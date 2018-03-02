@@ -1,0 +1,16 @@
+*.py[oc]
+*.so
+*.pyd
+.DS_Store
+
+build
+./dist
+dist
+.cache/
+./*.egg-info
+
+.git
+
+# Coverage report output
+.coverage
+coverage_html_report/
