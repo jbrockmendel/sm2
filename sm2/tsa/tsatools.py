@@ -1,16 +1,15 @@
 
-from statsmodels.compat.python import range, lrange, lzip, long, PY3
-from statsmodels.compat.numpy import recarray_select
+from six import PY3, integer_types
+from six.moves import range
 
 import numpy as np
 import numpy.lib.recfunctions as nprf
 import pandas as pd
-from pandas import DataFrame
-from pandas.tseries import offsets
 from pandas.tseries.frequencies import to_offset
 
-from statsmodels.tools.sm_exceptions import ValueWarning
-from statsmodels.tools.data import _is_using_pandas, _is_recarray
+from sm2.compat.numpy import recarray_select
+from sm2.tools.sm_exceptions import ValueWarning
+from sm2.tools.data import _is_using_pandas, _is_recarray
 
 
 def add_trend(x, trend="c", prepend=False, has_constant='skip'):
@@ -183,7 +182,7 @@ def add_lag(x, col=None, lags=1, drop=False, insert=True):
             raise IndexError("col is None and the input array is not 1d")
         elif len(names) == 1:
             col = names[0]
-        if isinstance(col, (int, long)):
+        if isinstance(col, integer_types):
             col = x.dtype.names[col]
         if not PY3:
             # TODO: Get rid of this kludge.  See GH # 3658
@@ -227,8 +226,8 @@ def add_lag(x, col=None, lags=1, drop=False, insert=True):
                                            usemask=False)
 
         else:
-            first_arr = np.zeros(len(x)-lags, dtype=lzip(tmp_names,
-                (x[col].dtype,)*lags))
+            first_arr = np.zeros(len(x)-lags, dtype=list(zip(tmp_names,
+                (x[col].dtype,)*lags)))
             for i,name in enumerate(tmp_names):
                 first_arr[name] = ndlags[:,i]
         if last_names:
@@ -265,8 +264,8 @@ def add_lag(x, col=None, lags=1, drop=False, insert=True):
             ins_idx = insert
 
         ndlags = lagmat(contemp, lags, trim='Both')
-        first_cols = lrange(ins_idx)
-        last_cols = lrange(ins_idx,x.shape[1])
+        first_cols = list(range(ins_idx))
+        last_cols = list(range(ins_idx,x.shape[1]))
         if drop:
             if col in first_cols:
                 first_cols.pop(first_cols.index(col))
@@ -417,12 +416,12 @@ def lagmat(x, maxlag, trim='forward', original='ex', use_pandas=False):
         stopobs = nobs
 
     if is_pandas:
-        x_columns = x.columns if isinstance(x, DataFrame) else [x.name]
+        x_columns = x.columns if isinstance(x, pd.DataFrame) else [x.name]
         columns = [str(col) for col in x_columns]
         for lag in range(maxlag):
             lag_str = str(lag + 1)
             columns.extend([str(col) + '.L.' + lag_str for col in x_columns])
-        lm = DataFrame(lm[:stopobs], index=x.index, columns=columns)
+        lm = pd.DataFrame(lm[:stopobs], index=x.index, columns=columns)
         lags = lm.iloc[startobs:]
         if original in ('sep', 'ex'):
             leads = lags[x_columns]
@@ -754,7 +753,7 @@ def freq_to_period(freq):
     -----
     Annual maps to 1, quarterly maps to 4, monthly to 12, weekly to 52.
     """
-    if not isinstance(freq, offsets.DateOffset):
+    if not isinstance(freq, pd.DateOffset):
         freq = to_offset(freq)  # go ahead and standardize
     freq = freq.rule_code.upper()
 
