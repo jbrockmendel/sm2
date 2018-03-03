@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
 """
 Much of the build system code was adapted from work done by the pandas
 developers [1], which was in turn based on work done in pyzmq [2] and lxml [3].
