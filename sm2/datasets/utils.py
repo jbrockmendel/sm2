@@ -1,5 +1,5 @@
-from statsmodels.compat.numpy import recarray_select
-from statsmodels.compat.python import (range, StringIO, urlopen,
+from sm2.compat.numpy import recarray_select
+from sm2.compat.python import (range, StringIO, urlopen,
                                        HTTPError, URLError, lrange,
                                        cPickle, urljoin, BytesIO, long, PY3)
 import sys

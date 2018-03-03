@@ -2,8 +2,9 @@
 Compatibility shims to facilitate the transition from nose to pytest.  Can be removed once pytest
 is the only way to run tests.
 """
-from statsmodels.compat.python import PY3
 import functools
+
+from six import PY3
 
 has_pytest = True
 try:

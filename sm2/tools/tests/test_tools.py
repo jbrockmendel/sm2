@@ -522,7 +522,6 @@ class TestNanDot(object):
         expected_res = np.array([[ 0.,  0.], [ 0.,  0.]])
         assert_array_equal(test_res, expected_res)
 
-'''
 
     def test_24(self):
         nan = np.nan
@@ -575,3 +574,5 @@ class TestEnsure2d(object):
         results = tools._ensure_2d(self.ndarray[:,0])
         assert_array_equal(results[0], self.ndarray[:,[0]])
         assert_equal(results[1], None)
+
+'''

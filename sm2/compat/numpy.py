@@ -42,7 +42,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 from __future__ import absolute_import
 import numpy as np
 
-from .python import PY3
+from six import PY3
 from .scipy import NumpyVersion
 
 

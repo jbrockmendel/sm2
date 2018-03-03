@@ -433,11 +433,6 @@ def test_GLSARlag():
 
 
 
-if __name__ == '__main__':
-    t = TestGLSARGretl()
-    t.test_all()
-
-
 """
 Model 5: OLS, using observations 1959:2-2009:3 (T = 202)
 Dependent variable: ds_l_realinv

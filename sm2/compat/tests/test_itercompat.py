@@ -5,10 +5,10 @@ Created on Wed Feb 29 10:34:00 2012
 
 Author: Josef Perktold
 """
-from statsmodels.compat import lrange, zip_longest, combinations
+from sm2.compat import lrange, zip_longest, combinations
 from numpy.testing import assert_
 
-
+'''
 def test_zip_longest():
     lili = [['a0', 'b0', 'c0', 'd0'],
             ['a1', 'b1', 'c1'],
@@ -33,10 +33,4 @@ def test_combinations():
     actual = list(combinations(lrange(4), 3))
     desired = [(0, 1, 2), (0, 1, 3), (0, 2, 3), (1, 2, 3)]
     assert_(actual == desired, '%r not equal %r' % (actual, desired))
-
-
-
-
-if __name__ == '__main__':
-    test_zip_longest()
-    test_combinations()
+'''

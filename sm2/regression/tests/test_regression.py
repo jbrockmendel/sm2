@@ -2,7 +2,7 @@
 Test functions for models.regression
 """
 # TODO: Test for LM
-from statsmodels.compat.python import long, lrange
+from statsmodels.compat.python import long
 import warnings
 
 import pandas
@@ -733,9 +733,9 @@ def test_wls_example():
     # example from the docstring, there was a note about a bug, should
     # be fixed now
     Y = [1, 3, 4, 5, 2, 3, 4]
-    X = lrange(1, 8)
+    X = list(range(1, 8))
     X = add_constant(X, prepend=False)
-    wls_model = WLS(Y, X, weights=lrange(1, 8)).fit()
+    wls_model = WLS(Y, X, weights=list(range(1, 8))).fit()
     # taken from R lm.summary
     assert_almost_equal(wls_model.fvalue, 0.127337843215, 6)
     assert_almost_equal(wls_model.scale, 2.44608530786**2, 6)

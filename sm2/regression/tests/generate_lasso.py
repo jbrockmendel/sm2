@@ -7,6 +7,8 @@ results file "glmnet_r_results.py".
 Currently only tests OLS.  Our implementation covers GLS, but it's not
 clear if glmnet does.
 """
+import os
+
 import numpy as np
 
 n = 300
@@ -22,5 +24,6 @@ endog = expval + np.random.normal(size=n)
 data = np.concatenate((endog[:,None], exog), axis=1)
 data = np.around(100*data)
 
-fname = "results/lasso_data.csv"
-np.savetxt(fname, data, fmt="%.0f", delimiter=",")
+here = os.path.dirname(__file__)
+path = os.path.join(here, "results", "lasso_data.csv")
+np.savetxt(path, data, fmt="%.0f", delimiter=",")

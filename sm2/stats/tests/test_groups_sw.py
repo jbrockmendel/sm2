@@ -11,6 +11,7 @@ import numpy as np
 from numpy.testing import assert_equal, assert_raises
 
 import sm2.stats.sandwich_covariance as sw
+
 from statsmodels.tools.grouputils import Group, GroupSorted
 
 '''

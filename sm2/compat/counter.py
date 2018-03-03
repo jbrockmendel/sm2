@@ -7,10 +7,14 @@ http://code.activestate.com/recipes/576611/ , downloaded 2013-03-08
 '''
 
 from __future__ import print_function
-from .python import filter, iteritems
+
 from operator import itemgetter
 from heapq import nlargest
 from itertools import repeat
+
+from six import iteritems
+from six.moves import filter
+
 
 class Counter(dict):
     '''Dict subclass for counting hashable objects.  Sometimes called a bag

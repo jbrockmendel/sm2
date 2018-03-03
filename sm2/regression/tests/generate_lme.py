@@ -20,15 +20,15 @@ n_max = 5
 dsix = 0
 
 # Number of random effects
-for pr in 1,2:
+for pr in 1, 2:
 
     re_sd = np.linspace(-0.5, 1.5, pr)
 
     # Number of fixed effects
-    for pf in 1,2,3:
+    for pf in [1, 2, 3]:
 
         # Error standard deviation
-        for sig in 0.5,2:
+        for sig in [0.5, 2]:
 
             params = np.linspace(-1, 1, pf)
 
@@ -38,7 +38,7 @@ for pr in 1,2:
             groups = []
             for i in range(ngroup):
 
-                n = np.random.randint(n_min, n_max, 1)
+                n = np.random.randint(n_min, n_max, 1).item()
                 x_fe = np.random.normal(size=(n, pf))
                 x_re = np.zeros((n, pr))
                 u = np.linspace(-1, 1, n)

@@ -42,7 +42,6 @@ import sm2.base.wrapper as wrap
 from sm2.compat.numpy import np_matrix_rank
 
 from statsmodels.base.l1_slsqp import fit_l1_slsqp
-from statsmodels.distributions import genpoisson_p
 
 try:
     import cvxopt  # noqa:F401
@@ -1614,6 +1613,7 @@ class GeneralizedPoisson(CountModel):
             counts = np.atleast_2d(np.arange(0, np.max(self.endog)+1))
             mu = self.predict(params, exog=exog, exposure=exposure,
                               offset=offset)[:,None]
+            from statsmodels.distributions import genpoisson_p
             return genpoisson_p.pmf(counts, mu, params[-1],
                                     self.parameterization + 1)
         else:

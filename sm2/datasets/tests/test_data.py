@@ -5,22 +5,22 @@ import pandas as pd
 import nose
 import pytest
 
-import statsmodels.datasets
-from statsmodels.datasets.utils import Dataset
+import sm2.datasets
+from sm2.datasets.utils import Dataset
 
 exclude = ['check_internet', 'clear_data_home', 'get_data_home',
            'get_rdataset', 'tests', 'utils', 'webuse']
 datasets = []
-for dataset_name in dir(statsmodels.datasets):
+for dataset_name in dir(sm2.datasets):
     if not dataset_name.startswith('_') and dataset_name not in exclude:
         datasets.append(dataset_name)
-
+'''
 
 # TODO: Remove nottest when nose support is dropped
 @nose.tools.nottest
 @pytest.mark.parametrize('dataset_name', datasets)
 def test_dataset(dataset_name):
-    dataset = importlib.import_module('statsmodels.datasets.' + dataset_name)
+    dataset = importlib.import_module('sm2.datasets.' + dataset_name)
     data = dataset.load()
     assert isinstance(data, Dataset)
     assert isinstance(data.data, np.recarray)
@@ -34,3 +34,4 @@ def test_dataset(dataset_name):
 def test_all_datasets():
     for dataset in datasets:
         test_dataset(dataset)
+'''
