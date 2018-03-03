@@ -6,6 +6,7 @@ Utility functions models code
 """
 
 from six import integer_types
+from six.moves import reduce
 
 import numpy as np
 import numpy.lib.recfunctions as nprf
@@ -299,3 +300,56 @@ def nan_dot(A, B):
     C[should_be_nan] = np.nan
 
     return C
+
+
+# TODO: Not sure if this belongs here
+def chain_dot(*arrs):
+    """
+    Returns the dot product of the given matrices.
+
+    Parameters
+    ----------
+    arrs: argument list of ndarray
+
+    Returns
+    -------
+    Dot product of all arguments.
+
+    Examples
+    --------
+    >>> import numpy as np
+    >>> from sm2.tools import chain_dot
+    >>> A = np.arange(1,13).reshape(3,4)
+    >>> B = np.arange(3,15).reshape(4,3)
+    >>> C = np.arange(5,8).reshape(3,1)
+    >>> chain_dot(A,B,C)
+    array([[1820],
+       [4300],
+       [6780]])
+    """
+    return reduce(lambda x, y: np.dot(y, x), arrs[::-1])
+
+
+# TODO: Not sure if this belongs here
+def pinv_extended(X, rcond=1e-15):
+    """
+    Return the pinv of an array X as well as the singular values
+    used in computation.
+
+    Code adapted from numpy.
+    """
+    X = np.asarray(X)
+    X = X.conjugate()
+    u, s, vt = np.linalg.svd(X, 0)
+    s_orig = np.copy(s)
+    m = u.shape[0]
+    n = vt.shape[1]
+    cutoff = rcond * np.maximum.reduce(s)
+    for i in range(min(n, m)):
+        if s[i] > cutoff:
+            s[i] = 1./s[i]
+        else:
+            s[i] = 0.
+    res = np.dot(np.transpose(vt), np.multiply(s[:, np.core.newaxis],
+                                               np.transpose(u)))
+    return res, s_orig

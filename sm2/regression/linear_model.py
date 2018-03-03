@@ -1576,11 +1576,11 @@ class RegressionResults(base.LikelihoodModelResults):
             # TODO: Restats as LM test by projecting orthogonalizing
             #       to constant?
             if self.model.data.k_constant == 1:
-                # if constant is implicit, return nan see #2444
+                # if constant is implicit, return nan see GH#2444
                 if const_idx is None:
                     return np.nan
 
-                idx = list(range((k_params))
+                idx = list(range(k_params))
                 idx.pop(const_idx)
                 mat = mat[idx]  # remove constant
                 if mat.size == 0:  # see  GH#3642
