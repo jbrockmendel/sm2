@@ -1,20 +1,20 @@
-from statsmodels.compat.numpy import recarray_select
-
-from statsmodels.compat.python import lrange
-from statsmodels.tools.sm_exceptions import ColinearityWarning
-from statsmodels.tsa.stattools import (adfuller, acf, pacf_ols, pacf_yw,
-                                               pacf, grangercausalitytests,
-                                               coint, acovf, kpss, ResultsStore,
-                                               arma_order_select_ic)
-import numpy as np
-import pandas as pd
-from numpy.testing import (assert_almost_equal, assert_equal, assert_warns,
-                           assert_raises, dec, assert_, assert_allclose)
-from statsmodels.datasets import macrodata, sunspots
-from pandas import Series, DatetimeIndex, DataFrame
 import os
 import warnings
-from statsmodels.tools.sm_exceptions import MissingDataError
+
+import numpy as np
+from numpy.testing import (assert_almost_equal, assert_equal, assert_warns,
+                           assert_raises, dec, assert_, assert_allclose)
+import pandas as pd
+from pandas import Series, DatetimeIndex, DataFrame
+
+
+from sm2.compat.numpy import recarray_select
+from sm2.tools.sm_exceptions import ColinearityWarning, MissingDataError
+from sm2.tsa.stattools import (adfuller, acf, pacf_ols, pacf_yw,
+                               pacf, grangercausalitytests,
+                               coint, acovf, kpss, ResultsStore,
+                               arma_order_select_ic)
+from sm2.datasets import macrodata, sunspots
 
 DECIMAL_8 = 8
 DECIMAL_6 = 6
@@ -468,7 +468,7 @@ class TestKPSS(SetupKPSS):
 
 
 def test_pandasacovf():
-    s = Series(lrange(1, 11))
+    s = Series(list(range(1, 11)))
     assert_almost_equal(acovf(s), acovf(s.values))
 
 
@@ -516,8 +516,8 @@ def test_arma_order_select_ic():
                       [ 517.61019619,  496.99650196,  499.52656493],
                       [ 498.12580329,  499.75598491,  504.99255506],
                       [ 499.49225249,  504.96650341,  510.48779255]])
-    aic = DataFrame(aic_x , index=lrange(5), columns=lrange(3))
-    bic = DataFrame(bic_x , index=lrange(5), columns=lrange(3))
+    aic = DataFrame(aic_x , index=list(range(5)), columns=list(range(3)))
+    bic = DataFrame(bic_x , index=list(range(5)), columns=list(range(3)))
     assert_almost_equal(res.aic.values, aic.values, 5)
     assert_almost_equal(res.bic.values, bic.values, 5)
     assert_equal(res.aic_min_order, (1, 2))
@@ -559,7 +559,3 @@ def test_acf_fft_dataframe():
 
     result = acf(sunspots.load_pandas().data[['SUNACTIVITY']], fft=True)
     assert_equal(result.ndim, 1)
-
-if __name__=="__main__":
-    import pytest
-    pytest.main([__file__, '-vvs', '-x', '--pdb'])

@@ -1,7 +1,8 @@
 '''tests for some time series analysis functions
 
 '''
-from statsmodels.compat.python import zip
+
+from six.moves import zip
 
 import numpy as np
 from numpy.testing import (assert_array_almost_equal, assert_equal,
@@ -9,14 +10,15 @@ from numpy.testing import (assert_array_almost_equal, assert_equal,
 import pandas as pd
 from pandas.util.testing import assert_frame_equal, assert_series_equal
 
-import statsmodels.api as sm
-import statsmodels.tsa.stattools as tsa
-import statsmodels.tsa.tsatools as tools
-from statsmodels.tsa.tsatools import vec, vech
+import sm2.tsa.stattools as tsa
+import sm2.tsa.tsatools as tools
+from sm2.tsa.tsatools import vec, vech
 
-from statsmodels.tsa.tests.results import savedrvs
-from statsmodels.tsa.tests.results.datamlw_tls import mlacf, mlccf, mlpacf, \
-    mlywar
+from sm2.tsa.tests.results import savedrvs
+from sm2.tsa.tests.results.datamlw_tls import mlacf, mlccf, mlpacf, mlywar
+
+import statsmodels.api as sm
+
 
 xo = savedrvs.rvsdata.xar2
 x100 = xo[-100:] / 1000.
