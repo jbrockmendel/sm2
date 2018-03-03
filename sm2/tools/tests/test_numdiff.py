@@ -7,12 +7,15 @@ Should Hessian also work per observation, if fun returns 2d
 
 '''
 from __future__ import print_function
+
 import numpy as np
 from numpy.testing import assert_almost_equal, assert_allclose
-import statsmodels.api as sm
-from statsmodels.tools import numdiff
-from statsmodels.tools.numdiff import (approx_fprime, approx_fprime_cs,
-                                       approx_hess_cs)
+
+from sm2.tools import numdiff
+from sm2.tools.numdiff import approx_fprime, approx_fprime_cs, approx_hess_cs
+from sm2 import datasets
+
+# import sm2.api as sm
 
 DEC3 = 3
 DEC4 = 4
@@ -22,6 +25,7 @@ DEC8 = 8
 DEC13 = 13
 DEC14 = 14
 
+'''
 def maxabs(x,y):
     return np.abs(x-y).max()
 
@@ -93,7 +97,7 @@ class TestGradMNLogit(CheckGradLoglikeMixin):
     @classmethod
     def setup_class(cls):
         #from .results.results_discrete import Anes
-        data = sm.datasets.anes96.load()
+        data = datasets.anes96.load()
         exog = data.exog
         exog = sm.add_constant(exog, prepend=False)
         cls.mod = sm.MNLogit(data.endog, exog)
@@ -140,7 +144,7 @@ class TestGradMNLogit(CheckGradLoglikeMixin):
 class TestGradLogit(CheckGradLoglikeMixin):
     @classmethod
     def setup_class(cls):
-        data = sm.datasets.spector.load()
+        data = datasets.spector.load()
         data.exog = sm.add_constant(data.exog, prepend=False)
         #mod = sm.Probit(data.endog, data.exog)
         cls.mod = sm.Logit(data.endog, data.exog)
@@ -339,7 +343,7 @@ if __name__ == '__main__':
 
     import statsmodels.api as sm
 
-    data = sm.datasets.spector.load()
+    data = datasets.spector.load()
     data.exog = sm.add_constant(data.exog, prepend=False)
     #mod = sm.Probit(data.endog, data.exog)
     mod = sm.Logit(data.endog, data.exog)
@@ -372,7 +376,7 @@ if __name__ == '__main__':
     print('cs', hesscs)
     print(maxabs(hess(test_params), hesscs))
 
-    data = sm.datasets.anes96.load()
+    data = datasets.anes96.load()
     exog = data.exog
     exog = sm.add_constant(exog, prepend=False)
     res1 = sm.MNLogit(data.endog, exog).fit(method="newton", disp=0)
@@ -383,5 +387,4 @@ if __name__ == '__main__':
                             prepend=False)
     modp = sm.Poisson(datap.endog, exogp)
     resp = modp.fit(method='newton', disp=0)
-
-
+'''

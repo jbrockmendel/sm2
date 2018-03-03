@@ -1,7 +1,8 @@
 """
 Test functions for models.tools
 """
-from statsmodels.compat.python import lrange, range
+from six.moves import range
+
 import numpy as np
 from numpy.random import standard_normal
 from numpy.testing import (assert_equal, assert_array_equal,
@@ -10,15 +11,15 @@ import pandas as pd
 from pandas.util.testing import assert_frame_equal, assert_series_equal
 import pytest
 
-from statsmodels.datasets import longley
-from statsmodels.tools import tools
-from statsmodels.tools.tools import pinv_extended
+from sm2.datasets import longley
+from sm2.tools import tools
+from sm2.tools.tools import pinv_extended
 
 
 class TestTools(object):
 
     def test_add_constant_list(self):
-        x = lrange(1,5)
+        x = list(range(1, 5))
         x = tools.add_constant(x)
         y = np.asarray([[1,1,1,1],[1,2,3,4.]]).T
         assert_equal(x, y)

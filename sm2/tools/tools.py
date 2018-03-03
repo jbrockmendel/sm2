@@ -1,16 +1,20 @@
 '''
 Utility functions models code
 '''
-from statsmodels.compat.python import reduce, lzip, lmap, asstr2, range, long
+
 import numpy as np
 import numpy.lib.recfunctions as nprf
 import numpy.linalg as L
-from scipy.linalg import svdvals
 import pandas as pd
+from scipy.linalg import svdvals
 
-from statsmodels.datasets import webuse
-from statsmodels.tools.data import _is_using_pandas, _is_recarray
-from statsmodels.compat.numpy import np_matrix_rank
+from six import integer_types
+from six.moves import range, reduce
+
+from sm2.compat.python import asstr2
+
+from sm2.datasets import webuse
+from sm2.tools.data import _is_using_pandas, _is_recarray
 
 
 def _make_dictnames(tmp_arr, offset=0):
@@ -150,7 +154,7 @@ def categorical(data, col=None, dictnames=False, drop=False, ):
     if data.dtype.names or data.__class__ is np.recarray:
         if not col and np.squeeze(data).ndim > 1:
             raise IndexError("col is None and the input array is not 1d")
-        if isinstance(col, (int, long)):
+        if isinstance(col, integer_types):
             col = data.dtype.names[col]
         if col is None and data.dtype.names and len(data.dtype.names) == 1:
             col = data.dtype.names[0]
@@ -187,9 +191,9 @@ def categorical(data, col=None, dictnames=False, drop=False, ):
             if len(data.dtype) <= 1:
                 if tmp_dummy.shape[0] < tmp_dummy.shape[1]:
                     tmp_dummy = np.squeeze(tmp_dummy).swapaxes(1, 0)
-                dt = lzip(tmp_arr, [tmp_dummy.dtype.str]*len(tmp_arr))
+                dt = list(zip(tmp_arr, [tmp_dummy.dtype.str]*len(tmp_arr)))
                 # preserve array type
-                return np.array(lmap(tuple, tmp_dummy.tolist()),
+                return np.array(list(map(tuple, tmp_dummy.tolist())),
                                 dtype=dt).view(type(data))
 
             data = nprf.drop_fields(data, col, usemask=False,
@@ -204,7 +208,7 @@ def categorical(data, col=None, dictnames=False, drop=False, ):
         if not isinstance(data, np.ndarray):
             raise NotImplementedError("Array-like objects are not supported")
 
-        if isinstance(col, (int, long)):
+        if isinstance(col, integer_types):
             offset = data.shape[1]          # need error catching here?
             tmp_arr = np.unique(data[:, col])
             tmp_dummy = (tmp_arr[:, np.newaxis] == data[:, col]).astype(float)
@@ -266,7 +270,7 @@ def add_constant(data, prepend=True, has_constant='skip'):
     column's name is 'const'.
     """
     if _is_using_pandas(data, None) or _is_recarray(data):
-        from statsmodels.tsa.tsatools import add_trend
+        from sm2.tsa.tsatools import add_trend
         return add_trend(data, trend='c', prepend=prepend, has_constant=has_constant)
 
     # Special case for NumPy
@@ -325,7 +329,7 @@ def isestimable(C, D):
     if C.shape[1] != D.shape[1]:
         raise ValueError('Contrast should have %d columns' % D.shape[1])
     new = np.vstack([C, D])
-    if np_matrix_rank(new) != np_matrix_rank(D):
+    if np.linalg.matrix_rank(new) != np.linalg.matrix_rank(D):
         return False
     return True
 
@@ -406,7 +410,7 @@ def fullrank(X, r=None):
     """
 
     if r is None:
-        r = np_matrix_rank(X)
+        r = np.linalg.matrix_rank(X)
 
     V, D, U = L.svd(X, full_matrices=0)
     order = np.argsort(D)
