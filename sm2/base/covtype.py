@@ -12,6 +12,27 @@ import numpy as np
 import sm2.stats.sandwich_covariance as sw
 
 
+def _normalize_cov_type(cov_type):
+    # normalize names
+    if cov_type == 'nw-panel':
+        cov_type = 'hac-panel'
+    elif cov_type == 'nw-groupsum':
+        cov_type = 'hac-groupsum'
+    return cov_type
+
+
+def _set_df_adjustment(kwds, cov_type):
+    adjust_df = False
+    if cov_type in ['cluster', 'hac-panel', 'hac-groupsum']:
+        df_correction = kwds.get('df_correction', None)
+        # TODO: check also use_correction, do I need all combinations?
+        if df_correction is not False:  # i.e. in [None, True]:
+            # user didn't explicitly set it to False
+            adjust_df = True
+
+    return adjust_df
+
+
 def get_robustcov_results(self, cov_type='HC1', use_t=None, **kwds):
     """create new results instance with robust covariance as default
 
@@ -123,15 +144,11 @@ def get_robustcov_results(self, cov_type='HC1', use_t=None, **kwds):
 
     TODO: Currently there is no check for extra or misspelled keywords,
     except in the case of cov_type `HCx`
-
     """
-    # normalize names
-    if cov_type == 'nw-panel':
-        cov_type = 'hac-panel'
-    if cov_type == 'nw-groupsum':
-        cov_type = 'hac-groupsum'
+    cov_type = _normalize_cov_type(cov_type)
+
     if 'kernel' in kwds:
-            kwds['weights_func'] = kwds.pop('kernel')
+        kwds['weights_func'] = kwds.pop('kernel')
 
     # pop because HCx raises if any kwds
     sc_factor = kwds.pop('scaling_factor', None)
@@ -153,14 +170,7 @@ def get_robustcov_results(self, cov_type='HC1', use_t=None, **kwds):
     res.cov_kwds = {'use_t':use_t}  # store for information
     res.use_t = use_t
 
-    adjust_df = False
-    if cov_type in ['cluster', 'hac-panel', 'hac-groupsum']:
-        df_correction = kwds.get('df_correction', None)
-        # TODO: check also use_correction, do I need all combinations?
-        if df_correction is not False: # i.e. in [None, True]:
-            # user didn't explicitely set it to False
-            adjust_df = True
-
+    adjust_df = _set_df_adjustment(kwds, cov_type)
     res.cov_kwds['adjust_df'] = adjust_df
 
     # verify and set kwds, and calculate cov
@@ -194,7 +204,7 @@ def get_robustcov_results(self, cov_type='HC1', use_t=None, **kwds):
                                              weights_func=weights_func,
                                              use_correction=use_correction)
     elif cov_type.lower() == 'cluster':
-        #cluster robust standard errors, one- or two-way
+        # cluster robust standard errors, one- or two-way
         groups = kwds['groups']
         if not hasattr(groups, 'shape'):
             groups = np.asarray(groups).T
@@ -223,7 +233,7 @@ def get_robustcov_results(self, cov_type='HC1', use_t=None, **kwds):
                 n_groups0 = len(np.unique(groups[:,0]))
                 n_groups1 = len(np.unique(groups[:, 1]))
                 self.n_groups = (n_groups0, n_groups1)
-                n_groups = min(n_groups0, n_groups1) # use for adjust_df
+                n_groups = min(n_groups0, n_groups1)  # use for adjust_df
 
             # Note: sw.cov_cluster_2groups has 3 returns
             res.cov_params_default = sw.cov_cluster_2groups(self, groups,
@@ -238,8 +248,8 @@ def get_robustcov_results(self, cov_type='HC1', use_t=None, **kwds):
         res.cov_kwds['time'] = time = kwds.get('time', None)
         res.cov_kwds['groups'] = groups = kwds.get('groups', None)
         # TODO: nlags is currently required
-        #nlags = kwds.get('nlags', True)
-        #res.cov_kwds['nlags'] = nlags
+        # nlags = kwds.get('nlags', True)
+        # res.cov_kwds['nlags'] = nlags
         # TODO: `nlags` or `maxlags`
         res.cov_kwds['maxlags'] = maxlags = kwds['maxlags']
         use_correction = kwds.get('use_correction', 'hac')
@@ -269,8 +279,8 @@ def get_robustcov_results(self, cov_type='HC1', use_t=None, **kwds):
         # Driscoll-Kraay standard errors
         res.cov_kwds['time'] = time = kwds['time']
         # TODO: nlags is currently required
-        #nlags = kwds.get('nlags', True)
-        #res.cov_kwds['nlags'] = nlags
+        # nlags = kwds.get('nlags', True)
+        # res.cov_kwds['nlags'] = nlags
         # TODO: `nlags` or `maxlags`
         res.cov_kwds['maxlags'] = maxlags = kwds['maxlags']
         use_correction = kwds.get('use_correction', 'cluster')
