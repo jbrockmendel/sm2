@@ -1,19 +1,21 @@
 from __future__ import print_function
-from statsmodels.compat.python import iterkeys, lzip, range, reduce
+
+from six.moves import range, reduce
 import numpy as np
 from scipy import stats
-from statsmodels.base.data import handle_data
-from statsmodels.tools.data import _is_using_pandas
-from statsmodels.tools.tools import recipr, nan_dot
+
+from sm2.tools.data import _is_using_pandas
+from sm2.tools.tools import recipr, nan_dot
+from sm2.tools.decorators import resettable_cache, cache_readonly
+from sm2.tools.numdiff import approx_fprime
+from sm2.tools.sm_exceptions import ValueWarning, HessianInversionWarning
+
+from sm2.base.data import handle_data
+import sm2.base.wrapper as wrap
+from sm2.base.optimizer import Optimizer
+
 from statsmodels.stats.contrast import ContrastResults, WaldTestResults
-from statsmodels.tools.decorators import resettable_cache, cache_readonly
-import statsmodels.base.wrapper as wrap
-from statsmodels.tools.numdiff import approx_fprime
-from statsmodels.tools.sm_exceptions import ValueWarning, \
-    HessianInversionWarning
 from statsmodels.formula import handle_formula_data
-from statsmodels.compat.numpy import np_matrix_rank
-from statsmodels.base.optimizer import Optimizer
 
 
 _model_params_doc = """
@@ -506,7 +508,7 @@ class LikelihoodModel(Model):
             mlefit.mle_retvals = retvals
             if warn_convergence and not retvals['converged']:
                 from warnings import warn
-                from statsmodels.tools.sm_exceptions import ConvergenceWarning
+                from sm2.tools.sm_exceptions import ConvergenceWarning
                 warn("Maximum Likelihood optimization failed to converge. "
                      "Check mle_retvals", ConvergenceWarning)
 
@@ -615,7 +617,7 @@ class GenericLikelihoodModel(LikelihoodModel):
         #and should contain any preprocessing that needs to be done for a model
         if self.exog is not None:
             # assume constant
-            er = np_matrix_rank(self.exog)
+            er = np.linalg.matrix_rank(self.exog)
             self.df_model = float(er - 1)
             self.df_resid = float(self.exog.shape[0] - er)
         else:
@@ -687,7 +689,7 @@ class GenericLikelihoodModel(LikelihoodModel):
         '''
         Hessian of log-likelihood evaluated at params
         '''
-        from statsmodels.tools.numdiff import approx_hess
+        from sm2.tools.numdiff import approx_hess
         # need options for hess (epsilon)
         return approx_hess(params, self.loglike)
 
@@ -1027,7 +1029,7 @@ class LikelihoodModelResults(Results):
                                  'covariance matrix of the errors is correctly ' +
                                  'specified.'}
             else:
-                from statsmodels.base.covtype import get_robustcov_results
+                from sm2.base.covtype import get_robustcov_results
                 if cov_kwds is None:
                     cov_kwds = {}
                 use_t = self.use_t
@@ -1042,7 +1044,7 @@ class LikelihoodModelResults(Results):
 
     def _get_robustcov_results(self, cov_type='nonrobust', use_self=True,
                                    use_t=None, **cov_kwds):
-        from statsmodels.base.covtype import get_robustcov_results
+        from sm2.base.covtype import get_robustcov_results
         if cov_kwds is None:
             cov_kwds = {}
 
@@ -1731,7 +1733,7 @@ class LikelihoodModelResults(Results):
             cols = np.asarray(cols)
             lower = self.params[cols] - q * bse[cols]
             upper = self.params[cols] + q * bse[cols]
-        return np.asarray(lzip(lower, upper))
+        return np.asarray(list(zip(lower, upper)))
 
     def save(self, fname, remove_data=False):
         '''
@@ -1754,7 +1756,7 @@ class LikelihoodModelResults(Results):
 
         '''
 
-        from statsmodels.iolib.smpickle import save_pickle
+        from sm2.iolib.smpickle import save_pickle
 
         if remove_data:
             self.remove_data()
@@ -1777,7 +1779,7 @@ class LikelihoodModelResults(Results):
 
         '''
 
-        from statsmodels.iolib.smpickle import load_pickle
+        from sm2.iolib.smpickle import load_pickle
         return load_pickle(fname)
 
     def remove_data(self):
