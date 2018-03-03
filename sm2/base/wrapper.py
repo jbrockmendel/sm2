@@ -27,7 +27,7 @@ class SaveLoadMixin(object):
             In some cases not all arrays will be set to None.
 
         """
-        from statsmodels.iolib.smpickle import save_pickle
+        from sm2.iolib.smpickle import save_pickle
 
         if remove_data:
             self.remove_data()
@@ -49,7 +49,7 @@ class SaveLoadMixin(object):
         unpickled instance
 
         """
-        from statsmodels.iolib.smpickle import load_pickle
+        from sm2.iolib.smpickle import load_pickle
         return load_pickle(fname)
 
     def remove_data(self):
@@ -122,7 +122,7 @@ def _wipe(obj, att):
 
 class ResultsWrapper(SaveLoadMixin):
     """
-    Class which wraps a statsmodels estimation Results class and steps in to
+    Class which wraps a sm2 estimation Results class and steps in to
     reattach metadata to results (if available)
     """
     _wrap_attrs = {}
