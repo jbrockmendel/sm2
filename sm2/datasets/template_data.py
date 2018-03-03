@@ -27,9 +27,10 @@ NOTE        = """
 Any other useful information that does not fit into the above categories.
 """
 
+import os
+
 import numpy as np
 from sm2.datasets import utils as du
-from os.path import dirname, abspath
 
 
 def load():
@@ -56,8 +57,9 @@ def load_pandas():
 
 
 def _get_data():
-    filepath = dirname(abspath(__file__))
+    filepath = os.path.dirname(os.path.abspath(__file__))
     ##### EDIT THE FOLLOWING TO POINT TO DatasetName.csv #####
-    data = np.recfromtxt(open(filepath + '/DatasetName.csv', 'rb'),
+    path = os.path.join(filepath, 'DatasetName.csv')
+    data = np.recfromtxt(open(path, 'rb'),
                          delimiter=",", names=True, dtype=float)
     return data

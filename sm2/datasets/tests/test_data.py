@@ -9,7 +9,7 @@ import sm2.datasets
 from sm2.datasets.utils import Dataset
 
 exclude = ['check_internet', 'clear_data_home', 'get_data_home',
-           'get_rdataset', 'tests', 'utils', 'webuse']
+           'get_rdataset', 'tests', 'utils', 'webuse', 'template_data']
 datasets = []
 for dataset_name in dir(sm2.datasets):
     if not dataset_name.startswith('_') and dataset_name not in exclude:
