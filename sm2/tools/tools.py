@@ -257,3 +257,45 @@ def add_constant(data, prepend=True, has_constant='skip'):
     if not prepend:
         x = x[::-1]
     return np.column_stack(x)
+
+
+# TODO: Not sure if this belongs here
+def recipr(x):
+    """
+    Return the reciprocal of an array, setting all entries less than or
+    equal to 0 to 0. Therefore, it presumes that X should be positive in
+    general.
+    """
+
+    x = np.asarray(x)
+    out = np.zeros_like(x, dtype=np.float64)
+    nans = np.isnan(x.flat)
+    pos = ~nans
+    pos[pos] = pos[pos] & (x.flat[pos] > 0)
+    out.flat[pos] = 1.0 / x.flat[pos]
+    out.flat[nans] = np.nan
+    return out
+
+
+# TODO: Not sure if this belongs here
+def nan_dot(A, B):
+    """
+    Returns np.dot(left_matrix, right_matrix) with the convention that
+    nan * 0 = 0 and nan * x = nan if x != 0.
+
+    Parameters
+    ----------
+    A, B : np.ndarrays
+    """
+    # Find out who should be nan due to nan * nonzero
+    should_be_nan_1 = np.dot(np.isnan(A), (B != 0))
+    should_be_nan_2 = np.dot((A != 0), np.isnan(B))
+    should_be_nan = should_be_nan_1 + should_be_nan_2
+
+    # Multiply after setting all nan to 0
+    # This is what happens if there were no nan * nonzero conflicts
+    C = np.dot(np.nan_to_num(A), np.nan_to_num(B))
+
+    C[should_be_nan] = np.nan
+
+    return C
