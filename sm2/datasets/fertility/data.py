@@ -46,12 +46,12 @@ NOTE        = """
         Indicator Code - The World Bank Series code
         1960 - 2013 - The fertility rate for the given year
 """
-from sm2.compat import lzip, lmap
+import os
 
 import numpy as np
 import pandas as pd
+
 from sm2.datasets import utils as du
-from os.path import dirname, abspath, join
 
 
 def load():
@@ -65,8 +65,8 @@ def load():
     """
     data = _get_data()
     names = data.columns.tolist()
-    dtype = lzip(names, ['a45', 'a3', 'a40', 'a14'] + ['<f8'] * 54)
-    data = lmap(tuple, data.values.tolist())
+    dtype = list(zip(names, ['a45', 'a3', 'a40', 'a14'] + ['<f8'] * 54))
+    data = [tuple(x) for x in data.values.tolist()]
     dataset = du.Dataset(data=np.array(data, dtype=dtype).view(np.recarray), names=names)
     return dataset
 
@@ -77,7 +77,7 @@ def load_pandas():
 
 
 def _get_data():
-    filepath = dirname(abspath(__file__))
+    filepath = os.path.dirname(os.path.abspath(__file__))
     ##### EDIT THE FOLLOWING TO POINT TO DatasetName.csv #####
-    data = pd.read_csv(join(filepath, 'fertility.csv'))
+    data = pd.read_csv(os.path.join(filepath, 'fertility.csv'))
     return data

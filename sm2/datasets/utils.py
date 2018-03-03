@@ -1,18 +1,17 @@
-from sm2.compat.numpy import recarray_select
-from sm2.compat.python import (range, StringIO, urlopen,
-                                       HTTPError, URLError, lrange,
-                                       cPickle, urljoin, BytesIO, long, PY3)
+import os
 import sys
 import shutil
-from os import environ
-from os import makedirs
-from os.path import expanduser
-from os.path import exists
-from os.path import join
 
 import numpy as np
-from numpy import array
 from pandas import read_csv, DataFrame, Index
+
+from statsmodels.compat.numpy import recarray_select
+
+from six import BytesIO, StringIO, PY3, integer_types
+from six.moves import cPickle, range
+from six.moves.urllib_parse import urljoin
+from six.moves.urllib.request import urlopen
+from six.moves.urllib.error import HTTPError, URLError
 
 
 def webuse(data, baseurl='http://www.stata-press.com/data/r11/', as_df=True):
@@ -43,7 +42,7 @@ def webuse(data, baseurl='http://www.stata-press.com/data/r11/', as_df=True):
     error checking in response URLs.
     """
     # lazy imports
-    from sm2.iolib import genfromdta
+    from sm2.iolib.foreign import genfromdta
 
     url = urljoin(baseurl, data+'.dta')
     dta = urlopen(url)
@@ -78,8 +77,8 @@ class Dataset(dict):
 def process_recarray(data, endog_idx=0, exog_idx=None, stack=True, dtype=None):
     names = list(data.dtype.names)
 
-    if isinstance(endog_idx, (int, long)):
-        endog = array(data[names[endog_idx]], dtype=dtype)
+    if isinstance(endog_idx, integer_types):
+        endog = np.array(data[names[endog_idx]], dtype=dtype)
         endog_name = names[endog_idx]
         endog_idx = [endog_idx]
     else:
@@ -117,7 +116,7 @@ def process_recarray_pandas(data, endog_idx=0, exog_idx=None, dtype=None,
     data = DataFrame(data, dtype=dtype)
     names = data.columns
 
-    if isinstance(endog_idx, (int, long)):
+    if isinstance(endog_idx, integer_types):
         endog_name = names[endog_idx]
         endog = data[endog_name]
         if exog_idx is None:
@@ -129,7 +128,7 @@ def process_recarray_pandas(data, endog_idx=0, exog_idx=None, dtype=None,
         endog_name = list(endog.columns)
         if exog_idx is None:
             exog = data.drop(endog_name, axis=1)
-        elif isinstance(exog_idx, (int, long)):
+        elif isinstance(exog_idx, integer_types):
             exog = data.filter([names[exog_idx]])
         else:
             exog = data.filter(names[exog_idx])
@@ -150,7 +149,7 @@ def _maybe_reset_index(data):
     All the Rdatasets have the integer row.labels from R if there is no
     real index. Strip this for a zero-based index
     """
-    if data.index.equals(Index(lrange(1, len(data) + 1))):
+    if data.index.equals(Index(list(range(1, len(data) + 1)))):
         data = data.reset_index(drop=True)
     return data
 
@@ -199,8 +198,8 @@ def _urlopen_cached(url, cache):
     """
     from_cache = False
     if cache is not None:
-        cache_path = join(cache,
-                          url.split("://")[-1].replace('/', ',') + ".zip")
+        cache_path = os.path.join(cache,
+                                  url.split("://")[-1].replace('/', ',') + ".zip")
         try:
             data = _open_cache(cache_path)
             from_cache = True
@@ -316,11 +315,11 @@ def get_data_home(data_home=None):
     If the folder does not already exist, it is automatically created.
     """
     if data_home is None:
-        data_home = environ.get('STATSMODELS_DATA',
-                                join('~', 'statsmodels_data'))
-    data_home = expanduser(data_home)
-    if not exists(data_home):
-        makedirs(data_home)
+        data_home = os.environ.get('STATSMODELS_DATA',
+                                   os.path.join('~', 'statsmodels_data'))
+    data_home = os.path.expanduser(data_home)
+    if not os.path.exists(data_home):
+        os.makedirs(data_home)
     return data_home
 
 
