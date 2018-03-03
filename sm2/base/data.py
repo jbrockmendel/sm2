@@ -2,6 +2,8 @@
 Base tools for handling various kinds of data structures, attaching metadata to
 results, and doing data cleaning
 """
+import copy
+
 from six.moves import reduce, range, zip
 import numpy as np
 import pandas as pd
@@ -10,11 +12,6 @@ from sm2.tools.sm_exceptions import MissingDataError
 from sm2.tools.decorators import (resettable_cache, cache_readonly,
                                   cache_writable)
 from sm2.tools import input_types
-
-
-def _asarray_2dcolumns(x):
-    if np.asarray(x).ndim > 1 and np.asarray(x).squeeze().ndim == 1:
-        return
 
 
 def _asarray_2d_null_rows(x):
@@ -81,8 +78,7 @@ class ModelData(object):
         self._cache = resettable_cache()
 
     def __getstate__(self):
-        from copy import copy
-        d = copy(self.__dict__)
+        d = copy.copy(self.__dict__)
         if "design_info" in d:
             del d["design_info"]
             d["restore_design_info"] = True
