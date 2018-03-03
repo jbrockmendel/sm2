@@ -5,9 +5,9 @@ import warnings
 import pytest
 from numpy.testing import assert_equal
 
-from statsmodels.tools.decorators import (copy_doc,
-                                          cache_writable, deprecated_alias,
-                                          resettable_cache, cache_readonly)
+from sm2.tools.decorators import (copy_doc,
+                                  cache_writable, deprecated_alias,
+                                  resettable_cache, cache_readonly)
 
 
 class TestDeprecatedAlias(object):

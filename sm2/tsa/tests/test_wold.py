@@ -8,8 +8,8 @@ import scipy.signal
 
 from numpy.testing import assert_allclose, assert_equal
 
-from statsmodels.tsa import wold
-from statsmodels.tsa.wold import ARMARepresentation, VARRepresentation
+from sm2.tsa import wold
+from sm2.tsa.wold import ARMARepresentation, VARRepresentation
 
 # TODO: VARIMA test case
 

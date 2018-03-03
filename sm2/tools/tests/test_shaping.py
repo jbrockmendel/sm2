@@ -3,7 +3,7 @@
 
 import numpy as np
 
-from statsmodels.tools.shaping import atleast_2dcols
+from sm2.tools.shaping import atleast_2dcols
 
 # 2017-05-31 not implemented
 # def test_atleast2d_cols_scalar():
