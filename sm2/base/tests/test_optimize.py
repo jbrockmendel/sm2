@@ -15,23 +15,26 @@ fit_funcs = {
 
 try:
     from scipy.optimize import basinhopping
-    fit_funcs.update({'basinhopping': _fit_basinhopping})
+    fit_funcs['basinhopping'] = _fit_basinhopping
 except ImportError:
     pass
 
-'''
+
 def dummy_func(x):
     return x**2
+
 
 def dummy_score(x):
     return 2.*x
 
+
 def dummy_hess(x):
     return [[2.]]
 
-def test_full_output_false():
-    # just a smoke test
 
+'''
+@pytest.mark.smoke
+def test_full_output_false():
     # newton needs f, score, start, fargs, kwargs
     # bfgs needs f, score start, fargs, kwargs
     # nm needs ""
@@ -71,7 +74,7 @@ def test_full_output():
         assert_('converged' in retvals)
 
         if method == "powell":
-            #NOTE: I think I reported this? Might be version/optimize API
+            # NOTE: I think I reported this? Might be version/optimize API
             # dependent
             assert_(xopt.shape == () and xopt.size == 1)
         else:

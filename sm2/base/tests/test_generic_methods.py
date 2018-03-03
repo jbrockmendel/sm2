@@ -19,11 +19,8 @@ import pandas as pd
 
 '''
 import statsmodels.api as sm
-from sm2.compat.scipy import NumpyVersion
-from sm2.compat.testing import SkipTest
 
 class CheckGenericMixin(object):
-
     @classmethod
     def setup_class(cls):
         nobs = 500
@@ -115,9 +112,8 @@ class CheckGenericMixin(object):
             results = self.results._results
         else:
             results = self.results
-        if (isinstance(results, GLMResults) or
-            isinstance(results, DiscreteResults)):
-            raise SkipTest('Infeasible for {0}'.format(type(results)))
+        if isinstance(results, (GLMResults, DiscreteResults)):
+            raise pytest.skip('Infeasible for {0}'.format(type(results)))
 
         res = self.results
         fitted = res.fittedvalues
@@ -189,7 +185,6 @@ class CheckGenericMixin(object):
 # TODO: check if setup_class is faster than setup
 
 class TestGenericOLS(CheckGenericMixin):
-
     def setup(self):
         #fit for each test, because results will be changed by test
         x = self.exog
@@ -200,7 +195,6 @@ class TestGenericOLS(CheckGenericMixin):
 
 class TestGenericOLSOneExog(CheckGenericMixin):
     # check with single regressor (no constant)
-
     def setup(self):
         #fit for each test, because results will be changed by test
         x = self.exog[:, 1]
@@ -210,7 +204,6 @@ class TestGenericOLSOneExog(CheckGenericMixin):
 
 
 class TestGenericWLS(CheckGenericMixin):
-
     def setup(self):
         #fit for each test, because results will be changed by test
         x = self.exog
@@ -220,7 +213,6 @@ class TestGenericWLS(CheckGenericMixin):
 
 
 class TestGenericPoisson(CheckGenericMixin):
-
     def setup(self):
         #fit for each test, because results will be changed by test
         x = self.exog
@@ -236,7 +228,6 @@ class TestGenericPoisson(CheckGenericMixin):
         self.predict_kwds = dict(exposure=1, offset=0)
 
 class TestGenericNegativeBinomial(CheckGenericMixin):
-
     def setup(self):
         #fit for each test, because results will be changed by test
         np.random.seed(987689)
@@ -251,7 +242,6 @@ class TestGenericNegativeBinomial(CheckGenericMixin):
 
 
 class TestGenericLogit(CheckGenericMixin):
-
     def setup(self):
         #fit for each test, because results will be changed by test
         x = self.exog
@@ -265,7 +255,6 @@ class TestGenericLogit(CheckGenericMixin):
 
 
 class TestGenericRLM(CheckGenericMixin):
-
     def setup(self):
         #fit for each test, because results will be changed by test
         x = self.exog
@@ -275,7 +264,6 @@ class TestGenericRLM(CheckGenericMixin):
 
 
 class TestGenericGLM(CheckGenericMixin):
-
     def setup(self):
         #fit for each test, because results will be changed by test
         x = self.exog
@@ -285,7 +273,6 @@ class TestGenericGLM(CheckGenericMixin):
 
 
 class TestGenericGEEPoisson(CheckGenericMixin):
-
     def setup(self):
         #fit for each test, because results will be changed by test
         x = self.exog
@@ -302,7 +289,6 @@ class TestGenericGEEPoisson(CheckGenericMixin):
 
 
 class TestGenericGEEPoissonNaive(CheckGenericMixin):
-
     def setup(self):
         #fit for each test, because results will be changed by test
         x = self.exog
@@ -321,7 +307,6 @@ class TestGenericGEEPoissonNaive(CheckGenericMixin):
 
 
 class TestGenericGEEPoissonBC(CheckGenericMixin):
-
     def setup(self):
         #fit for each test, because results will be changed by test
         x = self.exog
