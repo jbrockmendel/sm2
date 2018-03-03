@@ -147,10 +147,6 @@ def append_cython_exclusion(path, filename):
         f.write(path + "\n")
 
 
-def strip_rc(version):
-    return re.sub(r"rc\d+$", "", version)
-
-
 def check_dependency_versions(min_versions):
     """
     Don't let pip/setuptools do this all by itself.  It's rude.
@@ -374,7 +370,6 @@ class DummyBuildSrc(Command):
 
     def run(self):
         pass
-
 
 
 cmdclass = {'clean': CleanCommand,
