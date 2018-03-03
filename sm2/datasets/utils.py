@@ -45,7 +45,7 @@ def webuse(data, baseurl='http://www.stata-press.com/data/r11/', as_df=True):
     # lazy imports
     from statsmodels.iolib import genfromdta
 
-    url = urljoin(baseurl, data+'.dta')
+    url = urljoin(baseurl, data + '.dta')
     dta = urlopen(url)
     dta = BytesIO(dta.read())  # make it truly file-like
     if as_df:  # could make this faster if we don't process dta twice?
@@ -256,14 +256,14 @@ def get_rdataset(dataname, package="datasets", cache=False):
         'datasets' package.
     cache : bool or str
         If True, will download this data into the STATSMODELS_DATA folder.
-        The default location is a folder called statsmodels_data in the
+        The default location is a folder called sm2_data in the
         user home folder. Otherwise, you can specify a path to a folder to
         use for caching the data. If False, the data will not be cached.
 
     Returns
     -------
     dataset : Dataset instance
-        A `statsmodels.data.utils.Dataset` instance. This objects has
+        A `sm2.data.utils.Dataset` instance. This objects has
         attributes:
 
         * data - A pandas DataFrame containing the data
@@ -271,7 +271,6 @@ def get_rdataset(dataname, package="datasets", cache=False):
         * package - The package from which the data came
         * from_cache - Whether not cached data was retrieved
         * __doc__ - The verbatim R documentation.
-
 
     Notes
     -----
@@ -283,9 +282,9 @@ def get_rdataset(dataname, package="datasets", cache=False):
     """
     # NOTE: use raw github bc html site might not be most up to date
     data_base_url = ("https://raw.github.com/vincentarelbundock/Rdatasets/"
-                     "master/csv/"+package+"/")
+                     "master/csv/" + package + "/")
     docs_base_url = ("https://raw.github.com/vincentarelbundock/Rdatasets/"
-                     "master/doc/"+package+"/rst/")
+                     "master/doc/" + package + "/rst/")
     cache = _get_cache(cache)
     data, from_cache = _get_data(data_base_url, dataname, cache)
     data = read_csv(data, index_col=0)
@@ -301,12 +300,12 @@ def get_rdataset(dataname, package="datasets", cache=False):
 
 
 def get_data_home(data_home=None):
-    """Return the path of the statsmodels data dir.
+    """Return the path of the sm2 data dir.
 
     This folder is used by some large dataset loaders to avoid
     downloading the data several times.
 
-    By default the data dir is set to a folder named 'statsmodels_data'
+    By default the data dir is set to a folder named 'sm2_data'
     in the user home folder.
 
     Alternatively, it can be set by the 'STATSMODELS_DATA' environment
@@ -317,7 +316,7 @@ def get_data_home(data_home=None):
     """
     if data_home is None:
         data_home = environ.get('STATSMODELS_DATA',
-                                join('~', 'statsmodels_data'))
+                                join('~', 'sm2_data'))
     data_home = expanduser(data_home)
     if not exists(data_home):
         makedirs(data_home)

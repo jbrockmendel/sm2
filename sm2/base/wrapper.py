@@ -7,7 +7,7 @@ import numpy as np
 
 class ResultsWrapper(object):
     """
-    Class which wraps a statsmodels estimation Results class and steps in to
+    Class which wraps a sm2 estimation Results class and steps in to
     reattach metadata to results (if available)
     """
     _wrap_attrs = {}
@@ -65,7 +65,7 @@ class ResultsWrapper(object):
             In some cases not all arrays will be set to None.
 
         '''
-        from statsmodels.iolib.smpickle import save_pickle
+        from sm2.iolib.smpickle import save_pickle
 
         if remove_data:
             self.remove_data()
@@ -74,7 +74,7 @@ class ResultsWrapper(object):
 
     @classmethod
     def load(cls, fname):
-        from statsmodels.iolib.smpickle import load_pickle
+        from sm2.iolib.smpickle import load_pickle
         return load_pickle(fname)
 
 

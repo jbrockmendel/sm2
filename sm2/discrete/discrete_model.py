@@ -164,7 +164,7 @@ class DiscreteModel(base.LikelihoodModel):
 
     This class does not do anything itself but lays out the methods and
     call signature expected of child classes in addition to those of
-    statsmodels.model.LikelihoodModel.
+    sm2.model.LikelihoodModel.
     """
     def __init__(self, endog, exog, **kwargs):
         super(DiscreteModel, self).__init__(endog, exog, **kwargs)
@@ -173,7 +173,7 @@ class DiscreteModel(base.LikelihoodModel):
     def initialize(self):
         """
         Initialize is called by
-        statsmodels.model.LikelihoodModel.__init__
+        sm2.model.LikelihoodModel.__init__
         and should contain any preprocessing that needs to be done for a model.
         """
         # assumes constant
@@ -2055,7 +2055,7 @@ class MNLogit(MultinomialModel):
     exog : array-like
         A nobs x k array where `nobs` is the number of observations and `k`
         is the number of regressors. An intercept is not included by default
-        and should be added by the user. See `statsmodels.tools.add_constant`.
+        and should be added by the user. See `sm2.tools.add_constant`.
     %(extra_params)s
 
     Attributes

@@ -616,7 +616,7 @@ class TestMissingPandas(object):
 class TestConstant(object):
     @classmethod
     def setup_class(cls):
-        from statsmodels.datasets.longley import load_pandas
+        from sm2.datasets.longley import load_pandas
         cls.data = load_pandas()
 
     def test_array_constant(self):
@@ -869,8 +869,8 @@ def test_formula_missing_extra_arrays():
 
 def test_raise_nonfinite_exog():
     # we raise now in the has constant check before hitting the linear algebra
-    from statsmodels.regression.linear_model import OLS
-    from statsmodels.tools.sm_exceptions import MissingDataError
+    from sm2.regression.linear_model import OLS
+    from sm2.tools.sm_exceptions import MissingDataError
     x = np.arange(10)[:,None]**([0., 1.])
     # random numbers for y
     y = np.array([-0.6, -0.1, 0., -0.7, -0.5, 0.5, 0.1, -0.8, -2., 1.1])
