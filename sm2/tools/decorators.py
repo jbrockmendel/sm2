@@ -61,14 +61,6 @@ class ResettableCache(dict):
         for mustreset in self._resetdict.get(key, []):
             del(self[mustreset])
 
-#    def __getstate__(self):
-#        print('pickling wrapper', self.__dict__)
-#        return self.__dict__
-#
-#    def __setstate__(self, dict_):
-#        print('unpickling wrapper', dict_)
-#        self.__dict__.update(dict_)
-
 
 resettable_cache = ResettableCache
 
@@ -84,25 +76,26 @@ class CachedAttribute(object):
     def __get__(self, obj, type=None):
         if obj is None:
             return self.fget
+
         # Get the cache or set a default one if needed
         _cachename = self.cachename
         _cache = getattr(obj, _cachename, None)
         if _cache is None:
             setattr(obj, _cachename, resettable_cache())
             _cache = getattr(obj, _cachename)
+
         # Get the name of the attribute to set and cache
         name = self.name
         _cachedval = _cache.get(name, None)
-        # print("[_cachedval=%s]" % _cachedval)
         if _cachedval is None:
             # Call the "fget" function
             _cachedval = self.fget(obj)
             # Set the attribute in obj
-            # print("Setting %s in cache to %s" % (name, _cachedval))
             try:
                 _cache[name] = _cachedval
             except KeyError:
                 setattr(_cache, name, _cachedval)
+
             # Update the reset list if needed (and possible)
             resetlist = self.resetlist
             if resetlist is not ():
@@ -110,13 +103,12 @@ class CachedAttribute(object):
                     _cache._resetdict[name] = self.resetlist
                 except AttributeError:
                     pass
-        # else:
-        # print("Reading %s from cache (%s)" % (name, _cachedval))
+
         return _cachedval
 
     def __set__(self, obj, value):
-        errmsg = "The attribute '%s' cannot be overwritten" % self.name
-        warnings.warn(errmsg, CacheWriteWarning)
+        warnings.warn("The attribute '%s' cannot be overwritten" % self.name,
+                      CacheWriteWarning)
 
 
 class CachedWritableAttribute(CachedAttribute):
@@ -133,7 +125,6 @@ class _cache_readonly(object):
     """
     Decorator for CachedAttribute
     """
-
     def __init__(self, cachename=None, resetlist=None):
         self.func = None
         self.cachename = cachename
@@ -143,6 +134,8 @@ class _cache_readonly(object):
         return CachedAttribute(func,
                                cachename=self.cachename,
                                resetlist=self.resetlist)
+
+
 cache_readonly = _cache_readonly()
 
 
@@ -154,49 +147,6 @@ class cache_writable(_cache_readonly):
         return CachedWritableAttribute(func,
                                        cachename=self.cachename,
                                        resetlist=self.resetlist)
-
-
-# this has been copied from nitime a long time ago
-# TODO: ceck whether class has change in nitime
-class OneTimeProperty(object):
-    """
-    A descriptor to make special properties that become normal attributes.
-
-    This is meant to be used mostly by the auto_attr decorator in this module.
-    Author: Fernando Perez, copied from nitime
-    """
-    def __init__(self, func):
-
-        """Create a OneTimeProperty instance.
-
-         Parameters
-         ----------
-           func : method
-
-             The method that will be called the first time to compute a value.
-             Afterwards, the method's name will be a standard attribute holding
-             the value of this computation.
-             """
-        self.getter = func
-        self.name = func.__name__
-
-    def __get__(self, obj, type=None):
-        """
-        This will be called on attribute access on the class or instance.
-        """
-
-        if obj is None:
-            # Being called on the class, return the original function.
-            # This way, introspection works on the class.
-            # return func
-            # print('class access')
-            return self.getter
-
-        val = self.getter(obj)
-        # print("** auto_attr - loading '%s'" % self.name  # dbg)
-        setattr(obj, self.name, val)
-        return val
-
 
 def nottest(fn):
     fn.__test__ = False

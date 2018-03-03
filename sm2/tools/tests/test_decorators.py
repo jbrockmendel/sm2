@@ -1,12 +1,9 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-import warnings
-
-import pytest
 from numpy.testing import assert_equal
 
-from statsmodels.tools.decorators import (cache_writable,
-                                          resettable_cache, cache_readonly)
+from sm2.tools.decorators import (cache_writable,
+                                  resettable_cache, cache_readonly)
 
 
 def test_resettable_cache():
