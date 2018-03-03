@@ -6,14 +6,16 @@ Created on Fri Mar 09 16:00:27 2012
 Author: Josef Perktold
 """
 from __future__ import print_function
-from statsmodels.compat.python import iterkeys, cPickle, BytesIO
-
 import warnings
+
+from six import BytesIO, iterkeys
+from six.moves import cPickle
 
 import numpy as np
 from numpy.testing import assert_, assert_equal
 import pandas as pd
 
+'''
 import statsmodels.api as sm
 
 
@@ -279,20 +281,4 @@ class TestRemoveDataPicklePoissonRegularized(RemoveDataPickle):
         y_count = np.random.poisson(np.exp(x.sum(1) - x.mean()))
         model = sm.Poisson(y_count, x)
         self.results = model.fit_regularized(method='l1', disp=0, alpha=10)
-
-
-
-if __name__ == '__main__':
-    for cls in [TestRemoveDataPickleOLS, TestRemoveDataPickleWLS,
-                TestRemoveDataPicklePoisson,
-                TestRemoveDataPicklePoissonRegularized,
-                TestRemoveDataPickleNegativeBinomial,
-                TestRemoveDataPickleLogit, TestRemoveDataPickleRLM,
-                TestRemoveDataPickleGLM]:
-        print(cls)
-        cls.setup_class()
-        tt = cls()
-        tt.setup()
-        tt.test_remove_data_pickle()
-        tt.test_remove_data_docstring()
-        tt.test_pickle_wrapper()
+'''

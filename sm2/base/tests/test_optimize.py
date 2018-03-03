@@ -1,8 +1,8 @@
 from numpy.testing import assert_
-from statsmodels.base.optimizer import (_fit_newton, _fit_nm,
-                                        _fit_bfgs, _fit_cg,
-                                        _fit_ncg, _fit_powell,
-                                        _fit_lbfgs, _fit_basinhopping)
+from sm2.base.optimizer import (_fit_newton, _fit_nm,
+                                _fit_bfgs, _fit_cg,
+                                _fit_ncg, _fit_powell,
+                                _fit_lbfgs, _fit_basinhopping)
 
 fit_funcs = {
     'newton': _fit_newton,
@@ -11,8 +11,7 @@ fit_funcs = {
     'cg': _fit_cg,
     'ncg': _fit_ncg,
     'powell': _fit_powell,
-    'lbfgs': _fit_lbfgs,
-            }
+    'lbfgs': _fit_lbfgs}
 
 try:
     from scipy.optimize import basinhopping
@@ -20,7 +19,7 @@ try:
 except ImportError:
     pass
 
-
+'''
 def dummy_func(x):
     return x**2
 
@@ -78,3 +77,4 @@ def test_full_output():
         else:
             assert_(len(xopt) == 1)
 
+'''

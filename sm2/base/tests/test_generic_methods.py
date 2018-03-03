@@ -10,18 +10,19 @@ Created on Wed Oct 30 14:01:27 2013
 
 Author: Josef Perktold
 """
-from statsmodels.compat.python import range
-import numpy as np
-import pandas as pd
-import statsmodels.api as sm
-from statsmodels.compat.scipy import NumpyVersion
-from statsmodels.compat.testing import SkipTest
-
-from numpy.testing import (assert_, assert_allclose, assert_equal,
-                           assert_array_equal)
-
 import platform
 
+from six.moves import range
+import numpy as np
+from numpy.testing import (assert_, assert_allclose, assert_equal,
+                           assert_array_equal)
+import pandas as pd
+
+
+'''
+import statsmodels.api as sm
+from sm2.compat.scipy import NumpyVersion
+from sm2.compat.testing import SkipTest
 
 class CheckGenericMixin(object):
 
@@ -517,6 +518,4 @@ class T_estWaldAnovaOLSNoFormula(object):
         mod = ols("np.log(Days+1) ~ C(Duration, Sum)*C(Weight, Sum)", cls.data)
         cls.res = mod.fit()  # default use_t=True
 
-
-if __name__ == '__main__':
-    pass
+'''

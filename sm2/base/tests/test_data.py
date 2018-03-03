@@ -1,15 +1,17 @@
 import numpy as np
 from numpy.testing import assert_equal, assert_, assert_raises
-import pandas
-import pandas.util.testing as ptesting
+import pandas as pd
+import pandas.util.testing as tm
 
-from statsmodels.base import data as sm_data
-from statsmodels.formula import handle_formula_data
-from statsmodels.regression.linear_model import OLS
-from statsmodels.genmod.generalized_linear_model import GLM
-from statsmodels.genmod import families
-from statsmodels.discrete.discrete_model import Logit
+from sm2.base import data as sm_data
+# from statsmodels.formula import handle_formula_data
+from sm2.regression.linear_model import OLS
+# from statsmodels.genmod.generalized_linear_model import GLM
+# from statsmodels.genmod import families
+from sm2.discrete.discrete_model import Logit
 
+
+'''
 #class TestDates(object):
 #    @classmethod
 #    def setup_class(cls):
@@ -98,8 +100,8 @@ class TestArrays1dExog(TestArrays):
 class TestDataFrames(TestArrays):
     @classmethod
     def setup_class(cls):
-        cls.endog = pandas.DataFrame(np.random.random(10), columns=['y_1'])
-        exog =  pandas.DataFrame(np.random.random((10,2)),
+        cls.endog = pd.DataFrame(np.random.random(10), columns=['y_1'])
+        exog =  pd.DataFrame(np.random.random((10,2)),
                                  columns=['x_1','x_2'])
         exog.insert(0, 'const', 1)
         cls.exog = exog
@@ -107,13 +109,13 @@ class TestDataFrames(TestArrays):
         nrows = 10
         nvars = 3
         cls.col_input = np.random.random(nvars)
-        cls.col_result = pandas.Series(cls.col_input,
+        cls.col_result = pd.Series(cls.col_input,
                                           index=exog.columns)
         cls.row_input = np.random.random(nrows)
-        cls.row_result = pandas.Series(cls.row_input,
+        cls.row_result = pd.Series(cls.row_input,
                                           index=exog.index)
         cls.cov_input = np.random.random((nvars, nvars))
-        cls.cov_result = pandas.DataFrame(cls.cov_input,
+        cls.cov_result = pd.DataFrame(cls.cov_input,
                                            index = exog.columns,
                                            columns = exog.columns)
         cls.xnames = ['const', 'x_1', 'x_2']
@@ -121,8 +123,8 @@ class TestDataFrames(TestArrays):
         cls.row_labels = cls.exog.index
 
     def test_orig(self):
-        ptesting.assert_frame_equal(self.data.orig_endog, self.endog)
-        ptesting.assert_frame_equal(self.data.orig_exog, self.exog)
+        tm.assert_frame_equal(self.data.orig_endog, self.endog)
+        tm.assert_frame_equal(self.data.orig_exog, self.exog)
 
     def test_endogexog(self):
         np.testing.assert_equal(self.data.endog, self.endog.values.squeeze())
@@ -132,13 +134,13 @@ class TestDataFrames(TestArrays):
         data = self.data
         # this makes sure what the wrappers need work but not the wrapped
         # results themselves
-        ptesting.assert_series_equal(data.wrap_output(self.col_input,
+        tm.assert_series_equal(data.wrap_output(self.col_input,
                                                   'columns'),
-                                self.col_result)
-        ptesting.assert_series_equal(data.wrap_output(self.row_input, 'rows'),
-                                self.row_result)
-        ptesting.assert_frame_equal(data.wrap_output(self.cov_input, 'cov'),
-                                self.cov_result)
+                               self.col_result)
+        tm.assert_series_equal(data.wrap_output(self.row_input, 'rows'),
+                               self.row_result)
+        tm.assert_frame_equal(data.wrap_output(self.cov_input, 'cov'),
+                              self.cov_result)
 
 
 class TestLists(TestArrays):
@@ -193,7 +195,7 @@ class TestListDataFrame(TestDataFrames):
     def setup_class(cls):
         cls.endog = np.random.random(10).tolist()
 
-        exog =  pandas.DataFrame(np.random.random((10,2)),
+        exog =  pd.DataFrame(np.random.random((10,2)),
                                  columns=['x_1','x_2'])
         exog.insert(0, 'const', 1)
         cls.exog = exog
@@ -201,15 +203,15 @@ class TestListDataFrame(TestDataFrames):
         nrows = 10
         nvars = 3
         cls.col_input = np.random.random(nvars)
-        cls.col_result = pandas.Series(cls.col_input,
-                                          index=exog.columns)
+        cls.col_result = pd.Series(cls.col_input,
+                                   index=exog.columns)
         cls.row_input = np.random.random(nrows)
-        cls.row_result = pandas.Series(cls.row_input,
-                                          index=exog.index)
+        cls.row_result = pd.Series(cls.row_input,
+                                   index=exog.index)
         cls.cov_input = np.random.random((nvars, nvars))
-        cls.cov_result = pandas.DataFrame(cls.cov_input,
-                                           index = exog.columns,
-                                           columns = exog.columns)
+        cls.cov_result = pd.DataFrame(cls.cov_input,
+                                      index = exog.columns,
+                                      columns = exog.columns)
         cls.xnames = ['const', 'x_1', 'x_2']
         cls.ynames = 'y'
         cls.row_labels = cls.exog.index
@@ -220,15 +222,15 @@ class TestListDataFrame(TestDataFrames):
 
     def test_orig(self):
         np.testing.assert_equal(self.data.orig_endog, self.endog)
-        ptesting.assert_frame_equal(self.data.orig_exog, self.exog)
+        tm.assert_frame_equal(self.data.orig_exog, self.exog)
 
 
 class TestDataFrameList(TestDataFrames):
     @classmethod
     def setup_class(cls):
-        cls.endog = pandas.DataFrame(np.random.random(10), columns=['y_1'])
+        cls.endog = pd.DataFrame(np.random.random(10), columns=['y_1'])
 
-        exog =  pandas.DataFrame(np.random.random((10,2)),
+        exog =  pd.DataFrame(np.random.random((10,2)),
                                  columns=['x1','x2'])
         exog.insert(0, 'const', 1)
         cls.exog = exog.values.tolist()
@@ -236,13 +238,13 @@ class TestDataFrameList(TestDataFrames):
         nrows = 10
         nvars = 3
         cls.col_input = np.random.random(nvars)
-        cls.col_result = pandas.Series(cls.col_input,
+        cls.col_result = pd.Series(cls.col_input,
                                           index=exog.columns)
         cls.row_input = np.random.random(nrows)
-        cls.row_result = pandas.Series(cls.row_input,
+        cls.row_result = pd.Series(cls.row_input,
                                           index=exog.index)
         cls.cov_input = np.random.random((nvars, nvars))
-        cls.cov_result = pandas.DataFrame(cls.cov_input,
+        cls.cov_result = pd.DataFrame(cls.cov_input,
                                            index = exog.columns,
                                            columns = exog.columns)
         cls.xnames = ['const', 'x1', 'x2']
@@ -254,7 +256,7 @@ class TestDataFrameList(TestDataFrames):
         np.testing.assert_equal(self.data.exog, self.exog)
 
     def test_orig(self):
-        ptesting.assert_frame_equal(self.data.orig_endog, self.endog)
+        tm.assert_frame_equal(self.data.orig_endog, self.endog)
         np.testing.assert_equal(self.data.orig_exog, self.exog)
 
 
@@ -263,7 +265,7 @@ class TestArrayDataFrame(TestDataFrames):
     def setup_class(cls):
         cls.endog = np.random.random(10)
 
-        exog =  pandas.DataFrame(np.random.random((10,2)),
+        exog =  pd.DataFrame(np.random.random((10,2)),
                                  columns=['x_1','x_2'])
         exog.insert(0, 'const', 1)
         cls.exog = exog
@@ -271,13 +273,13 @@ class TestArrayDataFrame(TestDataFrames):
         nrows = 10
         nvars = 3
         cls.col_input = np.random.random(nvars)
-        cls.col_result = pandas.Series(cls.col_input,
+        cls.col_result = pd.Series(cls.col_input,
                                           index=exog.columns)
         cls.row_input = np.random.random(nrows)
-        cls.row_result = pandas.Series(cls.row_input,
+        cls.row_result = pd.Series(cls.row_input,
                                           index=exog.index)
         cls.cov_input = np.random.random((nvars, nvars))
-        cls.cov_result = pandas.DataFrame(cls.cov_input,
+        cls.cov_result = pd.DataFrame(cls.cov_input,
                                            index = exog.columns,
                                            columns = exog.columns)
         cls.xnames = ['const', 'x_1', 'x_2']
@@ -290,15 +292,15 @@ class TestArrayDataFrame(TestDataFrames):
 
     def test_orig(self):
         np.testing.assert_equal(self.data.orig_endog, self.endog)
-        ptesting.assert_frame_equal(self.data.orig_exog, self.exog)
+        tm.assert_frame_equal(self.data.orig_exog, self.exog)
 
 
 class TestDataFrameArray(TestDataFrames):
     @classmethod
     def setup_class(cls):
-        cls.endog = pandas.DataFrame(np.random.random(10), columns=['y_1'])
+        cls.endog = pd.DataFrame(np.random.random(10), columns=['y_1'])
 
-        exog =  pandas.DataFrame(np.random.random((10,2)),
+        exog =  pd.DataFrame(np.random.random((10,2)),
                                  columns=['x1','x2']) # names mimic defaults
         exog.insert(0, 'const', 1)
         cls.exog = exog.values
@@ -306,15 +308,15 @@ class TestDataFrameArray(TestDataFrames):
         nrows = 10
         nvars = 3
         cls.col_input = np.random.random(nvars)
-        cls.col_result = pandas.Series(cls.col_input,
-                                          index=exog.columns)
+        cls.col_result = pd.Series(cls.col_input,
+                                   index=exog.columns)
         cls.row_input = np.random.random(nrows)
-        cls.row_result = pandas.Series(cls.row_input,
-                                          index=exog.index)
+        cls.row_result = pd.Series(cls.row_input,
+                                   index=exog.index)
         cls.cov_input = np.random.random((nvars, nvars))
-        cls.cov_result = pandas.DataFrame(cls.cov_input,
-                                           index = exog.columns,
-                                           columns = exog.columns)
+        cls.cov_result = pd.DataFrame(cls.cov_input,
+                                      index = exog.columns,
+                                      columns = exog.columns)
         cls.xnames = ['const', 'x1', 'x2']
         cls.ynames = 'y_1'
         cls.row_labels = cls.endog.index
@@ -324,68 +326,68 @@ class TestDataFrameArray(TestDataFrames):
         np.testing.assert_equal(self.data.exog, self.exog)
 
     def test_orig(self):
-        ptesting.assert_frame_equal(self.data.orig_endog, self.endog)
+        tm.assert_frame_equal(self.data.orig_endog, self.endog)
         np.testing.assert_equal(self.data.orig_exog, self.exog)
 
 
 class TestSeriesDataFrame(TestDataFrames):
     @classmethod
     def setup_class(cls):
-        cls.endog = pandas.Series(np.random.random(10), name='y_1')
+        cls.endog = pd.Series(np.random.random(10), name='y_1')
 
-        exog =  pandas.DataFrame(np.random.random((10,2)),
-                                 columns=['x_1','x_2'])
+        exog =  pd.DataFrame(np.random.random((10,2)),
+                             columns=['x_1','x_2'])
         exog.insert(0, 'const', 1)
         cls.exog = exog
         cls.data = sm_data.handle_data(cls.endog, cls.exog)
         nrows = 10
         nvars = 3
         cls.col_input = np.random.random(nvars)
-        cls.col_result = pandas.Series(cls.col_input,
-                                          index=exog.columns)
+        cls.col_result = pd.Series(cls.col_input,
+                                   index=exog.columns)
         cls.row_input = np.random.random(nrows)
-        cls.row_result = pandas.Series(cls.row_input,
-                                          index=exog.index)
+        cls.row_result = pd.Series(cls.row_input,
+                                   index=exog.index)
         cls.cov_input = np.random.random((nvars, nvars))
-        cls.cov_result = pandas.DataFrame(cls.cov_input,
-                                           index = exog.columns,
-                                           columns = exog.columns)
+        cls.cov_result = pd.DataFrame(cls.cov_input,
+                                      index = exog.columns,
+                                      columns = exog.columns)
         cls.xnames = ['const', 'x_1', 'x_2']
         cls.ynames = 'y_1'
         cls.row_labels = cls.exog.index
 
     def test_orig(self):
-        ptesting.assert_series_equal(self.data.orig_endog, self.endog)
-        ptesting.assert_frame_equal(self.data.orig_exog, self.exog)
+        tm.assert_series_equal(self.data.orig_endog, self.endog)
+        tm.assert_frame_equal(self.data.orig_exog, self.exog)
 
 
 class TestSeriesSeries(TestDataFrames):
     @classmethod
     def setup_class(cls):
-        cls.endog = pandas.Series(np.random.random(10), name='y_1')
+        cls.endog = pd.Series(np.random.random(10), name='y_1')
 
-        exog =  pandas.Series(np.random.random(10), name='x_1')
+        exog =  pd.Series(np.random.random(10), name='x_1')
         cls.exog = exog
         cls.data = sm_data.handle_data(cls.endog, cls.exog)
         nrows = 10
         nvars = 1
         cls.col_input = np.random.random(nvars)
-        cls.col_result = pandas.Series(cls.col_input,
-                                          index = [exog.name])
+        cls.col_result = pd.Series(cls.col_input,
+                                   index = [exog.name])
         cls.row_input = np.random.random(nrows)
-        cls.row_result = pandas.Series(cls.row_input,
-                                          index = exog.index)
+        cls.row_result = pd.Series(cls.row_input,
+                                   index = exog.index)
         cls.cov_input = np.random.random((nvars, nvars))
-        cls.cov_result = pandas.DataFrame(cls.cov_input,
-                                           index = [exog.name],
-                                           columns = [exog.name])
+        cls.cov_result = pd.DataFrame(cls.cov_input,
+                                      index = [exog.name],
+                                      columns = [exog.name])
         cls.xnames = ['x_1']
         cls.ynames = 'y_1'
         cls.row_labels = cls.exog.index
 
     def test_orig(self):
-        ptesting.assert_series_equal(self.data.orig_endog, self.endog)
-        ptesting.assert_series_equal(self.data.orig_exog, self.exog)
+        tm.assert_series_equal(self.data.orig_endog, self.endog)
+        tm.assert_series_equal(self.data.orig_exog, self.exog)
 
     def test_endogexog(self):
         np.testing.assert_equal(self.data.endog, self.endog.values.squeeze())
@@ -407,7 +409,7 @@ def test_alignment():
     # re-index because they won't conform to lint
     realgdp = gs_l_realgdp.reindex(lint.index, method='bfill')
     data = dict(const=np.ones_like(lint), lrealgdp=realgdp, lint=lint)
-    exog = pandas.DataFrame(data)
+    exog = pd.DataFrame(data)
 
     # which index do we get??
     np.testing.assert_raises(ValueError, OLS, *(endog, exog))
@@ -450,10 +452,10 @@ class TestMultipleEqsArrays(TestArrays):
 class TestMultipleEqsDataFrames(TestDataFrames):
     @classmethod
     def setup_class(cls):
-        cls.endog = endog = pandas.DataFrame(np.random.random((10,4)),
-                                     columns=['y_1', 'y_2', 'y_3', 'y_4'])
-        exog =  pandas.DataFrame(np.random.random((10,2)),
-                                 columns=['x_1','x_2'])
+        cls.endog = endog = pd.DataFrame(np.random.random((10,4)),
+                                         columns=['y_1', 'y_2', 'y_3', 'y_4'])
+        exog =  pd.DataFrame(np.random.random((10,2)),
+                             columns=['x_1','x_2'])
         exog.insert(0, 'const', 1)
         cls.exog = exog
         cls.data = sm_data.handle_data(cls.endog, cls.exog)
@@ -461,40 +463,40 @@ class TestMultipleEqsDataFrames(TestDataFrames):
         nvars = 3
         neqs = 4
         cls.col_input = np.random.random(nvars)
-        cls.col_result = pandas.Series(cls.col_input,
-                                          index=exog.columns)
+        cls.col_result = pd.Series(cls.col_input,
+                                   index=exog.columns)
         cls.row_input = np.random.random(nrows)
-        cls.row_result = pandas.Series(cls.row_input,
+        cls.row_result = pd.Series(cls.row_input,
                                           index=exog.index)
         cls.cov_input = np.random.random((nvars, nvars))
-        cls.cov_result = pandas.DataFrame(cls.cov_input,
-                                           index = exog.columns,
-                                           columns = exog.columns)
+        cls.cov_result = pd.DataFrame(cls.cov_input,
+                                      index = exog.columns,
+                                      columns = exog.columns)
         cls.cov_eq_input = np.random.random((neqs, neqs))
-        cls.cov_eq_result = pandas.DataFrame(cls.cov_eq_input,
-                                              index=endog.columns,
-                                              columns=endog.columns)
+        cls.cov_eq_result = pd.DataFrame(cls.cov_eq_input,
+                                         index=endog.columns,
+                                         columns=endog.columns)
         cls.col_eq_input = np.random.random((nvars, neqs))
-        cls.col_eq_result = pandas.DataFrame(cls.col_eq_input,
-                                              index=exog.columns,
-                                              columns=endog.columns)
+        cls.col_eq_result = pd.DataFrame(cls.col_eq_input,
+                                         index=exog.columns,
+                                         columns=endog.columns)
         cls.xnames = ['const', 'x_1', 'x_2']
         cls.ynames = ['y_1', 'y_2', 'y_3', 'y_4']
         cls.row_labels = cls.exog.index
 
     def test_attach(self):
         data = self.data
-        ptesting.assert_series_equal(data.wrap_output(self.col_input,
+        tm.assert_series_equal(data.wrap_output(self.col_input,
                                                   'columns'),
                                 self.col_result)
-        ptesting.assert_series_equal(data.wrap_output(self.row_input, 'rows'),
+        tm.assert_series_equal(data.wrap_output(self.row_input, 'rows'),
                                 self.row_result)
-        ptesting.assert_frame_equal(data.wrap_output(self.cov_input, 'cov'),
+        tm.assert_frame_equal(data.wrap_output(self.cov_input, 'cov'),
                                 self.cov_result)
-        ptesting.assert_frame_equal(data.wrap_output(self.cov_eq_input,
+        tm.assert_frame_equal(data.wrap_output(self.cov_eq_input,
                                     'cov_eq'),
                                 self.cov_eq_result)
-        ptesting.assert_frame_equal(data.wrap_output(self.col_eq_input,
+        tm.assert_frame_equal(data.wrap_output(self.col_eq_input,
                                                  'columns_eq'),
                                 self.col_eq_result)
 
@@ -572,12 +574,12 @@ class TestMissingPandas(object):
         y[10] = np.nan
         X[2,3] = np.nan
         X[14,2] = np.nan
-        cls.y, cls.X = pandas.Series(y), pandas.DataFrame(X)
+        cls.y, cls.X = pd.Series(y), pd.DataFrame(X)
 
     def test_raise_no_missing(self):
         # smoke test for #1700
-        sm_data.handle_data(pandas.Series(np.random.random(20)),
-                            pandas.DataFrame(np.random.random((20, 2))),
+        sm_data.handle_data(pd.Series(np.random.random(20)),
+                            pd.DataFrame(np.random.random((20, 2))),
                             'raise')
 
     def test_raise(self):
@@ -593,9 +595,9 @@ class TestMissingPandas(object):
         X = X.loc[idx]
         data = sm_data.handle_data(self.y, self.X, 'drop')
         np.testing.assert_array_equal(data.endog, y.values)
-        ptesting.assert_series_equal(data.orig_endog, self.y.loc[idx])
+        tm.assert_series_equal(data.orig_endog, self.y.loc[idx])
         np.testing.assert_array_equal(data.exog, X.values)
-        ptesting.assert_frame_equal(data.orig_exog, self.X.loc[idx])
+        tm.assert_frame_equal(data.orig_exog, self.X.loc[idx])
 
     def test_none(self):
         data = sm_data.handle_data(self.y, self.X, 'none', hasconst=False)
@@ -620,8 +622,8 @@ class TestMissingPandas(object):
 
     def test_labels(self):
         2, 10, 14
-        labels = pandas.Index([0, 1, 3, 4, 5, 6, 7, 8, 9, 11, 12, 13, 15,
-                               16, 17, 18, 19, 20, 21, 22, 23, 24])
+        labels = pd.Index([0, 1, 3, 4, 5, 6, 7, 8, 9, 11, 12, 13, 15,
+                           16, 17, 18, 19, 20, 21, 22, 23, 24])
         data = sm_data.handle_data(self.y, self.X, 'drop')
         np.testing.assert_(data.row_labels.equals(labels))
 
@@ -662,15 +664,15 @@ class TestConstant(object):
 class TestHandleMissing(object):
 
     def test_pandas(self):
-        df = ptesting.makeDataFrame()
+        df = tm.makeDataFrame()
         df.values[[2, 5, 10], [2, 3, 1]] = np.nan
         y, X = df[df.columns[0]], df[df.columns[1:]]
         data, _ = sm_data.handle_missing(y, X, missing='drop')
 
         df = df.dropna()
         y_exp, X_exp = df[df.columns[0]], df[df.columns[1:]]
-        ptesting.assert_frame_equal(data['exog'], X_exp)
-        ptesting.assert_series_equal(data['endog'], y_exp)
+        tm.assert_frame_equal(data['exog'], X_exp)
+        tm.assert_series_equal(data['endog'], y_exp)
 
     def test_arrays(self):
         arr = np.random.randn(20, 4)
@@ -686,7 +688,7 @@ class TestHandleMissing(object):
         np.testing.assert_array_equal(data['exog'], X_exp)
 
     def test_pandas_array(self):
-        df = ptesting.makeDataFrame()
+        df = tm.makeDataFrame()
         df.values[[2, 5, 10], [2, 3, 1]] = np.nan
         y, X = df[df.columns[0]], df[df.columns[1:]].values
         data, _ = sm_data.handle_missing(y, X, missing='drop')
@@ -694,28 +696,28 @@ class TestHandleMissing(object):
         df = df.dropna()
         y_exp, X_exp = df[df.columns[0]], df[df.columns[1:]].values
         np.testing.assert_array_equal(data['exog'], X_exp)
-        ptesting.assert_series_equal(data['endog'], y_exp)
+        tm.assert_series_equal(data['endog'], y_exp)
 
     def test_array_pandas(self):
-        df = ptesting.makeDataFrame()
+        df = tm.makeDataFrame()
         df.values[[2, 5, 10], [2, 3, 1]] = np.nan
         y, X = df[df.columns[0]].values, df[df.columns[1:]]
         data, _ = sm_data.handle_missing(y, X, missing='drop')
 
         df = df.dropna()
         y_exp, X_exp = df[df.columns[0]].values, df[df.columns[1:]]
-        ptesting.assert_frame_equal(data['exog'], X_exp)
+        tm.assert_frame_equal(data['exog'], X_exp)
         np.testing.assert_array_equal(data['endog'], y_exp)
 
     def test_noop(self):
-        df = ptesting.makeDataFrame()
+        df = tm.makeDataFrame()
         df.values[[2, 5, 10], [2, 3, 1]] = np.nan
         y, X = df[df.columns[0]], df[df.columns[1:]]
         data, _ = sm_data.handle_missing(y, X, missing='none')
 
         y_exp, X_exp = df[df.columns[0]], df[df.columns[1:]]
-        ptesting.assert_frame_equal(data['exog'], X_exp)
-        ptesting.assert_series_equal(data['endog'], y_exp)
+        tm.assert_frame_equal(data['exog'], X_exp)
+        tm.assert_series_equal(data['endog'], y_exp)
 
 
 class CheckHasConstant(object):
@@ -809,11 +811,11 @@ def test_dtype_object():
     # see #880
 
     X = np.random.random((40,2))
-    df = pandas.DataFrame(X)
+    df = pd.DataFrame(X)
     df[2] = np.random.randint(2, size=40).astype('object')
     df['constant'] = 1
 
-    y = pandas.Series(np.random.randint(2, size=40))
+    y = pd.Series(np.random.randint(2, size=40))
 
     np.testing.assert_raises(ValueError, sm_data.handle_data, y, df)
 
@@ -850,7 +852,7 @@ def test_formula_missing_extra_arrays():
             'X_missing': X_missing,
             'weights': weights,
             'weights_missing': weights_missing}
-    data = pandas.DataFrame.from_dict(data)
+    data = pd.DataFrame.from_dict(data)
     data['constant'] = 1
 
     formula = 'y_missing ~ X_missing'
@@ -903,8 +905,4 @@ def test_raise_nonfinite_exog():
     assert_raises(MissingDataError, OLS, y, x)
     x[1, 1] = np.nan
     assert_raises(MissingDataError, OLS, y, x)
-
-
-if __name__ == "__main__":
-    import pytest
-    pytest.main([__file__, '-vvs', '-x', '--pdb'])
+'''
