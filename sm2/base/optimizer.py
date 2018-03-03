@@ -5,6 +5,7 @@ Functions that are general enough to use for any model fitting. The idea is
 to untie these from LikelihoodModel so that they may be re-used generally.
 """
 from __future__ import print_function
+import copy
 
 import numpy as np
 from scipy import optimize
@@ -12,8 +13,7 @@ from scipy import optimize
 
 def _check_method(method, methods):
     if method not in methods:
-        message = "Unknown fit method %s" % method
-        raise ValueError(message)
+        raise ValueError("Unknown fit method {method}".format(method=method))
 
 
 class Optimizer(object):
@@ -406,7 +406,9 @@ def _fit_lbfgs(f, score, start_params, fargs, kwargs, disp=True,
                          'even though an analytic loglike_and_score function '
                          'was given')
     if loglike_and_score:
-        func = lambda p, *a: tuple(-x for x in loglike_and_score(p, *a))
+        def func(p, *a):
+            return tuple(-x for x in loglike_and_score(p, *a))
+
     elif score:
         func = f
         extra_kwargs['fprime'] = score
@@ -556,11 +558,10 @@ def _fit_basinhopping(f, score, start_params, fargs, kwargs, disp=True,
                       maxiter=100, callback=None, retall=False,
                       full_output=True, hess=None):
     if 'basinhopping' not in vars(optimize):
-        msg = 'basinhopping solver is not available, use e.g. bfgs instead!'
-        raise ValueError(msg)
+        raise ValueError('basinhopping solver is not available, '
+                         'use e.g. bfgs instead!')
 
-    from copy import copy
-    kwargs = copy(kwargs)
+    kwargs = copy.copy(kwargs)
     niter = kwargs.setdefault('niter', 100)
     niter_success = kwargs.setdefault('niter_success', None)
     T = kwargs.setdefault('T', 1.0)
@@ -579,12 +580,13 @@ def _fit_basinhopping(f, score, start_params, fargs, kwargs, disp=True,
                                     T=T, stepsize=stepsize, disp=disp,
                                     callback=callback, interval=interval)
     if full_output:
-        xopt, fopt, niter, fcalls = map(lambda x: getattr(retvals, x),
-                                        ['x', 'fun', 'nit', 'nfev'])
+        xopt = retvals.x
+        fopt = retvals.fun
+        niter = retvals.nit
+        fcalls = retvals.nfev
         converged = 'completed successfully' in retvals.message[0]
         retvals = {'fopt': fopt, 'iterations': niter,
                    'fcalls': fcalls, 'converged': converged}
-
     else:
         xopt = retvals.x
         retvals = None
