@@ -4,8 +4,6 @@ import inspect
 import functools
 
 from six.moves import reduce
-from inspect import getargspec
-from statsmodels.compat.python import get_function_name
 
 
 class SaveLoadMixin(object):
@@ -174,14 +172,12 @@ def make_wrapper(func, how):
             obj = data.wrap_output(unwrapped, how)
         return obj
 
-    argspec = getargspec(func)
+    argspec = inspect.getargspec(func)
     formatted = inspect.formatargspec(argspec[0], varargs=argspec[1],
                                       defaults=argspec[3])
 
-    func_name = get_function_name(func)
-
+    func_name = func.__name__
     wrapper.__doc__ = "%s%s\n%s" % (func_name, formatted, wrapper.__doc__)
-
     return wrapper
 
 
