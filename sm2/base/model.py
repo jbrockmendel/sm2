@@ -12,7 +12,7 @@ from sm2.tools.sm_exceptions import ValueWarning, HessianInversionWarning
 from sm2.tools.tools import recipr, nan_dot
 from sm2.tools.input_types import is_using_pandas
 from sm2.tools.decorators import cache_readonly, resettable_cache
-from sm2.tools.numdiff import approx_fprime
+from sm2.tools.numdiff import approx_fprime, approx_hess
 
 from sm2.base.data import handle_data
 from sm2.base.optimizer import Optimizer
@@ -538,7 +538,6 @@ class GenericLikelihoodModel(LikelihoodModel):
     Hessian is not positive definite the covariance matrix of the parameter
     estimates based on the outer product of the Jacobian might still be valid.
 
-
     Examples
     --------
     see also subclasses in directory miscmodels
@@ -605,6 +604,7 @@ class GenericLikelihoodModel(LikelihoodModel):
         else:   # can use approx_hess_p if we have a gradient
             if not self.hessian:
                 pass
+
         # Initialize is called by
         # statsmodels.model.LikelihoodModel.__init__
         # and should contain any preprocessing that needs to be done for a model
@@ -682,7 +682,6 @@ class GenericLikelihoodModel(LikelihoodModel):
         """
         Hessian of log-likelihood evaluated at params
         """
-        from sm2.tools.numdiff import approx_hess
         # need options for hess (epsilon)
         return approx_hess(params, self.loglike)
 
@@ -707,7 +706,6 @@ class GenericLikelihoodModel(LikelihoodModel):
             A 1d weight vector used in the calculation of the Hessian.
             The hessian is obtained by `(exog.T * hessian_factor).dot(exog)`
         """
-
         raise NotImplementedError
 
     def fit(self, start_params=None, method='nm', maxiter=500, full_output=1,
@@ -1662,7 +1660,6 @@ class LikelihoodModelResults(Results, wrap.SaveLoadMixin):
             "boot_quant"
             "profile"
 
-
         Returns
         --------
         conf_int : array
@@ -1684,7 +1681,6 @@ class LikelihoodModelResults(Results, wrap.SaveLoadMixin):
                [      -1.5179487 ,       -0.54850503],
                [      -0.56251721,        0.460309  ],
                [     798.7875153 ,     2859.51541392]])
-
 
         >>> results.conf_int(cols=(2,3))
         array([[-0.1115811 ,  0.03994274],

@@ -16,6 +16,7 @@ def _check_method(method, methods):
         raise ValueError("Unknown fit method {method}".format(method=method))
 
 
+# TODO: Does this need to be a class?
 class Optimizer(object):
     def _fit(self, objective, gradient, start_params, fargs, kwargs,
              hessian=None, method='newton', maxiter=100, full_output=True,
