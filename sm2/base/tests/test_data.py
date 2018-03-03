@@ -1,17 +1,17 @@
 # -*- coding: utf-8 -*-
 import numpy as np
 from numpy.testing import (assert_equal, assert_, assert_raises,
-                           assert_array_equal, assert_raises, assert_)
+                           assert_array_equal)
 import pandas as pd
-import pandas.util.testing as tm
+# import pandas.util.testing as tm
 
 from sm2.base import data as sm_data
-#from statsmodels.formula import handle_formula_data
+# from statsmodels.formula import handle_formula_data
 
-#from statsmodels.discrete.discrete_model import Logit
-#from statsmodels.regression.linear_model import OLS
-#from statsmodels.genmod.generalized_linear_model import GLM
-#from statsmodels.genmod import families
+# from statsmodels.discrete.discrete_model import Logit
+# from statsmodels.regression.linear_model import OLS
+# from statsmodels.genmod.generalized_linear_model import GLM
+# from statsmodels.genmod import families
 
 '''
 #class TestDates(object):
@@ -908,7 +908,7 @@ def test_alignment():
 
 def test_dtype_object():
     # See GH#880
-    X = np.random.random((40,2))
+    X = np.random.random((40, 2))
     df = pd.DataFrame(X)
     df[2] = np.random.randint(2, size=40).astype('object')
     df['constant'] = 1

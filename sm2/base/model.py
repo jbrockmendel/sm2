@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 from __future__ import print_function
-
+import collections
 import warnings
 
 import numpy as np
@@ -11,11 +11,11 @@ import pandas as pd
 from sm2.tools.sm_exceptions import ValueWarning, HessianInversionWarning
 from sm2.tools.tools import recipr, nan_dot
 from sm2.tools.input_types import is_using_pandas
-# from sm2.tools.numdiff import approx_fprime
 from sm2.tools.decorators import cache_readonly
 
 from sm2.base.data import handle_data
 from sm2.base.optimizer import Optimizer
+import sm2.base.wrapper as wrap
 
 
 _model_params_doc = """
@@ -597,7 +597,9 @@ class Results(object):
 
 
 # TODO: public method?
-class LikelihoodModelResults(Results):
+# TODO: is it redundant to have Results inherit SaveLoadMixin given that
+#   ResultsWrapper already inherits it?  Any Reason not to inherit in Results?
+class LikelihoodModelResults(Results, wrap.SaveLoadMixin):
     """
     Class to contain results from likelihood models
 
@@ -1325,9 +1327,6 @@ class LikelihoodModelResults(Results):
         Weight                 30.263368  4.32586407145e-06              4
 
         """
-        # lazy import
-        from collections import defaultdict
-
         result = self
         if extra_constraints is None:
             extra_constraints = []
@@ -1340,7 +1339,7 @@ class LikelihoodModelResults(Results):
 
         identity = np.eye(len(result.params))
         constraints = []
-        combined = defaultdict(list)
+        combined = collections.defaultdict(list)
         if design_info is not None:
             for term in design_info.terms:
                 cols = design_info.slice(term)
@@ -1481,104 +1480,17 @@ class LikelihoodModelResults(Results):
             upper = self.params[cols] + q * bse[cols]
         return np.asarray(list(zip(lower, upper)))
 
-    def save(self, fname, remove_data=False):
-        '''
-        save a pickle of this instance
 
-        Parameters
-        ----------
-        fname : string or filehandle
-            fname can be a string to a file path or filename, or a filehandle.
-        remove_data : bool
-            If False (default), then the instance is pickled without changes.
-            If True, then all arrays with length nobs are set to None before
-            pickling. See the remove_data method.
-            In some cases not all arrays will be set to None.
-
-        Notes
-        -----
-        If remove_data is true and the model result does not implement a
-        remove_data method then this will raise an exception.
-
-        '''
-
-        from sm2.iolib.smpickle import save_pickle
-
-        if remove_data:
-            self.remove_data()
-
-        save_pickle(self, fname)
-
-    @classmethod
-    def load(cls, fname):
-        '''
-        load a pickle, (class method)
-
-        Parameters
-        ----------
-        fname : string or filehandle
-            fname can be a string to a file path or filename, or a filehandle.
-
-        Returns
-        -------
-        unpickled instance
-
-        '''
-
-        from sm2.iolib.smpickle import load_pickle
-        return load_pickle(fname)
-
-    def remove_data(self):
-        '''remove data arrays, all nobs arrays from result and model
-
-        This reduces the size of the instance, so it can be pickled with less
-        memory. Currently tested for use with predict from an unpickled
-        results and model instance.
-
-        .. warning:: Since data and some intermediate results have been removed
-           calculating new statistics that require them will raise exceptions.
-           The exception will occur the first time an attribute is accessed
-           that has been set to None.
-
-        Not fully tested for time series models, tsa, and might delete too much
-        for prediction or not all that would be possible.
-
-        The lists of arrays to delete are maintained as attributes of
-        the result and model instance, except for cached values. These
-        lists could be changed before calling remove_data.
-
-        The attributes to remove are named in:
-
-        model._data_attr : arrays attached to both the model instance
-            and the results instance with the same attribute name.
-
-        result.data_in_cache : arrays that may exist as values in
-            result._cache (TODO : should privatize name)
-
-        result._data_attr_model : arrays attached to the model
-            instance but not to the results instance
-        '''
-        def wipe(obj, att):
-            # get to last element in attribute path
-            p = att.split('.')
-            att_ = p.pop(-1)
-            try:
-                obj_ = reduce(getattr, [obj] + p)
-
-                if hasattr(obj_, att_):
-                    setattr(obj_, att_, None)
-            except AttributeError:
-                pass
-
-        model_only = ['model.' + i for i in getattr(self, "_data_attr_model", [])]
-        model_attr = ['model.' + i for i in self.model._data_attr]
-        for att in self._data_attr + model_attr + model_only:
-            wipe(self, att)
-
-        data_in_cache = getattr(self, 'data_in_cache', [])
-        data_in_cache += ['fittedvalues', 'resid', 'wresid']
-        for key in data_in_cache:
-            try:
-                self._cache[key] = None
-            except (AttributeError, KeyError):
-                pass
+class LikelihoodResultsWrapper(wrap.ResultsWrapper):
+    _attrs = {'params': 'columns',
+              'bse': 'columns',
+              'pvalues': 'columns',
+              'tvalues': 'columns',
+              'resid': 'rows',
+              'fittedvalues': 'rows',
+              'normalized_cov_params': 'cov'}
+    _wrap_attrs = _attrs
+    _wrap_methods = {'cov_params': 'cov',
+                     'conf_int': 'columns'}
+wrap.populate_wrapper(LikelihoodResultsWrapper,  # noqa: E305
+                      LikelihoodModelResults)
