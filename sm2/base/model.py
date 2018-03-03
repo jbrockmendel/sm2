@@ -13,6 +13,8 @@ from sm2.tools.tools import recipr, nan_dot
 from sm2.tools.input_types import is_using_pandas
 from sm2.tools.decorators import cache_readonly
 
+from sm2.tools.numdiff import approx_fprime
+
 from sm2.base.data import handle_data
 from sm2.base.optimizer import Optimizer
 import sm2.base.wrapper as wrap
@@ -509,6 +511,242 @@ class LikelihoodModel(Model):
         return mlefit
 
 
+# TODO: the below is unfinished
+class GenericLikelihoodModel(LikelihoodModel):
+    """
+    Allows the fitting of any likelihood function via maximum likelihood.
+
+    A subclass needs to specify at least the log-likelihood
+    If the log-likelihood is specified for each observation, then results that
+    require the Jacobian will be available. (The other case is not tested yet.)
+
+    Notes
+    -----
+    Optimization methods that require only a likelihood function are 'nm' and
+    'powell'
+
+    Optimization methods that require a likelihood function and a
+    score/gradient are 'bfgs', 'cg', and 'ncg'. A function to compute the
+    Hessian is optional for 'ncg'.
+
+    Optimization method that require a likelihood function, a score/gradient,
+    and a Hessian is 'newton'
+
+    If they are not overwritten by a subclass, then numerical gradient,
+    Jacobian and Hessian of the log-likelihood are caclulated by numerical
+    forward differentiation. This might results in some cases in precision
+    problems, and the Hessian might not be positive definite. Even if the
+    Hessian is not positive definite the covariance matrix of the parameter
+    estimates based on the outer product of the Jacobian might still be valid.
+
+
+    Examples
+    --------
+    see also subclasses in directory miscmodels
+
+    import sm2.api as sm
+    data = sm.datasets.spector.load()
+    data.exog = sm.add_constant(data.exog)
+    # in this dir
+    from model import GenericLikelihoodModel
+    probit_mod = sm.Probit(data.endog, data.exog)
+    probit_res = probit_mod.fit()
+    loglike = probit_mod.loglike
+    score = probit_mod.score
+    mod = GenericLikelihoodModel(data.endog, data.exog, loglike, score)
+    res = mod.fit(method="nm", maxiter = 500)
+    import numpy as np
+    np.allclose(res.params, probit_res.params)
+
+    """
+    def __init__(self, endog, exog=None, loglike=None, score=None,
+                 hessian=None, missing='none', extra_params_names=None,
+                 **kwds):
+    # let them be none in case user wants to use inheritance
+        if not loglike is None:
+            self.loglike = loglike
+        if not score is None:
+            self.score = score
+        if not hessian is None:
+            self.hessian = hessian
+
+        self.__dict__.update(kwds)
+
+        # TODO: data structures?
+
+        #TODO temporary solution, force approx normal
+        #self.df_model = 9999
+        #somewhere: CacheWriteWarning: 'df_model' cannot be overwritten
+        super(GenericLikelihoodModel, self).__init__(endog, exog,
+                                                     missing=missing)
+
+        # this won't work for ru2nmnl, maybe np.ndim of a dict?
+        if exog is not None:
+            #try:
+            self.nparams = (exog.shape[1] if np.ndim(exog) == 2 else 1)
+
+        if extra_params_names is not None:
+            self._set_extra_params_names(extra_params_names)
+
+    def _set_extra_params_names(self, extra_params_names):
+        # check param_names
+        if extra_params_names is not None:
+            if self.exog is not None:
+                self.exog_names.extend(extra_params_names)
+            else:
+                self.data.xnames = extra_params_names
+
+        self.nparams = len(self.exog_names)
+
+    #this is redundant and not used when subclassing
+    def initialize(self):
+        if not self.score:  # right now score is not optional
+            self.score = approx_fprime
+            if not self.hessian:
+                pass
+        else:   # can use approx_hess_p if we have a gradient
+            if not self.hessian:
+                pass
+        #Initialize is called by
+        #statsmodels.model.LikelihoodModel.__init__
+        #and should contain any preprocessing that needs to be done for a model
+        if self.exog is not None:
+            # assume constant
+            er = np.lingalg.matrix_rank(self.exog)
+            self.df_model = float(er - 1)
+            self.df_resid = float(self.exog.shape[0] - er)
+        else:
+            self.df_model = np.nan
+            self.df_resid = np.nan
+        super(GenericLikelihoodModel, self).initialize()
+
+    def expandparams(self, params):
+        '''
+        expand to full parameter array when some parameters are fixed
+
+        Parameters
+        ----------
+        params : array
+            reduced parameter array
+
+        Returns
+        -------
+        paramsfull : array
+            expanded parameter array where fixed parameters are included
+
+        Notes
+        -----
+        Calling this requires that self.fixed_params and self.fixed_paramsmask
+        are defined.
+
+        *developer notes:*
+
+        This can be used in the log-likelihood to ...
+
+        this could also be replaced by a more general parameter
+        transformation.
+
+        '''
+        paramsfull = self.fixed_params.copy()
+        paramsfull[self.fixed_paramsmask] = params
+        return paramsfull
+
+    def reduceparams(self, params):
+        return params[self.fixed_paramsmask]
+
+    def loglike(self, params):
+        return self.loglikeobs(params).sum(0)
+
+    def nloglike(self, params):
+        return -self.loglikeobs(params).sum(0)
+
+    def loglikeobs(self, params):
+        return -self.nloglikeobs(params)
+
+    def score(self, params):
+        '''
+        Gradient of log-likelihood evaluated at params
+        '''
+        kwds = {}
+        kwds.setdefault('centered', True)
+        return approx_fprime(params, self.loglike, **kwds).ravel()
+
+    def score_obs(self, params, **kwds):
+        '''
+        Jacobian/Gradient of log-likelihood evaluated at params for each
+        observation.
+        '''
+        #kwds.setdefault('epsilon', 1e-4)
+        kwds.setdefault('centered', True)
+        return approx_fprime(params, self.loglikeobs, **kwds)
+
+    def hessian(self, params):
+        '''
+        Hessian of log-likelihood evaluated at params
+        '''
+        from sm2.tools.numdiff import approx_hess
+        # need options for hess (epsilon)
+        return approx_hess(params, self.loglike)
+
+    def hessian_factor(self, params, scale=None, observed=True):
+        """Weights for calculating Hessian
+
+        Parameters
+        ----------
+        params : ndarray
+            parameter at which Hessian is evaluated
+        scale : None or float
+            If scale is None, then the default scale will be calculated.
+            Default scale is defined by `self.scaletype` and set in fit.
+            If scale is not None, then it is used as a fixed scale.
+        observed : bool
+            If True, then the observed Hessian is returned. If false then the
+            expected information matrix is returned.
+
+        Returns
+        -------
+        hessian_factor : ndarray, 1d
+            A 1d weight vector used in the calculation of the Hessian.
+            The hessian is obtained by `(exog.T * hessian_factor).dot(exog)`
+        """
+
+        raise NotImplementedError
+
+    def fit(self, start_params=None, method='nm', maxiter=500, full_output=1,
+            disp=1, callback=None, retall=0, **kwargs):
+        """
+        Fit the model using maximum likelihood.
+
+        The rest of the docstring is from
+        statsmodels.LikelihoodModel.fit
+        """
+        if start_params is None:
+            if hasattr(self, 'start_params'):
+                start_params = self.start_params
+            else:
+                start_params = 0.1 * np.ones(self.nparams)
+
+        fit_method = super(GenericLikelihoodModel, self).fit
+        mlefit = fit_method(start_params=start_params,
+                            method=method, maxiter=maxiter,
+                            full_output=full_output,
+                            disp=disp, callback=callback, **kwargs)
+        genericmlefit = GenericLikelihoodModelResults(self, mlefit)
+
+        # amend param names
+        exog_names = [] if (self.exog_names is None) else self.exog_names
+        k_miss = len(exog_names) - len(mlefit.params)
+        if not k_miss == 0:
+            if k_miss < 0:
+                self._set_extra_params_names(['par%d' % i for i in range(-k_miss)])
+            else:
+                # I don't want to raise after we have already fit()
+                warnings.warn('more exog_names than parameters', ValueWarning)
+
+        return genericmlefit
+    # fit.__doc__ += LikelihoodModel.fit.__doc__
+
+
 class Results(object):
     """
     Class to contain model results
@@ -815,7 +1053,7 @@ class LikelihoodModelResults(Results, wrap.SaveLoadMixin):
 
     @cache_readonly
     def bse(self):
-        # Issue 3299
+        # GH#3299
         if ((not hasattr(self, 'cov_params_default')) and
                 (self.normalized_cov_params is None)):
             bse_ = np.empty(len(self.params))
@@ -932,8 +1170,7 @@ class LikelihoodModelResults(Results, wrap.SaveLoadMixin):
             return cov_p
 
     # TODO: make sure this works as needed for GLMs
-    def t_test(self, r_matrix, cov_p=None, scale=None,
-               use_t=None):
+    def t_test(self, r_matrix, cov_p=None, scale=None, use_t=None):
         """
         Compute a t-test for a each linear hypothesis of the form Rb = q
 
@@ -1494,3 +1731,278 @@ class LikelihoodResultsWrapper(wrap.ResultsWrapper):
                      'conf_int': 'columns'}
 wrap.populate_wrapper(LikelihoodResultsWrapper,  # noqa: E305
                       LikelihoodModelResults)
+
+
+class ResultMixin(object):
+
+    @cache_readonly
+    def df_modelwc(self):
+        # collect different ways of defining the number of parameters, used for
+        # aic, bic
+        if hasattr(self, 'df_model'):
+            if hasattr(self, 'hasconst'):
+                hasconst = self.hasconst
+            else:
+                # default assumption
+                hasconst = 1
+            return self.df_model + hasconst
+        else:
+            return self.params.size
+
+    @cache_readonly
+    def aic(self):
+        return -2 * self.llf + 2 * (self.df_modelwc)
+
+    @cache_readonly
+    def bic(self):
+        return -2 * self.llf + np.log(self.nobs) * (self.df_modelwc)
+
+    @cache_readonly
+    def score_obsv(self):
+        '''cached Jacobian of log-likelihood
+        '''
+        return self.model.score_obs(self.params)
+
+    @cache_readonly
+    def hessv(self):
+        '''cached Hessian of log-likelihood
+        '''
+        return self.model.hessian(self.params)
+
+    @cache_readonly
+    def covjac(self):
+        '''
+        covariance of parameters based on outer product of jacobian of
+        log-likelihood
+
+        '''
+        ##  if not hasattr(self, '_results'):
+        ##      raise ValueError('need to call fit first')
+        ##      #self.fit()
+        ##  self.jacv = jacv = self.jac(self._results.params)
+        jacv = self.score_obsv
+        return np.linalg.inv(np.dot(jacv.T, jacv))
+
+    @cache_readonly
+    def covjhj(self):
+        '''covariance of parameters based on HJJH
+
+        dot product of Hessian, Jacobian, Jacobian, Hessian of likelihood
+
+        name should be covhjh
+        '''
+        jacv = self.score_obsv
+        hessv = self.hessv
+        hessinv = np.linalg.inv(hessv)
+        ##  self.hessinv = hessin = self.cov_params()
+        return np.dot(hessinv, np.dot(np.dot(jacv.T, jacv), hessinv))
+
+    @cache_readonly
+    def bsejhj(self):
+        '''standard deviation of parameter estimates based on covHJH
+        '''
+        return np.sqrt(np.diag(self.covjhj))
+
+    @cache_readonly
+    def bsejac(self):
+        '''standard deviation of parameter estimates based on covjac
+        '''
+        return np.sqrt(np.diag(self.covjac))
+
+    def bootstrap(self, nrep=100, method='nm', disp=0, store=1):
+        """simple bootstrap to get mean and variance of estimator
+
+        see notes
+
+        Parameters
+        ----------
+        nrep : int
+            number of bootstrap replications
+        method : str
+            optimization method to use
+        disp : bool
+            If true, then optimization prints results
+        store : bool
+            If true, then parameter estimates for all bootstrap iterations
+            are attached in self.bootstrap_results
+
+        Returns
+        -------
+        mean : array
+            mean of parameter estimates over bootstrap replications
+        std : array
+            standard deviation of parameter estimates over bootstrap
+            replications
+
+        Notes
+        -----
+        This was mainly written to compare estimators of the standard errors of
+        the parameter estimates.  It uses independent random sampling from the
+        original endog and exog, and therefore is only correct if observations
+        are independently distributed.
+
+        This will be moved to apply only to models with independently
+        distributed observations.
+        """
+        results = []
+        print(self.model.__class__)
+        hascloneattr = True if hasattr(self, 'cloneattr') else False
+        for i in range(nrep):
+            rvsind = np.random.randint(self.nobs, size=self.nobs)
+            #this needs to set startparam and get other defining attributes
+            #need a clone method on model
+            fitmod = self.model.__class__(self.endog[rvsind],
+                                          self.exog[rvsind, :])
+            if hascloneattr:
+                for attr in self.model.cloneattr:
+                    setattr(fitmod, attr, getattr(self.model, attr))
+
+            fitres = fitmod.fit(method=method, disp=disp)
+            results.append(fitres.params)
+        results = np.array(results)
+        if store:
+            self.bootstrap_results = results
+        return results.mean(0), results.std(0), results
+
+    def get_nlfun(self, fun):
+        #I think this is supposed to get the delta method that is currently
+        #in miscmodels count (as part of Poisson example)
+        pass
+
+
+class GenericLikelihoodModelResults(LikelihoodModelResults, ResultMixin):
+    """
+    A results class for the discrete dependent variable models.
+
+    ..Warning :
+
+    The following description has not been updated to this version/class.
+    Where are AIC, BIC, ....? docstring looks like copy from discretemod
+
+    Parameters
+    ----------
+    model : A DiscreteModel instance
+    mlefit : instance of LikelihoodResults
+        This contains the numerical optimization results as returned by
+        LikelihoodModel.fit(), in a superclass of GnericLikelihoodModels
+
+
+    Returns
+    -------
+    *Attributes*
+
+    Warning most of these are not available yet
+
+    aic : float
+        Akaike information criterion.  -2*(`llf` - p) where p is the number
+        of regressors including the intercept.
+    bic : float
+        Bayesian information criterion. -2*`llf` + ln(`nobs`)*p where p is the
+        number of regressors including the intercept.
+    bse : array
+        The standard errors of the coefficients.
+    df_resid : float
+        See model definition.
+    df_model : float
+        See model definition.
+    fitted_values : array
+        Linear predictor XB.
+    llf : float
+        Value of the loglikelihood
+    llnull : float
+        Value of the constant-only loglikelihood
+    llr : float
+        Likelihood ratio chi-squared statistic; -2*(`llnull` - `llf`)
+    llr_pvalue : float
+        The chi-squared probability of getting a log-likelihood ratio
+        statistic greater than llr.  llr has a chi-squared distribution
+        with degrees of freedom `df_model`.
+    prsquared : float
+        McFadden's pseudo-R-squared. 1 - (`llf`/`llnull`)
+
+    """
+
+    def __init__(self, model, mlefit):
+        self.model = model
+        self.endog = model.endog
+        self.exog = model.exog
+        self.nobs = model.endog.shape[0]
+
+        # TODO: possibly move to model.fit()
+        #       and outsource together with patching names
+        if hasattr(model, 'df_model'):
+            self.df_model = model.df_model
+        else:
+            self.df_model = len(mlefit.params)
+            # retrofitting the model, used in t_test TODO: check design
+            self.model.df_model = self.df_model
+
+        if hasattr(model, 'df_resid'):
+            self.df_resid = model.df_resid
+        else:
+            self.df_resid = self.endog.shape[0] - self.df_model
+            # retrofitting the model, used in t_test TODO: check design
+            self.model.df_resid = self.df_resid
+
+        self._cache = resettable_cache()
+        self.__dict__.update(mlefit.__dict__)
+
+    def summary(self, yname=None, xname=None, title=None, alpha=.05):
+        """Summarize the Regression Results
+
+        Parameters
+        -----------
+        yname : string, optional
+            Default is `y`
+        xname : list of strings, optional
+            Default is `var_##` for ## in p the number of regressors
+        title : string, optional
+            Title for the top table. If not None, then this replaces the
+            default title
+        alpha : float
+            significance level for the confidence intervals
+
+        Returns
+        -------
+        smry : Summary instance
+            this holds the summary tables and text, which can be printed or
+            converted to various output formats.
+
+        See Also
+        --------
+        statsmodels.iolib.summary.Summary : class to hold summary
+            results
+
+        """
+
+        top_left = [('Dep. Variable:', None),
+                    ('Model:', None),
+                    ('Method:', ['Maximum Likelihood']),
+                    ('Date:', None),
+                    ('Time:', None),
+                    ('No. Observations:', None),
+                    ('Df Residuals:', None),  # [self.df_resid]),
+                    ('Df Model:', None),  # [self.df_model])
+                    ]
+
+        top_right = [  # ('R-squared:', ["%#8.3f" % self.rsquared]),
+                       # ('Adj. R-squared:', ["%#8.3f" % self.rsquared_adj]),
+                       # ('F-statistic:', ["%#8.4g" % self.fvalue] ),
+                       # ('Prob (F-statistic):', ["%#6.3g" % self.f_pvalue]),
+                     ('Log-Likelihood:', None),  # ["%#6.4g" % self.llf]),
+                     ('AIC:', ["%#8.4g" % self.aic]),
+                     ('BIC:', ["%#8.4g" % self.bic])
+                     ]
+
+        if title is None:
+            title = self.model.__class__.__name__ + ' ' + "Results"
+
+        #create summary table instance
+        from sm2.iolib.summary import Summary
+        smry = Summary()
+        smry.add_table_2cols(self, gleft=top_left, gright=top_right,
+                             yname=yname, xname=xname, title=title)
+        smry.add_table_params(self, yname=yname, xname=xname, alpha=alpha,
+                              use_t=False)
+
+        return smry
