@@ -24,6 +24,7 @@ DECIMAL_3 = 3
 DECIMAL_2 = 2
 DECIMAL_1 = 1
 
+'''
 class CheckADF(object):
     """
     Test Augmented Dickey-Fuller
@@ -559,3 +560,5 @@ def test_acf_fft_dataframe():
 
     result = acf(sunspots.load_pandas().data[['SUNACTIVITY']], fft=True)
     assert_equal(result.ndim, 1)
+
+'''

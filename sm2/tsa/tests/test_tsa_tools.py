@@ -19,6 +19,7 @@ from sm2.tsa.tests.results.datamlw_tls import mlacf, mlccf, mlpacf, mlywar
 
 import statsmodels.api as sm
 
+'''
 
 xo = savedrvs.rvsdata.xar2
 x100 = xo[-100:] / 1000.
@@ -660,7 +661,4 @@ class TestLagmat2DS(object):
 
         data = np.zeros((100,2,2))
         assert_raises(TypeError, sm.tsa.lagmat2ds, data, 5)
-
-if __name__ == '__main__':
-    import pytest
-    pytest.main([__file__, '-vvs', '-x', '--pdb'])
+'''
