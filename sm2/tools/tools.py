@@ -347,7 +347,7 @@ def pinv_extended(X, rcond=1e-15):
     cutoff = rcond * np.maximum.reduce(s)
     for i in range(min(n, m)):
         if s[i] > cutoff:
-            s[i] = 1./s[i]
+            s[i] = 1. / s[i]
         else:
             s[i] = 0.
     res = np.dot(np.transpose(vt), np.multiply(s[:, np.core.newaxis],
