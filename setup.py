@@ -13,6 +13,7 @@ import subprocess
 import re
 from distutils.version import LooseVersion
 from setuptools import setup, Command, find_packages
+import pkg_resources
 
 # versioning
 import versioneer
@@ -93,22 +94,7 @@ no_frills = (len(sys.argv) >= 2 and ('--help' in sys.argv[1:] or
                                      sys.argv[1] in ('--help-commands',
                                                      'egg_info', '--version',
                                                      'clean')))
-
-# try bootstrapping setuptools if it doesn't exist
-try:
-    import pkg_resources
-    try:
-        pkg_resources.require("setuptools>=0.6c5")
-    except pkg_resources.VersionConflict:
-        from ez_setup import use_setuptools
-        use_setuptools(version="0.6c5")
-    from setuptools import setup, Command
-    _have_setuptools = True
-except ImportError:
-    # no setuptools installed
-    from distutils.core import setup, Command
-    _have_setuptools = False
-
+'''
 
 # These imports need to be here; setuptools needs to be imported first.
 from distutils.extension import Extension  # noqa:E402
@@ -139,7 +125,7 @@ class build_ext(_build_ext):
                 ext.include_dirs.append(numpy_incl)
         _build_ext.build_extensions(self)
 
-
+'''
 def generate_cython():
     cwd = os.path.abspath(os.path.dirname(__file__))
     print("Cythonizing sources")
@@ -365,6 +351,15 @@ class CheckingBuildExt(build_ext):
         build_ext.build_extensions(self)
 
 
+class CythonCommand(build_ext):
+    """Custom distutils command subclassed from Cython.Distutils.build_ext
+    to compile pyx->c, and stop there. All this does is override the
+    C-compile method build_extension() with a no-op."""
+    # Copied verbatim from pandas setup.py
+    def build_extension(self, ext):
+        pass
+
+
 class DummyBuildSrc(Command):
     """ numpy's build_src command interferes with Cython's build_ext.
     """
@@ -508,7 +503,9 @@ except ImportError:
         append_cython_exclusion(path.replace('/', os.path.sep),
                                 CYTHON_EXCLUSION_FILE)
 
+'''
 extensions = []
+'''
 for name, data in ext_data.items():
     data['sources'] = data.get('sources', []) + [data['name']]
 
@@ -553,16 +550,13 @@ if __name__ == "__main__":
 
     (setup_requires, install_requires) = check_dependency_versions(min_versions)
 
-    if _have_setuptools:
-        setuptools_kwargs['setup_requires'] = setup_requires
-        setuptools_kwargs['install_requires'] = install_requires
-        write_version_py()
+    setuptools_kwargs['setup_requires'] = setup_requires
+    setuptools_kwargs['install_requires'] = install_requires
+    write_version_py()
 
     # this adds *.csv and *.dta files in datasets folders
     # and *.csv and *.txt files in test/results folders
     package_data = get_data_files()
-    packages = find_packages()
-    packages.append("sm2.tsa.vector_ar.data")
 
     package_data["sm2.datasets.tests"].append("*.zip")
     package_data["sm2.iolib.tests.results"].append("*.dta")
@@ -600,7 +594,7 @@ if __name__ == "__main__":
           classifiers=classifiers,
           platforms='any',
           cmdclass=cmdclass,
-          packages=packages,
+          packages=find_packages(),
           package_data=package_data,
           include_package_data=False,  # True will install all files in repo
           extras_require=extras,
