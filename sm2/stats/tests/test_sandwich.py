@@ -9,19 +9,22 @@ Created on Sat Dec 17 08:39:16 2011
 
 Author: Josef Perktold
 """
+import os
+
 import numpy as np
 from numpy.testing import assert_almost_equal
 
-from statsmodels.regression.linear_model import OLS, GLSAR
-from statsmodels.tools.tools import add_constant
-import statsmodels.stats.sandwich_covariance as sw
-#import statsmodels.sandbox.panel.sandwich_covariance_generic as swg
+from sm2.regression.linear_model import OLS, GLSAR
+from sm2.tools.tools import add_constant
+import sm2.stats.sandwich_covariance as sw
+# import statsmodels.sandbox.panel.sandwich_covariance_generic as swg
 
+
+'''
 def test_cov_cluster_2groups():
     #comparing cluster robust standard errors to Peterson
     #requires Petersen's test_data
     #http://www.kellogg.northwestern.edu/faculty/petersen/htm/papers/se/test_data.txt
-    import os
     cur_dir = os.path.abspath(os.path.dirname(__file__))
     fpath = os.path.join(cur_dir,"test_data.txt")
     pet = np.genfromtxt(fpath)
@@ -54,7 +57,7 @@ def test_cov_cluster_2groups():
 
 def test_hac_simple():
 
-    from statsmodels.datasets import macrodata
+    from sm2.datasets import macrodata
     d2 = macrodata.load().data
     g_gdp = 400*np.diff(np.log(d2['realgdp']))
     g_inv = 400*np.diff(np.log(d2['realinv']))
@@ -88,7 +91,4 @@ def test_hac_simple():
     cov3 = sw.cov_hac_simple(res_olsg, use_correction=False)
     cov4 = sw.cov_hac_simple(res_olsg, nlags=4, use_correction=False)
     assert_almost_equal(cov3, cov4, decimal=14)
-
-if __name__ == '__main__':
-    import pytest
-    pytest.main([__file__, '-vvs', '-x', '--pdb'])
+'''
