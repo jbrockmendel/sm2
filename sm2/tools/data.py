@@ -28,7 +28,7 @@ def is_design_matrix(obj):
     return isinstance(obj, DesignMatrix)
 
 
-def _is_structured_ndarray(obj):
+def is_structured_ndarray(obj):
     return isinstance(obj, np.ndarray) and obj.dtype.names is not None
 
 
@@ -85,23 +85,23 @@ def struct_to_ndarray(arr):
     return arr.view((float, len(arr.dtype.names)), type=np.ndarray)
 
 
-def _is_using_ndarray_type(endog, exog):
+def is_using_ndarray_type(endog, exog):
     return (type(endog) is np.ndarray and
             (type(exog) is np.ndarray or exog is None))
 
 
-def _is_using_ndarray(endog, exog):
+def is_using_ndarray(endog, exog):
     return (isinstance(endog, np.ndarray) and
             (isinstance(exog, np.ndarray) or exog is None))
 
 
-def _is_using_pandas(endog, exog):
+def is_using_pandas(endog, exog):
     klasses = (pd.Series, pd.DataFrame, pd.Panel)
     # from statsmodels.compat.pandas import data_klasses as klasses
     return (isinstance(endog, klasses) or isinstance(exog, klasses))
 
 
-def _is_array_like(endog, exog):
+def is_array_like(endog, exog):
     try:  # do it like this in case of mixed types, ie., ndarray and list
         endog = np.asarray(endog)
         exog = np.asarray(exog)
@@ -110,14 +110,24 @@ def _is_array_like(endog, exog):
         return False
 
 
-def _is_using_patsy(endog, exog):
+def is_using_patsy(endog, exog):
     # we get this when a structured array is passed through a formula
     return (is_design_matrix(endog) and
             (is_design_matrix(exog) or exog is None))
 
 
-def _is_recarray(data):
+def is_recarray(data):
     """
     Returns true if data is a recarray
     """
     return isinstance(data, np.core.recarray)
+
+
+# aliases for backward compatibility
+_is_structured_ndarray = is_structured_ndarray
+_is_recarray = is_recarray
+_is_using_patsy = is_using_patsy
+_is_array_like = is_array_like
+_is_using_pandas = is_using_pandas
+_is_using_ndarray = is_using_ndarray
+_is_using_ndarray_type = is_using_ndarray_type

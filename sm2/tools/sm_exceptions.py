@@ -11,9 +11,28 @@ warning_name_doc that services as a generic message to use when the warning is
 raised.
 """
 
+# ------------------------------------------------------------------
+# Error/Warning Message Templates
+
+convergence_doc = """
+Failed to converge on a solution.
+"""
+
+module_unavailable_doc = """
+The module {0} is not available. Cannot run in parallel.
+"""
+
+iteration_limit_doc = """
+Maximum iteration reached.
+"""
+
+
+# ------------------------------------------------------------------
 # Errors
+
 class PerfectSeparationError(Exception):
     pass
+
 
 class MissingDataError(Exception):
     pass
@@ -27,7 +46,8 @@ class X13Error(Exception):
     pass
 
 
-# Warning
+# ------------------------------------------------------------------
+# Warnings
 
 class X13Warning(Warning):
     pass
@@ -41,19 +61,8 @@ class ModuleUnavailableWarning(Warning):
     pass
 
 
-module_unavailable_doc = """
-The module {0} is not available. Cannot run in parallel.
-"""
-
-
-
 class ConvergenceWarning(UserWarning):
     pass
-
-
-convergence_doc = """
-Failed to converge on a solution.
-"""
 
 
 class CacheWriteWarning(UserWarning):
@@ -62,11 +71,6 @@ class CacheWriteWarning(UserWarning):
 
 class IterationLimitWarning(UserWarning):
     pass
-
-
-iteration_limit_doc = """
-Maximum iteration reached.
-"""
 
 
 class InvalidTestWarning(UserWarning):

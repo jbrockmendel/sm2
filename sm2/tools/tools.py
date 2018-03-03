@@ -1,19 +1,16 @@
-'''
+"""
 Utility functions models code
-'''
+"""
 
 import numpy as np
 import numpy.lib.recfunctions as nprf
-import numpy.linalg as L
 import pandas as pd
-from scipy.linalg import svdvals
 
 from six import integer_types
 from six.moves import range, reduce
 
 from sm2.compat.python import asstr2
 
-from sm2.datasets import webuse
 from sm2.tools.data import _is_using_pandas, _is_recarray
 
 
@@ -24,7 +21,7 @@ def _make_dictnames(tmp_arr, offset=0):
     """
     col_map = {}
     for i, col_name in enumerate(tmp_arr):
-        col_map.update({i+offset : col_name})
+        col_map.update({i + offset: col_name})
     return col_map
 
 
@@ -68,7 +65,7 @@ def drop_missing(Y, X=None, axis=1):
 # want to cast it to float
 # TODO: add name validator (ie., bad names for datasets.grunfeld)
 def categorical(data, col=None, dictnames=False, drop=False, ):
-    '''
+    """
     Returns a dummy matrix given an array of categorical variables.
 
     Parameters
@@ -141,7 +138,7 @@ def categorical(data, col=None, dictnames=False, drop=False, ):
     Or
 
     >>> design2 = sm.tools.categorical(struct_ar, col='str_instr', drop=True)
-    '''
+    """
     if isinstance(col, (list, tuple)):
         try:
             assert len(col) == 1
@@ -191,7 +188,7 @@ def categorical(data, col=None, dictnames=False, drop=False, ):
             if len(data.dtype) <= 1:
                 if tmp_dummy.shape[0] < tmp_dummy.shape[1]:
                     tmp_dummy = np.squeeze(tmp_dummy).swapaxes(1, 0)
-                dt = list(zip(tmp_arr, [tmp_dummy.dtype.str]*len(tmp_arr)))
+                dt = list(zip(tmp_arr, [tmp_dummy.dtype.str] * len(tmp_arr)))
                 # preserve array type
                 return np.array(list(map(tuple, tmp_dummy.tolist())),
                                 dtype=dt).view(type(data))
@@ -271,12 +268,14 @@ def add_constant(data, prepend=True, has_constant='skip'):
     """
     if _is_using_pandas(data, None) or _is_recarray(data):
         from sm2.tsa.tsatools import add_trend
-        return add_trend(data, trend='c', prepend=prepend, has_constant=has_constant)
+        return add_trend(data, trend='c',
+                         prepend=prepend,
+                         has_constant=has_constant)
 
     # Special case for NumPy
     x = np.asanyarray(data)
     if x.ndim == 1:
-        x = x[:,None]
+        x = x[:, None]
     elif x.ndim > 2:
         raise ValueError('Only implementd 2-dimensional arrays')
 
@@ -350,7 +349,7 @@ def pinv_extended(X, rcond=1e-15):
     cutoff = rcond * np.maximum.reduce(s)
     for i in range(min(n, m)):
         if s[i] > cutoff:
-            s[i] = 1./s[i]
+            s[i] = 1. / s[i]
         else:
             s[i] = 0.
     res = np.dot(np.transpose(vt), np.multiply(s[:, np.core.newaxis],
@@ -412,7 +411,7 @@ def fullrank(X, r=None):
     if r is None:
         r = np.linalg.matrix_rank(X)
 
-    V, D, U = L.svd(X, full_matrices=0)
+    V, D, U = np.linalg.svd(X, full_matrices=0)
     order = np.argsort(D)
     order = order[::-1]
     value = []
@@ -499,6 +498,7 @@ def maybe_unwrap_results(results):
     routines.
     """
     return getattr(results, '_results', results)
+
 
 class Bunch(dict):
     """

@@ -14,3 +14,4 @@ dist
 # Coverage report output
 .coverage
 coverage_html_report/
+y_arma_data.csv
