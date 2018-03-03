@@ -12,8 +12,7 @@ from sm2.tools.sm_exceptions import ValueWarning, HessianInversionWarning
 from sm2.tools.tools import recipr, nan_dot
 from sm2.tools.input_types import is_using_pandas
 from sm2.tools.decorators import cache_readonly, resettable_cache
-
-from statsmodels.tools.numdiff import approx_fprime
+from sm2.tools.numdiff import approx_fprime
 
 from sm2.base.data import handle_data
 from sm2.base.optimizer import Optimizer
