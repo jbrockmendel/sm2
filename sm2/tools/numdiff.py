@@ -249,13 +249,16 @@ def approx_hess_cs(x, f, epsilon=None, args=(), kwargs={}):
 approx_hess_cs.__doc__ = (("Calculate Hessian with complex-step derivative "
                           "approximation\n") +
                           "\n".join(_hessian_docs.split("\n")[1:]) %
-                          dict(scale="3", extra_params="",
-                               extra_returns="", equation_number="10",
-                               equation=("1/(2*d_j*d_k) * "
-                                         "imag(f(x + i*d[j]*e[j] + "
-                                         "d[k]*e[k]) -\n"
-                                         "                     "
-                                         "f(x + i*d[j]*e[j] - d[k]*e[k]))\n")))
+                          dict(
+                            scale="3",
+                            extra_params="",
+                            extra_returns="",
+                            equation_number="10",
+                            equation=("1/(2*d_j*d_k) * "
+                                      "imag(f(x + i*d[j]*e[j] + "
+                                      "d[k]*e[k]) -\n"
+                                      "                     "
+                                      "f(x + i*d[j]*e[j] - d[k]*e[k]))\n")))
 
 
 def approx_hess1(x, f, epsilon=None, args=(), kwargs={}, return_grad=False):
@@ -286,14 +289,11 @@ def approx_hess1(x, f, epsilon=None, args=(), kwargs={}, return_grad=False):
 approx_hess1.__doc__ = _hessian_docs % {
     'scale': "3",
     'extra_params': """return_grad : bool
-        Whether or not to also return the gradient
-""",
+        Whether or not to also return the gradient""",
     'extra_returns': """grad : nparray
-        Gradient if return_grad == True
-""",
+        Gradient if return_grad == True""",
     'equation_number': "7",
-    'equation': """1/(d_j*d_k) * ((f(x + d[j]*e[j] + d[k]*e[k]) - f(x + d[j]*e[j])))
-"""}
+    'equation': """1/(d_j*d_k) * ((f(x + d[j]*e[j] + d[k]*e[k]) - f(x + d[j]*e[j])))"""}
 
 
 def approx_hess2(x, f, epsilon=None, args=(), kwargs={}, return_grad=False):
@@ -328,17 +328,14 @@ def approx_hess2(x, f, epsilon=None, args=(), kwargs={}, return_grad=False):
 approx_hess2.__doc__ = _hessian_docs % {
     'scale': "3",
     'extra_params': """return_grad : bool
-            Whether or not to also return the gradient
-    """,
+            Whether or not to also return the gradient""",
     'extra_returns': """grad : nparray
-            Gradient if return_grad == True
-    """,
+            Gradient if return_grad == True""",
     'equation_number': "8",
     'equation': """1/(2*d_j*d_k) * ((f(x + d[j]*e[j] + d[k]*e[k]) - f(x + d[j]*e[j])) -
                      (f(x + d[k]*e[k]) - f(x)) +
                      (f(x - d[j]*e[j] - d[k]*e[k]) - f(x + d[j]*e[j])) -
-                     (f(x - d[k]*e[k]) - f(x)))
-    """}
+                     (f(x - d[k]*e[k]) - f(x)))"""}
 
 
 def approx_hess3(x, f, epsilon=None, args=(), kwargs={}):
