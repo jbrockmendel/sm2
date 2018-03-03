@@ -4,10 +4,7 @@ Created on Mon Aug 04 08:00:16 2014
 
 Author: Josef Perktold
 License: BSD-3
-
 """
-
-from six.moves import range
 import numpy as np
 
 
@@ -122,18 +119,16 @@ def get_robustcov_results(self, cov_type='HC1', use_t=None, **kwds):
 
     TODO: Currently there is no check for extra or misspelled keywords,
     except in the case of cov_type `HCx`
-
     """
-
     import sm2.stats.sandwich_covariance as sw
 
-    #normalize names
+    # normalize names
     if cov_type == 'nw-panel':
         cov_type = 'hac-panel'
     if cov_type == 'nw-groupsum':
         cov_type = 'hac-groupsum'
     if 'kernel' in kwds:
-            kwds['weights_func'] = kwds.pop('kernel')
+        kwds['weights_func'] = kwds.pop('kernel')
 
     # pop because HCx raises if any kwds
     sc_factor = kwds.pop('scaling_factor', None)
@@ -145,21 +140,21 @@ def get_robustcov_results(self, cov_type='HC1', use_t=None, **kwds):
     else:
         # this doesn't work for most models, use raw instance instead from fit
         res = self.__class__(self.model, self.params,
-                   normalized_cov_params=self.normalized_cov_params,
-                   scale=self.scale)
+                             normalized_cov_params=self.normalized_cov_params,
+                             scale=self.scale)
 
     res.cov_type = cov_type
     # use_t might already be defined by the class, and already set
     if use_t is None:
         use_t = self.use_t
-    res.cov_kwds = {'use_t':use_t}  # store for information
+    res.cov_kwds = {'use_t': use_t}  # store for information
     res.use_t = use_t
 
     adjust_df = False
     if cov_type in ['cluster', 'hac-panel', 'hac-groupsum']:
         df_correction = kwds.get('df_correction', None)
         # TODO: check also use_correction, do I need all combinations?
-        if df_correction is not False: # i.e. in [None, True]:
+        if df_correction is not False:  # i.e. in [None, True]:
             # user didn't explicitely set it to False
             adjust_df = True
 
@@ -171,9 +166,9 @@ def get_robustcov_results(self, cov_type='HC1', use_t=None, **kwds):
     # TODO: make it DRYer   repeated code for checking kwds
     if cov_type.upper() in ('HC0', 'HC1', 'HC2', 'HC3'):
         if kwds:
-            raise ValueError('heteroscedasticity robust covarians ' +
+            raise ValueError('heteroscedasticity robust covarians '
                              'does not use keywords')
-        res.cov_kwds['description'] = ('Standard Errors are heteroscedasticity ' +
+        res.cov_kwds['description'] = ('Standard Errors are heteroscedasticity '
                                        'robust ' + '(' + cov_type + ')')
 
         res.cov_params_default = getattr(self, 'cov_' + cov_type.upper(), None)
@@ -188,15 +183,17 @@ def get_robustcov_results(self, cov_type='HC1', use_t=None, **kwds):
         res.cov_kwds['weights_func'] = weights_func
         use_correction = kwds.get('use_correction', False)
         res.cov_kwds['use_correction'] = use_correction
-        res.cov_kwds['description'] = ('Standard Errors are heteroscedasticity ' +
-             'and autocorrelation robust (HAC) using %d lags and %s small ' +
-             'sample correction') % (maxlags, ['without', 'with'][use_correction])
+        maybe_with = ['without', 'with'][use_correction]
+        res.cov_kwds['description'] = ('Standard Errors are heteroscedasticity '
+                                       'and autocorrelation robust (HAC) '
+                                       'using %d lags and %s small sample '
+                                       'correction') % (maxlags, maybe_with)
 
         res.cov_params_default = sw.cov_hac_simple(self, nlags=maxlags,
-                                             weights_func=weights_func,
-                                             use_correction=use_correction)
+                                                   weights_func=weights_func,
+                                                   use_correction=use_correction)
     elif cov_type.lower() == 'cluster':
-        #cluster robust standard errors, one- or two-way
+        # cluster robust standard errors, one- or two-way
         groups = kwds['groups']
         if not hasattr(groups, 'shape'):
             groups = np.asarray(groups).T
@@ -213,7 +210,7 @@ def get_robustcov_results(self, cov_type='HC1', use_t=None, **kwds):
                 # duplicate work
                 self.n_groups = n_groups = len(np.unique(groups))
             res.cov_params_default = sw.cov_cluster(self, groups,
-                                             use_correction=use_correction)
+                                                    use_correction=use_correction)
 
         elif groups.ndim == 2:
             if hasattr(groups, 'values'):
@@ -222,27 +219,28 @@ def get_robustcov_results(self, cov_type='HC1', use_t=None, **kwds):
             if adjust_df:
                 # need to find number of groups
                 # duplicate work
-                n_groups0 = len(np.unique(groups[:,0]))
+                n_groups0 = len(np.unique(groups[:, 0]))
                 n_groups1 = len(np.unique(groups[:, 1]))
                 self.n_groups = (n_groups0, n_groups1)
-                n_groups = min(n_groups0, n_groups1) # use for adjust_df
+                n_groups = min(n_groups0, n_groups1)  # use for adjust_df
 
             # Note: sw.cov_cluster_2groups has 3 returns
             res.cov_params_default = sw.cov_cluster_2groups(self, groups,
-                                         use_correction=use_correction)[0]
+                                                            use_correction=use_correction)[0]
         else:
             raise ValueError('only two groups are supported')
-        res.cov_kwds['description'] = ('Standard Errors are robust to' +
-                            'cluster correlation ' + '(' + cov_type + ')')
+        res.cov_kwds['description'] = ('Standard Errors are robust to '
+                                       'cluster correlation '
+                                       '(' + cov_type + ')')
 
     elif cov_type.lower() == 'hac-panel':
-        #cluster robust standard errors
+        # cluster robust standard errors
         res.cov_kwds['time'] = time = kwds.get('time', None)
         res.cov_kwds['groups'] = groups = kwds.get('groups', None)
-        #TODO: nlags is currently required
-        #nlags = kwds.get('nlags', True)
-        #res.cov_kwds['nlags'] = nlags
-        #TODO: `nlags` or `maxlags`
+        # TODO: nlags is currently required
+        # nlags = kwds.get('nlags', True)
+        # res.cov_kwds['nlags'] = nlags
+        # TODO: `nlags` or `maxlags`
         res.cov_kwds['maxlags'] = maxlags = kwds['maxlags']
         use_correction = kwds.get('use_correction', 'hac')
         res.cov_kwds['use_correction'] = use_correction
@@ -263,17 +261,18 @@ def get_robustcov_results(self, cov_type='HC1', use_t=None, **kwds):
         groupidx = list(zip([0] + tt, tt + [nobs_]))
         self.n_groups = n_groups = len(groupidx)
         res.cov_params_default = sw.cov_nw_panel(self, maxlags, groupidx,
-                                            weights_func=weights_func,
-                                            use_correction=use_correction)
-        res.cov_kwds['description'] = ('Standard Errors are robust to' +
-                            'cluster correlation ' + '(' + cov_type + ')')
+                                                 weights_func=weights_func,
+                                                 use_correction=use_correction)
+        res.cov_kwds['description'] = ('Standard Errors are robust to'
+                                       'cluster correlation '
+                                       '(' + cov_type + ')')
     elif cov_type.lower() == 'hac-groupsum':
         # Driscoll-Kraay standard errors
         res.cov_kwds['time'] = time = kwds['time']
-        #TODO: nlags is currently required
-        #nlags = kwds.get('nlags', True)
-        #res.cov_kwds['nlags'] = nlags
-        #TODO: `nlags` or `maxlags`
+        # TODO: nlags is currently required
+        # nlags = kwds.get('nlags', True)
+        # res.cov_kwds['nlags'] = nlags
+        # TODO: `nlags` or `maxlags`
         res.cov_kwds['maxlags'] = maxlags = kwds['maxlags']
         use_correction = kwds.get('use_correction', 'cluster')
         res.cov_kwds['use_correction'] = use_correction
@@ -284,13 +283,13 @@ def get_robustcov_results(self, cov_type='HC1', use_t=None, **kwds):
             tt = (np.nonzero(time[1:] < time[:-1])[0] + 1)
             self.n_groups = n_groups = len(tt) + 1
         res.cov_params_default = sw.cov_nw_groupsum(self, maxlags, time,
-                                        weights_func=weights_func,
-                                        use_correction=use_correction)
-        res.cov_kwds['description'] = (
-                    'Driscoll and Kraay Standard Errors are robust to ' +
-                    'cluster correlation ' + '(' + cov_type + ')')
+                                                    weights_func=weights_func,
+                                                    use_correction=use_correction)
+        res.cov_kwds['description'] = ('Driscoll and Kraay Standard Errors '
+                                       'are robust to cluster correlation '
+                                       '(' + cov_type + ')')
     else:
-        raise ValueError('cov_type not recognized. See docstring for ' +
+        raise ValueError('cov_type not recognized. See docstring for '
                          'available options and spelling')
 
     # generic optional factor to scale covariance
