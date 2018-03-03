@@ -6,6 +6,8 @@ Re-shaping various array-like objects.
 import numpy as np
 import pandas as pd
 
+from input_types import is_using_pandas
+
 
 def _ensure_2d(x, ndarray=False):
     """
@@ -34,8 +36,8 @@ def _ensure_2d(x, ndarray=False):
     """
     if x is None:
         return x
-    
-    is_pandas = _is_using_pandas(x, None)
+
+    is_pandas = is_using_pandas(x, None)
     if x.ndim == 2:
         if is_pandas:
             return x, x.columns
@@ -89,7 +91,7 @@ def atleast_2dcols(x):
     np.atleast_2d, the result will have 1 row that matches the original input.
     If the same array is passed to atleast_2dcols, the result will have 1
     column that matches the original input.
-    
+
     """
     # x = np.asarray(x)
     if x.ndim == 1:

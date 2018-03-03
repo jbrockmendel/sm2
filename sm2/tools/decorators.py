@@ -4,7 +4,6 @@ from __future__ import print_function
 import warnings
 
 from sm2.tools.sm_exceptions import CacheWriteWarning
-from sm2.compat.python import get_function_name
 
 __all__ = ['resettable_cache', 'cache_readonly', 'cache_writable', 'copy_doc',
            'deprecated_alias']

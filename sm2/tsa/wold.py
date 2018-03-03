@@ -13,7 +13,7 @@ from pandas.util.decorators import deprecate_kwarg
 import scipy.linalg
 import scipy.signal
 
-from statsmodels.tools.decorators import cache_readonly
+from sm2.tools.decorators import cache_readonly
 
 # -----------------------------------------------------------------------
 # Input Validation

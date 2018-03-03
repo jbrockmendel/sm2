@@ -2,7 +2,6 @@
 # -*- coding: utf-8 -*-
 import warnings
 
-import pytest
 from numpy.testing import assert_equal
 
 from sm2.tools.decorators import (copy_doc,
@@ -14,7 +13,7 @@ class TestDeprecatedAlias(object):
 
     @classmethod
     def setup_class(cls):
-        
+
         class Dummy(object):
 
             y = deprecated_alias('y', 'x', '0.11.0')
@@ -72,7 +71,6 @@ class TestCopyDoc:
         func2 = copy_doc("foo")(func)
         assert func2.__doc__ == "foo"
         assert func.__doc__ == "foo"
-
 
 
 def test_resettable_cache():

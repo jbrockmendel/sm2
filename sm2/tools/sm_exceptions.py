@@ -11,9 +11,12 @@ warning_name_doc that services as a generic message to use when the warning is
 raised.
 """
 
+
+# -----------------------------------------------------------------
 # Errors
 class PerfectSeparationError(Exception):
     pass
+
 
 class MissingDataError(Exception):
     pass
@@ -27,8 +30,8 @@ class X13Error(Exception):
     pass
 
 
-# Warning
-
+# -----------------------------------------------------------------
+# Warnings
 class X13Warning(Warning):
     pass
 
@@ -44,7 +47,6 @@ class ModuleUnavailableWarning(Warning):
 module_unavailable_doc = """
 The module {0} is not available. Cannot run in parallel.
 """
-
 
 
 class ConvergenceWarning(UserWarning):
