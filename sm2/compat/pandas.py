@@ -1,4 +1,5 @@
 from __future__ import absolute_import
+import warnings
 
 from distutils.version import LooseVersion
 
@@ -49,9 +50,11 @@ if version >= '0.20':
     data_klasses = (pandas.Series, pandas.DataFrame, pandas.Panel)
 else:
     try:
-        import pandas.tseries.frequencies as frequencies
+        from pandas.tseries import frequencies
     except ImportError:
-        from pandas.core import datetools as frequencies  # noqa
+        with warnings.catch_warnings():
+            # deprecation warning telling us to use pandas.tseries
+            from pandas.core import datetools as frequencies  # noqa
 
     data_klasses = (pandas.Series, pandas.DataFrame, pandas.Panel,
                     pandas.WidePanel)

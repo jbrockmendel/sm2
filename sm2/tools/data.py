@@ -97,7 +97,7 @@ def is_using_ndarray(endog, exog):
 
 def is_using_pandas(endog, exog):
     klasses = (pd.Series, pd.DataFrame, pd.Panel)
-    # from statsmodels.compat.pandas import data_klasses as klasses
+    # from sm2.compat.pandas import data_klasses as klasses
     return (isinstance(endog, klasses) or isinstance(exog, klasses))
 
 
