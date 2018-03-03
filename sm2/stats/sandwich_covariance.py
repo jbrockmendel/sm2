@@ -18,7 +18,7 @@ pinv(x) scale pinv(x)   used currently in linear_model, with scale is
 1d (or diagonal matrix)
 (x'x)^(-1) x' scale x (x'x)^(-1),  scale in general is (nobs, nobs) so
 pretty large general formulas for scale in cluster case are in [4],
-which can be found (as of 2017-05-20) at 
+which can be found (as of 2017-05-20) at
 http://www.tandfonline.com/doi/abs/10.1198/jbes.2010.07136
 This paper also has the second version.
 
@@ -168,7 +168,7 @@ def combine_indices(groups, prefix='', sep='.', return_labels=False):
     # TODO: get rid of multiple-return
 
 
-#----------- from linear_model.RegressionResults
+# ----------- from linear_model.RegressionResults
 """
     HC0_se
         White's (1980) heteroskedasticity robust standard errors.
@@ -212,6 +212,8 @@ def combine_indices(groups, prefix='', sep='.', return_labels=False):
 """
 
 # Note: HCCM stands for Heteroskedasticity Consistent Covariance Matrix
+
+
 def _HCCM(results, scale):
     """
     sandwich with pinv(x) * diag(scale) * pinv(x).T
@@ -223,52 +225,52 @@ def _HCCM(results, scale):
                scale[:, None] * results.model.pinv_wexog.T)
     return H
 
+
 def cov_hc0(results):
     """
     See statsmodels.RegressionResults
     """
-
     het_scale = results.resid**2  # or whitened residuals? only OLS?
     cov_hc0 = _HCCM(results, het_scale)
-
     return cov_hc0
+
 
 def cov_hc1(results):
     """
     See statsmodels.RegressionResults
     """
-
     het_scale = results.nobs / results.df_resid * (results.resid**2)
     cov_hc1 = _HCCM(results, het_scale)
     return cov_hc1
+
 
 def cov_hc2(results):
     """
     See statsmodels.RegressionResults
     """
-
     # probably could be optimized
     h = np.diag(np.dot(results.model.exog,
-                          np.dot(results.normalized_cov_params,
-                          results.model.exog.T)))
+                       np.dot(results.normalized_cov_params,
+                              results.model.exog.T)))
     het_scale = results.resid**2 / (1 - h)
     cov_hc2_ = _HCCM(results, het_scale)
     return cov_hc2_
+
 
 def cov_hc3(results):
     """
     See statsmodels.RegressionResults
     """
-
     # above probably could be optimized to only calc the diag
     h = np.diag(np.dot(results.model.exog,
-                          np.dot(results.normalized_cov_params,
-                          results.model.exog.T)))
-    het_scale=(results.resid / (1 - h))**2
+                       np.dot(results.normalized_cov_params,
+                              results.model.exog.T)))
+    het_scale = (results.resid / (1 - h))**2
     cov_hc3_ = _HCCM(results, het_scale)
     return cov_hc3_
 
-#---------------------------------------
+
+# ---------------------------------------
 
 def _get_sandwich_arrays(results, cov_type=''):
     """Helper function to get scores from results
@@ -276,7 +278,6 @@ def _get_sandwich_arrays(results, cov_type=''):
     Parameters
 
     """
-
     if isinstance(results, tuple):
         # assume we have jac and hessian_inv
         jac, hessian_inv = results
@@ -300,14 +301,14 @@ def _get_sandwich_arrays(results, cov_type=''):
 
         # experimental support for freq_weights
         if hasattr(results.model, 'freq_weights') and not cov_type == 'clu':
-            # we don't want to square the weights in the covariance calculations
-            # assumes that freq_weights are incorporated in score_obs or equivalent
-            # assumes xu/score_obs is 2D
+            # we don't want to square the weights in the covariance
+            # calculations assumes that freq_weights are incorporated
+            # in score_obs or equivalent assumes xu/score_obs is 2D
             # temporary asarray
             xu /= np.sqrt(np.asarray(results.model.freq_weights)[:, None])
 
     else:
-        raise ValueError('need either tuple of (jac, hessian_inv) or results' +
+        raise ValueError('need either tuple of (jac, hessian_inv) or results'
                          'instance')
 
     return xu, hessian_inv
@@ -369,7 +370,8 @@ def _HCCM2(hessian_inv, scale):
     H = np.dot(np.dot(xxi, scale), xxi.T)
     return H
 
-#TODO: other kernels, move ?
+
+# TODO: other kernels, move ?
 def weights_bartlett(nlags):
     """Bartlett weights for HAC
 
@@ -442,7 +444,7 @@ def S_hac_simple(x, nlags=None, weights_func=weights_bartlett):
     """
 
     if x.ndim == 1:
-        x = x[:,None]
+        x = x[:, None]
     n_periods = x.shape[0]
     if nlags is None:
         nlags = int(np.floor(4 * (n_periods / 100.)**(2. / 9.)))
@@ -492,11 +494,9 @@ def group_sums(x, group):
     no dtype checking because I want to raise in that case
 
     uses loop over columns of x
-
-    #TODO: remove this, already copied to tools/grouputils
     """
-
-    #TODO: transpose return in group_sum, need test coverage first
+    # TODO: remove this, already copied to tools/grouputils
+    # TODO: transpose return in group_sum, need test coverage first
 
     # re-label groups or bincount takes too much memory
     if np.max(group) > 2 * x.shape[0]:
@@ -539,9 +539,8 @@ def S_hac_groupsum(x, time, nlags=None, weights_func=weights_bartlett):
     ----------
     Daniel Hoechle, xtscc paper
     Driscoll and Kraay
-
     """
-    #needs groupsums
+    # needs groupsums
 
     x_group_sums = group_sums(x, time).T  # TODO: transpose return in grou_sum
 
@@ -595,7 +594,6 @@ def cov_cluster(results, group, use_correction=True):
     Notes
     -----
     same result as Stata in UCLA example and same as Peterson
-
     """
     # TODO: currently used version of groupsums requires 2d resid
     xu, hessian_inv = _get_sandwich_arrays(results, cov_type='clu')
@@ -608,7 +606,8 @@ def cov_cluster(results, group, use_correction=True):
     scale = S_crosssection(xu, group)
 
     nobs, k_params = xu.shape
-    n_groups = len(clusters) # replace with stored group attributes if available
+    # replace with stored group attributes if available
+    n_groups = len(clusters)
 
     cov_c = _HCCM2(hessian_inv, scale)
 
@@ -617,6 +616,7 @@ def cov_cluster(results, group, use_correction=True):
                   ((nobs - 1.) / float(nobs - k_params)))
 
     return cov_c
+
 
 def cov_cluster_2groups(results, group, group2=None, use_correction=True):
     """cluster robust covariance matrix for two groups/clusters
@@ -657,7 +657,6 @@ def cov_cluster_2groups(results, group, group2=None, use_correction=True):
         group0 = group
         group1 = group2
         group = (group0, group1)
-
 
     cov0 = cov_cluster(results, group0, use_correction=use_correction)
     # [0] because we get still also returns bse
@@ -701,7 +700,6 @@ def cov_white_simple(results, use_correction=True):
     --------
     cov_hc1, cov_hc2, cov_hc3 : heteroscedasticity robust covariance matrices
         with small sample corrections
-
     """
     xu, hessian_inv = _get_sandwich_arrays(results)
     sigma = S_white_simple(xu)
@@ -722,7 +720,6 @@ def cov_hac_simple(results, nlags=None, weights_func=weights_bartlett,
 
     Assumes we have a single time series with zero axis consecutive, equal
     spaced time periods
-
 
     Parameters
     ----------
@@ -747,7 +744,6 @@ def cov_hac_simple(results, nlags=None, weights_func=weights_bartlett,
     just guessing on correction factor, need reference
 
     options might change when other kernels besides Bartlett are available.
-
     """
     xu, hessian_inv = _get_sandwich_arrays(results)
     sigma = S_hac_simple(xu, nlags=nlags, weights_func=weights_func)
@@ -760,14 +756,17 @@ def cov_hac_simple(results, nlags=None, weights_func=weights_bartlett,
 
     return cov_hac
 
+
 cov_hac = cov_hac_simple  # alias for users
 
-#---------------------- use time lags corrected for groups
-#the following were copied from a different experimental script,
-#groupidx is tuple, observations assumed to be stacked by group member and
-#sorted by time, equal number of periods is not required, but equal spacing is.
-#I think this is pure within group HAC: apply HAC to each group member
-#separately
+
+# ---------------------- use time lags corrected for groups
+# the following were copied from a different experimental script,
+# groupidx is tuple, observations assumed to be stacked by group member and
+# sorted by time, equal number of periods is not required, but equal spacing is.
+# I think this is pure within group HAC: apply HAC to each group member
+# separately
+
 
 def lagged_groups(x, lag, groupidx):
     """
@@ -777,14 +776,13 @@ def lagged_groups(x, lag, groupidx):
     out0 = []
     out_lagged = []
     for l, u in groupidx:
-        if l + lag < u: #group is longer than lag
+        if l + lag < u:  # group is longer than lag
             out0.append(x[l + lag:u])
             out_lagged.append(x[l:u - lag])
 
     if out0 == []:
         raise ValueError('all groups are empty taking lags')
     return np.vstack(out0), np.vstack(out_lagged)
-
 
 
 def S_nw_panel(xw, weights, groupidx):
@@ -794,7 +792,7 @@ def S_nw_panel(xw, weights, groupidx):
 
     no reference for this, just accounting for time indices
     """
-    nlags = len(weights)-1
+    nlags = len(weights) - 1
 
     S = weights[0] * np.dot(xw.T, xw)  # weights just for completeness
     for lag in range(1, nlags + 1):
@@ -853,7 +851,7 @@ def cov_nw_panel(results, nlags, groupidx, weights_func=weights_bartlett,
     available.
 
     """
-    if nlags == 0: # so we can reproduce HC0 White
+    if nlags == 0:  # so we can reproduce HC0 White
         weights = [1, 0]  # to avoid the scalar check in hac_nw
     else:
         weights = weights_func(nlags)
@@ -875,7 +873,7 @@ def cov_nw_panel(results, nlags, groupidx, weights_func=weights_bartlett,
 
 
 def cov_nw_groupsum(results, nlags, time, weights_func=weights_bartlett,
-                 use_correction=0):
+                    use_correction=0):
     """Driscoll and Kraay Panel robust covariance matrix
 
     Robust covariance matrix for panel data of Driscoll and Kraay.
@@ -901,8 +899,8 @@ def cov_nw_groupsum(results, nlags, time, weights_func=weights_bartlett,
         weights. default are Bartlett weights
     use_correction : 'cluster' or 'hac' or False
         If False, then no small sample correction is used.
-        If 'hac' (default), then the same correction as in single time series, cov_hac
-        is used.
+        If 'hac' (default), then the same correction as in single time
+        series, cov_hac is used.
         If 'cluster', then the same correction as in cov_cluster is
         used.
 
