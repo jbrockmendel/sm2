@@ -1,4 +1,6 @@
 import numpy as np
+
+
 class Bunch(dict):
     def __init__(self, **kw):
         dict.__init__(self, kw)

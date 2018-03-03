@@ -9,17 +9,23 @@ See also
 ---------
 numpy.lib.io
 """
-from statsmodels.compat.python import (zip, lzip, lmap, lrange, string_types, long, lfilter,
-                                       asbytes, asstr, range, PY3)
-from struct import unpack, calcsize, pack
-from struct import error as struct_error
 import datetime
 import sys
+from struct import unpack, calcsize, pack
+from struct import error as struct_error
+
 import numpy as np
 from numpy.lib._iotools import _is_string_like, easy_dtype
-import statsmodels.tools.data as data_util
 from pandas import isnull
-from statsmodels.iolib.openfile import get_file_obj
+
+from six import string_types, integer_types, PY3
+from six.moves import range, zip
+
+from sm2.compat.python import (lzip, lmap, lrange, lfilter, asbytes, asstr)
+
+import sm2.tools.data as data_util
+from sm2.iolib.openfile import get_file_obj
+
 
 _date_formats = ["%tc", "%tC", "%td", "%tw", "%tm", "%tq", "%th", "%ty"]
 
@@ -165,7 +171,7 @@ class _StataMissingValue(object):
 
     def __init__(self, offset, value):
         self._value = value
-        if isinstance(value, (int, long)):
+        if isinstance(value, integer_types):
             self._str = value-offset is 1 and \
                     '.' or ('.' + chr(value-offset+96))
         else:
@@ -412,7 +418,7 @@ class StataReader(object):
 
         k is zero-indexed.  Prefer using R.data() for performance.
         """
-        if not (isinstance(k, (int, long))) or k < 0 or k > len(self)-1:
+        if not (isinstance(k, integer_types)) or k < 0 or k > len(self)-1:
             raise IndexError(k)
         loc = self._data_location + sum(self._col_size()) * k
         if self._file.tell() != loc:
@@ -430,7 +436,7 @@ class StataReader(object):
                 pass
             return s.decode(encoding)
         else:
-            null_byte = asbytes('\x00')
+            null_byte = asbytes(b'\x00')
             try:
                 return s.lstrip(null_byte)[:s.index(null_byte)]
             except:

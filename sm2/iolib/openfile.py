@@ -2,7 +2,8 @@
 Handle file opening for read/write
 """
 from numpy.lib._iotools import _is_string_like
-from statsmodels.compat.python import PY3
+from six import PY3
+
 
 class EmptyContextManager(object):
     """

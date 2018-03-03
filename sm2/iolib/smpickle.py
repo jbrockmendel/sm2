@@ -1,6 +1,9 @@
 '''Helper files for pickling'''
-from statsmodels.compat.python import cPickle
-from statsmodels.iolib.openfile import get_file_obj
+
+from six.moves import cPickle
+
+from sm2.iolib.openfile import get_file_obj
+
 
 def save_pickle(obj, fname):
     """

@@ -9,11 +9,11 @@ Author: Josef Perktold
 import numpy as np
 from numpy.testing import assert_almost_equal, assert_allclose, assert_equal
 
-from statsmodels.regression.linear_model import GLSAR
-from statsmodels.tools.tools import add_constant
-from statsmodels.datasets import macrodata
+from sm2.regression.linear_model import GLSAR
+from sm2.tools.tools import add_constant
+from sm2.datasets import macrodata
 
-
+'''
 class CheckStataResultsMixin(object):
 
     def test_params_table(self):
@@ -92,7 +92,4 @@ class TestGLSARCorc(CheckStataResultsPMixin):
         assert_allclose(res0.model.rho, rho, rtol=1e-11)
         assert_allclose(res0b.model.rho, rho, rtol=1e-11)
 
-
-if __name__=="__main__":
-    import pytest
-    pytest.main([__file__, '-vvs', '-x', '--pdb'])
+'''

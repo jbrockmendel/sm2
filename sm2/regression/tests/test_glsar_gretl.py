@@ -14,16 +14,17 @@ import numpy as np
 from numpy.testing import (assert_almost_equal, assert_equal,
                            assert_approx_equal, assert_array_less)
 
-from statsmodels.regression.linear_model import OLS, GLSAR
-from statsmodels.tools.tools import add_constant
-from statsmodels.datasets import macrodata
+from sm2.regression.linear_model import OLS, GLSAR
+from sm2.tools.tools import add_constant
+from sm2.datasets import macrodata
 
-import statsmodels.stats.sandwich_covariance as sw
+import sm2.stats.sandwich_covariance as sw
+
 import statsmodels.stats.diagnostic as smsdia
 #import statsmodels.sandbox.stats.diagnostic as smsdia
 import statsmodels.stats.outliers_influence as oi
 
-
+'''
 def compare_ftest(contrast_res, other, decimal=(5,4)):
     assert_almost_equal(contrast_res.fvalue, other[0], decimal=decimal[0])
     assert_almost_equal(contrast_res.pvalue, other[1], decimal=decimal[1])
@@ -160,7 +161,7 @@ class TestGLSARGretl(object):
 
 
 
-        '''
+        """
         Performing iterative calculation of rho...
 
                          ITER       RHO        ESS
@@ -184,9 +185,9 @@ class TestGLSARGretl(object):
         R-squared            0.676973   Adjusted R-squared   0.673710
         F(2, 198)            221.0475   P-value(F)           3.56e-51
         rho                 -0.003481   Durbin-Watson        1.993858
-        '''
+        """
 
-        '''
+        """
         RESET test for specification (squares and cubes)
         Test statistic: F = 5.219019,
         with p-value = P(F(2,197) > 5.21902) = 0.00619
@@ -198,9 +199,9 @@ class TestGLSARGretl(object):
         RESET test for specification (cubes only)
         Test statistic: F = 5.248951,
         with p-value = P(F(1,198) > 5.24895) = 0.023:
-        '''
+        """
 
-        '''
+        """
         Test for ARCH of order 4
 
                      coefficient   std. error   t-ratio   p-value
@@ -214,9 +215,9 @@ class TestGLSARGretl(object):
           Null hypothesis: no ARCH effect is present
           Test statistic: LM = 7.30776
           with p-value = P(Chi-square(4) > 7.30776) = 0.120491:
-        '''
+        """
 
-        '''
+        """
         Variance Inflation Factors
 
         Minimum possible value = 1.0
@@ -233,8 +234,8 @@ class TestGLSARGretl(object):
          1-norm = 6862.0664
          Determinant = 1.0296049e+009
          Reciprocal condition number = 0.013819244
-        '''
-        '''
+        """
+        """
         Test for ARCH of order 4 -
           Null hypothesis: no ARCH effect is present
           Test statistic: LM = 7.30776
@@ -249,10 +250,10 @@ class TestGLSARGretl(object):
           Null hypothesis: error is normally distributed
           Test statistic: Chi-square(2) = 20.2792
           with p-value = 3.94837e-005:
-        '''
+        """
 
         #no idea what this is
-        '''
+        """
         Augmented regression for common factor test
         OLS, using observations 1959:3-2009:3 (T = 201)
         Dependent variable: ds_l_realinv
@@ -271,7 +272,7 @@ class TestGLSARGretl(object):
         Test of common factor restriction
 
           Test statistic: F(2, 195) = 0.426391, with p-value = 0.653468
-        '''
+        """
 
 
         ################ with OLS, HAC errors
@@ -410,7 +411,7 @@ class TestGLSARGretl(object):
 def test_GLSARlag():
     #test that results for lag>1 is close to lag=1, and smaller ssr
 
-    from statsmodels.datasets import macrodata
+    from sm2.datasets import macrodata
     d2 = macrodata.load().data
     g_gdp = 400*np.diff(np.log(d2['realgdp']))
     g_inv = 400*np.diff(np.log(d2['realinv']))
@@ -437,7 +438,7 @@ if __name__ == '__main__':
     t.test_all()
 
 
-'''
+"""
 Model 5: OLS, using observations 1959:2-2009:3 (T = 202)
 Dependent variable: ds_l_realinv
 HAC standard errors, bandwidth 4 (Bartlett kernel)
@@ -641,4 +642,5 @@ with p-value = P(Chi-square(2) > 0.709924) = 0.701200
   Regression proportion, UR         0.13557
   Disturbance proportion, UD        0.80049
 
+"""
 '''
