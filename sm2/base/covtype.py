@@ -7,8 +7,7 @@ License: BSD-3
 
 """
 
-from statsmodels.compat.python import lrange, lzip, range
-
+from six.moves import range
 import numpy as np
 
 
@@ -126,7 +125,7 @@ def get_robustcov_results(self, cov_type='HC1', use_t=None, **kwds):
 
     """
 
-    import statsmodels.stats.sandwich_covariance as sw
+    import sm2.stats.sandwich_covariance as sw
 
     #normalize names
     if cov_type == 'nw-panel':
@@ -261,7 +260,7 @@ def get_robustcov_results(self, cov_type='HC1', use_t=None, **kwds):
             nobs_ = len(time)
         else:
             raise ValueError('either time or groups needs to be given')
-        groupidx = lzip([0] + tt, tt + [nobs_])
+        groupidx = list(zip([0] + tt, tt + [nobs_]))
         self.n_groups = n_groups = len(groupidx)
         res.cov_params_default = sw.cov_nw_panel(self, maxlags, groupidx,
                                             weights_func=weights_func,

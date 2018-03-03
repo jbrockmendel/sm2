@@ -2,14 +2,15 @@
 Base tools for handling various kinds of data structures, attaching metadata to
 results, and doing data cleaning
 """
-from statsmodels.compat.python import reduce, iteritems, lmap, zip, range
-from statsmodels.compat.numpy import np_matrix_rank
+
+from six.moves import range, reduce, zip
 import numpy as np
 from pandas import DataFrame, Series, isnull
-from statsmodels.tools.decorators import (resettable_cache, cache_readonly,
-                                          cache_writable)
-import statsmodels.tools.data as data_util
-from statsmodels.tools.sm_exceptions import MissingDataError
+
+from sm2.tools.decorators import (resettable_cache, cache_readonly,
+                                  cache_writable)
+import sm2.tools.data as data_util
+from sm2.tools.sm_exceptions import MissingDataError
 
 
 def _asarray_2dcolumns(x):
@@ -172,8 +173,8 @@ class ModelData(object):
                 # Compute rank of augmented matrix
                 augmented_exog = np.column_stack(
                             (np.ones(self.exog.shape[0]), self.exog))
-                rank_augm = np_matrix_rank(augmented_exog)
-                rank_orig = np_matrix_rank(self.exog)
+                rank_augm = np.linalg.matrix_rank(augmented_exog)
+                rank_orig = np.linalg.matrix_rank(self.exog)
                 self.k_constant = int(rank_orig == rank_augm)
                 self.const_idx = None
 
@@ -215,7 +216,7 @@ class ModelData(object):
         combined_2d = ()
         combined_2d_names = []
         if len(kwargs):
-            for key, value_array in iteritems(kwargs):
+            for key, value_array in kwargs.items():
                 if value_array is None or value_array.ndim == 0:
                     none_array_names += [key]
                     continue
@@ -284,7 +285,7 @@ class ModelData(object):
             nan_mask = ~nan_mask
             drop_nans = lambda x: cls._drop_nans(x, nan_mask)
             drop_nans_2d = lambda x: cls._drop_nans_2d(x, nan_mask)
-            combined = dict(zip(combined_names, lmap(drop_nans, combined)))
+            combined = dict(zip(combined_names, list(map(drop_nans, combined))))
 
             if missing_idx is not None:
                 if updated_row_mask is not None:
@@ -300,7 +301,7 @@ class ModelData(object):
 
             if combined_2d:
                 combined.update(dict(zip(combined_2d_names,
-                                         lmap(drop_nans_2d, combined_2d))))
+                                         list(map(drop_nans_2d, combined_2d)))))
             if none_array_names:
                 combined.update(dict(zip(none_array_names,
                                          [None] * len(none_array_names))))
