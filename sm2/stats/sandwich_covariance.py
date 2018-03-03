@@ -101,7 +101,7 @@ for inference with clustered errors,” The Review of Economics and
 Statistics 90, no. 3 (2008): 414–427.
 
 """
-from statsmodels.compat.python import range
+from six.moves import range
 import pandas as pd
 import numpy as np
 

@@ -30,30 +30,30 @@ R. Davidson and J.G. MacKinnon.  "Econometric Theory and Methods," Oxford,
 
 W. Green.  "Econometric Analysis," 5th ed., Pearson, 2003.
 """
-
 from __future__ import print_function
 
-from statsmodels.compat.python import lrange, lzip, range
+import warnings
+
+from six.moves import range
 
 import numpy as np
 from scipy.linalg import toeplitz
 from scipy import stats
 from scipy import optimize
 
-from statsmodels.compat.numpy import np_matrix_rank
-from statsmodels.tools.tools import add_constant, chain_dot, pinv_extended
-from statsmodels.tools.decorators import (resettable_cache,
+from sm2.tools.tools import add_constant, chain_dot, pinv_extended
+from sm2.tools.decorators import (resettable_cache,
                                           cache_readonly,
                                           cache_writable)
-import statsmodels.base.model as base
-import statsmodels.base.wrapper as wrap
+import sm2.base.model as base
+import sm2.base.wrapper as wrap
+
 from statsmodels.emplike.elregress import _ELRegOpts
-import warnings
 from statsmodels.tools.sm_exceptions import InvalidTestWarning
 
 # need import in module instead of lazily to copy `__doc__`
 from statsmodels.regression._prediction import PredictionResults
-from . import _prediction as pred
+from statsmodels.regression import _prediction as pred
 
 __docformat__ = 'restructuredtext en'
 
@@ -197,7 +197,7 @@ class RegressionModel(base.LikelihoodModel):
         """
         if self._df_model is None:
             if self.rank is None:
-                self.rank = np_matrix_rank(self.exog)
+                self.rank = np.linalg.matrix_rank(self.exog)
             self._df_model = float(self.rank - self.k_constant)
         return self._df_model
 
@@ -214,7 +214,7 @@ class RegressionModel(base.LikelihoodModel):
 
         if self._df_resid is None:
             if self.rank is None:
-                self.rank = np_matrix_rank(self.exog)
+                self.rank = np.linalg.matrix_rank(self.exog)
             self._df_resid = self.nobs - self.rank
         return self._df_resid
 
@@ -276,7 +276,7 @@ class RegressionModel(base.LikelihoodModel):
 
                 # Cache these singular values for use later.
                 self.wexog_singular_values = singular_values
-                self.rank = np_matrix_rank(np.diag(singular_values))
+                self.rank = np.linalg.matrix_rank(np.diag(singular_values))
 
             beta = np.dot(self.pinv_wexog, self.wendog)
 
@@ -291,7 +291,7 @@ class RegressionModel(base.LikelihoodModel):
 
                 # Cache singular values from R.
                 self.wexog_singular_values = np.linalg.svd(R, 0, 0)
-                self.rank = np_matrix_rank(R)
+                self.rank = np.linalg.matrix_rank(R)
             else:
                 Q, R = self.exog_Q, self.exog_R
 
@@ -1284,7 +1284,7 @@ def yule_walker(X, order=1, method="unbiased", df=None, inv=False,
 
 
 class RegressionResults(base.LikelihoodModelResults):
-    r"""
+    """
     This class summarizes the fit of a linear regression model.
 
     It handles the output of contrasts, estimates of covariance, etc.
@@ -1580,7 +1580,7 @@ class RegressionResults(base.LikelihoodModelResults):
                 if const_idx is None:
                     return np.nan
 
-                idx = lrange(k_params)
+                idx = list(range(k_params))
                 idx.pop(const_idx)
                 mat = mat[idx]  # remove constant
                 if mat.size == 0:  # see  #3642
@@ -1803,7 +1803,7 @@ class RegressionResults(base.LikelihoodModelResults):
         -----
         TODO: explain LM text
         """
-        import statsmodels.stats.sandwich_covariance as sw
+        import sm2.stats.sandwich_covariance as sw
         from numpy.linalg import inv
 
         if not self._is_nested(restricted):
@@ -2117,7 +2117,7 @@ class RegressionResults(base.LikelihoodModelResults):
         except in the case of cov_type `HCx`
         """
 
-        import statsmodels.stats.sandwich_covariance as sw
+        import sm2.stats.sandwich_covariance as sw
 
         # normalize names
         if cov_type == 'nw-panel':
@@ -2255,7 +2255,7 @@ class RegressionResults(base.LikelihoodModelResults):
                 nobs_ = len(time)
             else:
                 raise ValueError('either time or groups needs to be given')
-            groupidx = lzip([0] + tt, tt + [nobs_])
+            groupidx = list(zip([0] + tt, tt + [nobs_]))
             self.n_groups = n_groups = len(groupidx)
             res.cov_params_default = sw.cov_nw_panel(self, maxlags, groupidx,
                                                      weights_func=weights_func,
@@ -2482,7 +2482,7 @@ class RegressionResults(base.LikelihoodModelResults):
                                                  omni_normtest,
                                                  durbin_watson)
 
-        from statsmodels.compat.collections import OrderedDict
+        from collections import OrderedDict
         jb, jbpv, skew, kurtosis = jarque_bera(self.wresid)
         omni, omnipv = omni_normtest(self.wresid)
         dw = durbin_watson(self.wresid)
@@ -2799,47 +2799,3 @@ class RegressionResultsWrapper(wrap.ResultsWrapper):
 
 wrap.populate_wrapper(RegressionResultsWrapper,
                       RegressionResults)
-
-
-if __name__ == "__main__":
-    import statsmodels.api as sm
-    data = sm.datasets.longley.load()
-    data.exog = add_constant(data.exog, prepend=False)
-    ols_results = OLS(data.endog, data.exog).fit()  # results
-    gls_results = GLS(data.endog, data.exog).fit()  # results
-    print(ols_results.summary())
-    tables = ols_results.summary(returns='tables')
-    csv = ols_results.summary(returns='csv')
-"""
-    Summary of Regression Results
-=======================================
-| Dependent Variable:            ['y']|
-| Model:                           OLS|
-| Method:                Least Squares|
-| Date:               Tue, 29 Jun 2010|
-| Time:                       22:32:21|
-| # obs:                          16.0|
-| Df residuals:                    9.0|
-| Df model:                        6.0|
-===========================================================================
-|            coefficient       std. error      t-statistic           prob.|
----------------------------------------------------------------------------
-| x1             15.0619          84.9149           0.1774          0.8631|
-| x2             -0.0358           0.0335          -1.0695          0.3127|
-| x3             -2.0202           0.4884          -4.1364        0.002535|
-| x4             -1.0332           0.2143          -4.8220       0.0009444|
-| x5             -0.0511           0.2261          -0.2261          0.8262|
-| x6           1829.1515         455.4785           4.0159        0.003037|
-| const    -3482258.6346      890420.3836          -3.9108        0.003560|
-===========================================================================
-|                        Models stats                      Residual stats |
----------------------------------------------------------------------------
-| R-squared:                 0.995479    Durbin-Watson:           2.55949 |
-| Adjusted R-squared:        0.992465    Omnibus:                0.748615 |
-| F-statistic:                330.285    Prob(Omnibus):          0.687765 |
-| Prob (F-statistic):     4.98403e-10    JB:                     0.352773 |
-| Log likelihood:            -109.617    Prob(JB):               0.838294 |
-| AIC criterion:              233.235    Skew:                   0.419984 |
-| BIC criterion:              238.643    Kurtosis:                2.43373 |
----------------------------------------------------------------------------
-"""
