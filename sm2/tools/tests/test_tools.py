@@ -8,11 +8,10 @@ import numpy as np
 from numpy.testing import (assert_equal, assert_array_equal,
                            assert_string_equal)
 import pandas as pd
-from pandas.util.testing import assert_frame_equal, assert_series_equal
+import pandas.util.testing as tm
 
-
-from statsmodels.datasets import longley
-from statsmodels.tools import tools
+from sm2.datasets import longley
+from sm2.tools import tools
 
 
 class TestAddConstant(object):
@@ -66,16 +65,16 @@ class TestAddConstant(object):
         s = pd.Series([1.0, 2.0, 3.0])
         output = tools.add_constant(s)
         expected = pd.Series([1.0, 1.0, 1.0], name='const')
-        assert_series_equal(expected, output['const'])
+        tm.assert_series_equal(expected, output['const'])
 
     def test_add_constant_dataframe(self):
         df = pd.DataFrame([[1.0, 'a', 4], [2.0, 'bc', 9], [3.0, 'def', 16]])
         output = tools.add_constant(df)
         expected = pd.Series([1.0, 1.0, 1.0], name='const')
-        assert_series_equal(expected, output['const'])
+        tm.assert_series_equal(expected, output['const'])
         dfc = df.copy()
         dfc.insert(0, 'const', np.ones(3))
-        assert_frame_equal(dfc, output)
+        tm.assert_frame_equal(dfc, output)
 
     def test_add_constant_zeros_array(self):
         a = np.zeros(100)
@@ -86,21 +85,21 @@ class TestAddConstant(object):
         s = pd.Series([0.0, 0.0, 0.0])
         output = tools.add_constant(s)
         expected = pd.Series([1.0, 1.0, 1.0], name='const')
-        assert_series_equal(expected, output['const'])
+        tm.assert_series_equal(expected, output['const'])
 
     def test_add_constant_zeros_frame_leading(self):
         df = pd.DataFrame([[0.0, 'a', 4], [0.0, 'bc', 9], [0.0, 'def', 16]])
         output = tools.add_constant(df)
         dfc = df.copy()
         dfc.insert(0, 'const', np.ones(3))
-        assert_frame_equal(dfc, output)
+        tm.assert_frame_equal(dfc, output)
 
     def test_add_constant_zeros_frame_trailing(self):
         df = pd.DataFrame([[1.0, 'a', 0], [0.0, 'bc', 0], [0.0, 'def', 0]])
         output = tools.add_constant(df)
         dfc = df.copy()
         dfc.insert(0, 'const', np.ones(3))
-        assert_frame_equal(dfc, output)
+        tm.assert_frame_equal(dfc, output)
 
     def test_pandas_const_series(self):
         # Check that the constant is added in the expected column location

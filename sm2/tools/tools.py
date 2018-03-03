@@ -11,6 +11,8 @@ import numpy.lib.recfunctions as nprf
 
 from statsmodels.compat.python import asstr2
 
+from .input_types import is_using_pandas, is_recarray
+
 
 def _make_dictnames(tmp_arr, offset=0):
     """
@@ -198,3 +200,59 @@ def categorical(data, col=None, dictnames=False, drop=False, ):
                 return data
         else:
             raise IndexError("The index %s is not understood" % col)
+
+
+# TODO: add an axis argument to this for sysreg
+def add_constant(data, prepend=True, has_constant='skip'):
+    """
+    Adds a column of ones to an array
+
+    Parameters
+    ----------
+    data : array-like
+        ``data`` is the column-ordered design matrix
+    prepend : bool
+        If true, the constant is in the first column.  Else the constant is
+        appended (last column).
+    has_constant : str {'raise', 'add', 'skip'}
+        Behavior if ``data`` already has a constant. The default will return
+        data without adding another constant. If 'raise', will raise an
+        error if a constant is present. Using 'add' will duplicate the
+        constant, if one is present.
+
+    Returns
+    -------
+    data : array, recarray or DataFrame
+        The original values with a constant (column of ones) as the first or
+        last column. Returned value depends on input type.
+
+    Notes
+    -----
+    When the input is recarray or a pandas Series or DataFrame, the added
+    column's name is 'const'.
+    """
+    if is_using_pandas(data, None) or is_recarray(data):
+        from statsmodels.tsa.tsatools import add_trend
+        # TODO: Move add_trend here to make tools self-contained?
+        return add_trend(data, trend='c',
+                         prepend=prepend, has_constant=has_constant)
+
+    # Special case for NumPy
+    x = np.asanyarray(data)
+    if x.ndim == 1:
+        x = x[:, None]
+    elif x.ndim > 2:
+        raise ValueError('Only implementd 2-dimensional arrays')
+
+    is_nonzero_const = np.ptp(x, axis=0) == 0
+    is_nonzero_const &= np.all(x != 0.0, axis=0)
+    if is_nonzero_const.any():
+        if has_constant == 'skip':
+            return x
+        elif has_constant == 'raise':
+            raise ValueError("data already contains a constant")
+
+    x = [np.ones(x.shape[0]), x]
+    if not prepend:
+        x = x[::-1]
+    return np.column_stack(x)
