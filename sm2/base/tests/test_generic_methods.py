@@ -10,9 +10,7 @@ Created on Wed Oct 30 14:01:27 2013
 
 Author: Josef Perktold
 """
-import platform
-
-from six.moves import range
+import pytest
 import numpy as np
 from numpy.testing import (assert_, assert_allclose, assert_equal,
                            assert_array_equal)
@@ -342,6 +340,7 @@ class TestGenericGEEPoissonBC(CheckGenericMixin):
                                cov_type='bias_reduced')
 
 
+# ------------------------------------------------------------------
 # Other test classes
 
 class CheckAnovaMixin(object):
@@ -356,7 +355,6 @@ class CheckAnovaMixin(object):
         cls.data = test.data.drop([0,1,2])
         cls.initialize()
 
-
     def test_combined(self):
         res = self.res
         wa = res.wald_test_terms(skip_single=False, combine_terms=['Duration', 'Weight'])
@@ -370,7 +368,6 @@ class CheckAnovaMixin(object):
 
         compare_waldres(res, wa, [c_const, c_d, c_w, c_dw, c_duration, c_weight])
 
-
     def test_categories(self):
         # test only multicolumn terms
         res = self.res
@@ -382,36 +379,7 @@ class CheckAnovaMixin(object):
         compare_waldres(res, wa, [c_w, c_dw])
 
 
-def compare_waldres(res, wa, constrasts):
-    for i, c in enumerate(constrasts):
-        wt = res.wald_test(c)
-        assert_allclose(wa.table.values[i, 0], wt.statistic)
-        assert_allclose(wa.table.values[i, 1], wt.pvalue)
-        df = c.shape[0] if c.ndim == 2 else 1
-        assert_equal(wa.table.values[i, 2], df)
-        # attributes
-        assert_allclose(wa.statistic[i], wt.statistic)
-        assert_allclose(wa.pvalues[i], wt.pvalue)
-        assert_equal(wa.df_constraints[i], df)
-        if res.use_t:
-            assert_equal(wa.df_denom[i], res.df_resid)
-
-    col_names = wa.col_names
-    if res.use_t:
-        assert_equal(wa.distribution, 'F')
-        assert_equal(col_names[0], 'F')
-        assert_equal(col_names[1], 'P>F')
-    else:
-        assert_equal(wa.distribution, 'chi2')
-        assert_equal(col_names[0], 'chi2')
-        assert_equal(col_names[1], 'P>chi2')
-
-    # SMOKETEST
-    wa.summary_frame()
-
-
 class TestWaldAnovaOLS(CheckAnovaMixin):
-
     @classmethod
     def initialize(cls):
         from statsmodels.formula.api import ols, glm, poisson
@@ -419,7 +387,6 @@ class TestWaldAnovaOLS(CheckAnovaMixin):
 
         mod = ols("np.log(Days+1) ~ C(Duration, Sum)*C(Weight, Sum)", cls.data)
         cls.res = mod.fit(use_t=False)
-
 
     def test_noformula(self):
         endog = self.res.model.endog
@@ -437,7 +404,6 @@ class TestWaldAnovaOLS(CheckAnovaMixin):
 
 
 class TestWaldAnovaOLSF(CheckAnovaMixin):
-
     @classmethod
     def initialize(cls):
         from statsmodels.formula.api import ols, glm, poisson
@@ -464,7 +430,6 @@ class TestWaldAnovaOLSF(CheckAnovaMixin):
 
 
 class TestWaldAnovaGLM(CheckAnovaMixin):
-
     @classmethod
     def initialize(cls):
         from statsmodels.formula.api import ols, glm, poisson
@@ -475,7 +440,6 @@ class TestWaldAnovaGLM(CheckAnovaMixin):
 
 
 class TestWaldAnovaPoisson(CheckAnovaMixin):
-
     @classmethod
     def initialize(cls):
         from statsmodels.discrete.discrete_model import Poisson
@@ -485,7 +449,6 @@ class TestWaldAnovaPoisson(CheckAnovaMixin):
 
 
 class TestWaldAnovaNegBin(CheckAnovaMixin):
-
     @classmethod
     def initialize(cls):
         from statsmodels.discrete.discrete_model import NegativeBinomial
@@ -497,7 +460,6 @@ class TestWaldAnovaNegBin(CheckAnovaMixin):
 
 
 class TestWaldAnovaNegBin1(CheckAnovaMixin):
-
     @classmethod
     def initialize(cls):
         from statsmodels.discrete.discrete_model import NegativeBinomial
@@ -507,15 +469,45 @@ class TestWaldAnovaNegBin1(CheckAnovaMixin):
                                             loglike_method='nb1')
         cls.res = mod.fit(cov_type='HC0')
 
+'''
 
-class T_estWaldAnovaOLSNoFormula(object):
 
+def compare_waldres(res, wa, constrasts):
+    for i, c in enumerate(constrasts):
+        wt = res.wald_test(c)
+        assert_allclose(wa.table.values[i, 0], wt.statistic)
+        assert_allclose(wa.table.values[i, 1], wt.pvalue)
+        df = c.shape[0] if c.ndim == 2 else 1
+        assert_equal(wa.table.values[i, 2], df)
+        # attributes
+        assert_allclose(wa.statistic[i], wt.statistic)
+        assert_allclose(wa.pvalues[i], wt.pvalue)
+        assert_equal(wa.df_constraints[i], df)
+        if res.use_t:
+            assert_equal(wa.df_denom[i], res.df_resid)
+
+    col_names = wa.col_names
+    if res.use_t:
+        assert_equal(wa.distribution, 'F')
+        assert_equal(col_names[0], 'F')
+        assert_equal(col_names[1], 'P>F')
+    else:
+        assert_equal(wa.distribution, 'chi2')
+        assert_equal(col_names[0], 'chi2')
+        assert_equal(col_names[1], 'P>chi2')
+
+    '''
+    # SMOKETEST
+    wa.summary_frame()
+    '''
+
+
+@pytest.mark.xfail
+class TestWaldAnovaOLSNoFormula(object):
     @classmethod
     def initialize(cls):
-        from statsmodels.formula.api import ols, glm, poisson
-        from statsmodels.discrete.discrete_model import Poisson
+        from statsmodels.formula.api import ols  # , glm, poisson
+        # from statsmodels.discrete.discrete_model import Poisson
 
         mod = ols("np.log(Days+1) ~ C(Duration, Sum)*C(Weight, Sum)", cls.data)
         cls.res = mod.fit()  # default use_t=True
-
-'''
