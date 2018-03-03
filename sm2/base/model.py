@@ -11,9 +11,9 @@ import pandas as pd
 from sm2.tools.sm_exceptions import ValueWarning, HessianInversionWarning
 from sm2.tools.tools import recipr, nan_dot
 from sm2.tools.input_types import is_using_pandas
-from sm2.tools.decorators import cache_readonly
+from sm2.tools.decorators import cache_readonly, resettable_cache
 
-from sm2.tools.numdiff import approx_fprime
+from statsmodels.tools.numdiff import approx_fprime
 
 from sm2.base.data import handle_data
 from sm2.base.optimizer import Optimizer
@@ -562,27 +562,26 @@ class GenericLikelihoodModel(LikelihoodModel):
     def __init__(self, endog, exog=None, loglike=None, score=None,
                  hessian=None, missing='none', extra_params_names=None,
                  **kwds):
-    # let them be none in case user wants to use inheritance
-        if not loglike is None:
+        # let them be none in case user wants to use inheritance
+        if loglike is not None:
             self.loglike = loglike
-        if not score is None:
+        if score is not None:
             self.score = score
-        if not hessian is None:
+        if hessian is not None:
             self.hessian = hessian
 
         self.__dict__.update(kwds)
 
         # TODO: data structures?
 
-        #TODO temporary solution, force approx normal
-        #self.df_model = 9999
-        #somewhere: CacheWriteWarning: 'df_model' cannot be overwritten
+        # TODO temporary solution, force approx normal
+        # self.df_model = 9999
+        # somewhere: CacheWriteWarning: 'df_model' cannot be overwritten
         super(GenericLikelihoodModel, self).__init__(endog, exog,
                                                      missing=missing)
 
         # this won't work for ru2nmnl, maybe np.ndim of a dict?
         if exog is not None:
-            #try:
             self.nparams = (exog.shape[1] if np.ndim(exog) == 2 else 1)
 
         if extra_params_names is not None:
@@ -598,7 +597,7 @@ class GenericLikelihoodModel(LikelihoodModel):
 
         self.nparams = len(self.exog_names)
 
-    #this is redundant and not used when subclassing
+    # this is redundant and not used when subclassing
     def initialize(self):
         if not self.score:  # right now score is not optional
             self.score = approx_fprime
@@ -607,9 +606,9 @@ class GenericLikelihoodModel(LikelihoodModel):
         else:   # can use approx_hess_p if we have a gradient
             if not self.hessian:
                 pass
-        #Initialize is called by
-        #statsmodels.model.LikelihoodModel.__init__
-        #and should contain any preprocessing that needs to be done for a model
+        # Initialize is called by
+        # statsmodels.model.LikelihoodModel.__init__
+        # and should contain any preprocessing that needs to be done for a model
         if self.exog is not None:
             # assume constant
             er = np.lingalg.matrix_rank(self.exog)
@@ -621,7 +620,7 @@ class GenericLikelihoodModel(LikelihoodModel):
         super(GenericLikelihoodModel, self).initialize()
 
     def expandparams(self, params):
-        '''
+        """
         expand to full parameter array when some parameters are fixed
 
         Parameters
@@ -646,7 +645,7 @@ class GenericLikelihoodModel(LikelihoodModel):
         this could also be replaced by a more general parameter
         transformation.
 
-        '''
+        """
         paramsfull = self.fixed_params.copy()
         paramsfull[self.fixed_paramsmask] = params
         return paramsfull
@@ -664,26 +663,26 @@ class GenericLikelihoodModel(LikelihoodModel):
         return -self.nloglikeobs(params)
 
     def score(self, params):
-        '''
+        """
         Gradient of log-likelihood evaluated at params
-        '''
+        """
         kwds = {}
         kwds.setdefault('centered', True)
         return approx_fprime(params, self.loglike, **kwds).ravel()
 
     def score_obs(self, params, **kwds):
-        '''
+        """
         Jacobian/Gradient of log-likelihood evaluated at params for each
         observation.
-        '''
-        #kwds.setdefault('epsilon', 1e-4)
+        """
+        # kwds.setdefault('epsilon', 1e-4)
         kwds.setdefault('centered', True)
         return approx_fprime(params, self.loglikeobs, **kwds)
 
     def hessian(self, params):
-        '''
+        """
         Hessian of log-likelihood evaluated at params
-        '''
+        """
         from sm2.tools.numdiff import approx_hess
         # need options for hess (epsilon)
         return approx_hess(params, self.loglike)
@@ -1759,54 +1758,54 @@ class ResultMixin(object):
 
     @cache_readonly
     def score_obsv(self):
-        '''cached Jacobian of log-likelihood
-        '''
+        """cached Jacobian of log-likelihood
+        """
         return self.model.score_obs(self.params)
 
     @cache_readonly
     def hessv(self):
-        '''cached Hessian of log-likelihood
-        '''
+        """cached Hessian of log-likelihood
+        """
         return self.model.hessian(self.params)
 
     @cache_readonly
     def covjac(self):
-        '''
+        """
         covariance of parameters based on outer product of jacobian of
         log-likelihood
 
-        '''
-        ##  if not hasattr(self, '_results'):
-        ##      raise ValueError('need to call fit first')
-        ##      #self.fit()
-        ##  self.jacv = jacv = self.jac(self._results.params)
+        """
+        #  if not hasattr(self, '_results'):
+        #      raise ValueError('need to call fit first')
+        #      #self.fit()
+        #  self.jacv = jacv = self.jac(self._results.params)
         jacv = self.score_obsv
         return np.linalg.inv(np.dot(jacv.T, jacv))
 
     @cache_readonly
     def covjhj(self):
-        '''covariance of parameters based on HJJH
+        """covariance of parameters based on HJJH
 
         dot product of Hessian, Jacobian, Jacobian, Hessian of likelihood
 
         name should be covhjh
-        '''
+        """
         jacv = self.score_obsv
         hessv = self.hessv
         hessinv = np.linalg.inv(hessv)
-        ##  self.hessinv = hessin = self.cov_params()
+        #  self.hessinv = hessin = self.cov_params()
         return np.dot(hessinv, np.dot(np.dot(jacv.T, jacv), hessinv))
 
     @cache_readonly
     def bsejhj(self):
-        '''standard deviation of parameter estimates based on covHJH
-        '''
+        """standard deviation of parameter estimates based on covHJH
+        """
         return np.sqrt(np.diag(self.covjhj))
 
     @cache_readonly
     def bsejac(self):
-        '''standard deviation of parameter estimates based on covjac
-        '''
+        """standard deviation of parameter estimates based on covjac
+        """
         return np.sqrt(np.diag(self.covjac))
 
     def bootstrap(self, nrep=100, method='nm', disp=0, store=1):
@@ -1849,8 +1848,8 @@ class ResultMixin(object):
         hascloneattr = True if hasattr(self, 'cloneattr') else False
         for i in range(nrep):
             rvsind = np.random.randint(self.nobs, size=self.nobs)
-            #this needs to set startparam and get other defining attributes
-            #need a clone method on model
+            # this needs to set startparam and get other defining attributes
+            # need a clone method on model
             fitmod = self.model.__class__(self.endog[rvsind],
                                           self.exog[rvsind, :])
             if hascloneattr:
@@ -1865,8 +1864,8 @@ class ResultMixin(object):
         return results.mean(0), results.std(0), results
 
     def get_nlfun(self, fun):
-        #I think this is supposed to get the delta method that is currently
-        #in miscmodels count (as part of Poisson example)
+        # I think this is supposed to get the delta method that is currently
+        # in miscmodels count (as part of Poisson example)
         pass
 
 
@@ -1885,7 +1884,6 @@ class GenericLikelihoodModelResults(LikelihoodModelResults, ResultMixin):
     mlefit : instance of LikelihoodResults
         This contains the numerical optimization results as returned by
         LikelihoodModel.fit(), in a superclass of GnericLikelihoodModels
-
 
     Returns
     -------
@@ -1919,9 +1917,7 @@ class GenericLikelihoodModelResults(LikelihoodModelResults, ResultMixin):
         with degrees of freedom `df_model`.
     prsquared : float
         McFadden's pseudo-R-squared. 1 - (`llf`/`llnull`)
-
     """
-
     def __init__(self, model, mlefit):
         self.model = model
         self.endog = model.endog
@@ -1972,9 +1968,7 @@ class GenericLikelihoodModelResults(LikelihoodModelResults, ResultMixin):
         --------
         statsmodels.iolib.summary.Summary : class to hold summary
             results
-
         """
-
         top_left = [('Dep. Variable:', None),
                     ('Model:', None),
                     ('Method:', ['Maximum Likelihood']),
@@ -1982,23 +1976,21 @@ class GenericLikelihoodModelResults(LikelihoodModelResults, ResultMixin):
                     ('Time:', None),
                     ('No. Observations:', None),
                     ('Df Residuals:', None),  # [self.df_resid]),
-                    ('Df Model:', None),  # [self.df_model])
-                    ]
+                    ('Df Model:', None)]  # [self.df_model])
 
-        top_right = [  # ('R-squared:', ["%#8.3f" % self.rsquared]),
-                       # ('Adj. R-squared:', ["%#8.3f" % self.rsquared_adj]),
-                       # ('F-statistic:', ["%#8.4g" % self.fvalue] ),
-                       # ('Prob (F-statistic):', ["%#6.3g" % self.f_pvalue]),
-                     ('Log-Likelihood:', None),  # ["%#6.4g" % self.llf]),
+        top_right = [('Log-Likelihood:', None),  # ["%#6.4g" % self.llf]),
                      ('AIC:', ["%#8.4g" % self.aic]),
-                     ('BIC:', ["%#8.4g" % self.bic])
-                     ]
+                     ('BIC:', ["%#8.4g" % self.bic])]
+        # ('R-squared:', ["%#8.3f" % self.rsquared]),
+        # ('Adj. R-squared:', ["%#8.3f" % self.rsquared_adj]),
+        # ('F-statistic:', ["%#8.4g" % self.fvalue] ),
+        # ('Prob (F-statistic):', ["%#6.3g" % self.f_pvalue]),
 
         if title is None:
             title = self.model.__class__.__name__ + ' ' + "Results"
 
-        #create summary table instance
-        from sm2.iolib.summary import Summary
+        # create summary table instance
+        from statsmodels.iolib.summary import Summary
         smry = Summary()
         smry.add_table_2cols(self, gleft=top_left, gright=top_right,
                              yname=yname, xname=xname, title=title)
