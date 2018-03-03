@@ -20,8 +20,8 @@ from __future__ import division
 __all__ = ["Poisson", "Logit", "Probit", "MNLogit", "NegativeBinomial",
            "GeneralizedPoisson", "NegativeBinomialP"]
 
-from statsmodels.compat.python import lmap, lzip, range
-from statsmodels.compat.scipy import loggamma
+from sm2.compat.python import lmap, lzip, range
+from sm2.compat.scipy import loggamma
 
 import numpy as np
 from pandas import get_dummies
@@ -30,16 +30,16 @@ from scipy.special import gammaln, digamma, polygamma
 from scipy import stats, special
 from scipy.stats import nbinom
 
-import statsmodels.tools.tools as tools
-from statsmodels.tools import data as data_tools
-from statsmodels.tools.decorators import resettable_cache, cache_readonly
-from statsmodels.tools.sm_exceptions import PerfectSeparationError
-from statsmodels.tools.numdiff import approx_fprime_cs
-import statsmodels.base.model as base
-from statsmodels.base.data import handle_data  # for mnlogit
-import statsmodels.regression.linear_model as lm
-import statsmodels.base.wrapper as wrap
-from statsmodels.compat.numpy import np_matrix_rank
+import sm2.tools.tools as tools
+from sm2.tools import data as data_tools
+from sm2.tools.decorators import resettable_cache, cache_readonly
+from sm2.tools.sm_exceptions import PerfectSeparationError
+from sm2.tools.numdiff import approx_fprime_cs
+import sm2.base.model as base
+from sm2.base.data import handle_data  # for mnlogit
+import sm2.regression.linear_model as lm
+import sm2.base.wrapper as wrap
+from sm2.compat.numpy import np_matrix_rank
 
 from statsmodels.base.l1_slsqp import fit_l1_slsqp
 from statsmodels.distributions import genpoisson_p
@@ -3275,7 +3275,7 @@ class DiscreteResults(base.LikelihoodModelResults):
             else:
                 if cov_kwds is None:
                     cov_kwds = {}
-                from statsmodels.base.covtype import get_robustcov_results
+                from sm2.base.covtype import get_robustcov_results
                 get_robustcov_results(self, cov_type=cov_type, use_self=True,
                                            **cov_kwds)
 
@@ -4121,8 +4121,3 @@ wrap.populate_wrapper(MultinomialResultsWrapper, MultinomialResults)
 class L1MultinomialResultsWrapper(lm.RegressionResultsWrapper):
     pass
 wrap.populate_wrapper(L1MultinomialResultsWrapper, L1MultinomialResults)
-
-
-if __name__=="__main__":
-    import numpy as np
-    import statsmodels.api as sm

@@ -8,28 +8,33 @@ in the Stata *.dta -> *.csv output, NOT the estimator for the Poisson
 tests.
 """
 # pylint: disable-msg=E1101
-from statsmodels.compat.python import range
-from statsmodels.compat.testing import SkipTest, skip
 import os
 import warnings
+
+from six.moves import range
+
+from sm2.compat.testing import SkipTest, skip
 
 import numpy as np
 import pandas as pd
 from numpy.testing import (assert_, assert_raises, assert_almost_equal,
                            assert_equal, assert_array_equal, assert_allclose,
                            assert_array_less)
+from scipy.stats import nbinom
 import pytest
 
-from statsmodels.discrete.discrete_model import (Logit, Probit, MNLogit,
-                                                Poisson, NegativeBinomial,
-                                                CountModel, GeneralizedPoisson,
-                                                NegativeBinomialP)
+from sm2.tools.sm_exceptions import PerfectSeparationError
+
+from sm2.discrete.discrete_model import (Logit, Probit, MNLogit,
+                                         Poisson, NegativeBinomial,
+                                         CountModel, GeneralizedPoisson,
+                                         NegativeBinomialP)
+
 from statsmodels.discrete.discrete_margins import _iscount, _isdummy
 import statsmodels.api as sm
 import statsmodels.formula.api as smf
+
 from .results.results_discrete import Spector, DiscreteL1, RandHIE, Anes
-from statsmodels.tools.sm_exceptions import PerfectSeparationError
-from scipy.stats import nbinom
 
 try:
     import cvxopt
@@ -58,6 +63,7 @@ DECIMAL_2 = 2
 DECIMAL_1 = 1
 DECIMAL_0 = 0
 
+'''
 class CheckModelResults(object):
     """
     res2 should be the test results from RModelWrap
@@ -2378,8 +2384,4 @@ def test_unchanging_degrees_of_freedom():
     # Test that the call to `fit_regularized` didn't modify model.df_model inplace.
     assert_equal(res3.df_model, res1.df_model)
     assert_equal(res3.df_resid, res1.df_resid)
-
-
-if __name__ == "__main__":
-    import pytest
-    pytest.main([__file__, '-vvs', '-x', '--pdb'])
+'''

@@ -7,20 +7,22 @@ Author: Josef Perktold
 """
 
 import os
+
 import numpy as np
+from numpy.testing import assert_allclose, assert_equal, assert_
 import pandas as pd
-import statsmodels.discrete.discrete_model as smd
+
+from sm2.tools.tools import add_constant
+from sm2.base.covtype import get_robustcov_results
+import sm2.stats.sandwich_covariance as sw
+
+import sm2.discrete.discrete_model as smd
+from sm2.regression.linear_model import OLS
+
 from statsmodels.genmod.generalized_linear_model import GLM
 from statsmodels.genmod import families
 from statsmodels.genmod.families import links
-from statsmodels.regression.linear_model import OLS
 import statsmodels.stats.sandwich_covariance as sc
-from statsmodels.base.covtype import get_robustcov_results
-import statsmodels.stats.sandwich_covariance as sw
-from statsmodels.tools.tools import add_constant
-
-
-from numpy.testing import assert_allclose, assert_equal, assert_
 import statsmodels.tools._testing as smt
 
 
@@ -41,7 +43,7 @@ exog = add_constant(exog_data, prepend=False)
 group = np.asarray(data['ship'], int)
 exposure = np.asarray(data['service'])
 
-
+'''
 # TODO get the test methods from regression/tests
 class CheckCountRobustMixin(object):
 
@@ -121,7 +123,7 @@ class TestPoissonCluGeneric(CheckCountRobustMixin):
             cls.bse_rob3 = cls.bse_rob.copy()
             cls.res1 = res1 = mod.fit(disp=False)
 
-        from statsmodels.base.covtype import get_robustcov_results
+        from sm2.base.covtype import get_robustcov_results
 
         #res_hc0_ = cls.res1.get_robustcov_results('HC1')
         get_robustcov_results(cls.res1._results, 'cluster',
@@ -148,7 +150,7 @@ class TestPoissonHC1Generic(CheckCountRobustMixin):
         mod = smd.Poisson(endog, exog)
         cls.res1 = mod.fit(disp=False)
 
-        from statsmodels.base.covtype import get_robustcov_results
+        from sm2.base.covtype import get_robustcov_results
 
         #res_hc0_ = cls.res1.get_robustcov_results('HC1')
         get_robustcov_results(cls.res1._results, 'HC1', use_self=True)
@@ -253,7 +255,7 @@ class TestPoissonCluExposureGeneric(CheckCountRobustMixin):
         mod = smd.Poisson(endog, exog, exposure=exposure)
         cls.res1 = res1 = mod.fit(disp=False)
 
-        from statsmodels.base.covtype import get_robustcov_results
+        from sm2.base.covtype import get_robustcov_results
 
         #res_hc0_ = cls.res1.get_robustcov_results('HC1')
         get_robustcov_results(cls.res1._results, 'cluster',
@@ -679,13 +681,4 @@ class TestGLMGaussHACGroupsum(CheckDiscreteGLM):
     def test_kwd(self):
         # test corrected keyword name
         assert_allclose(self.res1b.bse, self.res1.bse, rtol=1e-12)
-
-
-
-if __name__ == '__main__':
-    tt = TestPoissonClu()
-    tt.setup_class()
-    tt.test_basic()
-    tt = TestNegbinClu()
-    tt.setup_class()
-    tt.test_basic()
+'''
