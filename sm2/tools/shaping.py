@@ -6,7 +6,7 @@ Re-shaping various array-like objects.
 import numpy as np
 import pandas as pd
 
-from input_types import is_using_pandas
+from .input_types import is_using_pandas
 
 
 def _ensure_2d(x, ndarray=False):
