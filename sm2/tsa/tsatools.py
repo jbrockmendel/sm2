@@ -1,3 +1,9 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+__all__ = ['lagmat', 'lagmat2ds', 'add_trend', 'duplication_matrix',
+           'elimination_matrix', 'commutation_matrix',
+           'vec', 'vech', 'unvec', 'unvech']
+import warnings
 
 from six import PY3, integer_types
 from six.moves import range
@@ -47,7 +53,7 @@ def add_trend(x, trend="c", prepend=False, has_constant='skip'):
 
     See also
     --------
-    statsmodels.tools.tools.add_constant
+    sm2.tools.tools.add_constant
     """
     # TODO: could be generalized for trend of aribitrary order
     trend = trend.lower()
@@ -79,7 +85,8 @@ def add_trend(x, trend="c", prepend=False, has_constant='skip'):
         x = np.asanyarray(x)
 
     nobs = len(x)
-    trendarr = np.vander(np.arange(1, nobs + 1, dtype=np.float64), trendorder + 1)
+    trendarr = np.vander(np.arange(1, nobs + 1, dtype=np.float64),
+                         trendorder + 1)
     # put in order ctt
     trendarr = np.fliplr(trendarr)
     if trend == "t":
@@ -95,7 +102,8 @@ def add_trend(x, trend="c", prepend=False, has_constant='skip'):
                     return False
             col_const = x.apply(safe_is_const, 0)
         else:
-            col_const = np.logical_and(np.any(np.ptp(np.asanyarray(x), axis=0) == 0, axis=0),
+            ptp0 = np.ptp(np.asanyarray(x), axis=0) == 0
+            col_const = np.logical_and(np.any(ptp0, axis=0),
                                        np.all(x != 0.0, axis=0))
         if np.any(col_const):
             if has_constant == 'raise':
@@ -123,7 +131,7 @@ def add_trend(x, trend="c", prepend=False, has_constant='skip'):
             descr = descr + new_descr[-extra_col:]
 
         if not PY3:
-            # See 3658
+            # See GH#3658
             names = [entry[0] for entry in descr]
             dtypes = [entry[1] for entry in descr]
             names = [bytes(name) for name in names]
@@ -165,7 +173,7 @@ def add_lag(x, col=None, lags=1, drop=False, insert=True):
     Examples
     --------
 
-    >>> import statsmodels.api as sm
+    >>> import sm2.api as sm
     >>> data = sm.datasets.macrodata.load()
     >>> data = data.data[['year','quarter','realgdp','cpi']]
     >>> data = sm.tsa.add_lag(data, 'realgdp', lags=2)
@@ -185,8 +193,9 @@ def add_lag(x, col=None, lags=1, drop=False, insert=True):
         if isinstance(col, integer_types):
             col = x.dtype.names[col]
         if not PY3:
-            # TODO: Get rid of this kludge.  See GH # 3658
-            names = [bytes(name) if isinstance(name, unicode) else name for name in names]
+            # TODO: Get rid of this kludge.  See GH#3658
+            names = [bytes(name) if isinstance(name, unicode) else name
+                     for name in names]
             # Fail loudly if there is a non-ascii name.
             x.dtype.names = names
             if isinstance(col, unicode):
@@ -195,7 +204,7 @@ def add_lag(x, col=None, lags=1, drop=False, insert=True):
         contemp = x[col]
 
         # make names for lags
-        tmp_names = [col + '_'+'L(%i)' % i for i in range(1, lags+1)]
+        tmp_names = [col + '_' + 'L(%i)' % i for i in range(1, lags + 1)]
         ndlags = lagmat(contemp, maxlag=lags, trim='Both')
 
         # get index for return
@@ -203,9 +212,9 @@ def add_lag(x, col=None, lags=1, drop=False, insert=True):
             ins_idx = list(names).index(col) + 1
         elif insert is False:
             ins_idx = len(names) + 1
-        else: # insert is an int
+        else:
+            # insert is an int
             if insert > len(names):
-                import warnings
                 warnings.warn("insert > number of variables, inserting at the"
                               " last position", ValueWarning)
             ins_idx = insert
@@ -219,27 +228,29 @@ def add_lag(x, col=None, lags=1, drop=False, insert=True):
             else:
                 last_names.pop(last_names.index(col))
 
-        if first_names: # only do this if x isn't "empty"
+        if first_names:  # only do this if x isn't "empty"
             # Workaround to avoid NumPy FutureWarning
             _x = recarray_select(x, first_names)
             first_arr = nprf.append_fields(_x[lags:], tmp_names, ndlags.T,
                                            usemask=False)
 
         else:
-            first_arr = np.zeros(len(x)-lags, dtype=list(zip(tmp_names,
-                (x[col].dtype,)*lags)))
-            for i,name in enumerate(tmp_names):
-                first_arr[name] = ndlags[:,i]
+            dtype = list(zip(tmp_names, (x[col].dtype,) * lags))
+            first_arr = np.zeros(len(x) - lags, dtype=dtype)
+            for i, name in enumerate(tmp_names):
+                first_arr[name] = ndlags[:, i]
         if last_names:
             return nprf.append_fields(first_arr, last_names,
-                    [x[name][lags:] for name in last_names], usemask=False)
-        else: # lags for last variable
+                                      [x[name][lags:] for name in last_names],
+                                      usemask=False)
+        else:  # lags for last variable
             return first_arr
 
-    else: # we have an ndarray
+    else:
+        # we have an ndarray
 
-        if x.ndim == 1: # make 2d if 1d
-            x = x[:,None]
+        if x.ndim == 1:  # make 2d if 1d
+            x = x[:, None]
         if col is None:
             col = 0
 
@@ -247,32 +258,32 @@ def add_lag(x, col=None, lags=1, drop=False, insert=True):
         if col < 0:
             col = x.shape[1] + col
 
-        contemp = x[:,col]
+        contemp = x[:, col]
 
         if insert is True:
             ins_idx = col + 1
         elif insert is False:
             ins_idx = x.shape[1]
         else:
-            if insert < 0: # handle negative index
+            if insert < 0:  # handle negative index
                 insert = x.shape[1] + insert + 1
             if insert > x.shape[1]:
                 insert = x.shape[1]
-                import warnings
                 warnings.warn("insert > number of variables, inserting at the"
                               " last position", ValueWarning)
             ins_idx = insert
 
         ndlags = lagmat(contemp, lags, trim='Both')
         first_cols = list(range(ins_idx))
-        last_cols = list(range(ins_idx,x.shape[1]))
+        last_cols = list(range(ins_idx, x.shape[1]))
         if drop:
             if col in first_cols:
                 first_cols.pop(first_cols.index(col))
             else:
                 last_cols.pop(last_cols.index(col))
-        return np.column_stack((x[lags:,first_cols],ndlags,
-                    x[lags:,last_cols]))
+        return np.column_stack((x[lags:, first_cols],
+                                ndlags,
+                                x[lags:, last_cols]))
 
 
 def detrend(x, order=1, axis=0):
@@ -282,8 +293,8 @@ def detrend(x, order=1, axis=0):
     Parameters
     ----------
     x : array_like, 1d or 2d
-        data, if 2d, then each row or column is independently detrended with the
-        same trendorder, but independent trend estimates
+        data, if 2d, then each row or column is independently detrended with
+        the same trendorder, but independent trend estimates
     order : int
         specifies the polynomial order of the trend, zero is constant, one is
         linear trend, two is quadratic trend
@@ -300,7 +311,8 @@ def detrend(x, order=1, axis=0):
     if x.ndim == 2 and int(axis) == 1:
         x = x.T
     elif x.ndim > 2:
-        raise NotImplementedError('x.ndim > 2 is not implemented until it is needed')
+        raise NotImplementedError('x.ndim > 2 is not implemented until '
+                                  'it is needed')
 
     nobs = x.shape[0]
     if order == 0:
@@ -352,7 +364,7 @@ def lagmat(x, maxlag, trim='forward', original='ex', use_pandas=False):
 
     Examples
     --------
-    >>> from statsmodels.tsa.tsatools import lagmat
+    >>> from sm2.tsa.tsatools import lagmat
     >>> import numpy as np
     >>> X = np.arange(1,7).reshape(-1,2)
     >>> lagmat(X, maxlag=2, trim="forward", original='in')
@@ -377,11 +389,11 @@ def lagmat(x, maxlag, trim='forward', original='ex', use_pandas=False):
 
     Notes
     -----
-    When using a pandas DataFrame or Series with use_pandas=True, trim can only
-    be 'forward' or 'both' since it is not possible to consistently extend index
-    values.
+    When using a pandas DataFrame or Series with use_pandas=True, trim can
+    only be 'forward' or 'both' since it is not possible to consistently
+    extend index values.
     """
-    # TODO:  allow list of lags additional to maxlag
+    # TODO: allow list of lags additional to maxlag
     is_pandas = _is_using_pandas(x, None) and use_pandas
     trim = 'none' if trim is None else trim
     trim = trim.lower()
@@ -393,15 +405,17 @@ def lagmat(x, maxlag, trim='forward', original='ex', use_pandas=False):
     dropidx = 0
     if xa.ndim == 1:
         xa = xa[:, None]
+
     nobs, nvar = xa.shape
     if original in ['ex', 'sep']:
         dropidx = nvar
     if maxlag >= nobs:
         raise ValueError("maxlag should be < nobs")
+
     lm = np.zeros((nobs + maxlag, nvar * (maxlag + 1)))
     for k in range(0, int(maxlag + 1)):
         lm[maxlag - k:nobs + maxlag - k,
-        nvar * (maxlag - k):nvar * (maxlag - k + 1)] = xa
+           nvar * (maxlag - k):nvar * (maxlag - k + 1)] = xa
 
     if trim in ('none', 'forward'):
         startobs = 0
@@ -449,7 +463,8 @@ def lagmat2ds(x, maxlag0, maxlagex=None, dropex=0, trim='forward',
     maxlag0 : int
         for first variable all lags from zero to maxlag are included
     maxlagex : None or int
-        max lag for all other variables all lags from zero to maxlag are included
+        max lag for all other variables all lags from zero to maxlag
+        are included
     dropex : int (default is 0)
         exclude first dropex lags from other variables
         for all variables, except the first, lags from dropex to maxlagex are
@@ -472,7 +487,6 @@ def lagmat2ds(x, maxlag0, maxlagex=None, dropex=0, trim='forward',
     -----
     Inefficient implementation for unequal lags, implemented for convenience
     """
-
     if maxlagex is None:
         maxlagex = maxlag0
     maxlag = max(maxlag0, maxlagex)
@@ -500,36 +514,47 @@ def lagmat2ds(x, maxlag0, maxlagex=None, dropex=0, trim='forward',
     elif is_pandas:
         x = np.asanyarray(x)
 
-    lagsli = [lagmat(x[:, 0], maxlag, trim=trim, original='in')[:, :maxlag0 + 1]]
+    new_lagmat = lagmat(x[:, 0], maxlag, trim=trim, original='in')
+    lagsli = [new_lagmat[:, :maxlag0 + 1]]
     for k in range(1, nvar):
-        lagsli.append(lagmat(x[:, k], maxlag, trim=trim, original='in')[:, dropex:maxlagex + 1])
+        new_lagmat = lagmat(x[:, k], maxlag, trim=trim, original='in')
+        lagsli.append(new_lagmat[:, dropex:maxlagex + 1])
+
     return np.column_stack(lagsli)
+
 
 def vec(mat):
     return mat.ravel('F')
+
 
 def vech(mat):
     # Gets Fortran-order
     return mat.T.take(_triu_indices(len(mat)))
 
+
 # tril/triu/diag, suitable for ndarray.take
+
 
 def _tril_indices(n):
     rows, cols = np.tril_indices(n)
     return rows * n + cols
 
+
 def _triu_indices(n):
     rows, cols = np.triu_indices(n)
     return rows * n + cols
+
 
 def _diag_indices(n):
     rows, cols = np.diag_indices(n)
     return rows * n + cols
 
+
 def unvec(v):
     k = int(np.sqrt(len(v)))
     assert(k * k == len(v))
     return v.reshape((k, k), order='F')
+
 
 def unvech(v):
     # quadratic formula, correct fp error
@@ -545,6 +570,7 @@ def unvech(v):
 
     return result
 
+
 def duplication_matrix(n):
     """
     Create duplication matrix D_n which satisfies vec(S) = D_n vech(S) for
@@ -556,6 +582,7 @@ def duplication_matrix(n):
     """
     tmp = np.eye(n * (n + 1) // 2)
     return np.array([unvech(x).ravel() for x in tmp]).T
+
 
 def elimination_matrix(n):
     """
@@ -571,6 +598,7 @@ def elimination_matrix(n):
     """
     vech_indices = vec(np.tril(np.ones((n, n))))
     return np.eye(n * n)[vech_indices != 0]
+
 
 def commutation_matrix(p, q):
     """
@@ -589,6 +617,7 @@ def commutation_matrix(p, q):
     indices = np.arange(p * q).reshape((p, q), order='F')
     return K.take(indices.ravel(), axis=0)
 
+
 def _ar_transparams(params):
     """
     Transforms params to induce stationarity/invertability.
@@ -602,16 +631,15 @@ def _ar_transparams(params):
     ---------
     Jones(1980)
     """
-    newparams = ((1-np.exp(-params))/
-                (1+np.exp(-params))).copy()
-    tmp = ((1-np.exp(-params))/
-               (1+np.exp(-params))).copy()
-    for j in range(1,len(params)):
+    newparams = ((1 - np.exp(-params)) / (1 + np.exp(-params))).copy()
+    tmp = ((1 - np.exp(-params)) / (1 + np.exp(-params))).copy()
+    for j in range(1, len(params)):
         a = newparams[j]
         for kiter in range(j):
-            tmp[kiter] -= a * newparams[j-kiter-1]
+            tmp[kiter] -= a * newparams[j - kiter - 1]
         newparams[:j] = tmp[:j]
     return newparams
+
 
 def _ar_invtransparams(params):
     """
@@ -624,14 +652,15 @@ def _ar_invtransparams(params):
     """
     # AR coeffs
     tmp = params.copy()
-    for j in range(len(params)-1,0,-1):
+    for j in range(len(params) - 1, 0, -1):
         a = params[j]
+        denom = 1 - a**2
         for kiter in range(j):
-            tmp[kiter] = (params[kiter] + a * params[j-kiter-1])/\
-                    (1-a**2)
+            tmp[kiter] = (params[kiter] + a * params[j - kiter - 1]) / denom
         params[:j] = tmp[:j]
-    invarcoefs = -np.log((1-params)/(1+params))
+    invarcoefs = -np.log((1 - params) / (1 + params))
     return invarcoefs
+
 
 def _ma_transparams(params):
     """
@@ -646,16 +675,17 @@ def _ma_transparams(params):
     ---------
     Jones(1980)
     """
-    newparams = ((1-np.exp(-params))/(1+np.exp(-params))).copy()
-    tmp = ((1-np.exp(-params))/(1+np.exp(-params))).copy()
+    newparams = ((1 - np.exp(-params)) / (1 + np.exp(-params))).copy()
+    tmp = ((1 - np.exp(-params)) / (1 + np.exp(-params))).copy()
 
     # levinson-durbin to get macf
-    for j in range(1,len(params)):
+    for j in range(1, len(params)):
         b = newparams[j]
         for kiter in range(j):
-            tmp[kiter] += b * newparams[j-kiter-1]
+            tmp[kiter] += b * newparams[j - kiter - 1]
         newparams[:j] = tmp[:j]
     return newparams
+
 
 def _ma_invtransparams(macoefs):
     """
@@ -667,12 +697,13 @@ def _ma_invtransparams(macoefs):
         The transformed MA coefficients
     """
     tmp = macoefs.copy()
-    for j in range(len(macoefs)-1,0,-1):
+    for j in range(len(macoefs) - 1, 0, -1):
         b = macoefs[j]
+        denom = 1 - b**2
         for kiter in range(j):
-            tmp[kiter] = (macoefs[kiter]-b *macoefs[j-kiter-1])/(1-b**2)
+            tmp[kiter] = (macoefs[kiter] - b * macoefs[j - kiter - 1]) / denom
         macoefs[:j] = tmp[:j]
-    invmacoefs = -np.log((1-macoefs)/(1+macoefs))
+    invmacoefs = -np.log((1 - macoefs) / (1 + macoefs))
     return invmacoefs
 
 
@@ -727,7 +758,7 @@ def unintegrate(x, levels):
     >>> unintegrate(np.diff(x, 2), levels)
     array([  1.,   3.,   9.,  19.,   8.])
     """
-    levels = list(levels)[:] # copy
+    levels = list(levels)[:]  # copy
     if len(levels) > 1:
         x0 = levels.pop(-1)
         return unintegrate(np.cumsum(np.r_[x0, x]), levels)
@@ -774,9 +805,3 @@ def freq_to_period(freq):
     else:  # pragma : no cover
         raise ValueError("freq {} not understood. Please report if you "
                          "think this is in error.".format(freq))
-
-
-__all__ = ['lagmat', 'lagmat2ds','add_trend', 'duplication_matrix',
-           'elimination_matrix', 'commutation_matrix',
-           'vec', 'vech', 'unvec', 'unvech']
-

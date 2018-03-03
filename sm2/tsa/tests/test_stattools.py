@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
 import os
 import warnings
 
@@ -5,8 +7,6 @@ import numpy as np
 from numpy.testing import (assert_almost_equal, assert_equal, assert_warns,
                            assert_raises, dec, assert_, assert_allclose)
 import pandas as pd
-from pandas import Series, DatetimeIndex, DataFrame
-
 
 from sm2.compat.numpy import recarray_select
 from sm2.tools.sm_exceptions import ColinearityWarning, MissingDataError
@@ -469,13 +469,13 @@ class TestKPSS(SetupKPSS):
 
 
 def test_pandasacovf():
-    s = Series(list(range(1, 11)))
+    s = pd.Series(list(range(1, 11)))
     assert_almost_equal(acovf(s), acovf(s.values))
 
 
 def test_acovf2d():
     dta = sunspots.load_pandas().data
-    dta.index = DatetimeIndex(start='1700', end='2009', freq='A')[:309]
+    dta.index = pd.DatetimeIndex(start='1700', end='2009', freq='A')[:309]
     del dta["YEAR"]
     res = acovf(dta)
     assert_equal(res, acovf(dta.values))
@@ -517,8 +517,8 @@ def test_arma_order_select_ic():
                       [ 517.61019619,  496.99650196,  499.52656493],
                       [ 498.12580329,  499.75598491,  504.99255506],
                       [ 499.49225249,  504.96650341,  510.48779255]])
-    aic = DataFrame(aic_x , index=list(range(5)), columns=list(range(3)))
-    bic = DataFrame(bic_x , index=list(range(5)), columns=list(range(3)))
+    aic = pd.DataFrame(aic_x , index=list(range(5)), columns=list(range(3)))
+    bic = pd.DataFrame(bic_x , index=list(range(5)), columns=list(range(3)))
     assert_almost_equal(res.aic.values, aic.values, 5)
     assert_almost_equal(res.bic.values, bic.values, 5)
     assert_equal(res.aic_min_order, (1, 2))

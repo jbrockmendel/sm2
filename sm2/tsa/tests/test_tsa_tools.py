@@ -1,14 +1,14 @@
-'''tests for some time series analysis functions
-
-'''
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+"""tests for some time series analysis functions"""
 
 from six.moves import zip
 
 import numpy as np
 from numpy.testing import (assert_array_almost_equal, assert_equal,
-    assert_raises, assert_array_equal)
+                           assert_raises, assert_array_equal)
 import pandas as pd
-from pandas.util.testing import assert_frame_equal, assert_series_equal
+import pandas.util.testing as tm
 
 import sm2.tsa.stattools as tsa
 import sm2.tsa.tsatools as tools
@@ -17,9 +17,9 @@ from sm2.tsa.tsatools import vec, vech
 from sm2.tsa.tests.results import savedrvs
 from sm2.tsa.tests.results.datamlw_tls import mlacf, mlccf, mlpacf, mlywar
 
-import statsmodels.api as sm
 
 '''
+import statsmodels.api as sm
 
 xo = savedrvs.rvsdata.xar2
 x100 = xo[-100:] / 1000.
@@ -284,13 +284,13 @@ class TestLagmat(object):
         expected = expected.iloc[3:]
 
         both = sm.tsa.lagmat(self.macro_df, 3, trim='both', original='in', use_pandas=True)
-        assert_frame_equal(both, expected)
+        tm.assert_frame_equal(both, expected)
         lags = sm.tsa.lagmat(self.macro_df, 3, trim='both', original='ex', use_pandas=True)
-        assert_frame_equal(lags, expected.iloc[:, 4:])
+        tm.assert_frame_equal(lags, expected.iloc[:, 4:])
         lags, lead = sm.tsa.lagmat(self.macro_df, 3, trim='both',
                                    original='sep', use_pandas=True)
-        assert_frame_equal(lags, expected.iloc[:, 4:])
-        assert_frame_equal(lead, expected.iloc[:, :4])
+        tm.assert_frame_equal(lags, expected.iloc[:, 4:])
+        tm.assert_frame_equal(lead, expected.iloc[:, :4])
 
     def test_too_few_observations(self):
         assert_raises(ValueError, sm.tsa.lagmat, self.macro_df, 300, use_pandas=True)
@@ -317,14 +317,14 @@ class TestLagmat(object):
         expected = pd.DataFrame(values,columns=columns, index=index)
         both = sm.tsa.lagmat(self.macro_df, 3, trim='forward', original='in',
                              use_pandas=True)
-        assert_frame_equal(both, expected)
+        tm.assert_frame_equal(both, expected)
         lags = sm.tsa.lagmat(self.macro_df, 3, trim='forward', original='ex',
                              use_pandas=True)
-        assert_frame_equal(lags, expected.iloc[:, 4:])
+        tm.assert_frame_equal(lags, expected.iloc[:, 4:])
         lags, lead = sm.tsa.lagmat(self.macro_df, 3, trim='forward',
                                    original='sep', use_pandas=True)
-        assert_frame_equal(lags, expected.iloc[:, 4:])
-        assert_frame_equal(lead, expected.iloc[:, :4])
+        tm.assert_frame_equal(lags, expected.iloc[:, 4:])
+        tm.assert_frame_equal(lead, expected.iloc[:, :4])
 
     def test_pandas_errors(self):
         assert_raises(ValueError, sm.tsa.lagmat, self.macro_df, 3, trim='none', use_pandas=True)
@@ -344,13 +344,13 @@ class TestLagmat(object):
         expected = expected.fillna(0.0)
 
         both = sm.tsa.lagmat(self.series, 3, trim='forward', original='in', use_pandas=True)
-        assert_frame_equal(both, expected)
+        tm.assert_frame_equal(both, expected)
         lags = sm.tsa.lagmat(self.series, 3, trim='forward', original='ex', use_pandas=True)
-        assert_frame_equal(lags, expected.iloc[:, 1:])
+        tm.assert_frame_equal(lags, expected.iloc[:, 1:])
         lags, lead = sm.tsa.lagmat(self.series, 3, trim='forward',
                                    original='sep', use_pandas=True)
-        assert_frame_equal(lead, expected.iloc[:, :1])
-        assert_frame_equal(lags, expected.iloc[:, 1:])
+        tm.assert_frame_equal(lead, expected.iloc[:, :1])
+        tm.assert_frame_equal(lags, expected.iloc[:, 1:])
 
     def test_series_both(self):
         expected = pd.DataFrame(index=self.series.index,
@@ -362,12 +362,12 @@ class TestLagmat(object):
         expected = expected.iloc[3:]
 
         both = sm.tsa.lagmat(self.series, 3, trim='both', original='in', use_pandas=True)
-        assert_frame_equal(both, expected)
+        tm.assert_frame_equal(both, expected)
         lags = sm.tsa.lagmat(self.series, 3, trim='both', original='ex', use_pandas=True)
-        assert_frame_equal(lags, expected.iloc[:, 1:])
+        tm.assert_frame_equal(lags, expected.iloc[:, 1:])
         lags, lead = sm.tsa.lagmat(self.series, 3, trim='both', original='sep', use_pandas=True)
-        assert_frame_equal(lead, expected.iloc[:, :1])
-        assert_frame_equal(lags, expected.iloc[:, 1:])
+        tm.assert_frame_equal(lead, expected.iloc[:, :1])
+        tm.assert_frame_equal(lags, expected.iloc[:, 1:])
 
 
 def test_freq_to_period():
@@ -401,10 +401,10 @@ class TestDetrend(object):
         data = pd.Series(self.data_1d, name='one')
         detrended = sm.tsa.detrend(data, order=1)
         assert_array_almost_equal(detrended.values, np.zeros_like(data))
-        assert_series_equal(detrended, pd.Series(detrended.values, name='one'))
+        tm.assert_series_equal(detrended, pd.Series(detrended.values, name='one'))
         detrended = sm.tsa.detrend(data, order=0)
         assert_array_almost_equal(detrended.values, pd.Series([-2, -1, 0, 1, 2]))
-        assert_series_equal(detrended, pd.Series(detrended.values, name='one'))
+        tm.assert_series_equal(detrended, pd.Series(detrended.values, name='one'))
 
     def test_detrend_dataframe(self):
         columns = ['one', 'two']
@@ -413,15 +413,15 @@ class TestDetrend(object):
 
         detrended = sm.tsa.detrend(data, order=1, axis=0)
         assert_array_almost_equal(detrended.values, np.zeros_like(data))
-        assert_frame_equal(detrended, pd.DataFrame(detrended.values, columns=columns, index=index))
+        tm.assert_frame_equal(detrended, pd.DataFrame(detrended.values, columns=columns, index=index))
 
         detrended = sm.tsa.detrend(data, order=0, axis=0)
         assert_array_almost_equal(detrended.values, [[-4, -4], [-2, -2], [0, 0], [2, 2], [4, 4]])
-        assert_frame_equal(detrended, pd.DataFrame(detrended.values, columns=columns, index=index))
+        tm.assert_frame_equal(detrended, pd.DataFrame(detrended.values, columns=columns, index=index))
 
         detrended = sm.tsa.detrend(data, order=0, axis=1)
         assert_array_almost_equal(detrended.values, [[-0.5, 0.5], [-0.5, 0.5], [-0.5, 0.5], [-0.5, 0.5], [-0.5, 0.5]])
-        assert_frame_equal(detrended, pd.DataFrame(detrended.values, columns=columns, index=index))
+        tm.assert_frame_equal(detrended, pd.DataFrame(detrended.values, columns=columns, index=index))
 
     def test_detrend_dim_too_large(self):
         assert_raises(NotImplementedError, sm.tsa.detrend, np.ones((3, 3, 3)))
@@ -440,37 +440,37 @@ class TestAddTrend(object):
         appended = tools.add_trend(s)
         expected = pd.DataFrame(s)
         expected['const'] = self.c
-        assert_frame_equal(expected, appended)
+        tm.assert_frame_equal(expected, appended)
 
         prepended = tools.add_trend(s, prepend=True)
         expected = pd.DataFrame(s)
         expected.insert(0, 'const', self.c)
-        assert_frame_equal(expected, prepended)
+        tm.assert_frame_equal(expected, prepended)
 
         s = pd.Series(self.arr_1d)
         appended = tools.add_trend(s, trend='ct')
         expected = pd.DataFrame(s)
         expected['const'] = self.c
         expected['trend'] = self.t
-        assert_frame_equal(expected, appended)
+        tm.assert_frame_equal(expected, appended)
 
     def test_dataframe(self):
         df = pd.DataFrame(self.arr_2d)
         appended = tools.add_trend(df)
         expected = df.copy()
         expected['const'] = self.c
-        assert_frame_equal(expected, appended)
+        tm.assert_frame_equal(expected, appended)
 
         prepended = tools.add_trend(df, prepend=True)
         expected = df.copy()
         expected.insert(0, 'const', self.c)
-        assert_frame_equal(expected, prepended)
+        tm.assert_frame_equal(expected, prepended)
 
         df = pd.DataFrame(self.arr_2d)
         appended = tools.add_trend(df, trend='t')
         expected = df.copy()
         expected['trend'] = self.t
-        assert_frame_equal(expected, appended)
+        tm.assert_frame_equal(expected, appended)
 
         df = pd.DataFrame(self.arr_2d)
         appended = tools.add_trend(df, trend='ctt')
@@ -478,7 +478,7 @@ class TestAddTrend(object):
         expected['const'] = self.c
         expected['trend'] = self.t
         expected['trend_squared'] = self.t ** 2
-        assert_frame_equal(expected, appended)
+        tm.assert_frame_equal(expected, appended)
 
     def test_recarray(self):
         recarray = pd.DataFrame(self.arr_2d).to_records(index=False, convert_datetime64=False)
@@ -625,7 +625,7 @@ class TestLagmat2DS(object):
                 else:
                     cols.append(c + '.L.' + str(lags))
         expected = pd.DataFrame(expected, index=data.index, columns=cols)
-        assert_frame_equal(lagmat, expected)
+        tm.assert_frame_equal(lagmat, expected)
 
         lagmat = sm.tsa.lagmat2ds(data.iloc[:, :2], 3, use_pandas=True, trim='both')
         expected = self._prepare_expected(data.values[:, :2], 3)
@@ -638,7 +638,7 @@ class TestLagmat2DS(object):
                     cols.append(c + '.L.' + str(lags))
         expected = pd.DataFrame(expected, index=data.index, columns=cols)
         expected = expected.iloc[3:]
-        assert_frame_equal(lagmat, expected)
+        tm.assert_frame_equal(lagmat, expected)
 
         data = self.series
         lagmat = sm.tsa.lagmat2ds(data, 5, use_pandas=True)
@@ -653,7 +653,7 @@ class TestLagmat2DS(object):
                 cols.append(c + '.L.' + str(lags))
 
         expected = pd.DataFrame(expected, index=data.index, columns=cols)
-        assert_frame_equal(lagmat, expected)
+        tm.assert_frame_equal(lagmat, expected)
 
     def test_3d_error(self):
         data = np.array(2)
