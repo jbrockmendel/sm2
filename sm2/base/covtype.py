@@ -125,10 +125,7 @@ def get_robustcov_results(self, cov_type='HC1', use_t=None, **kwds):
     except in the case of cov_type `HCx`
 
     """
-
-    
-
-    #normalize names
+    # normalize names
     if cov_type == 'nw-panel':
         cov_type = 'hac-panel'
     if cov_type == 'nw-groupsum':
