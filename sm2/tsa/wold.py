@@ -38,8 +38,8 @@ def _check_is_poly(params):
     if np.ndim(params) != 1:  # pragma: no cover
         raise ValueError(params.shape, params)
     elif params[0] != 1:  # pragma: no cover
-        msg = 'Params must be in the form of a Lag Polynomial'
-        raise ValueError(msg, params)
+        raise ValueError('Params must be in the form of a Lag Polynomial',
+                         params)
 
 
 # TODO: re-cover the ValueErrors here
@@ -50,12 +50,11 @@ def _check_param_dims(params):
     # if len(params.shape) == 2:
     #    params = params[None, :, :]
     if len(params.shape) != 3:  # pragma: no cover
-        msg = 'AR and MA should each be 1 or 3-dimensional.'
-        raise ValueError(params.shape, msg)
+        raise ValueError('AR and MA should each be 1 or 3-dimensional.',
+                         params.shape)
     if params.shape[1] != params.shape[2]:  # pragma: no cover
-        msg = ('Dimensions 1 and 2 of AR coefficients should be equal.  '
-               'i.e. K x N x N')
-        raise ValueError(params.shape, msg)
+        raise ValueError('Dimensions 1 and 2 of AR coefficients should be '
+                         'equal.  i.e. K x N x N', params.shape)
 
 
 # TODO: re-cover the ValueErrors here
@@ -89,9 +88,9 @@ def _unpack_lags_and_neqs(ar, ma, intercept):
         k_ma = ma.shape[0]
         if len(ma.shape) > 1:
             _check_param_dims(ma)
-            if len(ar.shape) != 3 or ar.shape[1] != ma.shape[1]:  # pragma: no cover
-                msg = 'ar.shape[1:] must match ma.shape[1:]'
-                raise ValueError(ar.shape, ma.shape, msg)
+            if len(ar.shape) != 3 or ar.shape[1] != ma.shape[1]:
+                raise ValueError('ar.shape[1:] must match ma.shape[1:]',
+                                 ar.shape, ma.shape)  # pragma: no cover
             neqs = ma.shape[1]
     else:
         k_ma = 0
@@ -206,7 +205,8 @@ class RootsMixin(object):
 
         If the MA(q) process
 
-            y_t = \mu + \epsilon_t + \theta_1\epsilon_{t-1} +...+ \theta_q\epsilon_{t-q}
+            y_t = \mu + \epsilon_t + \theta_1\epsilon_{t-1}
+                      + ... + \theta_q\epsilon_{t-q}
                 = \mu + \theta(L)\epsilon_t
 
         can be rewritten as a linear combination of its past
@@ -317,7 +317,7 @@ class ARMAParams(object):
         k_ma = getattr(self, 'k_ma', 0)
         k = getattr(self, 'k_exog', 0) + self.k_trend
 
-        arparams = start_params[k:k + k_ar]  # TODO: Should we call this arcoefs?
+        arparams = start_params[k:k + k_ar]  # TODO: call this arcoefs?
         maparams = start_params[k + k_ar:]
 
         newparams = start_params.copy()
@@ -328,7 +328,8 @@ class ARMAParams(object):
 
         if k_ma != 0:
             # MA coeffs
-            newparams[k + k_ar:k + k_ar + k_ma] = self._ma_invtransparams(maparams)
+            mainv = self._ma_invtransparams(maparams)
+            newparams[k + k_ar:k + k_ar + k_ma] = mainv
 
         return newparams
 
@@ -369,7 +370,8 @@ class ARMAParams(object):
         for j in range(len(params) - 1, 0, -1):
             a = params[j]
             for kiter in range(j):
-                tmp[kiter] = (params[kiter] + a * params[j - kiter - 1]) / (1 - a**2)
+                val = (params[kiter] + a * params[j - kiter - 1]) / (1 - a**2)
+                tmp[kiter] = val
             params[:j] = tmp[:j]
 
         invarcoefs = -np.log((1 - params) / (1 + params))
@@ -388,7 +390,8 @@ class ARMAParams(object):
         for j in range(len(macoefs) - 1, 0, -1):
             b = macoefs[j]
             for kiter in range(j):
-                tmp[kiter] = (macoefs[kiter] - b * macoefs[j - kiter - 1]) / (1 - b**2)
+                val = (macoefs[kiter] - b * macoefs[j - kiter - 1]) / (1 - b**2)
+                tmp[kiter] = val
             macoefs[:j] = tmp[:j]
 
         invmacoefs = -np.log((1 - macoefs) / (1 + macoefs))
@@ -837,7 +840,8 @@ class ARMARepresentation(_DimBase, RootsMixin):
 
         The spectral density function $f(\omega)$ of this process is then:
 
-        f(\omega) = \sigma^2_{\epsilon} \frac{|\theta(e^{-2\pi i \omega})|^2}{|\phi(e^{-2\pi i \omega})|^2}
+        f(\omega) = \sigma^2_{\epsilon} \frac{|\theta(e^{-2\pi i \omega})|^2}\
+            {|\phi(e^{-2\pi i \omega})|^2}
 
         # TODO: Reference for the claim above
 

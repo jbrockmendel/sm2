@@ -265,8 +265,6 @@ class ARRepresentationCase(unittest.TestCase):
     def test_2ma(self):
         # Getting the MA Representation should be an exponential decay
         # with rate .5
-        ar = self.ar
-        ma = self.ma
         arma = self.arma
         marep = arma.arma2ma(5)
         assert (marep == [2.**-n for n in range(len(marep))]).all()
