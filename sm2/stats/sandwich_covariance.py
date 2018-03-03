@@ -173,7 +173,7 @@ def _HCCM(results, scale):
 
 def cov_hc0(results):
     """
-    See statsmodels.RegressionResults
+    See sm2.RegressionResults
     """
 
     het_scale = results.resid**2 # or whitened residuals? only OLS?
@@ -183,7 +183,7 @@ def cov_hc0(results):
 
 def cov_hc1(results):
     """
-    See statsmodels.RegressionResults
+    See sm2.RegressionResults
     """
 
     het_scale = results.nobs/(results.df_resid)*(results.resid**2)
@@ -192,7 +192,7 @@ def cov_hc1(results):
 
 def cov_hc2(results):
     """
-    See statsmodels.RegressionResults
+    See sm2.RegressionResults
     """
 
     # probably could be optimized
@@ -205,7 +205,7 @@ def cov_hc2(results):
 
 def cov_hc3(results):
     """
-    See statsmodels.RegressionResults
+    See sm2.RegressionResults
     """
 
     # above probably could be optimized to only calc the diag

@@ -24,6 +24,7 @@ DECIMAL_3 = 3
 DECIMAL_2 = 2
 DECIMAL_1 = 1
 
+
 '''
 class CheckADF(object):
     """
@@ -482,6 +483,7 @@ def test_acovf2d():
     X = np.random.random((10,2))
     assert_raises(ValueError, acovf, X)
 
+
 def test_acovf_fft_vs_convolution():
     np.random.seed(1)
     q = np.random.normal(size=100)
@@ -496,7 +498,6 @@ def test_acovf_fft_vs_convolution():
 def test_arma_order_select_ic():
     # smoke test, assumes info-criteria are right
     from statsmodels.tsa.arima_process import arma_generate_sample
-    import statsmodels.api as sm
 
     arparams = np.array([.75, -.25])
     maparams = np.array([.65, .35])
@@ -534,6 +535,7 @@ def test_arma_order_select_ic():
     assert_(res.aic.columns.equals(aic.columns))
     assert_equal(res.aic_min_order, (1, 2))
 
+
 def test_arma_order_select_ic_failure():
     # this should trigger an SVD convergence failure, smoke test that it
     # returns, likely platform dependent failure...
@@ -548,7 +550,7 @@ def test_arma_order_select_ic_failure():
        -0.15943768324388354896,  0.25169301564268781179,
         0.1762305709151877342 ,  0.12678133368791388857,
         0.89755829086753169399,  0.82667068795350151511])
-    import warnings
+
     with warnings.catch_warnings():
         # catch a hessian inversion and convergence failure warning
         warnings.simplefilter("ignore")
@@ -556,8 +558,7 @@ def test_arma_order_select_ic_failure():
 
 
 def test_acf_fft_dataframe():
-    # regression test #322
-
+    # GH#322
     result = acf(sunspots.load_pandas().data[['SUNACTIVITY']], fft=True)
     assert_equal(result.ndim, 1)
 

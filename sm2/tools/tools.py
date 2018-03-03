@@ -105,7 +105,7 @@ def categorical(data, col=None, dictnames=False, drop=False, ):
     Examples
     --------
     >>> import numpy as np
-    >>> import statsmodels.api as sm
+    >>> import sm2.api as sm
 
     Univariate examples
 
@@ -455,7 +455,7 @@ def chain_dot(*arrs):
     Examples
     --------
     >>> import numpy as np
-    >>> from statsmodels.tools import chain_dot
+    >>> from sm2.tools import chain_dot
     >>> A = np.arange(1,13).reshape(3,4)
     >>> B = np.arange(3,15).reshape(4,3)
     >>> C = np.arange(5,8).reshape(3,1)
