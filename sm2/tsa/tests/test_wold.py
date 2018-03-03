@@ -42,21 +42,21 @@ def test_arma_periodiogram_AR1():
     wsd = wold.arma_periodogram(ar, ma, None, 0)
 
     (w, h) = scipy.signal.freqz(ma, ar, worN=None, whole=0)
-    sd = np.abs(h)**2/np.sqrt(2*np.pi)
+    sd = np.abs(h)**2 / np.sqrt(2 * np.pi)
 
     hrng = np.arange(-100, 100)  # 100 is an arbitrary cutoff
     # Autocorrelations
     # The reader can verify that the variance of this process is 4/3
-    variance = 4./3.
+    variance = 4. / 3.
     gammas = variance * np.array([2.**-abs(n) for n in hrng])
 
     fw = 0 * w
     for n in range(len(fw)):
         omega = w[n]
-        val = gammas * np.exp(-1j*omega*hrng)
+        val = gammas * np.exp(-1j * omega * hrng)
         # Note we are not multiplying by 2 here.  I dont know of an
         # especially good reason why not.
-        fw[n] = val.sum().real / np.sqrt(2*np.pi)
+        fw[n] = val.sum().real / np.sqrt(2 * np.pi)
         # Note that the denominator is not standard across implementations
 
     assert_allclose(fw, sd)
@@ -73,7 +73,7 @@ def test_arma_periodiogram_MA1():
     wsd = wold.arma_periodogram(ar, ma, None, 0)
 
     (w, h) = scipy.signal.freqz(ma, ar, worN=None, whole=0)
-    sd = np.abs(h)**2/np.sqrt(2*np.pi)
+    sd = np.abs(h)**2 / np.sqrt(2 * np.pi)
 
     hrng = np.arange(-100, 100)  # 100 is an arbitrary cutoff
     # Autocorrelations
@@ -85,10 +85,10 @@ def test_arma_periodiogram_MA1():
     fw = 0 * w
     for n in range(len(fw)):
         omega = w[n]
-        val = gammas * np.exp(-1j*omega*hrng)
+        val = gammas * np.exp(-1j * omega * hrng)
         # Note we are not multiplying by 2 here.  I dont know of an
         # especially good reason why not.
-        fw[n] = val.sum().real / np.sqrt(2*np.pi)
+        fw[n] = val.sum().real / np.sqrt(2 * np.pi)
         # Note that the denominator is not standard across implementations
 
     assert_allclose(fw, sd)

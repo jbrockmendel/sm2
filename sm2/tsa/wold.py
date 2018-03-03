@@ -172,7 +172,7 @@ class RootsMixin(object):
         z = self.arroots
         # if not z.size:
         #    return np.nan
-        return np.arctan2(z.imag, z.real) / (2*np.pi)
+        return np.arctan2(z.imag, z.real) / (2 * np.pi)
 
     @property
     def mafreq(self):
@@ -184,7 +184,7 @@ class RootsMixin(object):
         z = self.maroots
         # if not z.size:
         #    return np.nan
-        return np.arctan2(z.imag, z.real) / (2*np.pi)
+        return np.arctan2(z.imag, z.real) / (2 * np.pi)
 
     @property
     def isstationary(self):
@@ -268,8 +268,8 @@ class ARMAParams(object):
     def _unpack_params(params, order, k_trend, k_exog, reverse=False):
         (k_ar, k_ma) = order
         k = k_trend + k_exog
-        maparams = params[k+k_ar:]
-        arparams = params[k:k+k_ar]
+        maparams = params[k + k_ar:]
+        arparams = params[k:k + k_ar]
         trend = params[:k_trend]
         exparams = params[k_trend:k]
         if reverse:
@@ -290,8 +290,8 @@ class ARMAParams(object):
         k = getattr(self, 'k_exog', 0) + self.k_trend
 
         # TODO: Use unpack_params?
-        arparams = params[k:k+k_ar]  # TODO: Should we call this arcoefs?
-        maparams = params[k+k_ar:]
+        arparams = params[k:k + k_ar]  # TODO: Should we call this arcoefs?
+        maparams = params[k + k_ar:]
 
         newparams = params.copy()
 
@@ -301,11 +301,11 @@ class ARMAParams(object):
 
         if k_ar != 0:
             # AR Coeffs
-            newparams[k:k+k_ar] = self._ar_transparams(arparams.copy())
+            newparams[k:k + k_ar] = self._ar_transparams(arparams.copy())
 
         if k_ma != 0:
             # MA Coeffs
-            newparams[k+k_ar:] = self._ma_transparams(maparams.copy())
+            newparams[k + k_ar:] = self._ma_transparams(maparams.copy())
 
         return newparams
 
@@ -317,18 +317,18 @@ class ARMAParams(object):
         k_ma = getattr(self, 'k_ma', 0)
         k = getattr(self, 'k_exog', 0) + self.k_trend
 
-        arparams = start_params[k:k+k_ar]  # TODO: Should we call this arcoefs?
-        maparams = start_params[k+k_ar:]
+        arparams = start_params[k:k + k_ar]  # TODO: Should we call this arcoefs?
+        maparams = start_params[k + k_ar:]
 
         newparams = start_params.copy()
 
         if k_ar != 0:
             # AR coeffs
-            newparams[k:k+k_ar] = self._ar_invtransparams(arparams)
+            newparams[k:k + k_ar] = self._ar_invtransparams(arparams)
 
         if k_ma != 0:
             # MA coeffs
-            newparams[k+k_ar:k+k_ar+k_ma] = self._ma_invtransparams(maparams)
+            newparams[k + k_ar:k + k_ar + k_ma] = self._ma_invtransparams(maparams)
 
         return newparams
 
@@ -346,12 +346,12 @@ class ARMAParams(object):
         Jones(1980)
         """
         meparams = np.exp(-params)
-        newparams = (1-meparams) / (1+meparams)
-        tmp = (1-meparams) / (1+meparams)
+        newparams = (1 - meparams) / (1 + meparams)
+        tmp = (1 - meparams) / (1 + meparams)
         for j in range(1, len(params)):
             a = newparams[j]
             for kiter in range(j):
-                tmp[kiter] -= a * newparams[j-kiter-1]
+                tmp[kiter] -= a * newparams[j - kiter - 1]
             newparams[:j] = tmp[:j]
         return newparams
 
@@ -366,13 +366,13 @@ class ARMAParams(object):
         """
         # AR coeffs
         tmp = params.copy()
-        for j in range(len(params)-1, 0, -1):
+        for j in range(len(params) - 1, 0, -1):
             a = params[j]
             for kiter in range(j):
-                tmp[kiter] = (params[kiter] + a * params[j-kiter-1])/(1-a**2)
+                tmp[kiter] = (params[kiter] + a * params[j - kiter - 1]) / (1 - a**2)
             params[:j] = tmp[:j]
 
-        invarcoefs = -np.log((1-params)/(1+params))
+        invarcoefs = -np.log((1 - params) / (1 + params))
         return invarcoefs
 
     @staticmethod
@@ -385,13 +385,13 @@ class ARMAParams(object):
             The transformed MA coefficients
         """
         tmp = macoefs.copy()
-        for j in range(len(macoefs)-1, 0, -1):
+        for j in range(len(macoefs) - 1, 0, -1):
             b = macoefs[j]
             for kiter in range(j):
-                tmp[kiter] = (macoefs[kiter]-b * macoefs[j-kiter-1])/(1-b**2)
+                tmp[kiter] = (macoefs[kiter] - b * macoefs[j - kiter - 1]) / (1 - b**2)
             macoefs[:j] = tmp[:j]
 
-        invmacoefs = -np.log((1-macoefs)/(1+macoefs))
+        invmacoefs = -np.log((1 - macoefs) / (1 + macoefs))
         return invmacoefs
 
     @staticmethod
@@ -408,14 +408,14 @@ class ARMAParams(object):
         Jones(1980)
         """
         meparams = np.exp(-params)
-        newparams = (1-meparams) / (1+meparams)
-        tmp = (1-meparams) / (1+meparams)
+        newparams = (1 - meparams) / (1 + meparams)
+        tmp = (1 - meparams) / (1 + meparams)
 
         # levinson-durbin to get macf
         for j in range(1, len(params)):
             b = newparams[j]
             for kiter in range(j):
-                tmp[kiter] += b * newparams[j-kiter-1]
+                tmp[kiter] += b * newparams[j - kiter - 1]
             newparams[:j] = tmp[:j]
         return newparams
 
@@ -481,7 +481,7 @@ class VARRepresentation(_DimBase):
         p = neqs * k_ar
         arr = np.zeros((p, p))
         arr[:neqs, :] = np.column_stack(arcoefs)
-        arr[neqs:, :-neqs] = np.eye(p-neqs)
+        arr[neqs:, :-neqs] = np.eye(p - neqs)
         roots = np.linalg.eig(arr)[0]**-1
         idx = np.argsort(np.abs(roots))[::-1]  # sort by reverse modulus
         return roots[idx]
@@ -588,16 +588,16 @@ class VARRepresentation(_DimBase):
         # if macoefs is not None and macoefs.shape[0] != 1:
         #    raise NotImplementedError
 
-        phis = np.zeros((maxn+1, k, k))
+        phis = np.zeros((maxn + 1, k, k))
         phis[0] = np.eye(k)
 
         # recursively compute Phi matrices
-        for i in range(1, maxn+1):
-            for j in range(1, i+1):
+        for i in range(1, maxn + 1):
+            for j in range(1, i + 1):
                 if j > p:
                     break
 
-                phis[i] += np.dot(phis[i-j], arcoefs[j-1])
+                phis[i] += np.dot(phis[i - j], arcoefs[j - 1])
 
         return phis
         # TODO: there's an analytical solution for this isnt there?
@@ -877,7 +877,7 @@ class ARMARepresentation(_DimBase, RootsMixin):
         _check_is_poly(np.array(ar))
         _check_is_poly(np.array(ma))
         (w, h) = scipy.signal.freqz(ma, ar, worN=worN, whole=whole)
-        sd = np.abs(h)**2/np.sqrt(2*np.pi)
+        sd = np.abs(h)**2 / np.sqrt(2 * np.pi)
         # TODO: is this normalization standard in the literature?
         # Fourier Transforms are like armpits...
         if np.isnan(h).any():
