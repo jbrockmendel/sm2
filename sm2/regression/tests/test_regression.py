@@ -4,16 +4,18 @@ Test functions for models.regression
 # TODO: Test for LM
 from statsmodels.compat.python import long, lrange
 import warnings
+
 import pandas
 import numpy as np
 from numpy.testing import (assert_almost_equal, assert_approx_equal, assert_,
                            assert_raises, assert_equal, assert_allclose)
 from scipy.linalg import toeplitz
-from statsmodels.tools.tools import add_constant, categorical
-from statsmodels.compat.numpy import np_matrix_rank
-from statsmodels.regression.linear_model import OLS, WLS, GLS, yule_walker
-from statsmodels.datasets import longley
 from scipy.stats import t as student_t
+
+from sm2.tools.tools import add_constant, categorical
+from sm2.compat.numpy import np_matrix_rank
+from sm2.regression.linear_model import OLS, WLS, GLS, yule_walker
+from sm2.datasets import longley
 
 DECIMAL_4 = 4
 DECIMAL_3 = 3
@@ -22,7 +24,7 @@ DECIMAL_1 = 1
 DECIMAL_7 = 7
 DECIMAL_0 = 0
 
-
+'''
 class CheckRegressionResults(object):
     """
     res2 contains results from Rmodelwrap or were obtained from a statistical
@@ -706,7 +708,7 @@ class TestWLSExogWeights(CheckRegressionResults):
     @classmethod
     def setup_class(cls):
         from .results.results_regression import CCardWLS
-        from statsmodels.datasets.ccard import load
+        from sm2.datasets.ccard import load
         dta = load()
 
         dta.exog = add_constant(dta.exog, prepend=False)
@@ -756,7 +758,7 @@ def test_wls_tss():
 class TestWLSScalarVsArray(CheckRegressionResults):
     @classmethod
     def setup_class(cls):
-        from statsmodels.datasets.longley import load
+        from sm2.datasets.longley import load
         dta = load()
         dta.exog = add_constant(dta.exog, prepend=True)
         wls_scalar = WLS(dta.endog, dta.exog, weights=1./3).fit()
@@ -768,7 +770,7 @@ class TestWLSScalarVsArray(CheckRegressionResults):
 #class TestWLS_GLS(CheckRegressionResults):
 #    @classmethod
 #    def setup_class(cls):
-#        from statsmodels.datasets.ccard import load
+#        from sm2.datasets.ccard import load
 #        data = load()
 #        cls.res1 = WLS(data.endog, data.exog, weights = 1/data.exog[:,2]).fit()
 #        cls.res2 = GLS(data.endog, data.exog, sigma = data.exog[:,2]).fit()
@@ -778,7 +780,7 @@ class TestWLSScalarVsArray(CheckRegressionResults):
 
 
 def test_wls_missing():
-    from statsmodels.datasets.ccard import load
+    from sm2.datasets.ccard import load
     data = load()
     endog = data.endog
     endog[[10, 25]] = np.nan
@@ -815,7 +817,7 @@ class TestGLS_OLS(CheckRegressionResults):
 # TODO: test AR
 # why the two-stage in AR?
 # class test_ar(object):
-#     from statsmodels.datasets.sunspots import load
+#     from sm2.datasets.sunspots import load
 #     data = load()
 #     model = AR(data.endog, rho=4).fit()
 #     R_res = RModel(data.endog, aic="FALSE", order_max=4)#
@@ -832,7 +834,7 @@ class TestGLS_OLS(CheckRegressionResults):
 class TestYuleWalker(object):
     @classmethod
     def setup_class(cls):
-        from statsmodels.datasets.sunspots import load
+        from sm2.datasets.sunspots import load
         data = load()
         cls.rho, cls.sigma = yule_walker(data.endog, order=4,
                                          method="mle")
@@ -1137,7 +1139,7 @@ def test_fvalue_implicit_constant():
     x = ((x > 0) == [True, False]).astype(int)
     y = x.sum(1) + np.random.randn(nobs)
 
-    from statsmodels.regression.linear_model import OLS, WLS
+    from sm2.regression.linear_model import OLS, WLS
 
     res = OLS(y, x).fit(cov_type='HC1')
     assert_(np.isnan(res.fvalue))
@@ -1157,7 +1159,7 @@ def test_fvalue_only_constant():
     x = np.ones(nobs)
     y = np.random.randn(nobs)
 
-    from statsmodels.regression.linear_model import OLS, WLS
+    from sm2.regression.linear_model import OLS, WLS
 
     res = OLS(y, x).fit(cov_type='hac', cov_kwds={'maxlags': 3})
     assert_(np.isnan(res.fvalue))
@@ -1243,8 +1245,4 @@ def test_regularized_options():
     result2 = model2.fit_regularized(alpha=1., L1_wt=0.5,
                                      start_params=np.zeros(5))
     assert_allclose(result1.params, result2.params)
-
-
-if __name__ == "__main__":
-    import pytest
-    pytest.main([__file__, '-vvs', '-x', '--pdb'])
+'''
