@@ -10,8 +10,8 @@ class SaveLoadMixin(object):
     def __getstate__(self):
         return self.__dict__
 
-    def __setstate__(self, dict_):
-        self.__dict__.update(dict_)
+    def __setstate__(self, state):
+        self.__dict__.update(state)
 
     def save(self, fname, remove_data=False):
         """save a pickle of this instance
