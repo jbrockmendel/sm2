@@ -25,7 +25,6 @@ class SaveLoadMixin(object):
             If True, then all arrays with length nobs are set to None before
             pickling. See the remove_data method.
             In some cases not all arrays will be set to None.
-
         """
         from sm2.iolib.smpickle import save_pickle
 
@@ -47,7 +46,6 @@ class SaveLoadMixin(object):
         Returns
         -------
         unpickled instance
-
         """
         from sm2.iolib.smpickle import load_pickle
         return load_pickle(fname)

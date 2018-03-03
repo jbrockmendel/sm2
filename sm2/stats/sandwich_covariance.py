@@ -105,19 +105,71 @@ from six.moves import range
 import pandas as pd
 import numpy as np
 
-from statsmodels.tools.grouputils import Group
-from statsmodels.stats.moment_helpers import se_cov
-
 __all__ = ['cov_cluster', 'cov_cluster_2groups', 'cov_hac', 'cov_nw_panel',
            'cov_white_simple',
            'cov_hc0', 'cov_hc1', 'cov_hc2', 'cov_hc3',
            'se_cov', 'weights_bartlett', 'weights_uniform']
 
 
+# TODO: taken from moment_helpers, not sure it belongs here
+def se_cov(arr):
+    return np.sqrt(np.diag(arr))
+
+
+# TODO: Extracted from grouputil, not sure it belongs here.
+def get_group_int(groups):
+    # Extracting from Group.__init__ the one bit that is needed
+    # in sandwich_covariance
+    uni, uni_idx, uni_inv = combine_indices(groups)
+    return uni
+
+
+# TODO: Extracted from grouputil, not sure it belongs here.
+def combine_indices(groups, prefix='', sep='.', return_labels=False):
+    """use np.unique to get integer group indices for product, intersection
+    """
+    if isinstance(groups, tuple):
+        groups = np.column_stack(groups)
+    else:
+        groups = np.asarray(groups)
+
+    dt = groups.dtype
+
+    is2d = (groups.ndim == 2)  # need to store
+
+    if is2d:
+        ncols = groups.shape[1]
+        if not groups.flags.c_contiguous:
+            groups = np.array(groups, order='C')
+
+        groups_ = groups.view([('', groups.dtype)] * groups.shape[1])
+    else:
+        groups_ = groups
+
+    uni, uni_idx, uni_inv = np.unique(groups_, return_index=True,
+                                      return_inverse=True)
+
+    if is2d:
+        uni = uni.view(dt).reshape(-1, ncols)
+
+        # avoiding a view would be
+        # for t in uni.dtype.fields.values():
+        #     assert (t[0] == dt)
+        #
+        # uni.dtype = dt
+        # uni.shape = (uni.size//ncols, ncols)
+
+    if return_labels:
+        label = [(prefix + sep.join(['%s'] * len(uni[0]))) % tuple(ii)
+                 for ii in uni]
+        return uni_inv, uni_idx, uni, label
+    else:
+        return uni_inv, uni_idx, uni
+    # TODO: get rid of multiple-return
 
 
 #----------- from linear_model.RegressionResults
-'''
+"""
     HC0_se
         White's (1980) heteroskedasticity robust standard errors.
         Defined as sqrt(diag(X.T X)^(-1)X.T diag(e_i^(2)) X(X.T X)^(-1)
@@ -157,16 +209,16 @@ __all__ = ['cov_cluster', 'cov_cluster_2groups', 'cov_hac', 'cov_nw_panel',
         which is in this case is resid^(2)/(1-h_ii)^(2).  HCCM matrices are
         only appropriate for OLS.
 
-'''
+"""
 
 # Note: HCCM stands for Heteroskedasticity Consistent Covariance Matrix
 def _HCCM(results, scale):
-    '''
+    """
     sandwich with pinv(x) * diag(scale) * pinv(x).T
 
     where pinv(x) = (X'X)^(-1) X
     and scale is (nobs,)
-    '''
+    """
     H = np.dot(results.model.pinv_wexog,
                scale[:, None] * results.model.pinv_wexog.T)
     return H
@@ -262,7 +314,7 @@ def _get_sandwich_arrays(results, cov_type=''):
 
 
 def _HCCM1(results, scale):
-    '''
+    """
     sandwich with pinv(x) * scale * pinv(x).T
 
     where pinv(x) = (X'X)^(-1) X
@@ -280,7 +332,7 @@ def _HCCM1(results, scale):
     H : ndarray (k_vars, k_vars)
         robust covariance matrix for the parameter estimates
 
-    '''
+    """
     if scale.ndim == 1:
         H = np.dot(results.model.pinv_wexog,
                    scale[:, None] * results.model.pinv_wexog.T)
@@ -291,7 +343,7 @@ def _HCCM1(results, scale):
 
 
 def _HCCM2(hessian_inv, scale):
-    '''
+    """
     sandwich with (X'X)^(-1) * scale * (X'X)^(-1)
 
     scale is (kvars, kvars)
@@ -309,7 +361,7 @@ def _HCCM2(hessian_inv, scale):
     H : ndarray (k_vars, k_vars)
         robust covariance matrix for the parameter estimates
 
-    '''
+    """
     if scale.ndim == 1:
         scale = scale[:, None]
 
@@ -319,7 +371,7 @@ def _HCCM2(hessian_inv, scale):
 
 #TODO: other kernels, move ?
 def weights_bartlett(nlags):
-    '''Bartlett weights for HAC
+    """Bartlett weights for HAC
 
     this will be moved to another module
 
@@ -333,13 +385,13 @@ def weights_bartlett(nlags):
     kernel : ndarray, (nlags+1,)
         weights for Bartlett kernel
 
-    '''
+    """
     # with lag zero
     return 1 - np.arange(nlags + 1) / (nlags + 1.)
 
 
 def weights_uniform(nlags):
-    '''uniform weights for HAC
+    """uniform weights for HAC
 
     this will be moved to another module
 
@@ -353,13 +405,13 @@ def weights_uniform(nlags):
     kernel : ndarray, (nlags+1,)
         weights for uniform kernel
 
-    '''
+    """
     # with lag zero
     return np.ones(nlags + 1)
 
 
 def S_hac_simple(x, nlags=None, weights_func=weights_bartlett):
-    '''inner covariance matrix for HAC (Newey, West) sandwich
+    """inner covariance matrix for HAC (Newey, West) sandwich
 
     assumes we have a single time series with zero axis consecutive, equal
     spaced time periods
@@ -387,7 +439,7 @@ def S_hac_simple(x, nlags=None, weights_func=weights_bartlett):
 
     options might change when other kernels besides Bartlett are available.
 
-    '''
+    """
 
     if x.ndim == 1:
         x = x[:,None]
@@ -407,7 +459,7 @@ def S_hac_simple(x, nlags=None, weights_func=weights_bartlett):
 
 
 def S_white_simple(x):
-    '''inner covariance matrix for White heteroscedastistity sandwich
+    """inner covariance matrix for White heteroscedastistity sandwich
 
 
     Parameters
@@ -424,7 +476,7 @@ def S_white_simple(x):
     -----
     this is just dot(X.T, X)
 
-    '''
+    """
     if x.ndim == 1:
         x = x[:, None]
 
@@ -432,7 +484,7 @@ def S_white_simple(x):
 
 
 def group_sums(x, group):
-    '''sum x for each group, simple bincount version, again
+    """sum x for each group, simple bincount version, again
 
     group : array, integer
         assumed to be consecutive integers
@@ -442,7 +494,7 @@ def group_sums(x, group):
     uses loop over columns of x
 
     #TODO: remove this, already copied to tools/grouputils
-    '''
+    """
 
     #TODO: transpose return in group_sum, need test coverage first
 
@@ -455,7 +507,7 @@ def group_sums(x, group):
 
 
 def S_hac_groupsum(x, time, nlags=None, weights_func=weights_bartlett):
-    '''inner covariance matrix for HAC over group sums sandwich
+    """inner covariance matrix for HAC over group sums sandwich
 
     This assumes we have complete equal spaced time periods.
     The number of time periods per group need not be the same, but we need
@@ -488,7 +540,7 @@ def S_hac_groupsum(x, time, nlags=None, weights_func=weights_bartlett):
     Daniel Hoechle, xtscc paper
     Driscoll and Kraay
 
-    '''
+    """
     #needs groupsums
 
     x_group_sums = group_sums(x, time).T  # TODO: transpose return in grou_sum
@@ -497,14 +549,14 @@ def S_hac_groupsum(x, time, nlags=None, weights_func=weights_bartlett):
 
 
 def S_crosssection(x, group):
-    '''inner covariance matrix for White on group sums sandwich
+    """inner covariance matrix for White on group sums sandwich
 
     I guess for a single categorical group only,
     categorical group, can also be the product/intersection of groups
 
     This is used by cov_cluster and indirectly verified
 
-    '''
+    """
     x_group_sums = group_sums(x, group).T  # TODO: why transposed?
 
     return S_white_simple(x_group_sums)
@@ -512,7 +564,7 @@ def S_crosssection(x, group):
 
 def cov_crosssection_0(results, group):
     # FIXME: If this is wrong, get rid of it!
-    '''this one is still wrong, use cov_cluster instead'''
+    """this one is still wrong, use cov_cluster instead"""
 
     # TODO: currently used version of groupsums requires 2d resid
     scale = S_crosssection(results.resid[:, None], group)
@@ -522,7 +574,7 @@ def cov_crosssection_0(results, group):
 
 
 def cov_cluster(results, group, use_correction=True):
-    '''cluster robust covariance matrix
+    """cluster robust covariance matrix
 
     Calculates sandwich covariance matrix for a single cluster, i.e. grouped
     variables.
@@ -544,7 +596,7 @@ def cov_cluster(results, group, use_correction=True):
     -----
     same result as Stata in UCLA example and same as Peterson
 
-    '''
+    """
     # TODO: currently used version of groupsums requires 2d resid
     xu, hessian_inv = _get_sandwich_arrays(results, cov_type='clu')
 
@@ -567,7 +619,7 @@ def cov_cluster(results, group, use_correction=True):
     return cov_c
 
 def cov_cluster_2groups(results, group, group2=None, use_correction=True):
-    '''cluster robust covariance matrix for two groups/clusters
+    """cluster robust covariance matrix for two groups/clusters
 
     Parameters
     ----------
@@ -593,7 +645,7 @@ def cov_cluster_2groups(results, group, group2=None, use_correction=True):
     -----
 
     verified against Peterson's table, (4 decimal print precision)
-    '''
+    """
 
     if group2 is None:
         if group.ndim != 2 or group.shape[1] != 2:
@@ -611,10 +663,10 @@ def cov_cluster_2groups(results, group, group2=None, use_correction=True):
     # [0] because we get still also returns bse
     cov1 = cov_cluster(results, group1, use_correction=use_correction)
 
-    group_intersection = Group(group)
+    group_int = get_group_int(group)
     # cov of cluster formed by intersection of two groups
     cov01 = cov_cluster(results,
-                        group_intersection.group_int,
+                        group_int,
                         use_correction=use_correction)
 
     # robust cov matrix for union of groups
@@ -624,7 +676,7 @@ def cov_cluster_2groups(results, group, group2=None, use_correction=True):
 
 
 def cov_white_simple(results, use_correction=True):
-    '''
+    """
     heteroscedasticity robust covariance matrix (White)
 
     Parameters
@@ -650,7 +702,7 @@ def cov_white_simple(results, use_correction=True):
     cov_hc1, cov_hc2, cov_hc3 : heteroscedasticity robust covariance matrices
         with small sample corrections
 
-    '''
+    """
     xu, hessian_inv = _get_sandwich_arrays(results)
     sigma = S_white_simple(xu)
 
@@ -665,7 +717,7 @@ def cov_white_simple(results, use_correction=True):
 
 def cov_hac_simple(results, nlags=None, weights_func=weights_bartlett,
                    use_correction=True):
-    '''
+    """
     heteroscedasticity and autocorrelation robust covariance matrix (Newey-West)
 
     Assumes we have a single time series with zero axis consecutive, equal
@@ -696,7 +748,7 @@ def cov_hac_simple(results, nlags=None, weights_func=weights_bartlett,
 
     options might change when other kernels besides Bartlett are available.
 
-    '''
+    """
     xu, hessian_inv = _get_sandwich_arrays(results)
     sigma = S_hac_simple(xu, nlags=nlags, weights_func=weights_func)
 
@@ -718,10 +770,10 @@ cov_hac = cov_hac_simple  # alias for users
 #separately
 
 def lagged_groups(x, lag, groupidx):
-    '''
+    """
     assumes sorted by time, groupidx is tuple of start and end values
     not optimized, just to get a working version, loop over groups
-    '''
+    """
     out0 = []
     out_lagged = []
     for l, u in groupidx:
@@ -736,12 +788,12 @@ def lagged_groups(x, lag, groupidx):
 
 
 def S_nw_panel(xw, weights, groupidx):
-    '''inner covariance matrix for HAC for panel data
+    """inner covariance matrix for HAC for panel data
 
     no denominator nobs used
 
     no reference for this, just accounting for time indices
-    '''
+    """
     nlags = len(weights)-1
 
     S = weights[0] * np.dot(xw.T, xw)  # weights just for completeness
@@ -754,7 +806,7 @@ def S_nw_panel(xw, weights, groupidx):
 
 def cov_nw_panel(results, nlags, groupidx, weights_func=weights_bartlett,
                  use_correction='hac'):
-    '''Panel HAC robust covariance matrix
+    """Panel HAC robust covariance matrix
 
     Assumes we have a panel of time series with consecutive, equal spaced time
     periods. Data is assumed to be in long format with time series of each
@@ -800,7 +852,7 @@ def cov_nw_panel(results, nlags, groupidx, weights_func=weights_bartlett,
     Options might change when other kernels besides Bartlett and uniform are
     available.
 
-    '''
+    """
     if nlags == 0: # so we can reproduce HC0 White
         weights = [1, 0]  # to avoid the scalar check in hac_nw
     else:
@@ -824,7 +876,7 @@ def cov_nw_panel(results, nlags, groupidx, weights_func=weights_bartlett,
 
 def cov_nw_groupsum(results, nlags, time, weights_func=weights_bartlett,
                  use_correction=0):
-    '''Driscoll and Kraay Panel robust covariance matrix
+    """Driscoll and Kraay Panel robust covariance matrix
 
     Robust covariance matrix for panel data of Driscoll and Kraay.
 
@@ -880,7 +932,7 @@ def cov_nw_groupsum(results, nlags, time, weights_func=weights_bartlett,
     Daniel Hoechle, xtscc paper
     Driscoll and Kraay
 
-    '''
+    """
 
     xu, hessian_inv = _get_sandwich_arrays(results)
 
