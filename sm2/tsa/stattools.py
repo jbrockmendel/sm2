@@ -1,21 +1,26 @@
 """
 Statistical tools for time series analysis
 """
-from statsmodels.compat.python import (iteritems, range, lrange, string_types,
-                                       lzip, zip, long)
-from statsmodels.compat.scipy import _next_regular
+
+from six import string_types, integer_types
+from six.moves import range, zip
 
 import numpy as np
 from numpy.linalg import LinAlgError
 from scipy import stats
 
-from statsmodels.regression.linear_model import OLS, yule_walker
-from statsmodels.tools.tools import add_constant, Bunch
-from statsmodels.tsa.tsatools import lagmat, lagmat2ds, add_trend
+from sm2.compat.scipy import _next_regular
+
+from sm2.tools.sm_exceptions import InterpolationWarning, MissingDataError
+from sm2.tools.tools import add_constant, Bunch
+
+from sm2.regression.linear_model import OLS, yule_walker
+
+from sm2.tsa.tsatools import lagmat, lagmat2ds, add_trend
+
 from statsmodels.tsa.adfvalues import mackinnonp, mackinnoncrit
 from statsmodels.tsa._bds import bds
 from statsmodels.tsa.arima_model import ARMA
-from statsmodels.tools.sm_exceptions import InterpolationWarning, MissingDataError
 
 
 __all__ = ['acovf', 'acf', 'pacf', 'pacf_yw', 'pacf_ols', 'ccovf', 'ccf',
@@ -86,9 +91,9 @@ def _autolag(mod, endog, exog, startlag, maxlag, method, modargs=(),
         results[lag] = mod_instance.fit()
 
     if method == "aic":
-        icbest, bestlag = min((v.aic, k) for k, v in iteritems(results))
+        icbest, bestlag = min((v.aic, k) for k, v in results.items())
     elif method == "bic":
-        icbest, bestlag = min((v.bic, k) for k, v in iteritems(results))
+        icbest, bestlag = min((v.bic, k) for k, v in results.items())
     elif method == "t-stat":
         #stop = stats.norm.ppf(.95)
         stop = 1.6448536269514722
@@ -204,7 +209,7 @@ def adfuller(x, maxlag=None, regression="c", autolag='AIC',
         store = True
 
     trenddict = {None: 'nc', 0: 'c', 1: 'ct', 2: 'ctt'}
-    if regression is None or isinstance(regression, (int, long)):
+    if regression is None or isinstance(regression, integer_types):
         regression = trenddict[regression]
     regression = regression.lower()
     if regression not in ['c', 'nc', 'ct', 'ctt']:
@@ -481,7 +486,7 @@ def acf(x, unbiased=False, nlags=40, qstat=False, fft=False, alpha=None,
         varacf[1] = 1. / nobs
         varacf[2:] *= 1 + 2 * np.cumsum(acf[1:-1]**2)
         interval = stats.norm.ppf(1 - alpha / 2.) * np.sqrt(varacf)
-        confint = np.array(lzip(acf - interval, acf + interval))
+        confint = np.array(list(zip(acf - interval, acf + interval)))
         if not qstat:
             return acf, confint
     if qstat:
@@ -615,7 +620,7 @@ def pacf(x, nlags=40, method='ywunbiased', alpha=None):
     if alpha is not None:
         varacf = 1. / len(x) # for all lags >=1
         interval = stats.norm.ppf(1. - alpha / 2.) * np.sqrt(varacf)
-        confint = np.array(lzip(ret - interval, ret + interval))
+        confint = np.array(list(zip(ret - interval, ret + interval)))
         confint[0] = ret[0]  # fix confidence interval for lag 0 to varpacf=0
         return ret, confint
     else:
@@ -837,8 +842,6 @@ def grangercausalitytests(x, maxlag, addconst=True, verbose=True):
     Greene: Econometric Analysis
 
     """
-    from scipy import stats
-
     x = np.asarray(x)
 
     if x.shape[0] <= 3 * maxlag + int(addconst):
@@ -1117,8 +1120,8 @@ def arma_order_select_ic(y, max_ar=4, max_ma=2, ic='bic', trend='c',
     """
     from pandas import DataFrame
 
-    ar_range = lrange(0, max_ar + 1)
-    ma_range = lrange(0, max_ma + 1)
+    ar_range = list(range(0, max_ar + 1))
+    ma_range = list(range(0, max_ma + 1))
     if isinstance(ic, string_types):
         ic = [ic]
     elif not isinstance(ic, (list, tuple)):
@@ -1146,7 +1149,7 @@ def arma_order_select_ic(y, max_ar=4, max_ma=2, ic='bic', trend='c',
 
     # add the minimums to the results dict
     min_res = {}
-    for i, result in iteritems(res):
+    for i, result in res.items():
         mins = np.where(result.min().min() == result)
         min_res.update({i + '_min_order' : (mins[0][0], mins[1][0])})
     res.update(min_res)
