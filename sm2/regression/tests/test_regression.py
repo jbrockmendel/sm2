@@ -2,10 +2,12 @@
 Test functions for models.regression
 """
 # TODO: Test for LM
-from sm2.compat.python import long
 import warnings
+import os
+import re
 
-import pandas
+from six import PY3
+import pandas as pd
 import numpy as np
 from numpy.testing import (assert_almost_equal, assert_approx_equal, assert_,
                            assert_raises, assert_equal, assert_allclose)
@@ -13,9 +15,12 @@ from scipy.linalg import toeplitz
 from scipy.stats import t as student_t
 
 from sm2.tools.tools import add_constant, categorical
-from sm2.compat.numpy import np_matrix_rank
 from sm2.regression.linear_model import OLS, WLS, GLS, yule_walker
 from sm2.datasets import longley
+from sm2 import datasets
+
+if PY3:
+    long = int
 
 DECIMAL_4 = 4
 DECIMAL_3 = 3
@@ -167,7 +172,7 @@ class TestOLS(CheckRegressionResults):
         Q, R = np.linalg.qr(data.exog)
         model_qr.exog_Q, model_qr.exog_R = Q, R
         model_qr.normalized_cov_params = np.linalg.inv(np.dot(R.T, R))
-        model_qr.rank = np_matrix_rank(R)
+        model_qr.rank = np.linalg.matrix_rank(R)
         res_qr2 = model_qr.fit(method="qr")
 
         cls.res_qr = res_qr
@@ -937,17 +942,16 @@ def test_const_indicator():
 def test_706():
     # make sure one regressor pandas Series gets passed to DataFrame
     # for conf_int.
-    y = pandas.Series(np.random.randn(10))
-    x = pandas.Series(np.ones(10))
+    y = pd.Series(np.random.randn(10))
+    x = pd.Series(np.ones(10))
     res = OLS(y, x).fit()
     conf_int = res.conf_int()
     np.testing.assert_equal(conf_int.shape, (1, 2))
-    np.testing.assert_(isinstance(conf_int, pandas.DataFrame))
+    np.testing.assert_(isinstance(conf_int, pd.DataFrame))
 
 
 def test_summary():
-    # test 734
-    import re
+    # testGH#734
     dta = longley.load_pandas()
     X = dta.exog
     X["constant"] = 1
@@ -1019,8 +1023,6 @@ class TestRegularizedFit(object):
             assert_equal(result.params, 0.)
 
     def test_regularized(self):
-
-        import os
         from . import glmnet_r_results
 
         cur_dir = os.path.dirname(os.path.abspath(__file__))
@@ -1093,36 +1095,34 @@ class TestRegularizedFit(object):
 
 
 def test_formula_missing_cat():
-    # gh-805
+    # GH#805
 
-    import statsmodels.api as sm
-    from statsmodels.formula.api import ols
     from patsy import PatsyError
 
-    dta = sm.datasets.grunfeld.load_pandas().data
+    dta = datasets.grunfeld.load_pandas().data
     dta.loc[dta.index[0], 'firm'] = np.nan
 
-    mod = ols(formula='value ~ invest + capital + firm + year',
+    mod = OLS.from_formula(formula='value ~ invest + capital + firm + year',
               data=dta.dropna())
     res = mod.fit()
 
-    mod2 = ols(formula='value ~ invest + capital + firm + year',
+    mod2 = OLS.from_formula(formula='value ~ invest + capital + firm + year',
                data=dta)
     res2 = mod2.fit()
 
     assert_almost_equal(res.params.values, res2.params.values)
 
-    assert_raises(PatsyError, ols, 'value ~ invest + capital + firm + year',
+    assert_raises(PatsyError, OLS.from_formula, 'value ~ invest + capital + firm + year',
                   data=dta, missing='raise')
 
 
 def test_missing_formula_predict():
-    # see 2171
+    # see GH#2171
     nsample = 30
 
-    data = pandas.DataFrame({'x': np.linspace(0, 10, nsample)})
-    null = pandas.DataFrame({'x': np.array([np.nan])})
-    data = pandas.concat([data, null])
+    data = pd.DataFrame({'x': np.linspace(0, 10, nsample)})
+    null = pd.DataFrame({'x': np.array([np.nan])})
+    data = pd.concat([data, null])
     beta = np.array([1, 0.1])
     e = np.random.normal(size=nsample+1)
     data['y'] = beta[0] + beta[1] * data['x'] + e
@@ -1132,14 +1132,12 @@ def test_missing_formula_predict():
 
 
 def test_fvalue_implicit_constant():
-    # if constant is implicit, return nan see #2444
+    # if constant is implicit, return nan see GH#2444
     nobs = 100
     np.random.seed(2)
     x = np.random.randn(nobs, 1)
     x = ((x > 0) == [True, False]).astype(int)
     y = x.sum(1) + np.random.randn(nobs)
-
-    from sm2.regression.linear_model import OLS, WLS
 
     res = OLS(y, x).fit(cov_type='HC1')
     assert_(np.isnan(res.fvalue))
@@ -1153,13 +1151,11 @@ def test_fvalue_implicit_constant():
 
 
 def test_fvalue_only_constant():
-    # if only constant in model, return nan see #3642
+    # if only constant in model, return nan see GH#3642
     nobs = 20
     np.random.seed(2)
     x = np.ones(nobs)
     y = np.random.randn(nobs)
-
-    from sm2.regression.linear_model import OLS, WLS
 
     res = OLS(y, x).fit(cov_type='hac', cov_kwds={'maxlags': 3})
     assert_(np.isnan(res.fvalue))

@@ -11,17 +11,16 @@ numpy.lib.io
 """
 import datetime
 import sys
-from struct import unpack, calcsize, pack
-from struct import error as struct_error
+import struct
 
 import numpy as np
 from numpy.lib._iotools import _is_string_like, easy_dtype
-from pandas import isnull
+import pandas as pd
 
 from six import string_types, integer_types, PY3
 from six.moves import range, zip
 
-from sm2.compat.python import (lzip, lmap, lrange, lfilter, asbytes, asstr)
+from sm2.compat.python import asstr
 
 import sm2.tools.data as data_util
 from sm2.iolib.openfile import get_file_obj
@@ -288,16 +287,18 @@ class StataReader(object):
     #NOTE: the byte type seems to be reserved for categorical variables
     # with a label, but the underlying variable is -127 to 100
     # we're going to drop the label and cast to int
-    DTYPE_MAP = dict(lzip(lrange(1,245), ['a' + str(i) for i in range(1,245)]) + \
-                    [(251, np.int16),(252, np.int32),(253, int),
-                        (254, np.float32), (255, np.float64)])
-    TYPE_MAP = lrange(251)+list('bhlfd')
+    DTYPE_MAP = dict(list(zip(list(range(1, 245)), ['a' + str(i) for i in range(1, 245)])) +
+                    [(251, np.int16), (252, np.int32), (253, int),
+                     (254, np.float32), (255, np.float64)])
+    TYPE_MAP = list(range(251)) + list('bhlfd')
     #NOTE: technically, some of these are wrong. there are more numbers
     # that can be represented. it's the 27 ABOVE and BELOW the max listed
     # numeric data type in [U] 12.2.2 of the 11.2 manual
-    MISSING_VALUES = { 'b': (-127,100), 'h': (-32767, 32740), 'l':
-            (-2147483647, 2147483620), 'f': (-1.701e+38, +1.701e+38), 'd':
-            (-1.798e+308, +8.988e+307) }
+    MISSING_VALUES = {'b': (-127,100),
+                      'h': (-32767, 32740),
+                      'l': (-2147483647, 2147483620),
+                      'f': (-1.701e+38, +1.701e+38),
+                      'd': (-1.798e+308, +8.988e+307)}
 
     def __init__(self, fname, missing_values=False, encoding=None):
         if encoding == None:
@@ -358,11 +359,14 @@ class StataReader(object):
         """
         Returns a list of the dataset's StataVariables objects.
         """
-        return lmap(_StataVariable, zip(lrange(self._header['nvar']),
-            self._header['typlist'], self._header['varlist'],
-            self._header['srtlist'],
-            self._header['fmtlist'], self._header['lbllist'],
-            self._header['vlblist']))
+        zipped = zip(list(range(self._header['nvar'])),
+                     self._header['typlist'],
+                     self._header['varlist'],
+                     self._header['srtlist'],
+                     self._header['fmtlist'],
+                     self._header['lbllist'],
+                     self._header['vlblist'])
+        return [_StataVariable(x) for x in zipped]
 
     def dataset(self, as_dict=False):
         """
@@ -393,7 +397,7 @@ class StataReader(object):
             pass
 
         if as_dict:
-            vars = lmap(str, self.variables())
+            vars = [str(x) for x in self.variables()]
             for i in range(len(self)):
                 yield dict(zip(vars, self._next()))
         else:
@@ -429,14 +433,14 @@ class StataReader(object):
 
     def _null_terminate(self, s, encoding):
         if PY3: # have bytes not strings, so must decode
-            null_byte = asbytes('\x00')
+            null_byte = b'\x00'
             try:
                 s = s.lstrip(null_byte)[:s.index(null_byte)]
             except:
                 pass
             return s.decode(encoding)
         else:
-            null_byte = asbytes(b'\x00')
+            null_byte = b'\x00'
             try:
                 return s.lstrip(null_byte)[:s.index(null_byte)]
             except:
@@ -447,20 +451,20 @@ class StataReader(object):
         encoding = self._encoding
 
         # parse headers
-        self._header['ds_format'] = unpack('b', self._file.read(1))[0]
+        self._header['ds_format'] = struct.unpack('b', self._file.read(1))[0]
 
         if self._header['ds_format'] not in [113, 114, 115]:
             raise ValueError("Only file formats >= 113 (Stata >= 9)"
                              " are supported.  Got format %s.  Please report "
                              "if you think this error is incorrect." %
                              self._header['ds_format'])
-        byteorder = self._header['byteorder'] = unpack('b',
+        byteorder = self._header['byteorder'] = struct.unpack('b',
                 self._file.read(1))[0]==0x1 and '>' or '<'
-        self._header['filetype'] = unpack('b', self._file.read(1))[0]
+        self._header['filetype'] = struct.unpack('b', self._file.read(1))[0]
         self._file.read(1)
-        nvar = self._header['nvar'] = unpack(byteorder+'h',
+        nvar = self._header['nvar'] = struct.unpack(byteorder+'h',
                 self._file.read(2))[0]
-        self._header['nobs'] = unpack(byteorder+'i', self._file.read(4))[0]
+        self._header['nobs'] = struct.unpack(byteorder+'i', self._file.read(4))[0]
         self._header['data_label'] = self._null_terminate(self._file.read(81),
                                                             encoding)
         self._header['time_stamp'] = self._null_terminate(self._file.read(18),
@@ -472,7 +476,7 @@ class StataReader(object):
         self._header['dtyplist'] = [self.DTYPE_MAP[typ] for typ in typlist]
         self._header['varlist'] = [self._null_terminate(self._file.read(33),
                                     encoding) for i in range(nvar)]
-        self._header['srtlist'] = unpack(byteorder+('h'*(nvar+1)),
+        self._header['srtlist'] = struct.unpack(byteorder+('h'*(nvar+1)),
                 self._file.read(2*(nvar+1)))[:-1]
         if self._header['ds_format'] <= 113:
             self._header['fmtlist'] = \
@@ -493,34 +497,32 @@ class StataReader(object):
         # this until you read 5 bytes of zeros.
 
         while True:
-            data_type = unpack(byteorder+'b', self._file.read(1))[0]
-            data_len = unpack(byteorder+'i', self._file.read(4))[0]
+            data_type = struct.unpack(byteorder+'b', self._file.read(1))[0]
+            data_len = struct.unpack(byteorder+'i', self._file.read(4))[0]
             if data_type == 0:
                 break
             self._file.read(data_len)
 
         # other state vars
         self._data_location = self._file.tell()
-        self._has_string_data = len(lfilter(lambda x: isinstance(x, int),
-            self._header['typlist'])) > 0
+        self._has_string_data = any(isinstance(x, int) for x in self._header['typlist'])
         self._col_size()
 
     def _calcsize(self, fmt):
-        return isinstance(fmt, int) and fmt or \
-                calcsize(self._header['byteorder']+fmt)
+        return isinstance(fmt, int) and fmt or struct.calcsize(self._header['byteorder'] + fmt)
 
     def _col_size(self, k = None):
         """Calculate size of a data record."""
         if len(self._col_sizes) == 0:
-            self._col_sizes = lmap(lambda x: self._calcsize(x),
-                    self._header['typlist'])
+            self._col_sizes = [self._calcsize(x)
+                               for x in self._header['typlist']]
         if k == None:
             return self._col_sizes
         else:
             return self._col_sizes[k]
 
     def _unpack(self, fmt, byt):
-        d = unpack(self._header['byteorder']+fmt, byt)[0]
+        d = struct.unpack(self._header['byteorder']+fmt, byt)[0]
         if fmt[-1] in self.MISSING_VALUES:
             nmin, nmax = self.MISSING_VALUES[fmt[-1]]
             if d < nmin or d > nmax:
@@ -543,9 +545,8 @@ class StataReader(object):
                             self._file.read(self._col_size(i)))
             return data
         else:
-            return lmap(lambda i: self._unpack(typlist[i],
-                self._file.read(self._col_size(i))),
-                lrange(self._header['nvar']))
+            return [self._unpack(typlist[i], self._file.read(self._col_size(i)))
+                    for i in range(self._header['nvar'])]
 
 def _set_endianness(endianness):
     if endianness.lower() in ["<", "little"]:
@@ -712,15 +713,15 @@ class StataWriter(object):
     #NOTE: the byte type seems to be reserved for categorical variables
     # with a label, but the underlying variable is -127 to 100
     # we're going to drop the label and cast to int
-    DTYPE_MAP = dict(lzip(lrange(1,245), ['a' + str(i) for i in range(1,245)]) + \
-                    [(251, np.int16),(252, np.int32),(253, int),
-                        (254, np.float32), (255, np.float64)])
-    TYPE_MAP = lrange(251)+list('bhlfd')
-    MISSING_VALUES = { 'b': 101,
-                       'h': 32741,
-                       'l' : 2147483621,
-                       'f': 1.7014118346046923e+38,
-                       'd': 8.98846567431158e+307}
+    DTYPE_MAP = dict(list(zip(list(range(1, 245)), ['a' + str(i) for i in range(1, 245)])) +
+                    [(251, np.int16), (252, np.int32), (253, int),
+                     (254, np.float32), (255, np.float64)])
+    TYPE_MAP = list(range(251)) + list('bhlfd')
+    MISSING_VALUES = {'b': 101,
+                      'h': 32741,
+                      'l': 2147483621,
+                      'f': 1.7014118346046923e+38,
+                      'd': 8.98846567431158e+307}
     def __init__(self, fname, data, convert_dates=None, encoding="latin-1",
                  byteorder=None):
 
@@ -753,7 +754,9 @@ class StataWriter(object):
         """
         Helper to call asbytes before writing to file for Python 3 compat.
         """
-        self._file.write(asbytes(to_write))
+        if not isinstance(to_write, bytes):
+            to_write = to_write.encode('latin-1')
+        self._file.write(to_write)
 
     def _prepare_structured_array(self, data):
         self.nobs = len(data)
@@ -851,7 +854,7 @@ class StataWriter(object):
     def _write_header(self, data_label=None, time_stamp=None):
         byteorder = self._byteorder
         # ds_format - just use 114
-        self._write(pack("b", 114))
+        self._write(struct.pack("b", 114))
         # byteorder
         self._write(byteorder == ">" and "\x01" or "\x02")
         # filetype
@@ -859,9 +862,9 @@ class StataWriter(object):
         # unused
         self._write("\x00")
         # number of vars, 2 bytes
-        self._write(pack(byteorder+"h", self.nvar)[:2])
+        self._write(struct.pack(byteorder+"h", self.nvar)[:2])
         # number of obs, 4 bytes
-        self._write(pack(byteorder+"i", self.nobs)[:4])
+        self._write(struct.pack(byteorder+"i", self.nobs)[:4])
         # data label 81 bytes, char, null terminated
         if data_label is None:
             self._write(self._null_terminate(_pad_bytes("", 80),
@@ -926,11 +929,11 @@ class StataWriter(object):
                     self._write(var)
                 else:
                     try:
-                        self._write(pack(byteorder+TYPE_MAP[typ], var))
-                    except struct_error:
+                        self._write(struct.pack(byteorder+TYPE_MAP[typ], var))
+                    except struct.error:
                         # have to be strict about type pack won't do any
                         # kind of casting
-                        self._write(pack(byteorder+TYPE_MAP[typ],
+                        self._write(struct.pack(byteorder+TYPE_MAP[typ],
                                     _type_converters[typ](var)))
 
     def _write_data_dates(self):
@@ -944,22 +947,21 @@ class StataWriter(object):
             #row = row.squeeze().tolist() # needed for structured arrays
             for i,var in enumerate(row):
                 typ = ord(typlist[i])
-                #NOTE: If anyone finds this terribly slow, there is
+                # NOTE: If anyone finds this terribly slow, there is
                 # a vectorized way to convert dates, see genfromdta for going
                 # from int to datetime and reverse it. will copy data though
                 if i in convert_dates:
                     var = _datetime_to_stata_elapsed(var, self.fmtlist[i])
                 if typ <= 244: # we've got a string
-                    if isnull(var):
-                        var = "" # missing string
+                    if pd.isnull(var):
+                        var = ""  # missing string
                     if len(var) < typ:
                         var = _pad_bytes(var, len(var) + 1)
                     self._write(var)
                 else:
-                    if isnull(var): # this only matters for floats
+                    if pd.isnull(var):  # this only matters for floats
                         var = MISSING_VALUES[typ]
-                    self._write(pack(byteorder+TYPE_MAP[typ], var))
-
+                    self._write(struct.pack(byteorder+TYPE_MAP[typ], var))
 
     def _null_terminate(self, s, encoding):
         null_byte = '\x00'
@@ -970,8 +972,9 @@ class StataWriter(object):
             s += null_byte
             return s
 
+
 def genfromdta(fname, missing_flt=-999., encoding=None, pandas=False,
-                convert_dates=True):
+               convert_dates=True):
     """
     Returns an ndarray or DataFrame from a Stata .dta file.
 
@@ -1011,13 +1014,13 @@ def genfromdta(fname, missing_flt=-999., encoding=None, pandas=False,
     varnames = header['varlist']
     fmtlist = header['fmtlist']
     dataname = header['data_label']
-    labels = header['vlblist'] # labels are thrown away unless DataArray
-                               # type is used
+    labels = header['vlblist']
+    # labels are thrown away unless DataArray type is used
     data = np.zeros((nobs,numvars))
     stata_dta = fhd.dataset()
 
-    dt = np.dtype(lzip(varnames, types))
-    data = np.zeros((nobs), dtype=dt) # init final array
+    dt = np.dtype(list(zip(varnames, types)))
+    data = np.zeros((nobs), dtype=dt)  # init final array
 
     for rownum,line in enumerate(stata_dta):
         # doesn't handle missing value objects, just casts
@@ -1034,7 +1037,7 @@ def genfromdta(fname, missing_flt=-999., encoding=None, pandas=False,
         from pandas import DataFrame
         data = DataFrame.from_records(data)
         if convert_dates:
-            cols = np.where(lmap(lambda x : x in _date_formats, fmtlist))[0]
+            cols = np.where([x in _date_formats for x in fmtlist])[0]
             for col in cols:
                 i = col
                 col = data.columns[col]
@@ -1044,7 +1047,7 @@ def genfromdta(fname, missing_flt=-999., encoding=None, pandas=False,
         #date_cols = np.where(map(lambda x : x in _date_formats,
         #                                                    fmtlist))[0]
         # make the dtype for the datetime types
-        cols = np.where(lmap(lambda x : x in _date_formats, fmtlist))[0]
+        cols = np.where([x in _date_formats for x in fmtlist])[0]
         dtype = data.dtype.descr
         dtype = [(dt[0], object) if i in cols else dt for i,dt in
                  enumerate(dtype)]
@@ -1052,8 +1055,8 @@ def genfromdta(fname, missing_flt=-999., encoding=None, pandas=False,
         for col in cols:
             def convert(x):
                 return _stata_elapsed_date_to_datetime(x, fmtlist[col])
-            data[data.dtype.names[col]] = lmap(convert,
-                                              data[data.dtype.names[col]])
+            data[data.dtype.names[col]] = [convert(x)
+                                           for x in data[data.dtype.names[col]]]
     return data
 
 def savetxt(fname, X, names=None, fmt='%.18e', delimiter=' '):
@@ -1187,6 +1190,7 @@ def savetxt(fname, X, names=None, fmt='%.18e', delimiter=' '):
 
         for row in X:
             fh.write(format % tuple(row) + '\n')
+
 
 if __name__ == "__main__":
     import os

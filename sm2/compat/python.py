@@ -36,7 +36,7 @@ if PY3:
             return s
         return s.decode('latin1')
 
-    def asstr2(s):  #added JP, not in numpy version
+    def asstr2(s):  # added JP, not in numpy version
         if isinstance(s, str):
             return s
         elif isinstance(s, bytes):
@@ -192,38 +192,6 @@ except NameError:
 next = advance_iterator
 
 
-try:
-    callable = callable
-except NameError:
-    def callable(obj):
-        return any("__call__" in klass.__dict__ for klass in type(obj).__mro__)
-
-def iteritems(obj, **kwargs):
-    """replacement for six's iteritems for Python2/3 compat
-       uses 'iteritems' if available and otherwise uses 'items'.
-
-       Passes kwargs to method.
-    """
-    func = getattr(obj, "iteritems", None)
-    if not func:
-        func = obj.items
-    return func(**kwargs)
-
-
-def iterkeys(obj, **kwargs):
-    func = getattr(obj, "iterkeys", None)
-    if not func:
-        func = obj.keys
-    return func(**kwargs)
-
-
-def itervalues(obj, **kwargs):
-    func = getattr(obj, "itervalues", None)
-    if not func:
-        func = obj.values
-    return func(**kwargs)
-
-
 def get_function_name(func):
     try:
         return func.im_func.func_name
@@ -237,29 +205,3 @@ def get_class(func):
     except AttributeError:
         #Python 3
         return func.__self__.__class__
-
-try:
-    combinations = itertools.combinations
-except:
-    # Python 2.6 only
-    def combinations(iterable, r):
-        # combinations('ABCD', 2) --> AB AC AD BC BD CD
-        # combinations(lrange(4), 3) --> 012 013 023 123
-        pool = tuple(iterable)
-        n = len(pool)
-        if r > n:
-            return
-        indices = lrange(r)
-        yield tuple(pool[i] for i in indices)
-        while True:
-            for i in reversed(lrange(r)):
-                if indices[i] != i + n - r:
-                    break
-            else:
-                return
-            indices[i] += 1
-            for j in range(i+1, r):
-                indices[j] = indices[j-1] + 1
-            yield tuple(pool[i] for i in indices)
-
-

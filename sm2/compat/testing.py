@@ -28,7 +28,8 @@ except ImportError:
         try:
             from unittest2 import SkipTest
         except ImportError:
-            raise ImportError('Unable to locate SkipTest.  unittest, unittest2 or nose required.')
+            raise ImportError('Unable to locate SkipTest.  '
+                              'unittest, unittest2 or nose required.')
 
 
 def skip(reason):

@@ -13,17 +13,17 @@ import warnings
 
 from six.moves import range
 
-import sm2.datasets
-
-from sm2.compat.testing import SkipTest, skip
-
 import numpy as np
-import pandas as pd
 from numpy.testing import (assert_, assert_raises, assert_almost_equal,
                            assert_equal, assert_array_equal, assert_allclose,
                            assert_array_less)
+import pandas as pd
+import pandas.util.testing as tm
+
 from scipy.stats import nbinom
 import pytest
+
+import sm2.datasets
 
 from sm2.tools.sm_exceptions import PerfectSeparationError, MissingDataError
 from sm2.tools.tools import add_constant
@@ -34,7 +34,6 @@ from sm2.discrete.discrete_model import (Logit, Probit, MNLogit,
 
 from statsmodels import distributions
 from statsmodels.discrete.discrete_margins import _iscount, _isdummy
-import statsmodels.formula.api as smf
 
 from .results.results_discrete import Spector, DiscreteL1, RandHIE, Anes
 
@@ -440,8 +439,8 @@ class TestProbitBasinhopping(CheckBinaryResults):
     @classmethod
     def setup_class(cls):
         if not has_basinhopping:
-            raise SkipTest("Skipped TestProbitBasinhopping since"
-                           " basinhopping solver is not available")
+            raise pytest.skip("Skipped TestProbitBasinhopping since"
+                              " basinhopping solver is not available")
         data = sm2.datasets.spector.load()
         data.exog = add_constant(data.exog, prepend=False)
         res2 = Spector()
@@ -470,8 +469,8 @@ class TestProbitMinimizeDogleg(CheckBinaryResults):
     @classmethod
     def setup_class(cls):
         if not has_dogleg:
-            raise SkipTest("Skipped TestProbitMinimizeDogleg since "
-                           "dogleg method is not available")
+            raise pytest.skip("Skipped TestProbitMinimizeDogleg since "
+                              "dogleg method is not available")
 
         data = sm2.datasets.spector.load()
         data.exog = add_constant(data.exog, prepend=False)
@@ -587,7 +586,7 @@ class TestCVXOPT(object):
     @classmethod
     def setup_class(cls):
         if not has_cvxopt:
-            raise SkipTest('Skipped test_cvxopt since cvxopt is not available')
+            raise pytest.skip('Skipped test_cvxopt since cvxopt is not available')
         cls.data = sm2.datasets.spector.load()
         cls.data.exog = add_constant(cls.data.exog, prepend=True)
 
@@ -799,7 +798,7 @@ class TestMNLogitL1Compatability(CheckL1Compatability):
         assert_almost_equal(np.nan, t_reg.sd[m])
         assert_almost_equal(t_unreg.tvalue, t_reg.tvalue[:m, :m], DECIMAL_3)
 
-    @skip("Skipped test_f_test for MNLogit")
+    @pytest.skip("Skipped test_f_test for MNLogit")
     def test_f_test(self):
         pass
 
@@ -1464,9 +1463,8 @@ def test_perfect_prediction():
     #turn off raise PerfectSeparationError
     mod.raise_on_perfect_prediction = False
     # this will raise if you set maxiter high enough with a singular matrix
-    from pandas.util.testing import assert_produces_warning
     # this is not thread-safe
-    with assert_produces_warning():
+    with tm.assert_produces_warning():
         warnings.simplefilter('always')
         mod.fit(disp=False, maxiter=50)  # should not raise but does warn
 
@@ -1496,9 +1494,8 @@ def test_poisson_newton():
     x = add_constant(x, prepend=True)
     y_count = np.random.poisson(np.exp(x.sum(1)))
     mod = Poisson(y_count, x)
-    from pandas.util.testing import assert_produces_warning
     # this is not thread-safe
-    with assert_produces_warning():
+    with tm.assert_produces_warning():
         warnings.simplefilter('always')
         res = mod.fit(start_params=-np.ones(4), method='newton', disp=0)
     assert_(not res.mle_retvals['converged'])
@@ -1572,7 +1569,7 @@ def test_mnlogit_factor():
     predicted = res.predict(exog.iloc[:5, :])
 
     # with patsy
-    mod = smf.mnlogit('PID ~ ' + ' + '.join(dta.exog.columns), dta.data)
+    mod = MNLogit.from_formula('PID ~ ' + ' + '.join(dta.exog.columns), dta.data)
     res2 = mod.fit(disp=0)
     params_f = res2.params
     summary = res2.summary()
@@ -1589,7 +1586,7 @@ def test_formula_missing_exposure():
     df = pd.DataFrame(d)
 
     # should work
-    mod1 = smf.poisson('Foo ~ Bar', data=df, exposure=df['exposure'])
+    mod1 = Poisson.from_formula('Foo ~ Bar', data=df, exposure=df['exposure'])
     assert_(type(mod1.exposure) is np.ndarray, msg='Exposure is not ndarray')
 
     # make sure this raises
@@ -1605,7 +1602,6 @@ def test_predict_with_exposure():
     # See 3565
 
     # Setup copied from test_formula_missing_exposure
-    import pandas as pd
     d = {'Foo': [1, 2, 10, 149], 'Bar': [1, 2, 3, 4],
          'constant': [1] * 4, 'exposure' : [np.exp(1)]*4,
          'x': [1, 3, 2, 1.5]}
@@ -2433,8 +2429,6 @@ def test_formula_missing_exposure():
     df = pd.DataFrame(d)
 
     # should work
-    # import statsmodels.formula.api as smf
-    # mod1 = smf.poisson('Foo ~ Bar', data=df, exposure=df['exposure'])
     mod1 = Poisson.from_formula('Foo ~ Bar', data=df, exposure=df['exposure'])
     assert type(mod1.exposure) is np.ndarray, type(mod1.exposure)
 
@@ -2498,9 +2492,8 @@ def test_poisson_newton():
     x = add_constant(x, prepend=True)
     y_count = np.random.poisson(np.exp(x.sum(1)))
     mod = Poisson(y_count, x)
-    from pandas.util.testing import assert_produces_warning
     # this is not thread-safe
-    with assert_produces_warning():
+    with tm.assert_produces_warning():
         warnings.simplefilter('always')
         res = mod.fit(start_params=-np.ones(4), method='newton', disp=0)
     assert not res.mle_retvals['converged']

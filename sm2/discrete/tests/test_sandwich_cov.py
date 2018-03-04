@@ -5,7 +5,6 @@ Created on Mon Dec 09 21:29:20 2013
 
 Author: Josef Perktold
 """
-
 import os
 
 import numpy as np
@@ -15,7 +14,6 @@ import pandas as pd
 from sm2.tools.tools import add_constant
 from sm2.base.covtype import get_robustcov_results
 import sm2.stats.sandwich_covariance as sw
-import sm2.stats.sandwich_covariance as sc
 
 import sm2.discrete.discrete_model as smd
 from sm2.regression.linear_model import OLS
@@ -79,24 +77,20 @@ class CheckCountRobustMixin(object):
         # for bse we need sqrt of correction factor
         cls.corr_fact = np.sqrt(corr_fact)
 
-
     def test_oth(self):
         res1 = self.res1
         res2 = self.res2
         assert_allclose(res1._results.llf, res2.ll, 1e-4)
         assert_allclose(res1._results.llnull, res2.ll_0, 1e-4)
 
-
     def test_ttest(self):
         smt.check_ttest_tvalues(self.res1)
-
 
     def test_waldtest(self):
         smt.check_ftest_pvalues(self.res1)
 
 
 class TestPoissonClu(CheckCountRobustMixin):
-
     @classmethod
     def setup_class(cls):
         cls.res2 = results_st.results_poisson_clu
@@ -106,7 +100,6 @@ class TestPoissonClu(CheckCountRobustMixin):
 
 
 class TestPoissonCluGeneric(CheckCountRobustMixin):
-
     @classmethod
     def setup_class(cls):
         cls.res2 = results_st.results_poisson_clu
@@ -122,8 +115,6 @@ class TestPoissonCluGeneric(CheckCountRobustMixin):
             cls.res3 = cls.res1
             cls.bse_rob3 = cls.bse_rob.copy()
             cls.res1 = res1 = mod.fit(disp=False)
-
-        from sm2.base.covtype import get_robustcov_results
 
         #res_hc0_ = cls.res1.get_robustcov_results('HC1')
         get_robustcov_results(cls.res1._results, 'cluster',
@@ -149,8 +140,6 @@ class TestPoissonHC1Generic(CheckCountRobustMixin):
         cls.res2 = results_st.results_poisson_hc1
         mod = smd.Poisson(endog, exog)
         cls.res1 = mod.fit(disp=False)
-
-        from sm2.base.covtype import get_robustcov_results
 
         #res_hc0_ = cls.res1.get_robustcov_results('HC1')
         get_robustcov_results(cls.res1._results, 'HC1', use_self=True)
@@ -254,8 +243,6 @@ class TestPoissonCluExposureGeneric(CheckCountRobustMixin):
         cls.res2 = results_st.results_poisson_exposure_clu #nonrobust
         mod = smd.Poisson(endog, exog, exposure=exposure)
         cls.res1 = res1 = mod.fit(disp=False)
-
-        from sm2.base.covtype import get_robustcov_results
 
         #res_hc0_ = cls.res1.get_robustcov_results('HC1')
         get_robustcov_results(cls.res1._results, 'cluster',

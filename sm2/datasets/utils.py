@@ -1,18 +1,17 @@
-from sm2.compat.numpy import recarray_select
-from sm2.compat.python import (range, StringIO, urlopen,
-                                       HTTPError, URLError, lrange,
-                                       cPickle, urljoin, BytesIO, long, PY3)
-import sys
+import os
 import shutil
-from os import environ
-from os import makedirs
-from os.path import expanduser
-from os.path import exists
-from os.path import join
+import sys
+
+from six import PY3, BytesIO, StringIO, integer_types
+from six.moves import range, cPickle
+from six.moves.urllib.error import URLError, HTTPError
+from six.moves.urllib.request import urlopen
+from six.moves.urllib_parse import urljoin
 
 import numpy as np
-from numpy import array
-from pandas import read_csv, DataFrame, Index
+import pandas as pd
+
+from sm2.compat.numpy import recarray_select
 
 
 def webuse(data, baseurl='http://www.stata-press.com/data/r11/', as_df=True):
@@ -43,13 +42,13 @@ def webuse(data, baseurl='http://www.stata-press.com/data/r11/', as_df=True):
     error checking in response URLs.
     """
     # lazy imports
-    from statsmodels.iolib import genfromdta
+    from sm2.iolib.foreign import genfromdta
 
     url = urljoin(baseurl, data + '.dta')
     dta = urlopen(url)
     dta = BytesIO(dta.read())  # make it truly file-like
     if as_df:  # could make this faster if we don't process dta twice?
-        return DataFrame.from_records(genfromdta(dta))
+        return pd.DataFrame.from_records(genfromdta(dta))
     else:
         return genfromdta(dta)
 
@@ -78,8 +77,8 @@ class Dataset(dict):
 def process_recarray(data, endog_idx=0, exog_idx=None, stack=True, dtype=None):
     names = list(data.dtype.names)
 
-    if isinstance(endog_idx, (int, long)):
-        endog = array(data[names[endog_idx]], dtype=dtype)
+    if isinstance(endog_idx, integer_types):
+        endog = np.array(data[names[endog_idx]], dtype=dtype)
         endog_name = names[endog_idx]
         endog_idx = [endog_idx]
     else:
@@ -114,10 +113,10 @@ def process_recarray(data, endog_idx=0, exog_idx=None, stack=True, dtype=None):
 def process_recarray_pandas(data, endog_idx=0, exog_idx=None, dtype=None,
                             index_idx=None):
 
-    data = DataFrame(data, dtype=dtype)
+    data = pd.DataFrame(data, dtype=dtype)
     names = data.columns
 
-    if isinstance(endog_idx, (int, long)):
+    if isinstance(endog_idx, integer_types):
         endog_name = names[endog_idx]
         endog = data[endog_name]
         if exog_idx is None:
@@ -129,14 +128,14 @@ def process_recarray_pandas(data, endog_idx=0, exog_idx=None, dtype=None,
         endog_name = list(endog.columns)
         if exog_idx is None:
             exog = data.drop(endog_name, axis=1)
-        elif isinstance(exog_idx, (int, long)):
+        elif isinstance(exog_idx, integer_types):
             exog = data.filter([names[exog_idx]])
         else:
             exog = data.filter(names[exog_idx])
 
     if index_idx is not None:  # NOTE: will have to be improved for dates
-        endog.index = Index(data.iloc[:, index_idx])
-        exog.index = Index(data.iloc[:, index_idx])
+        endog.index = pd.Index(data.iloc[:, index_idx])
+        exog.index = pd.Index(data.iloc[:, index_idx])
         data = data.set_index(names[index_idx])
 
     exog_name = list(exog.columns)
@@ -150,7 +149,7 @@ def _maybe_reset_index(data):
     All the Rdatasets have the integer row.labels from R if there is no
     real index. Strip this for a zero-based index
     """
-    if data.index.equals(Index(lrange(1, len(data) + 1))):
+    if data.index.equals(pd.Index(list(range(1, len(data) + 1)))):
         data = data.reset_index(drop=True)
     return data
 
@@ -199,8 +198,8 @@ def _urlopen_cached(url, cache):
     """
     from_cache = False
     if cache is not None:
-        cache_path = join(cache,
-                          url.split("://")[-1].replace('/', ',') + ".zip")
+        cache_path = os.path.join(cache,
+                                  url.split("://")[-1].replace('/', ',') + ".zip")
         try:
             data = _open_cache(cache_path)
             from_cache = True
@@ -235,10 +234,9 @@ def _get_dataset_meta(dataname, package, cache):
     index_url = ("https://raw.github.com/vincentarelbundock/Rdatasets/master/"
                  "datasets.csv")
     data, _ = _urlopen_cached(index_url, cache)
-    # Python 3
     if PY3:  # pragma: no cover
         data = data.decode('utf-8', 'strict')
-    index = read_csv(StringIO(data))
+    index = pd.read_csv(StringIO(data))
     idx = np.logical_and(index.Item == dataname, index.Package == package)
     dataset_meta = index.loc[idx]
     return dataset_meta["Title"].item()
@@ -287,7 +285,7 @@ def get_rdataset(dataname, package="datasets", cache=False):
                      "master/doc/" + package + "/rst/")
     cache = _get_cache(cache)
     data, from_cache = _get_data(data_base_url, dataname, cache)
-    data = read_csv(data, index_col=0)
+    data = pd.read_csv(data, index_col=0)
     data = _maybe_reset_index(data)
 
     title = _get_dataset_meta(dataname, package, cache)
@@ -315,11 +313,11 @@ def get_data_home(data_home=None):
     If the folder does not already exist, it is automatically created.
     """
     if data_home is None:
-        data_home = environ.get('STATSMODELS_DATA',
-                                join('~', 'sm2_data'))
-    data_home = expanduser(data_home)
-    if not exists(data_home):
-        makedirs(data_home)
+        data_home = os.environ.get('STATSMODELS_DATA',
+                                   os.path.join('~', 'sm2_data'))
+    data_home = os.path.expanduser(data_home)
+    if not os.path.exists(data_home):
+        os.makedirs(data_home)
     return data_home
 
 

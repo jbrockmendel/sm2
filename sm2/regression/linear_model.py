@@ -32,6 +32,7 @@ W. Green.  "Econometric Analysis," 5th ed., Pearson, 2003.
 """
 from __future__ import print_function
 
+import collections
 import warnings
 
 from six.moves import range
@@ -48,19 +49,16 @@ from sm2.tools.decorators import (resettable_cache,
 import sm2.base.model as base
 import sm2.base.wrapper as wrap
 
-from statsmodels.emplike.elregress import _ELRegOpts
-
 # need import in module instead of lazily to copy `__doc__`
-from statsmodels.regression._prediction import PredictionResults
-from statsmodels.regression import _prediction as pred
+from ._prediction import PredictionResults
+from . import _prediction as pred
 
 __docformat__ = 'restructuredtext en'
 
 __all__ = ['GLS', 'WLS', 'OLS', 'GLSAR', 'PredictionResults']
 
 
-_fit_regularized_doc =\
-        r"""
+_fit_regularized_doc = r"""
         Return a regularized fit to a linear regression model.
 
         Parameters
@@ -2326,8 +2324,9 @@ class RegressionResults(base.LikelihoodModelResults):
             results
         """
         # TODO: import where we need it (for now), add as cached attributes
-        from statsmodels.stats.stattools import (
-            jarque_bera, omni_normtest, durbin_watson)
+        from sm2.stats.stattools import (jarque_bera, omni_normtest,
+                                         durbin_watson)
+
         jb, jbpv, skew, kurtosis = jarque_bera(self.wresid)
         omni, omnipv = omni_normtest(self.wresid)
 
@@ -2338,7 +2337,7 @@ class RegressionResults(base.LikelihoodModelResults):
                           omni=omni, omnipv=omnipv, condno=condno,
                           mineigval=eigvals[-1])
 
-        # TODO not used yet
+        # TODO: not used yet
         # diagn_left_header = ['Models stats']
         # diagn_right_header = ['Residual stats']
 
@@ -2470,18 +2469,16 @@ class RegressionResults(base.LikelihoodModelResults):
             results
         """
         # Diagnostics
-        from statsmodels.stats.stattools import (jarque_bera,
-                                                 omni_normtest,
-                                                 durbin_watson)
+        from sm2.stats.stattools import (jarque_bera, omni_normtest,
+                                         durbin_watson)
 
-        from collections import OrderedDict
         jb, jbpv, skew, kurtosis = jarque_bera(self.wresid)
         omni, omnipv = omni_normtest(self.wresid)
         dw = durbin_watson(self.wresid)
         eigvals = self.eigenvals
         condno = self.condition_number
         eigvals = np.sort(eigvals)  # in increasing order
-        diagnostic = OrderedDict([
+        diagnostic = collections.OrderedDict([
             ('Omnibus:',  "%.3f" % omni),
             ('Prob(Omnibus):', "%.3f" % omnipv),
             ('Skew:', "%.3f" % skew),
@@ -2645,6 +2642,7 @@ class OLSResults(RegressionResults):
         >>> (27.248146353888796, 1.7894660442330235e-07)
         """
         params = np.copy(self.params)
+        from statsmodels.emplike.elregress import _ELRegOpts
         opt_fun_inst = _ELRegOpts()  # to store weights
         if len(param_nums) == len(params):
             llr = opt_fun_inst._opt_nuis_regress(
