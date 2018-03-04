@@ -193,9 +193,10 @@ def recarray_select(recarray, fields):
 
 
 def _bytelike_dtype_names(arr):
-    # See # 3658
+    # See GH#3658
     if not PY3:
         dtype = arr.dtype
         names = dtype.names
-        names = [bytes(name) if isinstance(name, unicode) else name for name in names]
+        names = [bytes(name) if isinstance(name, unicode) else name
+                 for name in names]
         dtype.names = names
