@@ -3,7 +3,7 @@ from six.moves import range
 import numpy as np
 from scipy import stats
 
-from statsmodels.tools.tools import clean0, fullrank
+from sm2.tools.tools import clean0, fullrank
 
 
 # TODO: should this be public if it's just a container?
@@ -210,8 +210,8 @@ class Contrast(object):
 
     Examples
     --------
-    >>> import statsmodels.api as sm
-    >>> from statsmodels.stats.contrast import Contrast
+    >>> import sm2.api as sm
+    >>> from sm2.stats.contrast import Contrast
     >>> import numpy as np
     >>> np.random.seed(54321)
     >>> X = np.random.standard_normal((40,10))

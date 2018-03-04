@@ -31,7 +31,7 @@ def test_predict_se():
     w[int(nsample * 6. / 10):] = 3
     sig = 0.5
     y2 = y_true2 + sig * w * np.random.normal(size=nsample)
-    x2 = x[:,[0,2]]
+    x2 = x[:, [0, 2]]
 
     # estimate OLS
     res2 = OLS(y2, x2).fit()
@@ -44,7 +44,7 @@ def test_predict_se():
     prstd, iv_l, iv_u = wls_prediction_std(res2)
     np.testing.assert_almost_equal(prstd, predstd, 15)
 
-    #stats.t.isf(0.05/2., 50 - 2)
+    # stats.t.isf(0.05/2., 50 - 2)
     q = 2.0106347546964458
     ci_half = q * predstd
     np.testing.assert_allclose(iv_u, res2.fittedvalues + ci_half, rtol=1e-12)
@@ -61,7 +61,7 @@ def test_predict_se():
     # check WLS
     res3 = WLS(y2, x2, 1. / w).fit()
 
-    #direct calculation
+    # direct calculation
     covb = res3.cov_params()
     predvar = res3.mse_resid * w + (x2 * np.dot(covb, x2.T).T).sum(1)
     predstd = np.sqrt(predvar)
@@ -95,16 +95,15 @@ def test_predict_se():
                                rtol=1e-12)
 
 
-    #use wrong size for exog
-    #prstd, iv_l, iv_u = wls_prediction_std(res3, x2[-1,0], weights=3.)
+    # use wrong size for exog
+    # prstd, iv_l, iv_u = wls_prediction_std(res3, x2[-1,0], weights=3.)
     np.testing.assert_raises(ValueError, wls_prediction_std, res3, x2[-1,0],
                              weights=3.)
 
     # check some weight values
-    sew1 = wls_prediction_std(res3, x2[-3:,:])[0]**2
+    sew1 = wls_prediction_std(res3, x2[-3:, :])[0]**2
     for wv in np.linspace(0.5, 3, 5):
-
-        sew = wls_prediction_std(res3, x2[-3:,:], weights=1. / wv)[0]**2
+        sew = wls_prediction_std(res3, x2[-3:, :], weights=1. / wv)[0]**2
         np.testing.assert_allclose(sew, sew1 + res3.scale * (wv - 1))
 
 
@@ -112,9 +111,7 @@ class TestWLSPrediction(object):
 
     @classmethod
     def setup_class(cls):
-
         # from example wls.py
-
         nsample = 50
         x = np.linspace(0, 20, nsample)
         X = np.column_stack((x, (x - 5)**2))
@@ -127,14 +124,11 @@ class TestWLSPrediction(object):
         y_true = np.dot(X, beta)
         e = np.random.normal(size=nsample)
         y = y_true + sig * w * e
-        X = X[:,[0,1]]
+        X = X[:, [0, 1]]
 
-
-        # ### WLS knowing the true variance ratio of heteroscedasticity
-
+        # WLS knowing the true variance ratio of heteroscedasticity
         mod_wls = WLS(y, X, weights=1./w)
         cls.res_wls = mod_wls.fit()
-
 
     def test_ci(self):
         res_wls = self.res_wls
@@ -159,7 +153,6 @@ class TestWLSPrediction(object):
 
         sf2 = pred_res2.summary_frame()
         assert_equal(sf2.columns.tolist(), col_names)
-
 
     def test_glm(self):
         # prelimnimary, getting started with basic test for GLM.get_prediction

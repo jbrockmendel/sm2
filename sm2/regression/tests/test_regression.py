@@ -391,7 +391,7 @@ class TestTtest(object):
     def test_pvalue(self):
         assert_almost_equal(self.Ttest.pvalue, student_t.sf(
             np.abs(self.res1.tvalues), self.res1.model.df_resid)*2,
-                            DECIMAL_4)
+                   DECIMAL_4)
 
     def test_df_denom(self):
         assert_equal(self.Ttest.df_denom, self.res1.model.df_resid)
