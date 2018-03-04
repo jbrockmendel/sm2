@@ -135,8 +135,7 @@ class CheckGenericMixin(object):
         else:
             results = self.results
 
-        if (isinstance(results, GLMResults) or
-            isinstance(results, DiscreteResults)):
+        if isinstance(results, (GLMResults, DiscreteResults)):
             # SMOKE test only  TODO
             res.predict(p_exog)
             res.predict(p_exog.tolist())

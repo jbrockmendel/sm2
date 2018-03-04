@@ -12,8 +12,7 @@ from numpy.testing import assert_array_equal, assert_, assert_equal, dec
 
 import pandas as pd
 import pandas.util.testing as tm
-
-from sm2.compat.testing import skipif
+import pytest
 
 from sm2.iolib.foreign import (StataWriter, genfromdta,
                                _datetime_to_stata_elapsed,
@@ -173,7 +172,7 @@ def test_date_converters():
                      _stata_elapsed_date_to_datetime(i, "ty"), "ty"), i)
 
 
-@skipif(pd.__version__ < '0.9', 'pandas too old')
+@pytest.mark.skipif(pd.__version__ < '0.9')
 def test_datetime_roundtrip():
     dta = np.array([(1, datetime(2010, 1, 1), 2),
                     (2, datetime(2010, 2, 1), 3),
