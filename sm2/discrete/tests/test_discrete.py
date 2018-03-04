@@ -25,12 +25,12 @@ from numpy.testing import (assert_, assert_raises, assert_almost_equal,
 from scipy.stats import nbinom
 import pytest
 
-from sm2.tools.sm_exceptions import PerfectSeparationError
+from sm2.tools.sm_exceptions import PerfectSeparationError, MissingDataError
 from sm2.tools.tools import add_constant
 from sm2.discrete.discrete_model import (Logit, Probit, MNLogit,
                                          Poisson, NegativeBinomial,
                                          CountModel, GeneralizedPoisson,
-                                         NegativeBinomialP)
+                                         NegativeBinomialP, MultinomialModel)
 
 from statsmodels.discrete.discrete_margins import _iscount, _isdummy
 import statsmodels.api as sm
@@ -2244,7 +2244,6 @@ class TestNegativeBinomialNBP2Null(CheckNull):
 
 
 class TestNegativeBinomialNBP1Null(CheckNull):
-
     @classmethod
     def setup_class(cls):
         endog, exog = cls._get_data()
@@ -2264,7 +2263,6 @@ class TestNegativeBinomialNBP1Null(CheckNull):
 
 
 class TestGeneralizedPoissonNull(CheckNull):
-
     @classmethod
     def setup_class(cls):
         endog, exog = cls._get_data()
@@ -2364,28 +2362,6 @@ def test_optim_kwds_prelim():
     assert_allclose(res.predict().mean(), y.mean(), rtol=0.1)
 
 
-def test_unchanging_degrees_of_freedom():
-    # see GH#3734
-    data = sm2.datasets.randhie.load()
-    model = NegativeBinomial(data.endog, data.exog, loglike_method='nb2')
-    params = np.array([-0.05654134, -0.21213734,  0.08783102, -0.02991825,
-                       0.22902315,  0.06210253,  0.06799444,  0.08406794,
-                       0.18530092,  1.36645186])
-
-    res1 = model.fit(start_params=params)
-    assert_equal(res1.df_model, 8)
-
-    reg_params = np.array([-0.04854   , -0.15019404,  0.08363671, -0.03032834,  0.17592454,
-        0.06440753,  0.01584555,  0.        ,  0.        ,  1.36984628])
-
-    res2 = model.fit_regularized(alpha=100, start_params=reg_params)
-    assert_(res2.df_model != 8)
-    # If res2.df_model == res1.df_model, then this test is invalid.
-
-    res3 = model.fit()
-    # Test that the call to `fit_regularized` didn't modify model.df_model inplace.
-    assert_equal(res3.df_model, res1.df_model)
-    assert_equal(res3.df_resid, res1.df_resid)
 '''
 
 # ------------------------------------------------------------------
@@ -2396,9 +2372,9 @@ def check_inherited_attributes(res):
     # object; this can help ensure that Results objects can still be useful
     # after `remove_data` and a pickle/unpickle cycle.
     model = res.model
-    if isinstance(model, MultinomialModel):
-        assert res.J == model.J
-        assert res.K == model.K
+    # if isinstance(model, MultinomialModel):  # havent yet implemented this
+    #    assert res.J == model.J
+    #    assert res.K == model.K
 
 
 def test_non_binary():
@@ -2428,7 +2404,8 @@ def test_mnlogit_non_square():
     smry = "\n".join(res1.summary().as_text().split('\n')[9:])
     cur_dir = os.path.dirname(os.path.abspath(__file__))
     test_case_file = os.path.join(cur_dir, 'results', 'mn_logit_summary.txt')
-    test_case = open(test_case_file, 'r').read()
+    with open(test_case_file, 'r') as fd:
+        test_case = fd.read()
     np.testing.assert_equal(smry, test_case[:-1])
 
     """
@@ -2452,21 +2429,21 @@ def test_mnlogit_2dexog():
 
 def test_formula_missing_exposure():
     # see GH#2083
-    import statsmodels.formula.api as smf
-
     d = {'Foo': [1, 2, 10, 149], 'Bar': [1, 2, 3, np.nan],
          'constant': [1] * 4, 'exposure' : np.random.uniform(size=4),
          'x': [1, 3, 2, 1.5]}
     df = pd.DataFrame(d)
 
     # should work
-    mod1 = smf.poisson('Foo ~ Bar', data=df, exposure=df['exposure'])
+    # import statsmodels.formula.api as smf
+    # mod1 = smf.poisson('Foo ~ Bar', data=df, exposure=df['exposure'])
+    mod1 = Poisson.from_formula('Foo ~ Bar', data=df, exposure=df['exposure'])
     assert type(mod1.exposure) is np.ndarray, type(mod1.exposure)
 
     # make sure this raises
     exposure = pd.Series(np.random.randn(5))
-    assert_raises(ValueError, Poisson, df.Foo, df[['constant', 'Bar']],
-                  exposure=exposure)
+    with pytest.raises(MissingDataError):
+        Poisson(df.Foo, df[['constant', 'Bar']], exposure=exposure)
 
 
 def test_predict_with_exposure():
