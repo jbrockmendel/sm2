@@ -3,6 +3,8 @@ Test functions for models.regression
 """
 # TODO: Test for LM
 import warnings
+import os
+import re
 
 from six import PY3
 import pandas as pd
@@ -949,8 +951,7 @@ def test_706():
 
 
 def test_summary():
-    # test 734
-    import re
+    # testGH#734
     dta = longley.load_pandas()
     X = dta.exog
     X["constant"] = 1
@@ -1022,8 +1023,6 @@ class TestRegularizedFit(object):
             assert_equal(result.params, 0.)
 
     def test_regularized(self):
-
-        import os
         from . import glmnet_r_results
 
         cur_dir = os.path.dirname(os.path.abspath(__file__))
@@ -1098,23 +1097,22 @@ class TestRegularizedFit(object):
 def test_formula_missing_cat():
     # GH#805
 
-    from statsmodels.formula.api import ols
     from patsy import PatsyError
 
     dta = datasets.grunfeld.load_pandas().data
     dta.loc[dta.index[0], 'firm'] = np.nan
 
-    mod = ols(formula='value ~ invest + capital + firm + year',
+    mod = OLS.from_formula(formula='value ~ invest + capital + firm + year',
               data=dta.dropna())
     res = mod.fit()
 
-    mod2 = ols(formula='value ~ invest + capital + firm + year',
+    mod2 = OLS.from_formula(formula='value ~ invest + capital + firm + year',
                data=dta)
     res2 = mod2.fit()
 
     assert_almost_equal(res.params.values, res2.params.values)
 
-    assert_raises(PatsyError, ols, 'value ~ invest + capital + firm + year',
+    assert_raises(PatsyError, OLS.from_formula, 'value ~ invest + capital + firm + year',
                   data=dta, missing='raise')
 
 
@@ -1141,8 +1139,6 @@ def test_fvalue_implicit_constant():
     x = ((x > 0) == [True, False]).astype(int)
     y = x.sum(1) + np.random.randn(nobs)
 
-    from sm2.regression.linear_model import OLS, WLS
-
     res = OLS(y, x).fit(cov_type='HC1')
     assert_(np.isnan(res.fvalue))
     assert_(np.isnan(res.f_pvalue))
@@ -1160,8 +1156,6 @@ def test_fvalue_only_constant():
     np.random.seed(2)
     x = np.ones(nobs)
     y = np.random.randn(nobs)
-
-    from sm2.regression.linear_model import OLS, WLS
 
     res = OLS(y, x).fit(cov_type='hac', cov_kwds={'maxlags': 3})
     assert_(np.isnan(res.fvalue))

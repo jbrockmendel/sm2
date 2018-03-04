@@ -34,7 +34,6 @@ from sm2.discrete.discrete_model import (Logit, Probit, MNLogit,
 
 from statsmodels import distributions
 from statsmodels.discrete.discrete_margins import _iscount, _isdummy
-import statsmodels.formula.api as smf
 
 from .results.results_discrete import Spector, DiscreteL1, RandHIE, Anes
 
@@ -1570,7 +1569,7 @@ def test_mnlogit_factor():
     predicted = res.predict(exog.iloc[:5, :])
 
     # with patsy
-    mod = smf.mnlogit('PID ~ ' + ' + '.join(dta.exog.columns), dta.data)
+    mod = MNLogit.from_formula('PID ~ ' + ' + '.join(dta.exog.columns), dta.data)
     res2 = mod.fit(disp=0)
     params_f = res2.params
     summary = res2.summary()
@@ -1587,7 +1586,7 @@ def test_formula_missing_exposure():
     df = pd.DataFrame(d)
 
     # should work
-    mod1 = smf.poisson('Foo ~ Bar', data=df, exposure=df['exposure'])
+    mod1 = Poisson.from_formula('Foo ~ Bar', data=df, exposure=df['exposure'])
     assert_(type(mod1.exposure) is np.ndarray, msg='Exposure is not ndarray')
 
     # make sure this raises
@@ -2430,8 +2429,6 @@ def test_formula_missing_exposure():
     df = pd.DataFrame(d)
 
     # should work
-    # import statsmodels.formula.api as smf
-    # mod1 = smf.poisson('Foo ~ Bar', data=df, exposure=df['exposure'])
     mod1 = Poisson.from_formula('Foo ~ Bar', data=df, exposure=df['exposure'])
     assert type(mod1.exposure) is np.ndarray, type(mod1.exposure)
 
