@@ -2,8 +2,6 @@ from __future__ import print_function
 
 import warnings
 
-from numpy.testing import assert_equal
-
 from sm2.tools.sm_exceptions import CacheWriteWarning
 
 __all__ = ['resettable_cache', 'cache_readonly', 'cache_writable']
@@ -28,6 +26,7 @@ class ResettableCache(dict):
 
     Examples
     --------
+    >>> from numpy.testing import assert_equal
     >>> reset = dict(a=('b',), b=('c',))
     >>> cache = resettable_cache(a=0, b=1, c=2, reset=reset)
     >>> assert_equal(cache, dict(a=0, b=1, c=2))
@@ -147,6 +146,7 @@ class cache_writable(_cache_readonly):
         return CachedWritableAttribute(func,
                                        cachename=self.cachename,
                                        resetlist=self.resetlist)
+
 
 def nottest(fn):
     fn.__test__ = False

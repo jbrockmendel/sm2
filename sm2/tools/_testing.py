@@ -32,9 +32,9 @@ def check_ttest_tvalues(results):
 
     # test params table frame returned by t_test
     table_res = np.column_stack((res.params, res.bse, res.tvalues,
-                                res.pvalues, res.conf_int()))
+                                 res.pvalues, res.conf_int()))
     table1 = np.column_stack((tt.effect, tt.sd, tt.tvalue, tt.pvalue,
-                             tt.conf_int()))
+                              tt.conf_int()))
     table2 = tt.summary_frame().values
     assert_allclose(table2, table_res, rtol=1e-12)
 
@@ -42,7 +42,7 @@ def check_ttest_tvalues(results):
     assert_(hasattr(res, 'use_t'))
 
     tt = res.t_test(mat[0])
-    tt.summary()   # smoke test for #1323
+    tt.summary()   # smoke test for GH#1323
     assert_allclose(tt.pvalue, res.pvalues[0], rtol=5e-10)
 
 
@@ -130,4 +130,3 @@ def check_predict_types(results):
         # predicted = res.predict(pandas.DataFrame(p_exog))
         # assert_(isinstance(predicted, pandas.DataFrame))
         # assert_allclose(predicted, fitted, rtol=1e-12)
-
