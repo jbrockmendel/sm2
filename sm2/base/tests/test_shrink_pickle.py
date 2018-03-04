@@ -56,11 +56,11 @@ class RemoveDataPickle(object):
         # uncomment the following to check whether tests run (7 failures now)
         #np.testing.assert_equal(res, 1)
 
-        #check pickle unpickle works on full results
-        #TODO: drop of load save is tested
+        # check pickle unpickle works on full results
+        # TODO: drop of load save is tested
         res, l = check_pickle(results._results)
 
-        #remove data arrays, check predict still works
+        # remove data arrays, check predict still works
         with warnings.catch_warnings(record=True) as w:
             results.remove_data()
 
@@ -154,11 +154,11 @@ class TestRemoveDataPicklePoisson(RemoveDataPickle):
         x = self.exog
         np.random.seed(987689)
         y_count = np.random.poisson(np.exp(x.sum(1) - x.mean()))
-        model = sm.Poisson(y_count, x)  #, exposure=np.ones(nobs), offset=np.zeros(nobs)) #bug with default
+        model = sm.Poisson(y_count, x)  #, exposure=np.ones(nobs), offset=np.zeros(nobs))  # bug with default
         # use start_params to converge faster
         start_params = np.array([0.75334818, 0.99425553, 1.00494724, 1.00247112])
-        self.results = model.fit(start_params=start_params, method='bfgs',
-                                 disp=0)
+        self.results = model.fit(start_params=start_params,
+                                 method='bfgs', disp=0)
 
         # TODO: temporary, fixed in master
         self.predict_kwds = dict(exposure=1, offset=0)
@@ -181,10 +181,12 @@ class TestRemoveDataPickleLogit(RemoveDataPickle):
         nobs = x.shape[0]
         np.random.seed(987689)
         y_bin = (np.random.rand(nobs) < 1.0 / (1 + np.exp(x.sum(1) - x.mean()))).astype(int)
-        model = sm.Logit(y_bin, x)  #, exposure=np.ones(nobs), offset=np.zeros(nobs)) #bug with default
+        model = sm.Logit(y_bin, x)  # , exposure=np.ones(nobs), offset=np.zeros(nobs)) #bug with default
         # use start_params to converge faster
-        start_params = np.array([-0.73403806, -1.00901514, -0.97754543, -0.95648212])
-        self.results = model.fit(start_params=start_params, method='bfgs', disp=0)
+        start_params = np.array([-0.73403806, -1.00901514,
+                                 -0.97754543, -0.95648212])
+        self.results = model.fit(start_params=start_params,
+                                 method='bfgs', disp=0)
 
 
 class TestRemoveDataPickleRLM(RemoveDataPickle):
@@ -241,33 +243,35 @@ class TestPickleFormula2(RemoveDataPickle):
         cls.l_max = 900000  # have to pickle endo/exog to unpickle form.
 
     def setup(self):
-        self.results = sm.OLS.from_formula("Y ~ A + B + C", data=self.data).fit()
+        self.results = sm.OLS.from_formula("Y ~ A + B + C",
+                                           data=self.data).fit()
 
 
 class TestPickleFormula3(TestPickleFormula2):
     def setup(self):
-        self.results = sm.OLS.from_formula("Y ~ A + B * C", data=self.data).fit()
+        self.results = sm.OLS.from_formula("Y ~ A + B * C",
+                                           data=self.data).fit()
 
 
 class TestPickleFormula4(TestPickleFormula2):
     def setup(self):
-        self.results = sm.OLS.from_formula("Y ~ np.log(abs(A) + 1) + B * C", data=self.data).fit()
+        self.results = sm.OLS.from_formula("Y ~ np.log(abs(A) + 1) + B * C",
+                                           data=self.data).fit()
 
 
 # we need log in module namespace for the following test
 from numpy import log
 class TestPickleFormula5(TestPickleFormula2):
-
     def setup(self):
         # if we import here, then unpickling fails -> exception in test
-        #from numpy import log
-        self.results = sm.OLS.from_formula("Y ~ log(abs(A) + 1) + B * C", data=self.data).fit()
+        # from numpy import log
+        self.results = sm.OLS.from_formula("Y ~ log(abs(A) + 1) + B * C",
+                                           data=self.data).fit()
 
 
 class TestRemoveDataPicklePoissonRegularized(RemoveDataPickle):
-
     def setup(self):
-        #fit for each test, because results will be changed by test
+        # fit for each test, because results will be changed by test
         x = self.exog
         np.random.seed(987689)
         y_count = np.random.poisson(np.exp(x.sum(1) - x.mean()))
