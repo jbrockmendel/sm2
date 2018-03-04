@@ -54,7 +54,7 @@ __all__ = ["Poisson", "Logit", "Probit", "MNLogit", "NegativeBinomial",
 #      this
 FLOAT_EPS = np.finfo(float).eps
 
-#TODO: add options for the parameter covariance/variance
+# TODO: add options for the parameter covariance/variance
 # ie., OIM, EIM, and BHHH see Green 21.4
 
 _discrete_models_docs = """
@@ -154,7 +154,8 @@ def _pandas_to_dummies(endog):
     return endog_dummies, ynames, yname
 
 
-#### Private Model Classes ####
+# ----------------------------------------------------------------
+# Private Model Classes
 
 
 class DiscreteModel(base.LikelihoodModel):
@@ -211,13 +212,15 @@ class DiscreteModel(base.LikelihoodModel):
         if callback is None:
             callback = self._check_perfect_pred
         else:
-            pass # make a function factory to have multiple call-backs
+            pass  # TODO: make a function factory to have multiple call-backs
 
         mlefit = super(DiscreteModel, self).fit(start_params=start_params,
-                method=method, maxiter=maxiter, full_output=full_output,
-                disp=disp, callback=callback, **kwargs)
+                                                method=method, maxiter=maxiter,
+                                                full_output=full_output,
+                                                disp=disp, callback=callback,
+                                                **kwargs)
 
-        return mlefit # up to subclasses to wrap results
+        return mlefit  # it is up to subclasses to wrap results
 
     fit.__doc__ += base.LikelihoodModel.fit.__doc__
 
@@ -1118,7 +1121,7 @@ class Poisson(CountModel):
         res._results.cov_params_default = cov
         cov_type = fit_kwds.get('cov_type', 'nonrobust')
         if cov_type != 'nonrobust':
-            res._results.normalized_cov_params = cov # assume scale=1
+            res._results.normalized_cov_params = cov  # assume scale=1
         else:
             res._results.normalized_cov_params = None
         k_constr = len(q)
@@ -1128,7 +1131,6 @@ class Poisson(CountModel):
         res._results.k_constr = k_constr
         res._results.results_constrained = res_constr
         return res
-
 
     def score(self, params):
         """
@@ -1187,7 +1189,7 @@ class Poisson(CountModel):
         exposure = getattr(self, "exposure", 0)
         X = self.exog
         L = np.exp(np.dot(X,params) + offset + exposure)
-        return (self.endog - L)[:,None] * X
+        return (self.endog - L)[:, None] * X
 
     def hessian(self, params):
         """
@@ -1216,8 +1218,8 @@ class Poisson(CountModel):
         offset = getattr(self, "offset", 0)
         exposure = getattr(self, "exposure", 0)
         X = self.exog
-        L = np.exp(np.dot(X,params) + exposure + offset)
-        return -np.dot(L*X.T, X)
+        L = np.exp(np.dot(X, params) + exposure + offset)
+        return -np.dot(L * X.T, X)
 
 
 class GeneralizedPoisson(CountModel):
@@ -1250,8 +1252,8 @@ class GeneralizedPoisson(CountModel):
     def __init__(self, endog, exog, p = 1, offset=None,
                        exposure=None, missing='none', **kwargs):
         super(GeneralizedPoisson, self).__init__(endog, exog, offset=offset,
-                                               exposure=exposure,
-                                               missing=missing, **kwargs)
+                                                 exposure=exposure,
+                                                 missing=missing, **kwargs)
         self.parameterization = p - 1
         self.exog_names.append('alpha')
         self.k_extra = 1
@@ -1383,14 +1385,15 @@ class GeneralizedPoisson(CountModel):
             start_params = np.append(start_params, max(-0.1, a))
 
         if callback is None:
-            # work around perfect separation callback #3895
+            # work around perfect separation callback GH#3895
             callback = lambda *x: x
 
         mlefit = super(GeneralizedPoisson, self).fit(start_params=start_params,
-                        maxiter=maxiter, method=method, disp=disp,
-                        full_output=full_output, callback=callback,
-                        **kwargs)
-
+                                                     maxiter=maxiter,
+                                                     method=method, disp=disp,
+                                                     full_output=full_output,
+                                                     callback=callback,
+                                                     **kwargs)
 
         if use_transparams and method not in ["newton", "ncg"]:
             self._transparams = False
@@ -1409,9 +1412,10 @@ class GeneralizedPoisson(CountModel):
     fit.__doc__ = DiscreteModel.fit.__doc__ + fit.__doc__
 
     def fit_regularized(self, start_params=None, method='l1',
-            maxiter='defined_by_method', full_output=1, disp=1, callback=None,
-            alpha=0, trim_mode='auto', auto_trim_tol=0.01, size_trim_tol=1e-4,
-            qc_tol=0.03, **kwargs):
+                        maxiter='defined_by_method', full_output=1, disp=1,
+                        callback=None, alpha=0, trim_mode='auto',
+                        auto_trim_tol=0.01, size_trim_tol=1e-4,
+                        qc_tol=0.03, **kwargs):
 
         if np.size(alpha) == 1 and alpha != 0:
             k_params = self.exog.shape[1] + self.k_extra
@@ -1441,8 +1445,8 @@ class GeneralizedPoisson(CountModel):
         if method in ['l1', 'l1_cvxopt_cp']:
             discretefit = L1GeneralizedPoissonResults(self, cntfit)
         else:
-            raise Exception(
-                    "argument method == %s, which is not handled" % method)
+            raise Exception("argument method == %s, which is not handled"
+                            % method)
 
         return L1GeneralizedPoissonResultsWrapper(discretefit)
 
@@ -1503,8 +1507,8 @@ class GeneralizedPoisson(CountModel):
         params = params[:-1]
         p = self.parameterization
         exog = self.exog
-        y = self.endog[:,None]
-        mu = self.predict(params)[:,None]
+        y = self.endog[:, None]
+        mu = self.predict(params)[:, None]
         mu_p = np.power(mu, p)
         a1 = 1 + alpha * mu_p
         a2 = mu + alpha * mu_p * y
@@ -1536,8 +1540,8 @@ class GeneralizedPoisson(CountModel):
         params = params[:-1]
         p = self.parameterization
         exog = self.exog
-        y = self.endog[:,None]
-        mu = self.predict(params)[:,None]
+        y = self.endog[:, None]
+        mu = self.predict(params)[:, None]
         mu_p = np.power(mu, p)
         a1 = 1 + alpha * mu_p
         a2 = mu + alpha * mu_p * y
@@ -1548,7 +1552,7 @@ class GeneralizedPoisson(CountModel):
 
         # for dl/dparams dparams
         dim = exog.shape[1]
-        hess_arr = np.empty((dim+1,dim+1))
+        hess_arr = np.empty((dim + 1, dim + 1))
 
         for i in range(dim):
             for j in range(i + 1):
@@ -1577,7 +1581,7 @@ class GeneralizedPoisson(CountModel):
         dldada = mu_p**2 * (3 * y / a1**2 - (y / a2)**2. * (y - 1) - 2 * a2 /
                             a1**3)
 
-        hess_arr[-1,-1] = dldada.sum()
+        hess_arr[-1, -1] = dldada.sum()
 
         return hess_arr
 
@@ -1612,7 +1616,7 @@ class GeneralizedPoisson(CountModel):
         elif which =='prob':
             counts = np.atleast_2d(np.arange(0, np.max(self.endog)+1))
             mu = self.predict(params, exog=exog, exposure=exposure,
-                              offset=offset)[:,None]
+                              offset=offset)[:, None]
             from statsmodels.distributions import genpoisson_p
             return genpoisson_p.pmf(counts, mu, params[-1],
                                     self.parameterization + 1)
@@ -2240,10 +2244,10 @@ class MNLogit(MultinomialModel):
         the flatteded array of derivatives in columns.
         """
         params = params.reshape(self.K, -1, order='F')
-        firstterm = self.wendog[:,1:] - self.cdf(np.dot(self.exog,
-                                                  params))[:,1:]
+        firstterm = self.wendog[:, 1:] - self.cdf(np.dot(self.exog,
+                                                  params))[:, 1:]
         #NOTE: might need to switch terms if params is reshaped
-        return (firstterm[:,:,None] * self.exog[:,None,:]).reshape(self.exog.shape[0], -1)
+        return (firstterm[:, :, None] * self.exog[:, None, :]).reshape(self.exog.shape[0], -1)
 
     def hessian(self, params):
         """
@@ -2280,16 +2284,16 @@ class MNLogit(MultinomialModel):
         partials = []
         J = self.J
         K = self.K
-        for i in range(J-1):
-            for j in range(J-1): # this loop assumes we drop the first col.
+        for i in range(J - 1):
+            for j in range(J - 1):  # this loop assumes we drop the first col.
                 if i == j:
                     partials.append(\
-                        -np.dot(((pr[:,i+1]*(1-pr[:,j+1]))[:,None]*X).T,X))
+                        -np.dot(((pr[:, i + 1] * (1 - pr[:, j + 1]))[:, None] * X).T, X))
                 else:
-                    partials.append(-np.dot(((pr[:,i+1]*-pr[:,j+1])[:,None]*X).T,X))
+                    partials.append(-np.dot(((pr[:, i + 1] * -pr[:,j + 1])[:, None] * X).T,X))
         H = np.array(partials)
         # the developer's notes on multinomial should clear this math up
-        H = np.transpose(H.reshape(J-1, J-1, K, K), (0, 2, 1, 3)).reshape((J-1)*K, (J-1)*K)
+        H = np.transpose(H.reshape(J - 1, J - 1, K, K), (0, 2, 1, 3)).reshape((J - 1) * K, (J - 1) * K)
         return H
 
 
@@ -2393,7 +2397,7 @@ class NegativeBinomial(CountModel):
 
     """ + base._missing_param_doc}
     def __init__(self, endog, exog, loglike_method='nb2', offset=None,
-                       exposure=None, missing='none', **kwargs):
+                 exposure=None, missing='none', **kwargs):
         super(NegativeBinomial, self).__init__(endog, exog, offset=offset,
                                                exposure=exposure,
                                                missing=missing, **kwargs)
@@ -2593,23 +2597,23 @@ class NegativeBinomial(CountModel):
 
         # for dl/dparams dparams
         dim = exog.shape[1]
-        hess_arr = np.empty((dim+1,dim+1))
+        hess_arr = np.empty((dim + 1, dim + 1))
         #const_arr = a1*mu*(a1+y)/(mu+a1)**2
         # not all of dparams
-        dparams = exog/alpha*(np.log(1/(alpha + 1)) +
-                              special.digamma(y + mu/alpha) -
-                              special.digamma(mu/alpha))
+        dparams = exog/alpha*(np.log(1 / (alpha + 1)) +
+                              special.digamma(y + mu / alpha) -
+                              special.digamma(mu / alpha))
 
         dmudb = exog*mu
         xmu_alpha = exog*mu/alpha
-        trigamma = (special.polygamma(1, mu/alpha + y) -
-                    special.polygamma(1, mu/alpha))
+        trigamma = (special.polygamma(1, mu / alpha + y) -
+                    special.polygamma(1, mu / alpha))
         for i in range(dim):
             for j in range(dim):
                 if j > i:
                     continue
-                hess_arr[i,j] = np.sum(dparams[:,i,None] * dmudb[:,j,None] +
-                                 xmu_alpha[:,i,None] * xmu_alpha[:,j,None] *
+                hess_arr[i,j] = np.sum(dparams[:, i, None] * dmudb[:, j, None] +
+                                 xmu_alpha[:, i, None] * xmu_alpha[:, j, None] *
                                  trigamma, axis=0)
         tri_idx = np.triu_indices(dim, k=1)
         hess_arr[tri_idx] = hess_arr.T[tri_idx]
@@ -2672,8 +2676,8 @@ class NegativeBinomial(CountModel):
         # for dl/dparams dalpha
         da1 = -alpha**-2
         dldpda = np.sum(mu * exog * (y - mu) * da1 / (mu + a1)**2 , axis=0)
-        hess_arr[-1,:-1] = dldpda
-        hess_arr[:-1,-1] = dldpda
+        hess_arr[-1, :-1] = dldpda
+        hess_arr[:-1, -1] = dldpda
 
         # for dl/dalpha dalpha
         # NOTE: polygamma(1,x) is the trigamma function
@@ -2755,10 +2759,12 @@ class NegativeBinomial(CountModel):
             callback = lambda *x: x
 
         mlefit = super(NegativeBinomial, self).fit(start_params=start_params,
-                        maxiter=maxiter, method=method, disp=disp,
-                        full_output=full_output, callback=callback,
-                        **kwargs)
-                        # TODO: Fix NBin _check_perfect_pred
+                                                   maxiter=maxiter,
+                                                   method=method, disp=disp,
+                                                   full_output=full_output,
+                                                   callback=callback,
+                                                   **kwargs)
+        # TODO: Fix NBin _check_perfect_pred
         if self.loglike_method.startswith('nb'):
             # mlefit is a wrapped counts results
             self._transparams = False  # don't need to transform anymore now
@@ -2774,7 +2780,7 @@ class NegativeBinomial(CountModel):
         if cov_kwds is None:
             cov_kwds = {}  # TODO: make this unnecessary ?
         result._get_robustcov_results(cov_type=cov_type,
-                                    use_self=True, use_t=use_t, **cov_kwds)
+                                      use_self=True, use_t=use_t, **cov_kwds)
         return result
 
 
@@ -4058,44 +4064,54 @@ class L1MultinomialResults(MultinomialResults):
 # --------------------------------------------------------------------
 # Results Wrappers
 
+
 class OrderedResultsWrapper(lm.RegressionResultsWrapper):
     pass
-wrap.populate_wrapper(OrderedResultsWrapper, OrderedResults)
+wrap.populate_wrapper(OrderedResultsWrapper, OrderedResults)  # noqa: E305
+
 
 class CountResultsWrapper(lm.RegressionResultsWrapper):
     pass
-wrap.populate_wrapper(CountResultsWrapper, CountResults)
+wrap.populate_wrapper(CountResultsWrapper, CountResults)  # noqa: E305
+
 
 class NegativeBinomialResultsWrapper(lm.RegressionResultsWrapper):
     pass
-wrap.populate_wrapper(NegativeBinomialResultsWrapper,
+wrap.populate_wrapper(NegativeBinomialResultsWrapper,  # noqa: E305
                       NegativeBinomialResults)
+
 
 class GeneralizedPoissonResultsWrapper(lm.RegressionResultsWrapper):
     pass
-wrap.populate_wrapper(GeneralizedPoissonResultsWrapper,
+wrap.populate_wrapper(GeneralizedPoissonResultsWrapper,  # noqa: E305
                       GeneralizedPoissonResults)
+
 
 class PoissonResultsWrapper(lm.RegressionResultsWrapper):
     pass
-wrap.populate_wrapper(PoissonResultsWrapper, PoissonResults)
+wrap.populate_wrapper(PoissonResultsWrapper, PoissonResults)  # noqa: E305
+
 
 class L1CountResultsWrapper(lm.RegressionResultsWrapper):
     pass
 
+
 class L1PoissonResultsWrapper(lm.RegressionResultsWrapper):
     pass
-wrap.populate_wrapper(L1PoissonResultsWrapper, L1PoissonResults)
+wrap.populate_wrapper(L1PoissonResultsWrapper, L1PoissonResults)  # noqa: E305
+
 
 class L1NegativeBinomialResultsWrapper(lm.RegressionResultsWrapper):
     pass
-wrap.populate_wrapper(L1NegativeBinomialResultsWrapper,
+wrap.populate_wrapper(L1NegativeBinomialResultsWrapper,  # noqa: E305
                       L1NegativeBinomialResults)
+
 
 class L1GeneralizedPoissonResultsWrapper(lm.RegressionResultsWrapper):
     pass
-wrap.populate_wrapper(L1GeneralizedPoissonResultsWrapper,
+wrap.populate_wrapper(L1GeneralizedPoissonResultsWrapper,  # noqa: E305
                       L1GeneralizedPoissonResults)
+
 
 class BinaryResultsWrapper(lm.RegressionResultsWrapper):
     _attrs = {"resid_dev": "rows",
@@ -4106,16 +4122,21 @@ class BinaryResultsWrapper(lm.RegressionResultsWrapper):
                                    _attrs)
 wrap.populate_wrapper(BinaryResultsWrapper, BinaryResults)
 
+
 class L1BinaryResultsWrapper(lm.RegressionResultsWrapper):
     pass
 wrap.populate_wrapper(L1BinaryResultsWrapper, L1BinaryResults)
+
 
 class MultinomialResultsWrapper(lm.RegressionResultsWrapper):
     _attrs = {"resid_misclassified": "rows"}
     _wrap_attrs = wrap.union_dicts(lm.RegressionResultsWrapper._wrap_attrs,
                                    _attrs)
-wrap.populate_wrapper(MultinomialResultsWrapper, MultinomialResults)
+wrap.populate_wrapper(MultinomialResultsWrapper,  # noqa: E305
+                      MultinomialResults)
+
 
 class L1MultinomialResultsWrapper(lm.RegressionResultsWrapper):
     pass
-wrap.populate_wrapper(L1MultinomialResultsWrapper, L1MultinomialResults)
+wrap.populate_wrapper(L1MultinomialResultsWrapper,  # noqa: E305
+                      L1MultinomialResults)
