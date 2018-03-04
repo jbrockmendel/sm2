@@ -46,7 +46,7 @@ NOTE        = """::
 """
 
 from numpy import recfromtxt, column_stack, array
-from statsmodels.datasets import utils as du
+from sm2.datasets import utils as du
 from os.path import dirname, abspath
 
 PATH = '%s/%s' % (dirname(abspath(__file__)), 'randhie.csv')

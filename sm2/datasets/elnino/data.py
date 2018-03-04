@@ -37,7 +37,7 @@ NOTE = """::
 from numpy import recfromtxt, column_stack, array
 from pandas import DataFrame
 
-from statsmodels.datasets.utils import Dataset
+from sm2.datasets.utils import Dataset
 from os.path import dirname, abspath
 
 
