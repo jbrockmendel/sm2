@@ -15,11 +15,14 @@ import numpy as np
 from numpy.testing import (assert_, assert_allclose, assert_equal,
                            assert_array_equal)
 import pandas as pd
+import pandas.util.testing as tm
 
+import sm2.api as sm
+from sm2.discrete.discrete_model import DiscreteResults
+
+from statsmodels.genmod.generalized_linear_model import GLMResults
 
 '''
-import statsmodels.api as sm
-
 class CheckGenericMixin(object):
     @classmethod
     def setup_class(cls):
@@ -105,8 +108,6 @@ class CheckGenericMixin(object):
     #@knownfailureif(True)
     def test_fitted(self):
         # ignore wrapper for isinstance check
-        from statsmodels.genmod.generalized_linear_model import GLMResults
-        from sm2.discrete.discrete_model import DiscreteResults
         # FIXME: work around GEE has no wrapper
         if hasattr(self.results, '_results'):
             results = self.results._results
@@ -127,8 +128,6 @@ class CheckGenericMixin(object):
         p_exog = np.squeeze(np.asarray(res.model.exog[:2]))
 
         # ignore wrapper for isinstance check
-        from statsmodels.genmod.generalized_linear_model import GLMResults
-        from sm2.discrete.discrete_model import DiscreteResults
 
         # FIXME: work around GEE has no wrapper
         if hasattr(self.results, '_results'):
@@ -143,9 +142,6 @@ class CheckGenericMixin(object):
             res.predict(p_exog.tolist())
             res.predict(p_exog[0].tolist())
         else:
-
-            import pandas as pd
-            from pandas.util.testing import assert_series_equal
 
             fitted = res.fittedvalues[:2]
             assert_allclose(fitted, res.predict(p_exog), rtol=1e-12)
@@ -172,7 +168,7 @@ class CheckGenericMixin(object):
                 assert_(isinstance(predicted_pandas, pd.Series))
 
                 predicted_expected = pd.Series(predicted, index=exog_index)
-                assert_series_equal(predicted_expected, predicted_pandas)
+                tm.assert_series_equal(predicted_expected, predicted_pandas)
 
             else:
                 assert_(isinstance(predicted_pandas, pd.DataFrame))
@@ -243,7 +239,7 @@ class TestGenericNegativeBinomial(CheckGenericMixin):
 
 class TestGenericLogit(CheckGenericMixin):
     def setup(self):
-        #fit for each test, because results will be changed by test
+        # fit for each test, because results will be changed by test
         x = self.exog
         nobs = x.shape[0]
         np.random.seed(987689)
@@ -256,25 +252,27 @@ class TestGenericLogit(CheckGenericMixin):
 
 class TestGenericRLM(CheckGenericMixin):
     def setup(self):
-        #fit for each test, because results will be changed by test
+        # fit for each test, because results will be changed by test
         x = self.exog
         np.random.seed(987689)
         y = x.sum(1) + np.random.randn(x.shape[0])
+        raise NotImplementedError
         self.results = sm.RLM(y, self.exog).fit()
 
 
 class TestGenericGLM(CheckGenericMixin):
     def setup(self):
-        #fit for each test, because results will be changed by test
+        # fit for each test, because results will be changed by test
         x = self.exog
         np.random.seed(987689)
         y = x.sum(1) + np.random.randn(x.shape[0])
+        raise NotImplementedError
         self.results = sm.GLM(y, self.exog).fit()
 
 
 class TestGenericGEEPoisson(CheckGenericMixin):
     def setup(self):
-        #fit for each test, because results will be changed by test
+        # fit for each test, because results will be changed by test
         x = self.exog
         np.random.seed(987689)
         y_count = np.random.poisson(np.exp(x.sum(1) - x.mean()))
@@ -282,6 +280,7 @@ class TestGenericGEEPoisson(CheckGenericMixin):
         # use start_params to speed up test, difficult convergence not tested
         start_params = np.array([0., 1., 1., 1.])
 
+        raise NotImplementedError
         vi = sm.cov_struct.Independence()
         family = sm.families.Poisson()
         self.results = sm.GEE(y_count, self.exog, groups, family=family,
@@ -290,7 +289,7 @@ class TestGenericGEEPoisson(CheckGenericMixin):
 
 class TestGenericGEEPoissonNaive(CheckGenericMixin):
     def setup(self):
-        #fit for each test, because results will be changed by test
+        # fit for each test, because results will be changed by test
         x = self.exog
         np.random.seed(987689)
         #y_count = np.random.poisson(np.exp(x.sum(1) - x.mean()))
@@ -298,7 +297,8 @@ class TestGenericGEEPoissonNaive(CheckGenericMixin):
         groups = np.random.randint(0, 4, size=x.shape[0])
         # use start_params to speed up test, difficult convergence not tested
         start_params = np.array([0., 1., 1., 1.])
-
+        
+        raise NotImplementedError
         vi = sm.cov_struct.Independence()
         family = sm.families.Poisson()
         self.results = sm.GEE(y_count, self.exog, groups, family=family,
@@ -308,7 +308,7 @@ class TestGenericGEEPoissonNaive(CheckGenericMixin):
 
 class TestGenericGEEPoissonBC(CheckGenericMixin):
     def setup(self):
-        #fit for each test, because results will be changed by test
+        # fit for each test, because results will be changed by test
         x = self.exog
         np.random.seed(987689)
         #y_count = np.random.poisson(np.exp(x.sum(1) - x.mean()))
@@ -318,6 +318,7 @@ class TestGenericGEEPoissonBC(CheckGenericMixin):
         start_params = np.array([0., 1., 1., 1.])
         # params_est = np.array([-0.0063238 ,  0.99463752,  1.02790201,  0.98080081])
 
+        raise NotImplementedError
         vi = sm.cov_struct.Independence()
         family = sm.families.Poisson()
         mod = sm.GEE(y_count, self.exog, groups, family=family, cov_struct=vi)
@@ -367,10 +368,7 @@ class CheckAnovaMixin(object):
 class TestWaldAnovaOLS(CheckAnovaMixin):
     @classmethod
     def initialize(cls):
-        from statsmodels.formula.api import ols, glm, poisson
-        from sm2.discrete.discrete_model import Poisson
-
-        mod = ols("np.log(Days+1) ~ C(Duration, Sum)*C(Weight, Sum)", cls.data)
+        mod = sm.OLS.from_formula("np.log(Days+1) ~ C(Duration, Sum)*C(Weight, Sum)", cls.data)
         cls.res = mod.fit(use_t=False)
 
     def test_noformula(self):
@@ -391,10 +389,7 @@ class TestWaldAnovaOLS(CheckAnovaMixin):
 class TestWaldAnovaOLSF(CheckAnovaMixin):
     @classmethod
     def initialize(cls):
-        from statsmodels.formula.api import ols, glm, poisson
-        from sm2.discrete.discrete_model import Poisson
-
-        mod = ols("np.log(Days+1) ~ C(Duration, Sum)*C(Weight, Sum)", cls.data)
+        mod = sm.OLS.from_formula("np.log(Days+1) ~ C(Duration, Sum)*C(Weight, Sum)", cls.data)
         cls.res = mod.fit()  # default use_t=True
 
     def test_predict_missing(self):
@@ -402,56 +397,42 @@ class TestWaldAnovaOLSF(CheckAnovaMixin):
         ex.iloc[0, 1] = np.nan
         predicted1 = self.res.predict(ex)
         predicted2 = self.res.predict(ex[1:])
-        from pandas.util.testing import assert_series_equal
-        try:
-            from pandas.util.testing import assert_index_equal
-        except ImportError:
-            # for old pandas
-            from numpy.testing import assert_array_equal as assert_index_equal
 
-        assert_index_equal(predicted1.index, ex.index)
-        assert_series_equal(predicted1[1:], predicted2)
+        tm.assert_index_equal(predicted1.index, ex.index)
+        tm.assert_series_equal(predicted1[1:], predicted2)
         assert_equal(predicted1.values[0], np.nan)
 
 
 class TestWaldAnovaGLM(CheckAnovaMixin):
     @classmethod
     def initialize(cls):
-        from statsmodels.formula.api import ols, glm, poisson
-        from sm2.discrete.discrete_model import Poisson
-
-        mod = glm("np.log(Days+1) ~ C(Duration, Sum)*C(Weight, Sum)", cls.data)
+        raise NotImplementedError
+        mod = sm.GLM.from_formula("np.log(Days+1) ~ C(Duration, Sum)*C(Weight, Sum)", cls.data)
         cls.res = mod.fit(use_t=False)
 
 
 class TestWaldAnovaPoisson(CheckAnovaMixin):
     @classmethod
     def initialize(cls):
-        from sm2.discrete.discrete_model import Poisson
-
-        mod = Poisson.from_formula("Days ~ C(Duration, Sum)*C(Weight, Sum)", cls.data)
+        mod = sm.Poisson.from_formula("Days ~ C(Duration, Sum)*C(Weight, Sum)", cls.data)
         cls.res = mod.fit(cov_type='HC0')
 
 
 class TestWaldAnovaNegBin(CheckAnovaMixin):
     @classmethod
     def initialize(cls):
-        from sm2.discrete.discrete_model import NegativeBinomial
-
         formula = "Days ~ C(Duration, Sum)*C(Weight, Sum)"
-        mod = NegativeBinomial.from_formula(formula, cls.data,
-                                            loglike_method='nb2')
+        mod = sm.NegativeBinomial.from_formula(formula, cls.data,
+                                               loglike_method='nb2')
         cls.res = mod.fit()
 
 
 class TestWaldAnovaNegBin1(CheckAnovaMixin):
     @classmethod
     def initialize(cls):
-        from sm2.discrete.discrete_model import NegativeBinomial
-
         formula = "Days ~ C(Duration, Sum)*C(Weight, Sum)"
-        mod = NegativeBinomial.from_formula(formula, cls.data,
-                                            loglike_method='nb1')
+        mod = sm.NegativeBinomial.from_formula(formula, cls.data,
+                                               loglike_method='nb1')
         cls.res = mod.fit(cov_type='HC0')
 
 '''
@@ -491,8 +472,5 @@ def compare_waldres(res, wa, constrasts):
 class TestWaldAnovaOLSNoFormula(object):
     @classmethod
     def initialize(cls):
-        from statsmodels.formula.api import ols  # , glm, poisson
-        # from sm2.discrete.discrete_model import Poisson
-
-        mod = ols("np.log(Days+1) ~ C(Duration, Sum)*C(Weight, Sum)", cls.data)
+        mod = sm.OLS.from_formula("np.log(Days+1) ~ C(Duration, Sum)*C(Weight, Sum)", cls.data)
         cls.res = mod.fit()  # default use_t=True
