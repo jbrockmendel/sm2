@@ -5,6 +5,8 @@ import os
 import warnings
 from datetime import datetime
 
+from six import BytesIO
+
 import numpy as np
 from numpy.testing import assert_array_equal, assert_, assert_equal, dec
 
@@ -13,9 +15,9 @@ import pandas.util.testing as tm
 
 from sm2.compat.testing import skipif
 
-from sm2.compat.python import BytesIO, asbytes
 from sm2.iolib.foreign import (StataWriter, genfromdta,
-            _datetime_to_stata_elapsed, _stata_elapsed_date_to_datetime)
+                               _datetime_to_stata_elapsed,
+                               _stata_elapsed_date_to_datetime)
 from sm2.datasets import macrodata
 
 
@@ -79,7 +81,7 @@ def test_missing_roundtrip():
     dta = genfromdta(buf, missing_flt=np.nan)
     assert_(pd.isnull(dta[0][0]))
     assert_(pd.isnull(dta[0][1]))
-    assert_(dta[0][2] == asbytes(""))
+    assert_(dta[0][2] == b"")
 
     dta = genfromdta(os.path.join(curdir, "results/data_missing.dta"),
             missing_flt=-999)

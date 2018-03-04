@@ -16,31 +16,29 @@ G.S. Madalla. `Limited-Dependent and Qualitative Variables in Econometrics`.
 W. Greene. `Econometric Analysis`. Prentice Hall, 5th. edition. 2003.
 """
 from __future__ import division
+import warnings
 
-__all__ = ["Poisson", "Logit", "Probit", "MNLogit", "NegativeBinomial",
-           "GeneralizedPoisson", "NegativeBinomialP"]
 
 from six.moves import range
-from sm2.compat.python import lmap
 from sm2.compat.scipy import loggamma
 
 import numpy as np
-from pandas import get_dummies
+import pandas as pd
 
 from scipy.special import gammaln, digamma, polygamma
 from scipy import stats, special
-from scipy.stats import nbinom
 
 import sm2.tools.tools as tools
 from sm2.tools import data as data_tools
 from sm2.tools.decorators import resettable_cache, cache_readonly
 from sm2.tools.sm_exceptions import PerfectSeparationError
 from sm2.tools.numdiff import approx_fprime_cs
+
 import sm2.base.model as base
 from sm2.base.data import handle_data  # for mnlogit
-import sm2.regression.linear_model as lm
 import sm2.base.wrapper as wrap
-from sm2.compat.numpy import np_matrix_rank
+
+import sm2.regression.linear_model as lm
 
 from statsmodels.base.l1_slsqp import fit_l1_slsqp
 
@@ -50,9 +48,10 @@ try:
 except ImportError:
     have_cvxopt = False
 
-import warnings
+__all__ = ["Poisson", "Logit", "Probit", "MNLogit", "NegativeBinomial",
+           "GeneralizedPoisson", "NegativeBinomialP"]
 
-#TODO: When we eventually get user-settable precision, we need to change
+# TODO: When we eventually get user-settable precision, we need to change
 #      this
 FLOAT_EPS = np.finfo(float).eps
 
@@ -144,13 +143,13 @@ def _pandas_to_dummies(endog):
     if endog.ndim == 2:
         if endog.shape[1] == 1:
             yname = endog.columns[0]
-            endog_dummies = get_dummies(endog.iloc[:, 0])
+            endog_dummies = pd.get_dummies(endog.iloc[:, 0])
         else:  # series
             yname = 'y'
             endog_dummies = endog
     else:
         yname = endog.name
-        endog_dummies = get_dummies(endog)
+        endog_dummies = pd.get_dummies(endog)
     ynames = endog_dummies.columns.tolist()
 
     return endog_dummies, ynames, yname
@@ -178,9 +177,9 @@ class DiscreteModel(base.LikelihoodModel):
         and should contain any preprocessing that needs to be done for a model.
         """
         # assumes constant
-        self.df_model = float(np_matrix_rank(self.exog) - 1)
+        self.df_model = float(np.linalg.matrix_rank(self.exog) - 1)
         self.df_resid = (float(self.exog.shape[0] -
-                         np_matrix_rank(self.exog)))
+                         np.linalg.matrix_rank(self.exog)))
 
     def cdf(self, X):
         """
@@ -3233,7 +3232,7 @@ class NegativeBinomialP(CountModel):
             counts = np.atleast_2d(np.arange(0, np.max(self.endog)+1))
             mu = self.predict(params, exog, exposure, offset)
             size, prob = self.convert_params(params, mu)
-            return nbinom.pmf(counts, size[:, None], prob[:, None])
+            return stats.nbinom.pmf(counts, size[:, None], prob[:, None])
         else:
             raise TypeError('keyword \'which\' = %s not recognized' % which)
 
