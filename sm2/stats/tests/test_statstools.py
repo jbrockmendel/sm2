@@ -275,7 +275,6 @@ class TestStattools(object):
         for i, r in enumerate(self.expected_kurtosis):
             assert_almost_equal(r * np.ones((10, 10)), kurtosis[i])
 
-
     def test_robust_kurtosis_excess_false(self):
         x = self.kurtosis_x
         expected = self.expected_kurtosis + self.kurtosis_constants

@@ -7,7 +7,6 @@ Author: Josef Perktold
 License: BSD-3
 
 """
-
 import os
 
 import numpy as np
@@ -20,9 +19,7 @@ from sm2.datasets import macrodata
 
 import sm2.stats.sandwich_covariance as sw
 
-import statsmodels.stats.diagnostic as smsdia
-#import statsmodels.sandbox.stats.diagnostic as smsdia
-import statsmodels.stats.outliers_influence as oi
+from statsmodels.stats import diagnostic, outliers_influence
 
 '''
 def compare_ftest(contrast_res, other, decimal=(5,4)):
@@ -35,7 +32,6 @@ def compare_ftest(contrast_res, other, decimal=(5,4)):
 class TestGLSARGretl(object):
 
     def test_all(self):
-
         d = macrodata.load().data
         #import datasetswsm.greene as g
         #d = g.load('5-1')
@@ -121,8 +117,8 @@ class TestGLSARGretl(object):
         #assert_almost_equal(res.durbin_watson, result_gretl_g1['dw'][1], decimal=7) #TODO
 
         #arch
-        #sm_arch = smsdia.acorr_lm(res.wresid**2, maxlag=4, autolag=None)
-        sm_arch = smsdia.het_arch(res.wresid, maxlag=4)
+        #sm_arch = diagnostic.acorr_lm(res.wresid**2, maxlag=4, autolag=None)
+        sm_arch = diagnostic.het_arch(res.wresid, maxlag=4)
         assert_almost_equal(sm_arch[0], arch_4[0], decimal=4)
         assert_almost_equal(sm_arch[1], arch_4[1], decimal=6)
 
@@ -146,20 +142,16 @@ class TestGLSARGretl(object):
         assert_almost_equal(res.f_pvalue, result_gretl_g1['f_pvalue'][1], decimal=6)
         #assert_almost_equal(res.durbin_watson, result_gretl_g1['dw'][1], decimal=7) #TODO
 
-
-
-        c = oi.reset_ramsey(res, degree=2)
+        c = outliers_influence.reset_ramsey(res, degree=2)
         compare_ftest(c, reset_2, decimal=(2,4))
-        c = oi.reset_ramsey(res, degree=3)
+        c = outliers_influence.reset_ramsey(res, degree=3)
         compare_ftest(c, reset_2_3, decimal=(2,4))
 
         #arch
-        #sm_arch = smsdia.acorr_lm(res.wresid**2, maxlag=4, autolag=None)
-        sm_arch = smsdia.het_arch(res.wresid, maxlag=4)
+        #sm_arch = diagnostic.acorr_lm(res.wresid**2, maxlag=4, autolag=None)
+        sm_arch = diagnostic.het_arch(res.wresid, maxlag=4)
         assert_almost_equal(sm_arch[0], arch_4[0], decimal=1)
         assert_almost_equal(sm_arch[1], arch_4[1], decimal=2)
-
-
 
         """
         Performing iterative calculation of rho...
@@ -341,7 +333,7 @@ class TestGLSARGretl(object):
 
         names = 'date   residual        leverage       influence        DFFITS'.split()
         cur_dir = os.path.abspath(os.path.dirname(__file__))
-        fpath = os.path.join(cur_dir, 'results/leverage_influence_ols_nostars.txt')
+        fpath = os.path.join(cur_dir, 'results', 'leverage_influence_ols_nostars.txt')
         lev = np.genfromtxt(fpath, skip_header=3, skip_footer=1,
                             converters={0:lambda s: s})
         #either numpy 1.6 or python 3.2 changed behavior
@@ -372,35 +364,35 @@ class TestGLSARGretl(object):
         #assert_approx_equal(res.f_pvalue, result_gretl_g1['f_pvalue'][1], significant=1) #FAIL
         #assert_almost_equal(res.durbin_watson, result_gretl_g1['dw'][1], decimal=7) #TODO
 
-
-        c = oi.reset_ramsey(res, degree=2)
+        c = outliers_influence.reset_ramsey(res, degree=2)
         compare_ftest(c, reset_2, decimal=(6,5))
-        c = oi.reset_ramsey(res, degree=3)
+        c = outliers_influence.reset_ramsey(res, degree=3)
         compare_ftest(c, reset_2_3, decimal=(6,5))
 
-        linear_sq = smsdia.linear_lm(res.resid, res.model.exog)
+        linear_sq = diagnostic.linear_lm(res.resid, res.model.exog)
         assert_almost_equal(linear_sq[0], linear_squares[0], decimal=6)
         assert_almost_equal(linear_sq[1], linear_squares[1], decimal=7)
 
-        hbpk = smsdia.het_breuschpagan(res.resid, res.model.exog)
+        hbpk = diagnostic.het_breuschpagan(res.resid, res.model.exog)
         assert_almost_equal(hbpk[0], het_breusch_pagan_konker[0], decimal=6)
         assert_almost_equal(hbpk[1], het_breusch_pagan_konker[1], decimal=6)
 
-        hw = smsdia.het_white(res.resid, res.model.exog)
+        hw = diagnostic.het_white(res.resid, res.model.exog)
         assert_almost_equal(hw[:2], het_white[:2], 6)
 
         #arch
-        #sm_arch = smsdia.acorr_lm(res.resid**2, maxlag=4, autolag=None)
-        sm_arch = smsdia.het_arch(res.resid, maxlag=4)
+        #sm_arch = diagnostic.acorr_lm(res.resid**2, maxlag=4, autolag=None)
+        sm_arch = diagnostic.het_arch(res.resid, maxlag=4)
         assert_almost_equal(sm_arch[0], arch_4[0], decimal=5)
         assert_almost_equal(sm_arch[1], arch_4[1], decimal=6)
 
-        vif2 = [oi.variance_inflation_factor(res.model.exog, k) for k in [1,2]]
+        vif2 = [outliers_influence.variance_inflation_factor(res.model.exog, k)
+                for k in [1, 2]]
 
-        infl = oi.OLSInfluence(res_ols)
+        infl = outliers_influence.OLSInfluence(res_ols)
         #print np.max(np.abs(lev['DFFITS'] - infl.dffits[0]))
         #print np.max(np.abs(lev['leverage'] - infl.hat_matrix_diag))
-        #print np.max(np.abs(lev['influence'] - infl.influence))  #just added this based on Gretl
+        #print np.max(np.abs(lev['influence'] - infl.influence))  # just added this based on Gretl
 
         #just rough test, low decimal in Gretl output,
         assert_almost_equal(lev['residual'], res.resid, decimal=3)
@@ -408,13 +400,12 @@ class TestGLSARGretl(object):
         assert_almost_equal(lev['leverage'], infl.hat_matrix_diag, decimal=3)
         assert_almost_equal(lev['influence'], infl.influence, decimal=4)
 
-def test_GLSARlag():
-    #test that results for lag>1 is close to lag=1, and smaller ssr
 
-    from sm2.datasets import macrodata
+def test_GLSARlag():
+    # test that results for lag>1 is close to lag=1, and smaller ssr
     d2 = macrodata.load().data
-    g_gdp = 400*np.diff(np.log(d2['realgdp']))
-    g_inv = 400*np.diff(np.log(d2['realinv']))
+    g_gdp = 400 * np.diff(np.log(d2['realgdp']))
+    g_inv = 400 * np.diff(np.log(d2['realinv']))
     exogg = add_constant(np.c_[g_gdp, d2['realint'][:-1]], prepend=False)
 
     mod1 = GLSAR(g_inv, exogg, 1)

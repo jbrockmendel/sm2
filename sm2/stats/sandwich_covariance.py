@@ -105,8 +105,7 @@ from six.moves import range
 import pandas as pd
 import numpy as np
 
-from statsmodels.tools.grouputils import Group
-from statsmodels.stats.moment_helpers import se_cov
+from sm2.tools.grouputils import Group
 
 __all__ = ['cov_cluster', 'cov_cluster_2groups', 'cov_hac', 'cov_nw_panel',
            'cov_white_simple',
@@ -114,9 +113,12 @@ __all__ = ['cov_cluster', 'cov_cluster_2groups', 'cov_hac', 'cov_nw_panel',
            'se_cov', 'weights_bartlett', 'weights_uniform']
 
 
+def se_cov(cov):
+    # TODO: This comes from stats.moment_helpers upstream, doesn't belong here
+    return np.sqrt(np.diag(cov))
 
 
-#----------- from linear_model.RegressionResults
+# ----------- from linear_model.RegressionResults
 '''
     HC0_se
         White's (1980) heteroskedasticity robust standard errors.

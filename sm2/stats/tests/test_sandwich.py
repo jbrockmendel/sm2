@@ -17,16 +17,15 @@ from numpy.testing import assert_almost_equal
 from sm2.regression.linear_model import OLS, GLSAR
 from sm2.tools.tools import add_constant
 import sm2.stats.sandwich_covariance as sw
-# import statsmodels.sandbox.panel.sandwich_covariance_generic as swg
 
 
 '''
 def test_cov_cluster_2groups():
-    #comparing cluster robust standard errors to Peterson
-    #requires Petersen's test_data
-    #http://www.kellogg.northwestern.edu/faculty/petersen/htm/papers/se/test_data.txt
+    # comparing cluster robust standard errors to Peterson
+    # requires Petersen's test_data
+    # http://www.kellogg.northwestern.edu/faculty/petersen/htm/papers/se/test_data.txt
     cur_dir = os.path.abspath(os.path.dirname(__file__))
-    fpath = os.path.join(cur_dir,"test_data.txt")
+    fpath = os.path.join(cur_dir, "test_data.txt")
     pet = np.genfromtxt(fpath)
     endog = pet[:,-1]
     group = pet[:,0].astype(int)
@@ -36,8 +35,8 @@ def test_cov_cluster_2groups():
 
     cov01, covg, covt = sw.cov_cluster_2groups(res, group, group2=time)
 
-    #Reference number from Petersen
-    #http://www.kellogg.northwestern.edu/faculty/petersen/htm/papers/se/test_data.htm
+    # Reference number from Petersen
+    # http://www.kellogg.northwestern.edu/faculty/petersen/htm/papers/se/test_data.htm
 
     bse_petw = [0.0284, 0.0284]
     bse_pet0 = [0.0670, 0.0506]
@@ -55,16 +54,14 @@ def test_cov_cluster_2groups():
     assert_almost_equal(bse_1, bse_pet1, decimal=4)
     assert_almost_equal(bse_01, bse_pet01, decimal=4)
 
-def test_hac_simple():
 
+def test_hac_simple():
     from sm2.datasets import macrodata
     d2 = macrodata.load().data
     g_gdp = 400*np.diff(np.log(d2['realgdp']))
     g_inv = 400*np.diff(np.log(d2['realinv']))
     exogg = add_constant(np.c_[g_gdp, d2['realint'][:-1]])
     res_olsg = OLS(g_inv, exogg).fit()
-
-
 
     #> NeweyWest(fm, lag = 4, prewhite = FALSE, sandwich = TRUE, verbose=TRUE, adjust=TRUE)
     #Lag truncation parameter chosen: 4
