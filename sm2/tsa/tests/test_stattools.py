@@ -47,82 +47,87 @@ class CheckADF(object):
         critvalues = [self.res1[4][lev] for lev in self.levels]
         assert_almost_equal(critvalues, self.critvalues, DECIMAL_2)
 
+
 class TestADFConstant(CheckADF):
     """
     Dickey-Fuller test for unit root
     """
     @classmethod
     def setup_class(cls):
-        cls.res1 = adfuller(cls.x, regression="c", autolag=None,
-                maxlag=4)
+        cls.res1 = adfuller(cls.x, regression="c", autolag=None, maxlag=4)
         cls.teststat = .97505319
         cls.pvalue = .99399563
         cls.critvalues = [-3.476, -2.883, -2.573]
+
 
 class TestADFConstantTrend(CheckADF):
     """
     """
     @classmethod
     def setup_class(cls):
-        cls.res1 = adfuller(cls.x, regression="ct", autolag=None,
-                maxlag=4)
+        cls.res1 = adfuller(cls.x, regression="ct", autolag=None, maxlag=4)
         cls.teststat = -1.8566374
         cls.pvalue = .67682968
         cls.critvalues = [-4.007, -3.437, -3.137]
 
-#class TestADFConstantTrendSquared(CheckADF):
+
+# class TestADFConstantTrendSquared(CheckADF):
 #    """
 #    """
 #    pass
-#TODO: get test values from R?
+# TODO: get test values from R?
+
 
 class TestADFNoConstant(CheckADF):
     """
     """
     @classmethod
     def setup_class(cls):
-        cls.res1 = adfuller(cls.x, regression="nc", autolag=None,
-                maxlag=4)
+        cls.res1 = adfuller(cls.x, regression="nc", autolag=None, maxlag=4)
         cls.teststat = 3.5227498
-        cls.pvalue = .99999 # Stata does not return a p-value for noconstant.
-                        # Tau^max in MacKinnon (1994) is missing, so it is
-                        # assumed that its right-tail is well-behaved
+        cls.pvalue = .99999
+        # Stata does not return a p-value for noconstant.
+        # Tau^max in MacKinnon (1994) is missing, so it is
+        # assumed that its right-tail is well-behaved
         cls.critvalues = [-2.587, -1.950, -1.617]
 
+
 # No Unit Root
+
 
 class TestADFConstant2(CheckADF):
     @classmethod
     def setup_class(cls):
-        cls.res1 = adfuller(cls.y, regression="c", autolag=None,
-                maxlag=1)
+        cls.res1 = adfuller(cls.y, regression="c", autolag=None, maxlag=1)
         cls.teststat = -4.3346988
         cls.pvalue = .00038661
         cls.critvalues = [-3.476, -2.883, -2.573]
 
+
 class TestADFConstantTrend2(CheckADF):
     @classmethod
     def setup_class(cls):
-        cls.res1 = adfuller(cls.y, regression="ct", autolag=None,
-                maxlag=1)
+        cls.res1 = adfuller(cls.y, regression="ct", autolag=None, maxlag=1)
         cls.teststat = -4.425093
         cls.pvalue = .00199633
         cls.critvalues = [-4.006, -3.437, -3.137]
 
+
 class TestADFNoConstant2(CheckADF):
     @classmethod
     def setup_class(cls):
-        cls.res1 = adfuller(cls.y, regression="nc", autolag=None,
-                maxlag=1)
+        cls.res1 = adfuller(cls.y, regression="nc", autolag=None, maxlag=1)
         cls.teststat = -2.4511596
-        cls.pvalue = 0.013747 # Stata does not return a p-value for noconstant
-                               # this value is just taken from our results
+        cls.pvalue = 0.013747
+        # Stata does not return a p-value for noconstant
+        # this value is just taken from our results
         cls.critvalues = [-2.587,-1.950,-1.617]
         _, _1, _2, cls.store = adfuller(cls.y, regression="nc", autolag=None,
-                                         maxlag=1, store=True)
+                                        maxlag=1, store=True)
 
     def test_store_str(self):
-        assert_equal(self.store.__str__(), 'Augmented Dickey-Fuller Test Results')
+        assert_equal(self.store.__str__(),
+                     'Augmented Dickey-Fuller Test Results')
 
 class CheckCorrGram(object):
     """
@@ -134,7 +139,7 @@ class CheckCorrGram(object):
             "/results/results_corrgram.csv"
     results = pd.read_csv(filename, delimiter=',')
 
-    #not needed: add 1. for lag zero
+    # not needed: add 1. for lag zero
     #self.results['acvar'] = np.concatenate(([1.], self.results['acvar']))
 
 
@@ -163,7 +168,7 @@ class TestACF(CheckCorrGram):
 
 #    def pvalue(self):
 #        pass
-#NOTE: shouldn't need testing if Q stat is correct
+# NOTE: shouldn't need testing if Q stat is correct
 
 
 class TestACF_FFT(CheckCorrGram):
@@ -181,6 +186,7 @@ class TestACF_FFT(CheckCorrGram):
         #todo why is res1/qstat 1 short
         assert_almost_equal(self.res1[1], self.qstat, DECIMAL_3)
 
+
 class TestACFMissing(CheckCorrGram):
     # Test Autocorrelation Function using Missing
     @classmethod
@@ -195,7 +201,7 @@ class TestACFMissing(CheckCorrGram):
         cls.acf_none = np.empty(40) * np.nan # lags 1 to 40 inclusive
         cls.qstat_none = np.empty(40) * np.nan
         cls.res_none = acf(cls.x, nlags=40, qstat=True, alpha=.05,
-                        missing='none')
+                           missing='none')
 
     def test_raise(self):
         assert_raises(MissingDataError, acf, self.x, nlags=40,
@@ -214,6 +220,7 @@ class TestACFMissing(CheckCorrGram):
     def test_qstat_none(self):
         #todo why is res1/qstat 1 short
         assert_almost_equal(self.res_none[2], self.qstat_none, DECIMAL_3)
+
 
 # how to do this test? the correct q_stat depends on whether nobs=len(x) is
 # used when x contains NaNs or whether nobs<len(x) when x contains NaNs
@@ -239,7 +246,6 @@ class TestPACF(CheckCorrGram):
         assert_equal(confint[0], [1, 1])
         assert_equal(pacfols[0], 1)
 
-
     def test_yw(self):
         pacfyw = pacf_yw(self.x, nlags=40, method="mle")
         assert_almost_equal(pacfyw[1:], self.pacfyw, DECIMAL_8)
@@ -252,6 +258,7 @@ class TestPACF(CheckCorrGram):
         pacfyw = pacf(self.x, nlags=40, method="yw")
         pacfld = pacf(self.x, nlags=40, method="ldu")
         assert_almost_equal(pacfyw, pacfld, DECIMAL_8)
+
 
 class CheckCoint(object):
     """
@@ -267,7 +274,8 @@ class CheckCoint(object):
     def test_tstat(self):
         assert_almost_equal(self.coint_t,self.teststat, DECIMAL_4)
 
-# this doesn't produce the old results anymore
+
+# TODO: this doesn't produce the old results anymore
 class TestCoint_t(CheckCoint):
     """
     Get AR(1) parameter on residuals
@@ -275,7 +283,8 @@ class TestCoint_t(CheckCoint):
     @classmethod
     def setup_class(cls):
         #cls.coint_t = coint(cls.y1, cls.y2, trend="c")[0]
-        cls.coint_t = coint(cls.y1, cls.y2, trend="c", maxlag=0, autolag=None)[0]
+        cls.coint_t = coint(cls.y1, cls.y2, trend="c",
+                            maxlag=0, autolag=None)[0]
         cls.teststat = -1.8208817
         cls.teststat = -1.830170986148
 
@@ -302,27 +311,39 @@ def test_coint():
     res_egranger = {}
     # trend = 'ct'
     res = res_egranger['ct'] = {}
-    res[0]  = [-5.615251442239, -4.406102369132,  -3.82866685109, -3.532082997903]
-    res[1]  = [-5.63591313706, -4.758609717199, -4.179130554708, -3.880909696863]
-    res[2]  = [-2.892029275027, -4.758609717199, -4.179130554708, -3.880909696863]
-    res[3]  = [-5.626932544079,  -5.08363327039, -4.502469783057,   -4.2031051091]
+    res[0] = [-5.615251442239, -4.406102369132,
+              -3.82866685109, -3.532082997903]
+    res[1] = [-5.63591313706, -4.758609717199,
+              -4.179130554708, -3.880909696863]
+    res[2] = [-2.892029275027, -4.758609717199,
+              -4.179130554708, -3.880909696863]
+    res[3] = [-5.626932544079,  -5.08363327039,
+              -4.502469783057, -4.2031051091]
 
     # trend = 'c'
     res = res_egranger['c'] = {}
     # first critical value res[0][1] has a discrepancy starting at 4th decimal
-    res[0]  = [-5.760696844656, -3.952043522638, -3.367006313729, -3.065831247948]
+    res[0]  = [-5.760696844656, -3.952043522638,
+               -3.367006313729, -3.065831247948]
     # manually adjusted to have higher precision as in other cases
     res[0][1] = -3.952321293401682
-    res[1]  = [-5.781087068772, -4.367111915942, -3.783961136005, -3.483501524709]
-    res[2]  = [-2.477444137366, -4.367111915942, -3.783961136005, -3.483501524709]
-    res[3]  = [-5.778205811661, -4.735249216434, -4.152738973763, -3.852480848968]
+    res[1] = [-5.781087068772, -4.367111915942,
+              -3.783961136005, -3.483501524709]
+    res[2] = [-2.477444137366, -4.367111915942,
+              -3.783961136005, -3.483501524709]
+    res[3] = [-5.778205811661, -4.735249216434,
+              -4.152738973763, -3.852480848968]
 
     # trend = 'ctt'
     res = res_egranger['ctt'] = {}
-    res[0]  = [-5.644431269946, -4.796038299708, -4.221469431008, -3.926472577178]
-    res[1]  = [-5.665691609506, -5.111158174219,  -4.53317278104,  -4.23601008516]
-    res[2]  = [-3.161462374828, -5.111158174219,  -4.53317278104,  -4.23601008516]
-    res[3]  = [-5.657904558563, -5.406880189412, -4.826111619543, -4.527090164875]
+    res[0] = [-5.644431269946, -4.796038299708,
+              -4.221469431008, -3.926472577178]
+    res[1] = [-5.665691609506, -5.111158174219,
+              -4.53317278104, -4.23601008516]
+    res[2] = [-3.161462374828, -5.111158174219,
+              -4.53317278104, -4.23601008516]
+    res[3] = [-5.657904558563, -5.406880189412,
+              -4.826111619543, -4.527090164875]
 
     # The following for 'nc' are only regression test numbers
     # trend = 'nc' not allowed in egranger
@@ -392,7 +413,8 @@ class TestGrangerCausality(object):
         r_result = [0.243097, 0.7844328, 195, 2]  # f_test
         gr = grangercausalitytests(data[:, 1::-1], 2, verbose=False)
         assert_almost_equal(r_result, gr[2][0]['ssr_ftest'], decimal=7)
-        assert_almost_equal(gr[2][0]['params_ftest'], gr[2][0]['ssr_ftest'], decimal=7)
+        assert_almost_equal(gr[2][0]['params_ftest'], gr[2][0]['ssr_ftest'],
+                            decimal=7)
 
     def test_granger_fails_on_nobs_check(self):
         # Test that if maxlag is too large, Granger Test raises a clear error.
@@ -464,7 +486,8 @@ class TestKPSS(SetupKPSS):
     def test_lags(self):
         with warnings.catch_warnings(record=True) as w:
             kpss_stat, pval, lags, crits = kpss(self.x, 'c')
-        assert_equal(lags, int(np.ceil(12. * np.power(len(self.x) / 100., 1 / 4.))))
+        assert_equal(lags,
+                     int(np.ceil(12. * np.power(len(self.x) / 100., 1 / 4.))))
         # assert_warns(UserWarning, kpss, self.x)
 
 

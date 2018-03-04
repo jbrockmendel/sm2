@@ -44,8 +44,8 @@ class Y_arma11(object):
             self.bse = [0.042075906061, 0.060925105865]
             self.hqic = 718.741675179309
             self.llf = -354.244910136737
-            self.resid = resids_mle[:,0]
-            self.fittedvalues = yhat_mle[:,0]
+            self.resid = resids_mle[:, 0]
+            self.fittedvalues = yhat_mle[:, 0]
             self.pvalues = [2.39e-78, 3.69e-10]
             self.tvalues = [18.74, 6.267]
             self.sigma2 = 0.994743350844 ** 2
@@ -70,8 +70,8 @@ class Y_arma11(object):
                 [-0.00106195321540, 0.00370579282860]]
             self.hqic = 715.241545108550
             self.llf = -352.497023588285
-            self.resid = resids_css[1:,0]
-            self.fittedvalues = yhat_css[1:,0]
+            self.resid = resids_css[1:, 0]
+            self.fittedvalues = yhat_css[1:, 0]
             self.pvalues = [7.02e-78, 5.53e-09]
             # self.tvalues = [18.68, 5.830]
             self.tvalues = [18.6671317239, 6.2928857557]
@@ -98,8 +98,8 @@ class Y_arma14(object):
                 [-0.00037373, -0.00062289, -0.0028984, 0.0026998, 0.0051219 ]]
             self.hqic = 744.504804564101
             self.llf = -362.000547376215
-            self.resid = resids_mle[:,1]
-            self.fittedvalues = yhat_mle[:,1]
+            self.resid = resids_mle[:, 1]
+            self.fittedvalues = yhat_mle[:, 1]
             self.pvalues = [5.51e-32, 8.59e-05, 5.96e-28, 0.0289, 3.98e-09]
             self.tvalues = [11.77, 3.927, -10.96, 2.185, 5.885]
             self.sigma2 = 1.022607088673 ** 2
@@ -132,8 +132,8 @@ class Y_arma14(object):
                 [-0.0002716368, -0.0008073432, -0.0028534882, 0.0026710177, 0.0049646795]]
             self.hqic = 742.789053551421
             self.llf = -361.147028843730
-            self.resid = resids_css[1:,1]
-            self.fittedvalues = yhat_css[1:,1]
+            self.resid = resids_css[1:, 1]
+            self.fittedvalues = yhat_css[1:, 1]
             self.pvalues = [2.15e-20, 0.0011, 6.01e-19, 0.0206, 5.92e-11]
             #self.tvalues = [9.255, 3.269, -8.892, 2.314, 6.546]
             self.tvalues = [12.643194, 3.847252, -11.501785, 2.301399,
@@ -161,7 +161,7 @@ class Y_arma41(object):
             self.hqic = 689.304925277181
             self.llf = -334.400607732754
             self.resid = resids_mle[:, 2]
-            self.fittedvalues = yhat_mle[:,2]
+            self.fittedvalues = yhat_mle[:, 2]
             self.pvalues = [1.10e-18, 0.0010, 0.4626, 5.48e-15, 0.7769]
             self.tvalues = [8.824, -3.279, -.7345, 7.815, .2833]
             self.sigma2 = 0.911409665692 ** 2
@@ -194,8 +194,8 @@ class Y_arma41(object):
                 [-0.011031907, 0.01505312, -0.013923062, 0.008562476, 0.018107521]]
             self.hqic = 674.640335476392
             self.llf = -327.085865780964
-            self.resid = resids_css[4:,2]
-            self.fittedvalues = yhat_css[4:,2]
+            self.resid = resids_css[4:, 2]
+            self.fittedvalues = yhat_css[4:, 2]
             self.pvalues = [6.51e-29, 4.23e-05, 0.4122, 1.62e-20, 0.7679]
             # self.tvalues = [11.16, -4.095, -0.8201, 9.285, 0.2951]
             self.tvalues = [9.0887381, -3.4315100, -0.6786792, 7.8938778,
@@ -220,8 +220,8 @@ class Y_arma22(object):
                 [-0.0012756, -0.0019999, 0.0017842, 0.0050802]]
             self.hqic = 763.372960386513
             self.llf = -373.143267771727
-            self.resid = resids_mle[:,3]
-            self.fittedvalues = yhat_mle[:,3]
+            self.resid = resids_mle[:, 3]
+            self.fittedvalues = yhat_mle[:, 3]
             self.pvalues = [1.22e-35 , 8.59e-19, 0.1207, 2.81e-22]
             self.tvalues = [12.46, -8.852, 1.552, -9.707]
             self.sigma2 = 1.069529754715**2
@@ -248,8 +248,8 @@ class Y_arma22(object):
                 [-0.001244467, -0.0020391767, 0.0017200417, 0.005109695]]
             self.hqic = 756.724194601530
             self.llf = -369.826163767706
-            self.resid = resids_css[2:,3]
-            self.fittedvalues = yhat_css[2:,3]
+            self.resid = resids_css[2:, 3]
+            self.fittedvalues = yhat_css[2:, 3]
             self.pvalues = [1.57e-37, 8.26e-17, 0.0639, 7.55e-30]
             # self.tvalues = [12.80, -8.327, 1.853, -11.35]
             self.tvalues = [12.385077, -8.795883, 1.657944, -9.755738]
@@ -277,8 +277,8 @@ class Y_arma50(object):
                 [-0.00066624, -0.0014275, 0.0013917, -0.0028959, 0.0040322]]
             self.hqic = 699.926340238986
             self.llf = -339.711315213657
-            self.resid = resids_mle[:,4]
-            self.fittedvalues = yhat_mle[:,4]
+            self.resid = resids_mle[:, 4]
+            self.fittedvalues = yhat_mle[:, 4]
             self.pvalues = [7.51e-31, 4.42e-05, 2.38e-05, 0.0034, 0.1584]
             self.tvalues = [11.55, -4.084, 4.226, 2.929, -1.410]
             self.sigma2 = 0.938374940397 ** 2
@@ -292,7 +292,7 @@ class Y_arma50(object):
             self.aic = 676.8173
             # self.bic = 692.323577617397
             self.bic = 697.8248
-            self.arroots = [1.0755    +0.0000j,0.0075-1.2434j, 0.0075 +1.2434j,
+            self.arroots = [1.0755    +0.0000j, 0.0075-1.2434j, 0.0075 +1.2434j,
                             -1.9686  +0.0000j, 3.3994    +0.0000j]
             self.maroots = None
             self.bse = [0.064344956583, 0.078060866211, 0.077980166982,
@@ -306,8 +306,8 @@ class Y_arma50(object):
             # self.hqic = 681.867054880965
             self.hqic = 685.2770
             self.llf = -332.408643282337
-            self.resid = resids_css[5:,4]
-            self.fittedvalues = yhat_css[5:,4]
+            self.resid = resids_css[5:, 4]
+            self.fittedvalues = yhat_css[5:, 4]
             self.pvalues = [1.68e-29, 9.09e-05, 3.91e-05, 0.0039, 0.1628]
             self.tvalues = [11.28, -3.914, 4.113, 2.890, -1.396]
             # self.sigma2 = 0.949462810435**2
@@ -327,8 +327,8 @@ class Y_arma02(object):
                                [0.00078704, 0.0025545]]
             self.hqic = 779.269556450598
             self.llf = -384.508850772381
-            self.resid = resids_mle[:,5]
-            self.fittedvalues = yhat_mle[:,5]
+            self.resid = resids_mle[:, 5]
+            self.fittedvalues = yhat_mle[:, 5]
             self.pvalues = [.0006, 1.07e-41]
             self.tvalues = [3.433, -13.53]
             self.sigma2 = 1.122887152869 ** 2
@@ -372,8 +372,8 @@ class Y_arma11c(object):
                 [1.5413e-05, -0.0020242, 0.0046579]]
             self.hqic = 743.591784752421
             self.llf = -364.961322438987
-            self.resid = residsc_mle[:,0]
-            self.fittedvalues = yhatc_mle[:,0]
+            self.resid = residsc_mle[:, 0]
+            self.fittedvalues = yhatc_mle[:, 0]
             self.pvalues = [1.04e-70, 5.02e-33, 2.35e-9]
             self.tvalues = [17.78, 11.97, 5.971]
             self.sigma2 = 1.039168068701 ** 2
@@ -400,8 +400,8 @@ class Y_arma11c(object):
                 [1.29481824075e-06, -2.02754322743e-03, 4.64350314042e-03 ]]
             self.hqic = 740.276857090925
             self.llf = -363.306763257476
-            self.resid = residsc_css[1:,0]
-            self.fittedvalues = yhatc_css[1:,0]
+            self.resid = residsc_css[1:, 0]
+            self.fittedvalues = yhatc_css[1:, 0]
             self.pvalues = [3.51e-08, 4.70e-31, 8.35e-11]
             # self.tvalues = [5.514, 11.59, 6.494]
             self.tvalues = [17.544326, 11.951494, 6.009649]
@@ -417,7 +417,7 @@ class Y_arma14c(object):
             self.bic = 745.465113183973
             self.arroots = [1.6916 +0.0000j]
             self.maroots = [1.1071  -0.7821j, 1.1071  +0.7821j,
-                    -1.2868  -0.1705j,-1.2868 +0.1705j] # had to change order?
+                    -1.2868  -0.1705j, -1.2868 +0.1705j] # had to change order?
             self.bse = [0.160891073193, 0.151756542096, 0.152996852330,
                         0.140231020145, 0.064663675882, 0.065045468010]
             self.cov_params = [
@@ -429,8 +429,8 @@ class Y_arma14c(object):
                 [5.2904e-05, 0.0011363, -0.0010750, -0.0033840, 0.0014543, 0.0042309]]
             self.hqic = 730.735881539221
             self.llf = -353.407443379469
-            self.resid = residsc_mle[:,1]
-            self.fittedvalues = yhatc_mle[:,1]
+            self.resid = residsc_mle[:, 1]
+            self.fittedvalues = yhatc_mle[:, 1]
             self.pvalues = [1.82e-193, 9.80e-05, 0.0352, 5.37e-07, 0.0725,
                     6.84e-07]
             self.tvalues = [29.67, 3.895, 2.106, -5.013, 1.796, 4.966]
@@ -452,7 +452,7 @@ class Y_arma14c(object):
                         0.0929630759694, 0.0628352649371, 0.0645444272345]
             # self.cov_params = [
             #    [0.28593, -0.059175, 0.053968, 0.046974, 0.00085168, 0.0028000 ],
-            #    [-0.059175, 0.012382, -0.011333, -0.0098375, -0.00012631,-0.00058518 ],
+            #    [-0.059175, 0.012382, -0.011333, -0.0098375, -0.00012631, -0.00058518 ],
             #    [0.053968, -0.011333, 0.014362, 0.010298, -0.0028117, -0.00011132 ],
             #    [0.046974, -0.0098375, 0.010298, 0.012380, 0.00031018, -0.0021617 ],
             #    [0.00085168, -0.00012631, -0.0028117, 0.00031018, 0.0050069, 0.00079958 ],
@@ -466,8 +466,8 @@ class Y_arma14c(object):
                 [0.000116062673743, -3.81880917361e-04, 0.000757683049669, -0.002170706208320, 8.84171120090e-04, 0.004165983087027]]
             self.hqic = 729.888235701317
             self.llf = -352.988703596681
-            self.resid = residsc_css[1:,1]
-            self.fittedvalues = yhatc_css[1:,1]
+            self.resid = residsc_css[1:, 1]
+            self.fittedvalues = yhatc_css[1:, 1]
             self.pvalues = [0.0050, 8.31e-10, 0.0991, 6.64e-12, 0.0528,
                             8.09e-07]
             #self.tvalues = [2.810, 6.139, 1.649, -6.865, 1.936, 4.933]
@@ -497,8 +497,8 @@ class Y_arma41c(object):
                 [-0.0098015, -0.0047964, 0.0067289, -0.0057962, 0.0036193, 0.0097917]]
             self.hqic = 696.389304738311
             self.llf = -336.234154979014
-            self.resid = residsc_mle[:,2]
-            self.fittedvalues = yhatc_mle[:,2]
+            self.resid = residsc_mle[:, 2]
+            self.fittedvalues = yhatc_mle[:, 2]
             self.pvalues = [0.7024, 7.50e-34, 0.0036, 0.0009, 1.77e-43, 0.0193]
             self.tvalues = [0.3821, 12.13, -2.909, -3.306, 13.83, 2.340]
             self.sigma2 = 0.915487643192 ** 2
@@ -535,8 +535,8 @@ class Y_arma41c(object):
                 [0.00950558295301, -0.00494984519949, 0.00693146988144, -0.00600908311031, 0.00373734623817, 0.01007679228317]]
             self.hqic = 678.787238280001
             self.llf = -327.453600189896
-            self.resid = residsc_css[4:,2]
-            self.fittedvalues = yhatc_css[4:,2]
+            self.resid = residsc_css[4:, 2]
+            self.fittedvalues = yhatc_css[4:, 2]
             self.pvalues = [0.3109, 2.15e-29, 0.0057, 0.0017, 8.06e-40,
                             0.0243]
             # self.tvalues = [-1.013, 11.26, -2.764, -3.137, 13.21, 2.253]
@@ -564,8 +564,8 @@ class Y_arma22c(object):
                 [5.8515e-05, -0.0019265, -0.0025716, 0.0022931, 0.0049940]]
             self.hqic = 821.920952341460
             self.llf = -400.708621264894
-            self.resid = residsc_mle[:,3]
-            self.fittedvalues = yhatc_mle[:,3]
+            self.resid = residsc_mle[:, 3]
+            self.fittedvalues = yhatc_mle[:, 3]
             self.pvalues = [0.0000, 8.48e-24, 3.05e-07, 0.6042, 4.17e-23]
             self.tvalues = [99.41, 10.06, -5.120, 0.5184, -9.900]
             self.sigma2 = 1.196309833136 ** 2
@@ -590,15 +590,15 @@ class Y_arma22c(object):
             self.cov_params =[
                 [1.99732030964e-03, -2.22972353619e-05, -0.000009957435095, 4.64825632252e-05, 5.98134427402e-05],
                 [-2.22972353619e-05, 6.13184377186e-03, -0.001435210779968, -3.47284237940e-03, -1.95077811843e-03 ],
-                [-9.95743509501e-06,-1.43521077997e-03, 0.004870171997068, -6.54767224831e-04, -2.44459075151e-03],
-                [4.64825632252e-05,-3.47284237940e-03, -0.000654767224831, 4.64393007167e-03, 2.34032945541e-03],
-                [5.98134427402e-05,-1.95077811843e-03, -0.002444590751509, 2.34032945541e-03, 4.75520608091e-03]]
+                [-9.95743509501e-06, -1.43521077997e-03, 0.004870171997068, -6.54767224831e-04, -2.44459075151e-03],
+                [4.64825632252e-05, -3.47284237940e-03, -0.000654767224831, 4.64393007167e-03, 2.34032945541e-03],
+                [5.98134427402e-05, -1.95077811843e-03, -0.002444590751509, 2.34032945541e-03, 4.75520608091e-03]]
             self.arroots = [1.0908    -1.2494j, 1.0908     +1.2494j]
             self.maroots = [-1.1694  +  0.0000j, 1.2171   +0.0000j]
             self.hqic = 815.293412134796
             self.llf = -397.403585827727
-            self.resid = residsc_css[2:,3]
-            self.fittedvalues = yhatc_css[2:,3]
+            self.resid = residsc_css[2:, 3]
+            self.fittedvalues = yhatc_css[2:, 3]
             self.pvalues = [3.30e-12, 1.83e-25, 2.09e-07, 0.5918, 6.55e-25]
             # self.tvalues = [6.964, 10.43, -5.191, 0.5363, -10.31]
             self.tvalues = [100.851808120009, 10.127629231947, -5.209036989363,
@@ -610,7 +610,7 @@ class Y_arma50c(object):
     def __init__(self, method="mle"):
         if method == "mle":
             self.params = [4.562207236168, 0.754284447885, -0.305849188005,
-                           0.253824706641,0.281161230244,-0.172263847479]
+                           0.253824706641, 0.281161230244, -0.172263847479]
             self.aic = 711.817562780112
             self.bic = 736.467789205148
             self.arroots = [-1.6535 + 0.j, .0129 -1.2018j, .0129 + 1.2018j,
@@ -627,8 +627,8 @@ class Y_arma50c(object):
                 [-0.00013170, -0.00058978, -0.0012307, 0.0013481, -0.0028575, 0.0039241]]
             self.hqic = 721.738557560396
             self.llf = -348.908781390056
-            self.resid = residsc_mle[:,4]
-            self.fittedvalues = yhatc_mle[:,4]
+            self.resid = residsc_mle[:, 4]
+            self.fittedvalues = yhatc_mle[:, 4]
             self.pvalues = [1.50e-46, 9.06e-34, 6.53e-05, 0.0010, 0.0003, 0.0060]
             self.tvalues = [14.33, 12.11, -3.993, 3.283, 3.659, -2.750]
             self.sigma2 = 0.973930886014 ** 2
@@ -654,11 +654,11 @@ class Y_arma50c(object):
                         0.0771715117870, 0.0764444608104, 0.0621813373935]
             # self.cov_params = [
             #    [0.056132, -0.0028895, -0.0012291, -0.0031424, -0.0012502, -0.0028739],
-            #    [-0.0028895, 0.0040416, -0.0029508, 0.0014229, -0.0012546,-0.00062818],
+            #    [-0.0028895, 0.0040416, -0.0029508, 0.0014229, -0.0012546, -0.00062818],
             #    [-0.0012291, -0.0029508, 0.0061163, -0.0041939, 0.0025537, -0.0012585],
             #    [-0.0031424, 0.0014229, -0.0041939, 0.0062295, -0.0041928, 0.0014204],
             #    [-0.0012502, -0.0012546, 0.0025537, -0.0041928, 0.0061127, -0.0029479],
-            #    [-0.0028739,-0.00062818, -0.0012585, 0.0014204, -0.0029479, 0.0040445]]
+            #    [-0.0028739, -0.00062818, -0.0012585, 0.0014204, -0.0029479, 0.0040445]]
             self.cov_params = [
                 [1.12870995832e-01, 4.32810158586e-05, -1.89697385245e-05, 0.0000465331836881, -0.000024151327384, 0.000109807500875],
                 [4.32810158586e-05, 3.86378796585e-03, -2.82098637123e-03, 0.001360256141301, -0.001199382243647, -0.000600542191229],
@@ -669,8 +669,8 @@ class Y_arma50c(object):
             # self.hqic = 703.303100827167
             self.hqic = 706.7131
             self.llf = -341.421689423809
-            self.resid = residsc_css[5:,4]
-            self.fittedvalues = yhatc_css[5:,4]
+            self.resid = residsc_css[5:, 4]
+            self.fittedvalues = yhatc_css[5:, 4]
             self.pvalues = [0.0004, 1.45e-32, 0.0001, 0.0013, 0.0004, 0.0066]
             # self.tvalues = [3.559, 11.88, -3.796, 3.213, 3.543, -2.715]
             self.tvalues = [13.67262984389, 12.15307258528, -3.88227918086,
@@ -693,7 +693,7 @@ class Y_arma02c(object):
                 [6.4093e-05, 0.0014083, 0.0023972]]
             self.hqic = 763.720334415218
             self.llf = -375.025597270385
-            self.resid = residsc_mle[:,5]
+            self.resid = residsc_mle[:, 5]
             self.fittedvalues = yhatc_mle[:, 5]
             self.pvalues = [0.0000, 4.84e-5, 1.74e-39]
             self.tvalues = [117.7, 4.063, -13.15]
@@ -716,8 +716,8 @@ class Y_arma02c(object):
                 [5.34796521051e-05, 1.41090983316e-03, 2.35584355080e-03]]
             self.hqic = 762.348245198795
             self.llf = -374.339552662174
-            self.resid = residsc_css[:,5]
-            self.fittedvalues = yhatc_css[:,5]
+            self.resid = residsc_css[:, 5]
+            self.fittedvalues = yhatc_css[:, 5]
             self.pvalues = [0.0000, 2.46e-05, 2.49e-50]
             # self.tvalues = [117.7, 4.218, -14.92]
             self.tvalues = [118.24120637494, 4.15691796413, -13.33981086206]
