@@ -307,7 +307,8 @@ class TestFTest2(object):
         data = longley.load()
         data.exog = add_constant(data.exog, prepend=False)
         res1 = OLS(data.endog, data.exog).fit()
-        R2 = [[0, 1, -1, 0, 0, 0, 0], [0, 0, 0, 0, 1, -1, 0]]
+        R2 = [[0, 1, -1, 0, 0, 0, 0],
+              [0, 0, 0, 0, 1, -1, 0]]
         cls.Ftest1 = res1.f_test(R2)
         hyp = 'x2 = x3, x5 = x6'
         cls.NewFtest1 = res1.f_test(hyp)
@@ -316,11 +317,14 @@ class TestFTest2(object):
         assert_equal(self.NewFtest1.fvalue, self.Ftest1.fvalue)
 
     def test_fvalue(self):
-        assert_almost_equal(self.Ftest1.fvalue, 9.7404618732968196, DECIMAL_4)
+        assert_almost_equal(self.Ftest1.fvalue,
+                            9.7404618732968196,
+                            DECIMAL_4)
 
     def test_pvalue(self):
-        assert_almost_equal(self.Ftest1.pvalue, 0.0056052885317493459,
-                DECIMAL_4)
+        assert_almost_equal(self.Ftest1.pvalue,
+                            0.0056052885317493459,
+                            DECIMAL_4)
 
     def test_df_denom(self):
         assert_equal(self.Ftest1.df_denom, 9)
@@ -477,7 +481,8 @@ class TestGLS(object):
         assert_almost_equal(self.res1.bse, self.res2.bse, DECIMAL_4)
 
     def test_fittedvalues(self):
-        assert_almost_equal(self.res1.fittedvalues, self.res2.fittedvalues,
+        assert_almost_equal(self.res1.fittedvalues,
+                            self.res2.fittedvalues,
                             DECIMAL_4)
 
     def test_pvalues(self):
@@ -507,7 +512,7 @@ class TestGLS_alt_sigma(CheckRegressionResults):
         cls.res1 = gls_res
         cls.res2 = ols_res
         cls.res3 = gls_res_scalar
-#        self.res2.conf_int = self.res2.conf_int()
+        #self.res2.conf_int = self.res2.conf_int()
 
     def test_wrong_size_sigma_1d(self):
         n = len(self.endog)
@@ -519,8 +524,8 @@ class TestGLS_alt_sigma(CheckRegressionResults):
         assert_raises(ValueError, GLS, self.endog, self.exog,
                       sigma=np.ones((n-1, n-1)))
 
-#    def check_confidenceintervals(self, conf1, conf2):
-#        assert_almost_equal(conf1, conf2, DECIMAL_4)
+    #def check_confidenceintervals(self, conf1, conf2):
+    #    assert_almost_equal(conf1, conf2, DECIMAL_4)
 
 
 class TestLM(object):
@@ -674,9 +679,11 @@ class TestGLS_WLS_equivalence(TestOLS_GLS_WLS_equivalence):
         # TODO: WLS rsquared is ok, GLS might have wrong centered_tss
         # We only check that WLS and GLS rsquared is invariant to scaling
         # WLS and GLS have different rsquared
-        assert_almost_equal(self.results[1].rsquared, self.results[0].rsquared,
+        assert_almost_equal(self.results[1].rsquared,
+                            self.results[0].rsquared,
                             DECIMAL_7)
-        assert_almost_equal(self.results[3].rsquared, self.results[2].rsquared,
+        assert_almost_equal(self.results[3].rsquared,
+                            self.results[2].rsquared,
                             DECIMAL_7)
 
 
@@ -772,13 +779,14 @@ class TestWLSScalarVsArray(CheckRegressionResults):
         cls.res1 = wls_scalar
         cls.res2 = wls_array
 
-#class TestWLS_GLS(CheckRegressionResults):
+# class TestWLS_GLS(CheckRegressionResults):
 #    @classmethod
 #    def setup_class(cls):
 #        from sm2.datasets.ccard import load
 #        data = load()
-#        cls.res1 = WLS(data.endog, data.exog, weights = 1/data.exog[:,2]).fit()
-#        cls.res2 = GLS(data.endog, data.exog, sigma = data.exog[:,2]).fit()
+#        cls.res1 = WLS(data.endog, data.exog,
+#                        weights=1 / data.exog[:, 2]).fit()
+#        cls.res2 = GLS(data.endog, data.exog, sigma=data.exog[:, 2]).fit()
 #
 #    def check_confidenceintervals(self, conf1, conf2):
 #        assert_almost_equal(conf1, conf2(), DECIMAL_4)
@@ -886,13 +894,18 @@ class TestGLS_large_data(TestDataDimensions):
         cls.ols_res = OLS(y, X).fit()
 
     def test_large_equal_params(self):
-        assert_almost_equal(self.ols_res.params, self.gls_res.params, DECIMAL_7)
+        assert_almost_equal(self.ols_res.params,
+                            self.gls_res.params,
+                            DECIMAL_7)
 
     def test_large_equal_loglike(self):
-        assert_almost_equal(self.ols_res.llf, self.gls_res.llf, DECIMAL_7)
+        assert_almost_equal(self.ols_res.llf,
+                            self.gls_res.llf,
+                            DECIMAL_7)
 
     def test_large_equal_params_none(self):
-        assert_almost_equal(self.gls_res.params, self.gls_res_none.params,
+        assert_almost_equal(self.gls_res.params,
+                            self.gls_res_none.params,
                             DECIMAL_7)
 
 
@@ -951,7 +964,7 @@ def test_706():
 
 
 def test_summary():
-    # testGH#734
+    # GH#734
     dta = longley.load_pandas()
     X = dta.exog
     X["constant"] = 1
@@ -1112,7 +1125,8 @@ def test_formula_missing_cat():
 
     assert_almost_equal(res.params.values, res2.params.values)
 
-    assert_raises(PatsyError, OLS.from_formula, 'value ~ invest + capital + firm + year',
+    assert_raises(PatsyError,
+                  OLS.from_formula, 'value ~ invest + capital + firm + year',
                   data=dta, missing='raise')
 
 
@@ -1228,6 +1242,7 @@ def test_regularized_predict():
 
         pr = result1.predict()
         assert_allclose(fittedvalues, pr)
+
 
 def test_regularized_options():
     n = 100
