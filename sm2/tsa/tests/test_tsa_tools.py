@@ -626,7 +626,8 @@ class TestLagmat2DS(object):
         expected = pd.DataFrame(expected, index=data.index, columns=cols)
         tm.assert_frame_equal(lagmat, expected)
 
-        lagmat = tools.lagmat2ds(data.iloc[:, :2], 3, use_pandas=True, trim='both')
+        lagmat = tools.lagmat2ds(data.iloc[:, :2], 3,
+                                 use_pandas=True, trim='both')
         expected = self._prepare_expected(data.values[:, :2], 3)
         cols = []
         for c in data.iloc[:, :2]:
