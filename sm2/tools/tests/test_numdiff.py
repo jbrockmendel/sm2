@@ -25,23 +25,25 @@ DEC8 = 8
 DEC13 = 13
 DEC14 = 14
 
-'''
-def maxabs(x,y):
-    return np.abs(x-y).max()
+
+def maxabs(x, y):
+    return np.abs(x - y).max()
+
 
 def fun(beta, x):
     return np.dot(x, beta).sum(0)
 
+
 def fun1(beta, y, x):
-    #print(beta.shape, x.shape)
     xb = np.dot(x, beta)
-    return (y-xb)**2 #(xb-xb.mean(0))**2
+    return (y - xb)**2  # (xb-xb.mean(0))**2
+
 
 def fun2(beta, y, x):
-    #print(beta.shape, x.shape)
     return fun1(beta, y, x).sum(0)
 
 
+'''
 #ravel() added because of MNLogit 2d params
 class CheckGradLoglikeMixin(object):
     def test_score(self):
@@ -218,20 +220,20 @@ class CheckDerivativeMixin(object):
             hetrue = self.hesstrue(test_params)
             if not hetrue is None: #Hessian doesn't work for 2d return of fun
                 fun = self.fun()
-                #default works, epsilon 1e-6 or 1e-8 is not precise enough
+                # default works, epsilon 1e-6 or 1e-8 is not precise enough
                 hefd = numdiff.approx_hess1(test_params, fun, #epsilon=1e-8,
-                                             args=self.args)
-                                             #TODO:should be kwds
+                                            args=self.args)
+                # TODO:should be kwds
                 assert_almost_equal(hetrue, hefd, decimal=DEC3)
-                #TODO: I reduced precision to DEC3 from DEC4 because of
+                # TODO: I reduced precision to DEC3 from DEC4 because of
                 #    TestDerivativeFun
-                hefd = numdiff.approx_hess2(test_params, fun, #epsilon=1e-8,
-                                             args=self.args)
-                                             #TODO:should be kwds
+                hefd = numdiff.approx_hess2(test_params, fun, # epsilon=1e-8,
+                                            args=self.args)
+                # TODO:should be kwds
                 assert_almost_equal(hetrue, hefd, decimal=DEC3)
-                hefd = numdiff.approx_hess3(test_params, fun, #epsilon=1e-8,
-                                             args=self.args)
-                                             #TODO:should be kwds
+                hefd = numdiff.approx_hess3(test_params, fun, # epsilon=1e-8,
+                                            args=self.args)
+                # TODO:should be kwds
                 assert_almost_equal(hetrue, hefd, decimal=DEC3)
 
     def test_hess_fun1_cs(self):
@@ -249,23 +251,27 @@ class TestDerivativeFun(CheckDerivativeMixin):
     def setup_class(cls):
         super(TestDerivativeFun,cls).setup_class()
         xkols = np.dot(np.linalg.pinv(cls.x), cls.y)
-        cls.params = [np.array([1.,1.,1.]), xkols]
+        cls.params = [np.array([1., 1., 1.]), xkols]
         cls.args = (cls.x,)
 
     def fun(self):
         return fun
+
     def gradtrue(self, params):
         return self.x.sum(0)
+
     def hesstrue(self, params):
-        return np.zeros((3,3))   #make it (3,3), because test fails with scalar 0
-        #why is precision only DEC3
+        return np.zeros((3, 3))
+        # make it (3, 3), because test fails with scalar 0
+        # why is precision only DEC3
+
 
 class TestDerivativeFun2(CheckDerivativeMixin):
     @classmethod
     def setup_class(cls):
         super(TestDerivativeFun2,cls).setup_class()
         xkols = np.dot(np.linalg.pinv(cls.x), cls.y)
-        cls.params = [np.array([1.,1.,1.]), xkols]
+        cls.params = [np.array([1., 1., 1.]), xkols]
         cls.args = (cls.y, cls.x)
 
     def fun(self):
@@ -273,35 +279,38 @@ class TestDerivativeFun2(CheckDerivativeMixin):
 
     def gradtrue(self, params):
         y, x = self.y, self.x
-        return (-x*2*(y-np.dot(x, params))[:,None]).sum(0)
+        return (-x * 2 * (y - np.dot(x, params))[:, None]).sum(0)
                 #2*(y-np.dot(x, params)).sum(0)
 
     def hesstrue(self, params):
         x = self.x
-        return 2*np.dot(x.T, x)
+        return 2 * np.dot(x.T, x)
+
 
 class TestDerivativeFun1(CheckDerivativeMixin):
     @classmethod
     def setup_class(cls):
         super(TestDerivativeFun1, cls).setup_class()
         xkols = np.dot(np.linalg.pinv(cls.x), cls.y)
-        cls.params = [np.array([1.,1.,1.]), xkols]
+        cls.params = [np.array([1., 1., 1.]), xkols]
         cls.args = (cls.y, cls.x)
 
     def fun(self):
         return fun1
+
     def gradtrue(self, params):
         y, x = self.y, self.x
-        return (-x*2*(y-np.dot(x, params))[:,None])
+        return (-x * 2 * (y - np.dot(x, params))[:, None])
+
     def hesstrue(self, params):
         return None
         y, x = self.y, self.x
-        return (-x*2*(y-np.dot(x, params))[:,None])  #TODO: check shape
+        return (-x*2*(y-np.dot(x, params))[:, None])  # TODO: check shape
 
 
 def test_dtypes():
     def f(x):
-        return 2*x
+        return 2 * x
 
     desired = np.array([[2, 0],
                         [0, 2]])
