@@ -49,19 +49,16 @@ from sm2.tools.decorators import (resettable_cache,
 import sm2.base.model as base
 import sm2.base.wrapper as wrap
 
-from statsmodels.emplike.elregress import _ELRegOpts
-
 # need import in module instead of lazily to copy `__doc__`
-from statsmodels.regression._prediction import PredictionResults
-from statsmodels.regression import _prediction as pred
+from ._prediction import PredictionResults
+from . import _prediction as pred
 
 __docformat__ = 'restructuredtext en'
 
 __all__ = ['GLS', 'WLS', 'OLS', 'GLSAR', 'PredictionResults']
 
 
-_fit_regularized_doc =\
-        r"""
+_fit_regularized_doc = r"""
         Return a regularized fit to a linear regression model.
 
         Parameters
@@ -2645,6 +2642,7 @@ class OLSResults(RegressionResults):
         >>> (27.248146353888796, 1.7894660442330235e-07)
         """
         params = np.copy(self.params)
+        from statsmodels.emplike.elregress import _ELRegOpts
         opt_fun_inst = _ELRegOpts()  # to store weights
         if len(param_nums) == len(params):
             llr = opt_fun_inst._opt_nuis_regress(
