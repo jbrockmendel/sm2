@@ -20,7 +20,8 @@ from __future__ import division
 __all__ = ["Poisson", "Logit", "Probit", "MNLogit", "NegativeBinomial",
            "GeneralizedPoisson", "NegativeBinomialP"]
 
-from sm2.compat.python import lmap, lzip, range
+from six.moves import range
+from sm2.compat.python import lmap
 from sm2.compat.scipy import loggamma
 
 import numpy as np
@@ -647,9 +648,10 @@ class MultinomialModel(BinaryModel):
 
         eXB = np.exp(np.dot(exog, params))
         sum_eXB = (1 + eXB.sum(1))[:,None]
-        J, K = lmap(int, [self.J, self.K])
+        J = int(self.J)
+        K = int(self.K)
         repeat_eXB = np.repeat(eXB, J, axis=1)
-        X = np.tile(exog, J-1)
+        X = np.tile(exog, J - 1)
         # this is the derivative wrt the base level
         F0 = -repeat_eXB * X / sum_eXB ** 2
         # this is the derivative wrt the other levels when
@@ -3949,7 +3951,6 @@ class MultinomialResults(DiscreteResults):
         """
         ju = self.model.J - 1  # highest index
         # these are the actual, predicted indices
-        #idx = lzip(self.model.endog, self.predict().argmax(1))
         bins = np.concatenate(([0], np.linspace(0.5, ju - 0.5, ju), [ju]))
         return np.histogram2d(self.model.endog, self.predict().argmax(1),
                               bins=bins)[0]

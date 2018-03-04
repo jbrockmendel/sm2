@@ -196,8 +196,3 @@ class Counter(dict):
             if newcount > 0:
                 result[elem] = newcount
         return result
-
-
-if __name__ == '__main__':
-    import doctest
-    print(doctest.testmod())
