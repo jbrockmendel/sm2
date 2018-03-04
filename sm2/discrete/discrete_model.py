@@ -206,7 +206,7 @@ class DiscreteModel(base.LikelihoodModel):
         Fit the model using maximum likelihood.
 
         The rest of the docstring is from
-        statsmodels.base.model.LikelihoodModel.fit
+        sm2.base.model.LikelihoodModel.fit
         """
         if callback is None:
             callback = self._check_perfect_pred
