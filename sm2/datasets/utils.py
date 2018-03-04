@@ -2,16 +2,16 @@ import os
 import shutil
 import sys
 
-from six import PY3, BytesIO, integer_types
+from six import PY3, BytesIO, StringIO, integer_types
 from six.moves import range, cPickle
+from six.moves.urllib.error import URLError, HTTPError
+from six.moves.urllib.request import urlopen
+from six.moves.urllib_parse import urljoin
 
 import numpy as np
 import pandas as pd
 
 from sm2.compat.numpy import recarray_select
-from sm2.compat.python import (StringIO, urlopen,
-                               HTTPError, URLError,
-                               urljoin)
 
 
 def webuse(data, baseurl='http://www.stata-press.com/data/r11/', as_df=True):
@@ -42,7 +42,7 @@ def webuse(data, baseurl='http://www.stata-press.com/data/r11/', as_df=True):
     error checking in response URLs.
     """
     # lazy imports
-    from statsmodels.iolib import genfromdta
+    from sm2.iolib.foreign import genfromdta
 
     url = urljoin(baseurl, data + '.dta')
     dta = urlopen(url)

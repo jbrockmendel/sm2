@@ -18,7 +18,6 @@ W. Greene. `Econometric Analysis`. Prentice Hall, 5th. edition. 2003.
 from __future__ import division
 import warnings
 
-
 from six.moves import range
 from sm2.compat.scipy import loggamma
 
