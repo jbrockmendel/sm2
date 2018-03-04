@@ -2,9 +2,9 @@
 Test functions for models.regression
 """
 # TODO: Test for LM
-from sm2.compat.python import long
 import warnings
 
+from six import PY3
 import pandas as pd
 import numpy as np
 from numpy.testing import (assert_almost_equal, assert_approx_equal, assert_,
@@ -16,6 +16,9 @@ from sm2.tools.tools import add_constant, categorical
 from sm2.regression.linear_model import OLS, WLS, GLS, yule_walker
 from sm2.datasets import longley
 from sm2 import datasets
+
+if PY3:
+    long = int
 
 DECIMAL_4 = 4
 DECIMAL_3 = 3

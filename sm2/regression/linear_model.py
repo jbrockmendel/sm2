@@ -32,6 +32,7 @@ W. Green.  "Econometric Analysis," 5th ed., Pearson, 2003.
 """
 from __future__ import print_function
 
+import collections
 import warnings
 
 from six.moves import range
@@ -2326,8 +2327,9 @@ class RegressionResults(base.LikelihoodModelResults):
             results
         """
         # TODO: import where we need it (for now), add as cached attributes
-        from statsmodels.stats.stattools import (
-            jarque_bera, omni_normtest, durbin_watson)
+        from sm2.stats.stattools import (jarque_bera, omni_normtest,
+                                         durbin_watson)
+
         jb, jbpv, skew, kurtosis = jarque_bera(self.wresid)
         omni, omnipv = omni_normtest(self.wresid)
 
@@ -2338,7 +2340,7 @@ class RegressionResults(base.LikelihoodModelResults):
                           omni=omni, omnipv=omnipv, condno=condno,
                           mineigval=eigvals[-1])
 
-        # TODO not used yet
+        # TODO: not used yet
         # diagn_left_header = ['Models stats']
         # diagn_right_header = ['Residual stats']
 
@@ -2470,18 +2472,16 @@ class RegressionResults(base.LikelihoodModelResults):
             results
         """
         # Diagnostics
-        from statsmodels.stats.stattools import (jarque_bera,
-                                                 omni_normtest,
-                                                 durbin_watson)
+        from sm2.stats.stattools import (jarque_bera, omni_normtest,
+                                         durbin_watson)
 
-        from collections import OrderedDict
         jb, jbpv, skew, kurtosis = jarque_bera(self.wresid)
         omni, omnipv = omni_normtest(self.wresid)
         dw = durbin_watson(self.wresid)
         eigvals = self.eigenvals
         condno = self.condition_number
         eigvals = np.sort(eigvals)  # in increasing order
-        diagnostic = OrderedDict([
+        diagnostic = collections.OrderedDict([
             ('Omnibus:',  "%.3f" % omni),
             ('Prob(Omnibus):', "%.3f" % omnipv),
             ('Skew:', "%.3f" % skew),
