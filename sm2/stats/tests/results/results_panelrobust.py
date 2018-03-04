@@ -76,4 +76,7 @@ class Bunch(dict):
         self.__dict__  = self
 
 
-results = Bunch(cov_clu_stata=cov_clu_stata, cov_pnw0_stata=cov_pnw0_stata, cov_pnw1_stata=cov_pnw1_stata, cov_pnw4_stata=cov_pnw4_stata, cov_dk0_stata=cov_dk0_stata, cov_dk1_stata=cov_dk1_stata, cov_dk4_stata=cov_dk4_stata, )
+results = Bunch(cov_clu_stata=cov_clu_stata, cov_pnw0_stata=cov_pnw0_stata,
+                cov_pnw1_stata=cov_pnw1_stata, cov_pnw4_stata=cov_pnw4_stata,
+                cov_dk0_stata=cov_dk0_stata, cov_dk1_stata=cov_dk1_stata,
+                cov_dk4_stata=cov_dk4_stata)

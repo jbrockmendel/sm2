@@ -3,8 +3,6 @@
 
 Author: Sébastien Lerique
 """
-
-
 import collections
 import numpy as np
 

@@ -471,6 +471,7 @@ def compare_waldres(res, wa, constrasts):
 @pytest.mark.xfail
 class TestWaldAnovaOLSNoFormula(object):
     @classmethod
-    def initialize(cls):
-        mod = sm.OLS.from_formula("np.log(Days+1) ~ C(Duration, Sum)*C(Weight, Sum)", cls.data)
+    def initialize(cls):  # FIXME: This should subclass something right?
+        mod = sm.OLS.from_formula("np.log(Days+1) ~ C(Duration, Sum)*C(Weight, Sum)",
+                                  cls.data)
         cls.res = mod.fit()  # default use_t=True
