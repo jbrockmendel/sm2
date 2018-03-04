@@ -5,11 +5,10 @@ import pandas as pd
 # import pandas.util.testing as tm
 
 from sm2.base import data as sm_data
+from sm2.api import Logit, OLS
 # from statsmodels.formula import handle_formula_data
-from sm2.regression.linear_model import OLS
 # from statsmodels.genmod.generalized_linear_model import GLM
 # from statsmodels.genmod import families
-# from sm2.discrete.discrete_model import Logit
 
 
 '''
