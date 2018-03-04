@@ -2619,8 +2619,8 @@ class NegativeBinomial(CountModel):
         dldpda = np.sum(-mu/alpha * dparams + exog*mu/alpha *
                         (-trigamma*mu/alpha**2 - 1/(alpha+1)), axis=0)
 
-        hess_arr[-1,:-1] = dldpda
-        hess_arr[:-1,-1] = dldpda
+        hess_arr[-1, :-1] = dldpda
+        hess_arr[:-1, -1] = dldpda
 
         # for dl/dalpha dalpha
         digamma_part = (special.digamma(y + mu/alpha) -
@@ -2645,16 +2645,16 @@ class NegativeBinomial(CountModel):
         """
         Hessian of NB2 model.
         """
-        if self._transparams: # lnalpha came in during fit
+        if self._transparams:  # lnalpha came in during fit
             alpha = np.exp(params[-1])
         else:
             alpha = params[-1]
-        a1 = 1/alpha
+        a1 = 1 / alpha
         params = params[:-1]
 
         exog = self.exog
-        y = self.endog[:,None]
-        mu = self.predict(params)[:,None]
+        y = self.endog[:, None]
+        mu = self.predict(params)[:, None]
 
         # for dl/dparams dparams
         dim = exog.shape[1]
@@ -2664,30 +2664,30 @@ class NegativeBinomial(CountModel):
             for j in range(dim):
                 if j > i:
                     continue
-                hess_arr[i,j] = np.sum(-exog[:,i,None] * exog[:,j,None] *
+                hess_arr[i,j] = np.sum(-exog[:, i, None] * exog[:, j, None] *
                                        const_arr, axis=0)
         tri_idx = np.triu_indices(dim, k=1)
         hess_arr[tri_idx] = hess_arr.T[tri_idx]
 
         # for dl/dparams dalpha
         da1 = -alpha**-2
-        dldpda = np.sum(mu*exog*(y-mu)*da1/(mu+a1)**2 , axis=0)
+        dldpda = np.sum(mu * exog * (y - mu) * da1 / (mu + a1)**2 , axis=0)
         hess_arr[-1,:-1] = dldpda
         hess_arr[:-1,-1] = dldpda
 
         # for dl/dalpha dalpha
-        #NOTE: polygamma(1,x) is the trigamma function
-        da2 = 2*alpha**-3
+        # NOTE: polygamma(1,x) is the trigamma function
+        da2 = 2 * alpha**-3
         dalpha = da1 * (special.digamma(a1+y) - special.digamma(a1) +
                     np.log(a1) - np.log(a1+mu) - (a1+y)/(a1+mu) + 1)
         dada = (da2 * dalpha/da1 + da1**2 * (special.polygamma(1, a1+y) -
                     special.polygamma(1, a1) + 1/a1 - 1/(a1 + mu) +
                     (y - mu)/(mu + a1)**2)).sum()
-        hess_arr[-1,-1] = dada
+        hess_arr[-1, -1] = dada
 
         return hess_arr
 
-    #TODO: replace this with analytic where is it used?
+    # TODO: replace this with analytic where is it used?
     def score_obs(self, params):
         sc = approx_fprime_cs(params, self.loglikeobs)
         return sc
@@ -2711,7 +2711,7 @@ class NegativeBinomial(CountModel):
         if self.loglike_method == 'nb2':
             #params.append(np.linalg.pinv(mu[:,None]).dot(resid**2 / mu - 1))
             a = ((resid**2 / mu - 1) / mu).sum() / df_resid
-        else: #self.loglike_method == 'nb1':
+        else:  # i.e. self.loglike_method == 'nb1':
             a = (resid**2 / mu - 1).sum() / df_resid
         return a
 
@@ -2721,16 +2721,16 @@ class NegativeBinomial(CountModel):
 
         # Note: don't let super handle robust covariance because it has
         # transformed params
-        self._transparams = False # always define attribute
+        self._transparams = False  # always define attribute
         if self.loglike_method.startswith('nb') and method not in ['newton',
                                                                    'ncg']:
-            self._transparams = True # in case same Model instance is refit
-        elif self.loglike_method.startswith('nb'): # method is newton/ncg
-            self._transparams = False # because we need to step in alpha space
+            self._transparams = True  # in case same Model instance is refit
+        elif self.loglike_method.startswith('nb'):  # method is newton/ncg
+            self._transparams = False  # because we need to step in alpha space
 
         if start_params is None:
             # Use poisson fit as first guess.
-            #TODO, Warning: this assumes exposure is logged
+            # TODO, Warning: this assumes exposure is logged
             offset = getattr(self, "offset", 0) + getattr(self, "exposure", 0)
             if np.size(offset) == 1 and offset == 0:
                 offset = None
@@ -2746,12 +2746,12 @@ class NegativeBinomial(CountModel):
                 start_params = np.append(start_params, max(0.05, a))
         else:
             if self._transparams is True:
-                # transform user provided start_params dispersion, see #3918
+                # transform user provided start_params dispersion, see GH#3918
                 start_params = np.array(start_params, copy=True)
                 start_params[-1] = np.log(start_params[-1])
 
         if callback is None:
-            # work around perfect separation callback #3895
+            # work around perfect separation callback GH#3895
             callback = lambda *x: x
 
         mlefit = super(NegativeBinomial, self).fit(start_params=start_params,
@@ -2761,7 +2761,7 @@ class NegativeBinomial(CountModel):
                         # TODO: Fix NBin _check_perfect_pred
         if self.loglike_method.startswith('nb'):
             # mlefit is a wrapped counts results
-            self._transparams = False # don't need to transform anymore now
+            self._transparams = False  # don't need to transform anymore now
             # change from lnalpha to alpha
             if method not in ["newton", "ncg"]:
                 mlefit._results.params[-1] = np.exp(mlefit._results.params[-1])
@@ -2772,16 +2772,17 @@ class NegativeBinomial(CountModel):
             result = mlefit
 
         if cov_kwds is None:
-            cov_kwds = {}  #TODO: make this unnecessary ?
+            cov_kwds = {}  # TODO: make this unnecessary ?
         result._get_robustcov_results(cov_type=cov_type,
                                     use_self=True, use_t=use_t, **cov_kwds)
         return result
 
 
     def fit_regularized(self, start_params=None, method='l1',
-            maxiter='defined_by_method', full_output=1, disp=1, callback=None,
-            alpha=0, trim_mode='auto', auto_trim_tol=0.01, size_trim_tol=1e-4,
-            qc_tol=0.03, **kwargs):
+                        maxiter='defined_by_method', full_output=1, disp=1,
+                        callback=None, alpha=0, trim_mode='auto',
+                        auto_trim_tol=0.01, size_trim_tol=1e-4,
+                        qc_tol=0.03, **kwargs):
 
         if self.loglike_method.startswith('nb') and (np.size(alpha) == 1 and
                                                      alpha != 0):
@@ -2796,7 +2797,7 @@ class NegativeBinomial(CountModel):
         self._transparams = False
         if start_params is None:
             # Use poisson fit as first guess.
-            #TODO, Warning: this assumes exposure is logged
+            # TODO, Warning: this assumes exposure is logged
             offset = getattr(self, "offset", 0) + getattr(self, "exposure", 0)
             if np.size(offset) == 1 and offset == 0:
                 offset = None
@@ -2837,9 +2838,8 @@ class NegativeBinomialP(CountModel):
     p : scalar
         P denotes parameterizations for NB-P regression. p=1 for NB-1 and
         p=2 for NB-2. Default is p=1.
-    """ % {'params' : base._model_params_doc,
-           'extra_params' :
-           """p: scalar
+    """ % {'params': base._model_params_doc,
+           'extra_params': """p: scalar
         P denotes parameterizations for NB regression. p=1 for NB-1 and
         p=2 for NB-2. Default is p=2.
     offset : array_like
@@ -2850,10 +2850,10 @@ class NegativeBinomialP(CountModel):
     """ + base._missing_param_doc}
 
     def __init__(self, endog, exog, p=2, offset=None,
-                       exposure=None, missing='none', **kwargs):
+                 exposure=None, missing='none', **kwargs):
         super(NegativeBinomialP, self).__init__(endog, exog, offset=offset,
-                                                  exposure=exposure,
-                                                  missing=missing, **kwargs)
+                                                exposure=exposure,
+                                                missing=missing, **kwargs)
         self.parameterization = p
         self.exog_names.append('alpha')
         self.k_extra = 1
@@ -2883,7 +2883,8 @@ class NegativeBinomialP(CountModel):
 
     def loglikeobs(self, params):
         """
-        Loglikelihood for observations of Generalized Negative Binomial (NB-P) model
+        Loglikelihood for observations of Generalized Negative
+        Binomial (NB-P) model
 
         Parameters
         ----------
@@ -2918,7 +2919,8 @@ class NegativeBinomialP(CountModel):
 
     def score_obs(self, params):
         """
-        Generalized Negative Binomial (NB-P) model score (gradient) vector of the log-likelihood for each observations.
+        Generalized Negative Binomial (NB-P) model score (gradient)
+        vector of the log-likelihood for each observations.
 
         Parameters
         ----------
@@ -2961,7 +2963,8 @@ class NegativeBinomialP(CountModel):
 
     def score(self, params):
         """
-        Generalized Negative Binomial (NB-P) model score (gradient) vector of the log-likelihood
+        Generalized Negative Binomial (NB-P) model score (gradient)
+        vector of the log-likelihood
 
         Parameters
         ----------
@@ -2983,7 +2986,8 @@ class NegativeBinomialP(CountModel):
 
     def hessian(self, params):
         """
-        Generalized Negative Binomial (NB-P) model hessian maxtrix of the log-likelihood
+        Generalized Negative Binomial (NB-P) model hessian maxtrix
+        of the log-likelihood
 
         Parameters
         ----------
@@ -3129,7 +3133,7 @@ class NegativeBinomialP(CountModel):
         if cov_kwds is None:
             cov_kwds = {}
         result._get_robustcov_results(cov_type=cov_type,
-                                    use_self=True, use_t=use_t, **cov_kwds)
+                                      use_self=True, use_t=use_t, **cov_kwds)
         return result
 
     fit.__doc__ += DiscreteModel.fit.__doc__
@@ -3204,9 +3208,6 @@ class NegativeBinomialP(CountModel):
             'linear' returns the linear predictor dot(exog,params).
             'prob' return probabilities for counts from 0 to max(endog).
             Default is 'mean'.
-
-        Notes
-        -----
         """
         if exog is None:
             exog = self.exog
@@ -3230,7 +3231,7 @@ class NegativeBinomialP(CountModel):
             counts = np.atleast_2d(np.arange(0, np.max(self.endog)+1))
             mu = self.predict(params, exog, exposure, offset)
             size, prob = self.convert_params(params, mu)
-            return nbinom.pmf(counts, size[:,None], prob[:,None])
+            return nbinom.pmf(counts, size[:, None], prob[:, None])
         else:
             raise TypeError('keyword \'which\' = %s not recognized' % which)
 
@@ -3240,16 +3241,17 @@ class NegativeBinomialP(CountModel):
 
         size = 1. / alpha * mu**p
         prob = size / (size + mu)
-
         return (size, prob)
 
 
-### Results Class ###
+# ----------------------------------------------------------------
+# Results Classes
 
 class DiscreteResults(base.LikelihoodModelResults):
-    __doc__ = _discrete_results_docs % {"one_line_description" :
-        "A results class for the discrete dependent variable models.",
-        "extra_attr" : ""}
+    __doc__ = _discrete_results_docs % {
+        "one_line_description": "A results class for the discrete dependent "
+                                "variable models.",
+        "extra_attr": ""}
 
     def __init__(self, model, mlefit, cov_type='nonrobust', cov_kwds=None,
                  use_t=None):
@@ -3269,16 +3271,15 @@ class DiscreteResults(base.LikelihoodModelResults):
                 self.use_t = use_t
             if cov_type == 'nonrobust':
                 self.cov_type = 'nonrobust'
-                self.cov_kwds = {'description' : 'Standard Errors assume that the ' +
-                                 'covariance matrix of the errors is correctly ' +
+                self.cov_kwds = {'description': 'Standard Errors assume that the '
+                                 'covariance matrix of the errors is correctly '
                                  'specified.'}
             else:
                 if cov_kwds is None:
                     cov_kwds = {}
                 from sm2.base.covtype import get_robustcov_results
                 get_robustcov_results(self, cov_type=cov_type, use_self=True,
-                                           **cov_kwds)
-
+                                      **cov_kwds)
 
     def __getstate__(self):
         # remove unpicklable methods
@@ -3292,11 +3293,11 @@ class DiscreteResults(base.LikelihoodModelResults):
 
     @cache_readonly
     def prsquared(self):
-        return 1 - self.llf/self.llnull
+        return 1 - self.llf / self.llnull
 
     @cache_readonly
     def llr(self):
-        return -2*(self.llnull - self.llf)
+        return -2 * (self.llnull - self.llf)
 
     @cache_readonly
     def llr_pvalue(self):
@@ -3326,7 +3327,6 @@ class DiscreteResults(base.LikelihoodModelResults):
         Returns
         -------
         no returns, modifies attributes of this instance
-
         """
         # reset cache, note we need to add here anything that depends on
         # llnullor the null model. If something is missing, then the attribute
@@ -3393,11 +3393,11 @@ class DiscreteResults(base.LikelihoodModelResults):
 
     @cache_readonly
     def aic(self):
-        return -2*(self.llf - (self.df_model+1))
+        return -2 * (self.llf - (self.df_model + 1))
 
     @cache_readonly
     def bic(self):
-        return -2*self.llf + np.log(self.nobs)*(self.df_model+1)
+        return -2 * self.llf + np.log(self.nobs) * (self.df_model + 1)
 
     def _get_endog_name(self, yname, yname_list):
         if yname is None:
@@ -3407,7 +3407,7 @@ class DiscreteResults(base.LikelihoodModelResults):
         return yname, yname_list
 
     def get_margeff(self, at='overall', method='dydx', atexog=None,
-            dummy=False, count=False):
+                    dummy=False, count=False):
         """Get marginal effects of the fitted model.
 
         Parameters
@@ -3498,17 +3498,14 @@ class DiscreteResults(base.LikelihoodModelResults):
         --------
         statsmodels.iolib.summary.Summary : class to hold summary
             results
-
         """
-
         top_left = [('Dep. Variable:', None),
-                     ('Model:', [self.model.__class__.__name__]),
-                     ('Method:', ['MLE']),
-                     ('Date:', None),
-                     ('Time:', None),
-                     #('No. iterations:', ["%d" % self.mle_retvals['iterations']]),
-                     ('converged:', ["%s" % self.mle_retvals['converged']])
-                      ]
+                    ('Model:', [self.model.__class__.__name__]),
+                    ('Method:', ['MLE']),
+                    ('Date:', None),
+                    ('Time:', None),
+                    # ('No. iterations:', ["%d" % self.mle_retvals['iterations']]),
+                    ('converged:', ["%s" % self.mle_retvals['converged']])]
 
         top_right = [('No. Observations:', None),
                      ('Df Residuals:', None),
@@ -3516,35 +3513,34 @@ class DiscreteResults(base.LikelihoodModelResults):
                      ('Pseudo R-squ.:', ["%#6.4g" % self.prsquared]),
                      ('Log-Likelihood:', None),
                      ('LL-Null:', ["%#8.5g" % self.llnull]),
-                     ('LLR p-value:', ["%#6.4g" % self.llr_pvalue])
-                     ]
+                     ('LLR p-value:', ["%#6.4g" % self.llr_pvalue])]
 
         if title is None:
             title = self.model.__class__.__name__ + ' ' + "Regression Results"
 
-        #boiler plate
+        # boiler plate
         from statsmodels.iolib.summary import Summary
         smry = Summary()
         yname, yname_list = self._get_endog_name(yname, yname_list)
         # for top of table
         smry.add_table_2cols(self, gleft=top_left, gright=top_right, #[],
-                          yname=yname, xname=xname, title=title)
+                             yname=yname, xname=xname, title=title)
         # for parameters, etc
         smry.add_table_params(self, yname=yname_list, xname=xname, alpha=alpha,
-                             use_t=self.use_t)
+                              use_t=self.use_t)
 
         if hasattr(self, 'constraints'):
             smry.add_extra_txt(['Model has been estimated subject to linear '
-                          'equality constraints.'])
+                                'equality constraints.'])
 
-        #diagnostic table not used yet
-        #smry.add_table_2cols(self, gleft=diagn_left, gright=diagn_right,
+        # diagnostic table not used yet
+        # smry.add_table_2cols(self, gleft=diagn_left, gright=diagn_right,
         #                   yname=yname, xname=xname,
         #                   title="")
         return smry
 
     def summary2(self, yname=None, xname=None, title=None, alpha=.05,
-            float_format="%.4f"):
+                 float_format="%.4f"):
         """Experimental function to summarize regression results
 
         Parameters
@@ -3571,26 +3567,24 @@ class DiscreteResults(base.LikelihoodModelResults):
         --------
         statsmodels.iolib.summary.Summary : class to hold summary
             results
-
         """
         # Summary
         from statsmodels.iolib import summary2
         smry = summary2.Summary()
         smry.add_base(results=self, alpha=alpha, float_format=float_format,
-                xname=xname, yname=yname, title=title)
+                      xname=xname, yname=yname, title=title)
 
         if hasattr(self, 'constraints'):
             smry.add_text('Model has been estimated subject to linear '
                           'equality constraints.')
-
         return smry
-
 
 
 class CountResults(DiscreteResults):
     __doc__ = _discrete_results_docs % {
-                    "one_line_description" : "A results class for count data",
-                    "extra_attr" : ""}
+        "one_line_description": "A results class for count data",
+        "extra_attr": ""}
+
     @cache_readonly
     def resid(self):
         """
@@ -3607,10 +3601,11 @@ class CountResults(DiscreteResults):
         """
         return self.model.endog - self.predict()
 
+
 class NegativeBinomialResults(CountResults):
     __doc__ = _discrete_results_docs % {
-        "one_line_description" : "A results class for NegativeBinomial 1 and 2",
-                    "extra_attr" : ""}
+        "one_line_description": "A results class for NegativeBinomial 1 and 2",
+        "extra_attr": ""}
 
     @cache_readonly
     def lnalpha(self):
@@ -3624,19 +3619,20 @@ class NegativeBinomialResults(CountResults):
     def aic(self):
         # + 1 because we estimate alpha
         k_extra = getattr(self.model, 'k_extra', 0)
-        return -2*(self.llf - (self.df_model + self.k_constant + k_extra))
+        return -2 * (self.llf - (self.df_model + self.k_constant + k_extra))
 
     @cache_readonly
     def bic(self):
         # + 1 because we estimate alpha
         k_extra = getattr(self.model, 'k_extra', 0)
-        return -2*self.llf + np.log(self.nobs)*(self.df_model +
-                                                self.k_constant + k_extra)
+        return -2 * self.llf + np.log(self.nobs) * (self.df_model +
+                                                    self.k_constant + k_extra)
+
 
 class GeneralizedPoissonResults(NegativeBinomialResults):
     __doc__ = _discrete_results_docs % {
-        "one_line_description" : "A results class for Generalized Poisson",
-                    "extra_attr" : ""}
+        "one_line_description": "A results class for Generalized Poisson",
+        "extra_attr": ""}
 
     @cache_readonly
     def _dispersion_factor(self):
@@ -3644,11 +3640,13 @@ class GeneralizedPoissonResults(NegativeBinomialResults):
         mu = self.predict()
         return (1 + self.params[-1] * mu**p)**2
 
+
 class L1CountResults(DiscreteResults):
-    __doc__ = _discrete_results_docs % {"one_line_description" :
-            "A results class for count data fit by l1 regularization",
-            "extra_attr" : _l1_results_attr}
-        #discretefit = CountResults(self, cntfit)
+    __doc__ = _discrete_results_docs % {
+        "one_line_description": "A results class for count data fit by "
+                                "l1 regularization",
+        "extra_attr": _l1_results_attr}
+        # discretefit = CountResults(self, cntfit)
 
     def __init__(self, model, cntfit):
         super(L1CountResults, self).__init__(model, cntfit)
@@ -3664,6 +3662,7 @@ class L1CountResults(DiscreteResults):
 
         self.df_model = self.nnz_params - 1 - k_extra
         self.df_resid = float(self.model.endog.shape[0] - self.nnz_params) + k_extra
+
 
 class PoissonResults(CountResults):
     def predict_prob(self, n=None, exog=None, exposure=None, offset=None,
@@ -3695,21 +3694,28 @@ class PoissonResults(CountResults):
         # uses broadcasting
         return stats.poisson.pmf(counts, mu)
 
+
 class L1PoissonResults(L1CountResults, PoissonResults):
     pass
+
 
 class L1NegativeBinomialResults(L1CountResults, NegativeBinomialResults):
     pass
 
+
 class L1GeneralizedPoissonResults(L1CountResults, GeneralizedPoissonResults):
     pass
 
+
 class OrderedResults(DiscreteResults):
-    __doc__ = _discrete_results_docs % {"one_line_description" : "A results class for ordered discrete data." , "extra_attr" : ""}
-    pass
+    __doc__ = _discrete_results_docs % {
+        "one_line_description": "A results class for ordered discrete data.",
+        "extra_attr": ""}
 
 class BinaryResults(DiscreteResults):
-    __doc__ = _discrete_results_docs % {"one_line_description" : "A results class for binary data", "extra_attr" : ""}
+    __doc__ = _discrete_results_docs % {
+        "one_line_description": "A results class for binary data",
+        "extra_attr": ""}
 
     def pred_table(self, threshold=.5):
         """
@@ -3732,7 +3738,6 @@ class BinaryResults(DiscreteResults):
         bins = np.array([0, 0.5, 1])
         return np.histogram2d(actual, pred, bins=bins)[0]
 
-
     def summary(self, yname=None, xname=None, title=None, alpha=.05,
                 yname_list=None):
         smry = super(BinaryResults, self).summary(yname, xname, title, alpha,
@@ -3742,9 +3747,9 @@ class BinaryResults(DiscreteResults):
         predclose_sum = (absprederror < 1e-4).sum()
         predclose_frac = predclose_sum / len(fittedvalues)
 
-        #add warnings/notes
+        # add warnings/notes
         etext = []
-        if predclose_sum == len(fittedvalues): #nobs?
+        if predclose_sum == len(fittedvalues):  # nobs?
             wstr = "Complete Separation: The results show that there is"
             wstr += "complete separation.\n"
             wstr += "In this case the Maximum Likelihood Estimator does "
@@ -3782,18 +3787,16 @@ class BinaryResults(DiscreteResults):
         For now :math:`M_j` is always set to 1.
         """
         #These are the deviance residuals
-        #model = self.model
         endog = self.model.endog
-        #exog = model.exog
         # M = # of individuals that share a covariate pattern
         # so M[i] = 2 for i = two share a covariate pattern
         M = 1
         p = self.predict()
-        #Y_0 = np.where(exog == 0)
-        #Y_M = np.where(exog == M)
-        #NOTE: Common covariate patterns are not yet handled
-        res = -(1-endog)*np.sqrt(2*M*np.abs(np.log(1-p))) + \
-                endog*np.sqrt(2*M*np.abs(np.log(p)))
+        # Y_0 = np.where(exog == 0)
+        # Y_M = np.where(exog == M)
+        # NOTE: Common covariate patterns are not yet handled
+        res = -(1 - endog) * np.sqrt(2 * M * np.abs(np.log(1 - p))) + \
+                endog * np.sqrt(2 * M * np.abs(np.log(p)))
         return res
 
     @cache_readonly
@@ -3813,15 +3816,13 @@ class BinaryResults(DiscreteResults):
         For now :math:`M_j` is always set to 1.
         """
         # Pearson residuals
-        #model = self.model
         endog = self.model.endog
-        #exog = model.exog
         # M = # of individuals that share a covariate pattern
         # so M[i] = 2 for i = two share a covariate pattern
         # use unique row pattern?
         M = 1
         p = self.predict()
-        return (endog - M*p)/np.sqrt(M*p*(1-p))
+        return (endog - M * p) / np.sqrt(M * p * (1 - p))
 
     @cache_readonly
     def resid_response(self):
@@ -3838,10 +3839,12 @@ class BinaryResults(DiscreteResults):
         """
         return self.model.endog - self.predict()
 
+
 class LogitResults(BinaryResults):
     __doc__ = _discrete_results_docs % {
-        "one_line_description" : "A results class for Logit Model",
-                    "extra_attr" : ""}
+        "one_line_description": "A results class for Logit Model",
+        "extra_attr": ""}
+
     @cache_readonly
     def resid_generalized(self):
         """
@@ -3859,10 +3862,12 @@ class LogitResults(BinaryResults):
         # Generalized residuals
         return self.model.endog - self.predict()
 
+
 class ProbitResults(BinaryResults):
     __doc__ = _discrete_results_docs % {
-        "one_line_description" : "A results class for Probit Model",
-                    "extra_attr" : ""}
+        "one_line_description": "A results class for Probit Model",
+        "extra_attr": ""}
+
     @cache_readonly
     def resid_generalized(self):
         """
@@ -3880,12 +3885,15 @@ class ProbitResults(BinaryResults):
         XB = self.predict(linear=True)
         pdf = model.pdf(XB)
         cdf = model.cdf(XB)
-        return endog * pdf/cdf - (1-endog)*pdf/(1-cdf)
+        return endog * pdf / cdf - (1 - endog) * pdf / (1 - cdf)
+
 
 class L1BinaryResults(BinaryResults):
-    __doc__ = _discrete_results_docs % {"one_line_description" :
-    "Results instance for binary data fit by l1 regularization",
-    "extra_attr" : _l1_results_attr}
+    __doc__ = _discrete_results_docs % {
+        "one_line_description": "Results instance for binary data fit "
+                                "by l1 regularization",
+        "extra_attr": _l1_results_attr}
+
     def __init__(self, model, bnryfit):
         super(L1BinaryResults, self).__init__(model, bnryfit)
         # self.trimmed is a boolean array with T/F telling whether or not that
@@ -3897,8 +3905,10 @@ class L1BinaryResults(BinaryResults):
 
 
 class MultinomialResults(DiscreteResults):
-    __doc__ = _discrete_results_docs % {"one_line_description" :
-            "A results class for multinomial data", "extra_attr" : ""}
+    __doc__ = _discrete_results_docs % {
+        "one_line_description": "A results class for multinomial data",
+        "extra_attr": ""}
+
     def _maybe_convert_ynames_int(self, ynames):
         # see if they're integers
         try:
@@ -3909,9 +3919,9 @@ class MultinomialResults(DiscreteResults):
             pass
         return ynames
 
-    def _get_endog_name(self, yname, yname_list, all=False):
+    def _get_endog_name(self, yname, yname_list, use_all=False):
         """
-        If all is False, the first variable name is dropped
+        If use_all is False, the first variable name is dropped
         """
         model = self.model
         if yname is None:
@@ -3922,8 +3932,8 @@ class MultinomialResults(DiscreteResults):
             # use range below to ensure sortedness
             ynames = [ynames[key] for key in range(int(model.J))]
             ynames = ['='.join([yname, name]) for name in ynames]
-            if not all:
-                yname_list = ynames[1:] # assumes first variable is dropped
+            if not use_all:
+                yname_list = ynames[1:]  # assumes first variable is dropped
             else:
                 yname_list = ynames
         return yname, yname_list
@@ -3951,16 +3961,16 @@ class MultinomialResults(DiscreteResults):
 
     @cache_readonly
     def aic(self):
-        return -2*(self.llf - (self.df_model+self.model.J-1))
+        return -2 * (self.llf - (self.df_model + self.model.J - 1))
 
     @cache_readonly
     def bic(self):
-        return -2*self.llf + np.log(self.nobs)*(self.df_model+self.model.J-1)
+        return -2 * self.llf + np.log(self.nobs) * (self.df_model + self.model.J - 1)
 
     def conf_int(self, alpha=.05, cols=None):
         confint = super(DiscreteResults, self).conf_int(alpha=alpha,
-                                                            cols=cols)
-        return confint.transpose(2,0,1)
+                                                        cols=cols)
+        return confint.transpose(2, 0, 1)
 
     def margeff(self):
         raise NotImplementedError("Use get_margeff instead")
@@ -4007,9 +4017,7 @@ class MultinomialResults(DiscreteResults):
         --------
         statsmodels.iolib.summary2.Summary : class to hold summary
             results
-
         """
-
         from statsmodels.iolib import summary2
         smry = summary2.Summary()
         smry.add_dict(summary2.summary_model(self))
@@ -4017,22 +4025,25 @@ class MultinomialResults(DiscreteResults):
         eqn = self.params.shape[1]
         confint = self.conf_int(alpha)
         for i in range(eqn):
-            coefs = summary2.summary_params((self, self.params[:,i],
-                    self.bse[:,i], self.tvalues[:,i], self.pvalues[:,i],
+            coefs = summary2.summary_params((self, self.params[:, i],
+                    self.bse[:, i], self.tvalues[:, i], self.pvalues[:, i],
                     confint[i]), alpha=alpha)
             # Header must show value of endog
             level_str =  self.model.endog_names + ' = ' + str(i)
             coefs[level_str] = coefs.index
-            coefs = coefs.iloc[:,[-1,0,1,2,3,4,5]]
-            smry.add_df(coefs, index=False, header=True, float_format=float_format)
+            coefs = coefs.iloc[:, [-1, 0, 1, 2, 3, 4, 5]]
+            smry.add_df(coefs, index=False, header=True,
+                        float_format=float_format)
             smry.add_title(results=self)
         return smry
 
 
 class L1MultinomialResults(MultinomialResults):
-    __doc__ = _discrete_results_docs % {"one_line_description" :
-        "A results class for multinomial data fit by l1 regularization",
+    __doc__ = _discrete_results_docs % {
+        "one_line_description": "A results class for multinomial data "
+                                "fit by l1 regularization",
         "extra_attr" : _l1_results_attr}
+
     def __init__(self, model, mlefit):
         super(L1MultinomialResults, self).__init__(model, mlefit)
         # self.trimmed is a boolean array with T/F telling whether or not that
@@ -4045,7 +4056,8 @@ class L1MultinomialResults(MultinomialResults):
         self.df_resid = float(self.model.endog.shape[0] - self.nnz_params)
 
 
-#### Results Wrappers ####
+# --------------------------------------------------------------------
+# Results Wrappers
 
 class OrderedResultsWrapper(lm.RegressionResultsWrapper):
     pass
@@ -4067,12 +4079,6 @@ wrap.populate_wrapper(GeneralizedPoissonResultsWrapper,
 
 class PoissonResultsWrapper(lm.RegressionResultsWrapper):
     pass
-    #_methods = {
-    #        "predict_prob" : "rows",
-    #        }
-    #_wrap_methods = lm.wrap.union_dicts(
-    #                            lm.RegressionResultsWrapper._wrap_methods,
-    #                            _methods)
 wrap.populate_wrapper(PoissonResultsWrapper, PoissonResults)
 
 class L1CountResultsWrapper(lm.RegressionResultsWrapper):
@@ -4080,12 +4086,6 @@ class L1CountResultsWrapper(lm.RegressionResultsWrapper):
 
 class L1PoissonResultsWrapper(lm.RegressionResultsWrapper):
     pass
-    #_methods = {
-    #        "predict_prob" : "rows",
-    #        }
-    #_wrap_methods = lm.wrap.union_dicts(
-    #                            lm.RegressionResultsWrapper._wrap_methods,
-    #                            _methods)
 wrap.populate_wrapper(L1PoissonResultsWrapper, L1PoissonResults)
 
 class L1NegativeBinomialResultsWrapper(lm.RegressionResultsWrapper):
@@ -4099,11 +4099,10 @@ wrap.populate_wrapper(L1GeneralizedPoissonResultsWrapper,
                       L1GeneralizedPoissonResults)
 
 class BinaryResultsWrapper(lm.RegressionResultsWrapper):
-    _attrs = {"resid_dev" : "rows",
-              "resid_generalized" : "rows",
-              "resid_pearson" : "rows",
-              "resid_response" : "rows"
-              }
+    _attrs = {"resid_dev": "rows",
+              "resid_generalized": "rows",
+              "resid_pearson": "rows",
+              "resid_response": "rows"}
     _wrap_attrs = wrap.union_dicts(lm.RegressionResultsWrapper._wrap_attrs,
                                    _attrs)
 wrap.populate_wrapper(BinaryResultsWrapper, BinaryResults)
@@ -4113,9 +4112,9 @@ class L1BinaryResultsWrapper(lm.RegressionResultsWrapper):
 wrap.populate_wrapper(L1BinaryResultsWrapper, L1BinaryResults)
 
 class MultinomialResultsWrapper(lm.RegressionResultsWrapper):
-    _attrs = {"resid_misclassified" : "rows"}
+    _attrs = {"resid_misclassified": "rows"}
     _wrap_attrs = wrap.union_dicts(lm.RegressionResultsWrapper._wrap_attrs,
-            _attrs)
+                                   _attrs)
 wrap.populate_wrapper(MultinomialResultsWrapper, MultinomialResults)
 
 class L1MultinomialResultsWrapper(lm.RegressionResultsWrapper):
