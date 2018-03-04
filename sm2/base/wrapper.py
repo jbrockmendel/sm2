@@ -2,8 +2,6 @@
 import inspect
 import functools
 
-import numpy as np
-
 
 class ResultsWrapper(object):
     """
@@ -21,15 +19,14 @@ class ResultsWrapper(object):
         return [x for x in dir(self._results)]
 
     def __getattribute__(self, attr):
-        get = lambda name: object.__getattribute__(self, name)
-
+        # TODO: Why are we checking this first and then possibly ignoring it?
         try:
-            results = get('_results')
+            results = object.__getattribute__(self, '_results')
         except AttributeError:
             pass
 
         try:
-            return get(attr)
+            return object.__getattribute__(self, attr)
         except AttributeError:
             pass
 
@@ -44,15 +41,13 @@ class ResultsWrapper(object):
         return obj
 
     def __getstate__(self):
-        #print 'pickling wrapper', self.__dict__
         return self.__dict__
 
     def __setstate__(self, dict_):
-        #print 'unpickling wrapper', dict_
         self.__dict__.update(dict_)
 
     def save(self, fname, remove_data=False):
-        '''save a pickle of this instance
+        """save a pickle of this instance
 
         Parameters
         ----------
@@ -63,8 +58,7 @@ class ResultsWrapper(object):
             If True, then all arrays with length nobs are set to None before
             pickling. See the remove_data method.
             In some cases not all arrays will be set to None.
-
-        '''
+        """
         from sm2.iolib.smpickle import save_pickle
 
         if remove_data:
@@ -91,7 +85,8 @@ def make_wrapper(func, how):
         results = object.__getattribute__(self, '_results')
         data = results.model.data
         if how and isinstance(how, tuple):
-            obj = data.wrap_output(func(results, *args, **kwargs), how[0], how[1:])
+            obj = data.wrap_output(func(results, *args, **kwargs),
+                                   how[0], how[1:])
         elif how:
             obj = data.wrap_output(func(results, *args, **kwargs), how)
         return obj
@@ -101,9 +96,7 @@ def make_wrapper(func, how):
                                       defaults=argspec[3])
 
     func_name = func.__name__
-
     wrapper.__doc__ = "%s%s\n%s" % (func_name, formatted, wrapper.__doc__)
-
     return wrapper
 
 

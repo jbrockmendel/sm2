@@ -5,9 +5,7 @@ from sm2.tools import data
 
 '''
 def test_missing_data_pandas():
-    """
-    Fixes GH: #144
-    """
+    # GH#144
     X = np.random.random((10,5))
     X[1,2] = np.nan
     df = pd.DataFrame(X)

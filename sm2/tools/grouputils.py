@@ -28,12 +28,12 @@ Not all methods and options have been tried out yet after refactoring
 need more efficient loop if groups are sorted -> see GroupSorted.group_iter
 """
 from __future__ import print_function
-from statsmodels.compat.python import lrange, lzip, range
+
 import numpy as np
 import pandas as pd
-from statsmodels.compat.pandas import sort_values
-import statsmodels.tools.data as data_util
-from pandas import Index, MultiIndex
+from six.moves import range
+
+import sm2.tools.data as data_util
 
 
 def combine_indices(groups, prefix='', sep='.', return_labels=False):
@@ -226,7 +226,7 @@ class Group(object):
         """
         uni = self.uni
         if drop_idx is not None:
-            idx = lrange(len(uni))
+            idx = list(range(len(uni)))
             del idx[drop_idx]
             uni = uni[idx]
 
@@ -258,7 +258,7 @@ class GroupSorted(Group):
         super(self.__class__, self).__init__(group, name=name)
 
         idx = (np.nonzero(np.diff(group))[0]+1).tolist()
-        self.groupidx = lzip([0] + idx, idx + [len(group)])
+        self.groupidx = list(zip([0] + idx, idx + [len(group)]))
 
     def group_iter(self):
         for low, upp in self.groupidx:
@@ -301,7 +301,7 @@ def _is_hierarchical(x):
 
 
 def _make_hierarchical_index(index, names):
-    return MultiIndex.from_tuples(*[index], names=names)
+    return pd.MultiIndex.from_tuples(*[index], names=names)
 
 
 def _make_generic_names(index):
@@ -326,7 +326,7 @@ class Grouping(object):
         -----
         If index is already a pandas Index then there is no copy.
         """
-        if isinstance(index, (Index, MultiIndex)):
+        if isinstance(index, (pd.Index, pd.MultiIndex)):
             if names is not None:
                 if hasattr(index, 'set_names'):  # newer pandas
                     index.set_names(names, inplace=True)
@@ -337,7 +337,7 @@ class Grouping(object):
             if _is_hierarchical(index):
                 self.index = _make_hierarchical_index(index, names)
             else:
-                self.index = Index(index, name=names)
+                self.index = pd.Index(index, name=names)
             if names is None:
                 names = _make_generic_names(self.index)
                 if hasattr(self.index, 'set_names'):
@@ -404,7 +404,7 @@ class Grouping(object):
         groups = self.index.get_level_values(level).unique()
         groups = np.array(groups)
         groups.sort()
-        if isinstance(self.index, MultiIndex):
+        if isinstance(self.index, pd.MultiIndex):
             self.slices = [self.index.get_loc_level(x, level=level)[0]
                            for x in groups]
         else:
@@ -423,7 +423,7 @@ class Grouping(object):
         if not index:
             index = self.index
         if is_sorted:
-            test = pd.DataFrame(lrange(len(index)), index=index)
+            test = pd.DataFrame(list(range(len(index))), index=index)
             test_sorted = test.sort()
             if not test.index.equals(test_sorted.index):
                 raise Exception('Data is not be sorted')
@@ -616,8 +616,8 @@ if __name__ == '__main__':
     from scipy import sparse
 
     g = np.array([0, 0, 1, 2, 1, 1, 2, 0])
-    u = lrange(3)
-    indptr = np.arange(len(g)+1)
+    u = list(range(3))
+    indptr = np.arange(len(g) + 1)
     data = np.ones(len(g), dtype=np.int8)
     a = sparse.csr_matrix((data, g, indptr))
     print(a.todense())

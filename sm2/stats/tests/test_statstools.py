@@ -8,8 +8,9 @@ from scipy import stats
 from sm2.stats.stattools import (omni_normtest, jarque_bera,
                                  durbin_watson, _medcouple_1d, medcouple,
                                  robust_kurtosis, robust_skewness)
+from sm2.stats._adnorm import normal_ad
+
 '''
-from statsmodels.stats._adnorm import normal_ad
 
 # a random array, rounded to 4 decimals
 x = np.array([-0.1184, -1.3403, 0.0063, -0.612, -0.3869, -0.2313, -2.8485,
@@ -48,7 +49,6 @@ def test_durbin_watson():
 
 def test_omni_normtest():
     # tests against R fBasics
-    
 
     st_pv_R = np.array(
               [[3.994138321207883, -1.129304302161460,  1.648881473704978],
@@ -65,7 +65,8 @@ def test_omni_normtest():
 
     st_pv_R = np.array(
               [[34.523210399523926,  4.429509162503833,  3.860396220444025],
-               [3.186985686465249e-08, 9.444780064482572e-06, 1.132033129378485e-04]])
+               [3.186985686465249e-08, 9.444780064482572e-06,
+                1.132033129378485e-04]])
 
     x2 = x**2
     #TODO: fix precision in these test with relative tolerance
@@ -109,8 +110,8 @@ def test_jarque_bera():
 
 
 def test_shapiro():
-    #tests against R fBasics
-    #testing scipy.stats
+    # tests against R fBasics
+    # testing scipy.stats
     from scipy.stats import shapiro
 
     st_pv_R = np.array([0.939984787255526, 0.239621898000460])
@@ -170,17 +171,22 @@ class TestStattools(object):
     @classmethod
     def setup_class(cls):
         x = np.random.standard_normal(1000)
-        e1, e2, e3, e4, e5, e6, e7 = np.percentile(x, (12.5, 25.0, 37.5, 50.0, 62.5, 75.0, 87.5))
+        e1, e2, e3, e4, e5, e6, e7 = np.percentile(x, (12.5, 25.0, 37.5, 50.0,
+                                                       62.5, 75.0, 87.5))
         c05, c50, c95 = np.percentile(x, (5.0, 50.0, 95.0))
         f025, f25, f75, f975 = np.percentile(x, (2.5, 25.0, 75.0, 97.5))
         mean = np.mean
         kr1 = mean(((x - mean(x)) / np.std(x))**4.0) - 3.0
         kr2 = ((e7 - e5) + (e3 - e1)) / (e6 - e2) - 1.2330951154852172
-        kr3 = (mean(x[x > c95]) - mean(x[x < c05])) / (mean(x[x > c50]) - mean(x[x < c50])) - 2.5852271228708048
+        kr3 = (mean(x[x > c95]) - mean(x[x < c05])) / (mean(x[x > c50]) -
+               mean(x[x < c50])) - 2.5852271228708048
         kr4 = (f975 - f025) / (f75 - f25) - 2.9058469516701639
         cls.kurtosis_x = x
         cls.expected_kurtosis = np.array([kr1, kr2, kr3, kr4])
-        cls.kurtosis_constants = np.array([3.0,1.2330951154852172,2.5852271228708048,2.9058469516701639])
+        cls.kurtosis_constants = np.array([3.0,
+            1.2330951154852172,
+                                           2.5852271228708048,
+                                           2.9058469516701639])
 
     def test_medcouple_no_axis(self):
         x = np.reshape(np.arange(100.0), (50, 2))
@@ -227,7 +233,8 @@ class TestStattools(object):
         x = np.random.standard_normal(100)
         dw = sum(np.diff(x)**2.0) / np.dot(x, x)
         x = np.tile(x[None, :, None], shape)
-        assert_almost_equal(np.squeeze(dw * np.ones(shape)), durbin_watson(x, axis=1))
+        assert_almost_equal(np.squeeze(dw * np.ones(shape)),
+                            durbin_watson(x, axis=1))
 
 
     def test_robust_skewness_1d(self):
@@ -267,7 +274,8 @@ class TestStattools(object):
 
     def test_robust_kurtosis(self):
         x = self.kurtosis_x
-        assert_almost_equal(np.array(robust_kurtosis(x)), self.expected_kurtosis)
+        assert_almost_equal(np.array(robust_kurtosis(x)),
+                            self.expected_kurtosis)
 
     def test_robust_kurtosis_3d(self):
         x = np.tile(self.kurtosis_x, (10, 10, 1))
@@ -285,16 +293,20 @@ class TestStattools(object):
         # Test custom alpha, beta in kr3
         x = self.kurtosis_x
         alpha, beta = (10.0, 45.0)
-        kurtosis = robust_kurtosis(self.kurtosis_x, ab=(alpha,beta), excess=False)
-        num = np.mean(x[x>np.percentile(x,100.0 - alpha)]) - np.mean(x[x<np.percentile(x,alpha)])
-        denom = np.mean(x[x>np.percentile(x,100.0 - beta)]) - np.mean(x[x<np.percentile(x,beta)])
+        kurtosis = robust_kurtosis(self.kurtosis_x, ab=(alpha,beta),
+                                   excess=False)
+        num = np.mean(x[x>np.percentile(x,100.0 - alpha)]) -
+                      np.mean(x[x<np.percentile(x,alpha)])
+        denom = np.mean(x[x>np.percentile(x,100.0 - beta)]) -
+                        np.mean(x[x<np.percentile(x,beta)])
         assert_almost_equal(kurtosis[2], num/denom)
 
     def test_robust_kurtosis_dg(self):
         # Test custom delta, gamma in kr4
         x = self.kurtosis_x
         delta, gamma = (10.0, 45.0)
-        kurtosis = robust_kurtosis(self.kurtosis_x, dg=(delta,gamma), excess=False)
+        kurtosis = robust_kurtosis(self.kurtosis_x, dg=(delta,gamma),
+                                   excess=False)
         q = np.percentile(x,[delta, 100.0-delta, gamma, 100.0-gamma])
         assert_almost_equal(kurtosis[3], (q[1] - q[0]) / (q[3] - q[2]))
 '''

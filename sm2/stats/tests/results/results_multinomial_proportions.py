@@ -3,8 +3,6 @@
 
 Author: Sébastien Lerique
 """
-
-
 import collections
 import numpy as np
 
@@ -41,11 +39,11 @@ res_multinomial[('sisonandglaz', 'Sison-Glaz example 2')].precision = 4
 
 res_multinomial[('sison-whatever', 'Sison-Glaz example 3')]\
     .proportions = [1] * 10 + [12] * 10 + [5] * 10 + [3] * 10 + [4] * 10
-res_multinomial[('sison-whatever', 'Sison-Glaz example 3')].cis = np.concatenate([
-    [0, .04120118] * np.ones((10, 2)), [.012, .08520118] * np.ones((10, 2)),
-    [0, .05720118] * np.ones((10, 2)), [0, .04920118] * np.ones((10, 2)),
-    [0, .05320118] * np.ones((10, 2))
-])
+res_multinomial[('sison-whatever',
+                 'Sison-Glaz example 3')].cis = np.concatenate(
+    [[0, .04120118] * np.ones((10, 2)), [.012, .08520118] * np.ones((10, 2)),
+     [0, .05720118] * np.ones((10, 2)), [0, .04920118] * np.ones((10, 2)),
+     [0, .05320118] * np.ones((10, 2))])
 res_multinomial[('sison-whatever', 'Sison-Glaz example 3')].precision = 4
 
 # The examples from the Sison & Glaz paper only include 3 decimals.

@@ -18,10 +18,11 @@ import sm2.stats.sandwich_covariance as sw
 import sm2.discrete.discrete_model as smd
 from sm2.regression.linear_model import OLS
 
+import sm2.tools._testing as smt
+
 from statsmodels.genmod.generalized_linear_model import GLM
 from statsmodels.genmod import families
 from statsmodels.genmod.families import links
-import statsmodels.tools._testing as smt
 
 
 # get data and results as module global for now, TODO: move to class

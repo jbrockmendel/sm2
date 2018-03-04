@@ -23,7 +23,7 @@ import sm2.stats.sandwich_covariance as sw
 def test_cov_cluster_2groups():
     # comparing cluster robust standard errors to Peterson
     # requires Petersen's test_data
-    # http://www.kellogg.northwestern.edu/faculty/petersen/htm/papers/se/test_data.txt
+    # http://www.kellogg.northwestern.edu/faculty/petersen/htm/papers/se/test_data.txt  # noqa:E501
     cur_dir = os.path.abspath(os.path.dirname(__file__))
     fpath = os.path.join(cur_dir, "test_data.txt")
     pet = np.genfromtxt(fpath)
@@ -36,7 +36,7 @@ def test_cov_cluster_2groups():
     cov01, covg, covt = sw.cov_cluster_2groups(res, group, group2=time)
 
     # Reference number from Petersen
-    # http://www.kellogg.northwestern.edu/faculty/petersen/htm/papers/se/test_data.htm
+    # http://www.kellogg.northwestern.edu/faculty/petersen/htm/papers/se/test_data.htm  # noqa:E501
 
     bse_petw = [0.0284, 0.0284]
     bse_pet0 = [0.0670, 0.0506]
@@ -63,19 +63,23 @@ def test_hac_simple():
     exogg = add_constant(np.c_[g_gdp, d2['realint'][:-1]])
     res_olsg = OLS(g_inv, exogg).fit()
 
-    #> NeweyWest(fm, lag = 4, prewhite = FALSE, sandwich = TRUE, verbose=TRUE, adjust=TRUE)
-    #Lag truncation parameter chosen: 4
-    #                     (Intercept)                   ggdp                  lint
-    cov1_r = [[  1.40643899878678802, -0.3180328707083329709, -0.060621111216488610],
-             [ -0.31803287070833292,  0.1097308348999818661,  0.000395311760301478],
-             [ -0.06062111121648865,  0.0003953117603014895,  0.087511528912470993]]
+    # > NeweyWest(fm, lag = 4, prewhite = FALSE, sandwich = TRUE,
+                  verbose=TRUE, adjust=TRUE)
+    # Lag truncation parameter chosen: 4
+    #                  (Intercept)                   ggdp                  lint
+    cov1_r = [
+        [1.40643899878678802, -0.3180328707083329709, -0.060621111216488610],
+        [-0.31803287070833292, 0.1097308348999818661, 0.000395311760301478],
+        [-0.06062111121648865, 0.0003953117603014895, 0.087511528912470993]]
 
-    #> NeweyWest(fm, lag = 4, prewhite = FALSE, sandwich = TRUE, verbose=TRUE, adjust=FALSE)
-    #Lag truncation parameter chosen: 4
-    #                    (Intercept)                  ggdp                  lint
-    cov2_r = [[ 1.3855512908840137, -0.313309610252268500, -0.059720797683570477],
-             [ -0.3133096102522685,  0.108101169035130618,  0.000389440793564339],
-             [ -0.0597207976835705,  0.000389440793564336,  0.086211852740503622]]
+    # > NeweyWest(fm, lag = 4, prewhite = FALSE, sandwich = TRUE,
+                  verbose=TRUE, adjust=FALSE)
+    # Lag truncation parameter chosen: 4
+    #                (Intercept)                  ggdp                  lint
+    cov2_r = [
+        [1.3855512908840137, -0.313309610252268500, -0.059720797683570477],
+        [-0.3133096102522685, 0.108101169035130618, 0.000389440793564339],
+        [-0.0597207976835705, 0.000389440793564336, 0.086211852740503622]]
 
     cov1 = sw.cov_hac_simple(res_olsg, nlags=4, use_correction=True)
     se1 =  sw.se_cov(cov1)

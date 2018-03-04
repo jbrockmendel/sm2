@@ -19,7 +19,7 @@ class _MinimalWLS(object):
         A nobs x k array where `nobs` is the number of observations and `k`
         is the number of regressors. An intercept is not included by default
         and should be added by the user. See
-        :func:`statsmodels.tools.add_constant`.
+        :func:`sm2.tools.add_constant`.
     weights : array-like, optional
         1d array of weights.  If you supply 1/W then the variables are pre-
         multiplied by 1/sqrt(W).  If no weights are supplied the default value
@@ -82,7 +82,7 @@ class _MinimalWLS(object):
 
         See Also
         --------
-        statsmodels.regression.linear_model.WLS
+        sm2.regression.linear_model.WLS
         """
         if method == 'pinv':
             pinv_wexog = np.linalg.pinv(self.wexog)

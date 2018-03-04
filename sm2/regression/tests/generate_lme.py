@@ -43,7 +43,7 @@ for pr in 1, 2:
                 x_re = np.zeros((n, pr))
                 u = np.linspace(-1, 1, n)
                 for j in range(pr):
-                    x_re[:,j] = u**j
+                    x_re[:, j] = u**j
 
                 re = np.random.normal(size=pr) * re_sd
 
@@ -59,11 +59,11 @@ for pr in 1, 2:
             exog_re = np.concatenate(exog_re, axis=0)
             groups = np.concatenate(groups, axis=0)
 
-            data = np.concatenate((groups[:,None], endog[:,None],
+            data = np.concatenate((groups[:, None], endog[:, None],
                                    exog_fe, exog_re), axis=1)
 
-            header = ["groups,endog",] +\
-                     ["exog_fe_%d" % k for k in range(pf)] +\
+            header = ["groups,endog",] + \
+                     ["exog_fe_%d" % k for k in range(pf)] + \
                      ["exog_re_%d" % k for k in range(pr)]
             header = ",".join(header)
 
