@@ -52,10 +52,10 @@ class ARIMA111(object):
             self.bse = np.diag(np.sqrt(self.cov_params))
             # from stata
             #forecast = genfromtxt(open(cur_dir+"/arima111_forecasts.csv"),
-            #                delimiter=",", skip_header=1, usecols=[1,2,3,4,5])
-            #self.forecast = forecast[203:,1]
-            #self.fcerr = forecast[203:,2]
-            #self.fc_conf_int = forecast[203:,3:]
+            #                delimiter=",", skip_header=1, usecols=[1, 2, 3, 4, 5])
+            #self.forecast = forecast[203:, 1]
+            #self.fcerr = forecast[203:, 2]
+            #self.fc_conf_int = forecast[203:, 3:]
             # from gretl
             self.forecast = forecast_results['fc111c'][-25:]
             self.forecasterr = forecast_results['fc111cse'][-25:]
@@ -215,8 +215,8 @@ class ARIMA211(object):
             cov_params = np.array([
                     [0.0616906,  -0.00250187, 0.0010129,    0.00260485],
                     [0, 0.0105302,   -0.00867819,   -0.00525614],
-                    [ 0 ,0,         0.00759185,    0.00361962],
-                    [ 0 ,0,0,                      0.00484898]])
+                    [ 0 , 0,         0.00759185,    0.00361962],
+                    [ 0 , 0, 0,                      0.00484898]])
             self.cov_params = cov_params + cov_params.T - \
                               np.diag(np.diag(cov_params))
             self.bse = np.diag(np.sqrt(self.cov_params))
@@ -320,8 +320,8 @@ class ARIMA112(object):
             self.cov_params = np.array([
                     [ 0.0059715623, 0.001327824, -0.001592129, -0.0008061933],
                     [ 0.0013278238, 0.008754705, -0.008024634, -0.0045933413],
-                    [-0.0015921293,-0.008024634,  0.011032492,  0.0072509641],
-                    [-0.0008061933,-0.004593341,  0.007250964,  0.0059721516]])
+                    [-0.0015921293, -0.008024634,  0.011032492,  0.0072509641],
+                    [-0.0008061933, -0.004593341,  0.007250964,  0.0059721516]])
 
             # from x12arima via gretl
             # gretl did not converge for this model...
@@ -433,6 +433,3 @@ class ARIMA112(object):
             self.forecasterr = forecast_results['fc112cse_css'][-25:]
             self.forecast_dyn = forecast_results['fc112cdyn_css']
             self.forecasterr_dyn = forecast_results['fc112cdynse_css']
-
-
-

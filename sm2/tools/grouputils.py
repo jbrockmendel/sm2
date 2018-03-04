@@ -72,7 +72,7 @@ def combine_indices(groups, prefix='', sep='.', return_labels=False):
         # uni.shape = (uni.size//ncols, ncols)
 
     if return_labels:
-        label = [(prefix+sep.join(['%s']*len(uni[0]))) % tuple(ii)
+        label = [(prefix + sep.join(['%s'] * len(uni[0]))) % tuple(ii)
                  for ii in uni]
         return uni_inv, uni_idx, uni, label
     else:
@@ -144,7 +144,6 @@ def dummy_sparse(groups):
 
     Examples
     --------
-
     >>> g = np.array([0, 0, 2, 1, 1, 2, 0])
     >>> indi = dummy_sparse(g)
     >>> indi
@@ -159,7 +158,6 @@ def dummy_sparse(groups):
             [0, 0, 1],
             [1, 0, 0]], dtype=int8)
 
-
     current behavior with missing groups
     >>> g = np.array([0, 0, 2, 0, 2, 0])
     >>> indi = dummy_sparse(g)
@@ -170,11 +168,10 @@ def dummy_sparse(groups):
             [1, 0, 0],
             [0, 0, 1],
             [1, 0, 0]], dtype=int8)
-
     """
     from scipy import sparse
 
-    indptr = np.arange(len(groups)+1)
+    indptr = np.arange(len(groups) + 1)
     data = np.ones(len(groups), dtype=np.int8)
     indi = sparse.csr_matrix((data, g, indptr))
 
@@ -212,7 +209,7 @@ class Group(object):
         sep = self.separator
 
         if uni.ndim > 1:
-            label = [(prefix+sep.join(['%s']*len(uni[0]))) % tuple(ii)
+            label = [(prefix + sep.join(['%s'] * len(uni[0]))) % tuple(ii)
                      for ii in uni]
         else:
             label = [prefix + '%s' % ii for ii in uni]
@@ -257,7 +254,7 @@ class GroupSorted(Group):
     def __init__(self, group, name=''):
         super(self.__class__, self).__init__(group, name=name)
 
-        idx = (np.nonzero(np.diff(group))[0]+1).tolist()
+        idx = (np.nonzero(np.diff(group))[0] + 1).tolist()
         self.groupidx = list(zip([0] + idx, idx + [len(group)]))
 
     def group_iter(self):
@@ -293,7 +290,7 @@ def _is_hierarchical(x):
     If so, we have a MultiIndex and returns True. Else returns False.
     """
     item = x[0]
-    # is there a better way to do this?
+    # TODO: is there a better way to do this?
     if isinstance(item, (list, tuple, np.ndarray, pd.Series, pd.DataFrame)):
         return True
     else:
@@ -307,7 +304,7 @@ def _make_hierarchical_index(index, names):
 def _make_generic_names(index):
     n_names = len(index.names)
     pad = str(len(str(n_names)))  # number of digits
-    return [("group{0:0"+pad+"}").format(i) for i in range(n_names)]
+    return [("group{0:0" + pad + "}").format(i) for i in range(n_names)]
 
 
 class Grouping(object):
@@ -376,7 +373,7 @@ class Grouping(object):
             try:
                 labl = tmp.codes
             except AttributeError:
-                labl = tmp.labels  # Old pandsd
+                labl = tmp.labels  # Old pandas
 
             return labl[None]
 
@@ -437,7 +434,6 @@ class Grouping(object):
         user-supplied index.  Returns an object of the same type as the
         original data as well as the matching (sorted) Pandas index.
         """
-
         if index is None:
             index = self.index
         if data_util._is_using_ndarray_type(data, None):
@@ -525,7 +521,6 @@ class Grouping(object):
 
         Examples
         --------
-
         >>> g = np.array([0, 0, 2, 1, 1, 2, 0])
         >>> indi = dummy_sparse(g)
         >>> indi
@@ -540,7 +535,6 @@ class Grouping(object):
                 [0, 0, 1],
                 [1, 0, 0]], dtype=int8)
 
-
         current behavior with missing groups
         >>> g = np.array([0, 0, 2, 0, 2, 0])
         >>> indi = dummy_sparse(g)
@@ -554,7 +548,7 @@ class Grouping(object):
         """
         from scipy import sparse
         groups = self.labels[level]
-        indptr = np.arange(len(groups)+1)
+        indptr = np.arange(len(groups) + 1)
         data = np.ones(len(groups), dtype=np.int8)
         self._dummies = sparse.csr_matrix((data, groups, indptr))
 
@@ -586,73 +580,3 @@ if __name__ == '__main__':
                                      'sector0.region1', 'sector0.region0'],
                                     dtype='|S15')
     assert_equal(group_joint, group_joint_expected)
-
-    """
-    >>> uv
-    array([2, 1, 0, 0, 1, 0, 2, 0, 1, 0])
-    >>> label
-    ['sector0.region0', 'sector1.region0', 'sector1.region1']
-    >>> np.array(label)[uv]
-    array(['sector1.region1', 'sector1.region0', 'sector0.region0',
-           'sector0.region0', 'sector1.region0', 'sector0.region0',
-           'sector1.region1', 'sector0.region0', 'sector1.region0',
-           'sector0.region0'],
-          dtype='|S15')
-    >>> np.column_stack((group0, group1))
-    array([['sector1', 'region1'],
-           ['sector1', 'region0'],
-           ['sector0', 'region0'],
-           ['sector0', 'region0'],
-           ['sector1', 'region0'],
-           ['sector0', 'region0'],
-           ['sector1', 'region1'],
-           ['sector0', 'region0'],
-           ['sector1', 'region0'],
-           ['sector0', 'region0']],
-          dtype='|S7')
-      """
-
-    # ------------- examples sparse_dummies
-    from scipy import sparse
-
-    g = np.array([0, 0, 1, 2, 1, 1, 2, 0])
-    u = list(range(3))
-    indptr = np.arange(len(g) + 1)
-    data = np.ones(len(g), dtype=np.int8)
-    a = sparse.csr_matrix((data, g, indptr))
-    print(a.todense())
-    print(np.all(a.todense() == (g[:, None] == np.arange(3)).astype(int)))
-
-    x = np.arange(len(g)*3).reshape(len(g), 3, order='F')
-
-    print('group means')
-    print(x.T * a)
-    print(np.dot(x.T, g[:, None] == np.arange(3)))
-    print(np.array([np.bincount(g, weights=x[:, col]) for col in range(3)]))
-    for cat in u:
-        print(x[g == cat].sum(0))
-    for cat in u:
-        x[g == cat].sum(0)
-
-    cc = sparse.csr_matrix([[0, 1, 0, 1, 0, 0, 0, 0, 0],
-                            [1, 0, 1, 0, 1, 0, 0, 0, 0],
-                            [0, 1, 0, 0, 0, 1, 0, 0, 0],
-                            [1, 0, 0, 0, 1, 0, 1, 0, 0],
-                            [0, 1, 0, 1, 0, 1, 0, 1, 0],
-                            [0, 0, 1, 0, 1, 0, 0, 0, 1],
-                            [0, 0, 0, 1, 0, 0, 0, 1, 0],
-                            [0, 0, 0, 0, 1, 0, 1, 0, 1],
-                            [0, 0, 0, 0, 0, 1, 0, 1, 0]])
-
-    # ------------- groupsums
-    print(group_sums(np.arange(len(g)*3*2).reshape(len(g), 3, 2), g,
-                     use_bincount=False).T)
-    print(group_sums(np.arange(len(g)*3*2).reshape(len(g), 3, 2)[:, :, 0], g))
-    print(group_sums(np.arange(len(g)*3*2).reshape(len(g), 3, 2)[:, :, 1], g))
-
-    # ------------- examples class
-    x = np.arange(len(g)*3).reshape(len(g), 3, order='F')
-    mygroup = Group(g)
-    print(mygroup.group_int)
-    print(mygroup.group_sums(x))
-    print(mygroup.labels())

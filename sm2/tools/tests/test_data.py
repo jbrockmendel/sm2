@@ -7,15 +7,15 @@ from sm2.tools import data
 def test_missing_data_pandas():
     # GH#144
     X = np.random.random((10,5))
-    X[1,2] = np.nan
+    X[1, 2] = np.nan
     df = pd.DataFrame(X)
     vals, cnames, rnames = data.interpret_data(df)
-    np.testing.assert_equal(rnames.tolist(), [0,2,3,4,5,6,7,8,9])
+    np.testing.assert_equal(rnames.tolist(), [0, 2, 3, 4, 5, 6, 7, 8, 9])
 
 def test_structarray():
     X = np.random.random((9,)).view([('var1', 'f8'),
-                                        ('var2', 'f8'),
-                                        ('var3', 'f8')])
+                                     ('var2', 'f8'),
+                                     ('var3', 'f8')])
     vals, cnames, rnames = data.interpret_data(X)
     np.testing.assert_equal(cnames, X.dtype.names)
     np.testing.assert_equal(vals, X.view((float,3)))
@@ -23,8 +23,8 @@ def test_structarray():
 
 def test_recarray():
     X = np.random.random((9,)).view([('var1', 'f8'),
-                                        ('var2', 'f8'),
-                                        ('var3', 'f8')])
+                                     ('var2', 'f8'),
+                                     ('var3', 'f8')])
     vals, cnames, rnames = data.interpret_data(X.view(np.recarray))
     np.testing.assert_equal(cnames, X.dtype.names)
     np.testing.assert_equal(vals, X.view((float,3)))
@@ -32,7 +32,7 @@ def test_recarray():
 
 
 def test_dataframe():
-    X = np.random.random((10,5))
+    X = np.random.random((10, 5))
     df = pd.DataFrame(X)
     vals, cnames, rnames = data.interpret_data(df)
     np.testing.assert_equal(vals, df.values)
