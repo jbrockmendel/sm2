@@ -16,7 +16,7 @@ from numpy.testing import assert_, assert_equal
 import pandas as pd
 
 
-import statsmodels.api as sm
+import sm2.api as sm
 
 
 def check_pickle(obj):
@@ -193,7 +193,7 @@ class TestRemoveDataPickleRLM(RemoveDataPickle):
         x = self.exog
         np.random.seed(987689)
         y = x.sum(1) + np.random.randn(x.shape[0])
-        self.results = sm.RLM(y, self.exog).fit()
+        self.results = sm.RLM(y, self.exog).fit()  # FIXME: not implemented
 
 
 class TestRemoveDataPickleGLM(RemoveDataPickle):
@@ -202,7 +202,7 @@ class TestRemoveDataPickleGLM(RemoveDataPickle):
         x = self.exog
         np.random.seed(987689)
         y = x.sum(1) + np.random.randn(x.shape[0])
-        self.results = sm.GLM(y, self.exog).fit()
+        self.results = sm.GLM(y, self.exog).fit()  # FIXME: not implemented
 
 
 class TestPickleFormula(RemoveDataPickle):

@@ -32,8 +32,8 @@ from sm2.discrete.discrete_model import (Logit, Probit, MNLogit,
                                          CountModel, GeneralizedPoisson,
                                          NegativeBinomialP, MultinomialModel)
 
+from statsmodels import distributions
 from statsmodels.discrete.discrete_margins import _iscount, _isdummy
-import statsmodels.api as sm
 import statsmodels.formula.api as smf
 
 from .results.results_discrete import Spector, DiscreteL1, RandHIE, Anes
@@ -1814,7 +1814,7 @@ class TestGeneralizedPoisson_underdispersion(object):
         exog = np.ones((nobs, 2))
         exog[:nobs//2, 1] = 2
         mu_true = np.exp(exog.dot(cls.expected_params[:-1]))
-        cls.endog = sm.distributions.genpoisson_p.rvs(mu_true,
+        cls.endog = distributions.genpoisson_p.rvs(mu_true,
             cls.expected_params[-1], 1, size=len(mu_true))
         model_gp = GeneralizedPoisson(cls.endog, exog, p=1)
         cls.res = model_gp.fit(method='nm', xtol=1e-6, maxiter=5000,
@@ -1856,7 +1856,7 @@ class TestGeneralizedPoisson_underdispersion(object):
         freq = np.bincount(endog.astype(int))
 
         pr = res.predict(which='prob')
-        pr2 = sm.distributions.genpoisson_p.pmf(np.arange(6)[:, None],
+        pr2 = distributions.genpoisson_p.pmf(np.arange(6)[:, None],
                                         res.predict(), res.params[-1], 1).T
         assert_allclose(pr, pr2, rtol=1e-10, atol=1e-10)
 
@@ -2360,8 +2360,6 @@ def test_optim_kwds_prelim():
     assert_equal(res.mle_settings['optim_kwds_prelim'], optim_kwds_prelim)
     # rough check that convergence makes sense
     assert_allclose(res.predict().mean(), y.mean(), rtol=0.1)
-
-
 '''
 
 # ------------------------------------------------------------------
