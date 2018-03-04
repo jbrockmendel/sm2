@@ -82,7 +82,7 @@ class _MinimalWLS(object):
 
         See Also
         --------
-        statsmodels.regression.linear_model.WLS
+        sm2.regression.linear_model.WLS
         """
         if method == 'pinv':
             pinv_wexog = np.linalg.pinv(self.wexog)
