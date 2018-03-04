@@ -15,7 +15,7 @@ import sm2.tsa.stattools as tsa
 import sm2.tsa.tsatools as tools
 from sm2.tsa.tsatools import vec, vech
 
-from sm2.regression import yule_walker
+from sm2.regression.linear_model import yule_walker
 
 from sm2.tsa.tests.results import savedrvs
 from sm2.tsa.tests.results.datamlw_tls import mlacf, mlccf, mlpacf, mlywar
