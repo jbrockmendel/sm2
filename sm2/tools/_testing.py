@@ -57,7 +57,7 @@ def check_ftest_pvalues(results):
 
     # automatic use_f based on results class use_t
     pvals = [res.wald_test(np.eye(k_vars)[k]).pvalue
-                                               for k in range(k_vars)]
+             for k in range(k_vars)]
     assert_allclose(pvals, res.pvalues, rtol=5e-10, atol=1e-25)
 
     # label for pvalues in summary
@@ -92,6 +92,7 @@ def check_fitted(results):
     fitted = res.fittedvalues
     assert_allclose(res.model.endog - fitted, res.resid, rtol=1e-12)
     assert_allclose(fitted, res.predict(), rtol=1e-12)
+
 
 def check_predict_types(results):
     res = results
