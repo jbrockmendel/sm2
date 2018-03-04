@@ -50,7 +50,7 @@ class TestGLSARCorc(CheckStataResultsPMixin):
         cls.results = results
 
     def test_rho(self):
-        assert_almost_equal(self.res.model.rho, self.results.rho, 3)  # pylint: disable-msg=E1101
+        assert_almost_equal(self.res.model.rho, self.results.rho, 3)
 
         assert_almost_equal(self.res.llf, self.results.ll, 4)
 
@@ -64,9 +64,12 @@ class TestGLSARCorc(CheckStataResultsPMixin):
         res = mod1.iterative_fit(10)
         mod_arma = ARMA(endog, order=(3,0), exog=exog[:, :-1])
         res_arma = mod_arma.fit(method='css', iprint=0, disp=0)
-        assert_allclose(res.params, res_arma.params[[1,2,0]], atol=0.01, rtol=1e-3)
-        assert_allclose(res.model.rho, res_arma.params[3:], atol=0.05, rtol=1e-3)
-        assert_allclose(res.bse, res_arma.bse[[1,2,0]], atol=0.015, rtol=1e-3)
+        assert_allclose(res.params, res_arma.params[[1,2,0]],
+                        atol=0.01, rtol=1e-3)
+        assert_allclose(res.model.rho, res_arma.params[3:],
+                        atol=0.05, rtol=1e-3)
+        assert_allclose(res.bse, res_arma.bse[[1,2,0]],
+                        atol=0.015, rtol=1e-3)
 
         assert_equal(len(res.history['params']), 5)
         # this should be identical, history has last fit
@@ -75,7 +78,6 @@ class TestGLSARCorc(CheckStataResultsPMixin):
         res2 = mod1.iterative_fit(4, rtol=0)
         assert_equal(len(res2.history['params']), 4)
         assert_equal(len(res2.history['rho']), 4)
-
 
     def test_glsar_iter0(self):
         endog = self.res.model.endog

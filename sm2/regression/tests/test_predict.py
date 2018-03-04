@@ -198,7 +198,8 @@ class TestWLSPrediction(object):
         # function for parameter transformation
         # should be separate test method
         from statsmodels.genmod._prediction import params_transform_univariate
-        rates = params_transform_univariate(res_glm.params, res_glm.cov_params())
+        rates = params_transform_univariate(res_glm.params,
+                                            res_glm.cov_params())
 
         rates2 = np.column_stack((np.exp(res_glm.params),
                                   res_glm.bse * np.exp(res_glm.params),
@@ -208,7 +209,8 @@ class TestWLSPrediction(object):
         from statsmodels.genmod.families import links
 
         # with identity transform
-        pt = params_transform_univariate(res_glm.params, res_glm.cov_params(), link=links.identity())
+        pt = params_transform_univariate(res_glm.params, res_glm.cov_params(),
+                                         link=links.identity())
 
         assert_allclose(pt.tvalues, res_glm.tvalues, rtol=1e-13)
         assert_allclose(pt.se_mean, res_glm.bse, rtol=1e-13)

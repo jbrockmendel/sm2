@@ -29,6 +29,7 @@ def compare_ftest(contrast_res, other, decimal=(5,4)):
     assert_equal(contrast_res.df_denom, other[3])
     assert_equal("f", other[4])
 
+
 class TestGLSARGretl(object):
 
     def test_all(self):
@@ -61,11 +62,11 @@ class TestGLSARGretl(object):
 
         rho = -0.108136
 
-        #                 coefficient   std. error   t-ratio    p-value 95% CONFIDENCE INTERVAL
+        # coefficient   std. error   t-ratio    p-value 95% CONFIDENCE INTERVAL
         partable = np.array([
-                        [-9.50990,  0.990456, -9.602, 3.65e-018, -11.4631, -7.55670], # ***
-                        [ 4.37040,  0.208146, 21.00,  2.93e-052,  3.95993, 4.78086], # ***
-                        [-0.579253, 0.268009, -2.161, 0.0319, -1.10777, -0.0507346]]) #    **
+            [-9.50990,  0.990456, -9.602, 3.65e-018, -11.4631, -7.55670],  # ***
+            [ 4.37040,  0.208146, 21.00,  2.93e-052,  3.95993, 4.78086],  # ***
+            [-0.579253, 0.268009, -2.161, 0.0319, -1.10777, -0.0507346]])  # **
 
         #Statistics based on the rho-differenced data:
 
@@ -108,39 +109,67 @@ class TestGLSARGretl(object):
         assert_almost_equal(res.tvalues, partable[:,2], 2)
 
         assert_almost_equal(res.ssr, result_gretl_g1['ssr'][1], decimal=2)
-        #assert_almost_equal(res.llf, result_gretl_g1['llf'][1], decimal=7) #not in gretl
-        #assert_almost_equal(res.rsquared, result_gretl_g1['rsquared'][1], decimal=7) #FAIL
-        #assert_almost_equal(res.rsquared_adj, result_gretl_g1['rsquared_adj'][1], decimal=7) #FAIL
-        assert_almost_equal(np.sqrt(res.mse_resid), result_gretl_g1['mse_resid_sqrt'][1], decimal=5)
-        assert_almost_equal(res.fvalue, result_gretl_g1['fvalue'][1], decimal=4)
-        assert_approx_equal(res.f_pvalue, result_gretl_g1['f_pvalue'][1], significant=2)
-        #assert_almost_equal(res.durbin_watson, result_gretl_g1['dw'][1], decimal=7) #TODO
+        #assert_almost_equal(res.llf,
+        #                    result_gretl_g1['llf'][1],
+        #                    decimal=7)  # not in gretl
+        #assert_almost_equal(res.rsquared,
+        #                    result_gretl_g1['rsquared'][1],
+        #                    decimal=7)  # FAIL
+        #assert_almost_equal(res.rsquared_adj,
+        #                    result_gretl_g1['rsquared_adj'][1],
+        #                    decimal=7)  # FAIL
+        assert_almost_equal(np.sqrt(res.mse_resid),
+                            result_gretl_g1['mse_resid_sqrt'][1],
+                            decimal=5)
+        assert_almost_equal(res.fvalue,
+                            result_gretl_g1['fvalue'][1],
+                            decimal=4)
+        assert_approx_equal(res.f_pvalue,
+                            result_gretl_g1['f_pvalue'][1],
+                            significant=2)
+        #assert_almost_equal(res.durbin_watson,
+        #                    result_gretl_g1['dw'][1],
+        #                    decimal=7)  # TODO
 
-        #arch
+        # arch
         #sm_arch = diagnostic.acorr_lm(res.wresid**2, maxlag=4, autolag=None)
         sm_arch = diagnostic.het_arch(res.wresid, maxlag=4)
         assert_almost_equal(sm_arch[0], arch_4[0], decimal=4)
         assert_almost_equal(sm_arch[1], arch_4[1], decimal=6)
 
-        #tests
+        # tests
         res = res_g2 #with estimated rho
 
         #estimated lag coefficient
         assert_almost_equal(res.model.rho, rho, decimal=3)
 
-        #basic
+        # basic
         assert_almost_equal(res.params, partable[:,0], 4)
         assert_almost_equal(res.bse, partable[:,1], 3)
         assert_almost_equal(res.tvalues, partable[:,2], 2)
 
         assert_almost_equal(res.ssr, result_gretl_g1['ssr'][1], decimal=2)
-        #assert_almost_equal(res.llf, result_gretl_g1['llf'][1], decimal=7) #not in gretl
-        #assert_almost_equal(res.rsquared, result_gretl_g1['rsquared'][1], decimal=7) #FAIL
-        #assert_almost_equal(res.rsquared_adj, result_gretl_g1['rsquared_adj'][1], decimal=7) #FAIL
-        assert_almost_equal(np.sqrt(res.mse_resid), result_gretl_g1['mse_resid_sqrt'][1], decimal=5)
-        assert_almost_equal(res.fvalue, result_gretl_g1['fvalue'][1], decimal=0)
-        assert_almost_equal(res.f_pvalue, result_gretl_g1['f_pvalue'][1], decimal=6)
-        #assert_almost_equal(res.durbin_watson, result_gretl_g1['dw'][1], decimal=7) #TODO
+        #assert_almost_equal(res.llf,
+                             result_gretl_g1['llf'][1],
+                             decimal=7)  # not in gretl
+        #assert_almost_equal(res.rsquared,
+                             result_gretl_g1['rsquared'][1],
+                             decimal=7)  # FAIL
+        #assert_almost_equal(res.rsquared_adj,
+                             result_gretl_g1['rsquared_adj'][1],
+                             decimal=7)  # FAIL
+        assert_almost_equal(np.sqrt(res.mse_resid),
+                            result_gretl_g1['mse_resid_sqrt'][1],
+                            decimal=5)
+        assert_almost_equal(res.fvalue,
+                            result_gretl_g1['fvalue'][1],
+                            decimal=0)
+        assert_almost_equal(res.f_pvalue,
+                            result_gretl_g1['f_pvalue'][1],
+                            decimal=6)
+        #assert_almost_equal(res.durbin_watson,
+                             result_gretl_g1['dw'][1],
+                             decimal=7)  # TODO
 
         c = outliers_influence.reset_ramsey(res, degree=2)
         compare_ftest(c, reset_2, decimal=(2,4))
@@ -307,24 +336,24 @@ class TestGLSARGretl(object):
         lm2_acorr4 = [4.771043, 0.312, 4, "chi2"]
         acorr_ljungbox4 = [5.23587, 0.264, 4, "chi2"]
 
-        #break
-        cusum_Harvey_Collier  = [0.494432, 0.621549, 198, "t"] #stats.t.sf(0.494432, 198)*2
-        #see cusum results in files
-        break_qlr = [3.01985, 0.1, 3, 196, "maxF"]  #TODO check this, max at 2001:4
-        break_chow = [13.1897, 0.00424384, 3, "chi2"] # break at 1984:1
+        # break
+        cusum_Harvey_Collier  = [0.494432, 0.621549, 198, "t"]  # stats.t.sf(0.494432, 198)*2
+        # see cusum results in files
+        break_qlr = [3.01985, 0.1, 3, 196, "maxF"]  # TODO check this, max at 2001:4
+        break_chow = [13.1897, 0.00424384, 3, "chi2"]  # break at 1984:1
 
         arch_4 = [3.43473, 0.487871, 4, "chi2"]
 
         normality = [23.962, 0.00001, 2, "chi2"]
 
         het_white = [33.503723, 0.000003, 5, "chi2"]
-        het_breusch_pagan = [1.302014, 0.521520, 2, "chi2"]  #TODO: not available
+        het_breusch_pagan = [1.302014, 0.521520, 2, "chi2"]  # TODO: not available
         het_breusch_pagan_konker = [0.709924, 0.701200, 2, "chi2"]
 
 
         reset_2_3 = [5.219019, 0.00619, 2, 197, "f"]
         reset_2 = [7.268492, 0.00762, 1, 198, "f"]
-        reset_3 = [5.248951, 0.023, 1, 198, "f"]  #not available
+        reset_3 = [5.248951, 0.023, 1, 198, "f"]  # not available
 
         cond_1norm = 5984.0525
         determinant = 7.1087467e+008
@@ -333,7 +362,8 @@ class TestGLSARGretl(object):
 
         names = 'date   residual        leverage       influence        DFFITS'.split()
         cur_dir = os.path.abspath(os.path.dirname(__file__))
-        fpath = os.path.join(cur_dir, 'results', 'leverage_influence_ols_nostars.txt')
+        fpath = os.path.join(cur_dir, 'results',
+                             'leverage_influence_ols_nostars.txt')
         lev = np.genfromtxt(fpath, skip_header=3, skip_footer=1,
                             converters={0:lambda s: s})
         #either numpy 1.6 or python 3.2 changed behavior
@@ -350,19 +380,32 @@ class TestGLSARGretl(object):
 
         assert_almost_equal(res.params, partable[:,0], 5)
         assert_almost_equal(bse_hac, partable[:,1], 5)
-        #TODO
+        # TODO
 
-        assert_almost_equal(res.ssr, result_gretl_g1['ssr'][1], decimal=2)
-        assert_almost_equal(res.llf, result_gretl_g1['llf'][1], decimal=4) #not in gretl
-        assert_almost_equal(res.rsquared, result_gretl_g1['rsquared'][1], decimal=6) #FAIL
-        assert_almost_equal(res.rsquared_adj, result_gretl_g1['rsquared_adj'][1], decimal=6) #FAIL
-        assert_almost_equal(np.sqrt(res.mse_resid), result_gretl_g1['mse_resid_sqrt'][1], decimal=5)
+        assert_almost_equal(res.ssr,
+                            result_gretl_g1['ssr'][1],
+                            decimal=2)
+        assert_almost_equal(res.llf,
+                            result_gretl_g1['llf'][1],
+                            decimal=4) # not in gretl
+        assert_almost_equal(res.rsquared,
+                            result_gretl_g1['rsquared'][1],
+                            decimal=6) #FAIL
+        assert_almost_equal(res.rsquared_adj,
+                            result_gretl_g1['rsquared_adj'][1],
+                            decimal=6) #FAIL
+        assert_almost_equal(np.sqrt(res.mse_resid),
+                            result_gretl_g1['mse_resid_sqrt'][1],
+                            decimal=5)
         #f-value is based on cov_hac I guess
         #res2 = res.get_robustcov_results(cov_type='HC1')
         # TODO: fvalue differs from Gretl, trying any of the HCx
-        #assert_almost_equal(res2.fvalue, result_gretl_g1['fvalue'][1], decimal=0) #FAIL
-        #assert_approx_equal(res.f_pvalue, result_gretl_g1['f_pvalue'][1], significant=1) #FAIL
-        #assert_almost_equal(res.durbin_watson, result_gretl_g1['dw'][1], decimal=7) #TODO
+        #assert_almost_equal(res2.fvalue, result_gretl_g1['fvalue'][1],
+        #                     decimal=0) # FAIL
+        #assert_approx_equal(res.f_pvalue, result_gretl_g1['f_pvalue'][1],
+        #                     significant=1) # FAIL
+        #assert_almost_equal(res.durbin_watson, result_gretl_g1['dw'][1],
+        #                     decimal=7) # TODO
 
         c = outliers_influence.reset_ramsey(res, degree=2)
         compare_ftest(c, reset_2, decimal=(6,5))
@@ -392,7 +435,8 @@ class TestGLSARGretl(object):
         infl = outliers_influence.OLSInfluence(res_ols)
         #print np.max(np.abs(lev['DFFITS'] - infl.dffits[0]))
         #print np.max(np.abs(lev['leverage'] - infl.hat_matrix_diag))
-        #print np.max(np.abs(lev['influence'] - infl.influence))  # just added this based on Gretl
+        #print np.max(np.abs(lev['influence'] - infl.influence))
+        # just added this based on Gretl
 
         #just rough test, low decimal in Gretl output,
         assert_almost_equal(lev['residual'], res.resid, decimal=3)
