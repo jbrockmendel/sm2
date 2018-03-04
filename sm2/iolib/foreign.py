@@ -20,7 +20,7 @@ import pandas as pd
 from six import string_types, integer_types, PY3
 from six.moves import range, zip
 
-from sm2.compat.python import (lzip, lmap, lrange, asbytes, asstr)
+from sm2.compat.python import asstr
 
 import sm2.tools.data as data_util
 from sm2.iolib.openfile import get_file_obj
@@ -287,10 +287,10 @@ class StataReader(object):
     #NOTE: the byte type seems to be reserved for categorical variables
     # with a label, but the underlying variable is -127 to 100
     # we're going to drop the label and cast to int
-    DTYPE_MAP = dict(lzip(lrange(1, 245), ['a' + str(i) for i in range(1, 245)]) +
+    DTYPE_MAP = dict(list(zip(list(range(1, 245)), ['a' + str(i) for i in range(1, 245)])) +
                     [(251, np.int16), (252, np.int32), (253, int),
                      (254, np.float32), (255, np.float64)])
-    TYPE_MAP = lrange(251)+list('bhlfd')
+    TYPE_MAP = list(range(251)) + list('bhlfd')
     #NOTE: technically, some of these are wrong. there are more numbers
     # that can be represented. it's the 27 ABOVE and BELOW the max listed
     # numeric data type in [U] 12.2.2 of the 11.2 manual
@@ -359,11 +359,14 @@ class StataReader(object):
         """
         Returns a list of the dataset's StataVariables objects.
         """
-        return lmap(_StataVariable, zip(lrange(self._header['nvar']),
-            self._header['typlist'], self._header['varlist'],
-            self._header['srtlist'],
-            self._header['fmtlist'], self._header['lbllist'],
-            self._header['vlblist']))
+        zipped = zip(list(range(self._header['nvar'])),
+                     self._header['typlist'],
+                     self._header['varlist'],
+                     self._header['srtlist'],
+                     self._header['fmtlist'],
+                     self._header['lbllist'],
+                     self._header['vlblist'])
+        return [_StataVariable(x) for x in zipped]
 
     def dataset(self, as_dict=False):
         """
@@ -394,7 +397,7 @@ class StataReader(object):
             pass
 
         if as_dict:
-            vars = lmap(str, self.variables())
+            vars = [str(x) for x in self.variables()]
             for i in range(len(self)):
                 yield dict(zip(vars, self._next()))
         else:
@@ -502,18 +505,17 @@ class StataReader(object):
 
         # other state vars
         self._data_location = self._file.tell()
-        self._has_string_data = any(isinstance(x, int) for x in self._headers['typlist'])
+        self._has_string_data = any(isinstance(x, int) for x in self._header['typlist'])
         self._col_size()
 
     def _calcsize(self, fmt):
-        return isinstance(fmt, int) and fmt or \
-                struct.calcsize(self._header['byteorder']+fmt)
+        return isinstance(fmt, int) and fmt or struct.calcsize(self._header['byteorder'] + fmt)
 
     def _col_size(self, k = None):
         """Calculate size of a data record."""
         if len(self._col_sizes) == 0:
-            self._col_sizes = lmap(lambda x: self._calcsize(x),
-                    self._header['typlist'])
+            self._col_sizes = [self._calcsize(x)
+                               for x in self._header['typlist']]
         if k == None:
             return self._col_sizes
         else:
@@ -543,9 +545,8 @@ class StataReader(object):
                             self._file.read(self._col_size(i)))
             return data
         else:
-            return lmap(lambda i: self._unpack(typlist[i],
-                self._file.read(self._col_size(i))),
-                lrange(self._header['nvar']))
+            return [self._unpack(typlist[i], self._file.read(self._col_size(i)))
+                    for i in range(self._header['nvar'])]
 
 def _set_endianness(endianness):
     if endianness.lower() in ["<", "little"]:
@@ -712,10 +713,10 @@ class StataWriter(object):
     #NOTE: the byte type seems to be reserved for categorical variables
     # with a label, but the underlying variable is -127 to 100
     # we're going to drop the label and cast to int
-    DTYPE_MAP = dict(lzip(lrange(1, 245), ['a' + str(i) for i in range(1, 245)]) +
+    DTYPE_MAP = dict(list(zip(list(range(1, 245)), ['a' + str(i) for i in range(1, 245)])) +
                     [(251, np.int16), (252, np.int32), (253, int),
                      (254, np.float32), (255, np.float64)])
-    TYPE_MAP = lrange(251) + list('bhlfd')
+    TYPE_MAP = list(range(251)) + list('bhlfd')
     MISSING_VALUES = {'b': 101,
                       'h': 32741,
                       'l': 2147483621,
@@ -753,7 +754,9 @@ class StataWriter(object):
         """
         Helper to call asbytes before writing to file for Python 3 compat.
         """
-        self._file.write(asbytes(to_write))
+        if not isinstance(to_write, bytes):
+            to_write = to_write.encode('latin-1')
+        self._file.write(to_write)
 
     def _prepare_structured_array(self, data):
         self.nobs = len(data)
@@ -1016,7 +1019,7 @@ def genfromdta(fname, missing_flt=-999., encoding=None, pandas=False,
     data = np.zeros((nobs,numvars))
     stata_dta = fhd.dataset()
 
-    dt = np.dtype(lzip(varnames, types))
+    dt = np.dtype(list(zip(varnames, types)))
     data = np.zeros((nobs), dtype=dt)  # init final array
 
     for rownum,line in enumerate(stata_dta):
@@ -1034,7 +1037,7 @@ def genfromdta(fname, missing_flt=-999., encoding=None, pandas=False,
         from pandas import DataFrame
         data = DataFrame.from_records(data)
         if convert_dates:
-            cols = np.where(lmap(lambda x: x in _date_formats, fmtlist))[0]
+            cols = np.where([x in _date_formats for x in fmtlist])[0]
             for col in cols:
                 i = col
                 col = data.columns[col]
@@ -1044,7 +1047,7 @@ def genfromdta(fname, missing_flt=-999., encoding=None, pandas=False,
         #date_cols = np.where(map(lambda x : x in _date_formats,
         #                                                    fmtlist))[0]
         # make the dtype for the datetime types
-        cols = np.where(lmap(lambda x: x in _date_formats, fmtlist))[0]
+        cols = np.where([x in _date_formats for x in fmtlist])[0]
         dtype = data.dtype.descr
         dtype = [(dt[0], object) if i in cols else dt for i,dt in
                  enumerate(dtype)]
@@ -1052,8 +1055,8 @@ def genfromdta(fname, missing_flt=-999., encoding=None, pandas=False,
         for col in cols:
             def convert(x):
                 return _stata_elapsed_date_to_datetime(x, fmtlist[col])
-            data[data.dtype.names[col]] = lmap(convert,
-                                               data[data.dtype.names[col]])
+            data[data.dtype.names[col]] = [convert(x)
+                                           for x in data[data.dtype.names[col]]]
     return data
 
 def savetxt(fname, X, names=None, fmt='%.18e', delimiter=' '):
