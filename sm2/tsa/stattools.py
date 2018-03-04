@@ -1095,8 +1095,8 @@ def arma_order_select_ic(y, max_ar=4, max_ma=2, ic='bic', trend='c',
     Examples
     --------
 
-    >>> from statsmodels.tsa.arima_process import arma_generate_sample
-    >>> import statsmodels.api as sm
+    >>> from sm2.tsa.arima_process import arma_generate_sample
+    >>> import sm2.api as sm
     >>> import numpy as np
 
     >>> arparams = np.array([.75, -.25])

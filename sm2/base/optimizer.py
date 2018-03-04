@@ -357,7 +357,7 @@ def _fit_lbfgs(f, score, start_params, fargs, kwargs, disp=True,
 
     Notes
     -----
-    Within the mle part of statsmodels, the log likelihood function and
+    Within the mle part of sm2, the log likelihood function and
     its gradient with respect to the parameters do not have notationally
     consistent sign.
     """

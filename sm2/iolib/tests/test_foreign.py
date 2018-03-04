@@ -24,8 +24,6 @@ from sm2.datasets import macrodata
 from sm2.compat.pandas import version as pandas_version
 pandas_old = pandas_version < '0.9'
 
-import statsmodels.api as sm
-
 # Test precisions
 DECIMAL_4 = 4
 DECIMAL_3 = 3
@@ -46,8 +44,8 @@ def test_genfromdta_pandas():
     from pandas.util.testing import assert_frame_equal
     dta = macrodata.load_pandas().data
     curdir = os.path.dirname(os.path.abspath(__file__))
-    res1 = sm.iolib.genfromdta(curdir+'/../../datasets/macrodata/macrodata.dta',
-                        pandas=True)
+    res1 = genfromdta(curdir+'/../../datasets/macrodata/macrodata.dta',
+                      pandas=True)
     res1 = res1.astype(float)
     assert_frame_equal(res1, dta)
 

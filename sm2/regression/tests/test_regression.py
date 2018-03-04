@@ -2,7 +2,7 @@
 Test functions for models.regression
 """
 # TODO: Test for LM
-from statsmodels.compat.python import long
+from sm2.compat.python import long
 import warnings
 
 import pandas
@@ -225,7 +225,7 @@ class TestOLS(CheckRegressionResults):
     def test_rsquared_adj_overfit(self):
         # Test that if df_resid = 0, rsquared_adj = 0.
         # This is a regression test for user issue:
-        # https://github.com/statsmodels/statsmodels/issues/868
+        # GH#868
         with warnings.catch_warnings(record=True):
             x = np.random.randn(5)
             y = np.random.randn(5, 6)

@@ -27,7 +27,7 @@ _model_params_doc = """
         A nobs x k array where `nobs` is the number of observations and `k`
         is the number of regressors. An intercept is not included by default
         and should be added by the user. See
-        :func:`statsmodels.tools.add_constant`."""
+        :func:`sm2.tools.add_constant`."""
 
 _missing_param_doc = """\
 missing : str
@@ -549,7 +549,7 @@ class GenericLikelihoodModel(LikelihoodModel):
     --------
     see also subclasses in directory miscmodels
 
-    import statsmodels.api as sm
+    import sm2.api as sm
     data = sm.datasets.spector.load()
     data.exog = sm.add_constant(data.exog)
     # in this dir
@@ -613,7 +613,7 @@ class GenericLikelihoodModel(LikelihoodModel):
             if not self.hessian:
                 pass
         #Initialize is called by
-        #statsmodels.model.LikelihoodModel.__init__
+        #sm2.model.LikelihoodModel.__init__
         #and should contain any preprocessing that needs to be done for a model
         if self.exog is not None:
             # assume constant
@@ -723,7 +723,7 @@ class GenericLikelihoodModel(LikelihoodModel):
         Fit the model using maximum likelihood.
 
         The rest of the docstring is from
-        statsmodels.LikelihoodModel.fit
+        sm2.LikelihoodModel.fit
         """
         if start_params is None:
             if hasattr(self, 'start_params'):
@@ -1221,7 +1221,7 @@ class LikelihoodModelResults(Results):
         Examples
         --------
         >>> import numpy as np
-        >>> import statsmodels.api as sm
+        >>> import sm2.api as sm
         >>> data = sm.datasets.longley.load()
         >>> data.exog = sm.add_constant(data.exog)
         >>> results = sm.OLS(data.endog, data.exog).fit()
@@ -1358,7 +1358,7 @@ class LikelihoodModelResults(Results):
         Examples
         --------
         >>> import numpy as np
-        >>> import statsmodels.api as sm
+        >>> import sm2.api as sm
         >>> data = sm.datasets.longley.load()
         >>> data.exog = sm.add_constant(data.exog)
         >>> results = sm.OLS(data.endog, data.exog).fit()
@@ -1389,7 +1389,7 @@ class LikelihoodModelResults(Results):
 
         Alternatively, you can specify the hypothesis tests using a string
 
-        >>> from statsmodels.datasets import longley
+        >>> from sm2.datasets import longley
         >>> from statsmodels.formula.api import ols
         >>> dta = longley.load_pandas().data
         >>> formula = 'TOTEMP ~ GNPDEFL + GNP + UNEMP + ARMED + POP + YEAR'
@@ -1692,7 +1692,7 @@ class LikelihoodModelResults(Results):
 
         Examples
         --------
-        >>> import statsmodels.api as sm
+        >>> import sm2.api as sm
         >>> data = sm.datasets.longley.load()
         >>> data.exog = sm.add_constant(data.exog)
         >>> results = sm.OLS(data.endog, data.exog).fit()
@@ -2100,11 +2100,8 @@ class GenericLikelihoodModelResults(LikelihoodModelResults, ResultMixin):
 
         See Also
         --------
-        statsmodels.iolib.summary.Summary : class to hold summary
-            results
-
+        statsmodels.iolib.summary.Summary : class to hold summary results
         """
-
         top_left = [('Dep. Variable:', None),
                     ('Model:', None),
                     ('Method:', ['Maximum Likelihood']),

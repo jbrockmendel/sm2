@@ -30,7 +30,7 @@ NOTE        = """::
 from numpy import recfromtxt, array
 from pandas import Series, DataFrame
 
-from statsmodels.datasets.utils import Dataset
+from sm2.datasets.utils import Dataset
 from os.path import dirname, abspath
 
 def load():

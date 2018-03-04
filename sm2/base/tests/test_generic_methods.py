@@ -10,9 +10,7 @@ Created on Wed Oct 30 14:01:27 2013
 
 Author: Josef Perktold
 """
-import platform
-
-from six.moves import range
+import pytest
 import numpy as np
 from numpy.testing import (assert_, assert_allclose, assert_equal,
                            assert_array_equal)
@@ -21,11 +19,8 @@ import pandas as pd
 
 '''
 import statsmodels.api as sm
-from sm2.compat.scipy import NumpyVersion
-from sm2.compat.testing import SkipTest
 
 class CheckGenericMixin(object):
-
     @classmethod
     def setup_class(cls):
         nobs = 500
@@ -111,15 +106,14 @@ class CheckGenericMixin(object):
     def test_fitted(self):
         # ignore wrapper for isinstance check
         from statsmodels.genmod.generalized_linear_model import GLMResults
-        from statsmodels.discrete.discrete_model import DiscreteResults
+        from sm2.discrete.discrete_model import DiscreteResults
         # FIXME: work around GEE has no wrapper
         if hasattr(self.results, '_results'):
             results = self.results._results
         else:
             results = self.results
-        if (isinstance(results, GLMResults) or
-            isinstance(results, DiscreteResults)):
-            raise SkipTest('Infeasible for {0}'.format(type(results)))
+        if isinstance(results, (GLMResults, DiscreteResults)):
+            raise pytest.skip('Infeasible for {0}'.format(type(results)))
 
         res = self.results
         fitted = res.fittedvalues
@@ -134,7 +128,7 @@ class CheckGenericMixin(object):
 
         # ignore wrapper for isinstance check
         from statsmodels.genmod.generalized_linear_model import GLMResults
-        from statsmodels.discrete.discrete_model import DiscreteResults
+        from sm2.discrete.discrete_model import DiscreteResults
 
         # FIXME: work around GEE has no wrapper
         if hasattr(self.results, '_results'):
@@ -191,7 +185,6 @@ class CheckGenericMixin(object):
 # TODO: check if setup_class is faster than setup
 
 class TestGenericOLS(CheckGenericMixin):
-
     def setup(self):
         #fit for each test, because results will be changed by test
         x = self.exog
@@ -202,7 +195,6 @@ class TestGenericOLS(CheckGenericMixin):
 
 class TestGenericOLSOneExog(CheckGenericMixin):
     # check with single regressor (no constant)
-
     def setup(self):
         #fit for each test, because results will be changed by test
         x = self.exog[:, 1]
@@ -212,7 +204,6 @@ class TestGenericOLSOneExog(CheckGenericMixin):
 
 
 class TestGenericWLS(CheckGenericMixin):
-
     def setup(self):
         #fit for each test, because results will be changed by test
         x = self.exog
@@ -222,7 +213,6 @@ class TestGenericWLS(CheckGenericMixin):
 
 
 class TestGenericPoisson(CheckGenericMixin):
-
     def setup(self):
         #fit for each test, because results will be changed by test
         x = self.exog
@@ -238,7 +228,6 @@ class TestGenericPoisson(CheckGenericMixin):
         self.predict_kwds = dict(exposure=1, offset=0)
 
 class TestGenericNegativeBinomial(CheckGenericMixin):
-
     def setup(self):
         #fit for each test, because results will be changed by test
         np.random.seed(987689)
@@ -253,7 +242,6 @@ class TestGenericNegativeBinomial(CheckGenericMixin):
 
 
 class TestGenericLogit(CheckGenericMixin):
-
     def setup(self):
         #fit for each test, because results will be changed by test
         x = self.exog
@@ -267,7 +255,6 @@ class TestGenericLogit(CheckGenericMixin):
 
 
 class TestGenericRLM(CheckGenericMixin):
-
     def setup(self):
         #fit for each test, because results will be changed by test
         x = self.exog
@@ -277,7 +264,6 @@ class TestGenericRLM(CheckGenericMixin):
 
 
 class TestGenericGLM(CheckGenericMixin):
-
     def setup(self):
         #fit for each test, because results will be changed by test
         x = self.exog
@@ -287,7 +273,6 @@ class TestGenericGLM(CheckGenericMixin):
 
 
 class TestGenericGEEPoisson(CheckGenericMixin):
-
     def setup(self):
         #fit for each test, because results will be changed by test
         x = self.exog
@@ -304,7 +289,6 @@ class TestGenericGEEPoisson(CheckGenericMixin):
 
 
 class TestGenericGEEPoissonNaive(CheckGenericMixin):
-
     def setup(self):
         #fit for each test, because results will be changed by test
         x = self.exog
@@ -323,7 +307,6 @@ class TestGenericGEEPoissonNaive(CheckGenericMixin):
 
 
 class TestGenericGEEPoissonBC(CheckGenericMixin):
-
     def setup(self):
         #fit for each test, because results will be changed by test
         x = self.exog
@@ -342,6 +325,7 @@ class TestGenericGEEPoissonBC(CheckGenericMixin):
                                cov_type='bias_reduced')
 
 
+# ------------------------------------------------------------------
 # Other test classes
 
 class CheckAnovaMixin(object):
@@ -356,7 +340,6 @@ class CheckAnovaMixin(object):
         cls.data = test.data.drop([0,1,2])
         cls.initialize()
 
-
     def test_combined(self):
         res = self.res
         wa = res.wald_test_terms(skip_single=False, combine_terms=['Duration', 'Weight'])
@@ -370,7 +353,6 @@ class CheckAnovaMixin(object):
 
         compare_waldres(res, wa, [c_const, c_d, c_w, c_dw, c_duration, c_weight])
 
-
     def test_categories(self):
         # test only multicolumn terms
         res = self.res
@@ -380,6 +362,99 @@ class CheckAnovaMixin(object):
         c_dw = eye[[4,5]]
 
         compare_waldres(res, wa, [c_w, c_dw])
+
+
+class TestWaldAnovaOLS(CheckAnovaMixin):
+    @classmethod
+    def initialize(cls):
+        from statsmodels.formula.api import ols, glm, poisson
+        from sm2.discrete.discrete_model import Poisson
+
+        mod = ols("np.log(Days+1) ~ C(Duration, Sum)*C(Weight, Sum)", cls.data)
+        cls.res = mod.fit(use_t=False)
+
+    def test_noformula(self):
+        endog = self.res.model.endog
+        exog = self.res.model.data.orig_exog
+        exog = pd.DataFrame(exog)
+
+        res = sm.OLS(endog, exog).fit()
+        wa = res.wald_test_terms(skip_single=True,
+                                 combine_terms=['Duration', 'Weight'])
+        eye = np.eye(len(res.params))
+        c_weight = eye[2:6]
+        c_duration = eye[[1, 4, 5]]
+
+        compare_waldres(res, wa, [c_duration, c_weight])
+
+
+class TestWaldAnovaOLSF(CheckAnovaMixin):
+    @classmethod
+    def initialize(cls):
+        from statsmodels.formula.api import ols, glm, poisson
+        from sm2.discrete.discrete_model import Poisson
+
+        mod = ols("np.log(Days+1) ~ C(Duration, Sum)*C(Weight, Sum)", cls.data)
+        cls.res = mod.fit()  # default use_t=True
+
+    def test_predict_missing(self):
+        ex = self.data[:5].copy()
+        ex.iloc[0, 1] = np.nan
+        predicted1 = self.res.predict(ex)
+        predicted2 = self.res.predict(ex[1:])
+        from pandas.util.testing import assert_series_equal
+        try:
+            from pandas.util.testing import assert_index_equal
+        except ImportError:
+            # for old pandas
+            from numpy.testing import assert_array_equal as assert_index_equal
+
+        assert_index_equal(predicted1.index, ex.index)
+        assert_series_equal(predicted1[1:], predicted2)
+        assert_equal(predicted1.values[0], np.nan)
+
+
+class TestWaldAnovaGLM(CheckAnovaMixin):
+    @classmethod
+    def initialize(cls):
+        from statsmodels.formula.api import ols, glm, poisson
+        from sm2.discrete.discrete_model import Poisson
+
+        mod = glm("np.log(Days+1) ~ C(Duration, Sum)*C(Weight, Sum)", cls.data)
+        cls.res = mod.fit(use_t=False)
+
+
+class TestWaldAnovaPoisson(CheckAnovaMixin):
+    @classmethod
+    def initialize(cls):
+        from sm2.discrete.discrete_model import Poisson
+
+        mod = Poisson.from_formula("Days ~ C(Duration, Sum)*C(Weight, Sum)", cls.data)
+        cls.res = mod.fit(cov_type='HC0')
+
+
+class TestWaldAnovaNegBin(CheckAnovaMixin):
+    @classmethod
+    def initialize(cls):
+        from sm2.discrete.discrete_model import NegativeBinomial
+
+        formula = "Days ~ C(Duration, Sum)*C(Weight, Sum)"
+        mod = NegativeBinomial.from_formula(formula, cls.data,
+                                            loglike_method='nb2')
+        cls.res = mod.fit()
+
+
+class TestWaldAnovaNegBin1(CheckAnovaMixin):
+    @classmethod
+    def initialize(cls):
+        from sm2.discrete.discrete_model import NegativeBinomial
+
+        formula = "Days ~ C(Duration, Sum)*C(Weight, Sum)"
+        mod = NegativeBinomial.from_formula(formula, cls.data,
+                                            loglike_method='nb1')
+        cls.res = mod.fit(cov_type='HC0')
+
+'''
 
 
 def compare_waldres(res, wa, constrasts):
@@ -406,116 +481,18 @@ def compare_waldres(res, wa, constrasts):
         assert_equal(col_names[0], 'chi2')
         assert_equal(col_names[1], 'P>chi2')
 
+    '''
     # SMOKETEST
     wa.summary_frame()
+    '''
 
 
-class TestWaldAnovaOLS(CheckAnovaMixin):
-
+@pytest.mark.xfail
+class TestWaldAnovaOLSNoFormula(object):
     @classmethod
     def initialize(cls):
-        from statsmodels.formula.api import ols, glm, poisson
-        from statsmodels.discrete.discrete_model import Poisson
-
-        mod = ols("np.log(Days+1) ~ C(Duration, Sum)*C(Weight, Sum)", cls.data)
-        cls.res = mod.fit(use_t=False)
-
-
-    def test_noformula(self):
-        endog = self.res.model.endog
-        exog = self.res.model.data.orig_exog
-        exog = pd.DataFrame(exog)
-
-        res = sm.OLS(endog, exog).fit()
-        wa = res.wald_test_terms(skip_single=True,
-                                 combine_terms=['Duration', 'Weight'])
-        eye = np.eye(len(res.params))
-        c_weight = eye[2:6]
-        c_duration = eye[[1, 4, 5]]
-
-        compare_waldres(res, wa, [c_duration, c_weight])
-
-
-class TestWaldAnovaOLSF(CheckAnovaMixin):
-
-    @classmethod
-    def initialize(cls):
-        from statsmodels.formula.api import ols, glm, poisson
-        from statsmodels.discrete.discrete_model import Poisson
+        from statsmodels.formula.api import ols  # , glm, poisson
+        # from sm2.discrete.discrete_model import Poisson
 
         mod = ols("np.log(Days+1) ~ C(Duration, Sum)*C(Weight, Sum)", cls.data)
         cls.res = mod.fit()  # default use_t=True
-
-    def test_predict_missing(self):
-        ex = self.data[:5].copy()
-        ex.iloc[0, 1] = np.nan
-        predicted1 = self.res.predict(ex)
-        predicted2 = self.res.predict(ex[1:])
-        from pandas.util.testing import assert_series_equal
-        try:
-            from pandas.util.testing import assert_index_equal
-        except ImportError:
-            # for old pandas
-            from numpy.testing import assert_array_equal as assert_index_equal
-
-        assert_index_equal(predicted1.index, ex.index)
-        assert_series_equal(predicted1[1:], predicted2)
-        assert_equal(predicted1.values[0], np.nan)
-
-
-class TestWaldAnovaGLM(CheckAnovaMixin):
-
-    @classmethod
-    def initialize(cls):
-        from statsmodels.formula.api import ols, glm, poisson
-        from statsmodels.discrete.discrete_model import Poisson
-
-        mod = glm("np.log(Days+1) ~ C(Duration, Sum)*C(Weight, Sum)", cls.data)
-        cls.res = mod.fit(use_t=False)
-
-
-class TestWaldAnovaPoisson(CheckAnovaMixin):
-
-    @classmethod
-    def initialize(cls):
-        from statsmodels.discrete.discrete_model import Poisson
-
-        mod = Poisson.from_formula("Days ~ C(Duration, Sum)*C(Weight, Sum)", cls.data)
-        cls.res = mod.fit(cov_type='HC0')
-
-
-class TestWaldAnovaNegBin(CheckAnovaMixin):
-
-    @classmethod
-    def initialize(cls):
-        from statsmodels.discrete.discrete_model import NegativeBinomial
-
-        formula = "Days ~ C(Duration, Sum)*C(Weight, Sum)"
-        mod = NegativeBinomial.from_formula(formula, cls.data,
-                                            loglike_method='nb2')
-        cls.res = mod.fit()
-
-
-class TestWaldAnovaNegBin1(CheckAnovaMixin):
-
-    @classmethod
-    def initialize(cls):
-        from statsmodels.discrete.discrete_model import NegativeBinomial
-
-        formula = "Days ~ C(Duration, Sum)*C(Weight, Sum)"
-        mod = NegativeBinomial.from_formula(formula, cls.data,
-                                            loglike_method='nb1')
-        cls.res = mod.fit(cov_type='HC0')
-
-
-class T_estWaldAnovaOLSNoFormula(object):
-
-    @classmethod
-    def initialize(cls):
-        from statsmodels.formula.api import ols, glm, poisson
-        from statsmodels.discrete.discrete_model import Poisson
-
-        mod = ols("np.log(Days+1) ~ C(Duration, Sum)*C(Weight, Sum)", cls.data)
-        cls.res = mod.fit()  # default use_t=True
-
-'''

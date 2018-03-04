@@ -40,7 +40,7 @@ NOTE        = """::
 """
 
 from numpy import recfromtxt, array, column_stack
-from statsmodels.datasets import utils as du
+from sm2.datasets import utils as du
 from os.path import dirname, abspath
 
 def load():

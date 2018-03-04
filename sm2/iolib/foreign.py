@@ -252,7 +252,7 @@ class StataReader(object):
 
     See also
     --------
-    statsmodels.iolib.foreign.genfromdta
+    sm2.iolib.foreign.genfromdta
     pandas.read_stata
     pandas.io.stata.StataReader
 

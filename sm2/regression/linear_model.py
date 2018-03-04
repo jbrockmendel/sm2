@@ -38,9 +38,9 @@ from six.moves import range
 
 import numpy as np
 from scipy.linalg import toeplitz
-from scipy import stats
-from scipy import optimize
+from scipy import stats, optimize
 
+from sm2.tools.sm_exceptions import InvalidTestWarning
 from sm2.tools.tools import add_constant, chain_dot, pinv_extended
 from sm2.tools.decorators import (resettable_cache,
                                           cache_readonly,
@@ -49,7 +49,6 @@ import sm2.base.model as base
 import sm2.base.wrapper as wrap
 
 from statsmodels.emplike.elregress import _ELRegOpts
-from statsmodels.tools.sm_exceptions import InvalidTestWarning
 
 # need import in module instead of lazily to copy `__doc__`
 from statsmodels.regression._prediction import PredictionResults
@@ -434,7 +433,7 @@ class GLS(RegressionModel):
     Examples
     --------
     >>> import numpy as np
-    >>> import statsmodels.api as sm
+    >>> import sm2.api as sm
     >>> data = sm.datasets.longley.load()
     >>> data.exog = sm.add_constant(data.exog)
     >>> ols_resid = sm.OLS(data.endog, data.exog).fit().resid
@@ -621,7 +620,7 @@ class WLS(RegressionModel):
     Examples
     ---------
     >>> import numpy as np
-    >>> import statsmodels.api as sm
+    >>> import sm2.api as sm
     >>> Y = [1,3,4,5,2,3,4]
     >>> X = range(1,8)
     >>> X = sm.add_constant(X)
@@ -787,7 +786,7 @@ class OLS(WLS):
     --------
     >>> import numpy as np
     >>>
-    >>> import statsmodels.api as sm
+    >>> import sm2.api as sm
     >>>
     >>> Y = [1,3,4,5,2,3,4]
     >>> X = range(1,8)
@@ -1049,7 +1048,7 @@ class GLSAR(GLS):
 
     Examples
     --------
-    >>> import statsmodels.api as sm
+    >>> import sm2.api as sm
     >>> X = range(1,8)
     >>> X = sm.add_constant(X)
     >>> Y = [1,3,4,5,8,10,9]
@@ -1240,8 +1239,8 @@ def yule_walker(X, order=1, method="unbiased", df=None, inv=False,
 
     Examples
     --------
-    >>> import statsmodels.api as sm
-    >>> from statsmodels.datasets.sunspots import load
+    >>> import sm2.api as sm
+    >>> from sm2.datasets.sunspots import load
     >>> data = load()
     >>> rho, sigma = sm.regression.yule_walker(data.endog,
     ...                                        order=4, method="mle")
@@ -1641,7 +1640,7 @@ class RegressionResults(base.LikelihoodModelResults):
     @cache_readonly
     def cov_HC0(self):
         """
-        See statsmodels.RegressionResults
+        See sm2.RegressionResults
         """
 
         self.het_scale = self.wresid**2
@@ -1651,7 +1650,7 @@ class RegressionResults(base.LikelihoodModelResults):
     @cache_readonly
     def cov_HC1(self):
         """
-        See statsmodels.RegressionResults
+        See sm2.RegressionResults
         """
 
         self.het_scale = self.nobs/(self.df_resid)*(self.wresid**2)
@@ -1661,7 +1660,7 @@ class RegressionResults(base.LikelihoodModelResults):
     @cache_readonly
     def cov_HC2(self):
         """
-        See statsmodels.RegressionResults
+        See sm2.RegressionResults
         """
 
         # probably could be optimized
@@ -1675,7 +1674,7 @@ class RegressionResults(base.LikelihoodModelResults):
     @cache_readonly
     def cov_HC3(self):
         """
-        See statsmodels.RegressionResults
+        See sm2.RegressionResults
         """
         h = np.diag(chain_dot(
             self.model.wexog, self.normalized_cov_params, self.model.wexog.T))
@@ -1686,28 +1685,28 @@ class RegressionResults(base.LikelihoodModelResults):
     @cache_readonly
     def HC0_se(self):
         """
-        See statsmodels.RegressionResults
+        See sm2.RegressionResults
         """
         return np.sqrt(np.diag(self.cov_HC0))
 
     @cache_readonly
     def HC1_se(self):
         """
-        See statsmodels.RegressionResults
+        See sm2.RegressionResults
         """
         return np.sqrt(np.diag(self.cov_HC1))
 
     @cache_readonly
     def HC2_se(self):
         """
-        See statsmodels.RegressionResults
+        See sm2.RegressionResults
         """
         return np.sqrt(np.diag(self.cov_HC2))
 
     @cache_readonly
     def HC3_se(self):
         """
-        See statsmodels.RegressionResults
+        See sm2.RegressionResults
         """
         return np.sqrt(np.diag(self.cov_HC3))
 
@@ -1720,15 +1719,13 @@ class RegressionResults(base.LikelihoodModelResults):
         -------
         An array wresid standardized by the sqrt if scale
         """
-
         if not hasattr(self, 'resid'):
             raise ValueError('Method requires residuals.')
         eps = np.finfo(self.wresid.dtype).eps
         if np.sqrt(self.scale) < 10 * eps * self.model.endog.mean():
             # don't divide if scale is zero close to numerical precision
-            from warnings import warn
-            warn("All residuals are 0, cannot compute normed residuals.",
-                 RuntimeWarning)
+            warnings.warn("All residuals are 0, cannot compute normed "
+                          "residuals.", RuntimeWarning)
             return self.wresid
         else:
             return self.wresid / np.sqrt(self.scale)
@@ -1804,7 +1801,6 @@ class RegressionResults(base.LikelihoodModelResults):
         TODO: explain LM text
         """
         import sm2.stats.sandwich_covariance as sw
-        from numpy.linalg import inv
 
         if not self._is_nested(restricted):
             raise ValueError("Restricted model is not nested by full model.")
@@ -1834,17 +1830,17 @@ class RegressionResults(base.LikelihoodModelResults):
         if cov_type == 'nonrobust':
             sigma2 = np.mean(wresid**2)
             XpX = np.dot(wexog.T, wexog) / n
-            Sinv = inv(sigma2 * XpX)
+            Sinv = np.linalg.inv(sigma2 * XpX)
         elif cov_type in ('HC0', 'HC1', 'HC2', 'HC3'):
-            Sinv = inv(np.dot(scores.T, scores) / n)
+            Sinv = np.linalg.inv(np.dot(scores.T, scores) / n)
         elif cov_type == 'HAC':
             maxlags = self.cov_kwds['maxlags']
-            Sinv = inv(sw.S_hac_simple(scores, maxlags) / n)
+            Sinv = np.linalg.inv(sw.S_hac_simple(scores, maxlags) / n)
         elif cov_type == 'cluster':
             # cluster robust standard errors
             groups = self.cov_kwds['groups']
             # TODO: Might need demean option in S_crosssection by group?
-            Sinv = inv(sw.S_crosssection(scores, groups))
+            Sinv = np.linalg.inv(sw.S_crosssection(scores, groups))
         else:
             raise ValueError('Only nonrobust, HC, HAC and cluster are ' +
                              'currently connected')
@@ -2116,7 +2112,6 @@ class RegressionResults(base.LikelihoodModelResults):
         TODO: Currently there is no check for extra or misspelled keywords,
         except in the case of cov_type `HCx`
         """
-
         import sm2.stats.sandwich_covariance as sw
 
         # normalize names
@@ -2329,9 +2324,7 @@ class RegressionResults(base.LikelihoodModelResults):
         --------
         statsmodels.iolib.summary.Summary : class to hold summary
             results
-
         """
-
         # TODO: import where we need it (for now), add as cached attributes
         from statsmodels.stats.stattools import (
             jarque_bera, omni_normtest, durbin_watson)
@@ -2475,7 +2468,6 @@ class RegressionResults(base.LikelihoodModelResults):
         --------
         statsmodels.iolib.summary.Summary : class to hold summary
             results
-
         """
         # Diagnostics
         from statsmodels.stats.stattools import (jarque_bera,
@@ -2638,7 +2630,7 @@ class OLSResults(RegressionResults):
 
         Examples
         --------
-        >>> import statsmodels.api as sm
+        >>> import sm2.api as sm
         >>> data = sm.datasets.stackloss.load()
         >>> endog = data.endog
         >>> exog = sm.add_constant(data.exog)

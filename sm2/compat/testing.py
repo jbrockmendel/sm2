@@ -81,10 +81,10 @@ def example(t):
 
     Examples
     --------
-    The `statsmodels.compat.testing` module includes ``example``.
+    The `sm2.compat.testing` module includes ``example``.
     A test can be decorated as slow like this::
 
-      from statsmodels.compat.testing import example
+      from sm2.compat.testing import example
 
       @example
       def test_example(self):

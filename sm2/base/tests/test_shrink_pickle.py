@@ -15,8 +15,8 @@ import numpy as np
 from numpy.testing import assert_, assert_equal
 import pandas as pd
 
-'''
-import statsmodels.api as sm
+
+import sm2.api as sm
 
 
 def check_pickle(obj):
@@ -29,8 +29,8 @@ def check_pickle(obj):
     return res, plen
 
 
+'''
 class RemoveDataPickle(object):
-
     @classmethod
     def setup_class(cls):
         nobs = 10000
@@ -43,7 +43,6 @@ class RemoveDataPickle(object):
         cls.predict_kwds = {}
 
     def test_remove_data_pickle(self):
-        import pandas as pd
         from pandas.util.testing import assert_series_equal
 
         results = self.results
@@ -77,10 +76,10 @@ class RemoveDataPickle(object):
         #pickle, unpickle reduced array
         res, l = check_pickle(results._results)
 
-        #for testing attach res
+        # for testing attach res
         self.res = res
 
-        #Note: l_max is just a guess for the limit on the length of the pickle
+        # Note: l_max is just a guess for the limit on the length of the pickle
         l_max = self.l_max
         assert_(l < l_max, msg='pickle length not %d < %d' % (l, l_max))
 
@@ -97,7 +96,6 @@ class RemoveDataPickle(object):
         assert_(self.results.remove_data.__doc__ is not None)
 
     def test_pickle_wrapper(self):
-
         fh = BytesIO()  # use cPickle with binary content
 
         # test unwrapped results load save pickle
@@ -133,9 +131,8 @@ class RemoveDataPickle(object):
 
 
 class TestRemoveDataPickleOLS(RemoveDataPickle):
-
     def setup(self):
-        #fit for each test, because results will be changed by test
+        # fit for each test, because results will be changed by test
         x = self.exog
         np.random.seed(987689)
         y = x.sum(1) + np.random.randn(x.shape[0])
@@ -143,9 +140,8 @@ class TestRemoveDataPickleOLS(RemoveDataPickle):
 
 
 class TestRemoveDataPickleWLS(RemoveDataPickle):
-
     def setup(self):
-        #fit for each test, because results will be changed by test
+        # fit for each test, because results will be changed by test
         x = self.exog
         np.random.seed(987689)
         y = x.sum(1) + np.random.randn(x.shape[0])
@@ -153,9 +149,8 @@ class TestRemoveDataPickleWLS(RemoveDataPickle):
 
 
 class TestRemoveDataPicklePoisson(RemoveDataPickle):
-
     def setup(self):
-        #fit for each test, because results will be changed by test
+        # fit for each test, because results will be changed by test
         x = self.exog
         np.random.seed(987689)
         y_count = np.random.poisson(np.exp(x.sum(1) - x.mean()))
@@ -165,23 +160,23 @@ class TestRemoveDataPicklePoisson(RemoveDataPickle):
         self.results = model.fit(start_params=start_params, method='bfgs',
                                  disp=0)
 
-        #TODO: temporary, fixed in master
+        # TODO: temporary, fixed in master
         self.predict_kwds = dict(exposure=1, offset=0)
 
-class TestRemoveDataPickleNegativeBinomial(RemoveDataPickle):
 
+class TestRemoveDataPickleNegativeBinomial(RemoveDataPickle):
     def setup(self):
-        #fit for each test, because results will be changed by test
+        # fit for each test, because results will be changed by test
         np.random.seed(987689)
         data = sm.datasets.randhie.load()
         exog = sm.add_constant(data.exog, prepend=False)
         mod = sm.NegativeBinomial(data.endog, data.exog)
         self.results = mod.fit(disp=0)
 
-class TestRemoveDataPickleLogit(RemoveDataPickle):
 
+class TestRemoveDataPickleLogit(RemoveDataPickle):
     def setup(self):
-        #fit for each test, because results will be changed by test
+        # fit for each test, because results will be changed by test
         x = self.exog
         nobs = x.shape[0]
         np.random.seed(987689)
@@ -193,23 +188,21 @@ class TestRemoveDataPickleLogit(RemoveDataPickle):
 
 
 class TestRemoveDataPickleRLM(RemoveDataPickle):
-
     def setup(self):
-        #fit for each test, because results will be changed by test
+        # fit for each test, because results will be changed by test
         x = self.exog
         np.random.seed(987689)
         y = x.sum(1) + np.random.randn(x.shape[0])
-        self.results = sm.RLM(y, self.exog).fit()
+        self.results = sm.RLM(y, self.exog).fit()  # FIXME: not implemented
 
 
 class TestRemoveDataPickleGLM(RemoveDataPickle):
-
     def setup(self):
-        #fit for each test, because results will be changed by test
+        # fit for each test, because results will be changed by test
         x = self.exog
         np.random.seed(987689)
         y = x.sum(1) + np.random.randn(x.shape[0])
-        self.results = sm.GLM(y, self.exog).fit()
+        self.results = sm.GLM(y, self.exog).fit()  # FIXME: not implemented
 
 
 class TestPickleFormula(RemoveDataPickle):
@@ -252,15 +245,14 @@ class TestPickleFormula2(RemoveDataPickle):
 
 
 class TestPickleFormula3(TestPickleFormula2):
-
     def setup(self):
         self.results = sm.OLS.from_formula("Y ~ A + B * C", data=self.data).fit()
 
 
 class TestPickleFormula4(TestPickleFormula2):
-
     def setup(self):
         self.results = sm.OLS.from_formula("Y ~ np.log(abs(A) + 1) + B * C", data=self.data).fit()
+
 
 # we need log in module namespace for the following test
 from numpy import log

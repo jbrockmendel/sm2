@@ -5,10 +5,9 @@
 import numpy as np
 from numpy.testing import assert_almost_equal
 
+import sm2.api as sm
 
 '''
-import statsmodels.api as sm
-
 
 def test_HC_use():
     np.random.seed(0)

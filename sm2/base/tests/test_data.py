@@ -1,18 +1,19 @@
+
+import pytest
 import numpy as np
-from numpy.testing import assert_equal, assert_, assert_raises
 import pandas as pd
-import pandas.util.testing as tm
+# import pandas.util.testing as tm
 
 from sm2.base import data as sm_data
 # from statsmodels.formula import handle_formula_data
 from sm2.regression.linear_model import OLS
 # from statsmodels.genmod.generalized_linear_model import GLM
 # from statsmodels.genmod import families
-from sm2.discrete.discrete_model import Logit
+# from sm2.discrete.discrete_model import Logit
 
 
 '''
-#class TestDates(object):
+# class TestDates(object):
 #    @classmethod
 #    def setup_class(cls):
 #        nrows = 10
@@ -167,8 +168,10 @@ class TestRecarrays(TestArrays):
         cls.ynames = 'y_1'
 
     def test_endogexog(self):
-        np.testing.assert_equal(self.data.endog, self.endog.view(float, type=np.ndarray))
-        np.testing.assert_equal(self.data.exog, self.exog.view((float, 3), type=np.ndarray))
+        np.testing.assert_equal(self.data.endog,
+                                self.endog.view(float, type=np.ndarray))
+        np.testing.assert_equal(self.data.exog,
+                                self.exog.view((float, 3), type=np.ndarray))
 
 
 class TestStructarrays(TestArrays):
@@ -186,8 +189,10 @@ class TestStructarrays(TestArrays):
         cls.ynames = 'y_1'
 
     def test_endogexog(self):
-        np.testing.assert_equal(self.data.endog, self.endog.view(float, type=np.ndarray))
-        np.testing.assert_equal(self.data.exog, self.exog.view((float,3), type=np.ndarray))
+        np.testing.assert_equal(self.data.endog,
+                                self.endog.view(float, type=np.ndarray))
+        np.testing.assert_equal(self.data.exog,
+                                self.exog.view((float,3), type=np.ndarray))
 
 
 class TestListDataFrame(TestDataFrames):
@@ -393,26 +398,6 @@ class TestSeriesSeries(TestDataFrames):
         np.testing.assert_equal(self.data.endog, self.endog.values.squeeze())
         np.testing.assert_equal(self.data.exog, self.exog.values[:,None])
 
-def test_alignment():
-    #Fix Issue #206
-    from statsmodels.regression.linear_model import OLS
-    from statsmodels.datasets.macrodata import load_pandas
-
-    d = load_pandas().data
-    #growth rates
-    gs_l_realinv = 400 * np.log(d['realinv']).diff().dropna()
-    gs_l_realgdp = 400 * np.log(d['realgdp']).diff().dropna()
-    lint = d['realint'][:-1] # incorrect indexing for test purposes
-
-    endog = gs_l_realinv
-
-    # re-index because they won't conform to lint
-    realgdp = gs_l_realgdp.reindex(lint.index, method='bfill')
-    data = dict(const=np.ones_like(lint), lrealgdp=realgdp, lint=lint)
-    exog = pd.DataFrame(data)
-
-    # which index do we get??
-    np.testing.assert_raises(ValueError, OLS, *(endog, exog))
 
 class TestMultipleEqsArrays(TestArrays):
     @classmethod
@@ -631,7 +616,7 @@ class TestMissingPandas(object):
 class TestConstant(object):
     @classmethod
     def setup_class(cls):
-        from statsmodels.datasets.longley import load_pandas
+        from sm2.datasets.longley import load_pandas
         cls.data = load_pandas()
 
     def test_array_constant(self):
@@ -725,19 +710,19 @@ class CheckHasConstant(object):
     def test_hasconst(self):
         for x, result in zip(self.exogs, self.results):
             mod = self.mod(self.y, x)
-            assert_equal(mod.k_constant, result[0]) #['k_constant'])
-            assert_equal(mod.data.k_constant, result[0])
+            np.testing.assert_equal(mod.k_constant, result[0]) #['k_constant'])
+            np.testing.assert_equal(mod.data.k_constant, result[0])
             if result[1] is None:
-                assert_(mod.data.const_idx is None)
+                np.testing.assert_(mod.data.const_idx is None)
             else:
-                assert_equal(mod.data.const_idx, result[1])
+                np.testing.assert_equal(mod.data.const_idx, result[1])
 
             # extra check after fit, some models raise on singular
             fit_kwds = getattr(self, 'fit_kwds', {})
             try:
                 res = mod.fit(**fit_kwds)
-                assert_equal(res.model.k_constant, result[0])
-                assert_equal(res.model.data.k_constant, result[0])
+                np.testing.assert_equal(res.model.k_constant, result[0])
+                np.testing.assert_equal(res.model.data.k_constant, result[0])
             except:
                 pass
 
@@ -799,25 +784,11 @@ class TestHasConstantGLM(CheckHasConstant):
         cls.y = cls.y_bin
 
 class TestHasConstantLogit(CheckHasConstant):
-
     @classmethod
     def _initialize(cls):
         cls.mod = Logit
         cls.y = cls.y_bin
         cls.fit_kwds = {'disp': False}
-
-
-def test_dtype_object():
-    # see #880
-
-    X = np.random.random((40,2))
-    df = pd.DataFrame(X)
-    df[2] = np.random.randint(2, size=40).astype('object')
-    df['constant'] = 1
-
-    y = pd.Series(np.random.randint(2, size=40))
-
-    np.testing.assert_raises(ValueError, sm_data.handle_data, y, df)
 
 
 def test_formula_missing_extra_arrays():
@@ -867,9 +838,10 @@ def test_formula_missing_extra_arrays():
 
     model_data = sm_data.handle_data(endog, exog, **kwargs)
     data_nona = data.dropna()
-    assert_equal(data_nona['y'].values, model_data.endog)
-    assert_equal(data_nona[['constant', 'X']].values, model_data.exog)
-    assert_equal(data_nona['weights'].values, model_data.weights)
+    np.testing.assert_equal(data_nona['y'].values, model_data.endog)
+    np.testing.assert_equal(data_nona[['constant', 'X']].values,
+                            model_data.exog)
+    np.testing.assert_equal(data_nona['weights'].values, model_data.weights)
 
     tmp = handle_formula_data(data, None, formula, depth=2, missing='drop')
     (endog, exog), missing_idx, design_info = tmp
@@ -881,9 +853,11 @@ def test_formula_missing_extra_arrays():
     model_data2 = sm_data.handle_data(endog, exog, **kwargs)
 
     good_idx = [0, 4, 6, 9]
-    assert_equal(data.loc[good_idx, 'y'], model_data2.endog)
-    assert_equal(data.loc[good_idx, ['constant', 'X']], model_data2.exog)
-    assert_equal(weights_2d[good_idx][:, good_idx], model_data2.weights)
+    np.testing.assert_equal(data.loc[good_idx, 'y'], model_data2.endog)
+    np.testing.assert_equal(data.loc[good_idx,
+                            ['constant', 'X']], model_data2.exog)
+    np.testing.assert_equal(weights_2d[good_idx][:, good_idx],
+                            model_data2.weights)
 
     tmp = handle_formula_data(data, None, formula, depth=2, missing='drop')
     (endog, exog), missing_idx, design_info = tmp
@@ -895,8 +869,8 @@ def test_formula_missing_extra_arrays():
 
 def test_raise_nonfinite_exog():
     # we raise now in the has constant check before hitting the linear algebra
-    from statsmodels.regression.linear_model import OLS
-    from statsmodels.tools.sm_exceptions import MissingDataError
+    from sm2.regression.linear_model import OLS
+    from sm2.tools.sm_exceptions import MissingDataError
     x = np.arange(10)[:,None]**([0., 1.])
     # random numbers for y
     y = np.array([-0.6, -0.1, 0., -0.7, -0.5, 0.5, 0.1, -0.8, -2., 1.1])
@@ -906,3 +880,41 @@ def test_raise_nonfinite_exog():
     x[1, 1] = np.nan
     assert_raises(MissingDataError, OLS, y, x)
 '''
+
+
+# ------------------------------------------------------------------
+# Issue Regression Tests
+
+def test_alignment():
+    # See GH#206
+    from sm2.datasets.macrodata import load_pandas
+
+    d = load_pandas().data
+    # growth rates
+    gs_l_realinv = 400 * np.log(d['realinv']).diff().dropna()
+    gs_l_realgdp = 400 * np.log(d['realgdp']).diff().dropna()
+    lint = d['realint'][:-1]  # incorrect indexing for test purposes
+
+    endog = gs_l_realinv
+
+    # re-index because they won't conform to lint
+    realgdp = gs_l_realgdp.reindex(lint.index, method='bfill')
+    data = dict(const=np.ones_like(lint), lrealgdp=realgdp, lint=lint)
+    exog = pd.DataFrame(data)
+
+    # which index do we get??
+    with pytest.raises(ValueError):
+        OLS(endog, exog)
+
+
+def test_dtype_object():
+    # See GH#880
+    X = np.random.random((40, 2))
+    df = pd.DataFrame(X)
+    df[2] = np.random.randint(2, size=40).astype('object')
+    df['constant'] = 1
+
+    y = pd.Series(np.random.randint(2, size=40))
+
+    with pytest.raises(ValueError):
+        sm_data.handle_data(y, df)

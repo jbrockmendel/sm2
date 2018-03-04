@@ -54,7 +54,7 @@ NOTE        = """::
         Areas are area of 50,000 or more people."""
 
 import numpy as np
-from statsmodels.datasets import utils as du
+from sm2.datasets import utils as du
 from os.path import dirname, abspath
 
 def load():

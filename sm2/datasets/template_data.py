@@ -1,23 +1,23 @@
-#! /usr/bin/env python
-
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
 """Name of dataset."""
 
 __docformat__ = 'restructuredtext'
 
-COPYRIGHT   = """E.g., This is public domain."""
-TITLE       = """Title of the dataset"""
-SOURCE      = """
+COPYRIGHT = """E.g., This is public domain."""
+TITLE = """Title of the dataset"""
+SOURCE = """
 This section should provide a link to the original dataset if possible and
 attribution and correspondance information for the dataset's original author
 if so desired.
 """
 
-DESCRSHORT  = """A short description."""
+DESCRSHORT = """A short description."""
 
-DESCRLONG   = """A longer description of the dataset."""
+DESCRLONG = """A longer description of the dataset."""
 
-#suggested notes
-NOTE        = """
+# suggested notes
+NOTE = """
 ::
 
     Number of observations:
@@ -26,10 +26,11 @@ NOTE        = """
 
 Any other useful information that does not fit into the above categories.
 """
+import os
 
 import numpy as np
-from statsmodels.datasets import utils as du
-from os.path import dirname, abspath
+
+from sm2.datasets import utils as du
 
 
 def load():
@@ -42,22 +43,22 @@ def load():
         See DATASET_PROPOSAL.txt for more information.
     """
     data = _get_data()
-    ##### SET THE INDICES #####
-    #NOTE: None for exog_idx is the complement of endog_idx
+    # SET THE INDICES #
+    # NOTE: None for exog_idx is the complement of endog_idx
     return du.process_recarray(data, endog_idx=0, exog_idx=None, dtype=float)
 
 
 def load_pandas():
     data = _get_data()
-    ##### SET THE INDICES #####
-    #NOTE: None for exog_idx is the complement of endog_idx
+    # SET THE INDICES #
+    # NOTE: None for exog_idx is the complement of endog_idx
     return du.process_recarray_pandas(data, endog_idx=0, exog_idx=None,
                                       dtype=float)
 
 
 def _get_data():
-    filepath = dirname(abspath(__file__))
-    ##### EDIT THE FOLLOWING TO POINT TO DatasetName.csv #####
+    filepath = os.path.dirname(os.path.abspath(__file__))
+    # EDIT THE FOLLOWING TO POINT TO DatasetName.csv #
     data = np.recfromtxt(open(filepath + '/DatasetName.csv', 'rb'),
                          delimiter=",", names=True, dtype=float)
     return data

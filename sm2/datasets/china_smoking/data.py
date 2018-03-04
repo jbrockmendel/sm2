@@ -27,7 +27,7 @@ NOTE        = """::
 """
 
 import pandas as pd
-from statsmodels.datasets import utils
+from sm2.datasets import utils
 import os
 
 
