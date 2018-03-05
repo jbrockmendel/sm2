@@ -13,6 +13,7 @@ from sm2.regression.linear_model import GLSAR
 from sm2.tools.tools import add_constant
 from sm2.datasets import macrodata
 
+
 @pytest.mark.not_vetted
 class CheckStataResultsMixin(object):
     def test_params_table(self):

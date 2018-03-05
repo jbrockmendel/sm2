@@ -194,6 +194,11 @@ class DiscreteModel(base.LikelihoodModel):
         super(DiscreteModel, self).__init__(endog, exog, **kwargs)
         self.raise_on_perfect_prediction = True
 
+        if not hasattr(self, 'nobs'):
+            # TODO: make this systematically impossible
+            self.nobs = self.exog.shape[0]
+        assert self.nobs == self.exog.shape[0]
+
     def initialize(self):
         """
         Initialize is called by
@@ -3966,6 +3971,16 @@ class MultinomialResults(DiscreteResults):
     __doc__ = _discrete_results_docs % {
         "one_line_description": "A results class for multinomial data",
         "extra_attr": ""}
+
+    def __init__(self, model, mlefit):
+        # Make sure params have the appropriate shape;
+        # TODO: Sould we avoid altering this in-place?
+        mlefit.params = mlefit.params.reshape(model.K, -1, order='F')
+        # TODO: Is the "order='F'" really necessary?
+        super(MultinomialResults, self).__init__(model, mlefit)
+        self.J = model.J
+        self.K = model.K
+        self.nobs = model.nobs
 
     # TODO: Doesn't need to be a method
     def _maybe_convert_ynames_int(self, ynames):
