@@ -42,7 +42,7 @@ def fun2(beta, y, x):
     return fun1(beta, y, x).sum(0)
 
 
-#ravel() added because of MNLogit 2d params
+# ravel() added because of MNLogit 2d params
 @pytest.mark.not_vetted
 class CheckGradLoglikeMixin(object):
     def test_score(self):
@@ -62,7 +62,7 @@ class CheckGradLoglikeMixin(object):
             hefd = numdiff.approx_fprime_cs(test_params, self.mod.score)
             assert_almost_equal(he, hefd, decimal=DEC8)
 
-            #NOTE: notice the accuracy below
+            # NOTE: notice the accuracy below
             assert_almost_equal(he, hefd, decimal=7)
             hefd = numdiff.approx_fprime(test_params, self.mod.score,
                                          centered=True)
@@ -103,11 +103,6 @@ class TestGradMNLogit(CheckGradLoglikeMixin):
         exog = sm.add_constant(exog, prepend=False)
         cls.mod = sm.MNLogit(data.endog, exog)
 
-        #def loglikeflat(cls, params):
-            #reshapes flattened params
-        #    return cls.loglike(params.reshape(6,6))
-        #cls.mod.loglike = loglikeflat  #need instance method
-        #cls.params = [np.ones((6,6)).ravel()]
         res = cls.mod.fit(disp=0)
         cls.params = [res.params.ravel('F')]
 
@@ -135,10 +130,10 @@ class TestGradMNLogit(CheckGradLoglikeMixin):
             hecs = numdiff.approx_hess_cs(test_params, self.mod.loglike)
             assert_almost_equal(he, hecs, decimal=5)
             # NOTE: these just don't work well
-            #hecs = numdiff.approx_hess1(test_params, self.mod.loglike, 1e-3)
-            #assert_almost_equal(he, hecs, decimal=1)
-            #hecs = numdiff.approx_hess2(test_params, self.mod.loglike, 1e-4)
-            #assert_almost_equal(he, hecs, decimal=0)
+            # hecs = numdiff.approx_hess1(test_params, self.mod.loglike, 1e-3)
+            # assert_almost_equal(he, hecs, decimal=1)
+            # hecs = numdiff.approx_hess2(test_params, self.mod.loglike, 1e-4)
+            # assert_almost_equal(he, hecs, decimal=0)
             hecs = numdiff.approx_hess3(test_params, self.mod.loglike, 1e-4)
             assert_almost_equal(he, hecs, decimal=0)
 
@@ -149,13 +144,8 @@ class TestGradLogit(CheckGradLoglikeMixin):
     def setup_class(cls):
         data = sm.datasets.spector.load()
         data.exog = sm.add_constant(data.exog, prepend=False)
-        #mod = sm.Probit(data.endog, data.exog)
         cls.mod = sm.Logit(data.endog, data.exog)
-        #res = mod.fit(method="newton")
         cls.params = [np.array([1, 0.25, 1.4, -7])]
-        ##loglike = mod.loglike
-        ##score = mod.score
-        ##hess = mod.hessian
 
 
 @pytest.mark.not_vetted
@@ -198,7 +188,8 @@ class CheckDerivativeMixin(object):
             gtrue = self.gradtrue(test_params)
             fun = self.fun()
 
-            epsilon = 1e-6  #default epsilon 1e-6 is not precise enough
+            epsilon = 1e-6  # default epsilon 1e-6 is not precise enough
+            # TODO: if comment above is correct, can we... change it?
             gfd = numdiff.approx_fprime(test_params, fun, epsilon=1e-8,
                                         args=self.args, centered=True)
             assert_almost_equal(gtrue, gfd, decimal=DEC5)
@@ -213,22 +204,21 @@ class CheckDerivativeMixin(object):
 
     def test_hess_fun1_fd(self):
         for test_params in self.params:
-            #hetrue = 0
             hetrue = self.hesstrue(test_params)
-            if not hetrue is None: #Hessian doesn't work for 2d return of fun
+            if hetrue is not None:  # Hessian doesn't work for 2d return of fun
                 fun = self.fun()
                 # default works, epsilon 1e-6 or 1e-8 is not precise enough
-                hefd = numdiff.approx_hess1(test_params, fun, #epsilon=1e-8,
+                hefd = numdiff.approx_hess1(test_params, fun,  #epsilon=1e-8,
                                             args=self.args)
                 # TODO:should be kwds
                 assert_almost_equal(hetrue, hefd, decimal=DEC3)
                 # TODO: I reduced precision to DEC3 from DEC4 because of
                 #    TestDerivativeFun
-                hefd = numdiff.approx_hess2(test_params, fun, # epsilon=1e-8,
+                hefd = numdiff.approx_hess2(test_params, fun,  # epsilon=1e-8,
                                             args=self.args)
                 # TODO:should be kwds
                 assert_almost_equal(hetrue, hefd, decimal=DEC3)
-                hefd = numdiff.approx_hess3(test_params, fun, # epsilon=1e-8,
+                hefd = numdiff.approx_hess3(test_params, fun,  # epsilon=1e-8,
                                             args=self.args)
                 # TODO:should be kwds
                 assert_almost_equal(hetrue, hefd, decimal=DEC3)
@@ -236,7 +226,7 @@ class CheckDerivativeMixin(object):
     def test_hess_fun1_cs(self):
         for test_params in self.params:
             hetrue = self.hesstrue(test_params)
-            if not hetrue is None: #Hessian doesn't work for 2d return of fun
+            if hetrue is not None:  # Hessian doesn't work for 2d return of fun
                 fun = self.fun()
                 hecs = numdiff.approx_hess_cs(test_params, fun, args=self.args)
                 assert_almost_equal(hetrue, hecs, decimal=DEC6)
@@ -246,7 +236,7 @@ class CheckDerivativeMixin(object):
 class TestDerivativeFun(CheckDerivativeMixin):
     @classmethod
     def setup_class(cls):
-        super(TestDerivativeFun,cls).setup_class()
+        super(TestDerivativeFun, cls).setup_class()
         xkols = np.dot(np.linalg.pinv(cls.x), cls.y)
         cls.params = [np.array([1., 1., 1.]), xkols]
         cls.args = (cls.x,)
@@ -267,7 +257,7 @@ class TestDerivativeFun(CheckDerivativeMixin):
 class TestDerivativeFun2(CheckDerivativeMixin):
     @classmethod
     def setup_class(cls):
-        super(TestDerivativeFun2,cls).setup_class()
+        super(TestDerivativeFun2, cls).setup_class()
         xkols = np.dot(np.linalg.pinv(cls.x), cls.y)
         cls.params = [np.array([1., 1., 1.]), xkols]
         cls.args = (cls.y, cls.x)
@@ -304,7 +294,7 @@ class TestDerivativeFun1(CheckDerivativeMixin):
     def hesstrue(self, params):
         return None
         y, x = self.y, self.x
-        return (-x * 2 * (y-np.dot(x, params))[:, None])  # TODO: check shape
+        return (-x * 2 * (y - np.dot(x, params))[:, None])  # TODO: check shape
 
 
 @pytest.mark.not_vetted
