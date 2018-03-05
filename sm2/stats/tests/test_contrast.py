@@ -33,7 +33,8 @@ class TestContrast(object):
         term = np.column_stack((noise, self.X[:, 2]))
         c = Contrast(term, self.X)
         assert_equal(c.contrast_matrix.shape, (10,))
-    # TODO: this should actually test the value of the contrast, not only its dimension
+    # TODO: this should actually test the value of the contrast,
+    # not only its dimension
 
     def test_estimable(self):
         X2 = np.column_stack((self.X, self.X[:, 5]))
