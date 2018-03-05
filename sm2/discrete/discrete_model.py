@@ -358,7 +358,7 @@ class DiscreteModel(base.LikelihoodModel):
         alpha = np.array(alpha)
         assert alpha.min() >= 0
         try:
-            kwargs['alpha'] = alpha  # TODO: how would t his happen?
+            kwargs['alpha'] = alpha  # TODO: how would this happen?
         except TypeError:
             kwargs = {'alpha': alpha}  # TODO: raise of kwargs isnt a dict?
         kwargs['alpha_rescaled'] = kwargs['alpha'] / float(self.endog.shape[0])
