@@ -4,7 +4,6 @@ Created on Fri Dec 19 11:29:18 2014
 
 Author: Josef Perktold
 License: BSD-3
-
 """
 from collections import OrderedDict
 
@@ -13,7 +12,8 @@ import numpy as np
 from scipy import stats
 
 
-# this is similar to ContrastResults after t_test, partially copied and adjusted
+# this is similar to ContrastResults after t_test, partially
+# copied and adjusted
 class PredictionResults(object):
 
     def __init__(self, predicted_mean, var_pred_mean, var_resid,
@@ -44,7 +44,8 @@ class PredictionResults(object):
 
     def conf_int(self, obs=False, alpha=0.05):
         """
-        Returns the confidence interval of the value, `effect` of the constraint.
+        Returns the confidence interval of the value, `effect` of the
+        constraint.
 
         This is currently only available for t and z tests.
 
@@ -52,16 +53,14 @@ class PredictionResults(object):
         ----------
         alpha : float, optional
             The significance level for the confidence interval.
-            ie., The default `alpha` = .05 returns a 95% confidence interval.
+            ie the default `alpha` = .05 returns a 95% confidence interval.
 
         Returns
         -------
         ci : ndarray, (k_constraints, 2)
             The array has the lower and the upper limit of the confidence
             interval in the columns.
-
         """
-
         se = self.se_obs if obs else self.se_mean
 
         q = self.dist.ppf(1 - alpha / 2., *self.dist_args)
@@ -69,10 +68,9 @@ class PredictionResults(object):
         upper = self.predicted_mean + q * se
         return np.column_stack((lower, upper))
 
-
     def summary_frame(self, what='all', alpha=0.05):
         # TODO: finish and cleanup
-        ci_obs = self.conf_int(alpha=alpha, obs=True) # need to split
+        ci_obs = self.conf_int(alpha=alpha, obs=True)  # need to split
         ci_mean = self.conf_int(alpha=alpha, obs=False)
         to_include = OrderedDict()
         to_include['mean'] = self.predicted_mean
@@ -83,10 +81,10 @@ class PredictionResults(object):
         to_include['obs_ci_upper'] = ci_obs[:, 1]
 
         self.table = to_include
-        #OrderedDict doesn't work to preserve sequence
+        # OrderedDict doesn't work to preserve sequence
         # pandas dict doesn't handle 2d_array
-        #data = np.column_stack(list(to_include.values()))
-        #names = ....
+        # data = np.column_stack(list(to_include.values()))
+        # names = ....
         res = pd.DataFrame(to_include, index=self.row_labels,
                            columns=to_include.keys())
         return res
@@ -123,11 +121,10 @@ def get_prediction(self, exog=None, transform=True, weights=None,
         tables for the prediction of the mean and of new observations.
     """
 
-    ### prepare exog and row_labels, based on base Results.predict
+    # prepare exog and row_labels, based on base Results.predict
     if transform and hasattr(self.model, 'formula') and exog is not None:
         from patsy import dmatrix
-        exog = dmatrix(self.model.data.design_info.builder,
-                       exog)
+        exog = dmatrix(self.model.data.design_info.builder, exog)
 
     if exog is not None:
         if row_labels is None:
@@ -155,8 +152,6 @@ def get_prediction(self, exog=None, transform=True, weights=None,
         if (weights.size > 1 and
            (weights.ndim != 1 or weights.shape[0] == exog.shape[1])):
             raise ValueError('weights has wrong shape')
-
-    ### end
 
     if pred_kwds is None:
         pred_kwds = {}

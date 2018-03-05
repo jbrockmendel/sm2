@@ -4,26 +4,25 @@ Created on Thu Aug  3 21:08:49 2017
 
 Author: Josef Perktold
 """
-
+import pytest
 import numpy as np
 from numpy.testing import assert_allclose
 
-from sm2.discrete.discrete_model import (Poisson, NegativeBinomial,
-                                         NegativeBinomialP)
-from sm2.tools.tools import add_constant
+import sm2.api as sm
+from sm2.discrete.discrete_model import NegativeBinomialP
 
 import sm2.discrete.tests.results.results_count_margins as res_stata
 
 
 # load data into module namespace
-from sm2.datasets.cpunish import load
-
-cpunish_data = load()
-cpunish_data.exog[:,3] = np.log(cpunish_data.exog[:, 3])
-exog = add_constant(cpunish_data.exog, prepend=False)
-endog = cpunish_data.endog - 1 # avoid zero-truncation
+cpunish_data = sm.datasets.cpunish.load()
+cpunish_data.exog[:, 3] = np.log(cpunish_data.exog[:, 3])
+exog = sm.add_constant(cpunish_data.exog, prepend=False)
+endog = cpunish_data.endog - 1  # avoid zero-truncation
 exog /= np.round(exog.max(0), 3)
 
+
+@pytest.mark.not_vetted
 class CheckMarginMixin(object):
     rtol_fac = 1
 
@@ -31,13 +30,21 @@ class CheckMarginMixin(object):
         res1 = self.res1
         sl = self.res1_slice
         rf = self.rtol_fac
-        assert_allclose(self.margeff.margeff, self.res1.params[sl], rtol=1e-5 * rf)
-        assert_allclose(self.margeff.margeff_se, self.res1.bse[sl], rtol=1e-6 * rf)
-        assert_allclose(self.margeff.pvalues, self.res1.pvalues[sl], rtol=5e-6 * rf)
-        assert_allclose(self.margeff.conf_int(), res1.margins_table[sl, 4:6],
+        assert_allclose(self.margeff.margeff,
+                        self.res1.params[sl],
+                        rtol=1e-5 * rf)
+        assert_allclose(self.margeff.margeff_se,
+                        self.res1.bse[sl],
+                        rtol=1e-6 * rf)
+        assert_allclose(self.margeff.pvalues,
+                        self.res1.pvalues[sl],
+                        rtol=5e-6 * rf)
+        assert_allclose(self.margeff.conf_int(),
+                        res1.margins_table[sl, 4:6],
                         rtol=1e-6 * rf)
 
 
+@pytest.mark.not_vetted
 class TestPoissonMargin(CheckMarginMixin):
 
     @classmethod
@@ -45,7 +52,7 @@ class TestPoissonMargin(CheckMarginMixin):
         # here we don't need to check convergence from default start_params
         start_params = [14.1709, 0.7085, -3.4548, -0.539, 3.2368,  -7.9299,
                         -5.0529]
-        mod_poi = Poisson(endog, exog)
+        mod_poi = sm.Poisson(endog, exog)
         res_poi = mod_poi.fit(start_params=start_params)
         #res_poi = mod_poi.fit(maxiter=100)
         marge_poi = res_poi.get_margeff()
@@ -57,6 +64,7 @@ class TestPoissonMargin(CheckMarginMixin):
         cls.res1 = res_stata.results_poisson_margins_cont
 
 
+@pytest.mark.not_vetted
 class TestPoissonMarginDummy(CheckMarginMixin):
 
     @classmethod
@@ -64,7 +72,7 @@ class TestPoissonMarginDummy(CheckMarginMixin):
         # here we don't need to check convergence from default start_params
         start_params = [14.1709, 0.7085, -3.4548, -0.539, 3.2368,  -7.9299,
                         -5.0529]
-        mod_poi = Poisson(endog, exog)
+        mod_poi = sm.Poisson(endog, exog)
         res_poi = mod_poi.fit(start_params=start_params)
         marge_poi = res_poi.get_margeff(dummy=True)
         cls.res = res_poi
@@ -74,6 +82,7 @@ class TestPoissonMarginDummy(CheckMarginMixin):
         cls.res1 = res_stata.results_poisson_margins_dummy
 
 
+@pytest.mark.not_vetted
 class TestNegBinMargin(CheckMarginMixin):
 
     @classmethod
@@ -81,7 +90,7 @@ class TestNegBinMargin(CheckMarginMixin):
         # here we don't need to check convergence from default start_params
         start_params = [13.1996, 0.8582, -2.8005, -1.5031, 2.3849, -8.5552,
                         -2.88, 1.14]
-        mod = NegativeBinomial(endog, exog)
+        mod = sm.NegativeBinomial(endog, exog)
         res = mod.fit(start_params=start_params, method='nm', maxiter=2000)
         marge = res.get_margeff()
         cls.res = res
@@ -93,6 +102,7 @@ class TestNegBinMargin(CheckMarginMixin):
         # negbin has lower agreement with Stata in this case
 
 
+@pytest.mark.not_vetted
 class TestNegBinMarginDummy(CheckMarginMixin):
 
     @classmethod
@@ -100,7 +110,7 @@ class TestNegBinMarginDummy(CheckMarginMixin):
         # here we don't need to check convergence from default start_params
         start_params = [13.1996, 0.8582, -2.8005, -1.5031, 2.3849, -8.5552,
                         -2.88, 1.14]
-        mod = NegativeBinomial(endog, exog)
+        mod = sm.NegativeBinomial(endog, exog)
         res = mod.fit(start_params=start_params, method='nm', maxiter=2000)
         marge = res.get_margeff(dummy=True)
         cls.res = res
@@ -111,6 +121,7 @@ class TestNegBinMarginDummy(CheckMarginMixin):
         cls.rtol_fac = 5e1
 
 
+@pytest.mark.not_vetted
 class TestNegBinPMargin(CheckMarginMixin):
     # this is the same as the nb2 version above for NB-P, p=2
 

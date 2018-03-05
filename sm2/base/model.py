@@ -17,8 +17,7 @@ import sm2.base.wrapper as wrap
 from sm2.base.optimizer import Optimizer
 
 from sm2.stats.contrast import ContrastResults, WaldTestResults
-
-from statsmodels.formula import handle_formula_data
+from sm2.formula import handle_formula_data
 
 
 _model_params_doc = """
@@ -1375,7 +1374,7 @@ class LikelihoodModelResults(Results):
         >>> from sm2.datasets import longley
         >>> dta = longley.load_pandas().data
         >>> formula = 'TOTEMP ~ GNPDEFL + GNP + UNEMP + ARMED + POP + YEAR'
-        >>> results = OLSstatsmodels.from_formula(formula, dta).fit()
+        >>> results = OLS.from_formula(formula, dta).fit()
         >>> hypotheses = '(GNPDEFL = GNP), (UNEMP = 2), (YEAR/1829 = 1)'
         >>> f_test = results.f_test(hypotheses)
         >>> print(f_test)
