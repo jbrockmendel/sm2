@@ -194,6 +194,11 @@ class DiscreteModel(base.LikelihoodModel):
         super(DiscreteModel, self).__init__(endog, exog, **kwargs)
         self.raise_on_perfect_prediction = True
 
+        if not hasattr(self, 'nobs'):
+            # TODO: make this systematically impossible
+            self.nobs = self.exog.shape[0]
+        assert self.nobs == self.exog.shape[0]
+
     def initialize(self):
         """
         Initialize is called by
@@ -305,7 +310,7 @@ class DiscreteModel(base.LikelihoodModel):
         Extra parameters are not penalized if alpha is given as a scalar.
         An example is the shape parameter in NegativeBinomial `nb1` and `nb2`.
 
-        Optional arguments for the solvers (available in Results.mle_settings)::
+        Optional arguments for the solvers (available in Results.mle_settings):
 
             'l1'
                 acc : float (default 1e-6)
@@ -346,7 +351,8 @@ class DiscreteModel(base.LikelihoodModel):
         """
         # Set attributes based on method
         if method not in ['l1', 'l1_cvxopt_cp']:
-            # TODO: fix upstream raising Exception
+            # TODO: fix upstream raises Exception, also in subclasses
+            # they raise at the _end_ of the call (and redundantly)
             raise ValueError("argument method == %s, which is not handled"
                              % method)
 
@@ -442,7 +448,58 @@ class DiscreteModel(base.LikelihoodModel):
         raise NotImplementedError
 
 
-class BinaryModel(DiscreteModel):
+class FitBase(DiscreteModel):
+    """Mixin to wrap DiscreteModel.fit and fit_regularized"""
+
+    def fit(self, start_params=None, method='newton', maxiter=35,
+            full_output=1, disp=1, callback=None, **kwargs):
+
+        bnryfit = DiscreteModel.fit(self, start_params=start_params,
+                                    method=method, maxiter=maxiter,
+                                    full_output=full_output,
+                                    disp=disp, callback=callback,
+                                    **kwargs)
+
+        res_cls, wrap_cls = self._res_classes["fit"]
+        discretefit = res_cls(self, bnryfit)
+        return wrap_cls(discretefit)
+    fit.__doc__ = DiscreteModel.fit.__doc__
+
+    def fit_regularized(self, start_params=None, method='l1',
+                        maxiter='defined_by_method', full_output=1, disp=1,
+                        callback=None, alpha=0, trim_mode='auto',
+                        auto_trim_tol=0.01, size_trim_tol=1e-4, qc_tol=0.03,
+                        **kwargs):
+
+        if method not in ['l1', 'l1_cvxopt_cp']:
+            # TODO: is this check necessary?  Its done in DiscreteModel call
+            # TODO: fix upstream raises Exception
+            # (and does it at the _end_ of the call)
+            raise ValueError("argument method == %s, which is not handled"
+                             % method)
+
+        bnryfit = DiscreteModel.fit_regularized(self,
+                                                start_params=start_params,
+                                                method=method, maxiter=maxiter,
+                                                full_output=full_output,
+                                                disp=disp, callback=callback,
+                                                alpha=alpha,
+                                                trim_mode=trim_mode,
+                                                auto_trim_tol=auto_trim_tol,
+                                                size_trim_tol=size_trim_tol,
+                                                qc_tol=qc_tol, **kwargs)
+
+        res_cls, wrap_cls = self._res_classes["fit_regularized"]
+        discretefit = res_cls(self, bnryfit)
+        return wrap_cls(discretefit)
+    fit_regularized.__doc__ = DiscreteModel.fit_regularized.__doc__
+
+
+class BinaryModel(FitBase):
+    @property
+    def _res_classes(self):
+        return {"fit": (BinaryResults, BinaryResultsWrapper),
+                "fit_regularized": (L1BinaryResults, L1BinaryResultsWrapper)}
 
     def __init__(self, endog, exog, **kwargs):
         super(BinaryModel, self).__init__(endog, exog, **kwargs)
@@ -476,34 +533,6 @@ class BinaryModel(DiscreteModel):
             return self.cdf(np.dot(exog, params))
         else:
             return np.dot(exog, params)
-
-    def fit_regularized(self, start_params=None, method='l1',
-                        maxiter='defined_by_method', full_output=1, disp=1,
-                        callback=None, alpha=0, trim_mode='auto',
-                        auto_trim_tol=0.01, size_trim_tol=1e-4, qc_tol=0.03,
-                        **kwargs):
-
-        if method not in ['l1', 'l1_cvxopt_cp']:
-            # TODO: upstream raises Exception
-            # (and does it at _end_ of the call)
-            raise ValueError("argument method == %s, which is not handled"
-                             % method)
-        bnryfit = super(BinaryModel, self).fit_regularized(
-                    start_params=start_params, method=method, maxiter=maxiter,
-                    full_output=full_output, disp=disp, callback=callback,
-                    alpha=alpha, trim_mode=trim_mode,
-                    auto_trim_tol=auto_trim_tol, size_trim_tol=size_trim_tol,
-                    qc_tol=qc_tol, **kwargs)
-
-        res_cls, wrap_cls = self._res_classes["fit_regularized"]
-        discretefit = res_cls(self, bnryfit)
-        return wrap_cls(discretefit)
-    fit_regularized.__doc__ = DiscreteModel.fit_regularized.__doc__
-
-    @property
-    def _res_classes(self):
-        return {"fit": (BinaryResults, BinaryResultsWrapper),
-                "fit_regularized": (L1BinaryResults, L1BinaryResultsWrapper)}
 
     def _derivative_predict(self, params, exog=None, transform='dydx'):
         """
@@ -556,6 +585,13 @@ class BinaryModel(DiscreteModel):
 
 
 class MultinomialModel(BinaryModel):
+    _check_perfect_pred = None  # placeholder until implemented
+
+    @property
+    def _res_classes(self):
+        return {"fit": (MultinomialResults, MultinomialResultsWrapper),
+                "fit_regularized": (L1MultinomialResults,
+                                    L1MultinomialResultsWrapper)}
 
     def _handle_data(self, endog, exog, missing, hasconst, **kwargs):
         if data_tools._is_using_ndarray_type(endog, None):
@@ -632,53 +668,12 @@ class MultinomialModel(BinaryModel):
             pred = np.column_stack((np.zeros(len(exog)), pred))
         return pred
 
-    def fit(self, start_params=None, method='newton', maxiter=35,
-            full_output=1, disp=1, callback=None, **kwargs):
+    def _get_start_params(self, start_params):
         if start_params is None:
             start_params = np.zeros((self.K * (self.J - 1)))
         else:
             start_params = np.asarray(start_params)
-        callback = lambda x: None  # placeholder until check_perfect_pred
-        # skip calling super to handle results from LikelihoodModel
-        mnfit = base.LikelihoodModel.fit(self, start_params=start_params,
-                                         method=method, maxiter=maxiter,
-                                         full_output=full_output, disp=disp,
-                                         callback=callback, **kwargs)
-        mnfit.params = mnfit.params.reshape(self.K, -1, order='F')
-        res_cls, wrap_cls = self._res_classes["fit"]
-        mnfit = res_cls(self, mnfit)
-        return wrap_cls(mnfit)
-    fit.__doc__ = DiscreteModel.fit.__doc__
-
-    @property
-    def _res_classes(self):
-        return {"fit": (MultinomialResults, MultinomialResultsWrapper),
-                "fit_regularized": (L1MultinomialResults,
-                                    L1MultinomialResultsWrapper)}
-
-    def fit_regularized(self, start_params=None, method='l1',
-                        maxiter='defined_by_method', full_output=1, disp=1,
-                        callback=None, alpha=0, trim_mode='auto',
-                        auto_trim_tol=0.01, size_trim_tol=1e-4, qc_tol=0.03,
-                        **kwargs):
-        if start_params is None:
-            start_params = np.zeros((self.K * (self.J - 1)))
-        else:
-            start_params = np.asarray(start_params)
-        mnfit = DiscreteModel.fit_regularized(self, start_params=start_params,
-                                              method=method, maxiter=maxiter,
-                                              full_output=full_output,
-                                              disp=disp, callback=callback,
-                                              alpha=alpha, trim_mode=trim_mode,
-                                              auto_trim_tol=auto_trim_tol,
-                                              size_trim_tol=size_trim_tol,
-                                              qc_tol=qc_tol, **kwargs)
-        mnfit.params = mnfit.params.reshape(self.K, -1, order='F')
-
-        res_cls, wrap_cls = self._res_classes["fit_regularized"]
-        mnfit = res_cls(self, mnfit)
-        return wrap_cls(mnfit)
-    fit_regularized.__doc__ = DiscreteModel.fit_regularized.__doc__
+        return start_params
 
     def _derivative_predict(self, params, exog=None, transform='dydx'):
         """
@@ -775,7 +770,13 @@ class MultinomialModel(BinaryModel):
         return margeff.reshape(len(exog), -1, order='F')
 
 
-class CountModel(DiscreteModel):
+class CountModel(FitBase):
+    @property
+    def _res_classes(self):
+        return {"fit": (CountResults, CountResultsWrapper),
+                "fit_regularized": (L1CountResults,
+                                    L1CountResultsWrapper)}
+
     def __init__(self, endog, exog, offset=None, exposure=None, missing='none',
                  **kwargs):
         super(CountModel, self).__init__(endog, exog, missing=missing,
@@ -893,46 +894,6 @@ class CountModel(DiscreteModel):
                                          self, params)
         return margeff
 
-    def fit(self, start_params=None, method='newton', maxiter=35,
-            full_output=1, disp=1, callback=None, **kwargs):
-        cntfit = super(CountModel, self).fit(start_params=start_params,
-                                             method=method, maxiter=maxiter,
-                                             full_output=full_output,
-                                             disp=disp, callback=callback,
-                                             **kwargs)
-        res_cls, wrap_cls = self._res_classes["fit"]
-        discretefit = res_cls(self, cntfit)
-        return wrap_cls(discretefit)
-    fit.__doc__ = DiscreteModel.fit.__doc__
-
-    @property
-    def _res_classes(self):
-        return {"fit": (CountResults, CountResultsWrapper),
-                "fit_regularized": (L1CountResults,
-                                    L1CountResultsWrapper)}
-
-    def fit_regularized(self, start_params=None, method='l1',
-                        maxiter='defined_by_method', full_output=1, disp=1,
-                        callback=None, alpha=0, trim_mode='auto',
-                        auto_trim_tol=0.01, size_trim_tol=1e-4, qc_tol=0.03,
-                        **kwargs):
-
-        if method not in ['l1', 'l1_cvxopt_cp']:
-            # TODO: Fix upstream raises Exception
-            # (and does it at the _end_ of the call)
-            raise ValueError("argument method == %s, which is not handled"
-                             % method)
-        cntfit = super(CountModel, self).fit_regularized(
-                start_params=start_params, method=method, maxiter=maxiter,
-                full_output=full_output, disp=disp, callback=callback,
-                alpha=alpha, trim_mode=trim_mode, auto_trim_tol=auto_trim_tol,
-                size_trim_tol=size_trim_tol, qc_tol=qc_tol, **kwargs)
-
-        res_cls, wrap_cls = self._res_classes["fit_regularized"]
-        discretefit = res_cls(self, cntfit)
-        return wrap_cls(discretefit)
-    fit_regularized.__doc__ = DiscreteModel.fit_regularized.__doc__
-
 
 class OrderedModel(DiscreteModel):
     pass
@@ -963,6 +924,12 @@ class Poisson(CountModel):
         equal to 1.
 
     """ + base._missing_param_doc}
+
+    @property
+    def _res_classes(self):
+        return {"fit": (PoissonResults, PoissonResultsWrapper),
+                "fit_regularized": (L1PoissonResults,
+                                    L1PoissonResultsWrapper)}
 
     def cdf(self, X):
         """
@@ -1092,11 +1059,11 @@ class Poisson(CountModel):
             start_params = 0.001 * np.ones(self.exog.shape[1])
             start_params[self.data.const_idx] = self._get_start_params_null()[0]
 
-        cntfit = super(CountModel, self).fit(start_params=start_params,
-                                             method=method, maxiter=maxiter,
-                                             full_output=full_output,
-                                             disp=disp, callback=callback,
-                                             **kwargs)
+        cntfit = DiscreteModel.fit(self, start_params=start_params,
+                                   method=method, maxiter=maxiter,
+                                   full_output=full_output,
+                                   disp=disp, callback=callback,
+                                   **kwargs)
 
         if 'cov_type' in kwargs:
             cov_kwds = kwargs.get('cov_kwds', {})
@@ -1108,36 +1075,6 @@ class Poisson(CountModel):
         discretefit = res_cls(self, cntfit, **kwds)
         return wrap_cls(discretefit)
     fit.__doc__ = DiscreteModel.fit.__doc__
-
-    @property
-    def _res_classes(self):
-        return {"fit": (PoissonResults, PoissonResultsWrapper),
-                "fit_regularized": (L1PoissonResults,
-                                    L1PoissonResultsWrapper)}
-
-    def fit_regularized(self, start_params=None, method='l1',
-                        maxiter='defined_by_method', full_output=1, disp=1,
-                        callback=None, alpha=0, trim_mode='auto',
-                        auto_trim_tol=0.01, size_trim_tol=1e-4, qc_tol=0.03,
-                        **kwargs):
-        if method not in ['l1', 'l1_cvxopt_cp']:
-            # TODO: fix upstream raises Exception
-            # (and does it at the _end_ of the call)
-            raise ValueError("argument method == %s, which is not handled"
-                             % method)
-
-        cntfit = super(CountModel, self).fit_regularized(
-                    start_params=start_params, method=method, maxiter=maxiter,
-                    full_output=full_output, disp=disp, callback=callback,
-                    alpha=alpha, trim_mode=trim_mode,
-                    auto_trim_tol=auto_trim_tol, size_trim_tol=size_trim_tol,
-                    qc_tol=qc_tol, **kwargs)
-        
-        res_cls, wrap_cls = self._res_classes["fit_regularized"]
-        discretefit = res_cls(self, cntfit)
-        return wrap_cls(discretefit)
-
-    fit_regularized.__doc__ = DiscreteModel.fit_regularized.__doc__
 
     def fit_constrained(self, constraints, start_params=None, **fit_kwds):
         """fit the model subject to linear equality constraints
@@ -1322,6 +1259,13 @@ class GeneralizedPoisson(CountModel):
 
     """ + base._missing_param_doc}
 
+    @property
+    def _res_classes(self):
+        return {"fit": (GeneralizedPoissonResults,
+                        GeneralizedPoissonResultsWrapper),
+                "fit_regularized": (L1GeneralizedPoissonResults,
+                                    L1GeneralizedPoissonResultsWrapper)}
+
     def __init__(self, endog, exog, p = 1, offset=None,
                  exposure=None, missing='none', **kwargs):
         super(GeneralizedPoisson, self).__init__(endog, exog, offset=offset,
@@ -1461,12 +1405,13 @@ class GeneralizedPoisson(CountModel):
             # work around perfect separation callback GH#3895
             callback = lambda *x: x
 
-        mlefit = super(GeneralizedPoisson, self).fit(start_params=start_params,
-                                                     maxiter=maxiter,
-                                                     method=method, disp=disp,
-                                                     full_output=full_output,
-                                                     callback=callback,
-                                                     **kwargs)
+        # TODO: skip CountModel and go straight to DiscreteModel?
+        mlefit = CountModel.fit(self, start_params=start_params,
+                                maxiter=maxiter,
+                                method=method, disp=disp,
+                                full_output=full_output,
+                                callback=callback,
+                                **kwargs)
 
         if use_transparams and method not in ["newton", "ncg"]:
             self._transparams = False
@@ -1509,14 +1454,19 @@ class GeneralizedPoisson(CountModel):
             if np.size(offset) == 1 and offset == 0:
                 offset = None
             mod_poi = Poisson(self.endog, self.exog, offset=offset)
-            start_params = mod_poi.fit_regularized(
-                start_params=start_params, method=method, maxiter=maxiter,
-                full_output=full_output, disp=0, callback=callback,
-                alpha=alpha_p, trim_mode=trim_mode, auto_trim_tol=auto_trim_tol,
-                size_trim_tol=size_trim_tol, qc_tol=qc_tol, **kwargs).params
+            res_poi = mod_poi.fit_regularized(start_params=start_params,
+                                              method=method, maxiter=maxiter,
+                                              full_output=full_output, disp=0,
+                                              callback=callback,
+                                              alpha=alpha_p,
+                                              trim_mode=trim_mode,
+                                              auto_trim_tol=auto_trim_tol,
+                                              size_trim_tol=size_trim_tol,
+                                              qc_tol=qc_tol, **kwargs)
+            start_params = res_poi.params
             start_params = np.append(start_params, 0.1)
 
-        cntfit = super(CountModel, self).fit_regularized(
+        cntfit = DiscreteModel.fit_regularized(self,
                     start_params=start_params, method=method,
                     maxiter=maxiter, full_output=full_output,
                     disp=disp, callback=callback, alpha=alpha,
@@ -1528,13 +1478,6 @@ class GeneralizedPoisson(CountModel):
         return wrap_cls(discretefit)
 
     fit_regularized.__doc__ = DiscreteModel.fit_regularized.__doc__
-
-    @property
-    def _res_classes(self):
-        return {"fit": (GeneralizedPoissonResults,
-                        GeneralizedPoissonResultsWrapper),
-                "fit_regularized": (L1GeneralizedPoissonResults,
-                                    L1GeneralizedPoissonResultsWrapper)}
 
     def score_obs(self, params):
         if self._transparams:
@@ -1723,6 +1666,11 @@ class Logit(BinaryModel):
     """ % {'params': base._model_params_doc,
            'extra_params': base._missing_param_doc}
 
+    @property
+    def _res_classes(self):
+        return {"fit": (LogitResults, BinaryResultsWrapper),
+                "fit_regularized": (L1BinaryResults, L1BinaryResultsWrapper)}
+
     def cdf(self, X):
         """
         The logistic cumulative distribution function
@@ -1897,24 +1845,6 @@ class Logit(BinaryModel):
         L = self.cdf(np.dot(X, params))
         return -np.dot(L * (1 - L) * X.T, X)
 
-    def fit(self, start_params=None, method='newton', maxiter=35,
-            full_output=1, disp=1, callback=None, **kwargs):
-        bnryfit = super(Logit, self).fit(start_params=start_params,
-                                         method=method, maxiter=maxiter,
-                                         full_output=full_output,
-                                         disp=disp, callback=callback,
-                                         **kwargs)
-
-        res_cls, wrap_cls = self._res_classes["fit"]
-        discretefit = res_cls(self, bnryfit)
-        return wrap_cls(discretefit)
-    fit.__doc__ = DiscreteModel.fit.__doc__
-
-    @property
-    def _res_classes(self):
-        return {"fit": (LogitResults, BinaryResultsWrapper),
-                "fit_regularized": (L1BinaryResults, L1BinaryResultsWrapper)}
-
 
 class Probit(BinaryModel):
     __doc__ = """
@@ -1931,6 +1861,11 @@ class Probit(BinaryModel):
         A reference to the exogenous design.
     """ % {'params': base._model_params_doc,
            'extra_params': base._missing_param_doc}
+
+    @property
+    def _res_classes(self):
+        return {"fit": (ProbitResults, BinaryResultsWrapper),
+                "fit_regularized": (L1BinaryResults, L1BinaryResultsWrapper)}
 
     def cdf(self, X):
         """
@@ -2119,24 +2054,6 @@ class Probit(BinaryModel):
         q = 2 * self.endog - 1
         L = q * self.pdf(q * XB) / self.cdf(q * XB)
         return np.dot(-L * (L + XB) * X.T, X)
-
-    def fit(self, start_params=None, method='newton', maxiter=35,
-            full_output=1, disp=1, callback=None, **kwargs):
-        bnryfit = super(Probit, self).fit(start_params=start_params,
-                                          method=method, maxiter=maxiter,
-                                          full_output=full_output,
-                                          disp=disp, callback=callback,
-                                          **kwargs)
-
-        res_cls, wrap_cls = self._res_classes["fit"]
-        discretefit = res_cls(self, bnryfit)
-        return wrap_cls(discretefit)
-    fit.__doc__ = DiscreteModel.fit.__doc__
-
-    @property
-    def _res_classes(self):
-        return {"fit": (ProbitResults, BinaryResultsWrapper),
-                "fit_regularized": (L1BinaryResults, L1BinaryResultsWrapper)}
 
 
 class MNLogit(MultinomialModel):
@@ -2428,6 +2345,14 @@ class NegativeBinomial(CountModel):
         equal to 1.
 
     """ + base._missing_param_doc}
+
+    @property
+    def _res_classes(self):
+        return {"fit": (NegativeBinomialResults,
+                        NegativeBinomialResultsWrapper),
+                "fit_regularized": (L1NegativeBinomialResults,
+                                    L1NegativeBinomialResultsWrapper)}
+
     def __init__(self, endog, exog, loglike_method='nb2', offset=None,
                  exposure=None, missing='none', **kwargs):
         super(NegativeBinomial, self).__init__(endog, exog, offset=offset,
@@ -2563,7 +2488,8 @@ class NegativeBinomial(CountModel):
         y = self.endog[:, None]
         mu = self.predict(params)[:, None]
         a1 = 1 / alpha * mu**Q
-        if Q: # nb1
+        if Q:
+            # nb1
             dparams = exog * mu / alpha * (np.log(1 / (alpha + 1)) +
                                            special.digamma(y + mu / alpha) -
                                            special.digamma(mu / alpha))
@@ -2575,13 +2501,14 @@ class NegativeBinomial(CountModel):
                              special.digamma(mu / alpha)))/
                        (alpha**2 * (alpha + 1))).sum()
 
-        else: # nb2
+        else:
+            # nb2
             dparams = exog * a1 * (y - mu) / (mu + a1)
             da1 = -alpha**-2
             dalpha = (special.digamma(a1 + y) - special.digamma(a1) + np.log(a1)
                         - np.log(a1 + mu) - (a1 + y) / (a1 + mu) + 1).sum() * da1
 
-        #multiply above by constant outside sum to reduce rounding error
+        # multiply above by constant outside sum to reduce rounding error
         if self._transparams:
             return np.r_[dparams.sum(0), dalpha * alpha]
         else:
@@ -2604,7 +2531,7 @@ class NegativeBinomial(CountModel):
                 if j > i:
                     continue
                 hess_arr[i, j] = np.sum(-exog[:, i, None] * exog[:, j, None] *
-                                       const_arr, axis=0)
+                                        const_arr, axis=0)
         tri_idx = np.triu_indices(dim, k=1)
         hess_arr[tri_idx] = hess_arr.T[tri_idx]
         return hess_arr
@@ -2699,7 +2626,7 @@ class NegativeBinomial(CountModel):
                 if j > i:
                     continue
                 hess_arr[i, j] = np.sum(-exog[:, i, None] * exog[:, j, None] *
-                                       const_arr, axis=0)
+                                        const_arr, axis=0)
         tri_idx = np.triu_indices(dim, k=1)
         hess_arr[tri_idx] = hess_arr.T[tri_idx]
 
@@ -2788,12 +2715,13 @@ class NegativeBinomial(CountModel):
             # work around perfect separation callback GH#3895
             callback = lambda *x: x
 
-        mlefit = super(NegativeBinomial, self).fit(start_params=start_params,
-                                                   maxiter=maxiter,
-                                                   method=method, disp=disp,
-                                                   full_output=full_output,
-                                                   callback=callback,
-                                                   **kwargs)
+        # TODO: can we skip CountModel and go straight to DiscreteModel?
+        mlefit = CountModel.fit(self, start_params=start_params,
+                                maxiter=maxiter,
+                                method=method, disp=disp,
+                                full_output=full_output,
+                                callback=callback,
+                                **kwargs)
         # TODO: Fix NBin _check_perfect_pred
         if self.loglike_method.startswith('nb'):
             # mlefit is a wrapped counts results
@@ -2814,19 +2742,12 @@ class NegativeBinomial(CountModel):
                                       use_self=True, use_t=use_t, **cov_kwds)
         return result
 
-    @property
-    def _res_classes(self):
-        return {"fit": (NegativeBinomialResults,
-                        NegativeBinomialResultsWrapper),
-                "fit_regularized": (L1NegativeBinomialResults,
-                                    L1NegativeBinomialResultsWrapper)}
-
     def fit_regularized(self, start_params=None, method='l1',
                         maxiter='defined_by_method', full_output=1, disp=1,
                         callback=None, alpha=0, trim_mode='auto',
                         auto_trim_tol=0.01, size_trim_tol=1e-4,
                         qc_tol=0.03, **kwargs):
-        
+
         if method not in ['l1', 'l1_cvxopt_cp']:
             # TODO: fix upstream incorrectly raises Exception
             # (and does it at the very _end_ of the method)
@@ -2851,19 +2772,30 @@ class NegativeBinomial(CountModel):
             if np.size(offset) == 1 and offset == 0:
                 offset = None
             mod_poi = Poisson(self.endog, self.exog, offset=offset)
-            start_params = mod_poi.fit_regularized(
-                start_params=start_params, method=method, maxiter=maxiter,
-                full_output=full_output, disp=0, callback=callback,
-                alpha=alpha_p, trim_mode=trim_mode, auto_trim_tol=auto_trim_tol,
-                size_trim_tol=size_trim_tol, qc_tol=qc_tol, **kwargs).params
+            res_poi = mod_poi.fit_regularized(start_params=start_params,
+                                              method=method,
+                                              maxiter=maxiter,
+                                              full_output=full_output,
+                                              disp=0, callback=callback,
+                                              alpha=alpha_p,
+                                              trim_mode=trim_mode,
+                                              auto_trim_tol=auto_trim_tol,
+                                              size_trim_tol=size_trim_tol,
+                                              qc_tol=qc_tol, **kwargs)
+            start_params = res_poi.params
             if self.loglike_method.startswith('nb'):
                 start_params = np.append(start_params, 0.1)
 
-        cntfit = super(CountModel, self).fit_regularized(
-                start_params=start_params, method=method, maxiter=maxiter,
-                full_output=full_output, disp=disp, callback=callback,
-                alpha=alpha, trim_mode=trim_mode, auto_trim_tol=auto_trim_tol,
-                size_trim_tol=size_trim_tol, qc_tol=qc_tol, **kwargs)
+        cntfit = DiscreteModel.fit_regularized(self,
+                                               start_params=start_params,
+                                               method=method, maxiter=maxiter,
+                                               full_output=full_output,
+                                               disp=disp, callback=callback,
+                                               alpha=alpha,
+                                               trim_mode=trim_mode,
+                                               auto_trim_tol=auto_trim_tol,
+                                               size_trim_tol=size_trim_tol,
+                                               qc_tol=qc_tol, **kwargs)
 
         res_cls, wrap_cls = self._res_classes["fit_regularized"]
         discretefit = res_cls(self, cntfit)
@@ -2894,6 +2826,13 @@ class NegativeBinomialP(CountModel):
         Log(exposure) is added to the linear prediction with coefficient
         equal to 1.
     """ + base._missing_param_doc}
+
+    @property
+    def _res_classes(self):
+        return {"fit": (NegativeBinomialResults,
+                        NegativeBinomialResultsWrapper),
+                "fit_regularized": (L1NegativeBinomialResults,
+                                    L1NegativeBinomialResultsWrapper)}
 
     def __init__(self, endog, exog, p=2, offset=None,
                  exposure=None, missing='none', **kwargs):
@@ -3079,8 +3018,8 @@ class NegativeBinomialP(CountModel):
                                 digamma(a3) + 1)) / mu)
 
         for i in range(dim):
-            hess_arr[i, :-1] = np.sum(self.exog[:, :].T * self.exog[:, i] * coeff, axis=1)
-
+            hess_arr[i, :-1] = np.sum(self.exog[:, :].T * self.exog[:, i] * coeff,
+                                      axis=1)
 
         hess_arr[-1, :-1] = (self.exog[:, :].T * mu * a1 *
                 ((1 + a4) * (1 - a3 / a2) / a2 -
@@ -3161,16 +3100,17 @@ class NegativeBinomialP(CountModel):
             start_params = np.append(start_params, max(0.05, a))
 
         if callback is None:
-            # work around perfect separation callback #3895
+            # work around perfect separation callback GH#3895
             callback = lambda *x: x
 
-        mlefit = super(NegativeBinomialP, self).fit(start_params=start_params,
+        # TODO: can we skip CountModel and go straight to DiscreteModel?
+        mlefit = CountModel.fit(self, start_params=start_params,
                         maxiter=maxiter, method=method, disp=disp,
                         full_output=full_output, callback=callback,
                         **kwargs)
 
         if use_transparams and method not in ["newton", "ncg"]:
-            self._transparams = False
+            self._transparams = False  # TODO: Not the right place to set this
             mlefit._results.params[-1] = np.exp(mlefit._results.params[-1])
 
         res_class, wrap_cls = self._res_classes["fit"]
@@ -3203,7 +3143,7 @@ class NegativeBinomialP(CountModel):
 
         alpha_p = alpha[:-1] if (self.k_extra and np.size(alpha) > 1) else alpha
 
-        self._transparams = False
+        self._transparams = False  # TODO: Not the right place to set this
         if start_params is None:
             offset = getattr(self, "offset", 0) + getattr(self, "exposure", 0)
             if np.size(offset) == 1 and offset == 0:
@@ -3216,7 +3156,7 @@ class NegativeBinomialP(CountModel):
                 size_trim_tol=size_trim_tol, qc_tol=qc_tol, **kwargs).params
             start_params = np.append(start_params, 0.1)
 
-        cntfit = super(CountModel, self).fit_regularized(
+        cntfit = DiscreteModel.fit_regularized(self,
                     start_params=start_params, method=method, maxiter=maxiter,
                     full_output=full_output, disp=disp, callback=callback,
                     alpha=alpha, trim_mode=trim_mode,
@@ -3228,13 +3168,6 @@ class NegativeBinomialP(CountModel):
         return wrap_cls(discretefit)
 
     fit_regularized.__doc__ = DiscreteModel.fit_regularized.__doc__
-
-    @property
-    def _res_classes(self):
-        return {"fit": (NegativeBinomialResults,
-                        NegativeBinomialResultsWrapper),
-                "fit_regularized": (L1NegativeBinomialResults,
-                                    L1NegativeBinomialResultsWrapper)}
 
     def predict(self, params, exog=None, exposure=None, offset=None,
                 which='mean'):
@@ -3966,6 +3899,16 @@ class MultinomialResults(DiscreteResults):
     __doc__ = _discrete_results_docs % {
         "one_line_description": "A results class for multinomial data",
         "extra_attr": ""}
+
+    def __init__(self, model, mlefit):
+        # Make sure params have the appropriate shape;
+        # TODO: Sould we avoid altering this in-place?
+        mlefit.params = mlefit.params.reshape(model.K, -1, order='F')
+        # TODO: Is the "order='F'" really necessary?
+        super(MultinomialResults, self).__init__(model, mlefit)
+        self.J = model.J
+        self.K = model.K
+        self.nobs = model.nobs
 
     # TODO: Doesn't need to be a method
     def _maybe_convert_ynames_int(self, ynames):

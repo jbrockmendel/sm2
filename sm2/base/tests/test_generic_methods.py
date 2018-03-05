@@ -50,9 +50,9 @@ class CheckGenericMixin(object):
 
         # test params table frame returned by t_test
         table_res = np.column_stack((res.params, res.bse, res.tvalues,
-                                    res.pvalues, res.conf_int()))
+                                     res.pvalues, res.conf_int()))
         table1 = np.column_stack((tt.effect, tt.sd, tt.tvalue, tt.pvalue,
-                                 tt.conf_int()))
+                                  tt.conf_int()))
         table2 = tt.summary_frame().values
         assert_allclose(table2, table_res, rtol=1e-12)
 
@@ -60,12 +60,12 @@ class CheckGenericMixin(object):
         assert hasattr(res, 'use_t')
 
         tt = res.t_test(mat[0])
-        string_confint = lambda alpha: "[%4.3F      %4.3F]" % (
-                                       alpha / 2, 1- alpha / 2)
-        summ = tt.summary()   # smoke test for #1323
+        string_confint = lambda alpha: ("[%4.3F      %4.3F]" %
+                                        (alpha / 2, 1 - alpha / 2))
+        summ = tt.summary()   # smoke test for GH#1323
         assert_allclose(tt.pvalue, res.pvalues[0], rtol=5e-10)
         assert string_confint(0.05) in str(summ)
-        # issue #3116 alpha not used in column headers
+        # issue GH#3116 alpha not used in column headers
         summ = tt.summary(alpha=0.1)
         ss = "[0.05       0.95]"   # different formatting
         assert ss in str(summ)
@@ -76,19 +76,18 @@ class CheckGenericMixin(object):
                 'Conf. Int. Low', 'Conf. Int. Upp.']
         assert_array_equal(summf.columns.values, cols)
 
-
     def test_ftest_pvalues(self):
         res = self.results
         use_t = res.use_t
         k_vars = len(res.params)
         # check default use_t
         pvals = [res.wald_test(np.eye(k_vars)[k], use_f=use_t).pvalue
-                                                   for k in range(k_vars)]
+                 for k in range(k_vars)]
         assert_allclose(pvals, res.pvalues, rtol=5e-10, atol=1e-25)
 
         # sutomatic use_f based on results class use_t
         pvals = [res.wald_test(np.eye(k_vars)[k]).pvalue
-                                                   for k in range(k_vars)]
+                 for k in range(k_vars)]
         assert_allclose(pvals, res.pvalues, rtol=5e-10, atol=1e-25)
 
         # label for pvalues in summary
@@ -104,9 +103,6 @@ class CheckGenericMixin(object):
         if summ2 is not None:
             assert string_use_t in summ2
 
-
-    # TODO The following is not (yet) guaranteed across models
-    #@knownfailureif(True)
     def test_fitted(self):
         # ignore wrapper for isinstance check
         # FIXME: work around GEE has no wrapper
@@ -124,7 +120,6 @@ class CheckGenericMixin(object):
         assert_allclose(fitted, res.predict(), rtol=1e-12)
 
     def test_predict_types(self):
-
         res = self.results
         # squeeze to make 1d for single regressor test case
         p_exog = np.squeeze(np.asarray(res.model.exog[:2]))
@@ -160,18 +155,18 @@ class CheckGenericMixin(object):
             predicted = res.predict(p_exog)
 
             if p_exog.ndim == 1:
-                predicted_pandas = res.predict(pd.Series(p_exog, index=exog_index))
+                predicted_pandas = res.predict(pd.Series(p_exog,
+                                                         index=exog_index))
             else:
-                predicted_pandas = res.predict(pd.DataFrame(p_exog, index=exog_index))
+                predicted_pandas = res.predict(pd.DataFrame(p_exog,
+                                                            index=exog_index))
 
             if predicted.ndim == 1:
                 assert isinstance(predicted_pandas, pd.Series)
                 predicted_expected = pd.Series(predicted, index=exog_index)
                 tm.assert_series_equal(predicted_expected, predicted_pandas)
-
             else:
                 assert isinstance(predicted_pandas, pd.DataFrame)
-
                 predicted_expected = pd.DataFrame(predicted, index=exog_index)
                 assert predicted_expected.equals(predicted_pandas)
 
@@ -182,7 +177,7 @@ class CheckGenericMixin(object):
 @pytest.mark.not_vetted
 class TestGenericOLS(CheckGenericMixin):
     def setup(self):
-        #fit for each test, because results will be changed by test
+        # fit for each test, because results will be changed by test
         x = self.exog
         np.random.seed(987689)
         y = x.sum(1) + np.random.randn(x.shape[0])
@@ -217,9 +212,11 @@ class TestGenericPoisson(CheckGenericMixin):
         x = self.exog
         np.random.seed(987689)
         y_count = np.random.poisson(np.exp(x.sum(1) - x.mean()))
-        model = sm.Poisson(y_count, x)  #, exposure=np.ones(nobs), offset=np.zeros(nobs)) #bug with default
+        model = sm.Poisson(y_count, x)
+        # , exposure=np.ones(nobs), offset=np.zeros(nobs)) # bug with default
         # use start_params to converge faster
-        start_params = np.array([0.75334818, 0.99425553, 1.00494724, 1.00247112])
+        start_params = np.array([0.75334818, 0.99425553,
+                                 1.00494724, 1.00247112])
         self.results = model.fit(start_params=start_params, method='bfgs',
                                  disp=0)
 
@@ -235,10 +232,10 @@ class TestGenericNegativeBinomial(CheckGenericMixin):
         data = sm.datasets.randhie.load()
         exog = sm.add_constant(data.exog, prepend=False)
         mod = sm.NegativeBinomial(data.endog, data.exog)
-        start_params = np.array([-0.0565406 , -0.21213599,  0.08783076,
-                                 -0.02991835,  0.22901974,  0.0621026,
-                                  0.06799283,  0.08406688,  0.18530969,
-                                  1.36645452])
+        start_params = np.array([-0.0565406, -0.21213599, 0.08783076,
+                                 -0.02991835, 0.22901974, 0.0621026,
+                                 0.06799283, 0.08406688, 0.18530969,
+                                 1.36645452])
         self.results = mod.fit(start_params=start_params, disp=0)
 
 
@@ -250,10 +247,13 @@ class TestGenericLogit(CheckGenericMixin):
         nobs = x.shape[0]
         np.random.seed(987689)
         y_bin = (np.random.rand(nobs) < 1.0 / (1 + np.exp(x.sum(1) - x.mean()))).astype(int)
-        model = sm.Logit(y_bin, x)  #, exposure=np.ones(nobs), offset=np.zeros(nobs)) #bug with default
+        model = sm.Logit(y_bin, x)
+        # , exposure=np.ones(nobs), offset=np.zeros(nobs)) # bug with default
         # use start_params to converge faster
-        start_params = np.array([-0.73403806, -1.00901514, -0.97754543, -0.95648212])
-        self.results = model.fit(start_params=start_params, method='bfgs', disp=0)
+        start_params = np.array([-0.73403806, -1.00901514,
+                                 -0.97754543, -0.95648212])
+        self.results = model.fit(start_params=start_params,
+                                 method='bfgs', disp=0)
 
 
 @pytest.mark.not_vetted
@@ -293,7 +293,7 @@ class TestGenericGEEPoisson(CheckGenericMixin):
         vi = sm.cov_struct.Independence()
         family = sm.families.Poisson()
         self.results = sm.GEE(y_count, self.exog, groups, family=family,
-                                cov_struct=vi).fit(start_params=start_params)
+                              cov_struct=vi).fit(start_params=start_params)
 
 
 @pytest.mark.not_vetted
@@ -302,18 +302,17 @@ class TestGenericGEEPoissonNaive(CheckGenericMixin):
         # fit for each test, because results will be changed by test
         x = self.exog
         np.random.seed(987689)
-        #y_count = np.random.poisson(np.exp(x.sum(1) - x.mean()))
         y_count = np.random.poisson(np.exp(x.sum(1) - x.sum(1).mean(0)))
         groups = np.random.randint(0, 4, size=x.shape[0])
         # use start_params to speed up test, difficult convergence not tested
         start_params = np.array([0., 1., 1., 1.])
-        
+
         raise pytest.skip("cov_struct not implemented")
         vi = sm.cov_struct.Independence()
         family = sm.families.Poisson()
         self.results = sm.GEE(y_count, self.exog, groups, family=family,
-                                cov_struct=vi).fit(start_params=start_params,
-                                                   cov_type='naive')
+                              cov_struct=vi).fit(start_params=start_params,
+                                                 cov_type='naive')
 
 
 @pytest.mark.not_vetted
@@ -322,12 +321,11 @@ class TestGenericGEEPoissonBC(CheckGenericMixin):
         # fit for each test, because results will be changed by test
         x = self.exog
         np.random.seed(987689)
-        #y_count = np.random.poisson(np.exp(x.sum(1) - x.mean()))
         y_count = np.random.poisson(np.exp(x.sum(1) - x.sum(1).mean(0)))
         groups = np.random.randint(0, 4, size=x.shape[0])
         # use start_params to speed up test, difficult convergence not tested
         start_params = np.array([0., 1., 1., 1.])
-        # params_est = np.array([-0.0063238 ,  0.99463752,  1.02790201,  0.98080081])
+        # params_est = np.array([-0.0063238 , 0.99463752, 1.02790201, 0.98080081])
 
         raise pytest.skip("cov_struct not implemented")
         vi = sm.cov_struct.Independence()
@@ -438,8 +436,8 @@ class CheckAnovaMixin(object):
         res = self.res
         wa = res.wald_test_terms(skip_single=True)
         eye = np.eye(len(res.params))
-        c_w = eye[[2,3]]
-        c_dw = eye[[4,5]]
+        c_w = eye[[2, 3]]
+        c_dw = eye[[4, 5]]
 
         compare_waldres(res, wa, [c_w, c_dw])
 
@@ -523,7 +521,6 @@ class TestWaldAnovaNegBin1(CheckAnovaMixin):
         mod = sm.NegativeBinomial.from_formula(formula, cls.data,
                                                loglike_method='nb1')
         cls.res = mod.fit(cov_type='HC0')
-
 
 
 def compare_waldres(res, wa, constrasts):

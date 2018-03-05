@@ -1,4 +1,3 @@
-from numpy.testing import assert_
 from sm2.base.optimizer import (_fit_newton, _fit_nm,
                                 _fit_bfgs, _fit_cg,
                                 _fit_ncg, _fit_powell,
@@ -25,7 +24,7 @@ def dummy_func(x):
 
 
 def dummy_score(x):
-    return 2.*x
+    return 2. * x
 
 
 def dummy_hess(x):
@@ -51,13 +50,13 @@ def test_full_output_false():
         else:
             xopt, retvals = func(dummy_func, dummy_score, [1], (), {},
                 full_output=False, disp=0)
-        assert_(retvals is None)
+        assert retvals is None
         if method == "powell":
-            #NOTE: I think I reported this? Might be version/optimize API
+            # NOTE: I think I reported this? Might be version/optimize API
             # dependent
-            assert_(xopt.shape == () and xopt.size == 1)
+            assert xopt.shape == () and xopt.size == 1
         else:
-            assert_(len(xopt) == 1)
+            assert len(xopt) == 1
 
 @pytest.mark.not_vetted
 def test_full_output():
@@ -71,14 +70,13 @@ def test_full_output():
             xopt, retvals = func(dummy_func, dummy_score, [1], (), {},
                                  full_output=True, disp=0)
 
-        assert_(retvals is not None)
-        assert_('converged' in retvals)
+        assert retvals is not None
+        assert 'converged' in retvals
 
         if method == "powell":
             # NOTE: I think I reported this? Might be version/optimize API
             # dependent
-            assert_(xopt.shape == () and xopt.size == 1)
+            assert xopt.shape == () and xopt.size == 1
         else:
-            assert_(len(xopt) == 1)
-
+            assert len(xopt) == 1
 '''
