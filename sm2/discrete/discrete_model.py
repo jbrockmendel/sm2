@@ -310,7 +310,7 @@ class DiscreteModel(base.LikelihoodModel):
         Extra parameters are not penalized if alpha is given as a scalar.
         An example is the shape parameter in NegativeBinomial `nb1` and `nb2`.
 
-        Optional arguments for the solvers (available in Results.mle_settings)::
+        Optional arguments for the solvers (available in Results.mle_settings):
 
             'l1'
                 acc : float (default 1e-6)
@@ -449,7 +449,7 @@ class DiscreteModel(base.LikelihoodModel):
 
 
 class FitBase(DiscreteModel):
-    """Mixin to wrap DiscreteModel.fit"""
+    """Mixin to wrap DiscreteModel.fit and fit_regularized"""
 
     def fit(self, start_params=None, method='newton', maxiter=35,
             full_output=1, disp=1, callback=None, **kwargs):
@@ -464,10 +464,6 @@ class FitBase(DiscreteModel):
         discretefit = res_cls(self, bnryfit)
         return wrap_cls(discretefit)
     fit.__doc__ = DiscreteModel.fit.__doc__
-
-
-class FitRegBase(DiscreteModel):
-    """Mixin to wrap DiscreteModel.fit_regularized"""
 
     def fit_regularized(self, start_params=None, method='l1',
                         maxiter='defined_by_method', full_output=1, disp=1,
@@ -499,7 +495,7 @@ class FitRegBase(DiscreteModel):
     fit_regularized.__doc__ = DiscreteModel.fit_regularized.__doc__
 
 
-class BinaryModel(FitRegBase):  # TODO: also inherit FitBase?
+class BinaryModel(FitBase):
     @property
     def _res_classes(self):
         return {"fit": (BinaryResults, BinaryResultsWrapper),
@@ -588,7 +584,7 @@ class BinaryModel(FitRegBase):  # TODO: also inherit FitBase?
         return margeff
 
 
-class MultinomialModel(FitBase, BinaryModel):
+class MultinomialModel(BinaryModel):
     _check_perfect_pred = None  # placeholder until implemented
 
     @property
@@ -774,7 +770,7 @@ class MultinomialModel(FitBase, BinaryModel):
         return margeff.reshape(len(exog), -1, order='F')
 
 
-class CountModel(FitRegBase, FitBase):
+class CountModel(FitBase):
     @property
     def _res_classes(self):
         return {"fit": (CountResults, CountResultsWrapper),
@@ -1458,11 +1454,16 @@ class GeneralizedPoisson(CountModel):
             if np.size(offset) == 1 and offset == 0:
                 offset = None
             mod_poi = Poisson(self.endog, self.exog, offset=offset)
-            start_params = mod_poi.fit_regularized(
-                start_params=start_params, method=method, maxiter=maxiter,
-                full_output=full_output, disp=0, callback=callback,
-                alpha=alpha_p, trim_mode=trim_mode, auto_trim_tol=auto_trim_tol,
-                size_trim_tol=size_trim_tol, qc_tol=qc_tol, **kwargs).params
+            res_poi = mod_poi.fit_regularized(start_params=start_params,
+                                              method=method, maxiter=maxiter,
+                                              full_output=full_output, disp=0,
+                                              callback=callback,
+                                              alpha=alpha_p,
+                                              trim_mode=trim_mode,
+                                              auto_trim_tol=auto_trim_tol,
+                                              size_trim_tol=size_trim_tol,
+                                              qc_tol=qc_tol, **kwargs)
+            start_params = res_poi.params
             start_params = np.append(start_params, 0.1)
 
         cntfit = DiscreteModel.fit_regularized(self,
@@ -1649,7 +1650,7 @@ class GeneralizedPoisson(CountModel):
             raise ValueError('keyword "which" not recognized')
 
 
-class Logit(FitBase, BinaryModel):
+class Logit(BinaryModel):
     __doc__ = """
     Binary choice logit model
 
@@ -1845,7 +1846,7 @@ class Logit(FitBase, BinaryModel):
         return -np.dot(L * (1 - L) * X.T, X)
 
 
-class Probit(FitBase, BinaryModel):
+class Probit(BinaryModel):
     __doc__ = """
     Binary choice Probit model
 
@@ -2487,7 +2488,8 @@ class NegativeBinomial(CountModel):
         y = self.endog[:, None]
         mu = self.predict(params)[:, None]
         a1 = 1 / alpha * mu**Q
-        if Q: # nb1
+        if Q:
+            # nb1
             dparams = exog * mu / alpha * (np.log(1 / (alpha + 1)) +
                                            special.digamma(y + mu / alpha) -
                                            special.digamma(mu / alpha))
@@ -2499,13 +2501,14 @@ class NegativeBinomial(CountModel):
                              special.digamma(mu / alpha)))/
                        (alpha**2 * (alpha + 1))).sum()
 
-        else: # nb2
+        else:
+            # nb2
             dparams = exog * a1 * (y - mu) / (mu + a1)
             da1 = -alpha**-2
             dalpha = (special.digamma(a1 + y) - special.digamma(a1) + np.log(a1)
                         - np.log(a1 + mu) - (a1 + y) / (a1 + mu) + 1).sum() * da1
 
-        #multiply above by constant outside sum to reduce rounding error
+        # multiply above by constant outside sum to reduce rounding error
         if self._transparams:
             return np.r_[dparams.sum(0), dalpha * alpha]
         else:
@@ -2528,7 +2531,7 @@ class NegativeBinomial(CountModel):
                 if j > i:
                     continue
                 hess_arr[i, j] = np.sum(-exog[:, i, None] * exog[:, j, None] *
-                                       const_arr, axis=0)
+                                        const_arr, axis=0)
         tri_idx = np.triu_indices(dim, k=1)
         hess_arr[tri_idx] = hess_arr.T[tri_idx]
         return hess_arr
@@ -2623,7 +2626,7 @@ class NegativeBinomial(CountModel):
                 if j > i:
                     continue
                 hess_arr[i, j] = np.sum(-exog[:, i, None] * exog[:, j, None] *
-                                       const_arr, axis=0)
+                                        const_arr, axis=0)
         tri_idx = np.triu_indices(dim, k=1)
         hess_arr[tri_idx] = hess_arr.T[tri_idx]
 
@@ -2744,7 +2747,7 @@ class NegativeBinomial(CountModel):
                         callback=None, alpha=0, trim_mode='auto',
                         auto_trim_tol=0.01, size_trim_tol=1e-4,
                         qc_tol=0.03, **kwargs):
-        
+
         if method not in ['l1', 'l1_cvxopt_cp']:
             # TODO: fix upstream incorrectly raises Exception
             # (and does it at the very _end_ of the method)
@@ -2769,19 +2772,30 @@ class NegativeBinomial(CountModel):
             if np.size(offset) == 1 and offset == 0:
                 offset = None
             mod_poi = Poisson(self.endog, self.exog, offset=offset)
-            start_params = mod_poi.fit_regularized(
-                start_params=start_params, method=method, maxiter=maxiter,
-                full_output=full_output, disp=0, callback=callback,
-                alpha=alpha_p, trim_mode=trim_mode, auto_trim_tol=auto_trim_tol,
-                size_trim_tol=size_trim_tol, qc_tol=qc_tol, **kwargs).params
+            res_poi = mod_poi.fit_regularized(start_params=start_params,
+                                              method=method,
+                                              maxiter=maxiter,
+                                              full_output=full_output,
+                                              disp=0, callback=callback,
+                                              alpha=alpha_p,
+                                              trim_mode=trim_mode,
+                                              auto_trim_tol=auto_trim_tol,
+                                              size_trim_tol=size_trim_tol,
+                                              qc_tol=qc_tol, **kwargs)
+            start_params = res_poi.params
             if self.loglike_method.startswith('nb'):
                 start_params = np.append(start_params, 0.1)
 
         cntfit = DiscreteModel.fit_regularized(self,
-                start_params=start_params, method=method, maxiter=maxiter,
-                full_output=full_output, disp=disp, callback=callback,
-                alpha=alpha, trim_mode=trim_mode, auto_trim_tol=auto_trim_tol,
-                size_trim_tol=size_trim_tol, qc_tol=qc_tol, **kwargs)
+                                               start_params=start_params,
+                                               method=method, maxiter=maxiter,
+                                               full_output=full_output,
+                                               disp=disp, callback=callback,
+                                               alpha=alpha,
+                                               trim_mode=trim_mode,
+                                               auto_trim_tol=auto_trim_tol,
+                                               size_trim_tol=size_trim_tol,
+                                               qc_tol=qc_tol, **kwargs)
 
         res_cls, wrap_cls = self._res_classes["fit_regularized"]
         discretefit = res_cls(self, cntfit)
@@ -3004,8 +3018,8 @@ class NegativeBinomialP(CountModel):
                                 digamma(a3) + 1)) / mu)
 
         for i in range(dim):
-            hess_arr[i, :-1] = np.sum(self.exog[:, :].T * self.exog[:, i] * coeff, axis=1)
-
+            hess_arr[i, :-1] = np.sum(self.exog[:, :].T * self.exog[:, i] * coeff,
+                                      axis=1)
 
         hess_arr[-1, :-1] = (self.exog[:, :].T * mu * a1 *
                 ((1 + a4) * (1 - a3 / a2) / a2 -
