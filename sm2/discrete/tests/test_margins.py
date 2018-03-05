@@ -4,7 +4,7 @@ Created on Thu Aug  3 21:08:49 2017
 
 Author: Josef Perktold
 """
-
+import pytest
 import numpy as np
 from numpy.testing import assert_allclose
 
@@ -22,6 +22,7 @@ endog = cpunish_data.endog - 1  # avoid zero-truncation
 exog /= np.round(exog.max(0), 3)
 
 
+@pytest.mark.not_vetted
 class CheckMarginMixin(object):
     rtol_fac = 1
 
@@ -43,6 +44,7 @@ class CheckMarginMixin(object):
                         rtol=1e-6 * rf)
 
 
+@pytest.mark.not_vetted
 class TestPoissonMargin(CheckMarginMixin):
 
     @classmethod
@@ -62,6 +64,7 @@ class TestPoissonMargin(CheckMarginMixin):
         cls.res1 = res_stata.results_poisson_margins_cont
 
 
+@pytest.mark.not_vetted
 class TestPoissonMarginDummy(CheckMarginMixin):
 
     @classmethod
@@ -79,6 +82,7 @@ class TestPoissonMarginDummy(CheckMarginMixin):
         cls.res1 = res_stata.results_poisson_margins_dummy
 
 
+@pytest.mark.not_vetted
 class TestNegBinMargin(CheckMarginMixin):
 
     @classmethod
@@ -98,6 +102,7 @@ class TestNegBinMargin(CheckMarginMixin):
         # negbin has lower agreement with Stata in this case
 
 
+@pytest.mark.not_vetted
 class TestNegBinMarginDummy(CheckMarginMixin):
 
     @classmethod
@@ -116,6 +121,7 @@ class TestNegBinMarginDummy(CheckMarginMixin):
         cls.rtol_fac = 5e1
 
 
+@pytest.mark.not_vetted
 class TestNegBinPMargin(CheckMarginMixin):
     # this is the same as the nb2 version above for NB-P, p=2
 

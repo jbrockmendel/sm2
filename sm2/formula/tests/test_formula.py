@@ -4,6 +4,7 @@ from six import StringIO, iteritems
 import pandas as pd
 import pandas.util.testing as tm
 import numpy.testing as npt
+import pytest
 
 import sm2.api as sm
 from sm2.formula.formulatools import make_hypotheses_matrices
@@ -21,6 +22,7 @@ def assert_equal(left, right):
 longley_formula = 'TOTEMP ~ GNPDEFL + GNP + UNEMP + ARMED + POP + YEAR'
 
 
+@pytest.mark.not_vetted
 class CheckFormulaOLS(object):
 
     @classmethod
@@ -48,6 +50,7 @@ class CheckFormulaOLS(object):
             self.model.fit().summary()
 
 
+@pytest.mark.not_vetted
 class TestFormulaPandas(CheckFormulaOLS):
     @classmethod
     def setup_class(cls):
@@ -56,6 +59,7 @@ class TestFormulaPandas(CheckFormulaOLS):
         super(TestFormulaPandas, cls).setup_class()
 
 
+@pytest.mark.not_vetted
 class TestFormulaDict(CheckFormulaOLS):
     @classmethod
     def setup_class(cls):
@@ -64,6 +68,7 @@ class TestFormulaDict(CheckFormulaOLS):
         super(TestFormulaDict, cls).setup_class()
 
 
+@pytest.mark.not_vetted
 class TestFormulaRecArray(CheckFormulaOLS):
     @classmethod
     def setup_class(cls):
@@ -72,6 +77,7 @@ class TestFormulaRecArray(CheckFormulaOLS):
         super(TestFormulaRecArray, cls).setup_class()
 
 
+@pytest.mark.not_vetted
 def test_tests():
     formula = 'TOTEMP ~ GNPDEFL + GNP + UNEMP + ARMED + POP + YEAR'
     dta = load_pandas().data
@@ -81,9 +87,9 @@ def test_tests():
     R = LC.coefs
     Q = LC.constants
     npt.assert_almost_equal(R, [[0, 1, -1, 0, 0, 0, 0],
-                               [0, 0 , 0, 1, 0, 0, 0],
-                               [0, 0, 0, 0, 0, 0, 1./1829]], 8)
-    npt.assert_array_equal(Q, [[0],[2],[1]])
+                                [0, 0 , 0, 1, 0, 0, 0],
+                                [0, 0, 0, 0, 0, 0, 1. / 1829]], 8)
+    npt.assert_array_equal(Q, [[0], [2], [1]])
 
 
 def test_formula_labels():
@@ -96,6 +102,7 @@ def test_formula_labels():
     assert_equal(model.fittedvalues.index, dta.index)
 
 
+@pytest.mark.not_vetted
 def test_formula_predict():
     from numpy import log
     formula = """TOTEMP ~ log(GNPDEFL) + log(GNP) + UNEMP + ARMED +
@@ -107,6 +114,7 @@ def test_formula_predict():
                             results.predict(data.exog), 8)
 
 
+@pytest.mark.not_vetted
 def test_formula_predict_series():
     data = pd.DataFrame({"y": [1, 2, 3], "x": [1, 2, 3]}, index=[5, 3, 1])
     results = sm.OLS.from_formula('y ~ x', data).fit()

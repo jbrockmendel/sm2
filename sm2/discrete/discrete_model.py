@@ -201,9 +201,9 @@ class DiscreteModel(base.LikelihoodModel):
         and should contain any preprocessing that needs to be done for a model.
         """
         # assumes constant
-        self.df_model = float(np.linalg.matrix_rank(self.exog) - 1)
-        self.df_resid = (float(self.exog.shape[0] -
-                         np.linalg.matrix_rank(self.exog)))
+        rank = np.linalg.matrix_rank(self.exog)
+        self.df_model = float(rank - 1)
+        self.df_resid = float(self.exog.shape[0] - rank)
 
     def cdf(self, X):
         """
@@ -222,8 +222,8 @@ class DiscreteModel(base.LikelihoodModel):
         fittedvalues = self.cdf(np.dot(self.exog, params[:self.exog.shape[1]]))
         if (self.raise_on_perfect_prediction and
                 np.allclose(fittedvalues - endog, 0)):
-            msg = "Perfect separation detected, results not available"
-            raise PerfectSeparationError(msg)
+            raise PerfectSeparationError("Perfect separation detected, "
+                                         "results not available")
 
     def fit(self, start_params=None, method='newton', maxiter=35,
             full_output=1, disp=1, callback=None, **kwargs):
@@ -359,7 +359,7 @@ class DiscreteModel(base.LikelihoodModel):
         try:
             kwargs['alpha'] = alpha
         except TypeError:
-            kwargs = dict(alpha=alpha)
+            kwargs = {'alpha': alpha}  # TODO: raise of kwargs isnt a dict?
         kwargs['alpha_rescaled'] = kwargs['alpha'] / float(self.endog.shape[0])
         kwargs['trim_mode'] = trim_mode
         kwargs['size_trim_tol'] = size_trim_tol
@@ -481,16 +481,20 @@ class BinaryModel(DiscreteModel):
                         callback=None, alpha=0, trim_mode='auto',
                         auto_trim_tol=0.01, size_trim_tol=1e-4, qc_tol=0.03,
                         **kwargs):
+
+        if method not in ['l1', 'l1_cvxopt_cp']:
+            # TODO: upstream raises Exception
+            # (and does it at _end_ of the call)
+            raise ValueError("argument method == %s, which is not handled"
+                             % method)
         bnryfit = super(BinaryModel, self).fit_regularized(
-                start_params=start_params, method=method, maxiter=maxiter,
-                full_output=full_output, disp=disp, callback=callback,
-                alpha=alpha, trim_mode=trim_mode, auto_trim_tol=auto_trim_tol,
-                size_trim_tol=size_trim_tol, qc_tol=qc_tol, **kwargs)
-        if method in ['l1', 'l1_cvxopt_cp']:
-            discretefit = L1BinaryResults(self, bnryfit)
-        else:
-            raise Exception("argument method == %s, which is not handled"
-                            % method)
+                    start_params=start_params, method=method, maxiter=maxiter,
+                    full_output=full_output, disp=disp, callback=callback,
+                    alpha=alpha, trim_mode=trim_mode,
+                    auto_trim_tol=auto_trim_tol, size_trim_tol=size_trim_tol,
+                    qc_tol=qc_tol, **kwargs)
+
+        discretefit = L1BinaryResults(self, bnryfit)
         return L1BinaryResultsWrapper(discretefit)
     fit_regularized.__doc__ = DiscreteModel.fit_regularized.__doc__
 
@@ -528,19 +532,17 @@ class BinaryModel(DiscreteModel):
         if exog is None:
             exog = self.exog
         margeff = np.dot(self.pdf(np.dot(exog, params))[:, None],
-                                                          params[None, :])
+                         params[None, :])
         if 'ex' in transform:
             margeff *= exog
         if 'ey' in transform:
             margeff /= self.predict(params, exog)[:, None]
         if count_idx is not None:
-            from sm2.discrete.discrete_margins import (
-                    _get_count_effects)
+            from sm2.discrete.discrete_margins import _get_count_effects
             margeff = _get_count_effects(margeff, exog, count_idx, transform,
                                          self, params)
         if dummy_idx is not None:
-            from sm2.discrete.discrete_margins import (
-                    _get_dummy_effects)
+            from sm2.discrete.discrete_margins import _get_dummy_effects
             margeff = _get_dummy_effects(margeff, exog, dummy_idx, transform,
                                          self, params)
         return margeff
@@ -747,13 +749,11 @@ class MultinomialModel(BinaryModel):
             margeff /= self.predict(params, exog)[:, None, :]
 
         if count_idx is not None:
-            from sm2.discrete.discrete_margins import (
-                    _get_count_effects)
+            from sm2.discrete.discrete_margins import _get_count_effects
             margeff = _get_count_effects(margeff, exog, count_idx, transform,
                                          self, params)
         if dummy_idx is not None:
-            from sm2.discrete.discrete_margins import (
-                    _get_dummy_effects)
+            from sm2.discrete.discrete_margins import _get_dummy_effects
             margeff = _get_dummy_effects(margeff, exog, dummy_idx, transform,
                                          self, params)
         return margeff.reshape(len(exog), -1, order='F')
@@ -820,7 +820,7 @@ class CountModel(DiscreteModel):
         fitted = np.dot(exog, params[:exog.shape[1]])
         linpred = fitted + exposure + offset
         if not linear:
-            return np.exp(linpred) # not cdf
+            return np.exp(linpred)  # not cdf
         else:
             return linpred
 
@@ -868,13 +868,11 @@ class CountModel(DiscreteModel):
             margeff /= self.predict(params, exog)[:, None]
 
         if count_idx is not None:
-            from sm2.discrete.discrete_margins import (
-                    _get_count_effects)
+            from sm2.discrete.discrete_margins import _get_count_effects
             margeff = _get_count_effects(margeff, exog, count_idx, transform,
                                          self, params)
         if dummy_idx is not None:
-            from sm2.discrete.discrete_margins import (
-                    _get_dummy_effects)
+            from sm2.discrete.discrete_margins import _get_dummy_effects
             margeff = _get_dummy_effects(margeff, exog, dummy_idx, transform,
                                          self, params)
         return margeff
@@ -895,16 +893,19 @@ class CountModel(DiscreteModel):
                         callback=None, alpha=0, trim_mode='auto',
                         auto_trim_tol=0.01, size_trim_tol=1e-4, qc_tol=0.03,
                         **kwargs):
+
+        if method not in ['l1', 'l1_cvxopt_cp']:
+            # TODO: Fix upstream raises Exception
+            # (and does it at the _end_ of the call)
+            raise ValueError("argument method == %s, which is not handled"
+                             % method)
         cntfit = super(CountModel, self).fit_regularized(
                 start_params=start_params, method=method, maxiter=maxiter,
                 full_output=full_output, disp=disp, callback=callback,
                 alpha=alpha, trim_mode=trim_mode, auto_trim_tol=auto_trim_tol,
                 size_trim_tol=size_trim_tol, qc_tol=qc_tol, **kwargs)
-        if method in ['l1', 'l1_cvxopt_cp']:
-            discretefit = L1CountResults(self, cntfit)
-        else:
-            raise Exception("argument method == %s, which is not handled"
-                            % method)
+
+        discretefit = L1CountResults(self, cntfit)
         return L1CountResultsWrapper(discretefit)
     fit_regularized.__doc__ = DiscreteModel.fit_regularized.__doc__
 
@@ -1087,16 +1088,20 @@ class Poisson(CountModel):
                         callback=None, alpha=0, trim_mode='auto',
                         auto_trim_tol=0.01, size_trim_tol=1e-4, qc_tol=0.03,
                         **kwargs):
+        if method not in ['l1', 'l1_cvxopt_cp']:
+            # TODO: fix upstream raises Exception
+            # (and does it at the _end_ of the call)
+            raise ValueError("argument method == %s, which is not handled"
+                             % method)
+
         cntfit = super(CountModel, self).fit_regularized(
-                start_params=start_params, method=method, maxiter=maxiter,
-                full_output=full_output, disp=disp, callback=callback,
-                alpha=alpha, trim_mode=trim_mode, auto_trim_tol=auto_trim_tol,
-                size_trim_tol=size_trim_tol, qc_tol=qc_tol, **kwargs)
-        if method in ['l1', 'l1_cvxopt_cp']:
-            discretefit = L1PoissonResults(self, cntfit)
-        else:
-            raise Exception("argument method == %s, which is not handled"
-                            % method)
+                    start_params=start_params, method=method, maxiter=maxiter,
+                    full_output=full_output, disp=disp, callback=callback,
+                    alpha=alpha, trim_mode=trim_mode,
+                    auto_trim_tol=auto_trim_tol, size_trim_tol=size_trim_tol,
+                    qc_tol=qc_tol, **kwargs)
+        
+        discretefit = L1PoissonResults(self, cntfit)
         return L1PoissonResultsWrapper(discretefit)
 
     fit_regularized.__doc__ = DiscreteModel.fit_regularized.__doc__
@@ -1452,6 +1457,12 @@ class GeneralizedPoisson(CountModel):
                         auto_trim_tol=0.01, size_trim_tol=1e-4,
                         qc_tol=0.03, **kwargs):
 
+        if method not in ['l1', 'l1_cvxopt_cp']:
+            # TODO: Fix upstream raises Exception
+            # (and does it at the _end_ of the method)
+            raise ValueError("argument method == %s, which is not handled"
+                            % method)
+
         if np.size(alpha) == 1 and alpha != 0:
             k_params = self.exog.shape[1] + self.k_extra
             alpha = alpha * np.ones(k_params)
@@ -1472,17 +1483,13 @@ class GeneralizedPoisson(CountModel):
             start_params = np.append(start_params, 0.1)
 
         cntfit = super(CountModel, self).fit_regularized(
-                 start_params=start_params, method=method, maxiter=maxiter,
-                full_output=full_output, disp=disp, callback=callback,
-                alpha=alpha, trim_mode=trim_mode, auto_trim_tol=auto_trim_tol,
-                size_trim_tol=size_trim_tol, qc_tol=qc_tol, **kwargs)
+                    start_params=start_params, method=method,
+                    maxiter=maxiter, full_output=full_output,
+                    disp=disp, callback=callback, alpha=alpha,
+                    trim_mode=trim_mode, auto_trim_tol=auto_trim_tol,
+                    size_trim_tol=size_trim_tol, qc_tol=qc_tol, **kwargs)
 
-        if method in ['l1', 'l1_cvxopt_cp']:
-            discretefit = L1GeneralizedPoissonResults(self, cntfit)
-        else:
-            raise Exception("argument method == %s, which is not handled"
-                            % method)
-
+        discretefit = L1GeneralizedPoissonResults(self, cntfit)
         return L1GeneralizedPoissonResultsWrapper(discretefit)
 
     fit_regularized.__doc__ = DiscreteModel.fit_regularized.__doc__
@@ -1655,7 +1662,7 @@ class GeneralizedPoisson(CountModel):
             return genpoisson_p.pmf(counts, mu, params[-1],
                                     self.parameterization + 1)
         else:
-            raise ValueError('keyword \'which\' not recognized')
+            raise ValueError('keyword "which" not recognized')
 
 
 class Logit(BinaryModel):
@@ -2757,6 +2764,12 @@ class NegativeBinomial(CountModel):
                         callback=None, alpha=0, trim_mode='auto',
                         auto_trim_tol=0.01, size_trim_tol=1e-4,
                         qc_tol=0.03, **kwargs):
+        
+        if method not in ['l1', 'l1_cvxopt_cp']:
+            # TODO: fix upstream incorrectly raises Exception
+            # (and does it at the very _end_ of the method)
+            raise ValueError("argument method == %s, which is not handled"
+                             % method)
 
         if self.loglike_method.startswith('nb') and (np.size(alpha) == 1 and
                                                      alpha != 0):
@@ -2789,12 +2802,8 @@ class NegativeBinomial(CountModel):
                 full_output=full_output, disp=disp, callback=callback,
                 alpha=alpha, trim_mode=trim_mode, auto_trim_tol=auto_trim_tol,
                 size_trim_tol=size_trim_tol, qc_tol=qc_tol, **kwargs)
-        if method in ['l1', 'l1_cvxopt_cp']:
-            discretefit = L1NegativeBinomialResults(self, cntfit)
-        else:
-            raise Exception(
-                    "argument method == %s, which is not handled" % method)
 
+        discretefit = L1NegativeBinomialResults(self, cntfit)
         return L1NegativeBinomialResultsWrapper(discretefit)
 
 
@@ -3119,8 +3128,9 @@ class NegativeBinomialP(CountModel):
                         **kwargs):
 
         if method not in ['l1', 'l1_cvxopt_cp']:
-            raise TypeError("argument method == %s, which is not handled"
-                            % method)
+            # TODO: Fix upstream incorrectly raises TypeError
+            raise ValueError("argument method == %s, which is not handled"
+                             % method)
 
         if np.size(alpha) == 1 and alpha != 0:
             k_params = self.exog.shape[1] + self.k_extra
@@ -3203,12 +3213,12 @@ class NegativeBinomialP(CountModel):
         elif which == 'linear':
             return linpred
         elif which == 'prob':
-            counts = np.atleast_2d(np.arange(0, np.max(self.endog)+1))
+            counts = np.atleast_2d(np.arange(0, np.max(self.endog) + 1))
             mu = self.predict(params, exog, exposure, offset)
             size, prob = self.convert_params(params, mu)
             return stats.nbinom.pmf(counts, size[:, None], prob[:, None])
         else:
-            raise TypeError('keyword \'which\' = %s not recognized' % which)
+            raise TypeError('keyword "which" = %s not recognized' % which)
 
     def convert_params(self, params, mu):
         alpha = params[-1]

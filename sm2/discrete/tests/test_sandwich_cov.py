@@ -500,10 +500,10 @@ class CheckDiscreteGLM(object):
         assert_allclose(res1.params, res2.params, rtol=1e-13)
         # bug TODO res1.scale missing ?  in Gaussian/OLS
         assert_allclose(res1.bse, res2.bse, rtol=1e-13)
-#         if not self.cov_type == 'nonrobust':
-#             assert_allclose(res1.bse * res1.scale, res2.bse, rtol=1e-13)
-#         else:
-#             assert_allclose(res1.bse, res2.bse, rtol=1e-13)
+        # if not self.cov_type == 'nonrobust':
+        #    assert_allclose(res1.bse * res1.scale, res2.bse, rtol=1e-13)
+        # else:
+        #    assert_allclose(res1.bse, res2.bse, rtol=1e-13)
 
 
 @pytest.mark.not_vetted
@@ -533,7 +533,8 @@ class TestGLMProbit(CheckDiscreteGLM):
         raise pytest.skip("GLM not implemented")
         endog_bin = (endog > endog.mean()).astype(int)
 
-        mod1 = GLM(endog_bin, exog, family=families.Gaussian(link=links.CDFLink()))
+        mod1 = GLM(endog_bin, exog,
+                   family=families.Gaussian(link=links.CDFLink()))
         cls.res1 = mod1.fit(cov_type='cluster', cov_kwds=dict(groups=group))
 
         mod1 = smd.Probit(endog_bin, exog)
@@ -675,7 +676,7 @@ class TestGLMGaussHACPanelGroups(CheckDiscreteGLM):
         # time index is just made up to have a test case
         groups = np.repeat(np.arange(5), 7)[:-1]
         mod1 = GLM(endog.copy(), exog.copy(), family=families.Gaussian())
-        kwds = dict(groups=pd.Series(groups),  # check for #3606
+        kwds = dict(groups=pd.Series(groups),  # check for GH#3606
                     maxlags=2,
                     kernel=sw.weights_uniform,
                     use_correction='hac',
@@ -696,7 +697,7 @@ class TestGLMGaussHACGroupsum(CheckDiscreteGLM):
         # time index is just made up to have a test case
         time = np.tile(np.arange(7), 5)[:-1]
         mod1 = GLM(endog, exog, family=families.Gaussian())
-        kwds = dict(time=pd.Series(time),  # check for #3606
+        kwds = dict(time=pd.Series(time),  # check for GH#3606
                     maxlags=2,
                     use_correction='hac',
                     df_correction=False)
