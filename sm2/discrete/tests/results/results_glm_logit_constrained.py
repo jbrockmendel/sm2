@@ -33,7 +33,9 @@ est = dict(k_eq_model=0,
            cmdline="glm grade  gpa tuce psi, family(binomial)",
            cmd="glm",
            predict="glim_p",
-           marginsnotok="stdp Anscombe Cooksd Deviance Hat Likelihood Pearson Response Score Working ADJusted STAndardized STUdentized MODified",
+           marginsnotok="stdp Anscombe Cooksd Deviance Hat Likelihood "
+                        "Pearson Response Score Working "
+                        "ADJusted STAndardized STUdentized MODified",
            marginsok="default",
            hac_lag="30",
            vcetype="OIM",
@@ -69,8 +71,7 @@ params_table = np.array([
     2.2344237073472, .02545520725424, .29217999740245, 4.4651950107149,
     np.nan, 1.9599639845401, 0, -13.021345912635,
     4.931323890811, -2.6405375515688, .00827746189686, -22.686563134726,
-    -3.3561286905433, np.nan, 1.9599639845401, 0
-    ]).reshape(4,9)
+    -3.3561286905433, np.nan, 1.9599639845401, 0]).reshape(4, 9)
 
 params_table_colnames = 'b se z pvalue ll ul df crit eform'.split()
 
@@ -80,8 +81,8 @@ cov = np.array([
     1.5950200254665, -.03692058012179, .42761557297075, -4.5734780841711,
     -.03692058012179, .0200375919221, .01491263753083, -.34625566662867,
     .42761557297075, .01491263753083, 1.1332969526786, -2.3591604492672,
-    -4.5734780841711, -.34625566662867, -2.3591604492672, 24.317955316083
-    ]).reshape(4,4)
+    -4.5734780841711, -.34625566662867, -2.3591604492672,
+    24.317955316083]).reshape(4, 4)
 
 cov_colnames = 'gpa tuce psi _cons'.split()
 
@@ -102,7 +103,7 @@ class Bunch(dict):
         self.__dict__ = self
 
         for i, att in enumerate(['params', 'bse', 'tvalues', 'pvalues']):
-            self[att] = self.params_table[:,i]
+            self[att] = self.params_table[:, i]
 
 
 results_noconstraint = Bunch(
@@ -150,7 +151,9 @@ est = dict(k_eq_model=0,
            cmdline="glm grade  gpa tuce psi, family(binomial) vce(robust)",
            cmd="glm",
            predict="glim_p",
-           marginsnotok="stdp Anscombe Cooksd Deviance Hat Likelihood Pearson Response Score Working ADJusted STAndardized STUdentized MODified",
+           marginsnotok="stdp Anscombe Cooksd Deviance Hat Likelihood "
+                        "Pearson Response Score Working "
+                        "ADJusted STAndardized STUdentized MODified",
            marginsok="default",
            hac_lag="30",
            vcetype="Robust",
@@ -186,7 +189,7 @@ params_table = np.array([
     2.4276016757712, .01519902587997, .45821517741577, 4.2991598307016,
     np.nan, 1.9599639845401, 0, -13.021345912635,
     5.2807513766642, -2.4658130981467, .01367026437574, -23.371428422207,
-    -2.6712634030626, np.nan, 1.9599639845401, 0]).reshape(4,9)
+    -2.6712634030626, np.nan, 1.9599639845401, 0]).reshape(4, 9)
 
 params_table_colnames = 'b se z pvalue ll ul df crit eform'.split()
 
@@ -196,8 +199,8 @@ cov = np.array([
     1.6585006464861, .00630184631279, .20368998146717, -5.7738061195745,
     .00630184631279, .01435422935215, .01997066738212, -.34768562593344,
     .20368998146717, .01997066738212, .96010763867432, -1.5315997267117,
-    -5.7738061195745, -.34768562593344, -1.5315997267117, 27.886335102141
-    ]).reshape(4,4)
+    -5.7738061195745, -.34768562593344, -1.5315997267117,
+    27.886335102141]).reshape(4, 4)
 
 cov_colnames = 'gpa tuce psi _cons'.split()
 
@@ -257,7 +260,9 @@ est = dict(k_eq_model=0,
            cmdline="glm grade  gpa tuce psi, family(binomial) constraints(1)",
            cmd="glm",
            predict="glim_p",
-           marginsnotok="stdp Anscombe Cooksd Deviance Hat Likelihood Pearson Response Score Working ADJusted STAndardized STUdentized MODified",
+           marginsnotok="stdp Anscombe Cooksd Deviance Hat Likelihood "
+                        "Pearson Response Score Working "
+                        "ADJusted STAndardized STUdentized MODified",
            marginsok="default",
            hac_lag="30",
            vcetype="OIM",
@@ -282,7 +287,7 @@ est = dict(k_eq_model=0,
            technique="nr",
            which="max",
            depvar="grade",
-           properties="b V",)
+           properties="b V")
 
 params_table = np.array([
     2.8, np.nan, np.nan, np.nan,
@@ -293,7 +298,7 @@ params_table = np.array([
     2.3548843882081, .01852846934254, .39774155425619, 4.3456718929091,
     np.nan, 1.9599639845401, 0, -12.946549758905,
     3.3404275889275, -3.8757163309928, .00010631147941, -19.493667526167,
-    -6.3994319916434, np.nan, 1.9599639845401, 0]).reshape(4,9)
+    -6.3994319916434, np.nan, 1.9599639845401, 0]).reshape(4, 9)
 
 params_table_colnames = 'b se z pvalue ll ul df crit eform'.split()
 
@@ -363,7 +368,9 @@ est = dict(k_eq_model=0,
            cmdline="glm grade  gpa tuce psi, family(binomial) constraints(2)",
            cmd="glm",
            predict="glim_p",
-           marginsnotok="stdp Anscombe Cooksd Deviance Hat Likelihood Pearson Response Score Working ADJusted STAndardized STUdentized MODified",
+           marginsnotok="stdp Anscombe Cooksd Deviance Hat Likelihood "
+                        "Pearson Response Score Working "
+                        "ADJusted STAndardized STUdentized MODified",
            marginsok="default",
            hac_lag="30",
            vcetype="OIM",
@@ -436,7 +443,9 @@ predict_mu = np.array([
 
 predict_mu_colnames = 'predict_mu'.split()
 
-predict_mu_rownames = 'r1 r2 r3 r4 r5 r6 r7 r8 r9 r10 r11 r12 r13 r14 r15 r16 r17 r18 r19 r20 r21 r22 r23 r24 r25 r26 r27 r28 r29 r30 r31 r32'.split()
+predict_mu_rownames = ('r1 r2 r3 r4 r5 r6 r7 r8 r9 r10 r11 r12 '
+                       'r13 r14 r15 r16 r17 r18 r19 r20 r21 r22 '
+                       'r23 r24 r25 r26 r27 r28 r29 r30 r31 r32'.split())
 
 predict_linpred_std = np.array([
     1.2186852972383, .98250143329647, .71300625338041, 1.7281112031272,
@@ -450,7 +459,10 @@ predict_linpred_std = np.array([
 
 predict_linpred_std_colnames = 'predict_linpred_std'.split()
 
-predict_linpred_std_rownames = 'r1 r2 r3 r4 r5 r6 r7 r8 r9 r10 r11 r12 r13 r14 r15 r16 r17 r18 r19 r20 r21 r22 r23 r24 r25 r26 r27 r28 r29 r30 r31 r32'.split()
+predict_linpred_std_rownames = ('r1 r2 r3 r4 r5 r6 r7 r8 r9 r10 '
+                                'r11 r12 r13 r14 r15 r16 r17 r18 '
+                                'r19 r20 r21 r22 r23 r24 r25 r26 '
+                                'r27 r28 r29 r30 r31 r32'.split())
 
 predict_hat = np.array([
     .03931157544567, .05340381182541, .07287215399916, .06540404284993,
@@ -464,7 +476,9 @@ predict_hat = np.array([
 
 predict_hat_colnames = 'predict_hat'.split()
 
-predict_hat_rownames = 'r1 r2 r3 r4 r5 r6 r7 r8 r9 r10 r11 r12 r13 r14 r15 r16 r17 r18 r19 r20 r21 r22 r23 r24 r25 r26 r27 r28 r29 r30 r31 r32'.split()
+predict_hat_rownames = ('r1 r2 r3 r4 r5 r6 r7 r8 r9 r10 r11 r12 r13 r14 r15 '
+                        'r16 r17 r18 r19 r20 r21 r22 r23 r24 r25 r26 r27 '
+                        'r28 r29 r30 r31 r32'.split())
 
 
 results_constraint2 = Bunch(
@@ -518,10 +532,13 @@ est = dict(k_eq_model=0,
            deviance_s=25.88828200889509,
            dispers=.892699379617072,
            deviance=25.88828200889509,
-           cmdline="glm grade  gpa tuce psi, family(binomial) constraints(2) vce(robust)",
+           cmdline="glm grade  gpa tuce psi, family(binomial) "
+                   "constraints(2) vce(robust)",
            cmd="glm",
            predict="glim_p",
-           marginsnotok="stdp Anscombe Cooksd Deviance Hat Likelihood Pearson Response Score Working ADJusted STAndardized STUdentized MODified",
+           marginsnotok="stdp Anscombe Cooksd Deviance Hat Likelihood "
+                        "Pearson Response Score Working "
+                        "ADJusted STAndardized STUdentized MODified",
            marginsok="default",
            hac_lag="30",
            vcetype="Robust",
@@ -615,7 +632,8 @@ est = dict(N_cds=0,
            cmd="logit",
            estat_cmd="logit_estat",
            predict="logit_p",
-           marginsnotok="stdp DBeta DEviance DX2 DDeviance Hat Number Residuals RStandard SCore",
+           marginsnotok="stdp DBeta DEviance DX2 DDeviance Hat Number "
+                        "Residuals RStandard SCore",
            title="Logistic regression",
            chi2type="Wald",
            opt="moptimize",

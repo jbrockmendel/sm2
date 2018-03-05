@@ -66,7 +66,8 @@ params_table = np.array([
 
 params_table_colnames = 'b se z pvalue ll ul df crit eform'.split()
 
-params_table_rownames = 'lnpyears smokes 1b.agecat 2.agecat 3.agecat 4.agecat 5.agecat _cons'.split()
+params_table_rownames = ('lnpyears smokes 1b.agecat 2.agecat 3.agecat '
+                         '4.agecat 5.agecat _cons'.split())
 
 cov = np.array([
     .40441190871844, -.59566294916097, 0, .1055698685775,
@@ -87,9 +88,11 @@ cov = np.array([
     -2.7206801001387, -5.8333014154113, -8.993394678922,
     36.331985220299]).reshape(8, 8)
 
-cov_colnames = 'lnpyears smokes 1b.agecat 2.agecat 3.agecat 4.agecat 5.agecat _cons'.split()
+cov_colnames = ('lnpyears smokes 1b.agecat 2.agecat 3.agecat '
+                '4.agecat 5.agecat _cons'.split())
 
-cov_rownames = 'lnpyears smokes 1b.agecat 2.agecat 3.agecat 4.agecat 5.agecat _cons'.split()
+cov_rownames = ('lnpyears smokes 1b.agecat 2.agecat 3.agecat '
+                '4.agecat 5.agecat _cons'.split())
 
 
 results_noexposure_noconstraint = Bunch(
@@ -156,7 +159,8 @@ params_table = np.array([
 
 params_table_colnames = 'b se z pvalue ll ul df crit eform'.split()
 
-params_table_rownames = 'smokes 1b.agecat 2.agecat 3.agecat 4.agecat 5.agecat _cons'.split()
+params_table_rownames = ('smokes 1b.agecat 2.agecat 3.agecat '
+                         '4.agecat 5.agecat _cons'.split())
 
 cov = np.array([
     .01152920125677, 0, -.00061561668833, -.00090117889461,
@@ -173,9 +177,11 @@ cov = np.array([
     -.0289198676971, -.02869169455392, -.02871436265941, -.02905000614546,
     .036772595135]).reshape(7, 7)
 
-cov_colnames = 'smokes 1b.agecat 2.agecat 3.agecat 4.agecat 5.agecat _cons'.split()
+cov_colnames = ('smokes 1b.agecat 2.agecat 3.agecat '
+                '4.agecat 5.agecat _cons'.split())
 
-cov_rownames = 'smokes 1b.agecat 2.agecat 3.agecat 4.agecat 5.agecat _cons'.split()
+cov_rownames = ('smokes 1b.agecat 2.agecat 3.agecat '
+                '4.agecat 5.agecat _cons'.split())
 
 
 results_exposure_noconstraint = Bunch(
@@ -242,7 +248,8 @@ params_table = np.array([
 
 params_table_colnames = 'b se z pvalue ll ul df crit eform'.split()
 
-params_table_rownames = 'lnpyears smokes 1b.agecat 2.agecat 3.agecat 4.agecat 5.agecat _cons'.split()
+params_table_rownames = ('lnpyears smokes 1b.agecat 2.agecat '
+                         '3.agecat 4.agecat 5.agecat _cons'.split())
 
 cov = np.array([
     .0171797439346, -.02561346650005, 0, .00445310785396,
@@ -263,9 +270,11 @@ cov = np.array([
     -.14290240509701, -.32621483141938, -.32621483141938,
     1.5734864548889]).reshape(8, 8)
 
-cov_colnames = 'lnpyears smokes 1b.agecat 2.agecat 3.agecat 4.agecat 5.agecat _cons'.split()
+cov_colnames = ('lnpyears smokes 1b.agecat 2.agecat 3.agecat '
+                '4.agecat 5.agecat _cons'.split())
 
-cov_rownames = 'lnpyears smokes 1b.agecat 2.agecat 3.agecat 4.agecat 5.agecat _cons'.split()
+cov_rownames = ('lnpyears smokes 1b.agecat 2.agecat 3.agecat '
+                '4.agecat 5.agecat _cons'.split())
 
 
 results_noexposure_constraint = Bunch(
@@ -292,7 +301,8 @@ est = dict(rank=5,
            chi2=641.6446542589836,
            p=1.5005477751e-137,
            r2_p=np.nan,
-           cmdline="poisson deaths smokes i.agecat, exposure(pyears) constraints(1)",
+           cmdline="poisson deaths smokes i.agecat, "
+                   "exposure(pyears) constraints(1)",
            cmd="poisson",
            predict="poisso_p",
            estat_cmd="poisson_estat",
@@ -331,7 +341,8 @@ params_table = np.array([
 
 params_table_colnames = 'b se z pvalue ll ul df crit eform'.split()
 
-params_table_rownames = 'smokes 1b.agecat 2.agecat 3.agecat 4.agecat 5.agecat _cons'.split()
+params_table_rownames = ('smokes 1b.agecat 2.agecat 3.agecat '
+                         '4.agecat 5.agecat _cons'.split())
 
 cov = np.array([
     .01151508241338, 0, -.00061947268694, -.00090708285562,
@@ -348,9 +359,11 @@ cov = np.array([
     -.02891793401778, -.02868865719866, -.02881420109427, -.02881420109427,
     .03672953668345]).reshape(7, 7)
 
-cov_colnames = 'smokes 1b.agecat 2.agecat 3.agecat 4.agecat 5.agecat _cons'.split()
+cov_colnames = ('smokes 1b.agecat 2.agecat 3.agecat '
+                '4.agecat 5.agecat _cons'.split())
 
-cov_rownames = 'smokes 1b.agecat 2.agecat 3.agecat 4.agecat 5.agecat _cons'.split()
+cov_rownames = ('smokes 1b.agecat 2.agecat 3.agecat '
+                '4.agecat 5.agecat _cons'.split())
 
 
 results_exposure_constraint = Bunch(
@@ -417,7 +430,8 @@ params_table = np.array([
 
 params_table_colnames = 'b se z pvalue ll ul df crit eform'.split()
 
-params_table_rownames = 'lnpyears smokes 1b.agecat 2.agecat 3.agecat 4.agecat 5.agecat _cons'.split()
+params_table_rownames = ('lnpyears smokes 1b.agecat 2.agecat 3.agecat '
+                         '4.agecat 5.agecat _cons'.split())
 
 cov = np.array([
     .01711639917181, -.02559852137367, 0, .00475026273828,
@@ -438,9 +452,11 @@ cov = np.array([
     -.14512177326509, -.32873181469848, -.32873181469848,
     1.5719033807586]).reshape(8, 8)
 
-cov_colnames = 'lnpyears smokes 1b.agecat 2.agecat 3.agecat 4.agecat 5.agecat _cons'.split()
+cov_colnames = ('lnpyears smokes 1b.agecat 2.agecat 3.agecat '
+                '4.agecat 5.agecat _cons'.split())
 
-cov_rownames = 'lnpyears smokes 1b.agecat 2.agecat 3.agecat 4.agecat 5.agecat _cons'.split()
+cov_rownames = ('lnpyears smokes 1b.agecat 2.agecat 3.agecat '
+                '4.agecat 5.agecat _cons'.split())
 
 
 results_noexposure_constraint2 = Bunch(
@@ -467,7 +483,8 @@ est = dict(rank=5,
            chi2=554.4168921897579,
            p=1.1331093797e-118,
            r2_p=np.nan,
-           cmdline="poisson deaths smokes i.agecat, exposure(pyears) constraints(2)",
+           cmdline="poisson deaths smokes i.agecat, "
+                   "exposure(pyears) constraints(2)",
            cmd="poisson",
            predict="poisso_p",
            estat_cmd="poisson_estat",
@@ -506,7 +523,8 @@ params_table = np.array([
 
 params_table_colnames = 'b se z pvalue ll ul df crit eform'.split()
 
-params_table_rownames = 'smokes 1b.agecat 2.agecat 3.agecat 4.agecat 5.agecat _cons'.split()
+params_table_rownames = ('smokes 1b.agecat 2.agecat 3.agecat '
+                         '4.agecat 5.agecat _cons'.split())
 
 cov = np.array([
     .01151472500521, 0, -.00061274288972, -.00089685568608,
@@ -523,9 +541,11 @@ cov = np.array([
     -.02892164840477, -.0286943943397, -.02885716752919, -.02885716752919,
     .03677884328645]).reshape(7, 7)
 
-cov_colnames = 'smokes 1b.agecat 2.agecat 3.agecat 4.agecat 5.agecat _cons'.split()
+cov_colnames = ('smokes 1b.agecat 2.agecat 3.agecat '
+                '4.agecat 5.agecat _cons'.split())
 
-cov_rownames = 'smokes 1b.agecat 2.agecat 3.agecat 4.agecat 5.agecat _cons'.split()
+cov_rownames = ('smokes 1b.agecat 2.agecat 3.agecat '
+                '4.agecat 5.agecat _cons'.split())
 
 
 results_exposure_constraint2 = Bunch(
@@ -553,7 +573,8 @@ est = dict(rank=5,
            chi2=582.5215805315736,
            p=9.3932644024e-125,
            r2_p=np.nan,
-           cmdline="poisson deaths smokes i.agecat, exposure(pyears) constraints(2) vce(robust)",
+           cmdline="poisson deaths smokes i.agecat, exposure(pyears) "
+                   "constraints(2) vce(robust)",
            cmd="poisson",
            predict="poisso_p",
            estat_cmd="poisson_estat",
@@ -593,7 +614,8 @@ params_table = np.array([
 
 params_table_colnames = 'b se z pvalue ll ul df crit eform'.split()
 
-params_table_rownames = 'smokes 1b.agecat 2.agecat 3.agecat 4.agecat 5.agecat _cons'.split()
+params_table_rownames = ('smokes 1b.agecat 2.agecat 3.agecat '
+                         '4.agecat 5.agecat _cons'.split())
 
 cov = np.array([
     .0137450618599, 0, .00249770233028, .00412347653263,
@@ -610,9 +632,11 @@ cov = np.array([
     -.04609122424924, -.04726310745444, -.04794543190806, -.04794543190806,
     .06149788552196]).reshape(7, 7)
 
-cov_colnames = 'smokes 1b.agecat 2.agecat 3.agecat 4.agecat 5.agecat _cons'.split()
+cov_colnames = ('smokes 1b.agecat 2.agecat 3.agecat '
+                '4.agecat 5.agecat _cons'.split())
 
-cov_rownames = 'smokes 1b.agecat 2.agecat 3.agecat 4.agecat 5.agecat _cons'.split()
+cov_rownames = ('smokes 1b.agecat 2.agecat 3.agecat '
+                '4.agecat 5.agecat _cons'.split())
 
 
 results_exposure_constraint2_robust = Bunch(
