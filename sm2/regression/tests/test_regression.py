@@ -10,8 +10,8 @@ from six import PY3
 import pytest
 import pandas as pd
 import numpy as np
-from numpy.testing import (assert_almost_equal, assert_approx_equal, assert_,
-                           assert_raises, assert_equal, assert_allclose)
+from numpy.testing import (assert_almost_equal, assert_approx_equal,
+                           assert_equal, assert_allclose)
 from scipy.linalg import toeplitz
 from scipy.stats import t as student_t
 from patsy import PatsyError
@@ -577,13 +577,13 @@ class TestGLS_alt_sigma(CheckRegressionResults):
 
     def test_wrong_size_sigma_1d(self):
         n = len(self.endog)
-        assert_raises(ValueError, GLS, self.endog, self.exog,
-                      sigma=np.ones(n-1))
+        with pytest.raises(ValueError):
+            GLS(self.endog, self.exog, sigma=np.ones(n - 1))
 
     def test_wrong_size_sigma_2d(self):
         n = len(self.endog)
-        assert_raises(ValueError, GLS, self.endog, self.exog,
-                      sigma=np.ones((n-1, n-1)))
+        with pytest.raises(ValueError):
+            GLS(self.endog, self.exog, sigma=sigma=np.ones((n - 1, n - 1)))
 
     #def check_confidenceintervals(self, conf1, conf2):
     #    assert_almost_equal(conf1, conf2, DECIMAL_4)
@@ -667,10 +667,9 @@ class TestLM(object):
         LMstat2 = LMstat_OLS[0]
         assert_almost_equal(LMstat, LMstat2, DECIMAL_7)
 
-
     def test_LM_nonnested(self):
-        assert_raises(ValueError, self.res2_restricted.compare_lm_test,
-                      self.res2_full)
+        with pytest.raises(ValueError):
+            self.res2_restricted.compare_lm_test(self.res2_full)
 
 
 @pytest.mark.not_vetted
@@ -776,8 +775,8 @@ class TestWLS_CornerCases(object):
         cls.wls_res = WLS(cls.endog, cls.exog, weights=weights).fit()
 
     def test_wrong_size_weights(self):
-        weights = np.ones((10, 10))
-        assert_raises(ValueError, WLS, self.endog, self.exog, weights=weights)
+        with pytest.raises(ValueError):
+            WLS(self.endog, self.exog, weights=np.ones((10, 10)))
 
 
 @pytest.mark.not_vetted
@@ -1020,7 +1019,8 @@ class TestNxNxOne(TestDataDimensions):
 def test_bad_size():
     np.random.seed(54321)
     data = np.random.uniform(0, 20, 31)
-    assert_raises(ValueError, OLS, data, data[1:])
+    with pytest.raises(ValueError):
+        OLS(data, data[1:])
 
 
 @pytest.mark.not_vetted
@@ -1043,7 +1043,7 @@ def test_706():
     res = OLS(y, x).fit()
     conf_int = res.conf_int()
     np.testing.assert_equal(conf_int.shape, (1, 2))
-    np.testing.assert_(isinstance(conf_int, pd.DataFrame))
+    assert isinstance(conf_int, pd.DataFrame)
 
 
 @pytest.mark.not_vetted
@@ -1211,9 +1211,9 @@ def test_formula_missing_cat():
 
     assert_almost_equal(res.params.values, res2.params.values)
 
-    assert_raises(PatsyError,
-                  OLS.from_formula, 'value ~ invest + capital + firm + year',
-                  data=dta, missing='raise')
+    with pytest.raises(PatsyError):
+        OLS.from_formula('value ~ invest + capital + firm + year',
+                         data=dta, missing='raise')
 
 
 @pytest.mark.not_vetted
@@ -1242,13 +1242,13 @@ def test_fvalue_implicit_constant():
     y = x.sum(1) + np.random.randn(nobs)
 
     res = OLS(y, x).fit(cov_type='HC1')
-    assert_(np.isnan(res.fvalue))
-    assert_(np.isnan(res.f_pvalue))
+    assert np.isnan(res.fvalue)
+    assert np.isnan(res.f_pvalue)
     res.summary()
 
     res = WLS(y, x).fit(cov_type='HC1')
-    assert_(np.isnan(res.fvalue))
-    assert_(np.isnan(res.f_pvalue))
+    assert np.isnan(res.fvalue)
+    assert np.isnan(res.f_pvalue)
     res.summary()
 
 
@@ -1261,13 +1261,13 @@ def test_fvalue_only_constant():
     y = np.random.randn(nobs)
 
     res = OLS(y, x).fit(cov_type='hac', cov_kwds={'maxlags': 3})
-    assert_(np.isnan(res.fvalue))
-    assert_(np.isnan(res.f_pvalue))
+    assert np.isnan(res.fvalue)
+    assert np.isnan(res.f_pvalue)
     res.summary()
 
     res = WLS(y, x).fit(cov_type='HC1')
-    assert_(np.isnan(res.fvalue))
-    assert_(np.isnan(res.f_pvalue))
+    assert np.isnan(res.fvalue)
+    assert np.isnan(res.f_pvalue)
     res.summary()
 
 

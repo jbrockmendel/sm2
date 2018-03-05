@@ -490,7 +490,8 @@ class TestProbitCG(CheckBinaryResults):
         res1_st = Probit(data.endog, exog_st).fit(method="cg", disp=0,
                                                   maxiter=1000, gtol=1e-08)
         start_params = transf.transform_params(res1_st.params)
-        assert_allclose(start_params, res2.params,
+        assert_allclose(start_params,
+                        res2.params,
                         rtol=1e-5, atol=1e-6)
 
         cls.res1 = Probit(data.endog, data.exog).fit(start_params=start_params,
