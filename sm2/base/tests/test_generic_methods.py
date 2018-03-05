@@ -235,9 +235,9 @@ class TestGenericNegativeBinomial(CheckGenericMixin):
         data = sm.datasets.randhie.load()
         exog = sm.add_constant(data.exog, prepend=False)
         mod = sm.NegativeBinomial(data.endog, data.exog)
-        start_params = np.array([-0.0565406 , -0.21213599,  0.08783076,
-                                 -0.02991835,  0.22901974,  0.0621026,
-                                  0.06799283,  0.08406688,  0.18530969,
+        start_params = np.array([-0.0565406, -0.21213599, 0.08783076,
+                                 -0.02991835, 0.22901974, 0.0621026,
+                                  0.06799283, 0.08406688, 0.18530969,
                                   1.36645452])
         self.results = mod.fit(start_params=start_params, disp=0)
 
@@ -327,7 +327,7 @@ class TestGenericGEEPoissonBC(CheckGenericMixin):
         groups = np.random.randint(0, 4, size=x.shape[0])
         # use start_params to speed up test, difficult convergence not tested
         start_params = np.array([0., 1., 1., 1.])
-        # params_est = np.array([-0.0063238 ,  0.99463752,  1.02790201,  0.98080081])
+        # params_est = np.array([-0.0063238 , 0.99463752, 1.02790201, 0.98080081])
 
         raise pytest.skip("cov_struct not implemented")
         vi = sm.cov_struct.Independence()
@@ -438,8 +438,8 @@ class CheckAnovaMixin(object):
         res = self.res
         wa = res.wald_test_terms(skip_single=True)
         eye = np.eye(len(res.params))
-        c_w = eye[[2,3]]
-        c_dw = eye[[4,5]]
+        c_w = eye[[2, 3]]
+        c_dw = eye[[4, 5]]
 
         compare_waldres(res, wa, [c_w, c_dw])
 

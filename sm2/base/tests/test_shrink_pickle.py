@@ -13,7 +13,7 @@ from six.moves import cPickle
 
 import pytest
 import numpy as np
-from numpy.testing import assert_, assert_equal
+from numpy.testing import assert_
 import pandas as pd
 import pandas.util.testing as tm
 
@@ -69,7 +69,7 @@ class RemoveDataPickle(object):
         if isinstance(pred1, pd.Series) and isinstance(pred2, pd.Series):
             tm.assert_series_equal(pred1, pred2)
         elif isinstance(pred1, pd.DataFrame) and isinstance(pred2, pd.DataFrame):
-            assert_(pred1.equals(pred2))
+            assert pred1.equals(pred2)
         else:
             np.testing.assert_equal(pred2, pred1)
 
@@ -93,7 +93,7 @@ class RemoveDataPickle(object):
             np.testing.assert_equal(pred3, pred1)
 
     def test_remove_data_docstring(self):
-        assert_(self.results.remove_data.__doc__ is not None)
+        assert self.results.remove_data.__doc__ is not None
 
     def test_pickle_wrapper(self):
         fh = BytesIO()  # use cPickle with binary content
@@ -102,7 +102,7 @@ class RemoveDataPickle(object):
         self.results._results.save(fh)
         fh.seek(0, 0)
         res_unpickled = self.results._results.__class__.load(fh)
-        assert_(type(res_unpickled) is type(self.results._results))
+        assert type(res_unpickled) == type(self.results._results)
 
         # test wrapped results load save
         fh.seek(0, 0)
@@ -110,8 +110,7 @@ class RemoveDataPickle(object):
         fh.seek(0, 0)
         res_unpickled = self.results.__class__.load(fh)
         fh.close()
-        # print type(res_unpickled)
-        assert_(type(res_unpickled) is type(self.results))
+        assert type(res_unpickled) == type(self.results)
 
         before = sorted(iterkeys(self.results.__dict__))
         after = sorted(iterkeys(res_unpickled.__dict__))
@@ -248,7 +247,7 @@ class TestPickleFormula2(RemoveDataPickle):
         nobs = 500
         np.random.seed(987689)
         data = np.random.randn(nobs, 4)
-        data[:,0] = data[:, 1:].sum(1)
+        data[:, 0] = data[:, 1:].sum(1)
         cls.data = pd.DataFrame(data, columns=["Y", "A", "B", "C"])
         cls.xf = pd.DataFrame(0.25 * np.ones((2, 3)),
                               columns=cls.data.columns[1:])
@@ -274,7 +273,7 @@ class TestPickleFormula4(TestPickleFormula2):
 
 
 # we need log in module namespace for the following test
-from numpy import log
+from numpy import log  # noqa:F401
 
 @pytest.mark.not_vetted
 class TestPickleFormula5(TestPickleFormula2):
@@ -294,4 +293,3 @@ class TestRemoveDataPicklePoissonRegularized(RemoveDataPickle):
         y_count = np.random.poisson(np.exp(x.sum(1) - x.mean()))
         model = sm.Poisson(y_count, x)
         self.results = model.fit_regularized(method='l1', disp=0, alpha=10)
-
