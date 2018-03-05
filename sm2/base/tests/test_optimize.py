@@ -34,6 +34,7 @@ def dummy_hess(x):
 
 '''
 @pytest.mark.smoke
+@pytest.mark.not_vetted
 def test_full_output_false():
     # newton needs f, score, start, fargs, kwargs
     # bfgs needs f, score start, fargs, kwargs
@@ -58,7 +59,7 @@ def test_full_output_false():
         else:
             assert_(len(xopt) == 1)
 
-
+@pytest.mark.not_vetted
 def test_full_output():
     for method in fit_funcs:
         func = fit_funcs[method]

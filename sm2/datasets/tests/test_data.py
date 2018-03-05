@@ -14,10 +14,11 @@ datasets = []
 for dataset_name in dir(sm2.datasets):
     if not dataset_name.startswith('_') and dataset_name not in exclude:
         datasets.append(dataset_name)
-'''
+
 
 # TODO: Remove nottest when nose support is dropped
 @nose.tools.nottest
+@pytest.mark.not_vetted
 @pytest.mark.parametrize('dataset_name', datasets)
 def test_dataset(dataset_name):
     dataset = importlib.import_module('sm2.datasets.' + dataset_name)
@@ -31,7 +32,7 @@ def test_dataset(dataset_name):
 
 
 # TODO: Remove when nose support is dropped
+@pytest.mark.not_vetted
 def test_all_datasets():
     for dataset in datasets:
         test_dataset(dataset)
-'''

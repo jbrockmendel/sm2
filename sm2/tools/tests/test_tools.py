@@ -5,7 +5,7 @@ from six.moves import range
 
 import numpy as np
 from numpy.testing import (assert_equal, assert_array_equal,
-                           # assert_almost_equal,
+                           assert_almost_equal,
                            assert_string_equal)
 import pandas as pd
 import pandas.util.testing as tm
@@ -126,7 +126,7 @@ class TestAddConstant(object):
         assert_equal(dta.var(0)[-1], 0)
 
 
-'''
+@pytest.mark.not_vetted
 class TestTools(object):
 
     def test_recipr(self):
@@ -172,6 +172,7 @@ class TestTools(object):
             warnings.simplefilter("ignore")
 
 
+@pytest.mark.not_vetted
 def test_estimable():
     rng = np.random.RandomState(20120713)
     N, P = (40, 10)
@@ -204,6 +205,7 @@ def test_estimable():
         isestimable(np.eye(4), X)
 
 
+@pytest.mark.not_vetted
 class TestCategoricalNumerical(object):
     #TODO: use assert_raises to check that bad inputs are taken care of
     @classmethod
@@ -346,6 +348,7 @@ class TestCategoricalNumerical(object):
 #        assert_equal(dum.shape[1], 5)
 
 
+@pytest.mark.not_vetted
 class TestCategoricalString(TestCategoricalNumerical):
 
 # comment out until we have type coercion
@@ -449,6 +452,7 @@ class TestCategoricalString(TestCategoricalNumerical):
         pass
 
 
+@pytest.mark.not_vetted
 def test_chain_dot():
     A = np.arange(1,13).reshape(3,4)
     B = np.arange(3,15).reshape(4,3)
@@ -456,6 +460,7 @@ def test_chain_dot():
     assert_equal(tools.chain_dot(A,B,C), np.array([[1820],[4300],[6780]]))
 
 
+@pytest.mark.not_vetted
 class TestNanDot(object):
     @classmethod
     def setup_class(cls):
@@ -527,6 +532,8 @@ class TestNanDot(object):
         expected_res = np.array([[  7.,  10.], [ 15.,  22.]])
         assert_array_equal(test_res, expected_res)
 
+
+@pytest.mark.not_vetted
 class TestEnsure2d(object):
     @classmethod
     def setup_class(cls):
@@ -545,11 +552,11 @@ class TestEnsure2d(object):
 
     def test_pandas(self):
         results = tools._ensure_2d(self.df, False)
-        assert_frame_equal(results[0], self.df)
+        tm.assert_frame_equal(results[0], self.df)
         assert_array_equal(results[1], self.df.columns)
 
         results = tools._ensure_2d(self.series, False)
-        assert_frame_equal(results[0], self.df.iloc[:,[0]])
+        tm.assert_frame_equal(results[0], self.df.iloc[:,[0]])
         assert_equal(results[1], self.df.columns[0])
 
     def test_numpy(self):
@@ -561,7 +568,6 @@ class TestEnsure2d(object):
         assert_array_equal(results[0], self.ndarray[:,[0]])
         assert_equal(results[1], None)
 
-'''
 
 
 # ------------------------------------------------------------------

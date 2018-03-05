@@ -1,13 +1,14 @@
-from unittest import TestCase
 
+import pytest
 import numpy as np
 from numpy.testing import assert_allclose
 
 from sm2.regression.linear_model import WLS
 from sm2.regression._tools import _MinimalWLS
 
-'''
-class TestMinimalWLS(TestCase):
+
+@pytest.mark.not_vetted
+class TestMinimalWLS(object):
     @classmethod
     def setup_class(cls):
         rs = np.random.RandomState(1234)
@@ -40,4 +41,3 @@ class TestMinimalWLS(TestCase):
                              weights=self.weights2).fit()
         assert_allclose(res.params, minres.params)
         assert_allclose(res.resid, minres.resid)
-'''

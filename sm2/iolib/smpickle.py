@@ -1,4 +1,4 @@
-'''Helper files for pickling'''
+"""Helper files for pickling"""
 
 from six.moves import cPickle
 

@@ -1,21 +1,20 @@
-'''Testing numerical differentiation
+"""Testing numerical differentiation
 
 Still some problems, with API (args tuple versus *args)
 finite difference Hessian has some problems that I didn't look at yet
 
 Should Hessian also work per observation, if fun returns 2d
 
-'''
+"""
 from __future__ import print_function
+
+import pytest
 
 import numpy as np
 from numpy.testing import assert_almost_equal, assert_allclose
 
 from sm2.tools import numdiff
-from sm2.tools.numdiff import approx_fprime, approx_fprime_cs, approx_hess_cs
-from sm2 import datasets
-
-# import sm2.api as sm
+import sm2.api as sm
 
 DEC3 = 3
 DEC4 = 4
@@ -43,8 +42,8 @@ def fun2(beta, y, x):
     return fun1(beta, y, x).sum(0)
 
 
-'''
 #ravel() added because of MNLogit 2d params
+@pytest.mark.not_vetted
 class CheckGradLoglikeMixin(object):
     def test_score(self):
         for test_params in self.params:
@@ -95,11 +94,12 @@ class CheckGradLoglikeMixin(object):
             assert_almost_equal(he, hecs, decimal=4)
 
 
+@pytest.mark.not_vetted
 class TestGradMNLogit(CheckGradLoglikeMixin):
     @classmethod
     def setup_class(cls):
         #from .results.results_discrete import Anes
-        data = datasets.anes96.load()
+        data = sm.datasets.anes96.load()
         exog = data.exog
         exog = sm.add_constant(exog, prepend=False)
         cls.mod = sm.MNLogit(data.endog, exog)
@@ -143,10 +143,12 @@ class TestGradMNLogit(CheckGradLoglikeMixin):
             hecs = numdiff.approx_hess3(test_params, self.mod.loglike, 1e-4)
             assert_almost_equal(he, hecs, decimal=0)
 
+
+@pytest.mark.not_vetted
 class TestGradLogit(CheckGradLoglikeMixin):
     @classmethod
     def setup_class(cls):
-        data = datasets.spector.load()
+        data = sm.datasets.spector.load()
         data.exog = sm.add_constant(data.exog, prepend=False)
         #mod = sm.Probit(data.endog, data.exog)
         cls.mod = sm.Logit(data.endog, data.exog)
@@ -157,6 +159,7 @@ class TestGradLogit(CheckGradLoglikeMixin):
         ##hess = mod.hessian
 
 
+@pytest.mark.not_vetted
 class CheckDerivativeMixin(object):
     @classmethod
     def setup_class(cls):
@@ -246,6 +249,7 @@ class CheckDerivativeMixin(object):
                 assert_almost_equal(hetrue, hecs, decimal=DEC6)
 
 
+@pytest.mark.not_vetted
 class TestDerivativeFun(CheckDerivativeMixin):
     @classmethod
     def setup_class(cls):
@@ -266,6 +270,7 @@ class TestDerivativeFun(CheckDerivativeMixin):
         # why is precision only DEC3
 
 
+@pytest.mark.not_vetted
 class TestDerivativeFun2(CheckDerivativeMixin):
     @classmethod
     def setup_class(cls):
@@ -287,6 +292,7 @@ class TestDerivativeFun2(CheckDerivativeMixin):
         return 2 * np.dot(x.T, x)
 
 
+@pytest.mark.not_vetted
 class TestDerivativeFun1(CheckDerivativeMixin):
     @classmethod
     def setup_class(cls):
@@ -308,14 +314,14 @@ class TestDerivativeFun1(CheckDerivativeMixin):
         return (-x*2*(y-np.dot(x, params))[:, None])  # TODO: check shape
 
 
+@pytest.mark.not_vetted
 def test_dtypes():
     def f(x):
         return 2 * x
 
     desired = np.array([[2, 0],
                         [0, 2]])
-    assert_allclose(approx_fprime(np.array([1, 2]), f), desired)
-    assert_allclose(approx_fprime(np.array([1., 2.]), f), desired)
-    assert_allclose(approx_fprime(np.array([1.+0j, 2.+0j]), f), desired)
-
-'''
+    assert_allclose(numdiff.approx_fprime(np.array([1, 2]), f), desired)
+    assert_allclose(numdiff.approx_fprime(np.array([1., 2.]), f), desired)
+    assert_allclose(numdiff.approx_fprime(np.array([1. + 0j, 2. + 0j]), f),
+                    desired)

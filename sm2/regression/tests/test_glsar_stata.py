@@ -5,7 +5,7 @@ Created on Wed May 30 09:25:24 2012
 
 Author: Josef Perktold
 """
-
+import pytest
 import numpy as np
 from numpy.testing import assert_almost_equal, assert_allclose, assert_equal
 
@@ -13,9 +13,8 @@ from sm2.regression.linear_model import GLSAR
 from sm2.tools.tools import add_constant
 from sm2.datasets import macrodata
 
-'''
+@pytest.mark.not_vetted
 class CheckStataResultsMixin(object):
-
     def test_params_table(self):
         res, results = self.res, self.results
         assert_almost_equal(res.params, results.params, 3)
@@ -24,18 +23,20 @@ class CheckStataResultsMixin(object):
         assert_allclose(res.tvalues, results.tvalues, atol=0, rtol=0.004)
         assert_allclose(res.pvalues, results.pvalues, atol=1e-7, rtol=0.004)
 
-class CheckStataResultsPMixin(CheckStataResultsMixin):
 
+@pytest.mark.not_vetted
+class CheckStataResultsPMixin(CheckStataResultsMixin):
     def test_predicted(self):
         res, results = self.res, self.results
         assert_allclose(res.fittedvalues, results.fittedvalues, rtol=0.002)
         predicted = res.predict(res.model.exog) #should be equal
         assert_allclose(predicted, results.fittedvalues, rtol=0.0016)
-        #not yet
+        # not yet
         #assert_almost_equal(res.fittedvalues_se, results.fittedvalues_se, 4)
 
-class TestGLSARCorc(CheckStataResultsPMixin):
 
+@pytest.mark.not_vetted
+class TestGLSARCorc(CheckStataResultsPMixin):
     @classmethod
     def setup_class(cls):
         d2 = macrodata.load().data
@@ -51,9 +52,7 @@ class TestGLSARCorc(CheckStataResultsPMixin):
 
     def test_rho(self):
         assert_almost_equal(self.res.model.rho, self.results.rho, 3)
-
         assert_almost_equal(self.res.llf, self.results.ll, 4)
-
 
     def test_glsar_arima(self):
         from statsmodels.tsa.arima_model import ARMA
@@ -93,5 +92,3 @@ class TestGLSARCorc(CheckStataResultsPMixin):
         assert_allclose(res0b.params, res1.params, rtol=1e-11)
         assert_allclose(res0.model.rho, rho, rtol=1e-11)
         assert_allclose(res0b.model.rho, rho, rtol=1e-11)
-
-'''

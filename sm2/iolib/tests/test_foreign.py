@@ -22,7 +22,8 @@ from sm2.datasets import macrodata
 
 curdir = os.path.dirname(os.path.abspath(__file__))
 
-'''
+
+@pytest.mark.not_vetted
 def test_genfromdta():
     # Test genfromdta vs. results/macrodta.npy created with genfromtxt.
     # NOTE: Stata handles data very oddly.  Round tripping from csv to dta
@@ -33,6 +34,7 @@ def test_genfromdta():
     assert_array_equal(res1 == res2, True)
 
 
+@pytest.mark.not_vetted
 def test_genfromdta_pandas():
     from pandas.util.testing import assert_frame_equal
     dta = macrodata.load_pandas().data
@@ -43,6 +45,7 @@ def test_genfromdta_pandas():
     assert_frame_equal(res1, dta)
 
 
+@pytest.mark.not_vetted
 def test_stata_writer_structured():
     buf = BytesIO()
     dta = macrodata.load().data
@@ -56,6 +59,7 @@ def test_stata_writer_structured():
     assert_array_equal(dta, dta2)
 
 
+@pytest.mark.not_vetted
 def test_stata_writer_array():
     buf = BytesIO()
     dta = macrodata.load().data
@@ -69,6 +73,7 @@ def test_stata_writer_array():
     assert_array_equal(dta, dta2)
 
 
+@pytest.mark.not_vetted
 def test_missing_roundtrip():
     buf = BytesIO()
     dta = np.array([(np.nan, np.inf, "")],
@@ -87,6 +92,7 @@ def test_missing_roundtrip():
     assert_(np.all([dta[0][i] == -999 for i in range(5)]))
 
 
+@pytest.mark.not_vetted
 def test_stata_writer_pandas():
     buf = BytesIO()
     dta = macrodata.load().data
@@ -113,11 +119,13 @@ def test_stata_writer_pandas():
         tm.assert_frame_equal(dta4, dta5[dta5.columns[1:]])
 
 
+@pytest.mark.not_vetted
 def test_stata_writer_unicode():
     # make sure to test with characters outside the latin-1 encoding
     pass
 
 
+@pytest.mark.not_vetted
 def test_genfromdta_datetime():
     results = [(datetime(2006, 11, 19, 23, 13, 20), 1479596223000,
                 datetime(2010, 1, 20), datetime(2010, 1, 8), datetime(2010, 1, 1),
@@ -141,6 +149,7 @@ def test_genfromdta_datetime():
     assert_array_equal(dta.iloc[1].tolist(), results[1])
 
 
+@pytest.mark.not_vetted
 def test_date_converters():
     ms = [-1479597200000, -1e6, -1e5, -100, 1e5, 1e6, 1479597200000]
     days = [-1e5, -1200, -800, -365, -50, 0, 50, 365, 800, 1200, 1e5]
@@ -172,7 +181,8 @@ def test_date_converters():
                      _stata_elapsed_date_to_datetime(i, "ty"), "ty"), i)
 
 
-@pytest.mark.skipif(pd.__version__ < '0.9')
+@pytest.mark.not_vetted
+@pytest.mark.skipif("pd.__version__ < '0.9'")
 def test_datetime_roundtrip():
     dta = np.array([(1, datetime(2010, 1, 1), 2),
                     (2, datetime(2010, 2, 1), 3),
@@ -192,4 +202,3 @@ def test_datetime_roundtrip():
     buf.seek(0)
     dta2 = genfromdta(buf, pandas=True)
     tm.assert_frame_equal(dta, dta2.drop('index', axis=1))
-'''

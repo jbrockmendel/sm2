@@ -108,7 +108,7 @@ def _get_epsilon(x, s, epsilon, n):
 
 
 def approx_fprime(x, f, epsilon=None, args=(), kwargs=None, centered=False):
-    '''
+    """
     Gradient of function, or Jacobian if function f returns 1d array
 
     Parameters
@@ -139,7 +139,7 @@ def approx_fprime(x, f, epsilon=None, args=(), kwargs=None, centered=False):
     by f (e.g., with a value for each observation), it returns a 3d array
     with the Jacobian of each observation with shape xk x nobs x xk. I.e.,
     the Jacobian of the first observation would be [:, 0, :]
-    '''
+    """
     kwargs = kwargs or {}
     n = len(x)
     # TODO:  add scaled stepsize
@@ -164,7 +164,7 @@ def approx_fprime(x, f, epsilon=None, args=(), kwargs=None, centered=False):
 
 
 def approx_fprime_cs(x, f, epsilon=None, args=(), kwargs=None):
-    '''
+    """
     Calculate gradient or Jacobian with complex step derivative approximation
 
     Parameters
@@ -192,7 +192,7 @@ def approx_fprime_cs(x, f, epsilon=None, args=(), kwargs=None):
     truncation error can be eliminated by choosing epsilon to be very small.
     The complex-step derivative avoids the problem of round-off error with
     small epsilon because there is no subtraction.
-    '''
+    """
     # From Guilherme P. de Freitas, numpy mailing list
     # May 04 2010 thread "Improvement of performance"
     # http://mail.scipy.org/pipermail/numpy-discussion/2010-May/050250.html
@@ -207,7 +207,7 @@ def approx_fprime_cs(x, f, epsilon=None, args=(), kwargs=None):
 
 
 def approx_hess_cs(x, f, epsilon=None, args=(), kwargs=None):
-    '''Calculate Hessian with complex-step derivative approximation
+    """Calculate Hessian with complex-step derivative approximation
 
     Parameters
     ----------
@@ -230,7 +230,7 @@ def approx_hess_cs(x, f, epsilon=None, args=(), kwargs=None):
     of Numerical Differentiation, University of Kent, Canterbury, Kent, U.K.
 
     The stepsize is the same for the complex and the finite difference part.
-    '''
+    """
     # TODO: might want to consider lowering the step for pure derivatives
     kwargs = kwargs or {}
     n = len(x)

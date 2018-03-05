@@ -13,7 +13,7 @@ from numpy.testing import assert_allclose, assert_
 import pytest
 
 # the following are copied from
-# statsmodels.base.tests.test_generic_methods.CheckGenericMixin
+# sm2.base.tests.test_generic_methods.CheckGenericMixin
 # and only adjusted to work as standalone functions
 
 
@@ -101,7 +101,7 @@ def check_predict_types(results):
 
     # ignore wrapper for isinstance check
     from statsmodels.genmod.generalized_linear_model import GLMResults
-    from statsmodels.discrete.discrete_model import DiscreteResults
+    from sm2.discrete.discrete_model import DiscreteResults
 
     # FIXME: work around GEE has no wrapper
     if hasattr(results, '_results'):

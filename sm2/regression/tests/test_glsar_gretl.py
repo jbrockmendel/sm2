@@ -9,6 +9,7 @@ License: BSD-3
 """
 import os
 
+import pytest
 import numpy as np
 from numpy.testing import (assert_almost_equal, assert_equal,
                            assert_approx_equal, assert_array_less)
@@ -21,7 +22,8 @@ import sm2.stats.sandwich_covariance as sw
 
 from statsmodels.stats import diagnostic, outliers_influence
 
-'''
+
+@pytest.mark.not_vetted
 def compare_ftest(contrast_res, other, decimal=(5,4)):
     assert_almost_equal(contrast_res.fvalue, other[0], decimal=decimal[0])
     assert_almost_equal(contrast_res.pvalue, other[1], decimal=decimal[1])
@@ -30,6 +32,7 @@ def compare_ftest(contrast_res, other, decimal=(5,4)):
     assert_equal("f", other[4])
 
 
+@pytest.mark.not_vetted
 class TestGLSARGretl(object):
 
     def test_all(self):
@@ -68,7 +71,7 @@ class TestGLSARGretl(object):
             [ 4.37040,  0.208146, 21.00,  2.93e-052,  3.95993, 4.78086],  # ***
             [-0.579253, 0.268009, -2.161, 0.0319, -1.10777, -0.0507346]])  # **
 
-        #Statistics based on the rho-differenced data:
+        # Statistics based on the rho-differenced data:
 
         result_gretl_g1 = dict(
         endog_mean = ("Mean dependent var",   3.113973),
@@ -90,7 +93,7 @@ class TestGLSARGretl(object):
         #LM-statistic, p-value, df
         arch_4 = [7.30776, 0.120491, 4, "chi2"]
 
-        #multicollinearity
+        # multicollinearity
         vif = [1.002, 1.002]
         cond_1norm = 6862.0664
         determinant = 1.0296049e+009
@@ -150,14 +153,14 @@ class TestGLSARGretl(object):
 
         assert_almost_equal(res.ssr, result_gretl_g1['ssr'][1], decimal=2)
         #assert_almost_equal(res.llf,
-                             result_gretl_g1['llf'][1],
-                             decimal=7)  # not in gretl
+        #                     result_gretl_g1['llf'][1],
+        #                     decimal=7)  # not in gretl
         #assert_almost_equal(res.rsquared,
-                             result_gretl_g1['rsquared'][1],
-                             decimal=7)  # FAIL
+        #                     result_gretl_g1['rsquared'][1],
+        #                     decimal=7)  # FAIL
         #assert_almost_equal(res.rsquared_adj,
-                             result_gretl_g1['rsquared_adj'][1],
-                             decimal=7)  # FAIL
+        #                     result_gretl_g1['rsquared_adj'][1],
+        #                     decimal=7)  # FAIL
         assert_almost_equal(np.sqrt(res.mse_resid),
                             result_gretl_g1['mse_resid_sqrt'][1],
                             decimal=5)
@@ -168,8 +171,8 @@ class TestGLSARGretl(object):
                             result_gretl_g1['f_pvalue'][1],
                             decimal=6)
         #assert_almost_equal(res.durbin_watson,
-                             result_gretl_g1['dw'][1],
-                             decimal=7)  # TODO
+        #                     result_gretl_g1['dw'][1],
+        #                     decimal=7)  # TODO
 
         c = outliers_influence.reset_ramsey(res, degree=2)
         compare_ftest(c, reset_2, decimal=(2,4))
@@ -445,6 +448,7 @@ class TestGLSARGretl(object):
         assert_almost_equal(lev['influence'], infl.influence, decimal=4)
 
 
+@pytest.mark.not_vetted
 def test_GLSARlag():
     # test that results for lag>1 is close to lag=1, and smaller ssr
     d2 = macrodata.load().data
@@ -673,4 +677,4 @@ with p-value = P(Chi-square(2) > 0.709924) = 0.701200
   Disturbance proportion, UD        0.80049
 
 """
-'''
+

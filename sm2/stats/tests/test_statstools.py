@@ -4,13 +4,13 @@ import numpy as np
 from numpy.testing import assert_almost_equal, assert_raises
 import pandas as pd
 from scipy import stats
+import pytest
 
 from sm2.stats.stattools import (omni_normtest, jarque_bera,
                                  durbin_watson, _medcouple_1d, medcouple,
                                  robust_kurtosis, robust_skewness)
 from sm2.stats._adnorm import normal_ad
 
-'''
 
 # a random array, rounded to 4 decimals
 x = np.array([-0.1184, -1.3403, 0.0063, -0.612, -0.3869, -0.2313, -2.8485,
@@ -18,6 +18,7 @@ x = np.array([-0.1184, -1.3403, 0.0063, -0.612, -0.3869, -0.2313, -2.8485,
               -1.4423, 1.2489, 0.9182, -0.2331, -0.6182, 0.183])
 
 
+@pytest.mark.not_vetted
 def test_durbin_watson():
     #benchmark values from R car::durbinWatsonTest(x)
     #library("car")
@@ -47,6 +48,7 @@ def test_durbin_watson():
     assert_almost_equal(durbin_watson(x[1:] + 0.9 * x[:-1]), st_R, 14)
 
 
+@pytest.mark.not_vetted
 def test_omni_normtest():
     # tests against R fBasics
 
@@ -80,6 +82,7 @@ def test_omni_normtest():
     assert_almost_equal(kt, st_pv_R[:, 2], 12)
 
 
+@pytest.mark.not_vetted
 def test_omni_normtest_axis():
     #test axis of omni_normtest
     x = np.random.randn(25, 3)
@@ -90,6 +93,7 @@ def test_omni_normtest_axis():
     assert_almost_equal(nt3, nt1, decimal=13)
 
 
+@pytest.mark.not_vetted
 def test_jarque_bera():
     #tests against R fBasics
     st_pv_R = np.array([1.9662677226861689, 0.3741367669648314])
@@ -109,6 +113,7 @@ def test_jarque_bera():
     assert_almost_equal(jb, st_pv_R, 14)
 
 
+@pytest.mark.not_vetted
 def test_shapiro():
     # tests against R fBasics
     # testing scipy.stats
@@ -133,6 +138,7 @@ def test_shapiro():
     assert_almost_equal(sh, st_pv_R, 5)
 
 
+@pytest.mark.not_vetted
 def test_adnorm():
     # tests against R fBasics
     st_pv = []
@@ -161,12 +167,14 @@ def test_adnorm():
     assert_almost_equal(ad, np.column_stack(st_pv), 11)
 
 
+@pytest.mark.not_vetted
 def test_durbin_watson_pandas():
     x = np.random.randn(50)
     x_series = pd.Series(x)
     assert_almost_equal(durbin_watson(x), durbin_watson(x_series), decimal=13)
 
 
+@pytest.mark.not_vetted
 class TestStattools(object):
     @classmethod
     def setup_class(cls):
@@ -295,10 +303,8 @@ class TestStattools(object):
         alpha, beta = (10.0, 45.0)
         kurtosis = robust_kurtosis(self.kurtosis_x, ab=(alpha,beta),
                                    excess=False)
-        num = np.mean(x[x>np.percentile(x,100.0 - alpha)]) -
-                      np.mean(x[x<np.percentile(x,alpha)])
-        denom = np.mean(x[x>np.percentile(x,100.0 - beta)]) -
-                        np.mean(x[x<np.percentile(x,beta)])
+        num = (np.mean(x[x>np.percentile(x, 100.0 - alpha)]) - np.mean(x[x<np.percentile(x,alpha)]))
+        denom = (np.mean(x[x>np.percentile(x, 100.0 - beta)]) - np.mean(x[x<np.percentile(x,beta)]))
         assert_almost_equal(kurtosis[2], num/denom)
 
     def test_robust_kurtosis_dg(self):
@@ -307,6 +313,5 @@ class TestStattools(object):
         delta, gamma = (10.0, 45.0)
         kurtosis = robust_kurtosis(self.kurtosis_x, dg=(delta,gamma),
                                    excess=False)
-        q = np.percentile(x,[delta, 100.0-delta, gamma, 100.0-gamma])
+        q = np.percentile(x,[delta, 100.0 - delta, gamma, 100.0-gamma])
         assert_almost_equal(kurtosis[3], (q[1] - q[0]) / (q[3] - q[2]))
-'''

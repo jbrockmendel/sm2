@@ -1,3 +1,5 @@
+
+import pytest
 import numpy as np
 import pandas as pd
 import pandas.util.testing as tm
@@ -7,7 +9,7 @@ from sm2.tools.tools import categorical
 from sm2.datasets import grunfeld, anes96
 
 
-'''
+@pytest.mark.not_vetted
 class CheckGrouping(object):
 
     def test_reindex(self):
@@ -146,6 +148,7 @@ class CheckGrouping(object):
                                     expected)
 
 
+@pytest.mark.not_vetted
 class TestMultiIndexGrouping(CheckGrouping):
     @classmethod
     def setup_class(cls):
@@ -158,6 +161,7 @@ class TestMultiIndexGrouping(CheckGrouping):
         cls.expected_counts = [20] * 11
 
 
+@pytest.mark.not_vetted
 class TestIndexGrouping(CheckGrouping):
     @classmethod
     def setup_class(cls):
@@ -170,6 +174,7 @@ class TestIndexGrouping(CheckGrouping):
         cls.expected_counts = [20] * 11
 
 
+@pytest.mark.not_vetted
 def test_init_api():
     # make a multi-index panel
     grun_data = grunfeld.load_pandas().data
@@ -250,4 +255,3 @@ def test_init_api():
     grouping = Grouping(list_groups)
     np.testing.assert_array_equal(grouping.group_names,
                                   ['group0', 'group1', 'group2'])
-'''

@@ -2,11 +2,13 @@ import tempfile
 import os
 
 from six import BytesIO
+import pytest
 from numpy.testing import assert_equal
 
 from sm2.iolib.smpickle import save_pickle, load_pickle
 
-'''
+
+@pytest.mark.not_vetted
 def test_pickle():
     tmpdir = tempfile.mkdtemp(prefix='pickle')
     a = list(range(10))
@@ -29,4 +31,3 @@ def test_pickle():
     c = load_pickle(fh)
     fh.close()
     assert_equal(a,b)
-'''

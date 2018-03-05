@@ -505,7 +505,7 @@ def acf(x, unbiased=False, nlags=40, qstat=False, fft=False, alpha=None,
 
 
 def pacf_yw(x, nlags=40, method='unbiased'):
-    '''Partial autocorrelation estimated with non-recursive yule_walker
+    """Partial autocorrelation estimated with non-recursive yule_walker
 
     Parameters
     ----------
@@ -525,7 +525,7 @@ def pacf_yw(x, nlags=40, method='unbiased'):
     -----
     This solves yule_walker for each desired lag and contains
     currently duplicate calculations.
-    '''
+    """
     pacf = [1.]
     for k in range(1, nlags + 1):
         pacf.append(yule_walker(x, k, method=method)[0][-1])
@@ -534,7 +534,7 @@ def pacf_yw(x, nlags=40, method='unbiased'):
 
 # FIXME: this is incorrect.
 def pacf_ols(x, nlags=40):
-    '''Calculate partial autocorrelations
+    """Calculate partial autocorrelations
 
     Parameters
     ----------
@@ -551,7 +551,7 @@ def pacf_ols(x, nlags=40):
     Notes
     -----
     This solves a separate OLS estimation for each desired lag.
-    '''
+    """
     # TODO: add warnings for Yule-Walker
     # NOTE: demeaning and not using a constant gave incorrect answers?
     # JP: demeaning should have a better estimate of the constant
@@ -634,7 +634,7 @@ def pacf(x, nlags=40, method='ywunbiased', alpha=None):
 
 
 def ccovf(x, y, unbiased=True, demean=True):
-    '''crosscovariance for 1D
+    """crosscovariance for 1D
 
     Parameters
     ----------
@@ -652,7 +652,7 @@ def ccovf(x, y, unbiased=True, demean=True):
     -----
     This uses np.correlate which does full convolution. For very long time
     series it is recommended to use fft convolution instead.
-    '''
+    """
     n = len(x)
     if demean:
         xo = x - x.mean()
@@ -669,7 +669,7 @@ def ccovf(x, y, unbiased=True, demean=True):
 
 
 def ccf(x, y, unbiased=True):
-    '''cross-correlation function for 1d
+    """cross-correlation function for 1d
 
     Parameters
     ----------
@@ -690,7 +690,7 @@ def ccf(x, y, unbiased=True):
 
     If unbiased is true, the denominator for the autocovariance is adjusted
     but the autocorrelation is not an unbiased estimtor.
-    '''
+    """
     cvf = ccovf(x, y, unbiased=unbiased, demean=True)
     return cvf / (np.std(x) * np.std(y))
 
@@ -726,7 +726,7 @@ def periodogram(X):
 # copied from nitime and statsmodels\sandbox\tsa\examples\try_ld_nitime.py
 # TODO: check what to return, for testing and trying out returns everything
 def levinson_durbin(s, nlags=10, isacov=False):
-    '''Levinson-Durbin recursion for autoregressive processes
+    """Levinson-Durbin recursion for autoregressive processes
 
     Parameters
     ----------
@@ -762,7 +762,7 @@ def levinson_durbin(s, nlags=10, isacov=False):
     If this function is called with the time series (isacov=False), then the
     sample autocovariance function is calculated with the default options
     (biased, no fft).
-    '''
+    """
     s = np.asarray(s)
     order = nlags  # rename compared to nitime
     # from nitime

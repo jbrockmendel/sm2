@@ -3,6 +3,7 @@ import warnings
 
 from six.moves import range, reduce
 import numpy as np
+import pandas as pd
 from scipy import stats
 
 from sm2.tools.data import _is_using_pandas
@@ -15,7 +16,8 @@ from sm2.base.data import handle_data
 import sm2.base.wrapper as wrap
 from sm2.base.optimizer import Optimizer
 
-from statsmodels.stats.contrast import ContrastResults, WaldTestResults
+from sm2.stats.contrast import ContrastResults, WaldTestResults
+
 from statsmodels.formula import handle_formula_data
 
 
@@ -792,8 +794,6 @@ class Results(object):
         prediction : ndarray, pandas.Series or pandas.DataFrame
             See self.model.predict
         """
-        import pandas as pd
-
         exog_index = exog.index if _is_using_pandas(exog, None) else None
 
         if transform and hasattr(self.model, 'formula') and exog is not None:
@@ -1236,10 +1236,9 @@ class LikelihoodModelResults(Results):
 
         Alternatively, you can specify the hypothesis tests using a string
 
-        >>> from statsmodels.formula.api import ols
         >>> dta = sm.datasets.longley.load_pandas().data
         >>> formula = 'TOTEMP ~ GNPDEFL + GNP + UNEMP + ARMED + POP + YEAR'
-        >>> results = ols(formula, dta).fit()
+        >>> results = OLS.from_formula(formula, dta).fit()
         >>> hypotheses = 'GNPDEFL = GNP, UNEMP = 2, YEAR/1829 = 1'
         >>> t_test = results.t_test(hypotheses)
         >>> print(t_test)
@@ -1374,10 +1373,9 @@ class LikelihoodModelResults(Results):
         Alternatively, you can specify the hypothesis tests using a string
 
         >>> from sm2.datasets import longley
-        >>> from statsmodels.formula.api import ols
         >>> dta = longley.load_pandas().data
         >>> formula = 'TOTEMP ~ GNPDEFL + GNP + UNEMP + ARMED + POP + YEAR'
-        >>> results = ols(formula, dta).fit()
+        >>> results = OLSstatsmodels.from_formula(formula, dta).fit()
         >>> hypotheses = '(GNPDEFL = GNP), (UNEMP = 2), (YEAR/1829 = 1)'
         >>> f_test = results.f_test(hypotheses)
         >>> print(f_test)
@@ -1385,7 +1383,7 @@ class LikelihoodModelResults(Results):
 
         See Also
         --------
-        statsmodels.stats.contrast.ContrastResults
+        sm2.stats.contrast.ContrastResults
         wald_test
         t_test
         patsy.DesignInfo.linear_constraint
@@ -1442,7 +1440,7 @@ class LikelihoodModelResults(Results):
 
         See also
         --------
-        statsmodels.stats.contrast.ContrastResults
+        sm2.stats.contrast.ContrastResults
         f_test
         t_test
         patsy.DesignInfo.linear_constraint
@@ -1540,7 +1538,7 @@ class LikelihoodModelResults(Results):
         --------
         >>> res_ols = ols("np.log(Days+1) ~ C(Duration, Sum)*C(Weight, Sum)", data).fit()
         >>> res_ols.wald_test_terms()
-        <class 'statsmodels.stats.contrast.WaldTestResults'>
+        <class 'sm2.stats.contrast.WaldTestResults'>
                                                   F                P>F  df constraint  df denom
         Intercept                        279.754525  2.37985521351e-22              1        51
         C(Duration, Sum)                   5.367071    0.0245738436636              1        51
@@ -1635,8 +1633,7 @@ class LikelihoodModelResults(Results):
         if use_t:
             col_names.append('df_denom')
         # TODO: maybe move DataFrame creation to results class
-        from pandas import DataFrame
-        table = DataFrame(res_wald, index=index, columns=col_names)
+        table = pd.DataFrame(res_wald, index=index, columns=col_names)
         res = WaldTestResults(None, distribution, None, table=table)
         # TODO: remove temp again, added for testing
         res.temp = constraints + combined_constraints + extra_constraints

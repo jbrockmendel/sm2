@@ -10,6 +10,8 @@ def pytest_addoption(parser):
                      help="run only slow tests")
     parser.addoption("--skip-examples", action="store_true",
                      help="skip tests of examples")
+    parser.addoption("--skip-not_vetted", action="store_true",
+                     help="skip tests marked as not_vetted")
 
 
 def pytest_runtest_setup(item):
@@ -21,3 +23,7 @@ def pytest_runtest_setup(item):
 
     if 'example' in item.keywords and item.config.getoption("--skip-examples"):
         pytest.skip("skipping due to --skip-examples")
+
+    if ('not_vetted' in item.keywords and
+            item.config.getoption("--skip-not_vetted")):
+        pytest.skip("skipping due to --skip-not_vetted")
