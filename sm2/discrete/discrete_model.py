@@ -3153,10 +3153,11 @@ class NegativeBinomialP(CountModel):
             start_params = np.append(start_params, 0.1)
 
         cntfit = super(CountModel, self).fit_regularized(
-                start_params=start_params, method=method, maxiter=maxiter,
-                full_output=full_output, disp=disp, callback=callback,
-                alpha=alpha, trim_mode=trim_mode, auto_trim_tol=auto_trim_tol,
-                size_trim_tol=size_trim_tol, qc_tol=qc_tol, **kwargs)
+                    start_params=start_params, method=method, maxiter=maxiter,
+                    full_output=full_output, disp=disp, callback=callback,
+                    alpha=alpha, trim_mode=trim_mode,
+                    auto_trim_tol=auto_trim_tol, size_trim_tol=size_trim_tol,
+                    qc_tol=qc_tol, **kwargs)
 
         discretefit = L1NegativeBinomialResults(self, cntfit)
 
@@ -3771,7 +3772,7 @@ class BinaryResults(DiscreteResults):
 
         For now :math:`M_j` is always set to 1.
         """
-        #These are the deviance residuals
+        # These are the deviance residuals
         endog = self.model.endog
         # M = # of individuals that share a covariate pattern
         # so M[i] = 2 for i = two share a covariate pattern
@@ -3949,7 +3950,8 @@ class MultinomialResults(DiscreteResults):
 
     @cache_readonly
     def bic(self):
-        return -2 * self.llf + np.log(self.nobs) * (self.df_model + self.model.J - 1)
+        return -2 * self.llf + np.log(self.nobs) * (self.df_model +
+                                                    self.model.J - 1)
 
     def conf_int(self, alpha=.05, cols=None):
         confint = super(DiscreteResults, self).conf_int(alpha=alpha,

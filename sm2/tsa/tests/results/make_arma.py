@@ -1,7 +1,7 @@
 import numpy as np
 from sm2.iolib.foreign import savetxt
 
-from statsmodels.tsa.arima_process import arma_generate_sample
+from sm2.tsa.arima_process import arma_generate_sample
 
 np.random.seed(12345)
 
