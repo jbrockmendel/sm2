@@ -130,14 +130,14 @@ class TestAddConstant(object):
 class TestTools(object):
 
     def test_recipr(self):
-        X = np.array([[2,1],[-1,0]])
+        X = np.array([[2, 1], [-1, 0]])
         Y = tools.recipr(X)
-        assert_almost_equal(Y, np.array([[0.5,1],[0,0]]))
+        assert_almost_equal(Y, np.array([[0.5, 1], [0, 0]]))
 
     def test_recipr0(self):
-        X = np.array([[2,1],[-4,0]])
+        X = np.array([[2, 1], [-4, 0]])
         Y = tools.recipr0(X)
-        assert_almost_equal(Y, np.array([[0.5,1],[-0.25,0]]))
+        assert_almost_equal(Y, np.array([[0.5, 1], [-0.25, 0]]))
 
     def test_extendedpinv(self):
         X = np.random.standard_normal((40, 10))
@@ -160,15 +160,15 @@ class TestTools(object):
         import warnings
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
-            X = np.random.standard_normal((40,10))
-            X[:,0] = X[:,1] + X[:,2]
+            X = np.random.standard_normal((40, 10))
+            X[:, 0] = X[:, 1] + X[:, 2]
 
             Y = tools.fullrank(X)
-            assert_equal(Y.shape, (40,9))
+            assert_equal(Y.shape, (40, 9))
 
-            X[:,5] = X[:,3] + X[:,4]
+            X[:, 5] = X[:, 3] + X[:, 4]
             Y = tools.fullrank(X)
-            assert_equal(Y.shape, (40,8))
+            assert_equal(Y.shape, (40, 8))
             warnings.simplefilter("ignore")
 
 
@@ -207,55 +207,56 @@ def test_estimable():
 
 @pytest.mark.not_vetted
 class TestCategoricalNumerical(object):
-    #TODO: use assert_raises to check that bad inputs are taken care of
+    # TODO: use assert_raises to check that bad inputs are taken care of
     @classmethod
     def setup_class(cls):
-        #import string
         stringabc = 'abcdefghijklmnopqrstuvwxy'
-        cls.des = np.random.randn(25,2)
-        cls.instr = np.floor(np.arange(10,60, step=2)/10)
-        x=np.zeros((25,5))
-        x[:5,0]=1
-        x[5:10,1]=1
-        x[10:15,2]=1
-        x[15:20,3]=1
-        x[20:25,4]=1
+        cls.des = np.random.randn(25, 2)
+        cls.instr = np.floor(np.arange(10, 60, step=2) / 10)
+        x = np.zeros((25, 5))
+        x[:5, 0] = 1
+        x[5:10, 1] = 1
+        x[10:15, 2] = 1
+        x[15:20, 3] = 1
+        x[20:25, 4] = 1
         cls.dummy = x
-        structdes = np.zeros((25,1),dtype=[('var1', 'f4'),('var2', 'f4'),
-                    ('instrument','f4'),('str_instr','a10')])
-        structdes['var1'] = cls.des[:,0][:,None]
-        structdes['var2'] = cls.des[:,1][:,None]
-        structdes['instrument'] = cls.instr[:,None]
+        structdes = np.zeros((25, 1), dtype=[('var1', 'f4'),
+                                             ('var2', 'f4'),
+                                             ('instrument', 'f4'),
+                                             ('str_instr', 'a10')])
+        structdes['var1'] = cls.des[:, 0][:, None]
+        structdes['var2'] = cls.des[:, 1][:, None]
+        structdes['instrument'] = cls.instr[:, None]
         string_var = [stringabc[0:5], stringabc[5:10],
-                stringabc[10:15], stringabc[15:20],
-                stringabc[20:25]]
+                      stringabc[10:15], stringabc[15:20],
+                      stringabc[20:25]]
         string_var *= 5
         cls.string_var = np.array(sorted(string_var))
-        structdes['str_instr'] = cls.string_var[:,None]
+        structdes['str_instr'] = cls.string_var[:, None]
         cls.structdes = structdes
         cls.recdes = structdes.view(np.recarray)
 
     def test_array2d(self):
         des = np.column_stack((self.des, self.instr, self.des))
         des = tools.categorical(des, col=2)
-        assert_array_equal(des[:,-5:], self.dummy)
-        assert_equal(des.shape[1],10)
+        assert_array_equal(des[:, -5:], self.dummy)
+        assert_equal(des.shape[1], 10)
 
     def test_array1d(self):
         des = tools.categorical(self.instr)
-        assert_array_equal(des[:,-5:], self.dummy)
-        assert_equal(des.shape[1],6)
+        assert_array_equal(des[:, -5:], self.dummy)
+        assert_equal(des.shape[1], 6)
 
     def test_array2d_drop(self):
         des = np.column_stack((self.des, self.instr, self.des))
         des = tools.categorical(des, col=2, drop=True)
-        assert_array_equal(des[:,-5:], self.dummy)
-        assert_equal(des.shape[1],9)
+        assert_array_equal(des[:, -5:], self.dummy)
+        assert_equal(des.shape[1], 9)
 
     def test_array1d_drop(self):
         des = tools.categorical(self.instr, drop=True)
         assert_array_equal(des, self.dummy)
-        assert_equal(des.shape[1],5)
+        assert_equal(des.shape[1], 5)
 
     def test_recarray2d(self):
         des = tools.categorical(self.recdes, col='instrument')
@@ -324,20 +325,20 @@ class TestCategoricalNumerical(object):
 
 #    def test_arraylike2d(self):
 #        des = tools.categorical(self.structdes.tolist(), col=2)
-#        test_des = des[:,-5:]
+#        test_des = des[:, -5:]
 #        assert_array_equal(test_des, self.dummy)
 #        assert_equal(des.shape[1], 9)
 
 #    def test_arraylike1d(self):
 #        instr = self.structdes['instrument'].tolist()
 #        dum = tools.categorical(instr)
-#        test_dum = dum[:,-5:]
+#        test_dum = dum[:, -5:]
 #        assert_array_equal(test_dum, self.dummy)
 #        assert_equal(dum.shape[1], 6)
 
 #    def test_arraylike2d_drop(self):
 #        des = tools.categorical(self.structdes.tolist(), col=2, drop=True)
-#        test_des = des[:,-5:]
+#        test_des = des[:, -5:]
 #        assert_array_equal(test__des, self.dummy)
 #        assert_equal(des.shape[1], 8)
 
@@ -355,24 +356,24 @@ class TestCategoricalString(TestCategoricalNumerical):
 #    def test_array2d(self):
 #        des = np.column_stack((self.des, self.instr, self.des))
 #        des = tools.categorical(des, col=2)
-#        assert_array_equal(des[:,-5:], self.dummy)
-#        assert_equal(des.shape[1],10)
+#        assert_array_equal(des[:, -5:], self.dummy)
+#        assert_equal(des.shape[1], 10)
 
 #    def test_array1d(self):
 #        des = tools.categorical(self.instr)
-#        assert_array_equal(des[:,-5:], self.dummy)
-#        assert_equal(des.shape[1],6)
+#        assert_array_equal(des[:, -5:], self.dummy)
+#        assert_equal(des.shape[1], 6)
 
 #    def test_array2d_drop(self):
 #        des = np.column_stack((self.des, self.instr, self.des))
 #        des = tools.categorical(des, col=2, drop=True)
-#        assert_array_equal(des[:,-5:], self.dummy)
-#        assert_equal(des.shape[1],9)
+#        assert_array_equal(des[:, -5:], self.dummy)
+#        assert_equal(des.shape[1], 9)
 
     def test_array1d_drop(self):
         des = tools.categorical(self.string_var, drop=True)
         assert_array_equal(des, self.dummy)
-        assert_equal(des.shape[1],5)
+        assert_equal(des.shape[1], 5)
 
     def test_recarray2d(self):
         des = tools.categorical(self.recdes, col='str_instr')
@@ -454,19 +455,18 @@ class TestCategoricalString(TestCategoricalNumerical):
 
 @pytest.mark.not_vetted
 def test_chain_dot():
-    A = np.arange(1,13).reshape(3,4)
-    B = np.arange(3,15).reshape(4,3)
-    C = np.arange(5,8).reshape(3,1)
-    assert_equal(tools.chain_dot(A,B,C), np.array([[1820],[4300],[6780]]))
+    A = np.arange(1, 13).reshape(3, 4)
+    B = np.arange(3, 15).reshape(4, 3)
+    C = np.arange(5, 8).reshape(3, 1)
+    assert_equal(tools.chain_dot(A, B, C), np.array([[1820], [4300], [6780]]))
 
 
 @pytest.mark.not_vetted
 class TestNanDot(object):
     @classmethod
     def setup_class(cls):
-        nan = np.nan
-        cls.mx_1 = np.array([[nan, 1.], [2., 3.]])
-        cls.mx_2 = np.array([[nan, nan], [2., 3.]])
+        cls.mx_1 = np.array([[np.nan, 1.], [2., 3.]])
+        cls.mx_2 = np.array([[np.nan, np.nan], [2., 3.]])
         cls.mx_3 = np.array([[0., 0.], [0., 0.]])
         cls.mx_4 = np.array([[1., 0.], [1., 0.]])
         cls.mx_5 = np.array([[0., 1.], [0., 1.]])
@@ -474,62 +474,52 @@ class TestNanDot(object):
 
     def test_11(self):
         test_res = tools.nan_dot(self.mx_1, self.mx_1)
-        expected_res = np.array([[ np.nan,  np.nan], [ np.nan,  11.]])
+        expected_res = np.array([[np.nan, np.nan], [np.nan, 11.]])
         assert_array_equal(test_res, expected_res)
 
     def test_12(self):
-        nan = np.nan
         test_res = tools.nan_dot(self.mx_1, self.mx_2)
-        expected_res = np.array([[ nan,  nan], [ nan,  nan]])
+        expected_res = np.array([[np.nan, np.nan], [np.nan, np.nan]])
         assert_array_equal(test_res, expected_res)
 
     def test_13(self):
-        nan = np.nan
         test_res = tools.nan_dot(self.mx_1, self.mx_3)
-        expected_res = np.array([[ 0.,  0.], [ 0.,  0.]])
+        expected_res = np.array([[0., 0.], [0., 0.]])
         assert_array_equal(test_res, expected_res)
 
     def test_14(self):
-        nan = np.nan
         test_res = tools.nan_dot(self.mx_1, self.mx_4)
-        expected_res = np.array([[ nan,   0.], [  5.,   0.]])
+        expected_res = np.array([[np.nan, 0.], [5., 0.]])
         assert_array_equal(test_res, expected_res)
 
     def test_41(self):
-        nan = np.nan
         test_res = tools.nan_dot(self.mx_4, self.mx_1)
-        expected_res = np.array([[ nan,   1.], [ nan,   1.]])
+        expected_res = np.array([[np.nan, 1.], [np.nan, 1.]])
         assert_array_equal(test_res, expected_res)
 
     def test_23(self):
-        nan = np.nan
         test_res = tools.nan_dot(self.mx_2, self.mx_3)
-        expected_res = np.array([[ 0.,  0.], [ 0.,  0.]])
+        expected_res = np.array([[0., 0.], [0., 0.]])
         assert_array_equal(test_res, expected_res)
 
     def test_32(self):
-        nan = np.nan
         test_res = tools.nan_dot(self.mx_3, self.mx_2)
-        expected_res = np.array([[ 0.,  0.], [ 0.,  0.]])
+        expected_res = np.array([[0., 0.], [0., 0.]])
         assert_array_equal(test_res, expected_res)
 
-
     def test_24(self):
-        nan = np.nan
         test_res = tools.nan_dot(self.mx_2, self.mx_4)
-        expected_res = np.array([[ nan,   0.], [  5.,   0.]])
+        expected_res = np.array([[np.nan, 0.], [5., 0.]])
         assert_array_equal(test_res, expected_res)
 
     def test_25(self):
-        nan = np.nan
         test_res = tools.nan_dot(self.mx_2, self.mx_5)
-        expected_res = np.array([[  0.,  nan], [  0.,   5.]])
+        expected_res = np.array([[0., np.nan], [0., 5.]])
         assert_array_equal(test_res, expected_res)
 
     def test_66(self):
-        nan = np.nan
         test_res = tools.nan_dot(self.mx_6, self.mx_6)
-        expected_res = np.array([[  7.,  10.], [ 15.,  22.]])
+        expected_res = np.array([[7., 10.], [15., 22.]])
         assert_array_equal(test_res, expected_res)
 
 
@@ -537,9 +527,9 @@ class TestNanDot(object):
 class TestEnsure2d(object):
     @classmethod
     def setup_class(cls):
-        x = np.arange(400.0).reshape((100,4))
-        cls.df = pd.DataFrame(x, columns = ['a','b','c','d'])
-        cls.series = cls.df.iloc[:,0]
+        x = np.arange(400.0).reshape((100, 4))
+        cls.df = pd.DataFrame(x, columns=['a', 'b', 'c', 'd'])
+        cls.series = cls.df.iloc[:, 0]
         cls.ndarray = x
 
     def test_enfore_numpy(self):
@@ -547,7 +537,7 @@ class TestEnsure2d(object):
         assert_array_equal(results[0], self.ndarray)
         assert_array_equal(results[1], self.df.columns)
         results = tools._ensure_2d(self.series, True)
-        assert_array_equal(results[0], self.ndarray[:,[0]])
+        assert_array_equal(results[0], self.ndarray[:, [0]])
         assert_array_equal(results[1], self.df.columns[0])
 
     def test_pandas(self):
@@ -556,7 +546,7 @@ class TestEnsure2d(object):
         assert_array_equal(results[1], self.df.columns)
 
         results = tools._ensure_2d(self.series, False)
-        tm.assert_frame_equal(results[0], self.df.iloc[:,[0]])
+        tm.assert_frame_equal(results[0], self.df.iloc[:, [0]])
         assert_equal(results[1], self.df.columns[0])
 
     def test_numpy(self):
@@ -564,14 +554,14 @@ class TestEnsure2d(object):
         assert_array_equal(results[0], self.ndarray)
         assert_equal(results[1], None)
 
-        results = tools._ensure_2d(self.ndarray[:,0])
-        assert_array_equal(results[0], self.ndarray[:,[0]])
+        results = tools._ensure_2d(self.ndarray[:, 0])
+        assert_array_equal(results[0], self.ndarray[:, [0]])
         assert_equal(results[1], None)
-
 
 
 # ------------------------------------------------------------------
 # Issue Regression Tests
+
 
 def test_categorical_recarray_1names():
     # GH#302

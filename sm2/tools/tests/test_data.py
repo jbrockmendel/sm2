@@ -8,11 +8,12 @@ from sm2.tools import data
 @pytest.mark.not_vetted
 def test_missing_data_pandas():
     # GH#144
-    X = np.random.random((10,5))
+    X = np.random.random((10, 5))
     X[1, 2] = np.nan
     df = pd.DataFrame(X)
     vals, cnames, rnames = data.interpret_data(df)
     np.testing.assert_equal(rnames.tolist(), [0, 2, 3, 4, 5, 6, 7, 8, 9])
+
 
 @pytest.mark.not_vetted
 def test_structarray():
@@ -21,8 +22,9 @@ def test_structarray():
                                      ('var3', 'f8')])
     vals, cnames, rnames = data.interpret_data(X)
     np.testing.assert_equal(cnames, X.dtype.names)
-    np.testing.assert_equal(vals, X.view((float,3)))
+    np.testing.assert_equal(vals, X.view((float, 3)))
     np.testing.assert_equal(rnames, None)
+
 
 @pytest.mark.not_vetted
 def test_recarray():
@@ -31,7 +33,7 @@ def test_recarray():
                                      ('var3', 'f8')])
     vals, cnames, rnames = data.interpret_data(X.view(np.recarray))
     np.testing.assert_equal(cnames, X.dtype.names)
-    np.testing.assert_equal(vals, X.view((float,3)))
+    np.testing.assert_equal(vals, X.view((float, 3)))
     np.testing.assert_equal(rnames, None)
 
 
@@ -43,6 +45,7 @@ def test_dataframe():
     np.testing.assert_equal(vals, df.values)
     np.testing.assert_equal(rnames.tolist(), df.index.tolist())
     np.testing.assert_equal(cnames, df.columns.tolist())
+
 
 @pytest.mark.not_vetted
 def test_patsy_577():

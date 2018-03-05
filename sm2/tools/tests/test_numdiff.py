@@ -49,11 +49,11 @@ class CheckGradLoglikeMixin(object):
         for test_params in self.params:
             sc = self.mod.score(test_params)
             scfd = numdiff.approx_fprime(test_params.ravel(),
-                                                      self.mod.loglike)
+                                         self.mod.loglike)
             assert_almost_equal(sc, scfd, decimal=1)
 
             sccs = numdiff.approx_fprime_cs(test_params.ravel(),
-                                                      self.mod.loglike)
+                                            self.mod.loglike)
             assert_almost_equal(sc, sccs, decimal=11)
 
     def test_hess(self):
@@ -72,22 +72,22 @@ class CheckGradLoglikeMixin(object):
             assert_almost_equal(he, hefd, decimal=4)
 
             hescs = numdiff.approx_fprime_cs(test_params.ravel(),
-                                                        self.mod.score)
+                                             self.mod.score)
             assert_allclose(he, hescs, rtol=1e-13)
 
             hecs = numdiff.approx_hess_cs(test_params.ravel(),
-                                                        self.mod.loglike)
+                                          self.mod.loglike)
             assert_allclose(he, hecs, rtol=1e-9)
 
-            #NOTE: Look at the lack of precision - default epsilon not always
-            #best
+            # NOTE: Look at the lack of precision - default epsilon not always
+            # best
             grad = self.mod.score(test_params)
             hecs, gradcs = numdiff.approx_hess1(test_params, self.mod.loglike,
-                                              1e-6, return_grad=True)
+                                                1e-6, return_grad=True)
             assert_almost_equal(he, hecs, decimal=1)
             assert_almost_equal(grad, gradcs, decimal=1)
             hecs, gradcs = numdiff.approx_hess2(test_params, self.mod.loglike,
-                                1e-4, return_grad=True)
+                                                1e-4, return_grad=True)
             assert_almost_equal(he, hecs, decimal=3)
             assert_almost_equal(grad, gradcs, decimal=1)
             hecs = numdiff.approx_hess3(test_params, self.mod.loglike, 1e-5)
@@ -98,7 +98,6 @@ class CheckGradLoglikeMixin(object):
 class TestGradMNLogit(CheckGradLoglikeMixin):
     @classmethod
     def setup_class(cls):
-        #from .results.results_discrete import Anes
         data = sm.datasets.anes96.load()
         exog = data.exog
         exog = sm.add_constant(exog, prepend=False)
@@ -113,13 +112,13 @@ class TestGradMNLogit(CheckGradLoglikeMixin):
         cls.params = [res.params.ravel('F')]
 
     def test_hess(self):
-        #NOTE: I had to overwrite this to lessen the tolerance
+        # NOTE: I had to overwrite this to lessen the tolerance
         for test_params in self.params:
             he = self.mod.hessian(test_params)
             hefd = numdiff.approx_fprime_cs(test_params, self.mod.score)
             assert_almost_equal(he, hefd, decimal=DEC8)
 
-            #NOTE: notice the accuracy below and the epsilon changes
+            # NOTE: notice the accuracy below and the epsilon changes
             # this doesn't work well for score -> hessian with non-cs step
             # it's a little better around the optimum
             assert_almost_equal(he, hefd, decimal=7)
@@ -135,7 +134,7 @@ class TestGradMNLogit(CheckGradLoglikeMixin):
 
             hecs = numdiff.approx_hess_cs(test_params, self.mod.loglike)
             assert_almost_equal(he, hecs, decimal=5)
-            #NOTE: these just don't work well
+            # NOTE: these just don't work well
             #hecs = numdiff.approx_hess1(test_params, self.mod.loglike, 1e-3)
             #assert_almost_equal(he, hecs, decimal=1)
             #hecs = numdiff.approx_hess2(test_params, self.mod.loglike, 1e-4)
@@ -153,7 +152,7 @@ class TestGradLogit(CheckGradLoglikeMixin):
         #mod = sm.Probit(data.endog, data.exog)
         cls.mod = sm.Logit(data.endog, data.exog)
         #res = mod.fit(method="newton")
-        cls.params = [np.array([1,0.25,1.4,-7])]
+        cls.params = [np.array([1, 0.25, 1.4, -7])]
         ##loglike = mod.loglike
         ##score = mod.score
         ##hess = mod.hessian
@@ -164,20 +163,18 @@ class CheckDerivativeMixin(object):
     @classmethod
     def setup_class(cls):
         nobs = 200
-        #x = np.arange(nobs*3).reshape(nobs,-1)
         np.random.seed(187678)
-        x = np.random.randn(nobs,3)
+        x = np.random.randn(nobs, 3)
 
-        xk = np.array([1,2,3])
-        xk = np.array([1.,1.,1.])
-        #xk = np.zeros(3)
+        xk = np.array([1, 2, 3])
+        xk = np.array([1., 1., 1.])
         beta = xk
-        y = np.dot(x, beta) + 0.1*np.random.randn(nobs)
-        xkols = np.dot(np.linalg.pinv(x),y)
+        y = np.dot(x, beta) + 0.1 * np.random.randn(nobs)
+        xkols = np.dot(np.linalg.pinv(x), y)
 
         cls.x = x
         cls.y = y
-        cls.params = [np.array([1.,1.,1.]), xkols]
+        cls.params = [np.array([1., 1., 1.]), xkols]
         cls.init()
 
     @classmethod
@@ -186,31 +183,28 @@ class CheckDerivativeMixin(object):
 
     def test_grad_fun1_fd(self):
         for test_params in self.params:
-            #gtrue = self.x.sum(0)
             gtrue = self.gradtrue(test_params)
             fun = self.fun()
             epsilon = 1e-6
             gfd = numdiff.approx_fprime(test_params, fun, epsilon=epsilon,
-                                         args=self.args)
+                                        args=self.args)
             gfd += numdiff.approx_fprime(test_params, fun, epsilon=-epsilon,
-                                          args=self.args)
+                                         args=self.args)
             gfd /= 2.
             assert_almost_equal(gtrue, gfd, decimal=DEC6)
 
     def test_grad_fun1_fdc(self):
         for test_params in self.params:
-            #gtrue = self.x.sum(0)
             gtrue = self.gradtrue(test_params)
             fun = self.fun()
 
             epsilon = 1e-6  #default epsilon 1e-6 is not precise enough
             gfd = numdiff.approx_fprime(test_params, fun, epsilon=1e-8,
-                                         args=self.args, centered=True)
+                                        args=self.args, centered=True)
             assert_almost_equal(gtrue, gfd, decimal=DEC5)
 
     def test_grad_fun1_cs(self):
         for test_params in self.params:
-            #gtrue = self.x.sum(0)
             gtrue = self.gradtrue(test_params)
             fun = self.fun()
 
@@ -241,7 +235,6 @@ class CheckDerivativeMixin(object):
 
     def test_hess_fun1_cs(self):
         for test_params in self.params:
-            #hetrue = 0
             hetrue = self.hesstrue(test_params)
             if not hetrue is None: #Hessian doesn't work for 2d return of fun
                 fun = self.fun()
@@ -285,7 +278,7 @@ class TestDerivativeFun2(CheckDerivativeMixin):
     def gradtrue(self, params):
         y, x = self.y, self.x
         return (-x * 2 * (y - np.dot(x, params))[:, None]).sum(0)
-                #2*(y-np.dot(x, params)).sum(0)
+        # 2*(y-np.dot(x, params)).sum(0)
 
     def hesstrue(self, params):
         x = self.x
@@ -311,7 +304,7 @@ class TestDerivativeFun1(CheckDerivativeMixin):
     def hesstrue(self, params):
         return None
         y, x = self.y, self.x
-        return (-x*2*(y-np.dot(x, params))[:, None])  # TODO: check shape
+        return (-x * 2 * (y-np.dot(x, params))[:, None])  # TODO: check shape
 
 
 @pytest.mark.not_vetted
