@@ -14,15 +14,13 @@ import pytest
 from six import StringIO
 
 import numpy as np
-from numpy.testing import (assert_, assert_allclose, assert_equal,
+from numpy.testing import (assert_allclose, assert_equal,
                            assert_array_equal)
 import pandas as pd
 import pandas.util.testing as tm
 
 import sm2.api as sm
 from sm2.discrete.discrete_model import DiscreteResults
-
-from statsmodels.genmod.generalized_linear_model import GLMResults
 
 
 @pytest.mark.not_vetted
@@ -59,18 +57,18 @@ class CheckGenericMixin(object):
         assert_allclose(table2, table_res, rtol=1e-12)
 
         # move this to test_attributes ?
-        assert_(hasattr(res, 'use_t'))
+        assert hasattr(res, 'use_t')
 
         tt = res.t_test(mat[0])
         string_confint = lambda alpha: "[%4.3F      %4.3F]" % (
                                        alpha / 2, 1- alpha / 2)
         summ = tt.summary()   # smoke test for #1323
         assert_allclose(tt.pvalue, res.pvalues[0], rtol=5e-10)
-        assert_(string_confint(0.05) in str(summ))
+        assert string_confint(0.05) in str(summ)
         # issue #3116 alpha not used in column headers
         summ = tt.summary(alpha=0.1)
         ss = "[0.05       0.95]"   # different formatting
-        assert_(ss in str(summ))
+        assert ss in str(summ)
         summf = tt.summary_frame(alpha=0.1)
         pvstring_use_t = 'P>|z|' if res.use_t is False else 'P>|t|'
         tstring_use_t = 'z' if res.use_t is False else 't'
@@ -96,7 +94,7 @@ class CheckGenericMixin(object):
         # label for pvalues in summary
         string_use_t = 'P>|z|' if use_t is False else 'P>|t|'
         summ = str(res.summary())
-        assert_(string_use_t in summ)
+        assert string_use_t in summ
 
         # try except for models that don't have summary2
         try:
@@ -104,7 +102,7 @@ class CheckGenericMixin(object):
         except AttributeError:
             summ2 = None
         if summ2 is not None:
-            assert_(string_use_t in summ2)
+            assert string_use_t in summ2
 
 
     # TODO The following is not (yet) guaranteed across models
@@ -116,6 +114,7 @@ class CheckGenericMixin(object):
             results = self.results._results
         else:
             results = self.results
+        from statsmodels.genmod.generalized_linear_model import GLMResults
         if isinstance(results, (GLMResults, DiscreteResults)):
             raise pytest.skip('Infeasible for {0}'.format(type(results)))
 
@@ -138,6 +137,7 @@ class CheckGenericMixin(object):
         else:
             results = self.results
 
+        from statsmodels.genmod.generalized_linear_model import GLMResults
         if isinstance(results, (GLMResults, DiscreteResults)):
             # SMOKE test only  TODO
             res.predict(p_exog)
@@ -161,25 +161,22 @@ class CheckGenericMixin(object):
 
             if p_exog.ndim == 1:
                 predicted_pandas = res.predict(pd.Series(p_exog, index=exog_index))
-
             else:
                 predicted_pandas = res.predict(pd.DataFrame(p_exog, index=exog_index))
 
             if predicted.ndim == 1:
-
-                assert_(isinstance(predicted_pandas, pd.Series))
-
+                assert isinstance(predicted_pandas, pd.Series)
                 predicted_expected = pd.Series(predicted, index=exog_index)
                 tm.assert_series_equal(predicted_expected, predicted_pandas)
 
             else:
-                assert_(isinstance(predicted_pandas, pd.DataFrame))
+                assert isinstance(predicted_pandas, pd.DataFrame)
 
                 predicted_expected = pd.DataFrame(predicted, index=exog_index)
-                assert_(predicted_expected.equals(predicted_pandas))
+                assert predicted_expected.equals(predicted_pandas)
 
 
-#########  subclasses for individual models, unchanged from test_shrink_pickle
+# subclasses for individual models, unchanged from test_shrink_pickle
 # TODO: check if setup_class is faster than setup
 
 @pytest.mark.not_vetted
@@ -423,16 +420,18 @@ class CheckAnovaMixin(object):
 
     def test_combined(self):
         res = self.res
-        wa = res.wald_test_terms(skip_single=False, combine_terms=['Duration', 'Weight'])
+        wa = res.wald_test_terms(skip_single=False,
+                                 combine_terms=['Duration', 'Weight'])
         eye = np.eye(len(res.params))
         c_const = eye[0]
-        c_w = eye[[2,3]]
+        c_w = eye[[2, 3]]
         c_d = eye[1]
-        c_dw = eye[[4,5]]
+        c_dw = eye[[4, 5]]
         c_weight = eye[2:6]
         c_duration = eye[[1, 4, 5]]
 
-        compare_waldres(res, wa, [c_const, c_d, c_w, c_dw, c_duration, c_weight])
+        compare_waldres(res, wa,
+                        [c_const, c_d, c_w, c_dw, c_duration, c_weight])
 
     def test_categories(self):
         # test only multicolumn terms
@@ -449,8 +448,8 @@ class CheckAnovaMixin(object):
 class TestWaldAnovaOLS(CheckAnovaMixin):
     @classmethod
     def initialize(cls):
-        mod = sm.OLS.from_formula("np.log(Days+1) ~ C(Duration, Sum)*C(Weight, Sum)",
-                                  cls.data)
+        formula = "np.log(Days+1) ~ C(Duration, Sum)*C(Weight, Sum)"
+        mod = sm.OLS.from_formula(formula, cls.data)
         cls.res = mod.fit(use_t=False)
 
     def test_noformula(self):
@@ -472,7 +471,8 @@ class TestWaldAnovaOLS(CheckAnovaMixin):
 class TestWaldAnovaOLSF(CheckAnovaMixin):
     @classmethod
     def initialize(cls):
-        mod = sm.OLS.from_formula("np.log(Days+1) ~ C(Duration, Sum)*C(Weight, Sum)", cls.data)
+        formula = "np.log(Days+1) ~ C(Duration, Sum)*C(Weight, Sum)"
+        mod = sm.OLS.from_formula(formula, cls.data)
         cls.res = mod.fit()  # default use_t=True
 
     def test_predict_missing(self):
@@ -491,7 +491,8 @@ class TestWaldAnovaGLM(CheckAnovaMixin):
     @classmethod
     def initialize(cls):
         raise pytest.skip("GLM not implemented")
-        mod = sm.GLM.from_formula("np.log(Days+1) ~ C(Duration, Sum)*C(Weight, Sum)", cls.data)
+        formula = "np.log(Days+1) ~ C(Duration, Sum)*C(Weight, Sum)"
+        mod = sm.GLM.from_formula(formula, cls.data)
         cls.res = mod.fit(use_t=False)
 
 
@@ -499,7 +500,8 @@ class TestWaldAnovaGLM(CheckAnovaMixin):
 class TestWaldAnovaPoisson(CheckAnovaMixin):
     @classmethod
     def initialize(cls):
-        mod = sm.Poisson.from_formula("Days ~ C(Duration, Sum)*C(Weight, Sum)", cls.data)
+        formula = "Days ~ C(Duration, Sum)*C(Weight, Sum)"
+        mod = sm.Poisson.from_formula(formula, cls.data)
         cls.res = mod.fit(cov_type='HC0')
 
 
@@ -558,6 +560,6 @@ def compare_waldres(res, wa, constrasts):
 class TestWaldAnovaOLSNoFormula(object):
     @classmethod
     def initialize(cls):  # FIXME: This should subclass something right?
-        mod = sm.OLS.from_formula("np.log(Days+1) ~ C(Duration, Sum)*C(Weight, Sum)",
-                                  cls.data)
+        formula = "np.log(Days+1) ~ C(Duration, Sum)*C(Weight, Sum)"
+        mod = sm.OLS.from_formula(formula, cls.data)
         cls.res = mod.fit()  # default use_t=True
