@@ -48,8 +48,6 @@ exposure = np.asarray(data['service'])
 
 @pytest.mark.not_vetted
 class CheckCountRobustMixin(object):
-
-
     def test_basic(self):
         res1 = self.res1
         res2 = self.res2
@@ -64,9 +62,13 @@ class CheckCountRobustMixin(object):
             res2_params = res2.params
             res2_bse = res2.bse
 
-        assert_allclose(res1._results.params, res2_params, 1e-4)
+        assert_allclose(res1._results.params,
+                        res2_params,
+                        1e-4)
 
-        assert_allclose(self.bse_rob / self.corr_fact, res2_bse, 6e-5)
+        assert_allclose(self.bse_rob / self.corr_fact,
+                        res2_bse,
+                        6e-5)
 
     @classmethod
     def get_robust_clu(cls):
@@ -76,8 +78,7 @@ class CheckCountRobustMixin(object):
 
         nobs, k_vars = res1.model.exog.shape
         k_params = len(res1.params)
-        #n_groups = len(np.unique(group))
-        corr_fact = (nobs-1.) / float(nobs - k_params)
+        corr_fact = (nobs - 1.) / float(nobs - k_params)
         # for bse we need sqrt of correction factor
         cls.corr_fact = np.sqrt(corr_fact)
 
@@ -99,6 +100,7 @@ class TestPoissonClu(CheckCountRobustMixin):
     @classmethod
     def setup_class(cls):
         cls.res2 = results_st.results_poisson_clu
+
         mod = smd.Poisson(endog, exog)
         cls.res1 = mod.fit(disp=False)
         cls.get_robust_clu()
@@ -109,32 +111,31 @@ class TestPoissonCluGeneric(CheckCountRobustMixin):
     @classmethod
     def setup_class(cls):
         cls.res2 = results_st.results_poisson_clu
+
         mod = smd.Poisson(endog, exog)
-        cls.res1 = res1 = mod.fit(disp=False)
+        cls.res1 = mod.fit(disp=False)
 
         debug = False
         if debug:
             # for debugging
             cls.bse_nonrobust = cls.res1.bse.copy()
-            cls.res1 = res1 = mod.fit(disp=False)
+            cls.res1 = mod.fit(disp=False)
             cls.get_robust_clu()
             cls.res3 = cls.res1
             cls.bse_rob3 = cls.bse_rob.copy()
-            cls.res1 = res1 = mod.fit(disp=False)
+            cls.res1 = mod.fit(disp=False)
 
-        #res_hc0_ = cls.res1.get_robustcov_results('HC1')
         get_robustcov_results(cls.res1._results, 'cluster',
-                                                  groups=group,
-                                                  use_correction=True,
-                                                  df_correction=True,  #TODO has no effect
-                                                  use_t=False, #True,
-                                                  use_self=True)
+                              groups=group,
+                              use_correction=True,
+                              df_correction=True,  #TODO has no effect
+                              use_t=False, #True,
+                              use_self=True)
         cls.bse_rob = cls.res1.bse
 
-        nobs, k_vars = res1.model.exog.shape
-        k_params = len(res1.params)
-        #n_groups = len(np.unique(group))
-        corr_fact = (nobs-1.) / float(nobs - k_params)
+        nobs, k_vars = cls.res1.model.exog.shape
+        k_params = len(cls.res1.params)
+        corr_fact = (nobs - 1.) / float(nobs - k_params)
         # for bse we need sqrt of correction factor
         cls.corr_fact = np.sqrt(corr_fact)
 
@@ -145,6 +146,7 @@ class TestPoissonHC1Generic(CheckCountRobustMixin):
     @classmethod
     def setup_class(cls):
         cls.res2 = results_st.results_poisson_hc1
+
         mod = smd.Poisson(endog, exog)
         cls.res1 = mod.fit(disp=False)
 
@@ -154,7 +156,8 @@ class TestPoissonHC1Generic(CheckCountRobustMixin):
         nobs, k_vars = mod.exog.shape
         corr_fact = (nobs) / float(nobs - 1.)
         # for bse we need sqrt of correction factor
-        cls.corr_fact = np.sqrt(1./corr_fact)
+        cls.corr_fact = np.sqrt(1. / corr_fact)
+
 
 # TODO: refactor xxxFit to full testing results
 @pytest.mark.not_vetted
@@ -162,15 +165,14 @@ class TestPoissonCluFit(CheckCountRobustMixin):
 
     @classmethod
     def setup_class(cls):
-
-
         cls.res2 = results_st.results_poisson_clu
+
         mod = smd.Poisson(endog, exog)
 
         # scaling of cov_params_default to match Stata
         # TODO should the default be changed?
         nobs, k_params = mod.exog.shape
-        sc_fact = (nobs-1.) / float(nobs - k_params)
+        sc_fact = (nobs - 1.) / float(nobs - k_params)
 
         cls.res1 = mod.fit(disp=False, cov_type='cluster',
                            cov_kwds=dict(groups=group,
@@ -190,7 +192,6 @@ class TestPoissonCluFit(CheckCountRobustMixin):
         # backwards compatibility with inherited test methods
         cls.corr_fact = 1
 
-
     def test_basic_inference(self):
         res1 = self.res1
         res2 = self.res2
@@ -209,6 +210,7 @@ class TestPoissonHC1Fit(CheckCountRobustMixin):
     @classmethod
     def setup_class(cls):
         cls.res2 = results_st.results_poisson_hc1
+
         mod = smd.Poisson(endog, exog)
         cls.res1 = mod.fit(disp=False, cov_type='HC1')
 
@@ -225,6 +227,7 @@ class TestPoissonHC1FitExposure(CheckCountRobustMixin):
     @classmethod
     def setup_class(cls):
         cls.res2 = results_st.results_poisson_exposure_hc1
+
         mod = smd.Poisson(endog, exog, exposure=exposure)
         cls.res1 = mod.fit(disp=False, cov_type='HC1')
 
@@ -232,7 +235,7 @@ class TestPoissonHC1FitExposure(CheckCountRobustMixin):
         nobs, k_vars = mod.exog.shape
         corr_fact = (nobs) / float(nobs - 1.)
         # for bse we need sqrt of correction factor
-        cls.corr_fact = np.sqrt(1./corr_fact)
+        cls.corr_fact = np.sqrt(1. / corr_fact)
 
 
 @pytest.mark.not_vetted
@@ -241,6 +244,7 @@ class TestPoissonCluExposure(CheckCountRobustMixin):
     @classmethod
     def setup_class(cls):
         cls.res2 = results_st.results_poisson_exposure_clu #nonrobust
+
         mod = smd.Poisson(endog, exog, exposure=exposure)
         cls.res1 = mod.fit(disp=False)
         cls.get_robust_clu()
@@ -252,22 +256,21 @@ class TestPoissonCluExposureGeneric(CheckCountRobustMixin):
     @classmethod
     def setup_class(cls):
         cls.res2 = results_st.results_poisson_exposure_clu #nonrobust
+
         mod = smd.Poisson(endog, exog, exposure=exposure)
-        cls.res1 = res1 = mod.fit(disp=False)
+        cls.res1 = mod.fit(disp=False)
 
-        #res_hc0_ = cls.res1.get_robustcov_results('HC1')
         get_robustcov_results(cls.res1._results, 'cluster',
-                                                  groups=group,
-                                                  use_correction=True,
-                                                  df_correction=True,  #TODO has no effect
-                                                  use_t=False, #True,
-                                                  use_self=True)
-        cls.bse_rob = cls.res1.bse #sw.se_cov(cov_clu)
+                              groups=group,
+                              use_correction=True,
+                              df_correction=True,  #TODO has no effect
+                              use_t=False, #True,
+                              use_self=True)
+        cls.bse_rob = cls.res1.bse
 
-        nobs, k_vars = res1.model.exog.shape
-        k_params = len(res1.params)
-        #n_groups = len(np.unique(group))
-        corr_fact = (nobs-1.) / float(nobs - k_params)
+        nobs, k_vars = cls.res1.model.exog.shape
+        k_params = len(cls.res1.params)
+        corr_fact = (nobs - 1.) / float(nobs - k_params)
         # for bse we need sqrt of correction factor
         cls.corr_fact = np.sqrt(corr_fact)
 
@@ -279,6 +282,7 @@ class TestGLMPoissonClu(CheckCountRobustMixin):
     def setup_class(cls):
         raise pytest.skip("GLM not implemented")
         cls.res2 = results_st.results_poisson_clu
+
         mod = smd.Poisson(endog, exog)
         mod = GLM(endog, exog, family=families.Poisson())
         cls.res1 = mod.fit()
@@ -292,21 +296,21 @@ class TestGLMPoissonCluGeneric(CheckCountRobustMixin):
     def setup_class(cls):
         raise pytest.skip("GLM not implemented")
         cls.res2 = results_st.results_poisson_clu
+
         mod = GLM(endog, exog, family=families.Poisson())
-        cls.res1 = res1 = mod.fit()
+        cls.res1 = mod.fit()
 
         get_robustcov_results(cls.res1._results, 'cluster',
-                                                  groups=group,
-                                                  use_correction=True,
-                                                  df_correction=True,  #TODO has no effect
-                                                  use_t=False, #True,
-                                                  use_self=True)
+                              groups=group,
+                              use_correction=True,
+                              df_correction=True,  #TODO has no effect
+                              use_t=False, #True,
+                              use_self=True)
         cls.bse_rob = cls.res1.bse
 
-        nobs, k_vars = res1.model.exog.shape
-        k_params = len(res1.params)
-        #n_groups = len(np.unique(group))
-        corr_fact = (nobs-1.) / float(nobs - k_params)
+        nobs, k_vars = cls.res1.model.exog.shape
+        k_params = len(cls.res1.params)
+        corr_fact = (nobs - 1.) / float(nobs - k_params)
         # for bse we need sqrt of correction factor
         cls.corr_fact = np.sqrt(corr_fact)
 
@@ -327,7 +331,7 @@ class TestGLMPoissonHC1Generic(CheckCountRobustMixin):
         nobs, k_vars = mod.exog.shape
         corr_fact = (nobs) / float(nobs - 1.)
         # for bse we need sqrt of correction factor
-        cls.corr_fact = np.sqrt(1./corr_fact)
+        cls.corr_fact = np.sqrt(1. / corr_fact)
 
 
 # TODO: refactor xxxFit to full testing results
@@ -339,12 +343,12 @@ class TestGLMPoissonCluFit(CheckCountRobustMixin):
         raise pytest.skip("GLM not implemented")
         cls.res2 = results_st.results_poisson_clu
         mod = GLM(endog, exog, family=families.Poisson())
-        cls.res1 = res1 = mod.fit(cov_type='cluster',
-                                  cov_kwds=dict(groups=group,
-                                                use_correction=True,
-                                                df_correction=True),  #TODO has no effect
-                                  use_t=False, #True,
-                                                )
+        cls.res1 = mod.fit(cov_type='cluster',
+                           cov_kwds=dict(groups=group,
+                                         use_correction=True,
+                                         df_correction=True),  #TODO has no effect
+                           use_t=False, #True,
+                           )
 
         # The model results, t_test, ... should also work without
         # normalized_cov_params, see #2209
@@ -355,8 +359,7 @@ class TestGLMPoissonCluFit(CheckCountRobustMixin):
 
         nobs, k_vars = mod.exog.shape
         k_params = len(cls.res1.params)
-        #n_groups = len(np.unique(group))
-        corr_fact = (nobs-1.) / float(nobs - k_params)
+        corr_fact = (nobs - 1.) / float(nobs - k_params)
         # for bse we need sqrt of correction factor
         cls.corr_fact = np.sqrt(corr_fact)
 
@@ -375,7 +378,7 @@ class TestGLMPoissonHC1Fit(CheckCountRobustMixin):
         nobs, k_vars = mod.exog.shape
         corr_fact = (nobs) / float(nobs - 1.)
         # for bse we need sqrt of correction factor
-        cls.corr_fact = np.sqrt(1./corr_fact)
+        cls.corr_fact = np.sqrt(1. / corr_fact)
 
 
 @pytest.mark.not_vetted
@@ -422,7 +425,7 @@ class TestNegbinCluGeneric(CheckCountRobustMixin):
     def setup_class(cls):
         cls.res2 = results_st.results_negbin_clu
         mod = smd.NegativeBinomial(endog, exog)
-        cls.res1 = res1 = mod.fit(disp=False, gtol=1e-7)
+        cls.res1 = mod.fit(disp=False, gtol=1e-7)
 
         get_robustcov_results(cls.res1._results, 'cluster',
                                                   groups=group,
@@ -434,8 +437,7 @@ class TestNegbinCluGeneric(CheckCountRobustMixin):
 
         nobs, k_vars = mod.exog.shape
         k_params = len(cls.res1.params)
-        #n_groups = len(np.unique(group))
-        corr_fact = (nobs-1.) / float(nobs - k_params)
+        corr_fact = (nobs - 1.) / float(nobs - k_params)
         # for bse we need sqrt of correction factor
         cls.corr_fact = np.sqrt(corr_fact)
 
@@ -457,8 +459,7 @@ class TestNegbinCluFit(CheckCountRobustMixin):
 
         nobs, k_vars = mod.exog.shape
         k_params = len(cls.res1.params)
-        #n_groups = len(np.unique(group))
-        corr_fact = (nobs-1.) / float(nobs - k_params)
+        corr_fact = (nobs - 1.) / float(nobs - k_params)
         # for bse we need sqrt of correction factor
         cls.corr_fact = np.sqrt(corr_fact)
 
@@ -480,7 +481,6 @@ class TestNegbinCluExposureFit(CheckCountRobustMixin):
 
         nobs, k_vars = mod.exog.shape
         k_params = len(cls.res1.params)
-        #n_groups = len(np.unique(group))
         corr_fact = (nobs-1.) / float(nobs - k_params)
         # for bse we need sqrt of correction factor
         cls.corr_fact = np.sqrt(corr_fact)
@@ -508,12 +508,12 @@ class CheckDiscreteGLM(object):
 
 @pytest.mark.not_vetted
 class TestGLMLogit(CheckDiscreteGLM):
+    cov_type = 'cluster'
 
     @classmethod
     def setup_class(cls):
         raise pytest.skip("GLM not implemented")
         endog_bin = (endog > endog.mean()).astype(int)
-        cls.cov_type = 'cluster'
 
         mod1 = GLM(endog_bin, exog, family=families.Binomial())
         cls.res1 = mod1.fit(cov_type='cluster', cov_kwds=dict(groups=group))
@@ -523,14 +523,15 @@ class TestGLMLogit(CheckDiscreteGLM):
 
 
 @pytest.mark.not_vetted
-class T_estGLMProbit(CheckDiscreteGLM):
-    # invalid link. What's Probit as GLM?
+@pytest.mark.xfail(reason="This test is mangled upstream.  Has comment: "
+                          "invalid link. What's Probit as GLM?")
+class TestGLMProbit(CheckDiscreteGLM):
+    cov_type = 'cluster'
 
     @classmethod
     def setup_class(cls):
         raise pytest.skip("GLM not implemented")
         endog_bin = (endog > endog.mean()).astype(int)
-        cls.cov_type = 'cluster'
 
         mod1 = GLM(endog_bin, exog, family=families.Gaussian(link=links.CDFLink()))
         cls.res1 = mod1.fit(cov_type='cluster', cov_kwds=dict(groups=group))
@@ -541,12 +542,11 @@ class T_estGLMProbit(CheckDiscreteGLM):
 
 @pytest.mark.not_vetted
 class TestGLMGaussNonRobust(CheckDiscreteGLM):
+    cov_type = 'nonrobust'
 
     @classmethod
     def setup_class(cls):
         raise pytest.skip("GLM not implemented")
-        cls.cov_type = 'nonrobust'
-
         mod1 = GLM(endog, exog, family=families.Gaussian())
         cls.res1 = mod1.fit()
 
@@ -556,12 +556,11 @@ class TestGLMGaussNonRobust(CheckDiscreteGLM):
 
 @pytest.mark.not_vetted
 class TestGLMGaussClu(CheckDiscreteGLM):
+    cov_type = 'cluster'
 
     @classmethod
     def setup_class(cls):
         raise pytest.skip("GLM not implemented")
-        cls.cov_type = 'cluster'
-
         mod1 = GLM(endog, exog, family=families.Gaussian())
         cls.res1 = mod1.fit(cov_type='cluster', cov_kwds=dict(groups=group))
 
@@ -571,12 +570,11 @@ class TestGLMGaussClu(CheckDiscreteGLM):
 
 @pytest.mark.not_vetted
 class TestGLMGaussHC(CheckDiscreteGLM):
+    cov_type = 'HC0'
 
     @classmethod
     def setup_class(cls):
         raise pytest.skip("GLM not implemented")
-        cls.cov_type = 'HC0'
-
         mod1 = GLM(endog, exog, family=families.Gaussian())
         cls.res1 = mod1.fit(cov_type='HC0')
 
@@ -586,14 +584,12 @@ class TestGLMGaussHC(CheckDiscreteGLM):
 
 @pytest.mark.not_vetted
 class TestGLMGaussHAC(CheckDiscreteGLM):
+    cov_type = 'HAC'
 
     @classmethod
     def setup_class(cls):
         raise pytest.skip("GLM not implemented")
-
-        cls.cov_type = 'HAC'
-
-        kwds={'maxlags':2}
+        kwds = {'maxlags': 2}
         mod1 = GLM(endog, exog, family=families.Gaussian())
         cls.res1 = mod1.fit(cov_type='HAC', cov_kwds=kwds)
 
@@ -603,28 +599,25 @@ class TestGLMGaussHAC(CheckDiscreteGLM):
 
 @pytest.mark.not_vetted
 class TestGLMGaussHACUniform(CheckDiscreteGLM):
+    cov_type = 'HAC'
 
     @classmethod
     def setup_class(cls):
         raise pytest.skip("GLM not implemented")
 
-        cls.cov_type = 'HAC'
-
-        kwds={'kernel': sw.weights_uniform, 'maxlags':2}
+        kwds = {'kernel': sw.weights_uniform, 'maxlags': 2}
         mod1 = GLM(endog, exog, family=families.Gaussian())
         cls.res1 = mod1.fit(cov_type='HAC', cov_kwds=kwds)
 
         mod2 = OLS(endog, exog)
         cls.res2 = mod2.fit(cov_type='HAC', cov_kwds=kwds)
 
-        #for debugging
-        cls.res3 = mod2.fit(cov_type='HAC', cov_kwds={'maxlags':2})
-
+        # for debugging
+        cls.res3 = mod2.fit(cov_type='HAC', cov_kwds={'maxlags': 2})
 
     def test_cov_options(self):
-
         # check keyword `weights_func
-        kwdsa = {'weights_func': sw.weights_uniform, 'maxlags':2}
+        kwdsa = {'weights_func': sw.weights_uniform, 'maxlags': 2}
         res1a = self.res1.model.fit(cov_type='HAC', cov_kwds=kwdsa)
         res2a = self.res2.model.fit(cov_type='HAC', cov_kwds=kwdsa)
         assert_allclose(res1a.bse, self.res1.bse, rtol=1e-12)
@@ -636,7 +629,7 @@ class TestGLMGaussHACUniform(CheckDiscreteGLM):
 
         assert_(res1a.cov_kwds['weights_func'] is sw.weights_uniform)
 
-        kwdsb = {'kernel': sw.weights_bartlett, 'maxlags':2}
+        kwdsb = {'kernel': sw.weights_bartlett, 'maxlags': 2}
         res1a = self.res1.model.fit(cov_type='HAC', cov_kwds=kwdsb)
         res2a = self.res2.model.fit(cov_type='HAC', cov_kwds=kwdsb)
         assert_allclose(res1a.bse, res2a.bse, rtol=1e-12)
@@ -648,10 +641,11 @@ class TestGLMGaussHACUniform(CheckDiscreteGLM):
 
 @pytest.mark.not_vetted
 class TestGLMGaussHACPanel(CheckDiscreteGLM):
+    cov_type = 'hac-panel'
+
     @classmethod
     def setup_class(cls):
         raise pytest.skip("GLM not implemented")
-        cls.cov_type = 'hac-panel'
         # time index is just made up to have a test case
         time = np.tile(np.arange(7), 5)[:-1]
         mod1 = GLM(endog.copy(), exog.copy(), family=families.Gaussian())
@@ -673,11 +667,11 @@ class TestGLMGaussHACPanel(CheckDiscreteGLM):
 
 @pytest.mark.not_vetted
 class TestGLMGaussHACPanelGroups(CheckDiscreteGLM):
+    cov_type = 'hac-panel'
 
     @classmethod
     def setup_class(cls):
         raise pytest.skip("GLM not implemented")
-        cls.cov_type = 'hac-panel'
         # time index is just made up to have a test case
         groups = np.repeat(np.arange(5), 7)[:-1]
         mod1 = GLM(endog.copy(), exog.copy(), family=families.Gaussian())
@@ -694,11 +688,11 @@ class TestGLMGaussHACPanelGroups(CheckDiscreteGLM):
 
 @pytest.mark.not_vetted
 class TestGLMGaussHACGroupsum(CheckDiscreteGLM):
+    cov_type = 'hac-groupsum'
 
     @classmethod
     def setup_class(cls):
         raise pytest.skip("GLM not implemented")
-        cls.cov_type = 'hac-groupsum'
         # time index is just made up to have a test case
         time = np.tile(np.arange(7), 5)[:-1]
         mod1 = GLM(endog, exog, family=families.Gaussian())
