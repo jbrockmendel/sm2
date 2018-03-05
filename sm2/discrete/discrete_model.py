@@ -27,19 +27,16 @@ import pandas as pd
 from scipy.special import gammaln, digamma, polygamma
 from scipy import stats, special
 
-import sm2.tools.tools as tools
-from sm2.tools import data as data_tools
 from sm2.tools.decorators import resettable_cache, cache_readonly
 from sm2.tools.sm_exceptions import PerfectSeparationError
 from sm2.tools.numdiff import approx_fprime_cs
+from sm2.tools import tools, data as data_tools
 
 import sm2.base.model as base
 from sm2.base.data import handle_data  # for mnlogit
 import sm2.base.wrapper as wrap
 
 import sm2.regression.linear_model as lm
-
-from statsmodels.base.l1_slsqp import fit_l1_slsqp
 
 try:
     import cvxopt  # noqa:F401
@@ -380,6 +377,7 @@ class DiscreteModel(base.LikelihoodModel):
         # Parameters to pass to super(...).fit()
         # For the 'extra' parameters, pass all that are available,
         # even if we know (at this point) we will only use one.
+        from statsmodels.base.l1_slsqp import fit_l1_slsqp
         extra_fit_funcs = {'l1': fit_l1_slsqp}
         if have_cvxopt and method == 'l1_cvxopt_cp':
             from statsmodels.base.l1_cvxopt import fit_l1_cvxopt_cp

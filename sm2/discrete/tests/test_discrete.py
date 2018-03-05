@@ -941,7 +941,7 @@ class CompareL1(object):
         assert_almost_equal(self.res1.pvalues, self.res2.pvalues, DECIMAL_4)
 
         if self.res1.mle_retvals['converged'] == 'True':
-            # KLUDGE for older statsmodels returning the wrong thing
+            # KLUDGE for older sm returning the wrong thing
             self.res1.mle_retvals['converged'] = True
         assert self.res1.mle_retvals['converged'] is True
 
@@ -978,7 +978,7 @@ class TestL1AlphaZeroLogit(CompareL11D):
 
         # see GH#2857
         if res.mle_retvals['converged'] == 'Iteration limit exceeded':
-            # KLUDGE for older statsmodels
+            # KLUDGE for older sm
             res.mle_retvals['converged'] = False
         assert res.mle_retvals['converged'] is False
 
@@ -1427,17 +1427,29 @@ class CheckMNLogitBaseZero(CheckModelResults):
 
     def test_margeff_overall(self):
         me = self.res1.get_margeff()
-        assert_almost_equal(me.margeff, self.res2.margeff_dydx_overall, 6)
-        assert_almost_equal(me.margeff_se, self.res2.margeff_dydx_overall_se, 6)
+        assert_almost_equal(me.margeff,
+                            self.res2.margeff_dydx_overall,
+                            6)
+        assert_almost_equal(me.margeff_se,
+                            self.res2.margeff_dydx_overall_se,
+                            6)
+
         me_frame = me.summary_frame()
         eff = me_frame["dy/dx"].values.reshape(me.margeff.shape, order="F")
-        assert_allclose(eff, me.margeff, rtol=1e-13)
-        assert_equal(me_frame.shape, (np.size(me.margeff), 6))
+        assert_allclose(eff,
+                        me.margeff,
+                        rtol=1e-13)
+        assert_equal(me_frame.shape,
+                     (np.size(me.margeff), 6))
 
     def test_margeff_mean(self):
         me = self.res1.get_margeff(at='mean')
-        assert_almost_equal(me.margeff, self.res2.margeff_dydx_mean, 7)
-        assert_almost_equal(me.margeff_se, self.res2.margeff_dydx_mean_se, 7)
+        assert_almost_equal(me.margeff,
+                            self.res2.margeff_dydx_mean,
+                            7)
+        assert_almost_equal(me.margeff_se,
+                            self.res2.margeff_dydx_mean_se,
+                            7)
 
     def test_margeff_dummy(self):
         data = self.data
@@ -1445,16 +1457,22 @@ class CheckMNLogitBaseZero(CheckModelResults):
         exog = np.column_stack((data.exog, vote))
         exog = add_constant(exog, prepend=False)
         res = MNLogit(data.endog, exog).fit(method="newton", disp=0)
+        
         me = res.get_margeff(dummy=True)
-        assert_almost_equal(me.margeff, self.res2.margeff_dydx_dummy_overall,
-                6)
+        assert_almost_equal(me.margeff,
+                            self.res2.margeff_dydx_dummy_overall,
+                            6)
         assert_almost_equal(me.margeff_se,
-                self.res2.margeff_dydx_dummy_overall_se, 6)
+                            self.res2.margeff_dydx_dummy_overall_se,
+                            6)
+
         me = res.get_margeff(dummy=True, method="eydx")
-        assert_almost_equal(me.margeff, self.res2.margeff_eydx_dummy_overall,
-                5)
+        assert_almost_equal(me.margeff,
+                            self.res2.margeff_eydx_dummy_overall,
+                            5)
         assert_almost_equal(me.margeff_se,
-                self.res2.margeff_eydx_dummy_overall_se, 6)
+                            self.res2.margeff_eydx_dummy_overall_se,
+                            6)
 
     def test_j(self):
         assert_equal(self.res1.model.J, self.res2.J)
@@ -1537,7 +1555,6 @@ class CheckMNLogitBaseZero(CheckModelResults):
 class TestMNLogitNewtonBaseZero(CheckMNLogitBaseZero):
     @classmethod
     def setup_class(cls):
-
         data = sm2.datasets.anes96.load()
         cls.data = data
         exog = data.exog
@@ -1574,10 +1591,10 @@ def test_perfect_prediction():
     cur_dir = os.path.dirname(os.path.abspath(__file__))
     iris_dir = os.path.join(cur_dir, '..', '..', 'genmod', 'tests', 'results')
     iris_dir = os.path.abspath(iris_dir)
-    iris = np.genfromtxt(os.path.join(iris_dir, 'iris.csv'), delimiter=",",
-                            skip_header=1)
-    y = iris[:,-1]
-    X = iris[:,:-1]
+    iris = np.genfromtxt(os.path.join(iris_dir, 'iris.csv'),
+                         delimiter=",", skip_header=1)
+    y = iris[:, -1]
+    X = iris[:, :-1]
     X = X[y != 2]
     y = y[y != 2]
     X = add_constant(X, prepend=True)
@@ -1639,22 +1656,6 @@ def test_mnlogit_factor():
 
 
 @pytest.mark.not_vetted
-def test_binary_pred_table_zeros():
-    # see GH#2968
-    nobs = 10
-    y = np.zeros(nobs)
-    y[[1,3]] = 1
-
-    res = Logit(y, np.ones(nobs)).fit(disp=0)
-    expected = np.array([[ 8.,  0.], [ 2.,  0.]])
-    assert_equal(res.pred_table(), expected)
-
-    res = MNLogit(y, np.ones(nobs)).fit(disp=0)
-    expected = np.array([[ 8.,  0.], [ 2.,  0.]])
-    assert_equal(res.pred_table(), expected)
-
-
-@pytest.mark.not_vetted
 class TestGeneralizedPoisson_p2(object):
     # Test Generalized Poisson model
 
@@ -1664,23 +1665,30 @@ class TestGeneralizedPoisson_p2(object):
         data.exog = add_constant(data.exog, prepend=False)
         mod = GeneralizedPoisson(data.endog, data.exog, p=2)
         cls.res1 = mod.fit(method='newton')
+
         res2 = RandHIE()
         res2.generalizedpoisson_gp2()
         cls.res2 = res2
 
     def test_bse(self):
-        assert_allclose(self.res1.bse, self.res2.bse, atol=1e-5)
+        assert_allclose(self.res1.bse,
+                        self.res2.bse,
+                        atol=1e-5)
 
     def test_params(self):
-        assert_allclose(self.res1.params, self.res2.params, atol=1e-5)
+        assert_allclose(self.res1.params,
+                        self.res2.params,
+                        atol=1e-5)
 
     def test_alpha(self):
         assert_allclose(self.res1.lnalpha, self.res2.lnalpha)
         assert_allclose(self.res1.lnalpha_std_err,
-                            self.res2.lnalpha_std_err, atol=1e-5)
+                        self.res2.lnalpha_std_err,
+                        atol=1e-5)
 
     def test_conf_int(self):
-        assert_allclose(self.res1.conf_int(), self.res2.conf_int,
+        assert_allclose(self.res1.conf_int(),
+                        self.res2.conf_int,
                         atol=1e-3)
 
     def test_aic(self):
@@ -1697,8 +1705,11 @@ class TestGeneralizedPoisson_p2(object):
 
     def test_wald(self):
         result = self.res1.wald_test(np.eye(len(self.res1.params))[:-2])
-        assert_allclose(result.statistic, self.res2.wald_statistic)
-        assert_allclose(result.pvalue, self.res2.wald_pvalue, atol=1e-15)
+        assert_allclose(result.statistic,
+                        self.res2.wald_statistic)
+        assert_allclose(result.pvalue,
+                        self.res2.wald_pvalue,
+                        atol=1e-15)
 
     def test_t(self):
         unit_matrix = np.identity(self.res1.params.size)
@@ -1714,25 +1725,33 @@ class TestGeneralizedPoisson_transparams(object):
     def setup_class(cls):
         data = sm2.datasets.randhie.load()
         data.exog = add_constant(data.exog, prepend=False)
-        cls.res1 = GeneralizedPoisson(data.endog, data.exog, p=2).fit(
-            method='newton', use_transparams=True)
+        gpmod = GeneralizedPoisson(data.endog, data.exog, p=2)
+        cls.res1 = gpmod.fit(method='newton', use_transparams=True)
+
         res2 = RandHIE()
         res2.generalizedpoisson_gp2()
         cls.res2 = res2
 
     def test_bse(self):
-        assert_allclose(self.res1.bse, self.res2.bse, atol=1e-5)
+        assert_allclose(self.res1.bse,
+                        self.res2.bse,
+                        atol=1e-5)
 
     def test_params(self):
-        assert_allclose(self.res1.params, self.res2.params, atol=1e-5)
+        assert_allclose(self.res1.params,
+                        self.res2.params,
+                        atol=1e-5)
 
     def test_alpha(self):
-        assert_allclose(self.res1.lnalpha, self.res2.lnalpha)
+        assert_allclose(self.res1.lnalpha,
+                        self.res2.lnalpha)
         assert_allclose(self.res1.lnalpha_std_err,
-                        self.res2.lnalpha_std_err, atol=1e-5)
+                        self.res2.lnalpha_std_err,
+                        atol=1e-5)
 
     def test_conf_int(self):
-        assert_allclose(self.res1.conf_int(), self.res2.conf_int,
+        assert_allclose(self.res1.conf_int(),
+                        self.res2.conf_int,
                         atol=1e-3)
 
     def test_aic(self):
@@ -1756,35 +1775,37 @@ class TestGeneralizedPoisson_p1(object):
     def setup_class(cls):
         cls.data = sm2.datasets.randhie.load()
         cls.data.exog = add_constant(cls.data.exog, prepend=False)
-        cls.res1 = GeneralizedPoisson(
-            cls.data.endog, cls.data.exog, p=1).fit(method='newton')
+        gpmod = GeneralizedPoisson(cls.data.endog, cls.data.exog, p=1)
+        cls.res1 = gpmod.fit(method='newton')
 
     def test_llf(self):
-        poisson_llf = Poisson(
-            self.data.endog, self.data.exog).loglike(
-            self.res1.params[:-1])
-        genpoisson_llf = GeneralizedPoisson(
-            self.data.endog, self.data.exog, p=1).loglike(
-            list(self.res1.params[:-1]) + [0])
-        assert_allclose(genpoisson_llf, poisson_llf)
+        pmod = Poisson(self.data.endog, self.data.exog)
+        gpmod = GeneralizedPoisson(self.data.endog, self.data.exog, p=1)
+
+        poisson_llf = pmod.loglike(self.res1.params[:-1])
+        genpoisson_llf = gpmod.loglike(list(self.res1.params[:-1]) + [0])
+        assert_allclose(genpoisson_llf,
+                        poisson_llf)
 
     def test_score(self):
-        poisson_score = Poisson(
-            self.data.endog, self.data.exog).score(
-            self.res1.params[:-1])
-        genpoisson_score = GeneralizedPoisson(
-            self.data.endog, self.data.exog, p=1).score(
-            list(self.res1.params[:-1]) + [0])
-        assert_allclose(genpoisson_score[:-1], poisson_score, atol=1e-9)
+        pmod = Poisson(self.data.endog, self.data.exog)
+        gpmod = GeneralizedPoisson(self.data.endog, self.data.exog, p=1)
+
+        poisson_score = pmod.score(self.res1.params[:-1])
+        genpoisson_score = gpmod.score(list(self.res1.params[:-1]) + [0])
+        assert_allclose(genpoisson_score[:-1],
+                        poisson_score,
+                        atol=1e-9)
 
     def test_hessian(self):
-        poisson_score = Poisson(
-            self.data.endog, self.data.exog).hessian(
-            self.res1.params[:-1])
-        genpoisson_score = GeneralizedPoisson(
-            self.data.endog, self.data.exog, p=1).hessian(
-            list(self.res1.params[:-1]) + [0])
-        assert_allclose(genpoisson_score[:-1,:-1], poisson_score, atol=1e-10)
+        pmod = Poisson(self.data.endog, self.data.exog)
+        gpmod = GeneralizedPoisson(self.data.endog, self.data.exog, p=1)
+
+        poisson_score = pmod.hessian(self.res1.params[:-1])
+        genpoisson_score = gpmod.hessian(list(self.res1.params[:-1]) + [0])
+        assert_allclose(genpoisson_score[:-1, :-1],
+                        poisson_score,
+                        atol=1e-10)
 
     def test_t(self):
         unit_matrix = np.identity(self.res1.params.size)
@@ -1813,8 +1834,8 @@ class TestGeneralizedPoisson_p1(object):
 
     def test_init_kwds(self):
         kwds = self.res1.model._get_init_kwds()
-        assert_('p' in kwds)
-        assert_equal(kwds['p'], 1)
+        assert 'p' in kwds
+        assert kwds['p'] == 1
 
 
 @pytest.mark.not_vetted
@@ -2097,16 +2118,16 @@ class TestNegativeBinomialPNB1BFGS(CheckModelResults):
 
     def test_init_kwds(self):
         kwds = self.res1.model._get_init_kwds()
-        assert_('p' in kwds)
-        assert_equal(kwds['p'], 1)
+        assert 'p' in kwds
+        assert kwds['p'] == 1
 
 
 @pytest.mark.not_vetted
 class TestNegativeBinomialPL1Compatability(CheckL1Compatability):
     @classmethod
     def setup_class(cls):
-        cls.kvars = 10 # Number of variables
-        cls.m = 7 # Number of unregularized parameters
+        cls.kvars = 10  # Number of variables
+        cls.m = 7  # Number of unregularized parameters
         rand_data = sm2.datasets.randhie.load()
         rand_exog = rand_data.exog.view(float).reshape(len(rand_data.exog), -1)
         rand_exog_st = (rand_exog - rand_exog.mean(0)) / rand_exog.std(0)
@@ -2121,9 +2142,10 @@ class TestNegativeBinomialPL1Compatability(CheckL1Compatability):
         alpha[-1] = 0  # don't penalize alpha
 
         mod_reg = NegativeBinomialP(rand_data.endog, rand_exog)
-        cls.res_reg = mod_reg.fit_regularized(
-            method='l1', alpha=alpha, disp=False, acc=1e-10, maxiter=2000,
-            trim_mode='auto')
+        cls.res_reg = mod_reg.fit_regularized(method='l1', alpha=alpha,
+                                              disp=False, acc=1e-10,
+                                              maxiter=2000,
+                                              trim_mode='auto')
         cls.k_extra = 1  # 1 extra parameter in nb2
 
 
@@ -2134,7 +2156,7 @@ class  TestNegativeBinomialPPredictProb(object):
         np.random.seed(1234)
         nobs = 200
         exog = np.ones((nobs, 2))
-        exog[:nobs//2, 1] = 2
+        exog[:nobs // 2, 1] = 2
         mu_true = np.exp(exog.dot(expected_params))
         alpha = 0.05
         size = 1. / alpha * mu_true
@@ -2153,7 +2175,9 @@ class  TestNegativeBinomialPPredictProb(object):
             atol=1e-2, rtol=1e-2)
 
         probs_ex = res.predict(exog=exog[[0, -1]], which='prob')
-        assert_allclose(probs_ex, probs[[0, -1]], rtol=1e-10, atol=1e-15)
+        assert_allclose(probs_ex,
+                        probs[[0, -1]],
+                        rtol=1e-10, atol=1e-15)
 
     def test_predict_prob_p2(self):
         expected_params = [1, -0.5]
@@ -2174,17 +2198,17 @@ class  TestNegativeBinomialPPredictProb(object):
         prob = size / (size + mu)
 
         assert_allclose(res.predict(which='prob'),
-            stats.nbinom.pmf(np.arange(8)[:,None], size, prob).T,
-            atol=1e-2, rtol=1e-2)
+                        stats.nbinom.pmf(np.arange(8)[:,None], size, prob).T,
+                        atol=1e-2, rtol=1e-2)
 
 
 class CheckNull(object):
     @classmethod
     def _get_data(cls):
-        x = np.array([ 20.,  25.,  30.,  35.,  40.,  45.,  50.])
+        x = np.array([20., 25., 30., 35., 40., 45., 50.])
         nobs = len(x)
         exog = np.column_stack((np.ones(nobs), x))
-        endog = np.array([ 469, 5516, 6854, 6837, 5952, 4066, 3242])
+        endog = np.array([469, 5516, 6854, 6837, 5952, 4066, 3242])
         return endog, exog
 
     def test_llnull(self):
@@ -2305,7 +2329,7 @@ def test_null_options():
     endog = np.random.poisson(mu)  # Note no size=nobs in np.random
     res = Poisson(endog, exog).fit(start_params=np.log([1, 1]))
     llnull0 = res.llnull
-    assert_(hasattr(res, 'res_llnull') is False)
+    assert not hasattr(res, 'res_llnull')
     res.set_null_options(attach_results=True)
     # default optimization
     lln = res.llnull  # access to trigger computation
@@ -2321,15 +2345,15 @@ def test_null_options():
     assert_equal(res.res_null.mle_settings['optimizer'], 'nm')
 
     res.summary()  # call to fill cache
-    assert_('prsquared' in res._cache)
+    assert 'prsquared' in res._cache
     assert_equal(res._cache['llnull'],  lln)
 
-    assert_('prsquared' in res._cache)
+    assert 'prsquared' in res._cache
     assert_equal(res._cache['llnull'],  lln)
 
     # check setting cache
     res.set_null_options(llnull=999)
-    assert_('prsquared' not in res._cache)
+    assert 'prsquared' not in res._cache
     assert_equal(res._cache['llnull'],  999)
 
 
@@ -2576,11 +2600,11 @@ def test_binary_pred_table_zeros():
     y[[1, 3]] = 1
 
     res = Logit(y, np.ones(nobs)).fit(disp=0)
-    expected = np.array([[ 8.,  0.], [ 2.,  0.]])
+    expected = np.array([[8., 0.], [2., 0.]])
     assert_equal(res.pred_table(), expected)
 
     res = MNLogit(y, np.ones(nobs)).fit(disp=0)
-    expected = np.array([[ 8.,  0.], [ 2.,  0.]])
+    expected = np.array([[8., 0.], [2., 0.]])
     assert_equal(res.pred_table(), expected)
 
     check_inherited_attributes(res)

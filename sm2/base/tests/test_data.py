@@ -6,7 +6,7 @@ import pandas.util.testing as tm
 
 from sm2.base import data as sm_data
 from sm2.api import Logit, OLS
-from statsmodels.formula import handle_formula_data
+from sm2.formula import handle_formula_data
 # from statsmodels.genmod.generalized_linear_model import GLM
 # from statsmodels.genmod import families
 
