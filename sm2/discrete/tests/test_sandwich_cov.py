@@ -183,7 +183,7 @@ class TestPoissonCluFit(CheckCountRobustMixin):
                            )
 
         # The model results, t_test, ... should also work without
-        # normalized_cov_params, see #2209
+        # normalized_cov_params, see GH#2209
         # Note: we cannot set on the wrapper res1, we need res1._results
         cls.res1._results.normalized_cov_params = None
 

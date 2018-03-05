@@ -44,8 +44,8 @@ from scipy import stats, optimize
 from sm2.tools.sm_exceptions import InvalidTestWarning
 from sm2.tools.tools import add_constant, chain_dot, pinv_extended
 from sm2.tools.decorators import (resettable_cache,
-                                          cache_readonly,
-                                          cache_writable)
+                                  cache_readonly,
+                                  cache_writable)
 import sm2.base.model as base
 import sm2.base.wrapper as wrap
 
@@ -2525,7 +2525,6 @@ class OLSResults(RegressionResults):
     See Also
     --------
     RegressionResults
-
     """
 
     def get_influence(self):
@@ -2552,7 +2551,6 @@ class OLSResults(RegressionResults):
         Parameters
         ----------
         method : str
-
             - `bonferroni` : one-step correction
             - `sidak` : one-step correction
             - `holm-sidak` :
@@ -2561,7 +2559,6 @@ class OLSResults(RegressionResults):
             - `hommel` :
             - `fdr_bh` : Benjamini/Hochberg
             - `fdr_by` : Benjamini/Yekutieli
-
             See `statsmodels.stats.multitest.multipletests` for details.
         alpha : float
             familywise error rate
@@ -2591,26 +2588,20 @@ class OLSResults(RegressionResults):
 
         Parameters
         ----------
-
         b0_vals : 1darray
             The hypothesized value of the parameter to be tested
-
         param_nums : 1darray
             The parameter number to be tested
-
         print_weights : bool
             If true, returns the weights that optimize the likelihood
             ratio at b0_vals.  Default is False
-
         ret_params : bool
             If true, returns the parameter vector that maximizes the likelihood
             ratio at b0_vals.  Also returns the weights.  Default is False
-
         method : string
             Can either be 'nm' for Nelder-Mead or 'powell' for Powell.  The
             optimization method that optimizes over nuisance parameters.
             Default is 'nm'
-
         stochastic_exog : bool
             When TRUE, the exogenous variables are assumed to be stochastic.
             When the regressors are nonstochastic, moment conditions are
@@ -2620,7 +2611,6 @@ class OLSResults(RegressionResults):
 
         Returns
         -------
-
         res : tuple
             The p-value and -2 times the log-likelihood ratio for the
             hypothesized values.
@@ -2689,21 +2679,16 @@ class OLSResults(RegressionResults):
 
         Parameters
         ----------
-
         param_num : float
             The parameter for which the confidence interval is desired
-
         sig : float
             The significance level.  Default is .05
-
         upper_bound : float
             The maximum value the upper limit can be.  Default is the
             99.9% confidence value under OLS assumptions.
-
         lower_bound : float
             The minimum value the lower limit can be.  Default is the 99.9%
             confidence value under OLS assumptions.
-
         method : string
             Can either be 'nm' for Nelder-Mead or 'powell' for Powell.  The
             optimization method that optimizes over nuisance parameters.
@@ -2711,18 +2696,15 @@ class OLSResults(RegressionResults):
 
         Returns
         -------
-
         ci : tuple
             The confidence interval
 
         See Also
         --------
-
         el_test
 
         Notes
         -----
-
         This function uses brentq to find the value of beta where
         test_beta([beta], param_num)[1] is equal to the critical
         value.
@@ -2763,7 +2745,6 @@ class OLSResults(RegressionResults):
 
 
 class RegressionResultsWrapper(wrap.ResultsWrapper):
-
     _attrs = {
         'chisq': 'columns',
         'sresid': 'rows',
@@ -2775,14 +2756,10 @@ class RegressionResultsWrapper(wrap.ResultsWrapper):
         'HC1_se': 'columns',
         'HC2_se': 'columns',
         'HC3_se': 'columns',
-        'norm_resid': 'rows',
-    }
-
+        'norm_resid': 'rows'}
     _wrap_attrs = wrap.union_dicts(base.LikelihoodResultsWrapper._attrs,
                                    _attrs)
-
     _methods = {}
-
     _wrap_methods = wrap.union_dicts(
                         base.LikelihoodResultsWrapper._wrap_methods,
                         _methods)

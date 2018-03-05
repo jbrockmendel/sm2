@@ -15,6 +15,7 @@ import pytest
 import numpy as np
 from numpy.testing import assert_, assert_equal
 import pandas as pd
+import pandas.util.testing as tm
 
 
 import sm2.api as sm
@@ -44,13 +45,11 @@ class RemoveDataPickle(object):
         cls.predict_kwds = {}
 
     def test_remove_data_pickle(self):
-        from pandas.util.testing import assert_series_equal
-
         results = self.results
         xf = self.xf
         pred_kwds = self.predict_kwds
         pred1 = results.predict(xf, **pred_kwds)
-        #create some cached attributes
+        # create some cached attributes
         results.summary()
         res = results.summary2()  # SMOKE test also summary2
 
@@ -68,7 +67,7 @@ class RemoveDataPickle(object):
         pred2 = results.predict(xf, **pred_kwds)
 
         if isinstance(pred1, pd.Series) and isinstance(pred2, pd.Series):
-            assert_series_equal(pred1, pred2)
+            tm.assert_series_equal(pred1, pred2)
         elif isinstance(pred1, pd.DataFrame) and isinstance(pred2, pd.DataFrame):
             assert_(pred1.equals(pred2))
         else:
@@ -87,7 +86,7 @@ class RemoveDataPickle(object):
         pred3 = results.predict(xf, **pred_kwds)
 
         if isinstance(pred1, pd.Series) and isinstance(pred3, pd.Series):
-            assert_series_equal(pred1, pred3)
+            tm.assert_series_equal(pred1, pred3)
         elif isinstance(pred1, pd.DataFrame) and isinstance(pred3, pd.DataFrame):
             assert_(pred1.equals(pred3))
         else:
@@ -160,7 +159,8 @@ class TestRemoveDataPicklePoisson(RemoveDataPickle):
         y_count = np.random.poisson(np.exp(x.sum(1) - x.mean()))
         model = sm.Poisson(y_count, x)  #, exposure=np.ones(nobs), offset=np.zeros(nobs))  # bug with default
         # use start_params to converge faster
-        start_params = np.array([0.75334818, 0.99425553, 1.00494724, 1.00247112])
+        start_params = np.array([0.75334818, 0.99425553,
+                                 1.00494724, 1.00247112])
         self.results = model.fit(start_params=start_params,
                                  method='bfgs', disp=0)
 
