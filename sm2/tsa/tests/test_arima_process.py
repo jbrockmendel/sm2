@@ -153,7 +153,6 @@ def test_spectrum():
                                 err_msg='spdr spdd not equal for %s, %s' % (ar, ma))
             assert_almost_equal(spdr, spdp, decimal=7,
                                 err_msg='spdr spdp not equal for %s, %s' % (ar, ma))
-'''
 
 
 @pytest.mark.not_vetted
@@ -163,11 +162,14 @@ def test_armafft():
     w = np.linspace(0, np.pi, nfreq, endpoint=False)
     for ar in arlist:
         for ma in malist:
+            from statsmodels.sandbox.tsa.fftarma import ArmaFft
             arma = ArmaFft(ar, ma, 20)
             ac1 = arma.invpowerspd(1024)[:10]
             ac2 = arma.acovf(10)[:10]
             assert_almost_equal(ac1, ac2, decimal=7,
                                 err_msg='acovf not equal for %s, %s' % (ar, ma))
+'''
+
 
 @pytest.mark.not_vetted
 def test_lpol2index_index2lpol():
@@ -361,4 +363,3 @@ class TestArmaProcess(object):
         pg = process.periodogram()
         assert_almost_equal(pg[0], np.linspace(0,np.pi,100,False))
         assert_almost_equal(pg[1], np.sqrt(2 / np.pi) / 2 * np.ones(100))
-

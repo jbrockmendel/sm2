@@ -21,9 +21,8 @@ from sm2.regression.linear_model import OLS, yule_walker
 
 from sm2.tsa.tsatools import lagmat, lagmat2ds, add_trend
 
-from statsmodels.tsa.adfvalues import mackinnonp, mackinnoncrit
-from statsmodels.tsa._bds import bds
-from statsmodels.tsa.arima_model import ARMA
+from sm2.tsa.adfvalues import mackinnonp, mackinnoncrit
+from sm2.tsa._bds import bds
 
 
 __all__ = ['acovf', 'acf', 'pacf', 'pacf_yw', 'pacf_ols', 'ccovf', 'ccf',
@@ -1037,29 +1036,7 @@ def coint(y0, y1, trend='c', method='aeg', maxlag=None, autolag='aic',
 
 
 def _safe_arma_fit(y, order, model_kw, trend, fit_kw, start_params=None):
-    try:
-        return ARMA(y, order=order, **model_kw).fit(disp=0, trend=trend,
-                                                    start_params=start_params,
-                                                    **fit_kw)
-    except np.linalg.LinAlgError:
-        # SVD convergence failure on badly misspecified models
-        return
-
-    except ValueError as error:
-        if start_params is not None:  # don't recurse again
-            # user supplied start_params only get one chance
-            return
-        # try a little harder, should be handled in fit really
-        elif ('initial' not in error.args[0] or 'initial' in str(error)):
-            start_params = [.1] * sum(order)
-            if trend == 'c':
-                start_params = [.1] + start_params
-            return _safe_arma_fit(y, order, model_kw, trend, fit_kw,
-                                  start_params)
-        else:
-            return
-    except:  # no idea what happened
-        return
+    raise NotImplementedError('Not ported from upstream')
 
 
 def arma_order_select_ic(y, max_ar=4, max_ma=2, ic='bic', trend='c',
