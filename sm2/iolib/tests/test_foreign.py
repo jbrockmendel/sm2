@@ -182,7 +182,7 @@ def test_date_converters():
 
 
 @pytest.mark.not_vetted
-@pytest.mark.skipif(pd.__version__ < '0.9')
+@pytest.mark.skipif("pd.__version__ < '0.9'")
 def test_datetime_roundtrip():
     dta = np.array([(1, datetime(2010, 1, 1), 2),
                     (2, datetime(2010, 2, 1), 3),

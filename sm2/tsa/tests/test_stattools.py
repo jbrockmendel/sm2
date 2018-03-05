@@ -540,8 +540,10 @@ def test_acovf_fft_vs_convolution():
             F2 = acovf(q, demean=demean, unbiased=unbiased, fft=False)
             assert_almost_equal(F1, F2, decimal=7)
 
-@pytest.mark.slow
+
 @pytest.mark.not_vetted
+@pytest.mark.slow
+@pytest.mark.smoke
 def test_arma_order_select_ic():
     # smoke test, assumes info-criteria are right
     from statsmodels.tsa.arima_process import arma_generate_sample
@@ -584,6 +586,7 @@ def test_arma_order_select_ic():
 
 
 @pytest.mark.not_vetted
+@pytest.mark.smoke
 def test_arma_order_select_ic_failure():
     # this should trigger an SVD convergence failure, smoke test that it
     # returns, likely platform dependent failure...
@@ -610,4 +613,3 @@ def test_acf_fft_dataframe():
     # GH#322
     result = acf(sunspots.load_pandas().data[['SUNACTIVITY']], fft=True)
     assert_equal(result.ndim, 1)
-
