@@ -20,18 +20,18 @@ x = np.array([-0.1184, -1.3403, 0.0063, -0.612, -0.3869, -0.2313, -2.8485,
 
 @pytest.mark.not_vetted
 def test_durbin_watson():
-    #benchmark values from R car::durbinWatsonTest(x)
-    #library("car")
-    #> durbinWatsonTest(x)
-    #[1] 1.95298958377419
-    #> durbinWatsonTest(x**2)
-    #[1] 1.848802400319998
-    #> durbinWatsonTest(x[2:20]+0.5*x[1:19])
-    #[1] 1.09897993228779
-    #> durbinWatsonTest(x[2:20]+0.8*x[1:19])
-    #[1] 0.937241876707273
-    #> durbinWatsonTest(x[2:20]+0.9*x[1:19])
-    #[1] 0.921488912587806
+    # benchmark values from R car::durbinWatsonTest(x)
+    # library("car")
+    # > durbinWatsonTest(x)
+    # [1] 1.95298958377419
+    # > durbinWatsonTest(x**2)
+    # [1] 1.848802400319998
+    # > durbinWatsonTest(x[2:20]+0.5*x[1:19])
+    # [1] 1.09897993228779
+    # > durbinWatsonTest(x[2:20]+0.8*x[1:19])
+    # [1] 0.937241876707273
+    # > durbinWatsonTest(x[2:20]+0.9*x[1:19])
+    # [1] 0.921488912587806
     st_R = 1.95298958377419
     assert_almost_equal(durbin_watson(x), st_R, 14)
 
@@ -52,9 +52,9 @@ def test_durbin_watson():
 def test_omni_normtest():
     # tests against R fBasics
 
-    st_pv_R = np.array(
-              [[3.994138321207883, -1.129304302161460,  1.648881473704978],
-               [0.1357325110375005, 0.2587694866795507, 0.0991719192710234]])
+    st_pv_R = np.array([
+        [3.994138321207883, -1.129304302161460, 1.648881473704978],
+        [0.1357325110375005, 0.2587694866795507, 0.0991719192710234]])
 
     nt = omni_normtest(x)
     assert_almost_equal(nt, st_pv_R[:, 0], 14)
@@ -65,13 +65,12 @@ def test_omni_normtest():
     kt = stats.kurtosistest(x)
     assert_almost_equal(kt, st_pv_R[:, 2], 11)
 
-    st_pv_R = np.array(
-              [[34.523210399523926,  4.429509162503833,  3.860396220444025],
-               [3.186985686465249e-08, 9.444780064482572e-06,
-                1.132033129378485e-04]])
+    st_pv_R = np.array([
+        [34.523210399523926, 4.429509162503833, 3.860396220444025],
+        [3.186985686465249e-08, 9.444780064482572e-06, 1.132033129378485e-04]])
 
     x2 = x**2
-    #TODO: fix precision in these test with relative tolerance
+    # TODO: fix precision in these test with relative tolerance
     nt = omni_normtest(x2)
     assert_almost_equal(nt, st_pv_R[:, 0], 12)
 
@@ -84,7 +83,7 @@ def test_omni_normtest():
 
 @pytest.mark.not_vetted
 def test_omni_normtest_axis():
-    #test axis of omni_normtest
+    # test axis of omni_normtest
     x = np.random.randn(25, 3)
     nt1 = omni_normtest(x)
     nt2 = omni_normtest(x, axis=0)
@@ -95,7 +94,7 @@ def test_omni_normtest_axis():
 
 @pytest.mark.not_vetted
 def test_jarque_bera():
-    #tests against R fBasics
+    # tests against R fBasics
     st_pv_R = np.array([1.9662677226861689, 0.3741367669648314])
     jb = jarque_bera(x)[:2]
     assert_almost_equal(jb, st_pv_R, 14)
@@ -123,7 +122,7 @@ def test_shapiro():
     sh = shapiro(x)
     assert_almost_equal(sh, st_pv_R, 4)
 
-    #st is ok -7.15e-06, pval agrees at -3.05e-10
+    # st is ok -7.15e-06, pval agrees at -3.05e-10
     st_pv_R = np.array([5.799574255943298e-01, 1.838456834681376e-06 * 1e4])
     sh = shapiro(x**2) * np.array([1, 1e4])
     assert_almost_equal(sh, st_pv_R, 5)
@@ -132,7 +131,7 @@ def test_shapiro():
     sh = shapiro(np.log(x**2))
     assert_almost_equal(sh, st_pv_R, 5)
 
-    #diff is [  9.38773155e-07,   5.48221246e-08]
+    # diff is [  9.38773155e-07, 5.48221246e-08]
     st_pv_R = np.array([0.818361863493919373, 0.001644620895206969])
     sh = shapiro(np.exp(-x**2))
     assert_almost_equal(sh, st_pv_R, 5)
@@ -186,15 +185,14 @@ class TestStattools(object):
         mean = np.mean
         kr1 = mean(((x - mean(x)) / np.std(x))**4.0) - 3.0
         kr2 = ((e7 - e5) + (e3 - e1)) / (e6 - e2) - 1.2330951154852172
-        kr3 = (mean(x[x > c95]) - mean(x[x < c05])) / (mean(x[x > c50]) -
-               mean(x[x < c50])) - 2.5852271228708048
+        kr3 = (((mean(x[x > c95]) - mean(x[x < c05])) /
+                (mean(x[x > c50]) - mean(x[x < c50]))) -
+               2.5852271228708048)
         kr4 = (f975 - f025) / (f75 - f25) - 2.9058469516701639
         cls.kurtosis_x = x
         cls.expected_kurtosis = np.array([kr1, kr2, kr3, kr4])
-        cls.kurtosis_constants = np.array([3.0,
-            1.2330951154852172,
-                                           2.5852271228708048,
-                                           2.9058469516701639])
+        cls.kurtosis_constants = np.array([
+            3.0, 1.2330951154852172, 2.5852271228708048, 2.9058469516701639])
 
     def test_medcouple_no_axis(self):
         x = np.reshape(np.arange(100.0), (50, 2))
@@ -202,18 +200,16 @@ class TestStattools(object):
         assert_almost_equal(mc, medcouple(x.ravel()))
 
     def test_medcouple_1d(self):
-        x = np.reshape(np.arange(100.0),(50,2))
+        x = np.reshape(np.arange(100.0), (50, 2))
         assert_raises(ValueError, _medcouple_1d, x)
 
     def test_medcouple_symmetric(self):
         mc = medcouple(np.arange(5.0))
         assert_almost_equal(mc, 0)
 
-
     def test_medcouple_nonzero(self):
         mc = medcouple(np.array([1, 2, 7, 9, 10.0]))
         assert_almost_equal(mc, -0.3333333)
-
 
     def test_medcouple_symmetry(self):
         x = np.random.standard_normal(100)
@@ -221,12 +217,10 @@ class TestStattools(object):
         mcn = medcouple(-x)
         assert_almost_equal(mcp + mcn, 0)
 
-
     def test_durbin_watson(self):
         x = np.random.standard_normal(100)
         dw = sum(np.diff(x)**2.0) / np.dot(x, x)
         assert_almost_equal(dw, durbin_watson(x))
-
 
     def test_durbin_watson_2d(self):
         shape = (1, 10)
@@ -235,7 +229,6 @@ class TestStattools(object):
         x = np.tile(x[:, None], shape)
         assert_almost_equal(np.squeeze(dw * np.ones(shape)), durbin_watson(x))
 
-
     def test_durbin_watson_3d(self):
         shape = (10, 1, 10)
         x = np.random.standard_normal(100)
@@ -243,7 +236,6 @@ class TestStattools(object):
         x = np.tile(x[None, :, None], shape)
         assert_almost_equal(np.squeeze(dw * np.ones(shape)),
                             durbin_watson(x, axis=1))
-
 
     def test_robust_skewness_1d(self):
         x = np.arange(21.0)
@@ -262,7 +254,6 @@ class TestStattools(object):
         x = np.hstack([x, np.zeros(1), -x])
         sk = robust_skewness(x)
         assert_almost_equal(np.array(sk), np.zeros(4))
-
 
     def test_robust_skewness_3d(self):
         x = np.random.standard_normal(100)
@@ -301,17 +292,19 @@ class TestStattools(object):
         # Test custom alpha, beta in kr3
         x = self.kurtosis_x
         alpha, beta = (10.0, 45.0)
-        kurtosis = robust_kurtosis(self.kurtosis_x, ab=(alpha,beta),
+        kurtosis = robust_kurtosis(self.kurtosis_x, ab=(alpha, beta),
                                    excess=False)
-        num = (np.mean(x[x>np.percentile(x, 100.0 - alpha)]) - np.mean(x[x<np.percentile(x,alpha)]))
-        denom = (np.mean(x[x>np.percentile(x, 100.0 - beta)]) - np.mean(x[x<np.percentile(x,beta)]))
-        assert_almost_equal(kurtosis[2], num/denom)
+        num = (np.mean(x[x > np.percentile(x, 100.0 - alpha)]) -
+               np.mean(x[x < np.percentile(x, alpha)]))
+        denom = (np.mean(x[x > np.percentile(x, 100.0 - beta)]) -
+                 np.mean(x[x < np.percentile(x, beta)]))
+        assert_almost_equal(kurtosis[2], num / denom)
 
     def test_robust_kurtosis_dg(self):
         # Test custom delta, gamma in kr4
         x = self.kurtosis_x
         delta, gamma = (10.0, 45.0)
-        kurtosis = robust_kurtosis(self.kurtosis_x, dg=(delta,gamma),
+        kurtosis = robust_kurtosis(self.kurtosis_x, dg=(delta, gamma),
                                    excess=False)
-        q = np.percentile(x,[delta, 100.0 - delta, gamma, 100.0-gamma])
+        q = np.percentile(x, [delta, 100.0 - delta, gamma, 100.0 - gamma])
         assert_almost_equal(kurtosis[3], (q[1] - q[0]) / (q[3] - q[2]))
