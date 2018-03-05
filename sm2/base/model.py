@@ -17,8 +17,7 @@ import sm2.base.wrapper as wrap
 from sm2.base.optimizer import Optimizer
 
 from sm2.stats.contrast import ContrastResults, WaldTestResults
-
-from statsmodels.formula import handle_formula_data
+from sm2.formula import handle_formula_data
 
 
 _model_params_doc = """
