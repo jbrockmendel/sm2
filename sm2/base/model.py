@@ -1375,7 +1375,7 @@ class LikelihoodModelResults(Results):
         >>> from sm2.datasets import longley
         >>> dta = longley.load_pandas().data
         >>> formula = 'TOTEMP ~ GNPDEFL + GNP + UNEMP + ARMED + POP + YEAR'
-        >>> results = OLSstatsmodels.from_formula(formula, dta).fit()
+        >>> results = OLS.from_formula(formula, dta).fit()
         >>> hypotheses = '(GNPDEFL = GNP), (UNEMP = 2), (YEAR/1829 = 1)'
         >>> f_test = results.f_test(hypotheses)
         >>> print(f_test)
