@@ -14,6 +14,7 @@ from numpy.testing import (assert_almost_equal, assert_approx_equal, assert_,
                            assert_raises, assert_equal, assert_allclose)
 from scipy.linalg import toeplitz
 from scipy.stats import t as student_t
+from patsy import PatsyError
 
 from sm2.tools.tools import add_constant, categorical
 from sm2.regression.linear_model import OLS, WLS, GLS, yule_walker
@@ -40,12 +41,14 @@ class CheckRegressionResults(object):
 
     decimal_params = DECIMAL_4
     def test_params(self):
-        assert_almost_equal(self.res1.params, self.res2.params,
+        assert_almost_equal(self.res1.params,
+                            self.res2.params,
                             self.decimal_params)
 
     decimal_standarderrors = DECIMAL_4
     def test_standarderrors(self):
-        assert_almost_equal(self.res1.bse, self.res2.bse,
+        assert_almost_equal(self.res1.bse,
+                            self.res2.bse,
                             self.decimal_standarderrors)
 
     decimal_confidenceintervals = DECIMAL_4
@@ -54,9 +57,11 @@ class CheckRegressionResults(object):
         conf1 = self.res1.conf_int()
         conf2 = self.res2.conf_int()
         for i in range(len(conf1)):
-            assert_approx_equal(conf1[i][0], conf2[i][0],
+            assert_approx_equal(conf1[i][0],
+                                conf2[i][0],
                                 self.decimal_confidenceintervals)
-            assert_approx_equal(conf1[i][1], conf2[i][1],
+            assert_approx_equal(conf1[i][1],
+                                conf2[i][1],
                                 self.decimal_confidenceintervals)
 
     decimal_conf_int_subset = DECIMAL_4
@@ -64,53 +69,66 @@ class CheckRegressionResults(object):
         if len(self.res1.params) > 1:
             ci1 = self.res1.conf_int(cols=(1, 2))
             ci2 = self.res1.conf_int()[1:3]
-            assert_almost_equal(ci1, ci2, self.decimal_conf_int_subset)
+            assert_almost_equal(ci1,
+                                ci2,
+                                self.decimal_conf_int_subset)
         else:
             pass
 
     decimal_scale = DECIMAL_4
     def test_scale(self):
-        assert_almost_equal(self.res1.scale, self.res2.scale,
+        assert_almost_equal(self.res1.scale,
+                            self.res2.scale,
                             self.decimal_scale)
 
     decimal_rsquared = DECIMAL_4
     def test_rsquared(self):
-        assert_almost_equal(self.res1.rsquared, self.res2.rsquared,
+        assert_almost_equal(self.res1.rsquared,
+                            self.res2.rsquared,
                             self.decimal_rsquared)
 
     decimal_rsquared_adj = DECIMAL_4
     def test_rsquared_adj(self):
-        assert_almost_equal(self.res1.rsquared_adj, self.res2.rsquared_adj,
+        assert_almost_equal(self.res1.rsquared_adj,
+                            self.res2.rsquared_adj,
                             self.decimal_rsquared_adj)
 
     def test_degrees(self):
-        assert_equal(self.res1.model.df_model, self.res2.df_model)
-        assert_equal(self.res1.model.df_resid, self.res2.df_resid)
+        assert_equal(self.res1.model.df_model,
+                     self.res2.df_model)
+        assert_equal(self.res1.model.df_resid,
+                     self.res2.df_resid)
 
     decimal_ess = DECIMAL_4
     def test_ess(self):
         # Explained Sum of Squares
-        assert_almost_equal(self.res1.ess, self.res2.ess,
+        assert_almost_equal(self.res1.ess,
+                            self.res2.ess,
                             self.decimal_ess)
 
     decimal_ssr = DECIMAL_4
     def test_sumof_squaredresids(self):
-        assert_almost_equal(self.res1.ssr, self.res2.ssr, self.decimal_ssr)
+        assert_almost_equal(self.res1.ssr,
+                            self.res2.ssr,
+                            self.decimal_ssr)
 
     decimal_mse_resid = DECIMAL_4
     def test_mse_resid(self):
         # Mean squared error of residuals
-        assert_almost_equal(self.res1.mse_model, self.res2.mse_model,
+        assert_almost_equal(self.res1.mse_model,
+                            self.res2.mse_model,
                             self.decimal_mse_resid)
 
     decimal_mse_model = DECIMAL_4
     def test_mse_model(self):
-        assert_almost_equal(self.res1.mse_resid, self.res2.mse_resid,
+        assert_almost_equal(self.res1.mse_resid,
+                            self.res2.mse_resid,
                             self.decimal_mse_model)
 
     decimal_mse_total = DECIMAL_4
     def test_mse_total(self):
-        assert_almost_equal(self.res1.mse_total, self.res2.mse_total,
+        assert_almost_equal(self.res1.mse_total,
+                            self.res2.mse_total,
                             self.decimal_mse_total,
                             err_msg="Test class %s" % self)
 
@@ -118,39 +136,50 @@ class CheckRegressionResults(object):
     def test_fvalue(self):
         # didn't change this, not sure it should complain -inf not equal -inf
         # if not (np.isinf(self.res1.fvalue) and np.isinf(self.res2.fvalue)):
-        assert_almost_equal(self.res1.fvalue, self.res2.fvalue,
+        assert_almost_equal(self.res1.fvalue,
+                            self.res2.fvalue,
                             self.decimal_fvalue)
 
     decimal_loglike = DECIMAL_4
     def test_loglike(self):
-        assert_almost_equal(self.res1.llf, self.res2.llf, self.decimal_loglike)
+        assert_almost_equal(self.res1.llf,
+                            self.res2.llf,
+                            self.decimal_loglike)
 
     decimal_aic = DECIMAL_4
     def test_aic(self):
-        assert_almost_equal(self.res1.aic, self.res2.aic, self.decimal_aic)
+        assert_almost_equal(self.res1.aic,
+                            self.res2.aic,
+                            self.decimal_aic)
 
     decimal_bic = DECIMAL_4
     def test_bic(self):
-        assert_almost_equal(self.res1.bic, self.res2.bic, self.decimal_bic)
+        assert_almost_equal(self.res1.bic,
+                            self.res2.bic,
+                            self.decimal_bic)
 
     decimal_pvalues = DECIMAL_4
     def test_pvalues(self):
-        assert_almost_equal(self.res1.pvalues, self.res2.pvalues,
+        assert_almost_equal(self.res1.pvalues,
+                            self.res2.pvalues,
                             self.decimal_pvalues)
 
     decimal_wresid = DECIMAL_4
     def test_wresid(self):
-        assert_almost_equal(self.res1.wresid, self.res2.wresid,
+        assert_almost_equal(self.res1.wresid,
+                            self.res2.wresid,
                             self.decimal_wresid)
 
     decimal_resids = DECIMAL_4
     def test_resids(self):
-        assert_almost_equal(self.res1.resid, self.res2.resid,
+        assert_almost_equal(self.res1.resid,
+                            self.res2.resid,
                             self.decimal_resids)
 
     decimal_norm_resids = DECIMAL_4
     def test_norm_resids(self):
-        assert_almost_equal(self.res1.resid_pearson, self.res2.resid_pearson,
+        assert_almost_equal(self.res1.resid_pearson,
+                            self.res2.resid_pearson,
                             self.decimal_norm_resids)
 
 
@@ -194,34 +223,43 @@ class TestOLS(CheckRegressionResults):
         # They are split up because the copied results do not have any
         # DECIMAL_4 places for the last place.
         assert_almost_equal(self.res1.HC0_se[:-1],
-                            self.res2.HC0_se[:-1], DECIMAL_4)
+                            self.res2.HC0_se[:-1],
+                            DECIMAL_4)
         assert_approx_equal(np.round(self.res1.HC0_se[-1]),
                             self.res2.HC0_se[-1])
 
     def test_HC1_errors(self):
         assert_almost_equal(self.res1.HC1_se[:-1],
-                            self.res2.HC1_se[:-1], DECIMAL_4)
-        assert_approx_equal(self.res1.HC1_se[-1], self.res2.HC1_se[-1])
+                            self.res2.HC1_se[:-1],
+                            DECIMAL_4)
+        assert_approx_equal(self.res1.HC1_se[-1],
+                            self.res2.HC1_se[-1])
 
     def test_HC2_errors(self):
         assert_almost_equal(self.res1.HC2_se[:-1],
-                            self.res2.HC2_se[:-1], DECIMAL_4)
-        assert_approx_equal(self.res1.HC2_se[-1], self.res2.HC2_se[-1])
+                            self.res2.HC2_se[:-1],
+                            DECIMAL_4)
+        assert_approx_equal(self.res1.HC2_se[-1],
+                            self.res2.HC2_se[-1])
 
     def test_HC3_errors(self):
         assert_almost_equal(self.res1.HC3_se[:-1],
-                            self.res2.HC3_se[:-1], DECIMAL_4)
-        assert_approx_equal(self.res1.HC3_se[-1], self.res2.HC3_se[-1])
+                            self.res2.HC3_se[:-1],
+                            DECIMAL_4)
+        assert_approx_equal(self.res1.HC3_se[-1],
+                            self.res2.HC3_se[-1])
 
     def test_qr_params(self):
         assert_almost_equal(self.res1.params,
-                            self.res_qr.params, 6)
+                            self.res_qr.params,
+                            6)
 
     def test_qr_normalized_cov_params(self):
-        # todo: need assert_close
+        # TODO: need assert_close
         assert_almost_equal(np.ones_like(self.res1.normalized_cov_params),
                             self.res1.normalized_cov_params /
-                            self.res_qr.normalized_cov_params, 5)
+                            self.res_qr.normalized_cov_params,
+                            5)
 
     def test_missing(self):
         data = longley.load()
@@ -243,21 +281,26 @@ class TestOLS(CheckRegressionResults):
             assert_equal(rsquared_adj, np.nan)
 
     def test_qr_alternatives(self):
-        assert_allclose(self.res_qr.params, self.res_qr_manual.params,
+        assert_allclose(self.res_qr.params,
+                        self.res_qr_manual.params,
                         rtol=5e-12)
 
     def test_norm_resid(self):
         resid = self.res1.wresid
         norm_resid = resid / np.sqrt(np.sum(resid**2.0) / self.res1.df_resid)
         model_norm_resid = self.res1.resid_pearson
-        assert_almost_equal(model_norm_resid, norm_resid, DECIMAL_7)
+        assert_almost_equal(model_norm_resid,
+                            norm_resid,
+                            DECIMAL_7)
 
     def test_norm_resid_zero_variance(self):
         with warnings.catch_warnings(record=True):
             y = self.res1.model.endog
             res = OLS(y, y).fit()
             assert_allclose(res.scale, 0, atol=1e-20)
-            assert_allclose(res.wresid, res.resid_pearson, atol=5e-11)
+            assert_allclose(res.wresid,
+                            res.resid_pearson,
+                            atol=5e-11)
 
 
 @pytest.mark.not_vetted
@@ -1155,9 +1198,6 @@ class TestRegularizedFit(object):
 @pytest.mark.not_vetted
 def test_formula_missing_cat():
     # GH#805
-
-    from patsy import PatsyError
-
     dta = datasets.grunfeld.load_pandas().data
     dta.loc[dta.index[0], 'firm'] = np.nan
 

@@ -22,8 +22,6 @@ from sm2.tsa.tests.results import savedrvs
 from sm2.tsa.tests.results.datamlw_tls import mlacf, mlccf, mlpacf, mlywar
 
 
-
-
 xo = savedrvs.rvsdata.xar2
 x100 = xo[-100:] / 1000.
 x1000 = xo / 1000.

@@ -257,7 +257,7 @@ class TestPoissonCluExposureGeneric(CheckCountRobustMixin):
         get_robustcov_results(cls.res1._results, 'cluster',
                               groups=group,
                               use_correction=True,
-                              df_correction=True,   #TODO has no effect
+                              df_correction=True,   # TODO has no effect
                               use_t=False, #True,
                               use_self=True)
         cls.bse_rob = cls.res1.bse
@@ -337,7 +337,7 @@ class TestGLMPoissonCluFit(CheckCountRobustMixin):
         cls.res1 = mod.fit(cov_type='cluster',
                            cov_kwds=dict(groups=group,
                                          use_correction=True,
-                                         df_correction=True),  #TODO has no effect
+                                         df_correction=True),  # TODO has no effect
                            use_t=False, #True,
                            )
 
@@ -421,7 +421,7 @@ class TestNegbinCluGeneric(CheckCountRobustMixin):
         get_robustcov_results(cls.res1._results, 'cluster',
                                                   groups=group,
                                                   use_correction=True,
-                                                  df_correction=True,  #TODO has no effect
+                                                  df_correction=True,  # TODO has no effect
                                                   use_t=False, #True,
                                                   use_self=True)
         cls.bse_rob = cls.res1.bse
@@ -443,7 +443,7 @@ class TestNegbinCluFit(CheckCountRobustMixin):
         cls.res1 = res1 = mod.fit(disp=False, cov_type='cluster',
                                   cov_kwds=dict(groups=group,
                                                 use_correction=True,
-                                                df_correction=True),  #TODO has no effect
+                                                df_correction=True),  # TODO has no effect
                                   use_t=False, #True,
                                   gtol=1e-7)
         cls.bse_rob = cls.res1.bse
@@ -465,7 +465,7 @@ class TestNegbinCluExposureFit(CheckCountRobustMixin):
         cls.res1 = res1 = mod.fit(disp=False, cov_type='cluster',
                                   cov_kwds=dict(groups=group,
                                                 use_correction=True,
-                                                df_correction=True),  #TODO has no effect
+                                                df_correction=True),  # TODO has no effect
                                   use_t=False, #True,
                                   )
         cls.bse_rob = cls.res1.bse
@@ -666,7 +666,8 @@ class TestGLMGaussHACPanelGroups(CheckDiscreteGLM):
         raise pytest.skip("GLM not implemented")
         # time index is just made up to have a test case
         groups = np.repeat(np.arange(5), 7)[:-1]
-        mod1 = GLM(endog.copy(), exog.copy(), family=families.Gaussian())
+        mod1 = GLM(endog.copy(), exog.copy(),
+                   family=families.Gaussian())
         kwds = dict(groups=pd.Series(groups),  # check for GH#3606
                     maxlags=2,
                     kernel=sw.weights_uniform,

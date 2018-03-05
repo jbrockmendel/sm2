@@ -41,8 +41,8 @@ class TestGLSARCorc(CheckStataResultsPMixin):
     @classmethod
     def setup_class(cls):
         d2 = macrodata.load().data
-        g_gdp = 400*np.diff(np.log(d2['realgdp']))
-        g_inv = 400*np.diff(np.log(d2['realinv']))
+        g_gdp = 400 * np.diff(np.log(d2['realgdp']))
+        g_inv = 400 * np.diff(np.log(d2['realinv']))
         exogg = add_constant(np.c_[g_gdp, d2['realint'][:-1]], prepend=False)
 
         mod1 = GLSAR(g_inv, exogg, 1)
@@ -62,13 +62,13 @@ class TestGLSARCorc(CheckStataResultsPMixin):
         exog = self.res.model.exog
         mod1 = GLSAR(endog, exog, 3)
         res = mod1.iterative_fit(10)
-        mod_arma = ARMA(endog, order=(3,0), exog=exog[:, :-1])
+        mod_arma = ARMA(endog, order=(3, 0), exog=exog[:, :-1])
         res_arma = mod_arma.fit(method='css', iprint=0, disp=0)
-        assert_allclose(res.params, res_arma.params[[1,2,0]],
+        assert_allclose(res.params, res_arma.params[[1, 2, 0]],
                         atol=0.01, rtol=1e-3)
         assert_allclose(res.model.rho, res_arma.params[3:],
                         atol=0.05, rtol=1e-3)
-        assert_allclose(res.bse, res_arma.bse[[1,2,0]],
+        assert_allclose(res.bse, res_arma.bse[[1, 2, 0]],
                         atol=0.015, rtol=1e-3)
 
         assert_equal(len(res.history['params']), 5)
@@ -83,7 +83,7 @@ class TestGLSARCorc(CheckStataResultsPMixin):
         endog = self.res.model.endog
         exog = self.res.model.exog
 
-        rho = np.array([ 0.207,  0.275,  1.033])
+        rho = np.array([0.207, 0.275, 1.033])
         mod1 = GLSAR(endog, exog, rho)
         res1 = mod1.fit()
         res0 = mod1.iterative_fit(0)

@@ -28,6 +28,7 @@ from sm2.iolib.openfile import get_file_obj
 
 _date_formats = ["%tc", "%tC", "%td", "%tw", "%tm", "%tq", "%th", "%ty"]
 
+
 def _datetime_to_stata_elapsed(date, fmt):
     """
     Convert from datetime to SIF. http://www.stata.com/help.cgi?datetime
@@ -65,6 +66,7 @@ def _datetime_to_stata_elapsed(date, fmt):
         return date.year
     else:
         raise ValueError("fmt %s not understood" % fmt)
+
 
 def _stata_elapsed_date_to_datetime(date, fmt):
     """
@@ -147,7 +149,6 @@ def _stata_elapsed_date_to_datetime(date, fmt):
     else:
         raise ValueError("Date fmt %s not understood" % fmt)
 
-### Helper classes for StataReader ###
 
 class _StataMissingValue(object):
     """
@@ -181,6 +182,7 @@ the missing value: '.', '.a'..'.z'")
 of the missing value.')
     def __str__(self): return self._str
     __str__.__doc__ = string.__doc__
+
 
 class _StataVariable(object):
     """
@@ -230,6 +232,7 @@ value format')
     label = property(lambda self: self._data[6], doc='the variable\'s label')
     __int__.__doc__ = index.__doc__
     __str__.__doc__ = name.__doc__
+
 
 class StataReader(object):
     """
@@ -548,6 +551,7 @@ class StataReader(object):
             return [self._unpack(typlist[i], self._file.read(self._col_size(i)))
                     for i in range(self._header['nvar'])]
 
+
 def _set_endianness(endianness):
     if endianness.lower() in ["<", "little"]:
         return "<"
@@ -555,6 +559,7 @@ def _set_endianness(endianness):
         return ">"
     else: # pragma : no cover
         raise ValueError("Endianness %s not understood" % endianness)
+
 
 def _dtype_to_stata_type(dtype):
     """
@@ -591,6 +596,7 @@ def _dtype_to_stata_type(dtype):
         raise ValueError("Data type %s not currently understood. "
                          "Please report an error to the developers." % dtype)
 
+
 def _dtype_to_default_stata_fmt(dtype):
     """
     Maps numpy dtype to stata's default format for this type. Not terribly
@@ -623,17 +629,20 @@ def _dtype_to_default_stata_fmt(dtype):
         raise ValueError("Data type %s not currently understood. "
                          "Please report an error to the developers." % dtype)
 
+
 def _pad_bytes(name, length):
     """
     Takes a char string and pads it wih null bytes until it's length chars
     """
     return name + "\x00" * (length - len(name))
 
+
 def _default_names(nvar):
     """
     Returns default Stata names v1, v2, ... vnvar
     """
     return ["v%d" % i for i in range(1,nvar+1)]
+
 
 def _convert_datetime_to_stata_type(fmt):
     """
@@ -644,6 +653,7 @@ def _convert_datetime_to_stata_type(fmt):
         return np.float64 # Stata expects doubles for SIFs
     else:
         raise ValueError("fmt %s not understood" % fmt)
+
 
 def _maybe_convert_to_int_keys(convert_dates, varlist):
     new_dict = {}
@@ -659,7 +669,9 @@ def _maybe_convert_to_int_keys(convert_dates, varlist):
             new_dict.update({key : convert_dates[key]})
     return new_dict
 
-_type_converters = {253 : np.long, 252 : int}
+
+_type_converters = {253: np.long, 252: int}
+
 
 class StataWriter(object):
     """
@@ -1059,6 +1071,7 @@ def genfromdta(fname, missing_flt=-999., encoding=None, pandas=False,
                                            for x in data[data.dtype.names[col]]]
     return data
 
+
 def savetxt(fname, X, names=None, fmt='%.18e', delimiter=' '):
     """
     Save an array to a text file.
@@ -1190,9 +1203,3 @@ def savetxt(fname, X, names=None, fmt='%.18e', delimiter=' '):
 
         for row in X:
             fh.write(format % tuple(row) + '\n')
-
-
-if __name__ == "__main__":
-    import os
-    curdir = os.path.dirname(os.path.abspath(__file__))
-    res1 = genfromdta(curdir+'/../../datasets/macrodata/macrodata.dta')
