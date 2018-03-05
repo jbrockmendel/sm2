@@ -5,7 +5,7 @@ Created on Wed May 30 09:25:24 2012
 
 Author: Josef Perktold
 """
-
+import pytest
 import numpy as np
 from numpy.testing import assert_almost_equal, assert_allclose, assert_equal
 
@@ -13,7 +13,7 @@ from sm2.regression.linear_model import GLSAR
 from sm2.tools.tools import add_constant
 from sm2.datasets import macrodata
 
-'''
+@pytest.mark.not_vetted
 class CheckStataResultsMixin(object):
     def test_params_table(self):
         res, results = self.res, self.results
@@ -24,6 +24,7 @@ class CheckStataResultsMixin(object):
         assert_allclose(res.pvalues, results.pvalues, atol=1e-7, rtol=0.004)
 
 
+@pytest.mark.not_vetted
 class CheckStataResultsPMixin(CheckStataResultsMixin):
     def test_predicted(self):
         res, results = self.res, self.results
@@ -34,6 +35,7 @@ class CheckStataResultsPMixin(CheckStataResultsMixin):
         #assert_almost_equal(res.fittedvalues_se, results.fittedvalues_se, 4)
 
 
+@pytest.mark.not_vetted
 class TestGLSARCorc(CheckStataResultsPMixin):
     @classmethod
     def setup_class(cls):
@@ -90,4 +92,3 @@ class TestGLSARCorc(CheckStataResultsPMixin):
         assert_allclose(res0b.params, res1.params, rtol=1e-11)
         assert_allclose(res0.model.rho, rho, rtol=1e-11)
         assert_allclose(res0b.model.rho, rho, rtol=1e-11)
-'''

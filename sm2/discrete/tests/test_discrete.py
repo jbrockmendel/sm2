@@ -64,7 +64,7 @@ DECIMAL_2 = 2
 DECIMAL_1 = 1
 DECIMAL_0 = 0
 
-'''
+
 class CheckModelResults(object):
     """
     res2 should be the test results from RModelWrap
@@ -137,6 +137,7 @@ class CheckModelResults(object):
         assert_almost_equal(jacsum, score, DECIMAL_9) #Poisson has low precision ?
 
 
+@pytest.mark.not_vetted
 class CheckBinaryResults(CheckModelResults):
     def test_pred_table(self):
         assert_array_equal(self.res1.pred_table(), self.res2.pred_table)
@@ -333,6 +334,7 @@ class CheckMargEff(object):
                 self.res2.margeff_count_dummy_dydxmean_se, DECIMAL_4)
 
 
+@pytest.mark.not_vetted
 class TestProbitNewton(CheckBinaryResults):
 
     @classmethod
@@ -349,6 +351,7 @@ class TestProbitNewton(CheckBinaryResults):
     #            self.res2.predict, DECIMAL_4)
 
 
+@pytest.mark.not_vetted
 class TestProbitBFGS(CheckBinaryResults):
 
     @classmethod
@@ -362,6 +365,7 @@ class TestProbitBFGS(CheckBinaryResults):
         cls.res2 = res2
 
 
+@pytest.mark.not_vetted
 class TestProbitNM(CheckBinaryResults):
 
     @classmethod
@@ -375,6 +379,7 @@ class TestProbitNM(CheckBinaryResults):
             disp=0, maxiter=500)
 
 
+@pytest.mark.not_vetted
 class TestProbitPowell(CheckBinaryResults):
 
     @classmethod
@@ -388,6 +393,7 @@ class TestProbitPowell(CheckBinaryResults):
             disp=0, ftol=1e-8)
 
 
+@pytest.mark.not_vetted
 class TestProbitCG(CheckBinaryResults):
 
     @classmethod
@@ -416,6 +422,7 @@ class TestProbitCG(CheckBinaryResults):
         assert_array_less(cls.res1.mle_retvals['fcalls'], 100)
 
 
+@pytest.mark.not_vetted
 class TestProbitNCG(CheckBinaryResults):
 
     @classmethod
@@ -431,6 +438,7 @@ class TestProbitNCG(CheckBinaryResults):
         # converges close enough but warnflag is 2 for precision loss
 
 
+@pytest.mark.not_vetted
 @pytest.mark.skipif(not has_basinhopping, reason='Skipped TestProbitBasinhopping '
                                                  'since basinhopping solver is '
                                                  'not available')
@@ -451,6 +459,7 @@ class TestProbitBasinhopping(CheckBinaryResults):
                         minimizer={'method' : 'L-BFGS-B', 'tol' : 1e-8})
 
 
+@pytest.mark.not_vetted
 class TestProbitMinimizeDefault(CheckBinaryResults):
 
     @classmethod
@@ -464,6 +473,7 @@ class TestProbitMinimizeDefault(CheckBinaryResults):
         cls.res1 = fit(method="minimize", disp=0, niter=5, tol = 1e-8)
 
 
+@pytest.mark.not_vetted
 class TestProbitMinimizeDogleg(CheckBinaryResults):
 
     @classmethod
@@ -482,6 +492,7 @@ class TestProbitMinimizeDogleg(CheckBinaryResults):
                        min_method = 'dogleg')
 
 
+@pytest.mark.not_vetted
 class TestProbitMinimizeAdditionalOptions(CheckBinaryResults):
 
     @classmethod
@@ -495,6 +506,7 @@ class TestProbitMinimizeAdditionalOptions(CheckBinaryResults):
                                                      maxiter=500,
                                                      min_method='Nelder-Mead',
                                                      xtol=1e-4, ftol=1e-4)
+
 
 class CheckLikelihoodModelL1(object):
     """
@@ -523,6 +535,7 @@ class CheckLikelihoodModelL1(object):
                 self.res1.bic, self.res2.bic, DECIMAL_3)
 
 
+@pytest.mark.not_vetted
 class TestProbitL1(CheckLikelihoodModelL1):
 
     @classmethod
@@ -542,6 +555,7 @@ class TestProbitL1(CheckLikelihoodModelL1):
                 self.res1.cov_params(), self.res2.cov_params, DECIMAL_4)
 
 
+@pytest.mark.not_vetted
 class TestMNLogitL1(CheckLikelihoodModelL1):
 
     @classmethod
@@ -560,6 +574,7 @@ class TestMNLogitL1(CheckLikelihoodModelL1):
         cls.res2 = res2
 
 
+@pytest.mark.not_vetted
 class TestLogitL1(CheckLikelihoodModelL1):
 
     @classmethod
@@ -579,6 +594,7 @@ class TestLogitL1(CheckLikelihoodModelL1):
                 self.res1.cov_params(), self.res2.cov_params, DECIMAL_4)
 
 
+@pytest.mark.not_vetted
 @pytest.mark.skipif(not has_cvxopt, reason='Skipped test_cvxopt since cvxopt '
                                            'is not available')
 class TestCVXOPT(object):
@@ -602,6 +618,7 @@ class TestCVXOPT(object):
         assert_almost_equal(res_slsqp.params, res_cvxopt.params, DECIMAL_4)
 
 
+@pytest.mark.not_vetted
 class TestSweepAlphaL1(object):
 
     @classmethod
@@ -680,6 +697,7 @@ class CheckL1Compatability(object):
         assert_raises(ValueError, self.res_reg.f_test, np.eye(kvars) )
 
 
+@pytest.mark.not_vetted
 class TestPoissonL1Compatability(CheckL1Compatability):
 
     @classmethod
@@ -701,6 +719,7 @@ class TestPoissonL1Compatability(CheckL1Compatability):
             trim_mode='auto')
 
 
+@pytest.mark.not_vetted
 class TestNegativeBinomialL1Compatability(CheckL1Compatability):
 
     @classmethod
@@ -727,6 +746,7 @@ class TestNegativeBinomialL1Compatability(CheckL1Compatability):
         cls.k_extra = 1  # 1 extra parameter in nb2
 
 
+@pytest.mark.not_vetted
 class TestNegativeBinomialGeoL1Compatability(CheckL1Compatability):
 
     @classmethod
@@ -753,6 +773,7 @@ class TestNegativeBinomialGeoL1Compatability(CheckL1Compatability):
         assert_equal(mod_reg.loglike_method, 'geometric')
 
 
+@pytest.mark.not_vetted
 class TestLogitL1Compatability(CheckL1Compatability):
 
     @classmethod
@@ -771,6 +792,7 @@ class TestLogitL1Compatability(CheckL1Compatability):
         cls.res_unreg = Logit(data.endog, exog_no_PSI).fit(disp=0, tol=1e-15)
 
 
+@pytest.mark.not_vetted
 class TestMNLogitL1Compatability(CheckL1Compatability):
 
     @classmethod
@@ -798,11 +820,12 @@ class TestMNLogitL1Compatability(CheckL1Compatability):
         assert_almost_equal(np.nan, t_reg.sd[m])
         assert_almost_equal(t_unreg.tvalue, t_reg.tvalue[:m, :m], DECIMAL_3)
 
-    @pytest.skip("Skipped test_f_test for MNLogit")
+    @pytest.mark.skip("Skipped test_f_test for MNLogit")
     def test_f_test(self):
         pass
 
 
+@pytest.mark.not_vetted
 class TestProbitL1Compatability(CheckL1Compatability):
 
     @classmethod
@@ -855,6 +878,7 @@ class CompareL11D(CompareL1):
                             self.res2.f_test(restrictmat).pvalue, DECIMAL_4)
 
 
+@pytest.mark.not_vetted
 class TestL1AlphaZeroLogit(CompareL11D):
     # Compares l1 model with alpha = 0 to the unregularized model.
 
@@ -876,6 +900,7 @@ class TestL1AlphaZeroLogit(CompareL11D):
         assert_(res.mle_retvals['converged'] is False)
 
 
+@pytest.mark.not_vetted
 class TestL1AlphaZeroProbit(CompareL11D):
     # Compares l1 model with alpha = 0 to the unregularized model.
 
@@ -889,6 +914,7 @@ class TestL1AlphaZeroProbit(CompareL11D):
         cls.res2 = Probit(data.endog, data.exog).fit(disp=0, tol=1e-15)
 
 
+@pytest.mark.not_vetted
 class TestL1AlphaZeroMNLogit(CompareL1):
 
     @classmethod
@@ -903,6 +929,7 @@ class TestL1AlphaZeroMNLogit(CompareL1):
                                                       maxiter=1000)
 
 
+@pytest.mark.not_vetted
 class TestLogitNewton(CheckBinaryResults, CheckMargEff):
 
     @classmethod
@@ -948,6 +975,7 @@ class TestLogitNewton(CheckBinaryResults, CheckMargEff):
                 self.res2.margeff_dummy_atexog2_se, DECIMAL_4)
 
 
+@pytest.mark.not_vetted
 class TestLogitNewtonPrepend(CheckMargEff):
     # same as previous version but adjusted for add_constant prepend=True
     # bug #3695
@@ -996,6 +1024,7 @@ class TestLogitNewtonPrepend(CheckMargEff):
                 self.res2.margeff_dummy_atexog2_se, DECIMAL_4)
 
 
+@pytest.mark.not_vetted
 class TestLogitBFGS(CheckBinaryResults, CheckMargEff):
 
     @classmethod
@@ -1008,6 +1037,7 @@ class TestLogitBFGS(CheckBinaryResults, CheckMargEff):
         cls.res1 = Logit(data.endog, data.exog).fit(method="bfgs", disp=0)
 
 
+@pytest.mark.not_vetted
 class TestPoissonNewton(CheckModelResults):
 
     @classmethod
@@ -1046,6 +1076,7 @@ class TestPoissonNewton(CheckModelResults):
         assert_almost_equal(probs, probs_res, 8)
 
 
+@pytest.mark.not_vetted
 class TestNegativeBinomialNB2Newton(CheckModelResults):
 
     @classmethod
@@ -1100,6 +1131,7 @@ class TestNegativeBinomialNB2Newton(CheckModelResults):
     test_jac = no_info
 
 
+@pytest.mark.not_vetted
 class TestNegativeBinomialNB1Newton(CheckModelResults):
 
     @classmethod
@@ -1142,6 +1174,7 @@ class TestNegativeBinomialNB1Newton(CheckModelResults):
         pass
 
 
+@pytest.mark.not_vetted
 class TestNegativeBinomialNB2BFGS(CheckModelResults):
 
     @classmethod
@@ -1198,6 +1231,7 @@ class TestNegativeBinomialNB2BFGS(CheckModelResults):
     test_jac = no_info
 
 
+@pytest.mark.not_vetted
 class TestNegativeBinomialNB1BFGS(CheckModelResults):
 
     @classmethod
@@ -1239,6 +1273,7 @@ class TestNegativeBinomialNB1BFGS(CheckModelResults):
         pass
 
 
+@pytest.mark.not_vetted
 class TestNegativeBinomialGeometricBFGS(CheckModelResults):
     # Cannot find another implementation of the geometric to cross-check results
     # we only test fitted values because geometric has fewer parameters
@@ -1304,6 +1339,7 @@ class TestNegativeBinomialGeometricBFGS(CheckModelResults):
     test_jac = no_info
 
 
+@pytest.mark.not_vetted
 class CheckMNLogitBaseZero(CheckModelResults):
 
     def test_margeff_overall(self):
@@ -1414,6 +1450,7 @@ class CheckMNLogitBaseZero(CheckModelResults):
         assert_array_equal(self.res1.resid_misclassified, self.res2.resid)
 
 
+@pytest.mark.not_vetted
 class TestMNLogitNewtonBaseZero(CheckMNLogitBaseZero):
     @classmethod
     def setup_class(cls):
@@ -1428,6 +1465,7 @@ class TestMNLogitNewtonBaseZero(CheckMNLogitBaseZero):
         cls.res2 = res2
 
 
+@pytest.mark.not_vetted
 class TestMNLogitLBFGSBaseZero(CheckMNLogitBaseZero):
     @classmethod
     def setup_class(cls):
@@ -1447,7 +1485,9 @@ class TestMNLogitLBFGSBaseZero(CheckMNLogitBaseZero):
         cls.res2 = res2
 
 
+@pytest.mark.not_vetted
 def test_perfect_prediction():
+    raise pytest.skip('genmod not ported')
     cur_dir = os.path.dirname(os.path.abspath(__file__))
     iris_dir = os.path.join(cur_dir, '..', '..', 'genmod', 'tests', 'results')
     iris_dir = os.path.abspath(iris_dir)
@@ -1469,8 +1509,9 @@ def test_perfect_prediction():
         mod.fit(disp=False, maxiter=50)  # should not raise but does warn
 
 
+@pytest.mark.not_vetted
 def test_poisson_predict():
-    #GH: 175, make sure poisson predict works without offset and exposure
+    # GH#175, make sure poisson predict works without offset and exposure
     data = sm2.datasets.randhie.load()
     exog = add_constant(data.exog, prepend=True)
     res = Poisson(data.endog, exog).fit(method='newton', disp=0)
@@ -1487,7 +1528,7 @@ def test_poisson_predict():
 
 
 def test_poisson_newton():
-    #GH: 24, Newton doesn't work well sometimes
+    # GH#24, Newton doesn't work well sometimes
     nobs = 10000
     np.random.seed(987689)
     x = np.random.randn(nobs, 3)
@@ -1501,12 +1542,13 @@ def test_poisson_newton():
     assert_(not res.mle_retvals['converged'])
 
 
+@pytest.mark.not_vetted
 def test_issue_339():
     # make sure MNLogit summary works for J != K.
     data = sm2.datasets.anes96.load()
     exog = data.exog
     # leave out last exog column
-    exog = exog[:,:-1]
+    exog = exog[:, :-1]
     exog = add_constant(exog, prepend=True)
     res1 = MNLogit(data.endog, exog).fit(method="newton", disp=0)
     # strip the header from the test
@@ -1516,47 +1558,52 @@ def test_issue_339():
     test_case = open(test_case_file, 'r').read()
     np.testing.assert_equal(smry, test_case[:-1])
     # smoke test for summary2
-    res1.summary2()  # see #3651
+    res1.summary2()  # see GH#3651
 
 
+@pytest.mark.not_vetted
 def test_issue_341():
     data = sm2.datasets.anes96.load()
     exog = data.exog
     # leave out last exog column
-    exog = exog[:,:-1]
+    exog = exog[:, :-1]
     exog = add_constant(exog, prepend=True)
     res1 = MNLogit(data.endog, exog).fit(method="newton", disp=0)
     x = exog[0]
-    np.testing.assert_equal(res1.predict(x).shape, (1,7))
-    np.testing.assert_equal(res1.predict(x[None]).shape, (1,7))
+    np.testing.assert_equal(res1.predict(x).shape, (1, 7))
+    np.testing.assert_equal(res1.predict(x[None]).shape, (1, 7))
 
 
+@pytest.mark.not_vetted
 def test_iscount():
     X = np.random.random((50, 10))
-    X[:,2] = np.random.randint(1, 10, size=50)
-    X[:,6] = np.random.randint(1, 10, size=50)
-    X[:,4] = np.random.randint(0, 2, size=50)
-    X[:,1] = np.random.randint(-10, 10, size=50) # not integers
+    X[:, 2] = np.random.randint(1, 10, size=50)
+    X[:, 6] = np.random.randint(1, 10, size=50)
+    X[:, 4] = np.random.randint(0, 2, size=50)
+    X[:, 1] = np.random.randint(-10, 10, size=50)  # not integers
     count_ind = _iscount(X)
     assert_equal(count_ind, [2, 6])
 
 
+@pytest.mark.not_vetted
 def test_isdummy():
     X = np.random.random((50, 10))
-    X[:,2] = np.random.randint(1, 10, size=50)
-    X[:,6] = np.random.randint(0, 2, size=50)
-    X[:,4] = np.random.randint(0, 2, size=50)
-    X[:,1] = np.random.randint(-10, 10, size=50) # not integers
+    X[:, 2] = np.random.randint(1, 10, size=50)
+    X[:, 6] = np.random.randint(0, 2, size=50)
+    X[:, 4] = np.random.randint(0, 2, size=50)
+    X[:, 1] = np.random.randint(-10, 10, size=50)  # not integers
     count_ind = _isdummy(X)
     assert_equal(count_ind, [4, 6])
 
 
+@pytest.mark.not_vetted
 def test_non_binary():
     y = [1, 2, 1, 2, 1, 2]
     X = np.random.randn(6, 2)
     np.testing.assert_raises(ValueError, Logit, y, X)
 
 
+@pytest.mark.not_vetted
 def test_mnlogit_factor():
     dta = sm2.datasets.anes96.load_pandas()
     dta['endog'] = dta.endog.replace(dict(zip(range(7), 'ABCDEFG')))
@@ -1578,8 +1625,9 @@ def test_mnlogit_factor():
     assert_allclose(predicted_f, predicted, rtol=1e-10)
 
 
+@pytest.mark.not_vetted
 def test_formula_missing_exposure():
-    # see 2083
+    # see GH#2083
     d = {'Foo': [1, 2, 10, 149], 'Bar': [1, 2, 3, np.nan],
          'constant': [1] * 4, 'exposure' : np.random.uniform(size=4),
          'x': [1, 3, 2, 1.5]}
@@ -1596,10 +1644,11 @@ def test_formula_missing_exposure():
                   exposure=exposure)
 
 
+@pytest.mark.not_vetted
 def test_predict_with_exposure():
     # Case where CountModel.predict is called with exog = None and exposure
     # or offset not-None
-    # See 3565
+    # See GH#3565
 
     # Setup copied from test_formula_missing_exposure
     d = {'Foo': [1, 2, 10, 149], 'Bar': [1, 2, 3, 4],
@@ -1625,8 +1674,9 @@ def test_predict_with_exposure():
     assert_allclose(pred2, expected2)
 
 
+@pytest.mark.not_vetted
 def test_binary_pred_table_zeros():
-    # see 2968
+    # see GH#2968
     nobs = 10
     y = np.zeros(nobs)
     y[[1,3]] = 1
@@ -1640,6 +1690,7 @@ def test_binary_pred_table_zeros():
     assert_equal(res.pred_table(), expected)
 
 
+@pytest.mark.not_vetted
 class TestGeneralizedPoisson_p2(object):
     # Test Generalized Poisson model
 
@@ -1691,6 +1742,7 @@ class TestGeneralizedPoisson_p2(object):
         assert_allclose(self.res1.tvalues, t_test.tvalue)
 
 
+@pytest.mark.not_vetted
 class TestGeneralizedPoisson_transparams(object):
     # Test Generalized Poisson model
 
@@ -1732,6 +1784,7 @@ class TestGeneralizedPoisson_transparams(object):
         assert_allclose(self.res1.llf, self.res2.llf)
 
 
+@pytest.mark.not_vetted
 class TestGeneralizedPoisson_p1(object):
     # Test Generalized Poisson model
 
@@ -1800,6 +1853,7 @@ class TestGeneralizedPoisson_p1(object):
         assert_equal(kwds['p'], 1)
 
 
+@pytest.mark.not_vetted
 class TestGeneralizedPoisson_underdispersion(object):
 
     @classmethod
@@ -1862,6 +1916,7 @@ class TestGeneralizedPoisson_underdispersion(object):
                         rtol=0.01)
 
 
+@pytest.mark.not_vetted
 class TestNegativeBinomialPNB2Newton(CheckModelResults):
 
     @classmethod
@@ -1911,6 +1966,7 @@ class TestNegativeBinomialPNB2Newton(CheckModelResults):
                         self.res2.fittedvalues[:10])
 
 
+@pytest.mark.not_vetted
 class TestNegativeBinomialPNB1Newton(CheckModelResults):
 
     @classmethod
@@ -1954,6 +2010,7 @@ class TestNegativeBinomialPNB1Newton(CheckModelResults):
                         atol=1e-3, rtol=1e-3)
 
 
+@pytest.mark.not_vetted
 class TestNegativeBinomialPNB2BFGS(CheckModelResults):
 
     @classmethod
@@ -2009,6 +2066,7 @@ class TestNegativeBinomialPNB2BFGS(CheckModelResults):
                         atol=1e-3, rtol=1e-3)
 
 
+@pytest.mark.not_vetted
 class TestNegativeBinomialPNB1BFGS(CheckModelResults):
 
     @classmethod
@@ -2079,6 +2137,7 @@ class TestNegativeBinomialPNB1BFGS(CheckModelResults):
         assert_equal(kwds['p'], 1)
 
 
+@pytest.mark.not_vetted
 class TestNegativeBinomialPL1Compatability(CheckL1Compatability):
     @classmethod
     def setup_class(cls):
@@ -2104,6 +2163,7 @@ class TestNegativeBinomialPL1Compatability(CheckL1Compatability):
         cls.k_extra = 1  # 1 extra parameter in nb2
 
 
+@pytest.mark.not_vetted
 class  TestNegativeBinomialPPredictProb(object):
 
     def test_predict_prob_p1(self):
@@ -2179,6 +2239,7 @@ class CheckNull(object):
         assert_allclose(res_null0.params, res_null1.params, rtol=5e-5)
 
 
+@pytest.mark.not_vetted
 class TestPoissonNull(CheckNull):
 
     @classmethod
@@ -2190,6 +2251,7 @@ class TestPoissonNull(CheckNull):
         cls.start_params = [8.5, 0]
 
 
+@pytest.mark.not_vetted
 class TestNegativeBinomialNB1Null(CheckNull):
 
     @classmethod
@@ -2205,6 +2267,7 @@ class TestNegativeBinomialNB1Null(CheckNull):
         cls.start_params = np.array([7.730452, 2.01633068e-02, 1763.0])
 
 
+@pytest.mark.not_vetted
 class TestNegativeBinomialNB2Null(CheckNull):
 
     @classmethod
@@ -2219,6 +2282,7 @@ class TestNegativeBinomialNB2Null(CheckNull):
         cls.start_params = np.array([8.07216448, 0.01087238, 0.44024134])
 
 
+@pytest.mark.not_vetted
 class TestNegativeBinomialNBP2Null(CheckNull):
 
     @classmethod
@@ -2239,6 +2303,7 @@ class TestNegativeBinomialNBP2Null(CheckNull):
         assert_allclose(sp0, sp1, rtol=1e-12)
 
 
+@pytest.mark.not_vetted
 class TestNegativeBinomialNBP1Null(CheckNull):
     @classmethod
     def setup_class(cls):
@@ -2258,6 +2323,7 @@ class TestNegativeBinomialNBP1Null(CheckNull):
         assert_allclose(sp0, sp1, rtol=1e-12)
 
 
+@pytest.mark.not_vetted
 class TestGeneralizedPoissonNull(CheckNull):
     @classmethod
     def setup_class(cls):
@@ -2270,6 +2336,7 @@ class TestGeneralizedPoissonNull(CheckNull):
         cls.start_params = np.array([6.91127148, 0.04501334, 0.88393736])
 
 
+@pytest.mark.not_vetted
 def test_null_options():
     # this is a "nice" case because we only check that options are used
     # correctly
@@ -2308,6 +2375,7 @@ def test_null_options():
     assert_equal(res._cache['llnull'],  999)
 
 
+@pytest.mark.not_vetted
 def test_optim_kwds_prelim():
     # test that fit options for preliminary fit is correctly transmitted
 
@@ -2356,7 +2424,7 @@ def test_optim_kwds_prelim():
     assert_equal(res.mle_settings['optim_kwds_prelim'], optim_kwds_prelim)
     # rough check that convergence makes sense
     assert_allclose(res.predict().mean(), y.mean(), rtol=0.1)
-'''
+
 
 # ------------------------------------------------------------------
 # Tests implemented/checked 2017-10-08 or later

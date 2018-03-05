@@ -7,6 +7,8 @@ Created on Thu May 17 21:09:41 2012
 
 Author: Josef Perktold
 """
+import pytest
+
 import numpy as np
 from numpy.testing import assert_equal, assert_raises
 
@@ -14,7 +16,8 @@ import sm2.stats.sandwich_covariance as sw
 from sm2.tools.grouputils import GroupSorted
 
 
-'''
+
+@pytest.mark.not_vetted
 class CheckPanelLagMixin(object):
 
     @classmethod
@@ -34,6 +37,7 @@ class CheckPanelLagMixin(object):
                       self.g.groupidx)
 
 
+@pytest.mark.not_vetted
 class TestBalanced(CheckPanelLagMixin):
 
     @classmethod
@@ -55,6 +59,7 @@ class TestBalanced(CheckPanelLagMixin):
         cls.calculate()
 
 
+@pytest.mark.not_vetted
 class TestUnBalanced(CheckPanelLagMixin):
     @classmethod
     def setup_class(cls):
@@ -76,4 +81,3 @@ class TestUnBalanced(CheckPanelLagMixin):
             4: np.array([[ 17, 112, 113, 114, 115, 116, 117]]),
             5: np.array([[113, 114, 115, 116, 117]])}
         cls.calculate()
-'''

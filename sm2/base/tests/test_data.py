@@ -2,16 +2,16 @@
 import pytest
 import numpy as np
 import pandas as pd
-# import pandas.util.testing as tm
+import pandas.util.testing as tm
 
 from sm2.base import data as sm_data
 from sm2.api import Logit, OLS
-# from statsmodels.formula import handle_formula_data
+from statsmodels.formula import handle_formula_data
 # from statsmodels.genmod.generalized_linear_model import GLM
 # from statsmodels.genmod import families
 
 
-'''
+
 # class TestDates(object):
 #    @classmethod
 #    def setup_class(cls):
@@ -22,6 +22,7 @@ from sm2.api import Logit, OLS
 #        np.testing.assert_equal(data.wrap_output(self.dates_input, 'dates'),
 #                                self.dates_result)
 
+@pytest.mark.not_vetted
 class TestArrays(object):
     @classmethod
     def setup_class(cls):
@@ -67,6 +68,7 @@ class TestArrays(object):
         np.testing.assert_(np.all(self.data.row_labels == self.row_labels))
 
 
+@pytest.mark.not_vetted
 class TestArrays2dEndog(TestArrays):
     @classmethod
     def setup_class(cls):
@@ -81,6 +83,7 @@ class TestArrays2dEndog(TestArrays):
         np.testing.assert_equal(self.data.exog, self.exog)
 
 
+@pytest.mark.not_vetted
 class TestArrays1dExog(TestArrays):
     @classmethod
     def setup_class(cls):
@@ -97,6 +100,7 @@ class TestArrays1dExog(TestArrays):
         np.testing.assert_equal(self.data.orig_exog, self.exog.squeeze())
 
 
+@pytest.mark.not_vetted
 class TestDataFrames(TestArrays):
     @classmethod
     def setup_class(cls):
@@ -143,6 +147,7 @@ class TestDataFrames(TestArrays):
                               self.cov_result)
 
 
+@pytest.mark.not_vetted
 class TestLists(TestArrays):
     @classmethod
     def setup_class(cls):
@@ -152,6 +157,7 @@ class TestLists(TestArrays):
         cls.data = sm_data.handle_data(cls.endog, cls.exog)
 
 
+@pytest.mark.not_vetted
 class TestRecarrays(TestArrays):
     @classmethod
     def setup_class(cls):
@@ -173,6 +179,7 @@ class TestRecarrays(TestArrays):
                                 self.exog.view((float, 3), type=np.ndarray))
 
 
+@pytest.mark.not_vetted
 class TestStructarrays(TestArrays):
     @classmethod
     def setup_class(cls):
@@ -194,6 +201,7 @@ class TestStructarrays(TestArrays):
                                 self.exog.view((float,3), type=np.ndarray))
 
 
+@pytest.mark.not_vetted
 class TestListDataFrame(TestDataFrames):
     @classmethod
     def setup_class(cls):
@@ -229,6 +237,7 @@ class TestListDataFrame(TestDataFrames):
         tm.assert_frame_equal(self.data.orig_exog, self.exog)
 
 
+@pytest.mark.not_vetted
 class TestDataFrameList(TestDataFrames):
     @classmethod
     def setup_class(cls):
@@ -264,6 +273,7 @@ class TestDataFrameList(TestDataFrames):
         np.testing.assert_equal(self.data.orig_exog, self.exog)
 
 
+@pytest.mark.not_vetted
 class TestArrayDataFrame(TestDataFrames):
     @classmethod
     def setup_class(cls):
@@ -299,6 +309,7 @@ class TestArrayDataFrame(TestDataFrames):
         tm.assert_frame_equal(self.data.orig_exog, self.exog)
 
 
+@pytest.mark.not_vetted
 class TestDataFrameArray(TestDataFrames):
     @classmethod
     def setup_class(cls):
@@ -334,6 +345,7 @@ class TestDataFrameArray(TestDataFrames):
         np.testing.assert_equal(self.data.orig_exog, self.exog)
 
 
+@pytest.mark.not_vetted
 class TestSeriesDataFrame(TestDataFrames):
     @classmethod
     def setup_class(cls):
@@ -365,6 +377,7 @@ class TestSeriesDataFrame(TestDataFrames):
         tm.assert_frame_equal(self.data.orig_exog, self.exog)
 
 
+@pytest.mark.not_vetted
 class TestSeriesSeries(TestDataFrames):
     @classmethod
     def setup_class(cls):
@@ -398,6 +411,7 @@ class TestSeriesSeries(TestDataFrames):
         np.testing.assert_equal(self.data.exog, self.exog.values[:,None])
 
 
+@pytest.mark.not_vetted
 class TestMultipleEqsArrays(TestArrays):
     @classmethod
     def setup_class(cls):
@@ -433,6 +447,7 @@ class TestMultipleEqsArrays(TestArrays):
                                 self.col_eq_result)
 
 
+@pytest.mark.not_vetted
 class TestMultipleEqsDataFrames(TestDataFrames):
     @classmethod
     def setup_class(cls):
@@ -484,6 +499,8 @@ class TestMultipleEqsDataFrames(TestDataFrames):
                                                  'columns_eq'),
                                 self.col_eq_result)
 
+
+@pytest.mark.not_vetted
 class TestMissingArray(object):
     @classmethod
     def setup_class(cls):
@@ -550,6 +567,8 @@ class TestMissingArray(object):
         weights = weights[idx]
         np.testing.assert_array_equal(data.weights, weights)
 
+
+@pytest.mark.not_vetted
 class TestMissingPandas(object):
     @classmethod
     def setup_class(cls):
@@ -560,15 +579,16 @@ class TestMissingPandas(object):
         X[14,2] = np.nan
         cls.y, cls.X = pd.Series(y), pd.DataFrame(X)
 
+    @pytest.mark.smoke
     def test_raise_no_missing(self):
-        # smoke test for #1700
+        # smoke test for GH#1700
         sm_data.handle_data(pd.Series(np.random.random(20)),
                             pd.DataFrame(np.random.random((20, 2))),
                             'raise')
 
     def test_raise(self):
         np.testing.assert_raises(Exception, sm_data.handle_data,
-                                            (self.y, self.X, 'raise'))
+                                 (self.y, self.X, 'raise'))
 
     def test_drop(self):
         y = self.y
@@ -590,7 +610,7 @@ class TestMissingPandas(object):
 
     def test_endog_only_raise(self):
         np.testing.assert_raises(Exception, sm_data.handle_data,
-                                            (self.y, None, 'raise'))
+                                 (self.y, None, 'raise'))
 
     def test_endog_only_drop(self):
         y = self.y
@@ -612,6 +632,7 @@ class TestMissingPandas(object):
         np.testing.assert_(data.row_labels.equals(labels))
 
 
+@pytest.mark.not_vetted
 class TestConstant(object):
     @classmethod
     def setup_class(cls):
@@ -645,6 +666,7 @@ class TestConstant(object):
         np.testing.assert_equal(data.const_idx, None)
 
 
+@pytest.mark.not_vetted
 class TestHandleMissing(object):
 
     def test_pandas(self):
@@ -704,6 +726,7 @@ class TestHandleMissing(object):
         tm.assert_series_equal(data['endog'], y_exp)
 
 
+@pytest.mark.not_vetted
 class CheckHasConstant(object):
 
     def test_hasconst(self):
@@ -763,25 +786,27 @@ class CheckHasConstant(object):
         cls._initialize()
 
 
+@pytest.mark.not_vetted
 class TestHasConstantOLS(CheckHasConstant):
-
     @classmethod
     def _initialize(cls):
-
         cls.mod = OLS
         cls.y = cls.y_c
 
 
+@pytest.mark.not_vetted
 class TestHasConstantGLM(CheckHasConstant):
-
     @staticmethod
     def mod(y, x):
+        raise pytest.skip("GLM, families not implemented")
         return GLM(y, x, family=families.Binomial())
 
     @classmethod
     def _initialize(cls):
         cls.y = cls.y_bin
 
+
+@pytest.mark.not_vetted
 class TestHasConstantLogit(CheckHasConstant):
     @classmethod
     def _initialize(cls):
@@ -790,6 +815,7 @@ class TestHasConstantLogit(CheckHasConstant):
         cls.fit_kwds = {'disp': False}
 
 
+@pytest.mark.not_vetted
 def test_formula_missing_extra_arrays():
     np.random.seed(1)
     # because patsy can't turn off missing data-handling as of 0.3.0, we need
@@ -798,7 +824,7 @@ def test_formula_missing_extra_arrays():
 
     # there is a handle_formula_data step
     # then there is the regular handle_data step
-    # see 2083
+    # see GH#2083
 
     # the untested cases are endog/exog have missing. extra has missing.
     # endog/exog are fine. extra has missing.
@@ -863,9 +889,11 @@ def test_formula_missing_extra_arrays():
 
     kwargs.update({'weights': weights_wrong_size,
                    'missing_idx': missing_idx})
-    assert_raises(ValueError, sm_data.handle_data, endog, exog, **kwargs)
+    np.testing.assert_raises(ValueError,
+                             sm_data.handle_data, endog, exog, **kwargs)
 
 
+@pytest.mark.not_vetted
 def test_raise_nonfinite_exog():
     # we raise now in the has constant check before hitting the linear algebra
     from sm2.regression.linear_model import OLS
@@ -875,10 +903,10 @@ def test_raise_nonfinite_exog():
     y = np.array([-0.6, -0.1, 0., -0.7, -0.5, 0.5, 0.1, -0.8, -2., 1.1])
 
     x[1, 1] = np.inf
-    assert_raises(MissingDataError, OLS, y, x)
+    np.testing.assert_raises(MissingDataError, OLS, y, x)
     x[1, 1] = np.nan
-    assert_raises(MissingDataError, OLS, y, x)
-'''
+    np.testing.assert_raises(MissingDataError, OLS, y, x)
+
 
 
 # ------------------------------------------------------------------

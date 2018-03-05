@@ -3,6 +3,7 @@
 import os
 import warnings
 
+import pytest
 import numpy as np
 from numpy.testing import (assert_almost_equal, assert_equal, assert_warns,
                            assert_raises, dec, assert_, assert_allclose)
@@ -25,7 +26,7 @@ DECIMAL_2 = 2
 DECIMAL_1 = 1
 
 
-'''
+@pytest.mark.not_vetted
 class CheckADF(object):
     """
     Test Augmented Dickey-Fuller
@@ -48,6 +49,7 @@ class CheckADF(object):
         assert_almost_equal(critvalues, self.critvalues, DECIMAL_2)
 
 
+@pytest.mark.not_vetted
 class TestADFConstant(CheckADF):
     """
     Dickey-Fuller test for unit root
@@ -60,6 +62,7 @@ class TestADFConstant(CheckADF):
         cls.critvalues = [-3.476, -2.883, -2.573]
 
 
+@pytest.mark.not_vetted
 class TestADFConstantTrend(CheckADF):
     """
     """
@@ -78,6 +81,7 @@ class TestADFConstantTrend(CheckADF):
 # TODO: get test values from R?
 
 
+@pytest.mark.not_vetted
 class TestADFNoConstant(CheckADF):
     """
     """
@@ -95,6 +99,7 @@ class TestADFNoConstant(CheckADF):
 # No Unit Root
 
 
+@pytest.mark.not_vetted
 class TestADFConstant2(CheckADF):
     @classmethod
     def setup_class(cls):
@@ -104,6 +109,7 @@ class TestADFConstant2(CheckADF):
         cls.critvalues = [-3.476, -2.883, -2.573]
 
 
+@pytest.mark.not_vetted
 class TestADFConstantTrend2(CheckADF):
     @classmethod
     def setup_class(cls):
@@ -113,6 +119,7 @@ class TestADFConstantTrend2(CheckADF):
         cls.critvalues = [-4.006, -3.437, -3.137]
 
 
+@pytest.mark.not_vetted
 class TestADFNoConstant2(CheckADF):
     @classmethod
     def setup_class(cls):
@@ -129,6 +136,8 @@ class TestADFNoConstant2(CheckADF):
         assert_equal(self.store.__str__(),
                      'Augmented Dickey-Fuller Test Results')
 
+
+@pytest.mark.not_vetted
 class CheckCorrGram(object):
     """
     Set up for ACF, PACF tests.
@@ -143,6 +152,7 @@ class CheckCorrGram(object):
     #self.results['acvar'] = np.concatenate(([1.], self.results['acvar']))
 
 
+@pytest.mark.not_vetted
 class TestACF(CheckCorrGram):
     """
     Test Autocorrelation Function
@@ -171,6 +181,7 @@ class TestACF(CheckCorrGram):
 # NOTE: shouldn't need testing if Q stat is correct
 
 
+@pytest.mark.not_vetted
 class TestACF_FFT(CheckCorrGram):
     # Test Autocorrelation Function using FFT
     @classmethod
@@ -228,6 +239,7 @@ class TestACFMissing(CheckCorrGram):
 #        assert_almost_equal(self.res_drop[2][:40], self.qstat, DECIMAL_3)
 
 
+@pytest.mark.not_vetted
 class TestPACF(CheckCorrGram):
     @classmethod
     def setup_class(cls):
@@ -260,6 +272,7 @@ class TestPACF(CheckCorrGram):
         assert_almost_equal(pacfyw, pacfld, DECIMAL_8)
 
 
+@pytest.mark.not_vetted
 class CheckCoint(object):
     """
     Test Cointegration Test Results for 2-variable system
@@ -276,6 +289,7 @@ class CheckCoint(object):
 
 
 # TODO: this doesn't produce the old results anymore
+@pytest.mark.not_vetted
 class TestCoint_t(CheckCoint):
     """
     Get AR(1) parameter on residuals
@@ -289,6 +303,7 @@ class TestCoint_t(CheckCoint):
         cls.teststat = -1.830170986148
 
 
+@pytest.mark.not_vetted
 def test_coint():
     nobs = 200
     scale_e = 1
@@ -372,6 +387,7 @@ def test_coint():
             assert_allclose(r1, r2, rtol=0, atol=6e-7)
 
 
+@pytest.mark.not_vetted
 def test_coint_identical_series():
     nobs = 200
     scale_e = 1
@@ -386,6 +402,7 @@ def test_coint_identical_series():
     assert_(c[1] > .98)
 
 
+@pytest.mark.not_vetted
 def test_coint_perfect_collinearity():
     nobs = 200
     scale_e = 1
@@ -400,6 +417,7 @@ def test_coint_perfect_collinearity():
     assert_(c[1] > .98)
 
 
+@pytest.mark.not_vetted
 class TestGrangerCausality(object):
 
     def test_grangercausality(self):
@@ -423,11 +441,13 @@ class TestGrangerCausality(object):
         assert_raises(ValueError, grangercausalitytests, X, 3, verbose=False)
 
 
+@pytest.mark.not_vetted
 class SetupKPSS(object):
     data = macrodata.load()
     x = data.data['realgdp']
 
 
+@pytest.mark.not_vetted
 class TestKPSS(SetupKPSS):
     """
     R-code
@@ -492,11 +512,13 @@ class TestKPSS(SetupKPSS):
 
 
 
+@pytest.mark.not_vetted
 def test_pandasacovf():
     s = pd.Series(list(range(1, 11)))
     assert_almost_equal(acovf(s), acovf(s.values))
 
 
+@pytest.mark.not_vetted
 def test_acovf2d():
     dta = sunspots.load_pandas().data
     dta.index = pd.DatetimeIndex(start='1700', end='2009', freq='A')[:309]
@@ -507,6 +529,7 @@ def test_acovf2d():
     assert_raises(ValueError, acovf, X)
 
 
+@pytest.mark.not_vetted
 def test_acovf_fft_vs_convolution():
     np.random.seed(1)
     q = np.random.normal(size=100)
@@ -517,7 +540,8 @@ def test_acovf_fft_vs_convolution():
             F2 = acovf(q, demean=demean, unbiased=unbiased, fft=False)
             assert_almost_equal(F1, F2, decimal=7)
 
-@dec.slow
+@pytest.mark.slow
+@pytest.mark.not_vetted
 def test_arma_order_select_ic():
     # smoke test, assumes info-criteria are right
     from statsmodels.tsa.arima_process import arma_generate_sample
@@ -559,6 +583,7 @@ def test_arma_order_select_ic():
     assert_equal(res.aic_min_order, (1, 2))
 
 
+@pytest.mark.not_vetted
 def test_arma_order_select_ic_failure():
     # this should trigger an SVD convergence failure, smoke test that it
     # returns, likely platform dependent failure...
@@ -580,9 +605,9 @@ def test_arma_order_select_ic_failure():
         res = arma_order_select_ic(y)
 
 
+@pytest.mark.not_vetted
 def test_acf_fft_dataframe():
     # GH#322
     result = acf(sunspots.load_pandas().data[['SUNACTIVITY']], fft=True)
     assert_equal(result.ndim, 1)
 
-'''

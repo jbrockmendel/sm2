@@ -4,6 +4,7 @@
 
 from six.moves import zip
 
+import pytest
 import numpy as np
 from numpy.testing import (assert_array_almost_equal, assert_equal,
                            assert_raises, assert_array_equal)
@@ -21,13 +22,14 @@ from sm2.tsa.tests.results import savedrvs
 from sm2.tsa.tests.results.datamlw_tls import mlacf, mlccf, mlpacf, mlywar
 
 
-'''
+
 
 xo = savedrvs.rvsdata.xar2
 x100 = xo[-100:] / 1000.
 x1000 = xo / 1000.
 
 
+@pytest.mark.not_vetted
 def test_acf():
     acf_x = tsa.acf(x100, unbiased=False)[:21]
     assert_array_almost_equal(mlacf.acf100.ravel(), acf_x, 8)
@@ -37,6 +39,7 @@ def test_acf():
     # why only dec=9? (comment out of date?)
 
 
+@pytest.mark.not_vetted
 def test_ccf():
     ccf_x = tsa.ccf(x100[4:], x100[:-4], unbiased=False)[:21]
     assert_array_almost_equal(mlccf.ccf100.ravel()[:21][::-1], ccf_x, 8)
@@ -44,6 +47,7 @@ def test_ccf():
     assert_array_almost_equal(mlccf.ccf1000.ravel()[:21][::-1], ccf_x, 8)
 
 
+@pytest.mark.not_vetted
 def test_pacf_yw():
     pacfyw = tsa.pacf_yw(x100, 20, method='mle')
     assert_array_almost_equal(mlpacf.pacf100.ravel(), pacfyw, 1)
@@ -52,6 +56,7 @@ def test_pacf_yw():
     # assert False
 
 
+@pytest.mark.not_vetted
 def test_pacf_ols():
     pacfols = tsa.pacf_ols(x100, 20)
     assert_array_almost_equal(mlpacf.pacf100.ravel(), pacfols, 8)
@@ -60,6 +65,7 @@ def test_pacf_ols():
     # assert False
 
 
+@pytest.mark.not_vetted
 def test_ywcoef():
     assert_array_almost_equal(mlywar.arcoef100[1:],
                               -yule_walker(x100, 10, method='mle')[0], 8)
@@ -67,6 +73,7 @@ def test_ywcoef():
                               -yule_walker(x1000, 20, method='mle')[0], 8)
 
 
+@pytest.mark.not_vetted
 def test_yule_walker_inter():
     # see GH#1869
     x = np.array([1, -1, 2, 2, 0, -2, 1, 0, -3, 0, 0])
@@ -74,6 +81,7 @@ def test_yule_walker_inter():
     result = yule_walker(x, 3)
 
 
+@pytest.mark.not_vetted
 def test_duplication_matrix():
     for k in range(2, 10):
         m = tools.unvech(np.random.randn(k * (k + 1) // 2))
@@ -81,6 +89,7 @@ def test_duplication_matrix():
         assert (np.array_equal(vec(m), np.dot(Dk, vech(m))))
 
 
+@pytest.mark.not_vetted
 def test_elimination_matrix():
     for k in range(2, 10):
         m = np.random.randn(k, k)
@@ -88,18 +97,21 @@ def test_elimination_matrix():
         assert (np.array_equal(vech(m), np.dot(Lk, vec(m))))
 
 
+@pytest.mark.not_vetted
 def test_commutation_matrix():
     m = np.random.randn(4, 3)
     K = tools.commutation_matrix(4, 3)
     assert (np.array_equal(vec(m.T), np.dot(K, vec(m))))
 
 
+@pytest.mark.not_vetted
 def test_vec():
     arr = np.array([[1, 2],
                     [3, 4]])
     assert (np.array_equal(vec(arr), [1, 3, 2, 4]))
 
 
+@pytest.mark.not_vetted
 def test_vech():
     arr = np.array([[1, 2, 3],
                     [4, 5, 6],
@@ -107,6 +119,7 @@ def test_vech():
     assert (np.array_equal(vech(arr), [1, 4, 7, 5, 8, 9]))
 
 
+@pytest.mark.not_vetted
 class TestLagmat(object):
     @classmethod
     def setup_class(cls):
@@ -387,6 +400,7 @@ class TestLagmat(object):
         tm.assert_frame_equal(lags, expected.iloc[:, 1:])
 
 
+@pytest.mark.not_vetted
 def test_freq_to_period():
     from pandas.tseries.frequencies import to_offset
     freqs = ['A', 'AS-MAR', 'Q', 'QS', 'QS-APR', 'W', 'W-MON', 'B', 'D', 'H']
@@ -396,6 +410,7 @@ def test_freq_to_period():
         assert_equal(tools.freq_to_period(to_offset(i)), j)
 
 
+@pytest.mark.not_vetted
 class TestDetrend(object):
     @classmethod
     def setup_class(cls):
@@ -430,7 +445,7 @@ class TestDetrend(object):
         assert_array_almost_equal(detrended.values,
                                   pd.Series([-2, -1, 0, 1, 2]))
         tm.assert_series_equal(detrended,
-                               d.Series(detrended.values, name='one'))
+                               pd.Series(detrended.values, name='one'))
 
     def test_detrend_dataframe(self):
         columns = ['one', 'two']
@@ -463,6 +478,7 @@ class TestDetrend(object):
         assert_raises(NotImplementedError, tools.detrend, np.ones((3, 3, 3)))
 
 
+@pytest.mark.not_vetted
 class TestAddTrend(object):
     @classmethod
     def setup_class(cls):
@@ -610,6 +626,7 @@ class TestAddTrend(object):
                       x=self.arr_1d, trend='unknown')
 
 
+@pytest.mark.not_vetted
 class TestLagmat2DS(object):
     @classmethod
     def setup_class(cls):
@@ -718,4 +735,4 @@ class TestLagmat2DS(object):
 
         data = np.zeros((100,2,2))
         assert_raises(TypeError, tools.lagmat2ds, data, 5)
-'''
+

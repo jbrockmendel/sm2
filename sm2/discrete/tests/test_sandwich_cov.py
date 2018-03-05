@@ -7,6 +7,7 @@ Author: Josef Perktold
 """
 import os
 
+import pytest
 import numpy as np
 from numpy.testing import assert_allclose, assert_equal, assert_
 import pandas as pd
@@ -42,8 +43,10 @@ exog = add_constant(exog_data, prepend=False)
 group = np.asarray(data['ship'], int)
 exposure = np.asarray(data['service'])
 
-'''
+
 # TODO get the test methods from regression/tests
+
+@pytest.mark.not_vetted
 class CheckCountRobustMixin(object):
 
 
@@ -91,6 +94,7 @@ class CheckCountRobustMixin(object):
         smt.check_ftest_pvalues(self.res1)
 
 
+@pytest.mark.not_vetted
 class TestPoissonClu(CheckCountRobustMixin):
     @classmethod
     def setup_class(cls):
@@ -100,6 +104,7 @@ class TestPoissonClu(CheckCountRobustMixin):
         cls.get_robust_clu()
 
 
+@pytest.mark.not_vetted
 class TestPoissonCluGeneric(CheckCountRobustMixin):
     @classmethod
     def setup_class(cls):
@@ -134,6 +139,7 @@ class TestPoissonCluGeneric(CheckCountRobustMixin):
         cls.corr_fact = np.sqrt(corr_fact)
 
 
+@pytest.mark.not_vetted
 class TestPoissonHC1Generic(CheckCountRobustMixin):
 
     @classmethod
@@ -151,6 +157,7 @@ class TestPoissonHC1Generic(CheckCountRobustMixin):
         cls.corr_fact = np.sqrt(1./corr_fact)
 
 # TODO: refactor xxxFit to full testing results
+@pytest.mark.not_vetted
 class TestPoissonCluFit(CheckCountRobustMixin):
 
     @classmethod
@@ -196,6 +203,7 @@ class TestPoissonCluFit(CheckCountRobustMixin):
         assert_allclose(res1.conf_int(), ci, rtol=5e-7, atol=1e-20)
 
 
+@pytest.mark.not_vetted
 class TestPoissonHC1Fit(CheckCountRobustMixin):
 
     @classmethod
@@ -211,6 +219,7 @@ class TestPoissonHC1Fit(CheckCountRobustMixin):
         cls.corr_fact = np.sqrt(1./corr_fact)
 
 
+@pytest.mark.not_vetted
 class TestPoissonHC1FitExposure(CheckCountRobustMixin):
 
     @classmethod
@@ -226,7 +235,7 @@ class TestPoissonHC1FitExposure(CheckCountRobustMixin):
         cls.corr_fact = np.sqrt(1./corr_fact)
 
 
-
+@pytest.mark.not_vetted
 class TestPoissonCluExposure(CheckCountRobustMixin):
 
     @classmethod
@@ -237,6 +246,7 @@ class TestPoissonCluExposure(CheckCountRobustMixin):
         cls.get_robust_clu()
 
 
+@pytest.mark.not_vetted
 class TestPoissonCluExposureGeneric(CheckCountRobustMixin):
 
     @classmethod
@@ -262,6 +272,7 @@ class TestPoissonCluExposureGeneric(CheckCountRobustMixin):
         cls.corr_fact = np.sqrt(corr_fact)
 
 
+@pytest.mark.not_vetted
 class TestGLMPoissonClu(CheckCountRobustMixin):
 
     @classmethod
@@ -273,6 +284,7 @@ class TestGLMPoissonClu(CheckCountRobustMixin):
         cls.get_robust_clu()
 
 
+@pytest.mark.not_vetted
 class TestGLMPoissonCluGeneric(CheckCountRobustMixin):
 
     @classmethod
@@ -297,6 +309,7 @@ class TestGLMPoissonCluGeneric(CheckCountRobustMixin):
         cls.corr_fact = np.sqrt(corr_fact)
 
 
+@pytest.mark.not_vetted
 class TestGLMPoissonHC1Generic(CheckCountRobustMixin):
 
     @classmethod
@@ -315,6 +328,7 @@ class TestGLMPoissonHC1Generic(CheckCountRobustMixin):
 
 
 # TODO: refactor xxxFit to full testing results
+@pytest.mark.not_vetted
 class TestGLMPoissonCluFit(CheckCountRobustMixin):
 
     @classmethod
@@ -343,6 +357,7 @@ class TestGLMPoissonCluFit(CheckCountRobustMixin):
         cls.corr_fact = np.sqrt(corr_fact)
 
 
+@pytest.mark.not_vetted
 class TestGLMPoissonHC1Fit(CheckCountRobustMixin):
 
     @classmethod
@@ -358,6 +373,7 @@ class TestGLMPoissonHC1Fit(CheckCountRobustMixin):
         cls.corr_fact = np.sqrt(1./corr_fact)
 
 
+@pytest.mark.not_vetted
 class TestNegbinClu(CheckCountRobustMixin):
 
     @classmethod
@@ -368,6 +384,7 @@ class TestNegbinClu(CheckCountRobustMixin):
         cls.get_robust_clu()
 
 
+@pytest.mark.not_vetted
 class TestNegbinCluExposure(CheckCountRobustMixin):
 
     @classmethod
@@ -392,6 +409,8 @@ class TestNegbinCluExposure(CheckCountRobustMixin):
 #
 #        print dir(results_st)
 
+
+@pytest.mark.not_vetted
 class TestNegbinCluGeneric(CheckCountRobustMixin):
 
     @classmethod
@@ -416,6 +435,7 @@ class TestNegbinCluGeneric(CheckCountRobustMixin):
         cls.corr_fact = np.sqrt(corr_fact)
 
 
+@pytest.mark.not_vetted
 class TestNegbinCluFit(CheckCountRobustMixin):
 
     @classmethod
@@ -438,6 +458,7 @@ class TestNegbinCluFit(CheckCountRobustMixin):
         cls.corr_fact = np.sqrt(corr_fact)
 
 
+@pytest.mark.not_vetted
 class TestNegbinCluExposureFit(CheckCountRobustMixin):
 
     @classmethod
@@ -460,6 +481,7 @@ class TestNegbinCluExposureFit(CheckCountRobustMixin):
         cls.corr_fact = np.sqrt(corr_fact)
 
 
+@pytest.mark.not_vetted
 class CheckDiscreteGLM(object):
     # compare GLM with other models, no verified reference results
 
@@ -479,6 +501,7 @@ class CheckDiscreteGLM(object):
 #             assert_allclose(res1.bse, res2.bse, rtol=1e-13)
 
 
+@pytest.mark.not_vetted
 class TestGLMLogit(CheckDiscreteGLM):
 
     @classmethod
@@ -493,6 +516,7 @@ class TestGLMLogit(CheckDiscreteGLM):
         cls.res2 = mod1.fit(cov_type='cluster', cov_kwds=dict(groups=group))
 
 
+@pytest.mark.not_vetted
 class T_estGLMProbit(CheckDiscreteGLM):
     # invalid link. What's Probit as GLM?
 
@@ -508,6 +532,7 @@ class T_estGLMProbit(CheckDiscreteGLM):
         cls.res2 = mod1.fit(cov_type='cluster', cov_kwds=dict(groups=group))
 
 
+@pytest.mark.not_vetted
 class TestGLMGaussNonRobust(CheckDiscreteGLM):
 
     @classmethod
@@ -521,6 +546,7 @@ class TestGLMGaussNonRobust(CheckDiscreteGLM):
         cls.res2 = mod2.fit()
 
 
+@pytest.mark.not_vetted
 class TestGLMGaussClu(CheckDiscreteGLM):
 
     @classmethod
@@ -534,6 +560,7 @@ class TestGLMGaussClu(CheckDiscreteGLM):
         cls.res2 = mod2.fit(cov_type='cluster', cov_kwds=dict(groups=group))
 
 
+@pytest.mark.not_vetted
 class TestGLMGaussHC(CheckDiscreteGLM):
 
     @classmethod
@@ -547,6 +574,7 @@ class TestGLMGaussHC(CheckDiscreteGLM):
         cls.res2 = mod2.fit(cov_type='HC0')
 
 
+@pytest.mark.not_vetted
 class TestGLMGaussHAC(CheckDiscreteGLM):
 
     @classmethod
@@ -562,6 +590,7 @@ class TestGLMGaussHAC(CheckDiscreteGLM):
         cls.res2 = mod2.fit(cov_type='HAC', cov_kwds=kwds)
 
 
+@pytest.mark.not_vetted
 class TestGLMGaussHACUniform(CheckDiscreteGLM):
 
     @classmethod
@@ -605,8 +634,8 @@ class TestGLMGaussHACUniform(CheckDiscreteGLM):
         assert_allclose(res1a.bse, bse, rtol=1e-6)
 
 
+@pytest.mark.not_vetted
 class TestGLMGaussHACPanel(CheckDiscreteGLM):
-
     @classmethod
     def setup_class(cls):
         cls.cov_type = 'hac-panel'
@@ -629,6 +658,7 @@ class TestGLMGaussHACPanel(CheckDiscreteGLM):
         assert_allclose(self.res1b.bse, self.res1.bse, rtol=1e-12)
 
 
+@pytest.mark.not_vetted
 class TestGLMGaussHACPanelGroups(CheckDiscreteGLM):
 
     @classmethod
@@ -648,6 +678,7 @@ class TestGLMGaussHACPanelGroups(CheckDiscreteGLM):
         cls.res2 = mod2.fit(cov_type='hac-panel', cov_kwds=kwds)
 
 
+@pytest.mark.not_vetted
 class TestGLMGaussHACGroupsum(CheckDiscreteGLM):
 
     @classmethod
@@ -669,4 +700,3 @@ class TestGLMGaussHACGroupsum(CheckDiscreteGLM):
     def test_kwd(self):
         # test corrected keyword name
         assert_allclose(self.res1b.bse, self.res1.bse, rtol=1e-12)
-'''

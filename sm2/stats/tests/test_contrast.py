@@ -1,10 +1,12 @@
 
+import pytest
 import numpy as np
 from numpy.testing import assert_almost_equal, assert_equal
 
 from sm2.stats.contrast import Contrast
 
-'''
+
+@pytest.mark.not_vetted
 class TestContrast(object):
     @classmethod
     def setup_class(cls):
@@ -37,4 +39,3 @@ class TestContrast(object):
         X2 = np.column_stack((self.X, self.X[:, 5]))
         c = Contrast(self.X[:, 5], X2)
         # TODO: I don't think this should be estimable?  isestimable correct?
-'''

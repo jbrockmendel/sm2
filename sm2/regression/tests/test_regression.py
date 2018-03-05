@@ -7,6 +7,7 @@ import os
 import re
 
 from six import PY3
+import pytest
 import pandas as pd
 import numpy as np
 from numpy.testing import (assert_almost_equal, assert_approx_equal, assert_,
@@ -29,7 +30,8 @@ DECIMAL_1 = 1
 DECIMAL_7 = 7
 DECIMAL_0 = 0
 
-'''
+
+@pytest.mark.not_vetted
 class CheckRegressionResults(object):
     """
     res2 contains results from Rmodelwrap or were obtained from a statistical
@@ -151,9 +153,11 @@ class CheckRegressionResults(object):
         assert_almost_equal(self.res1.resid_pearson, self.res2.resid_pearson,
                             self.decimal_norm_resids)
 
+
 # TODO: test fittedvalues and what else?
 
 
+@pytest.mark.not_vetted
 class TestOLS(CheckRegressionResults):
     @classmethod
     def setup_class(cls):
@@ -256,6 +260,7 @@ class TestOLS(CheckRegressionResults):
             assert_allclose(res.wresid, res.resid_pearson, atol=5e-11)
 
 
+@pytest.mark.not_vetted
 class TestRTO(CheckRegressionResults):
     @classmethod
     def setup_class(cls):
@@ -270,6 +275,8 @@ class TestRTO(CheckRegressionResults):
         res_qr = OLS(data.endog, data.exog).fit(method="qr")
         cls.res_qr = res_qr
 
+
+@pytest.mark.not_vetted
 class TestFtest(object):
     """
     Tests f_test vs. RegressionResults
@@ -294,6 +301,8 @@ class TestFtest(object):
     def test_Df_num(self):
         assert_equal(self.Ftest.df_num, 6)
 
+
+@pytest.mark.not_vetted
 class TestFTest2(object):
     """
     A joint test that the coefficient on
@@ -333,6 +342,7 @@ class TestFTest2(object):
         assert_equal(self.Ftest1.df_num, 2)
 
 
+@pytest.mark.not_vetted
 class TestFtestQ(object):
     """
     A joint hypothesis test that Rb = q.  Coefficient tests are essentially
@@ -363,6 +373,8 @@ class TestFtestQ(object):
     def test_df_num(self):
         assert_equal(self.Ftest1.df_num, 5)
 
+
+@pytest.mark.not_vetted
 class TestTtest(object):
     """
     Test individual t-tests.  Ie., are the coefficients significantly
@@ -399,6 +411,8 @@ class TestTtest(object):
     def test_effect(self):
         assert_almost_equal(self.Ttest.effect, self.res1.params)
 
+
+@pytest.mark.not_vetted
 class TestTtest2(object):
     """
     Tests the hypothesis that the coefficients on POP and YEAR
@@ -432,6 +446,8 @@ class TestTtest2(object):
     def test_effect(self):
         assert_almost_equal(self.Ttest1.effect, -1829.2025687186533, DECIMAL_4)
 
+
+@pytest.mark.not_vetted
 class TestGLS(object):
     """
     These test results were obtained by replication with R.
@@ -496,6 +512,8 @@ class TestGLS(object):
         assert_equal(mod.exog.shape[0], 13)
         assert_equal(mod.sigma.shape, (13, 13))
 
+
+@pytest.mark.not_vetted
 class TestGLS_alt_sigma(CheckRegressionResults):
     """
     Test that GLS with no argument is equivalent to OLS.
@@ -528,6 +546,7 @@ class TestGLS_alt_sigma(CheckRegressionResults):
     #    assert_almost_equal(conf1, conf2, DECIMAL_4)
 
 
+@pytest.mark.not_vetted
 class TestLM(object):
 
     @classmethod
@@ -611,6 +630,7 @@ class TestLM(object):
                       self.res2_full)
 
 
+@pytest.mark.not_vetted
 class TestOLS_GLS_WLS_equivalence(object):
 
     @classmethod
@@ -656,6 +676,7 @@ class TestOLS_GLS_WLS_equivalence(object):
         assert_almost_equal(rsquared, rsquared_1, DECIMAL_7)
 
 
+@pytest.mark.not_vetted
 class TestGLS_WLS_equivalence(TestOLS_GLS_WLS_equivalence):
     # reuse test methods
 
@@ -687,6 +708,7 @@ class TestGLS_WLS_equivalence(TestOLS_GLS_WLS_equivalence):
                             DECIMAL_7)
 
 
+@pytest.mark.not_vetted
 class TestNonFit(object):
     @classmethod
     def setup_class(cls):
@@ -701,6 +723,7 @@ class TestNonFit(object):
         assert_equal(self.ols_model.df_resid, long(9))
 
 
+@pytest.mark.not_vetted
 class TestWLS_CornerCases(object):
     @classmethod
     def setup_class(cls):
@@ -714,6 +737,7 @@ class TestWLS_CornerCases(object):
         assert_raises(ValueError, WLS, self.endog, self.exog, weights=weights)
 
 
+@pytest.mark.not_vetted
 class TestWLSExogWeights(CheckRegressionResults):
     # Test WLS with Greene's credit card data
     # reg avgexp age income incomesq ownrent [aw=1/incomesq]
@@ -741,6 +765,7 @@ class TestWLSExogWeights(CheckRegressionResults):
         cls.res2.llf += 0.5 * np.sum(np.log(cls.res1.model.weights))
 
 
+@pytest.mark.not_vetted
 def test_wls_example():
     # example from the docstring, there was a note about a bug, should
     # be fixed now
@@ -753,6 +778,7 @@ def test_wls_example():
     assert_almost_equal(wls_model.scale, 2.44608530786**2, 6)
 
 
+@pytest.mark.not_vetted
 def test_wls_tss():
     y = np.array([22, 22, 22, 23, 23, 23])
     X = [[1, 0], [1, 0], [1, 1], [0, 1], [0, 1], [0, 1]]
@@ -767,6 +793,7 @@ def test_wls_tss():
     assert_equal(ols_mod.centered_tss, wls_mod.centered_tss)
 
 
+@pytest.mark.not_vetted
 class TestWLSScalarVsArray(CheckRegressionResults):
     @classmethod
     def setup_class(cls):
@@ -792,6 +819,7 @@ class TestWLSScalarVsArray(CheckRegressionResults):
 #        assert_almost_equal(conf1, conf2(), DECIMAL_4)
 
 
+@pytest.mark.not_vetted
 def test_wls_missing():
     from sm2.datasets.ccard import load
     data = load()
@@ -804,6 +832,7 @@ def test_wls_missing():
     assert_equal(mod.weights.shape[0], 70)
 
 
+@pytest.mark.not_vetted
 class TestWLS_OLS(CheckRegressionResults):
     @classmethod
     def setup_class(cls):
@@ -816,6 +845,7 @@ class TestWLS_OLS(CheckRegressionResults):
         assert_almost_equal(conf1, conf2(), DECIMAL_4)
 
 
+@pytest.mark.not_vetted
 class TestGLS_OLS(CheckRegressionResults):
     @classmethod
     def setup_class(cls):
@@ -844,6 +874,7 @@ class TestGLS_OLS(CheckRegressionResults):
 #        pass
 
 
+@pytest.mark.not_vetted
 class TestYuleWalker(object):
     @classmethod
     def setup_class(cls):
@@ -858,6 +889,7 @@ class TestYuleWalker(object):
         assert_almost_equal(self.rho, self.R_params, DECIMAL_4)
 
 
+@pytest.mark.not_vetted
 class TestDataDimensions(CheckRegressionResults):
     @classmethod
     def setup_class(cls):
@@ -880,6 +912,7 @@ class TestDataDimensions(CheckRegressionResults):
         assert_almost_equal(conf1, conf2(), DECIMAL_4)
 
 
+@pytest.mark.not_vetted
 class TestGLS_large_data(TestDataDimensions):
     @classmethod
     def setup_class(cls):
@@ -909,6 +942,7 @@ class TestGLS_large_data(TestDataDimensions):
                             DECIMAL_7)
 
 
+@pytest.mark.not_vetted
 class TestNxNx(TestDataDimensions):
     @classmethod
     def setup_class(cls):
@@ -918,6 +952,7 @@ class TestNxNx(TestDataDimensions):
         cls.res2 = cls.mod2.fit()
 
 
+@pytest.mark.not_vetted
 class TestNxOneNx(TestDataDimensions):
     @classmethod
     def setup_class(cls):
@@ -927,6 +962,7 @@ class TestNxOneNx(TestDataDimensions):
         cls.res2 = cls.mod2.fit()
 
 
+@pytest.mark.not_vetted
 class TestNxNxOne(TestDataDimensions):
     @classmethod
     def setup_class(cls):
@@ -936,12 +972,14 @@ class TestNxNxOne(TestDataDimensions):
         cls.res2 = cls.mod2.fit()
 
 
+@pytest.mark.not_vetted
 def test_bad_size():
     np.random.seed(54321)
     data = np.random.uniform(0, 20, 31)
     assert_raises(ValueError, OLS, data, data[1:])
 
 
+@pytest.mark.not_vetted
 def test_const_indicator():
     np.random.seed(12345)
     X = np.random.randint(0, 3, size=30)
@@ -952,6 +990,7 @@ def test_const_indicator():
     assert_almost_equal(modc.rsquared, mod.rsquared, 12)
 
 
+@pytest.mark.not_vetted
 def test_706():
     # make sure one regressor pandas Series gets passed to DataFrame
     # for conf_int.
@@ -963,6 +1002,7 @@ def test_706():
     np.testing.assert_(isinstance(conf_int, pd.DataFrame))
 
 
+@pytest.mark.not_vetted
 def test_summary():
     # GH#734
     dta = longley.load_pandas()
@@ -1023,6 +1063,7 @@ Warnings: \\newline
 class TestRegularizedFit(object):
 
     # Make sure there are no problems when no variables are selected.
+    @pytest.mark.not_vetted
     def test_empty_model(self):
 
         np.random.seed(742)
@@ -1035,6 +1076,7 @@ class TestRegularizedFit(object):
             result = model.fit_regularized(alpha=1000)
             assert_equal(result.params, 0.)
 
+    @pytest.mark.not_vetted
     def test_regularized(self):
         from . import glmnet_r_results
 
@@ -1074,6 +1116,7 @@ class TestRegularizedFit(object):
                 mod.fit_regularized(L1_wt=L1_wt, alpha=lam,
                                     profile_scale=True)
 
+    @pytest.mark.not_vetted
     def test_regularized_weights(self):
 
         np.random.seed(1432)
@@ -1107,6 +1150,7 @@ class TestRegularizedFit(object):
                 assert_almost_equal(rslt1.params, rslt3.params, decimal=3)
 
 
+@pytest.mark.not_vetted
 def test_formula_missing_cat():
     # GH#805
 
@@ -1130,6 +1174,7 @@ def test_formula_missing_cat():
                   data=dta, missing='raise')
 
 
+@pytest.mark.not_vetted
 def test_missing_formula_predict():
     # see GH#2171
     nsample = 30
@@ -1145,6 +1190,7 @@ def test_missing_formula_predict():
     fit.predict(exog=data[:-1])
 
 
+@pytest.mark.not_vetted
 def test_fvalue_implicit_constant():
     # if constant is implicit, return nan see GH#2444
     nobs = 100
@@ -1164,6 +1210,7 @@ def test_fvalue_implicit_constant():
     res.summary()
 
 
+@pytest.mark.not_vetted
 def test_fvalue_only_constant():
     # if only constant in model, return nan see GH#3642
     nobs = 20
@@ -1182,6 +1229,7 @@ def test_fvalue_only_constant():
     res.summary()
 
 
+@pytest.mark.not_vetted
 def test_ridge():
     n = 100
     p = 5
@@ -1208,6 +1256,7 @@ def test_ridge():
     assert_allclose(fv1, fv2)
 
 
+@pytest.mark.not_vetted
 def test_regularized_refit():
     n = 100
     p = 5
@@ -1222,6 +1271,7 @@ def test_regularized_refit():
     assert_allclose(result1.bse, result2.bse)
 
 
+@pytest.mark.not_vetted
 def test_regularized_predict():
     n = 100
     p = 5
@@ -1244,6 +1294,7 @@ def test_regularized_predict():
         assert_allclose(fittedvalues, pr)
 
 
+@pytest.mark.not_vetted
 def test_regularized_options():
     n = 100
     p = 5
@@ -1256,4 +1307,4 @@ def test_regularized_options():
     result2 = model2.fit_regularized(alpha=1., L1_wt=0.5,
                                      start_params=np.zeros(5))
     assert_allclose(result1.params, result2.params)
-'''
+

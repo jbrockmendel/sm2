@@ -5,7 +5,7 @@ Created on Sun Apr 20 17:12:53 2014
 author: Josef Perktold
 
 """
-
+import pytest
 import numpy as np
 from numpy.testing import assert_allclose, assert_equal
 
@@ -15,7 +15,8 @@ from sm2.regression._prediction import get_prediction
 from statsmodels.sandbox.regression.predstd import wls_prediction_std
 
 
-'''
+
+@pytest.mark.not_vetted
 def test_predict_se():
     # this test doesn't use reference values
     # checks conistency across options, and compares to direct calculation
@@ -107,6 +108,7 @@ def test_predict_se():
         np.testing.assert_allclose(sew, sew1 + res3.scale * (wv - 1))
 
 
+@pytest.mark.not_vetted
 class TestWLSPrediction(object):
 
     @classmethod
@@ -214,4 +216,4 @@ class TestWLSPrediction(object):
         # prediction with exog and no weights does not error
         res_glm = mod_glm.fit()
         pred_glm = res_glm.get_prediction(X)
-'''
+

@@ -11,6 +11,8 @@ Created on Wed Oct 30 14:01:27 2013
 Author: Josef Perktold
 """
 import pytest
+from six import StringIO
+
 import numpy as np
 from numpy.testing import (assert_, assert_allclose, assert_equal,
                            assert_array_equal)
@@ -22,7 +24,8 @@ from sm2.discrete.discrete_model import DiscreteResults
 
 from statsmodels.genmod.generalized_linear_model import GLMResults
 
-'''
+
+@pytest.mark.not_vetted
 class CheckGenericMixin(object):
     @classmethod
     def setup_class(cls):
@@ -179,6 +182,7 @@ class CheckGenericMixin(object):
 #########  subclasses for individual models, unchanged from test_shrink_pickle
 # TODO: check if setup_class is faster than setup
 
+@pytest.mark.not_vetted
 class TestGenericOLS(CheckGenericMixin):
     def setup(self):
         #fit for each test, because results will be changed by test
@@ -188,28 +192,31 @@ class TestGenericOLS(CheckGenericMixin):
         self.results = sm.OLS(y, self.exog).fit()
 
 
+@pytest.mark.not_vetted
 class TestGenericOLSOneExog(CheckGenericMixin):
     # check with single regressor (no constant)
     def setup(self):
-        #fit for each test, because results will be changed by test
+        # fit for each test, because results will be changed by test
         x = self.exog[:, 1]
         np.random.seed(987689)
         y = x + np.random.randn(x.shape[0])
         self.results = sm.OLS(y, x).fit()
 
 
+@pytest.mark.not_vetted
 class TestGenericWLS(CheckGenericMixin):
     def setup(self):
-        #fit for each test, because results will be changed by test
+        # fit for each test, because results will be changed by test
         x = self.exog
         np.random.seed(987689)
         y = x.sum(1) + np.random.randn(x.shape[0])
         self.results = sm.WLS(y, self.exog, weights=np.ones(len(y))).fit()
 
 
+@pytest.mark.not_vetted
 class TestGenericPoisson(CheckGenericMixin):
     def setup(self):
-        #fit for each test, because results will be changed by test
+        # fit for each test, because results will be changed by test
         x = self.exog
         np.random.seed(987689)
         y_count = np.random.poisson(np.exp(x.sum(1) - x.mean()))
@@ -219,12 +226,14 @@ class TestGenericPoisson(CheckGenericMixin):
         self.results = model.fit(start_params=start_params, method='bfgs',
                                  disp=0)
 
-        #TODO: temporary, fixed in master
+        # TODO: temporary, fixed in master
         self.predict_kwds = dict(exposure=1, offset=0)
 
+
+@pytest.mark.not_vetted
 class TestGenericNegativeBinomial(CheckGenericMixin):
     def setup(self):
-        #fit for each test, because results will be changed by test
+        # fit for each test, because results will be changed by test
         np.random.seed(987689)
         data = sm.datasets.randhie.load()
         exog = sm.add_constant(data.exog, prepend=False)
@@ -236,6 +245,7 @@ class TestGenericNegativeBinomial(CheckGenericMixin):
         self.results = mod.fit(start_params=start_params, disp=0)
 
 
+@pytest.mark.not_vetted
 class TestGenericLogit(CheckGenericMixin):
     def setup(self):
         # fit for each test, because results will be changed by test
@@ -249,26 +259,29 @@ class TestGenericLogit(CheckGenericMixin):
         self.results = model.fit(start_params=start_params, method='bfgs', disp=0)
 
 
+@pytest.mark.not_vetted
 class TestGenericRLM(CheckGenericMixin):
     def setup(self):
         # fit for each test, because results will be changed by test
+        raise pytest.skip("RLM not implemented")
         x = self.exog
         np.random.seed(987689)
         y = x.sum(1) + np.random.randn(x.shape[0])
-        raise NotImplementedError
         self.results = sm.RLM(y, self.exog).fit()
 
 
+@pytest.mark.not_vetted
 class TestGenericGLM(CheckGenericMixin):
     def setup(self):
         # fit for each test, because results will be changed by test
+        raise pytest.skip("GLM not implemented")
         x = self.exog
         np.random.seed(987689)
         y = x.sum(1) + np.random.randn(x.shape[0])
-        raise NotImplementedError
         self.results = sm.GLM(y, self.exog).fit()
 
 
+@pytest.mark.not_vetted
 class TestGenericGEEPoisson(CheckGenericMixin):
     def setup(self):
         # fit for each test, because results will be changed by test
@@ -279,13 +292,14 @@ class TestGenericGEEPoisson(CheckGenericMixin):
         # use start_params to speed up test, difficult convergence not tested
         start_params = np.array([0., 1., 1., 1.])
 
-        raise NotImplementedError
+        raise pytest.skip("cov_struct not implemented")
         vi = sm.cov_struct.Independence()
         family = sm.families.Poisson()
         self.results = sm.GEE(y_count, self.exog, groups, family=family,
                                 cov_struct=vi).fit(start_params=start_params)
 
 
+@pytest.mark.not_vetted
 class TestGenericGEEPoissonNaive(CheckGenericMixin):
     def setup(self):
         # fit for each test, because results will be changed by test
@@ -297,7 +311,7 @@ class TestGenericGEEPoissonNaive(CheckGenericMixin):
         # use start_params to speed up test, difficult convergence not tested
         start_params = np.array([0., 1., 1., 1.])
         
-        raise NotImplementedError
+        raise pytest.skip("cov_struct not implemented")
         vi = sm.cov_struct.Independence()
         family = sm.families.Poisson()
         self.results = sm.GEE(y_count, self.exog, groups, family=family,
@@ -305,6 +319,7 @@ class TestGenericGEEPoissonNaive(CheckGenericMixin):
                                                    cov_type='naive')
 
 
+@pytest.mark.not_vetted
 class TestGenericGEEPoissonBC(CheckGenericMixin):
     def setup(self):
         # fit for each test, because results will be changed by test
@@ -317,7 +332,7 @@ class TestGenericGEEPoissonBC(CheckGenericMixin):
         start_params = np.array([0., 1., 1., 1.])
         # params_est = np.array([-0.0063238 ,  0.99463752,  1.02790201,  0.98080081])
 
-        raise NotImplementedError
+        raise pytest.skip("cov_struct not implemented")
         vi = sm.cov_struct.Independence()
         family = sm.families.Poisson()
         mod = sm.GEE(y_count, self.exog, groups, family=family, cov_struct=vi)
@@ -328,16 +343,82 @@ class TestGenericGEEPoissonBC(CheckGenericMixin):
 # ------------------------------------------------------------------
 # Other test classes
 
+
+# kidney_table moved from deprecated test_anova, where it had the comment:
+# "# kidney data taken from JT's course"
+# "don't know the license"
+kidney_table = StringIO("""Days      Duration Weight ID
+    0.0      1      1      1
+    2.0      1      1      2
+    1.0      1      1      3
+    3.0      1      1      4
+    0.0      1      1      5
+    2.0      1      1      6
+    0.0      1      1      7
+    5.0      1      1      8
+    6.0      1      1      9
+    8.0      1      1     10
+    2.0      1      2      1
+    4.0      1      2      2
+    7.0      1      2      3
+   12.0      1      2      4
+   15.0      1      2      5
+    4.0      1      2      6
+    3.0      1      2      7
+    1.0      1      2      8
+    5.0      1      2      9
+   20.0      1      2     10
+   15.0      1      3      1
+   10.0      1      3      2
+    8.0      1      3      3
+    5.0      1      3      4
+   25.0      1      3      5
+   16.0      1      3      6
+    7.0      1      3      7
+   30.0      1      3      8
+    3.0      1      3      9
+   27.0      1      3     10
+    0.0      2      1      1
+    1.0      2      1      2
+    1.0      2      1      3
+    0.0      2      1      4
+    4.0      2      1      5
+    2.0      2      1      6
+    7.0      2      1      7
+    4.0      2      1      8
+    0.0      2      1      9
+    3.0      2      1     10
+    5.0      2      2      1
+    3.0      2      2      2
+    2.0      2      2      3
+    0.0      2      2      4
+    1.0      2      2      5
+    1.0      2      2      6
+    3.0      2      2      7
+    6.0      2      2      8
+    7.0      2      2      9
+    9.0      2      2     10
+   10.0      2      3      1
+    8.0      2      3      2
+   12.0      2      3      3
+    3.0      2      3      4
+    7.0      2      3      5
+   15.0      2      3      6
+    4.0      2      3      7
+    9.0      2      3      8
+    6.0      2      3      9
+    1.0      2      3     10
+""")
+kidney_table.seek(0)
+kidney_table = pd.read_table(kidney_table, sep="\s+")
+
+
+@pytest.mark.not_vetted
 class CheckAnovaMixin(object):
 
     @classmethod
     def setup_class(cls):
-        import statsmodels.stats.tests.test_anova as ttmod
-
-        test = ttmod.TestAnova3()
-        test.setup_class()
-
-        cls.data = test.data.drop([0,1,2])
+        cls.data = kidney_table.drop([0, 1, 2])
         cls.initialize()
 
     def test_combined(self):
@@ -364,10 +445,12 @@ class CheckAnovaMixin(object):
         compare_waldres(res, wa, [c_w, c_dw])
 
 
+@pytest.mark.not_vetted
 class TestWaldAnovaOLS(CheckAnovaMixin):
     @classmethod
     def initialize(cls):
-        mod = sm.OLS.from_formula("np.log(Days+1) ~ C(Duration, Sum)*C(Weight, Sum)", cls.data)
+        mod = sm.OLS.from_formula("np.log(Days+1) ~ C(Duration, Sum)*C(Weight, Sum)",
+                                  cls.data)
         cls.res = mod.fit(use_t=False)
 
     def test_noformula(self):
@@ -385,6 +468,7 @@ class TestWaldAnovaOLS(CheckAnovaMixin):
         compare_waldres(res, wa, [c_duration, c_weight])
 
 
+@pytest.mark.not_vetted
 class TestWaldAnovaOLSF(CheckAnovaMixin):
     @classmethod
     def initialize(cls):
@@ -402,14 +486,16 @@ class TestWaldAnovaOLSF(CheckAnovaMixin):
         assert_equal(predicted1.values[0], np.nan)
 
 
+@pytest.mark.not_vetted
 class TestWaldAnovaGLM(CheckAnovaMixin):
     @classmethod
     def initialize(cls):
-        raise NotImplementedError
+        raise pytest.skip("GLM not implemented")
         mod = sm.GLM.from_formula("np.log(Days+1) ~ C(Duration, Sum)*C(Weight, Sum)", cls.data)
         cls.res = mod.fit(use_t=False)
 
 
+@pytest.mark.not_vetted
 class TestWaldAnovaPoisson(CheckAnovaMixin):
     @classmethod
     def initialize(cls):
@@ -417,6 +503,7 @@ class TestWaldAnovaPoisson(CheckAnovaMixin):
         cls.res = mod.fit(cov_type='HC0')
 
 
+@pytest.mark.not_vetted
 class TestWaldAnovaNegBin(CheckAnovaMixin):
     @classmethod
     def initialize(cls):
@@ -426,6 +513,7 @@ class TestWaldAnovaNegBin(CheckAnovaMixin):
         cls.res = mod.fit()
 
 
+@pytest.mark.not_vetted
 class TestWaldAnovaNegBin1(CheckAnovaMixin):
     @classmethod
     def initialize(cls):
@@ -434,7 +522,6 @@ class TestWaldAnovaNegBin1(CheckAnovaMixin):
                                                loglike_method='nb1')
         cls.res = mod.fit(cov_type='HC0')
 
-'''
 
 
 def compare_waldres(res, wa, constrasts):

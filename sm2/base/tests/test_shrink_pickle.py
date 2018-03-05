@@ -11,6 +11,7 @@ import warnings
 from six import BytesIO, iterkeys
 from six.moves import cPickle
 
+import pytest
 import numpy as np
 from numpy.testing import assert_, assert_equal
 import pandas as pd
@@ -29,7 +30,7 @@ def check_pickle(obj):
     return res, plen
 
 
-'''
+@pytest.mark.not_vetted
 class RemoveDataPickle(object):
     @classmethod
     def setup_class(cls):
@@ -130,6 +131,7 @@ class RemoveDataPickle(object):
         assert_(before == after, msg='not equal %r and %r' % (before, after))
 
 
+@pytest.mark.not_vetted
 class TestRemoveDataPickleOLS(RemoveDataPickle):
     def setup(self):
         # fit for each test, because results will be changed by test
@@ -139,6 +141,7 @@ class TestRemoveDataPickleOLS(RemoveDataPickle):
         self.results = sm.OLS(y, self.exog).fit()
 
 
+@pytest.mark.not_vetted
 class TestRemoveDataPickleWLS(RemoveDataPickle):
     def setup(self):
         # fit for each test, because results will be changed by test
@@ -148,6 +151,7 @@ class TestRemoveDataPickleWLS(RemoveDataPickle):
         self.results = sm.WLS(y, self.exog, weights=np.ones(len(y))).fit()
 
 
+@pytest.mark.not_vetted
 class TestRemoveDataPicklePoisson(RemoveDataPickle):
     def setup(self):
         # fit for each test, because results will be changed by test
@@ -164,6 +168,7 @@ class TestRemoveDataPicklePoisson(RemoveDataPickle):
         self.predict_kwds = dict(exposure=1, offset=0)
 
 
+@pytest.mark.not_vetted
 class TestRemoveDataPickleNegativeBinomial(RemoveDataPickle):
     def setup(self):
         # fit for each test, because results will be changed by test
@@ -174,6 +179,7 @@ class TestRemoveDataPickleNegativeBinomial(RemoveDataPickle):
         self.results = mod.fit(disp=0)
 
 
+@pytest.mark.not_vetted
 class TestRemoveDataPickleLogit(RemoveDataPickle):
     def setup(self):
         # fit for each test, because results will be changed by test
@@ -189,24 +195,29 @@ class TestRemoveDataPickleLogit(RemoveDataPickle):
                                  method='bfgs', disp=0)
 
 
+@pytest.mark.not_vetted
 class TestRemoveDataPickleRLM(RemoveDataPickle):
     def setup(self):
         # fit for each test, because results will be changed by test
+        raise pytest.skip("RLM not implemented")
         x = self.exog
         np.random.seed(987689)
         y = x.sum(1) + np.random.randn(x.shape[0])
-        self.results = sm.RLM(y, self.exog).fit()  # FIXME: not implemented
+        self.results = sm.RLM(y, self.exog).fit()
 
 
+@pytest.mark.not_vetted
 class TestRemoveDataPickleGLM(RemoveDataPickle):
     def setup(self):
         # fit for each test, because results will be changed by test
+        raise pytest.skip("GLM not implemented")
         x = self.exog
         np.random.seed(987689)
         y = x.sum(1) + np.random.randn(x.shape[0])
-        self.results = sm.GLM(y, self.exog).fit()  # FIXME: not implemented
+        self.results = sm.GLM(y, self.exog).fit()
 
 
+@pytest.mark.not_vetted
 class TestPickleFormula(RemoveDataPickle):
     @classmethod
     def setup_class(cls):
@@ -229,6 +240,7 @@ class TestPickleFormula(RemoveDataPickle):
         self.results = sm.OLS.from_formula("Y ~ A + B + C", data=X).fit()
 
 
+@pytest.mark.not_vetted
 class TestPickleFormula2(RemoveDataPickle):
     @classmethod
     def setup_class(cls):
@@ -247,12 +259,14 @@ class TestPickleFormula2(RemoveDataPickle):
                                            data=self.data).fit()
 
 
+@pytest.mark.not_vetted
 class TestPickleFormula3(TestPickleFormula2):
     def setup(self):
         self.results = sm.OLS.from_formula("Y ~ A + B * C",
                                            data=self.data).fit()
 
 
+@pytest.mark.not_vetted
 class TestPickleFormula4(TestPickleFormula2):
     def setup(self):
         self.results = sm.OLS.from_formula("Y ~ np.log(abs(A) + 1) + B * C",
@@ -261,6 +275,8 @@ class TestPickleFormula4(TestPickleFormula2):
 
 # we need log in module namespace for the following test
 from numpy import log
+
+@pytest.mark.not_vetted
 class TestPickleFormula5(TestPickleFormula2):
     def setup(self):
         # if we import here, then unpickling fails -> exception in test
@@ -269,6 +285,7 @@ class TestPickleFormula5(TestPickleFormula2):
                                            data=self.data).fit()
 
 
+@pytest.mark.not_vetted
 class TestRemoveDataPicklePoissonRegularized(RemoveDataPickle):
     def setup(self):
         # fit for each test, because results will be changed by test
@@ -277,4 +294,4 @@ class TestRemoveDataPicklePoissonRegularized(RemoveDataPickle):
         y_count = np.random.poisson(np.exp(x.sum(1) - x.mean()))
         model = sm.Poisson(y_count, x)
         self.results = model.fit_regularized(method='l1', disp=0, alpha=10)
-'''
+

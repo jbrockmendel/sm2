@@ -11,6 +11,7 @@ Author: Josef Perktold
 """
 import os
 
+import pytest
 import numpy as np
 from numpy.testing import assert_almost_equal
 
@@ -19,7 +20,7 @@ from sm2.tools.tools import add_constant
 import sm2.stats.sandwich_covariance as sw
 
 
-'''
+@pytest.mark.not_vetted
 def test_cov_cluster_2groups():
     # comparing cluster robust standard errors to Peterson
     # requires Petersen's test_data
@@ -55,6 +56,7 @@ def test_cov_cluster_2groups():
     assert_almost_equal(bse_01, bse_pet01, decimal=4)
 
 
+@pytest.mark.not_vetted
 def test_hac_simple():
     from sm2.datasets import macrodata
     d2 = macrodata.load().data
@@ -64,7 +66,7 @@ def test_hac_simple():
     res_olsg = OLS(g_inv, exogg).fit()
 
     # > NeweyWest(fm, lag = 4, prewhite = FALSE, sandwich = TRUE,
-                  verbose=TRUE, adjust=TRUE)
+    #              verbose=TRUE, adjust=TRUE)
     # Lag truncation parameter chosen: 4
     #                  (Intercept)                   ggdp                  lint
     cov1_r = [
@@ -73,7 +75,7 @@ def test_hac_simple():
         [-0.06062111121648865, 0.0003953117603014895, 0.087511528912470993]]
 
     # > NeweyWest(fm, lag = 4, prewhite = FALSE, sandwich = TRUE,
-                  verbose=TRUE, adjust=FALSE)
+    #              verbose=TRUE, adjust=FALSE)
     # Lag truncation parameter chosen: 4
     #                (Intercept)                  ggdp                  lint
     cov2_r = [
@@ -92,4 +94,3 @@ def test_hac_simple():
     cov3 = sw.cov_hac_simple(res_olsg, use_correction=False)
     cov4 = sw.cov_hac_simple(res_olsg, nlags=4, use_correction=False)
     assert_almost_equal(cov3, cov4, decimal=14)
-'''
