@@ -228,7 +228,7 @@ class Anes(object):
 
         # taken from gretl
         self.resid = np.loadtxt(os.path.join(cur_dir, 'mnlogit_resid.csv'),
-                                delimiter=", ")
+                                delimiter=",")
 
 
 class DiscreteL1(object):
@@ -776,7 +776,7 @@ class RandHIE(object):
                     .00925061122826, .01530987068312, .02627928267502,
                     .01116266712362]
         predict = np.loadtxt(os.path.join(cur_dir, 'yhat_poisson.csv'),
-                             delimiter=", ")
+                             delimiter=",")
         self.phat = predict[:, 0]
         self.yhat = predict[:, 1]
         self.llf = -62419.588535018
@@ -830,7 +830,7 @@ class RandHIE(object):
                                            .0752099666]
         # taken from gretl
         self.resid = np.loadtxt(os.path.join(cur_dir, 'poisson_resid.csv'),
-                                delimiter=", ")
+                                delimiter=",")
 
     def negativebinomial_nb2_bfgs(self):
         # R 2.15.1 MASS 7.3-22 glm.nb()
