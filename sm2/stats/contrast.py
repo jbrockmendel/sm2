@@ -9,7 +9,8 @@ from sm2.tools.tools import clean0, fullrank
 # TODO: should this be public if it's just a container?
 class ContrastResults(object):
     """
-    Class for results of tests of linear restrictions on coefficients in a model.
+    Class for results of tests of linear restrictions on coefficients
+    in a model.
 
     This class functions mainly as a container for `t_test`, `f_test` and
     `wald_test` for the parameters of a model.
@@ -46,7 +47,8 @@ class ContrastResults(object):
             self.distribution = kwds['distribution']
             self.statistic = kwds['statistic']
             self.tvalue = value = kwds['statistic']  # keep alias
-            # TODO: for results instance we decided to use tvalues also for normal
+            # TODO: for results instance we decided to use tvalues
+            #       also for normal
             self.sd = sd
             self.dist = getattr(stats, self.distribution)
             self.dist_args = ()
@@ -64,7 +66,8 @@ class ContrastResults(object):
 
     def conf_int(self, alpha=0.05):
         """
-        Returns the confidence interval of the value, `effect` of the constraint.
+        Returns the confidence interval of the value, `effect` of
+        the constraint.
 
         This is currently only available for t and z tests.
 
@@ -135,7 +138,7 @@ class ContrastResults(object):
                 title = None
             # we have everything for a params table
             use_t = (self.distribution == 't')
-            yname='constraints' # Not used in params_frame
+            yname = 'constraints'  # Not used in params_frame
             if xname is None:
                 xname = ['c%d' % ii for ii in range(len(self.effect))]
             from statsmodels.iolib.summary import summary_params
@@ -148,12 +151,12 @@ class ContrastResults(object):
         elif hasattr(self, 'fvalue'):
             # TODO: create something nicer for these casee
             return ('<F test: F=%s, p=%s, df_denom=%d, df_num=%d>' %
-                   (repr(self.fvalue), self.pvalue, self.df_denom, self.df_num))
+                    (repr(self.fvalue), self.pvalue,
+                     self.df_denom, self.df_num))
         else:
             # generic
             return ('<Wald test: statistic=%s, p-value=%s>' %
-                   (self.statistic, self.pvalue))
-
+                    (self.statistic, self.pvalue))
 
     def summary_frame(self, xname=None, alpha=0.05):
         """Return the parameter table as a pandas DataFrame
@@ -163,12 +166,12 @@ class ContrastResults(object):
         if self.effect is not None:
             # we have everything for a params table
             use_t = (self.distribution == 't')
-            yname='constraints'  # Not used in params_frame
+            yname = 'constraints'  # Not used in params_frame
             if xname is None:
                 xname = ['c%d' % ii for ii in range(len(self.effect))]
             from statsmodels.iolib.summary import summary_params_frame
             summ = summary_params_frame((self, self.effect, self.sd,
-                                         self.statistic,self.pvalue,
+                                         self.statistic, self.pvalue,
                                          self.conf_int(alpha)), yname=yname,
                                          xname=xname, use_t=use_t,
                                          alpha=alpha)

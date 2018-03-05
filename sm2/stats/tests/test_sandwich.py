@@ -15,9 +15,10 @@ import pytest
 import numpy as np
 from numpy.testing import assert_almost_equal
 
-from sm2.regression.linear_model import OLS, GLSAR
+from sm2.regression.linear_model import OLS
 from sm2.tools.tools import add_constant
 import sm2.stats.sandwich_covariance as sw
+from sm2.datasets import macrodata
 
 
 @pytest.mark.not_vetted
@@ -28,10 +29,10 @@ def test_cov_cluster_2groups():
     cur_dir = os.path.abspath(os.path.dirname(__file__))
     fpath = os.path.join(cur_dir, "test_data.txt")
     pet = np.genfromtxt(fpath)
-    endog = pet[:,-1]
-    group = pet[:,0].astype(int)
-    time = pet[:,1].astype(int)
-    exog = add_constant(pet[:,2])
+    endog = pet[:, -1]
+    group = pet[:, 0].astype(int)
+    time = pet[:, 1].astype(int)
+    exog = add_constant(pet[:, 2])
     res = OLS(endog, exog).fit()
 
     cov01, covg, covt = sw.cov_cluster_2groups(res, group, group2=time)
@@ -41,15 +42,11 @@ def test_cov_cluster_2groups():
 
     bse_petw = [0.0284, 0.0284]
     bse_pet0 = [0.0670, 0.0506]
-    bse_pet1 = [0.0234, 0.0334]  #year
-    bse_pet01 = [0.0651, 0.0536]  #firm and year
+    bse_pet1 = [0.0234, 0.0334]  # year
+    bse_pet01 = [0.0651, 0.0536]  # firm and year
     bse_0 = sw.se_cov(covg)
     bse_1 = sw.se_cov(covt)
     bse_01 = sw.se_cov(cov01)
-    #print res.HC0_se, bse_petw - res.HC0_se
-    #print bse_0, bse_0 - bse_pet0
-    #print bse_1, bse_1 - bse_pet1
-    #print bse_01, bse_01 - bse_pet01
     assert_almost_equal(bse_petw, res.HC0_se, decimal=4)
     assert_almost_equal(bse_0, bse_pet0, decimal=4)
     assert_almost_equal(bse_1, bse_pet1, decimal=4)
@@ -58,10 +55,9 @@ def test_cov_cluster_2groups():
 
 @pytest.mark.not_vetted
 def test_hac_simple():
-    from sm2.datasets import macrodata
     d2 = macrodata.load().data
-    g_gdp = 400*np.diff(np.log(d2['realgdp']))
-    g_inv = 400*np.diff(np.log(d2['realinv']))
+    g_gdp = 400 * np.diff(np.log(d2['realgdp']))
+    g_inv = 400 * np.diff(np.log(d2['realinv']))
     exogg = add_constant(np.c_[g_gdp, d2['realint'][:-1]])
     res_olsg = OLS(g_inv, exogg).fit()
 
@@ -84,9 +80,9 @@ def test_hac_simple():
         [-0.0597207976835705, 0.000389440793564336, 0.086211852740503622]]
 
     cov1 = sw.cov_hac_simple(res_olsg, nlags=4, use_correction=True)
-    se1 =  sw.se_cov(cov1)
+    se1 = sw.se_cov(cov1)
     cov2 = sw.cov_hac_simple(res_olsg, nlags=4, use_correction=False)
-    se2 =  sw.se_cov(cov2)
+    se2 = sw.se_cov(cov2)
     assert_almost_equal(cov1, cov1_r, decimal=14)
     assert_almost_equal(cov2, cov2_r, decimal=14)
 

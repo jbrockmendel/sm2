@@ -9,13 +9,14 @@ from numpy.testing import (assert_almost_equal, assert_equal, assert_warns,
                            assert_raises, dec, assert_, assert_allclose)
 import pandas as pd
 
-from sm2.compat.numpy import recarray_select
 from sm2.tools.sm_exceptions import ColinearityWarning, MissingDataError
+from sm2.compat.numpy import recarray_select
 from sm2.tsa.stattools import (adfuller, acf, pacf_ols, pacf_yw,
                                pacf, grangercausalitytests,
                                coint, acovf, kpss, ResultsStore,
                                arma_order_select_ic)
 from sm2.datasets import macrodata, sunspots
+from sm2.tsa.arima_process import arma_generate_sample
 
 DECIMAL_8 = 8
 DECIMAL_6 = 6
@@ -541,13 +542,12 @@ def test_acovf_fft_vs_convolution():
             assert_almost_equal(F1, F2, decimal=7)
 
 
+@pytest.mark.skip(reason='ARMA not ported from upstream')
 @pytest.mark.not_vetted
 @pytest.mark.slow
 @pytest.mark.smoke
 def test_arma_order_select_ic():
     # smoke test, assumes info-criteria are right
-    from statsmodels.tsa.arima_process import arma_generate_sample
-
     arparams = np.array([.75, -.25])
     maparams = np.array([.65, .35])
     arparams = np.r_[1, -arparams]
@@ -585,6 +585,7 @@ def test_arma_order_select_ic():
     assert_equal(res.aic_min_order, (1, 2))
 
 
+@pytest.mark.skip(reason='ARMA not ported from upstream')
 @pytest.mark.not_vetted
 @pytest.mark.smoke
 def test_arma_order_select_ic_failure():
