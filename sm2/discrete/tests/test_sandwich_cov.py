@@ -277,6 +277,7 @@ class TestGLMPoissonClu(CheckCountRobustMixin):
 
     @classmethod
     def setup_class(cls):
+        raise pytest.skip("GLM not implemented")
         cls.res2 = results_st.results_poisson_clu
         mod = smd.Poisson(endog, exog)
         mod = GLM(endog, exog, family=families.Poisson())
@@ -289,6 +290,7 @@ class TestGLMPoissonCluGeneric(CheckCountRobustMixin):
 
     @classmethod
     def setup_class(cls):
+        raise pytest.skip("GLM not implemented")
         cls.res2 = results_st.results_poisson_clu
         mod = GLM(endog, exog, family=families.Poisson())
         cls.res1 = res1 = mod.fit()
@@ -314,6 +316,7 @@ class TestGLMPoissonHC1Generic(CheckCountRobustMixin):
 
     @classmethod
     def setup_class(cls):
+        raise pytest.skip("GLM not implemented")
         cls.res2 = results_st.results_poisson_hc1
         mod = GLM(endog, exog, family=families.Poisson())
         cls.res1 = mod.fit()
@@ -333,6 +336,7 @@ class TestGLMPoissonCluFit(CheckCountRobustMixin):
 
     @classmethod
     def setup_class(cls):
+        raise pytest.skip("GLM not implemented")
         cls.res2 = results_st.results_poisson_clu
         mod = GLM(endog, exog, family=families.Poisson())
         cls.res1 = res1 = mod.fit(cov_type='cluster',
@@ -362,6 +366,7 @@ class TestGLMPoissonHC1Fit(CheckCountRobustMixin):
 
     @classmethod
     def setup_class(cls):
+        raise pytest.skip("GLM not implemented")
         cls.res2 = results_st.results_poisson_hc1
         mod = GLM(endog, exog, family=families.Poisson())
         cls.res1 = mod.fit(cov_type='HC1')
@@ -506,6 +511,7 @@ class TestGLMLogit(CheckDiscreteGLM):
 
     @classmethod
     def setup_class(cls):
+        raise pytest.skip("GLM not implemented")
         endog_bin = (endog > endog.mean()).astype(int)
         cls.cov_type = 'cluster'
 
@@ -522,6 +528,7 @@ class T_estGLMProbit(CheckDiscreteGLM):
 
     @classmethod
     def setup_class(cls):
+        raise pytest.skip("GLM not implemented")
         endog_bin = (endog > endog.mean()).astype(int)
         cls.cov_type = 'cluster'
 
@@ -537,6 +544,7 @@ class TestGLMGaussNonRobust(CheckDiscreteGLM):
 
     @classmethod
     def setup_class(cls):
+        raise pytest.skip("GLM not implemented")
         cls.cov_type = 'nonrobust'
 
         mod1 = GLM(endog, exog, family=families.Gaussian())
@@ -551,6 +559,7 @@ class TestGLMGaussClu(CheckDiscreteGLM):
 
     @classmethod
     def setup_class(cls):
+        raise pytest.skip("GLM not implemented")
         cls.cov_type = 'cluster'
 
         mod1 = GLM(endog, exog, family=families.Gaussian())
@@ -565,6 +574,7 @@ class TestGLMGaussHC(CheckDiscreteGLM):
 
     @classmethod
     def setup_class(cls):
+        raise pytest.skip("GLM not implemented")
         cls.cov_type = 'HC0'
 
         mod1 = GLM(endog, exog, family=families.Gaussian())
@@ -579,6 +589,7 @@ class TestGLMGaussHAC(CheckDiscreteGLM):
 
     @classmethod
     def setup_class(cls):
+        raise pytest.skip("GLM not implemented")
 
         cls.cov_type = 'HAC'
 
@@ -595,6 +606,7 @@ class TestGLMGaussHACUniform(CheckDiscreteGLM):
 
     @classmethod
     def setup_class(cls):
+        raise pytest.skip("GLM not implemented")
 
         cls.cov_type = 'HAC'
 
@@ -638,6 +650,7 @@ class TestGLMGaussHACUniform(CheckDiscreteGLM):
 class TestGLMGaussHACPanel(CheckDiscreteGLM):
     @classmethod
     def setup_class(cls):
+        raise pytest.skip("GLM not implemented")
         cls.cov_type = 'hac-panel'
         # time index is just made up to have a test case
         time = np.tile(np.arange(7), 5)[:-1]
@@ -663,6 +676,7 @@ class TestGLMGaussHACPanelGroups(CheckDiscreteGLM):
 
     @classmethod
     def setup_class(cls):
+        raise pytest.skip("GLM not implemented")
         cls.cov_type = 'hac-panel'
         # time index is just made up to have a test case
         groups = np.repeat(np.arange(5), 7)[:-1]
@@ -683,6 +697,7 @@ class TestGLMGaussHACGroupsum(CheckDiscreteGLM):
 
     @classmethod
     def setup_class(cls):
+        raise pytest.skip("GLM not implemented")
         cls.cov_type = 'hac-groupsum'
         # time index is just made up to have a test case
         time = np.tile(np.arange(7), 5)[:-1]
