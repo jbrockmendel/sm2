@@ -583,7 +583,7 @@ class TestGLS_alt_sigma(CheckRegressionResults):
     def test_wrong_size_sigma_2d(self):
         n = len(self.endog)
         with pytest.raises(ValueError):
-            GLS(self.endog, self.exog, sigma=sigma=np.ones((n - 1, n - 1)))
+            GLS(self.endog, self.exog, sigma=np.ones((n - 1, n - 1)))
 
     #def check_confidenceintervals(self, conf1, conf2):
     #    assert_almost_equal(conf1, conf2, DECIMAL_4)
