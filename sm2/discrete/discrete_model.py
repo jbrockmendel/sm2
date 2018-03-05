@@ -50,6 +50,32 @@ except ImportError:
 __all__ = ["Poisson", "Logit", "Probit", "MNLogit", "NegativeBinomial",
            "GeneralizedPoisson", "NegativeBinomialP"]
 
+
+# Taken from upstream distributions.discrete for testing 2018-03-04
+from scipy.stats import rv_discrete
+
+
+class genpoisson_p_gen(rv_discrete):
+    """Generalized Poisson distribution"""
+    def _argcheck(self, mu, alpha, p):
+        return (mu >= 0) & (alpha==alpha) & (p > 0)
+
+    def _logpmf(self, x, mu, alpha, p):
+        mu_p = mu ** (p - 1.)
+        a1 = np.maximum(np.nextafter(0, 1), 1 + alpha * mu_p)
+        a2 = np.maximum(np.nextafter(0, 1), mu + (a1 - 1.) * x)
+        logpmf_ = np.log(mu) + (x - 1.) * np.log(a2)
+        logpmf_ -=  x * np.log(a1) + gammaln(x + 1.) + a2 / a1
+        return logpmf_
+
+    def _pmf(self, x, mu, alpha, p):
+        return np.exp(self._logpmf(x, mu, alpha, p))
+
+
+genpoisson_p = genpoisson_p_gen(name='genpoisson_p',
+                                longname='Generalized Poisson')
+
+
 # TODO: When we eventually get user-settable precision, we need to change
 #      this
 FLOAT_EPS = np.finfo(float).eps
@@ -510,12 +536,12 @@ class BinaryModel(DiscreteModel):
         if 'ey' in transform:
             margeff /= self.predict(params, exog)[:, None]
         if count_idx is not None:
-            from statsmodels.discrete.discrete_margins import (
+            from sm2.discrete.discrete_margins import (
                     _get_count_effects)
             margeff = _get_count_effects(margeff, exog, count_idx, transform,
                                          self, params)
         if dummy_idx is not None:
-            from statsmodels.discrete.discrete_margins import (
+            from sm2.discrete.discrete_margins import (
                     _get_dummy_effects)
             margeff = _get_dummy_effects(margeff, exog, dummy_idx, transform,
                                          self, params)
@@ -607,7 +633,7 @@ class MultinomialModel(BinaryModel):
             start_params = np.asarray(start_params)
         callback = lambda x: None  # placeholder until check_perfect_pred
         # skip calling super to handle results from LikelihoodModel
-        mnfit = base.LikelihoodModel.fit(self, start_params = start_params,
+        mnfit = base.LikelihoodModel.fit(self, start_params=start_params,
                                          method=method, maxiter=maxiter,
                                          full_output=full_output, disp=disp,
                                          callback=callback, **kwargs)
@@ -723,12 +749,12 @@ class MultinomialModel(BinaryModel):
             margeff /= self.predict(params, exog)[:, None, :]
 
         if count_idx is not None:
-            from statsmodels.discrete.discrete_margins import (
+            from sm2.discrete.discrete_margins import (
                     _get_count_effects)
             margeff = _get_count_effects(margeff, exog, count_idx, transform,
                                          self, params)
         if dummy_idx is not None:
-            from statsmodels.discrete.discrete_margins import (
+            from sm2.discrete.discrete_margins import (
                     _get_dummy_effects)
             margeff = _get_dummy_effects(margeff, exog, dummy_idx, transform,
                                          self, params)
@@ -844,12 +870,12 @@ class CountModel(DiscreteModel):
             margeff /= self.predict(params, exog)[:, None]
 
         if count_idx is not None:
-            from statsmodels.discrete.discrete_margins import (
+            from sm2.discrete.discrete_margins import (
                     _get_count_effects)
             margeff = _get_count_effects(margeff, exog, count_idx, transform,
                                          self, params)
         if dummy_idx is not None:
-            from statsmodels.discrete.discrete_margins import (
+            from sm2.discrete.discrete_margins import (
                     _get_dummy_effects)
             margeff = _get_dummy_effects(margeff, exog, dummy_idx, transform,
                                          self, params)
@@ -1377,7 +1403,7 @@ class GeneralizedPoisson(CountModel):
             self._transparams = True
         else:
             if use_transparams:
-                warnings.warn("Paramter \"use_transparams\" is ignored",
+                warnings.warn('Parameter "use_transparams" is ignored',
                               RuntimeWarning)
             self._transparams = False
 
@@ -1628,7 +1654,6 @@ class GeneralizedPoisson(CountModel):
             counts = np.atleast_2d(np.arange(0, np.max(self.endog)+1))
             mu = self.predict(params, exog=exog, exposure=exposure,
                               offset=offset)[:, None]
-            from statsmodels.distributions import genpoisson_p
             return genpoisson_p.pmf(counts, mu, params[-1],
                                     self.parameterization + 1)
         else:
@@ -3414,7 +3439,7 @@ class DiscreteResults(base.LikelihoodModelResults):
         DiscreteMargins : marginal effects instance
             Returns an object that holds the marginal effects, standard
             errors, confidence intervals, etc. See
-            `statsmodels.discrete.discrete_margins.DiscreteMargins` for more
+            `sm2.discrete.discrete_margins.DiscreteMargins` for more
             information.
 
         Notes
@@ -3422,7 +3447,7 @@ class DiscreteResults(base.LikelihoodModelResults):
         When using after Poisson, returns the expected number of events
         per period, assuming that the model is loglinear.
         """
-        from statsmodels.discrete.discrete_margins import DiscreteMargins
+        from sm2.discrete.discrete_margins import DiscreteMargins
         return DiscreteMargins(self, (at, method, atexog, dummy, count))
 
     def summary(self, yname=None, xname=None, title=None, alpha=.05,
@@ -3521,7 +3546,6 @@ class DiscreteResults(base.LikelihoodModelResults):
         statsmodels.iolib.summary.Summary : class to hold summary
             results
         """
-        # Summary
         from statsmodels.iolib import summary2
         smry = summary2.Summary()
         smry.add_base(results=self, alpha=alpha, float_format=float_format,

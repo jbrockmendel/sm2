@@ -585,7 +585,7 @@ class GLS(RegressionModel):
             profile_scale=profile_scale,
             refit=refit, **kwargs)
 
-        from statsmodels.base.elastic_net import (
+        from sm2.base.elastic_net import (
             RegularizedResults, RegularizedResultsWrapper)
         rrslt = RegularizedResults(self, rslt.params)
         return RegularizedResultsWrapper(rrslt)
@@ -756,7 +756,7 @@ class WLS(RegressionModel):
             profile_scale=profile_scale,
             refit=refit, **kwargs)
 
-        from statsmodels.base.elastic_net import (
+        from sm2.base.elastic_net import (
             RegularizedResults, RegularizedResultsWrapper)
         rrslt = RegularizedResults(self, rslt.params)
         return RegularizedResultsWrapper(rrslt)
@@ -959,7 +959,7 @@ class OLS(WLS):
                         refit=False, **kwargs):
         # Docstring attached below
 
-        from statsmodels.base.elastic_net import fit_elasticnet
+        from sm2.base.elastic_net import fit_elasticnet
 
         if L1_wt == 0:
             return self._fit_ridge(alpha)
@@ -1031,7 +1031,7 @@ class OLS(WLS):
             r = np.linalg.solve(vtav, q)
             params = np.dot(v, r)
 
-        from statsmodels.base.elastic_net import RegularizedResults
+        from sm2.base.elastic_net import RegularizedResults
         return RegularizedResults(self, params)
 
 
