@@ -511,8 +511,8 @@ class TestMissingArray(object):
                             'raise')
 
     def test_raise(self):
-        np.testing.assert_raises(Exception, sm_data.handle_data,
-                                 (self.y, self.X, 'raise'))
+        with pytest.raises(Exception):
+            sm_data.handle_data(self.y, self.X, 'raise')
 
     def test_drop(self):
         y = self.y
@@ -531,8 +531,8 @@ class TestMissingArray(object):
         np.testing.assert_array_equal(data.exog, self.X)
 
     def test_endog_only_raise(self):
-        np.testing.assert_raises(Exception, sm_data.handle_data,
-                                 (self.y, None, 'raise'))
+        with pytest.raises(Exception):
+            sm_data.handle_data(self.y, None, 'raise')
 
     def test_endog_only_drop(self):
         y = self.y
@@ -581,8 +581,8 @@ class TestMissingPandas(object):
                             'raise')
 
     def test_raise(self):
-        np.testing.assert_raises(Exception, sm_data.handle_data,
-                                 (self.y, self.X, 'raise'))
+        with pytest.raises(Exception):
+            sm_data.handle_data(self.y, self.X, 'raise')
 
     def test_drop(self):
         y = self.y
@@ -603,8 +603,8 @@ class TestMissingPandas(object):
         np.testing.assert_array_equal(data.exog, self.X.values)
 
     def test_endog_only_raise(self):
-        np.testing.assert_raises(Exception, sm_data.handle_data,
-                                 (self.y, None, 'raise'))
+        with pytest.raises(Exception):
+            sm_data.handle_data(self.y, None, 'raise')
 
     def test_endog_only_drop(self):
         y = self.y
@@ -873,9 +873,10 @@ def test_formula_missing_extra_arrays():
     model_data2 = sm_data.handle_data(endog, exog, **kwargs)
 
     good_idx = [0, 4, 6, 9]
-    np.testing.assert_equal(data.loc[good_idx, 'y'], model_data2.endog)
-    np.testing.assert_equal(data.loc[good_idx,
-                            ['constant', 'X']], model_data2.exog)
+    np.testing.assert_equal(data.loc[good_idx, 'y'],
+                            model_data2.endog)
+    np.testing.assert_equal(data.loc[good_idx, ['constant', 'X']],
+                            model_data2.exog)
     np.testing.assert_equal(weights_2d[good_idx][:, good_idx],
                             model_data2.weights)
 
@@ -884,21 +885,25 @@ def test_formula_missing_extra_arrays():
 
     kwargs.update({'weights': weights_wrong_size,
                    'missing_idx': missing_idx})
-    np.testing.assert_raises(ValueError,
-                             sm_data.handle_data, endog, exog, **kwargs)
+    with pytest.raises(ValueError):
+        sm_data.handle_data(endog, exog, **kwargs)
 
 
-@pytest.mark.not_vetted
 def test_raise_nonfinite_exog():
+    # TODO: Is there a GH issue for this?
+    # np.inf or np.nan in exog should raise.
     # we raise now in the has constant check before hitting the linear algebra
     x = np.arange(10)[:, None]**([0., 1.])
     # random numbers for y
     y = np.array([-0.6, -0.1, 0., -0.7, -0.5, 0.5, 0.1, -0.8, -2., 1.1])
 
     x[1, 1] = np.inf
-    np.testing.assert_raises(MissingDataError, OLS, y, x)
+    with pytest.raises(MissingDataError):
+        OLS(y, x)
+
     x[1, 1] = np.nan
-    np.testing.assert_raises(MissingDataError, OLS, y, x)
+    with pytest.raises(MissingDataError):
+        OLS(y, x)
 
 
 # ------------------------------------------------------------------
