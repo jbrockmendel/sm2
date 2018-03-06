@@ -113,8 +113,9 @@ class CheckGenericMixin(object):
             results = self.results._results
         else:
             results = self.results
-        from statsmodels.genmod.generalized_linear_model import GLMResults
-        if isinstance(results, (GLMResults, DiscreteResults)):
+        if (isinstance(results, DiscreteResults) or
+                results.__class__.__name__ == 'GLMResults'):
+            # __name__ check is a kludge to avoid needing import from upstream
             raise pytest.skip('Infeasible for {0}'.format(type(results)))
 
         res = self.results
@@ -135,8 +136,9 @@ class CheckGenericMixin(object):
         else:
             results = self.results
 
-        from statsmodels.genmod.generalized_linear_model import GLMResults
-        if isinstance(results, (GLMResults, DiscreteResults)):
+        if (isinstance(results, DiscreteResults) or
+                results.__class__.__name__ == 'GLMResults'):
+            # __name__ check is a kludge to avoid needing import from upstream
             # SMOKE test only  TODO
             res.predict(p_exog)
             res.predict(p_exog.tolist())

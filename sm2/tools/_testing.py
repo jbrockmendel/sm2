@@ -81,14 +81,15 @@ def check_ftest_pvalues(results):
 # @knownfailureif(True)
 def check_fitted(results):
     # ignore wrapper for isinstance check
-    from statsmodels.genmod.generalized_linear_model import GLMResults
     from sm2.discrete.discrete_model import DiscreteResults
     # FIXME: work around GEE has no wrapper
     if hasattr(results, '_results'):
         results = results._results
     else:
         results = results
-    if isinstance(results, (GLMResults, DiscreteResults)):
+    if (isinstance(results, DiscreteResults) or
+            results.__class__.__name__ == 'GLMResults'):
+        # __name__ check is a kludge to avoid needing an import from upstream
         raise pytest.skip()
 
     res = results
@@ -103,7 +104,6 @@ def check_predict_types(results):
     p_exog = np.squeeze(np.asarray(res.model.exog[:2]))
 
     # ignore wrapper for isinstance check
-    from statsmodels.genmod.generalized_linear_model import GLMResults
     from sm2.discrete.discrete_model import DiscreteResults
 
     # FIXME: work around GEE has no wrapper
@@ -112,7 +112,9 @@ def check_predict_types(results):
     else:
         results = results
 
-    if isinstance(results, (GLMResults, DiscreteResults)):
+    if (isinstance(results, DiscreteResults) or
+            results.__class__.__name__ == 'GLMResults'):
+        # __name__ check is a kludge to avoid needing an import from upstream
         # SMOKE test only  TODO
         res.predict(p_exog)
         res.predict(p_exog.tolist())

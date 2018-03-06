@@ -2446,70 +2446,14 @@ class OLSResults(RegressionResults):
     """
     Results class for for an OLS model.
 
-    Most of the methods and attributes are inherited from RegressionResults.
-    The special methods that are only available for OLS are:
-
-    - get_influence
-    - outlier_test
-    - el_test
-    - conf_int_el
-
-    See Also
-    --------
-    RegressionResults
+    As of 2018-03-05 none of the OLSResults-specific methods are ported
+    from upstream.
     """
-
     def get_influence(self):
-        """
-        get an instance of Influence with influence and outlier measures
-
-        Returns
-        -------
-        infl : Influence instance
-            the instance has methods to calculate the main influence and
-            outlier measures for the OLS regression
-
-        See also
-        --------
-        statsmodels.stats.outliers_influence.OLSInfluence
-        """
-        from statsmodels.stats.outliers_influence import OLSInfluence
-        return OLSInfluence(self)
+        raise NotImplementedError("get_influence not ported from upstream")
 
     def outlier_test(self, method='bonf', alpha=.05):
-        """
-        Test observations for outliers according to method
-
-        Parameters
-        ----------
-        method : str
-            - `bonferroni` : one-step correction
-            - `sidak` : one-step correction
-            - `holm-sidak` :
-            - `holm` :
-            - `simes-hochberg` :
-            - `hommel` :
-            - `fdr_bh` : Benjamini/Hochberg
-            - `fdr_by` : Benjamini/Yekutieli
-            See `statsmodels.stats.multitest.multipletests` for details.
-        alpha : float
-            familywise error rate
-
-        Returns
-        -------
-        table : ndarray or DataFrame
-            Returns either an ndarray or a DataFrame if labels is not None.
-            Will attempt to get labels from model_results if available. The
-            columns are the Studentized residuals, the unadjusted p-value,
-            and the corrected p-value according to method.
-
-        Notes
-        -----
-        The unadjusted p-value is stats.t.sf(abs(resid), df) where
-        df = df_resid - 1.
-        """
-        from statsmodels.stats.outliers_influence import outlier_test
-        return outlier_test(self, method, alpha)
+        raise NotImplementedError("get_influence not ported from upstream")
 
     def el_test(self, b0_vals, param_nums, return_weights=0,
                 ret_params=0, method='nm',

@@ -135,13 +135,14 @@ def test_arma_impulse_response():
 
 
 '''
+from statsmodels.sandbox.tsa.fftarma import ArmaFft
+
 @pytest.mark.not_vetted
 def test_spectrum():
     nfreq = 20
     w = np.linspace(0, np.pi, nfreq, endpoint=False)
     for ar in arlist:
         for ma in malist:
-            from statsmodels.sandbox.tsa.fftarma import ArmaFft
             arma = ArmaFft(ar, ma, 20)
             spdr, wr = arma.spdroots(w)
             spdp, wp = arma.spdpoly(w, 200)
@@ -162,7 +163,6 @@ def test_armafft():
     w = np.linspace(0, np.pi, nfreq, endpoint=False)
     for ar in arlist:
         for ma in malist:
-            from statsmodels.sandbox.tsa.fftarma import ArmaFft
             arma = ArmaFft(ar, ma, 20)
             ac1 = arma.invpowerspd(1024)[:10]
             ac2 = arma.acovf(10)[:10]
