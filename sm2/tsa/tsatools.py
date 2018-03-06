@@ -172,7 +172,6 @@ def add_lag(x, col=None, lags=1, drop=False, insert=True):
 
     Examples
     --------
-
     >>> import sm2.api as sm
     >>> data = sm.datasets.macrodata.load()
     >>> data = data.data[['year','quarter','realgdp','cpi']]

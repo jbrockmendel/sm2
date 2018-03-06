@@ -96,7 +96,7 @@ def correlation_sum(indicators, embedding_dim):
         indicators_joint = indicators
     else:
         corrsum, indicators = correlation_sum(indicators, embedding_dim - 1)
-        indicators_joint = indicators[1:, 1:]*indicators[:-1, :-1]
+        indicators_joint = indicators[1:, 1:] * indicators[:-1, :-1]
 
     nobs = len(indicators_joint)
     corrsum = np.mean(indicators_joint[np.triu_indices(nobs, 1)])
@@ -118,9 +118,7 @@ def correlation_sums(indicators, max_dim):
     -------
     corrsums : 1d array
         Correlation sums
-
     """
-
     corrsums = np.zeros((1, max_dim))
 
     corrsums[0, 0], indicators = correlation_sum(indicators, 1)
@@ -145,20 +143,20 @@ def _var(indicators, max_dim):
     -------
     variances : float
         Variance of BDS effect
-
     """
     nobs = len(indicators)
     corrsum_1dim, _ = correlation_sum(indicators, 1)
-    k = ((indicators.sum(1)**2).sum() - 3*indicators.sum() +
-         2*nobs) / (nobs * (nobs - 1) * (nobs - 2))
+    k = (((indicators.sum(1)**2).sum() - 3 * indicators.sum() + 2 * nobs) /
+         (nobs * (nobs - 1) * (nobs - 2)))
 
     variances = np.zeros((1, max_dim - 1))
 
     for embedding_dim in range(2, max_dim + 1):
         tmp = 0
         for j in range(1, embedding_dim):
-            tmp += (k**(embedding_dim - j))*(corrsum_1dim**(2 * j))
-        variances[0, embedding_dim-2] = 4 * (
+            tmp += (k**(embedding_dim - j)) * (corrsum_1dim**(2 * j))
+        
+        variances[0, embedding_dim - 2] = 4 * (
             k**embedding_dim +
             2 * tmp +
             ((embedding_dim - 1)**2) * (corrsum_1dim**(2 * embedding_dim)) -
@@ -210,8 +208,8 @@ def bds(x, max_dim=2, epsilon=None, distance=1.5):
     nobs_full = len(x)
 
     if max_dim < 2 or max_dim >= nobs_full:
-        raise ValueError("Maximum embedding dimension must be in the range"
-                         " [2,len(x)-1]. Got %d." % max_dim)
+        raise ValueError("Maximum embedding dimension must be in the range "
+                         "[2, len(x)-1]. Got %d." % max_dim)
 
     # Cache the indicators
     indicators = distance_indicators(x, epsilon, distance)
@@ -242,7 +240,7 @@ def bds(x, max_dim=2, epsilon=None, distance=1.5):
         bds_stats[0, embedding_dim - 2] = np.sqrt(nobs) * effect / sd
 
         # Calculate the p-value (two-tailed test)
-        pvalue = 2*stats.norm.sf(np.abs(bds_stats[0, embedding_dim - 2]))
+        pvalue = 2 * stats.norm.sf(np.abs(bds_stats[0, embedding_dim - 2]))
         pvalues[0, embedding_dim - 2] = pvalue
 
     return np.squeeze(bds_stats), np.squeeze(pvalues)
