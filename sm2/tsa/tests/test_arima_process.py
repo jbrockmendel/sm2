@@ -1,8 +1,7 @@
 
-from distutils.version import LooseVersion
+from six.moves import range
 
 import pytest
-from six.moves import range
 import numpy as np
 from numpy.testing import (assert_array_almost_equal, assert_almost_equal,
                            assert_allclose,
@@ -17,7 +16,7 @@ from sm2.tsa.tests.results.results_process import armarep  # benchmarkdata
 
 
 arlist = [[1.],
-          [1, -0.9],  # ma representation will need many terms to get high precision
+          [1, -0.9],  # ma representation will need many terms to get precision
           [1, 0.9],
           [1, -0.9, 0.3]]
 
@@ -72,7 +71,8 @@ def test_arma_acf():
     # rep 1: from module function
     rep1 = arma_acf([1, -phi], [1], N)
     # rep 2: manually
-    acovf = np.array([1. * sigma * phi ** i / (1 - phi ** 2) for i in range(N)])
+    acovf = np.array([1. * sigma * phi ** i / (1 - phi ** 2)
+                      for i in range(N)])
     rep2 = acovf / (1. / (1 - phi ** 2))
     assert_almost_equal(rep1, rep2, 8)  # 8 is max precision here
 
@@ -151,9 +151,11 @@ def test_spectrum():
             assert_equal(w, wp)
             assert_almost_equal(w, wd[:nfreq], decimal=14)
             assert_almost_equal(spdr, spdd[:nfreq], decimal=7,
-                                err_msg='spdr spdd not equal for %s, %s' % (ar, ma))
+                                err_msg='spdr spdd not equal for %s, %s'
+                                        % (ar, ma))
             assert_almost_equal(spdr, spdp, decimal=7,
-                                err_msg='spdr spdp not equal for %s, %s' % (ar, ma))
+                                err_msg='spdr spdp not equal for %s, %s'
+                                        % (ar, ma))
 
 
 @pytest.mark.not_vetted
@@ -167,7 +169,8 @@ def test_armafft():
             ac1 = arma.invpowerspd(1024)[:10]
             ac2 = arma.acovf(10)[:10]
             assert_almost_equal(ac1, ac2, decimal=7,
-                                err_msg='acovf not equal for %s, %s' % (ar, ma))
+                                err_msg='acovf not equal for %s, %s'
+                                        % (ar, ma))
 '''
 
 
@@ -336,7 +339,9 @@ class TestArmaProcess(object):
         expected = np.random.randn(100)
         expected[1] = 1.6 * expected[0] + expected[1]
         for i in range(2, 100):
-            expected[i] = 1.6 * expected[i - 1] - 0.9 * expected[i - 2] + expected[i]
+            expected[i] = (1.6 * expected[i - 1] -
+                           0.9 * expected[i - 2] +
+                           expected[i])
         assert_almost_equal(sample, expected)
 
         process = ArmaProcess.from_coeffs([1.6, -0.9])
@@ -346,9 +351,10 @@ class TestArmaProcess(object):
         expected = np.random.randn(200)
         expected[1] = 1.6 * expected[0] + expected[1]
         for i in range(2, 200):
-            expected[i] = 1.6 * expected[i - 1] - 0.9 * expected[i - 2] + expected[i]
+            expected[i] = (1.6 * expected[i - 1] -
+                           0.9 * expected[i - 2] +
+                           expected[i])
         assert_almost_equal(sample, expected[100:])
-
 
         np.random.seed(12345)
         sample = process.generate_sample(nsample=(100, 5))
@@ -362,5 +368,5 @@ class TestArmaProcess(object):
     def test_periodogram(self):
         process = ArmaProcess()
         pg = process.periodogram()
-        assert_almost_equal(pg[0], np.linspace(0,np.pi,100,False))
+        assert_almost_equal(pg[0], np.linspace(0, np.pi, 100, False))
         assert_almost_equal(pg[1], np.sqrt(2 / np.pi) / 2 * np.ones(100))

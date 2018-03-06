@@ -155,7 +155,7 @@ def _var(indicators, max_dim):
         tmp = 0
         for j in range(1, embedding_dim):
             tmp += (k**(embedding_dim - j)) * (corrsum_1dim**(2 * j))
-        
+
         variances[0, embedding_dim - 2] = 4 * (
             k**embedding_dim +
             2 * tmp +
@@ -223,7 +223,7 @@ def bds(x, max_dim=2, epsilon=None, distance=1.5):
 
     bds_stats = np.zeros((1, max_dim - 1))
     pvalues = np.zeros((1, max_dim - 1))
-    for embedding_dim in range(2, max_dim+1):
+    for embedding_dim in range(2, max_dim + 1):
         ninitial = (embedding_dim - 1)
         nobs = nobs_full - ninitial
 

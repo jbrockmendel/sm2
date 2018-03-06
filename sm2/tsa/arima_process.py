@@ -129,7 +129,7 @@ def arma_acovf(ar, ma, nobs=10):
     if nobs_ir > 50000 and nobs < 1001:
         end = len(ir)
         # Explitly slice from the end to avoid foo[:-0] returning an empty slice
-        acovf = np.array([np.dot(ir[:end-nobs-t], ir[t:end-nobs])
+        acovf = np.array([np.dot(ir[:end - nobs - t], ir[t:end - nobs])
                           for t in range(nobs)])
     else:
         acovf = np.correlate(ir, ir, 'full')[len(ir) - 1:]
@@ -163,7 +163,6 @@ def arma_acf(ar, ma, lags=10, **kwargs):
     """
     if 'nobs' in kwargs:
         lags = kwargs['nobs']
-        
         warnings.warn('nobs is deprecated in favor of lags',
                       DeprecationWarning)
 

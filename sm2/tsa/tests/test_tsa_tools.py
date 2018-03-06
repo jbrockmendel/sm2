@@ -290,15 +290,15 @@ class TestLagmat(object):
         data = self.macro_df
         columns = list(data.columns)
         n = data.shape[0]
-        values = np.zeros((n + 3,16))
-        values[:n,:4] = data.values
-        for lag in range(1,4):
+        values = np.zeros((n + 3, 16))
+        values[:n, :4] = data.values
+        for lag in range(1, 4):
             new_cols = [col + '.L.' + str(lag) for col in data]
             columns.extend(new_cols)
-            values[lag:n+lag,4*lag:4*(lag+1)] = data.values
+            values[lag:n + lag, 4 * lag:4 * (lag + 1)] = data.values
         index = data.index
         values = values[:n]
-        expected = pd.DataFrame(values,columns=columns, index=index)
+        expected = pd.DataFrame(values, columns=columns, index=index)
         expected = expected.iloc[3:]
 
         both = tools.lagmat(self.macro_df, 3, trim='both',
@@ -308,7 +308,7 @@ class TestLagmat(object):
                             original='ex', use_pandas=True)
         tm.assert_frame_equal(lags, expected.iloc[:, 4:])
         lags, lead = tools.lagmat(self.macro_df, 3, trim='both',
-                                   original='sep', use_pandas=True)
+                                  original='sep', use_pandas=True)
         tm.assert_frame_equal(lags, expected.iloc[:, 4:])
         tm.assert_frame_equal(lead, expected.iloc[:, :4])
 
@@ -330,15 +330,15 @@ class TestLagmat(object):
         data = self.macro_df
         columns = list(data.columns)
         n = data.shape[0]
-        values = np.zeros((n + 3,16))
-        values[:n,:4] = data.values
-        for lag in range(1,4):
+        values = np.zeros((n + 3, 16))
+        values[:n, :4] = data.values
+        for lag in range(1, 4):
             new_cols = [col + '.L.' + str(lag) for col in data]
             columns.extend(new_cols)
-            values[lag:n+lag,4*lag:4*(lag+1)] = data.values
+            values[lag:n + lag, 4 * lag:4 * (lag + 1)] = data.values
         index = data.index
         values = values[:n]
-        expected = pd.DataFrame(values,columns=columns, index=index)
+        expected = pd.DataFrame(values, columns=columns, index=index)
         both = tools.lagmat(self.macro_df, 3, trim='forward', original='in',
                             use_pandas=True)
         tm.assert_frame_equal(both, expected)
@@ -346,7 +346,7 @@ class TestLagmat(object):
                             use_pandas=True)
         tm.assert_frame_equal(lags, expected.iloc[:, 4:])
         lags, lead = tools.lagmat(self.macro_df, 3, trim='forward',
-                                   original='sep', use_pandas=True)
+                                  original='sep', use_pandas=True)
         tm.assert_frame_equal(lags, expected.iloc[:, 4:])
         tm.assert_frame_equal(lead, expected.iloc[:, :4])
 
@@ -373,7 +373,7 @@ class TestLagmat(object):
                             original='ex', use_pandas=True)
         tm.assert_frame_equal(lags, expected.iloc[:, 1:])
         lags, lead = tools.lagmat(self.series, 3, trim='forward',
-                                   original='sep', use_pandas=True)
+                                  original='sep', use_pandas=True)
         tm.assert_frame_equal(lead, expected.iloc[:, :1])
         tm.assert_frame_equal(lags, expected.iloc[:, 1:])
 
