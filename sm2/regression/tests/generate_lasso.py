@@ -21,8 +21,8 @@ params = (-1.)**np.arange(p)
 params[::3] = 0
 expval = np.dot(exog, params)
 endog = expval + np.random.normal(size=n)
-data = np.concatenate((endog[:,None], exog), axis=1)
-data = np.around(100*data)
+data = np.concatenate((endog[:, None], exog), axis=1)
+data = np.around(100 * data)
 
 here = os.path.dirname(__file__)
 path = os.path.join(here, "results", "lasso_data.csv")

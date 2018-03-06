@@ -41,16 +41,16 @@ def webuse(data, baseurl='http://www.stata-press.com/data/r11/', as_df=True):
     Make sure baseurl has trailing forward slash. Doesn't do any
     error checking in response URLs.
     """
-    # lazy imports
-    from sm2.iolib.foreign import genfromdta
-
     url = urljoin(baseurl, data + '.dta')
     dta = urlopen(url)
-    dta = BytesIO(dta.read())  # make it truly file-like
-    if as_df:  # could make this faster if we don't process dta twice?
-        return pd.DataFrame.from_records(genfromdta(dta))
+    content = dta.read()
+    dta.close()
+    dta = BytesIO(content)  # make it truly file-like
+    df = pd.read_stata(dta)
+    if as_df:
+        return df
     else:
-        return genfromdta(dta)
+        return df.to_records(index=False)
 
 
 class Dataset(dict):

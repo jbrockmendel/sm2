@@ -1,17 +1,18 @@
 import warnings
 
 import numpy as np
-from numpy.testing import assert_equal
 import pandas as pd
 
-from sm2.iolib.table import SimpleTable, default_txt_fmt
-from sm2.iolib.table import default_latex_fmt
-from sm2.iolib.table import default_html_fmt
+from sm2.iolib.table import (SimpleTable,
+                             default_txt_fmt,
+                             default_latex_fmt,
+                             default_html_fmt)
 
 from sm2.regression.linear_model import OLS
 
 ltx_fmt1 = default_latex_fmt.copy()
 html_fmt1 = default_html_fmt.copy()
+
 
 class TestSimpleTable(object):
     def test_SimpleTable_1(self):
@@ -30,7 +31,7 @@ stub2 1.95038 2.65765
         actual = SimpleTable(test1data, test1header, test1stubs,
                              txt_fmt=default_txt_fmt)
         actual = '\n%s\n' % actual.as_text()
-        assert_equal(desired, str(actual))
+        assert str(actual) == desired
 
     def test_SimpleTable_2(self):
         #  Test SimpleTable.extend_right()
@@ -52,7 +53,7 @@ stub R2 C1  90.30312  90.73999 stub R2 C2  40.95038  40.65765
         actual2 = SimpleTable(data2, header2, stubs2, txt_fmt=default_txt_fmt)
         actual1.extend_right(actual2)
         actual = '\n%s\n' % actual1.as_text()
-        assert_equal(desired, str(actual))
+        assert str(actual) == desired
 
     def test_SimpleTable_3(self):
         # Test SimpleTable.extend() as in extend down
@@ -78,7 +79,7 @@ stub R2 C2  40.95038  40.65765
         actual2 = SimpleTable(data2, header2, stubs2, txt_fmt=default_txt_fmt)
         actual1.extend(actual2)
         actual = '\n%s\n' % actual1.as_text()
-        assert_equal(desired, str(actual))
+        assert str(actual) == desired
 
     def test_SimpleTable_4(self):
         # Basic test, test_SimpleTable_4 test uses custom txt_fmt
@@ -121,9 +122,8 @@ stub R2 C2  40.95038  40.65765
 *****************************
 """
             actual = '\n%s\n' % tbl.as_text()
-            #print(actual)
-            #print(desired)
-            assert_equal(actual, desired)
+            assert actual == desired
+
         def test_ltx_fmt1(self):
             # Limited test of custom ltx_fmt
             desired = r"""
@@ -137,9 +137,7 @@ stub R2 C2  40.95038  40.65765
 \end{tabular}
 """
             actual = '\n%s\n' % tbl.as_latex_tabular(center=False)
-            #print(actual)
-            #print(desired)
-            assert_equal(actual, desired)
+            assert actual == desired
             # Test "center=True" (the default):
             desired_centered = r"""
 \begin{center}
@@ -147,7 +145,7 @@ stub R2 C2  40.95038  40.65765
 \end{center}
 """ % desired[1:-1]
             actual_centered = '\n%s\n' % tbl.as_latex_tabular()
-            assert_equal(actual_centered, desired_centered)
+            assert actual_centered == desired_centered
         def test_html_fmt1(self):
             # Limited test of custom html_fmt
             desired = """
@@ -164,12 +162,14 @@ stub R2 C2  40.95038  40.65765
 </table>
 """
             actual = '\n%s\n' % tbl.as_html()
-            assert_equal(actual, desired)
+            assert actual == desired
+
         test_txt_fmt1(self)
         test_ltx_fmt1(self)
         test_html_fmt1(self)
+
     def test_SimpleTable_special_chars(self):
-    # Simple table with characters: (%, >, |, _, $, &, #)
+        # Simple table with characters: (%, >, |, _, $, &, #)
         cell0c_data = 22
         cell1c_data = 1053
         row0c_data = [cell0c_data, cell1c_data]
@@ -179,7 +179,7 @@ stub R2 C2  40.95038  40.65765
         test1c_header = ('#header1$', 'header&|')
         tbl_c = SimpleTable(table1c_data, test1c_header, test1c_stubs, ltx_fmt=ltx_fmt1)
         def test_ltx_special_chars(self):
-        # Test for special characters (latex) in headers and stubs
+            # Test for special characters (latex) in headers and stubs
             desired = r"""
 \begin{tabular}{lcc}
 \toprule
@@ -191,33 +191,35 @@ stub R2 C2  40.95038  40.65765
 \end{tabular}
 """
             actual = '\n%s\n' % tbl_c.as_latex_tabular(center=False)
-            assert_equal(actual, desired)
+            assert actual == desired
         test_ltx_special_chars(self)
+        # WTF Is this supposed to be a nested test or what?
+
     def test_regression_with_tuples(self):
-        i = pd.Series( [1,2,3,4]*10 , name="i")
-        y = pd.Series( [1,2,3,4,5]*8, name="y")
-        x = pd.Series( [1,2,3,4,5,6,7,8]*5, name="x")
+        i = pd.Series( [1, 2, 3, 4] * 10 , name="i")
+        y = pd.Series( [1, 2, 3, 4, 5] * 8, name="y")
+        x = pd.Series( [1, 2, 3, 4, 5, 6, 7, 8] * 5, name="x")
 
         df = pd.DataFrame( index=i.index )
-        df = df.join( i )
-        endo = df.join( y )
-        exo = df.join( x )
-        endo_groups = endo.groupby( ("i",) )
-        exo_groups = exo.groupby( ("i",) )
-        exo_Df = exo_groups.agg( [np.sum, np.max] )
-        endo_Df = endo_groups.agg( [np.sum, np.max] )
-        reg = OLS(exo_Df[[("x", "sum")]],endo_Df).fit()
+        df = df.join(i)
+        endo = df.join(y)
+        exo = df.join(x)
+        endo_groups = endo.groupby(("i",))
+        exo_groups = exo.groupby(("i",))
+        exo_Df = exo_groups.agg([np.sum, np.max])
+        endo_Df = endo_groups.agg([np.sum, np.max])
+        reg = OLS(exo_Df[[("x", "sum")]], endo_Df).fit()
         interesting_lines = []
-        import warnings
+        
         with warnings.catch_warnings():
             # Catch ominormal warning, not interesting here
             warnings.simplefilter("ignore")
-            for line in str( reg.summary() ).splitlines():
+            for line in str(reg.summary()).splitlines():
                 if "('" in line:
-                    interesting_lines.append( line[:38] )
+                    interesting_lines.append(line[:38])
 
         desired = ["Dep. Variable:           ('x', 'sum') ",
                    "('y', 'sum')      1.4595      0.209   ",
                    "('y', 'amax')     0.2432      0.035   "]
 
-        assert_equal(sorted(desired), sorted(interesting_lines)  )
+        assert sorted(desired) == sorted(interesting_lines)

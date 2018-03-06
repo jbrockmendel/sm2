@@ -51,13 +51,13 @@ class SaveLoadMixin(object):
         memory. Currently tested for use with predict from an unpickled
         results and model instance.
 
-        .. warning:: Since data and some intermediate results have been removed
-           calculating new statistics that require them will raise exceptions.
-           The exception will occur the first time an attribute is accessed
-           that has been set to None.
+        .. warning:: Since data and some intermediate results have been
+           removed calculating new statistics that require them will raise
+           exceptions. The exception will occur the first time an attribute
+           is accessed that has been set to None.
 
-        Not fully tested for time series models, tsa, and might delete too much
-        for prediction or not all that would be possible.
+        Not fully tested for time series models, tsa, and might delete too
+        much for prediction or not all that would be possible.
 
         The lists of arrays to delete are maintained as attributes of
         the result and model instance, except for cached values. These

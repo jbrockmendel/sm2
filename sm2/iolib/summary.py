@@ -37,7 +37,7 @@ def summary(self, yname=None, xname=None, title=0, alpha=.05,
             optional, Default is `X.#` for # in p the number of regressors
     Confidance interval : (0,1) not implimented
     title : string
-            optional, Defualt is 'Generalized linear model'
+            optional, Default is 'Generalized linear model'
     returns : string
               'text', 'table', 'csv', 'latex', 'html'
 

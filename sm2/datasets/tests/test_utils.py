@@ -7,8 +7,6 @@ import pytest
 
 from sm2.datasets import get_rdataset, webuse, check_internet, utils, macrodata
 
-from sm2.iolib.tests.results.macrodata import macrodata_result as res2
-
 cur_dir = os.path.dirname(os.path.abspath(__file__))
 
 
@@ -29,13 +27,18 @@ def test_get_rdataset():
 def test_webuse():
     # test copied and adjusted from iolib/tests/test_foreign
     base_gh = ("http://github.com/statsmodels/statsmodels/"
-               "raw/master/statsmodels.datasets/macrodata/")
+               "raw/master/statsmodels/datasets/macrodata/")
     internet_available = check_internet(base_gh)
     if not internet_available:
         raise pytest.skip('Unable to retrieve file - skipping test')
 
+    df = macrodata.load_pandas().data.astype('f4')
+    df['year'] = df['year'].astype('i2')
+    df['quarter'] = df['quarter'].astype('i1')
+    expected = df.to_records(index=False)
     res1 = webuse('macrodata', baseurl=base_gh, as_df=False)
-    assert_array_equal(res1, res2)
+    assert res1.dtype == expected.dtype
+    assert_array_equal(res1, expected)
 
 
 @pytest.mark.not_vetted
@@ -43,7 +46,7 @@ def test_webuse_pandas():
     # test copied and adjusted from iolib/tests/test_foreign
     dta = macrodata.load_pandas().data
     base_gh = ("http://github.com/statsmodels/statsmodels/"
-               "raw/master/statsmodels.datasets/macrodata/")
+               "raw/master/statsmodels/datasets/macrodata/")
     internet_available = check_internet(base_gh)
     if not internet_available:
         raise pytest.skip('Unable to retrieve file - skipping test')
