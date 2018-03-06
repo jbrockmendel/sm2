@@ -16,14 +16,14 @@ html_fmt1 = default_html_fmt.copy()
 class TestSimpleTable(object):
     def test_SimpleTable_1(self):
         # Basic test, test_SimpleTable_1
-        desired = '''
+        desired = """
 =====================
       header1 header2
 ---------------------
 stub1 1.30312 2.73999
 stub2 1.95038 2.65765
 ---------------------
-'''
+"""
         test1data = [[1.30312, 2.73999],[1.95038, 2.65765]]
         test1stubs = ('stub1', 'stub2')
         test1header = ('header1', 'header2')
@@ -34,14 +34,14 @@ stub2 1.95038 2.65765
 
     def test_SimpleTable_2(self):
         #  Test SimpleTable.extend_right()
-        desired = '''
+        desired = """
 =============================================================
            header s1 header d1            header s2 header d2
 -------------------------------------------------------------
 stub R1 C1  10.30312  10.73999 stub R1 C2  50.95038  50.65765
 stub R2 C1  90.30312  90.73999 stub R2 C2  40.95038  40.65765
 -------------------------------------------------------------
-'''
+"""
         data1 = [[10.30312, 10.73999], [90.30312, 90.73999]]
         data2 = [[50.95038, 50.65765], [40.95038, 40.65765]]
         stubs1 = ['stub R1 C1', 'stub R2 C1']
@@ -56,7 +56,7 @@ stub R2 C1  90.30312  90.73999 stub R2 C2  40.95038  40.65765
 
     def test_SimpleTable_3(self):
         # Test SimpleTable.extend() as in extend down
-        desired = '''
+        desired = """
 ==============================
            header s1 header d1
 ------------------------------
@@ -67,7 +67,7 @@ stub R2 C1  90.30312  90.73999
 stub R1 C2  50.95038  50.65765
 stub R2 C2  40.95038  40.65765
 ------------------------------
-'''
+"""
         data1 = [[10.30312, 10.73999], [90.30312, 90.73999]]
         data2 = [[50.95038, 50.65765], [40.95038, 40.65765]]
         stubs1 = ['stub R1 C1', 'stub R2 C1']

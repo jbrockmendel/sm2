@@ -33,7 +33,7 @@ from .results import results_glm_logit_constrained as reslogit
 
 DEBUG = False
 
-ss = '''\
+ss = """\
 agecat	smokes	deaths	pyears
 1	1	32	52407
 2	1	104	43248
@@ -44,7 +44,7 @@ agecat	smokes	deaths	pyears
 2	0	12	10673
 3	0	28	5710
 4	0	28	2585
-5	0	31	1462'''
+5	0	31	1462"""
 
 data = pd.read_csv(StringIO(ss), delimiter='\t')
 data = data.astype(int)

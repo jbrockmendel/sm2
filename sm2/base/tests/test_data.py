@@ -64,7 +64,7 @@ class TestArrays(object):
     def test_labels(self):
         # HACK: because numpy master after NA stuff assert_equal fails on
         # pandas indices
-        np.testing.assert_(np.all(self.data.row_labels == self.row_labels))
+        assert np.all(self.data.row_labels == self.row_labels)
 
 
 @pytest.mark.not_vetted
@@ -619,11 +619,11 @@ class TestMissingPandas(object):
         np.testing.assert_array_equal(data.endog, y.values)
 
     def test_labels(self):
-        2, 10, 14
+        2, 10, 14  # WTF
         labels = pd.Index([0, 1, 3, 4, 5, 6, 7, 8, 9, 11, 12, 13, 15,
                            16, 17, 18, 19, 20, 21, 22, 23, 24])
         data = sm_data.handle_data(self.y, self.X, 'drop')
-        np.testing.assert_(data.row_labels.equals(labels))
+        assert data.row_labels.equals(labels)
 
 
 @pytest.mark.not_vetted
@@ -729,7 +729,7 @@ class CheckHasConstant(object):
             np.testing.assert_equal(mod.k_constant, result[0])
             np.testing.assert_equal(mod.data.k_constant, result[0])
             if result[1] is None:
-                np.testing.assert_(mod.data.const_idx is None)
+                assert mod.data.const_idx is None
             else:
                 np.testing.assert_equal(mod.data.const_idx, result[1])
 

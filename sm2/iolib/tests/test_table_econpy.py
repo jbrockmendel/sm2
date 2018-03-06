@@ -1,10 +1,10 @@
-'''
+"""
 Unit tests table.py.
 
 :see: http://docs.python.org/lib/minimal-example.html for an intro to unittest
 :see: http://agiletesting.blogspot.com/2005/01/python-unit-testing-part-1-unittest.html
 :see: http://aspn.activestate.com/ASPN/Cookbook/Python/Recipe/305292
-'''
+"""
 from __future__ import absolute_import
 
 from six.moves import zip
@@ -116,7 +116,7 @@ class TestSimpleTable(object):
 </table>
 """
         #the previous has significant trailing whitespace that got removed
-        #desired = '''\n<table class="simpletable">\n<tr>\n    <td></td>    <th>header1</th> <th>header2</th>\n</tr>\n<tr>\n  <th>stub1</th>   <td>0.0</td>      <td>1</td>   \n</tr>\n<tr>\n  <th>stub2</th>    <td>2</td>     <td>3.333</td> \n</tr>\n</table>\n'''
+        #desired = """\n<table class="simpletable">\n<tr>\n    <td></td>    <th>header1</th> <th>header2</th>\n</tr>\n<tr>\n  <th>stub1</th>   <td>0.0</td>      <td>1</td>   \n</tr>\n<tr>\n  <th>stub2</th>    <td>2</td>     <td>3.333</td> \n</tr>\n</table>\n"""
         actual = '\n%s\n' % tbl.as_html()
         actual = '\n'.join((line.rstrip() for line in actual.split('\n')))
         #print(actual)

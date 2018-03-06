@@ -731,4 +731,3 @@ class TestLagmat2DS(object):
         data = np.zeros((100, 2, 2))
         with pytest.raises(TypeError):
             tools.lagmat2ds(data, 5)
-

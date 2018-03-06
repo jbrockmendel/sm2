@@ -256,8 +256,8 @@ def summary(self, yname=None, xname=None, title=0, alpha=.05,
             return printers['OLS']()
 
 def _getnames(self, yname=None, xname=None):
-    '''extract names from model or construct names
-    '''
+    """extract names from model or construct names
+    """
     if yname is None:
         if hasattr(self.model, 'endog_names') and (
                not self.model.endog_names is None):
@@ -277,13 +277,13 @@ def _getnames(self, yname=None, xname=None):
 
 
 def summary_top(results, title=None, gleft=None, gright=None, yname=None, xname=None):
-    '''generate top table(s)
+    """generate top table(s)
 
 
     TODO: this still uses predefined model_methods
     ? allow gleft, gright to be 1 element tuples instead of filling with None?
 
-    '''
+    """
     # change of names ?
     gen_left, gen_right = gleft, gright
 
@@ -405,7 +405,7 @@ def summary_top(results, title=None, gleft=None, gright=None, yname=None, xname=
 
 def summary_params(results, yname=None, xname=None, alpha=.05, use_t=True,
                    skip_header=False, title=None):
-    '''create a summary table for the parameters
+    """create a summary table for the parameters
 
     Parameters
     ----------
@@ -428,7 +428,7 @@ def summary_params(results, yname=None, xname=None, alpha=.05, use_t=True,
     Returns
     -------
     params_table : SimpleTable instance
-    '''
+    """
 
     #Parameters part of the summary table
     #------------------------------------
@@ -485,7 +485,7 @@ def summary_params(results, yname=None, xname=None, alpha=.05, use_t=True,
 
 def summary_params_frame(results, yname=None, xname=None, alpha=.05,
                          use_t=True):
-    '''create a summary table for the parameters
+    """create a summary table for the parameters
 
     Parameters
     ----------
@@ -508,7 +508,7 @@ def summary_params_frame(results, yname=None, xname=None, alpha=.05,
     Returns
     -------
     params_table : SimpleTable instance
-    '''
+    """
 
     #Parameters part of the summary table
     #------------------------------------
@@ -545,7 +545,7 @@ def summary_params_frame(results, yname=None, xname=None, alpha=.05,
 
 def summary_params_2d(result, extras=None, endog_names=None, exog_names=None,
                       title=None):
-    '''create summary table of regression parameters with several equations
+    """create summary table of regression parameters with several equations
 
     This allows interleaving of parameters with bse and/or tvalues
 
@@ -571,7 +571,7 @@ def summary_params_2d(result, extras=None, endog_names=None, exog_names=None,
         the merged table with results concatenated for each row of the parameter
         array
 
-    '''
+    """
     if endog_names is None:
         #TODO: note the [1:] is specific to current MNLogit
         endog_names = ['endog_%d' % i for i in
@@ -613,7 +613,7 @@ def summary_params_2d(result, extras=None, endog_names=None, exog_names=None,
 def summary_params_2dflat(result, endog_names=None, exog_names=None, alpha=0.05,
                           use_t=True, keep_headers=True, endog_cols=False):
                           #skip_headers2=True):
-    '''summary table for parameters that are 2d, e.g. multi-equation models
+    """summary table for parameters that are 2d, e.g. multi-equation models
 
     Parameters
     ----------
@@ -644,7 +644,7 @@ def summary_params_2dflat(result, endog_names=None, exog_names=None, alpha=0.05,
         the merged table with results concatenated for each row of the parameter
         array
 
-    '''
+    """
 
     res = result
     params = res.params
@@ -698,7 +698,7 @@ def summary_params_2dflat(result, endog_names=None, exog_names=None, alpha=0.05,
 
 
 def table_extend(tables, keep_headers=True):
-    '''extend a list of SimpleTables, adding titles to header of subtables
+    """extend a list of SimpleTables, adding titles to header of subtables
 
     This function returns the merged table as a deepcopy, in contrast to the
     SimpleTable extend method.
@@ -714,7 +714,7 @@ def table_extend(tables, keep_headers=True):
     -------
     table_all : SimpleTable
         merged tables as a single SimpleTable instance
-    '''
+    """
     for ii, t in enumerate(tables[:]): #[1:]:
         t = copy.deepcopy(t)
         # move title to first cell of header
@@ -764,7 +764,7 @@ def summary_return(tables, return_fmt='text'):
 
 
 class Summary(object):
-    '''class to hold tables for result summary presentation
+    """class to hold tables for result summary presentation
 
     Construction does not take any parameters. Tables and text can be added
     with the `add_` methods.
@@ -772,10 +772,12 @@ class Summary(object):
     Attributes
     ----------
     tables : list of tables
-        Contains the list of SimpleTable instances, horizontally concatenated tables are not saved separately.
+        Contains the list of SimpleTable instances, horizontally
+        concatenated tables are not saved separately.
     extra_txt : string
-        extra lines that are added to the text output, used for warnings and explanations.
-    '''
+        extra lines that are added to the text output, used for
+        warnings and explanations.
+    """
     def __init__(self):
         self.tables = []
         self.extra_txt = None
@@ -788,12 +790,12 @@ class Summary(object):
         return str(type(self)) + '\n"""\n' + self.__str__() + '\n"""'
 
     def _repr_html_(self):
-        '''Display as HTML in IPython notebook.'''
+        """Display as HTML in IPython notebook."""
         return self.as_html()
 
     def add_table_2cols(self, res,  title=None, gleft=None, gright=None,
-                            yname=None, xname=None):
-        '''add a double table, 2 tables with one column merged horizontally
+                        yname=None, xname=None):
+        """add a double table, 2 tables with one column merged horizontally
 
         Parameters
         ----------
@@ -816,7 +818,7 @@ class Summary(object):
         -------
         None : tables are attached
 
-        '''
+        """
 
         table = summary_top(res, title=title, gleft=gleft, gright=gright,
                             yname=yname, xname=xname)
@@ -824,7 +826,7 @@ class Summary(object):
 
     def add_table_params(self, res, yname=None, xname=None, alpha=.05,
                          use_t=True):
-        '''create and add a table for the parameter estimates
+        """create and add a table for the parameter estimates
 
         Parameters
         ----------
@@ -845,7 +847,7 @@ class Summary(object):
         -------
         None : table is attached
 
-        '''
+        """
         if res.params.ndim == 1:
             table = summary_params(res, yname=yname, xname=xname, alpha=alpha,
                                    use_t=use_t)
@@ -860,32 +862,32 @@ class Summary(object):
         self.tables.append(table)
 
     def add_extra_txt(self, etext):
-        '''add additional text that will be added at the end in text format
+        """add additional text that will be added at the end in text format
 
         Parameters
         ----------
         etext : list[str]
             string with lines that are added to the text output.
 
-        '''
+        """
         self.extra_txt = '\n'.join(etext)
 
     def as_text(self):
-        '''return tables as string
+        """return tables as string
 
         Returns
         -------
         txt : string
             summary tables and extra text as one string
 
-        '''
+        """
         txt = summary_return(self.tables, return_fmt='text')
         if not self.extra_txt is None:
             txt = txt + '\n\n' + self.extra_txt
         return txt
 
     def as_latex(self):
-        '''return tables as string
+        """return tables as string
 
         Returns
         -------
@@ -898,35 +900,35 @@ class Summary(object):
         It is recommended to use `as_latex_tabular` directly on the individual
         tables.
 
-        '''
+        """
         latex = summary_return(self.tables, return_fmt='latex')
         if not self.extra_txt is None:
             latex = latex + '\n\n' + self.extra_txt.replace('\n', ' \\newline\n ')
         return latex
 
     def as_csv(self):
-        '''return tables as string
+        """return tables as string
 
         Returns
         -------
         csv : string
             concatenated summary tables in comma delimited format
 
-        '''
+        """
         csv = summary_return(self.tables, return_fmt='csv')
         if not self.extra_txt is None:
             csv = csv + '\n\n' + self.extra_txt
         return csv
 
     def as_html(self):
-        '''return tables as string
+        """return tables as string
 
         Returns
         -------
         html : string
             concatenated summary tables in HTML format
 
-        '''
+        """
         html = summary_return(self.tables, return_fmt='html')
         if not self.extra_txt is None:
             html = html + '<br/><br/>' + self.extra_txt.replace('\n', '<br/>')

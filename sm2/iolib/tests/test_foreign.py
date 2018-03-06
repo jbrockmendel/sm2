@@ -8,7 +8,7 @@ from datetime import datetime
 from six import BytesIO
 
 import numpy as np
-from numpy.testing import assert_array_equal, assert_, assert_equal, dec
+from numpy.testing import assert_array_equal, assert_equal
 
 import pandas as pd
 import pandas.util.testing as tm
@@ -83,13 +83,13 @@ def test_missing_roundtrip():
     writer.write_file()
     buf.seek(0)
     dta = genfromdta(buf, missing_flt=np.nan)
-    assert_(pd.isnull(dta[0][0]))
-    assert_(pd.isnull(dta[0][1]))
-    assert_(dta[0][2] == b"")
+    assert pd.isnull(dta[0][0])
+    assert pd.isnull(dta[0][1])
+    assert dta[0][2] == b""
 
     dta = genfromdta(os.path.join(curdir, "results/data_missing.dta"),
             missing_flt=-999)
-    assert_(np.all([dta[0][i] == -999 for i in range(5)]))
+    assert np.all([dta[0][i] == -999 for i in range(5)])
 
 
 @pytest.mark.not_vetted
@@ -136,7 +136,7 @@ def test_genfromdta_datetime():
     with warnings.catch_warnings(record=True) as w:
         warnings.simplefilter('always')
         dta = genfromdta(os.path.join(curdir, "results/time_series_examples.dta"))
-        assert_(len(w) > 0)  # should get a warning for that format.
+        assert len(w) > 0  # should get a warning for that format.
 
     assert_array_equal(dta[0].tolist(), results[0])
     assert_array_equal(dta[1].tolist(), results[1])

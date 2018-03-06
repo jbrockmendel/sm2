@@ -92,7 +92,7 @@ class RemoveDataPickle(object):
         if isinstance(pred1, pd.Series) and isinstance(pred3, pd.Series):
             tm.assert_series_equal(pred1, pred3)
         elif isinstance(pred1, pd.DataFrame) and isinstance(pred3, pd.DataFrame):
-            assert_(pred1.equals(pred3))
+            assert pred1.equals(pred3)
         else:
             np.testing.assert_equal(pred3, pred1)
 

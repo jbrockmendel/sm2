@@ -1,12 +1,12 @@
 import os
 
 import numpy as np
-from numpy import genfromtxt
 cur_dir = os.path.dirname(os.path.abspath(__file__))
 
 path = os.path.join(cur_dir, "results_arima_forecasts.csv")
 with open(path, 'rb') as fd:
-    forecast_results = genfromtxt(fd, names=True, delimiter=",", dtype=float)
+    forecast_results = np.genfromtxt(fd, names=True,
+                                     delimiter=",", dtype=float)
 
 # NOTE:
 # stata gives no indication of no convergence for 112 CSS but gives a

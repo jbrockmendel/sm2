@@ -405,8 +405,9 @@ class SimpleTable(list):
         return '\n'.join(formatted_rows)
 
     def as_latex_tabular(self, center=True, **fmt_dict):
-        '''Return string, the table as a LaTeX tabular environment.
-        Note: will require the booktabs package.'''
+        """Return string, the table as a LaTeX tabular environment.
+        Note: will require the booktabs package.
+        """
         # fetch the text format, override with fmt_dict
         fmt = self._get_fmt('latex', **fmt_dict)
 
