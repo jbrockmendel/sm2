@@ -11,7 +11,7 @@ import os
 
 import pytest
 import numpy as np
-from numpy.testing import (assert_almost_equal, assert_equal,
+from numpy.testing import (assert_almost_equal,
                            assert_approx_equal, assert_array_less)
 
 from sm2.regression.linear_model import OLS, GLSAR
@@ -25,9 +25,9 @@ from sm2.stats import diagnostic
 def compare_ftest(contrast_res, other, decimal=(5,4)):
     assert_almost_equal(contrast_res.fvalue, other[0], decimal=decimal[0])
     assert_almost_equal(contrast_res.pvalue, other[1], decimal=decimal[1])
-    assert_equal(contrast_res.df_num, other[2])
-    assert_equal(contrast_res.df_denom, other[3])
-    assert_equal("f", other[4])
+    assert other[2] == contrast_res.df_num
+    assert other[3] == contrast_res.df_denom
+    assert other[4] == "f"
 
 
 @pytest.mark.not_vetted
@@ -55,7 +55,7 @@ class TestGLSARGretl(object):
         mod_g1 = GLSAR(endogg, exogg, rho=-0.108136)
         res_g1 = mod_g1.fit()
 
-        mod_g2 = GLSAR(endogg, exogg, rho=-0.108136)   #-0.1335859) from R
+        mod_g2 = GLSAR(endogg, exogg, rho=-0.108136)   # -0.1335859) from R
         res_g2 = mod_g2.iterative_fit(maxiter=5)
 
         rho = -0.108136
@@ -69,16 +69,16 @@ class TestGLSARGretl(object):
         # Statistics based on the rho-differenced data:
 
         result_gretl_g1 = dict(
-        endog_mean = ("Mean dependent var",   3.113973),
-        endog_std = ("S.D. dependent var",   18.67447),
-        ssr = ("Sum squared resid",    22530.90),
-        mse_resid_sqrt = ("S.E. of regression",   10.66735),
-        rsquared = ("R-squared",            0.676973),
-        rsquared_adj = ("Adjusted R-squared",   0.673710),
-        fvalue = ("F(2, 198)",            221.0475),
-        f_pvalue = ("P-value(F)",           3.56e-51),
-        resid_acf1 = ("rho",                 -0.003481),
-        dw = ("Durbin-Watson",        1.993858))
+            endog_mean = ("Mean dependent var", 3.113973),
+            endog_std = ("S.D. dependent var", 18.67447),
+            ssr = ("Sum squared resid", 22530.90),
+            mse_resid_sqrt = ("S.E. of regression", 10.66735),
+            rsquared = ("R-squared", 0.676973),
+            rsquared_adj = ("Adjusted R-squared", 0.673710),
+            fvalue = ("F(2, 198)", 221.0475),
+            f_pvalue = ("P-value(F)", 3.56e-51),
+            resid_acf1 = ("rho", -0.003481),
+            dw = ("Durbin-Watson", 1.993858))
 
         # fstatistic, p-value, df1, df2
         reset_2_3 = [5.219019, 0.00619, 2, 197, "f"]
@@ -139,9 +139,9 @@ class TestGLSARGretl(object):
         assert_almost_equal(res.model.rho, rho, decimal=3)
 
         # basic
-        assert_almost_equal(res.params, partable[:,0], 4)
-        assert_almost_equal(res.bse, partable[:,1], 3)
-        assert_almost_equal(res.tvalues, partable[:,2], 2)
+        assert_almost_equal(res.params, partable[:, 0], 4)
+        assert_almost_equal(res.bse, partable[:, 1], 3)
+        assert_almost_equal(res.tvalues, partable[:, 2], 2)
 
         assert_almost_equal(res.ssr, result_gretl_g1['ssr'][1], decimal=2)
         #assert_almost_equal(res.llf,
@@ -468,9 +468,7 @@ def test_GLSARlag():
     assert_array_less(np.abs(res4.bse / res1.bse) - 1, 0.015)
     assert_array_less(np.abs((res4.fittedvalues / res1.fittedvalues - 1).mean()),
                       0.015)
-    assert_equal(len(mod4.rho), 4)
-
-
+    assert len(mod4.rho) == 4
 
 
 """

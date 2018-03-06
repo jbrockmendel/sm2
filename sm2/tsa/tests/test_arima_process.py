@@ -6,7 +6,7 @@ from six.moves import range
 import numpy as np
 from numpy.testing import (assert_array_almost_equal, assert_almost_equal,
                            assert_allclose,
-                           assert_equal, assert_raises, assert_, dec)
+                           assert_equal)
 
 from sm2.tsa.arima_process import (arma_generate_sample, arma_acovf,
                                    arma_acf, arma_impulse_response,
@@ -27,7 +27,6 @@ malist = [[1.],
           [1, 0.9, -0.3]]
 
 DECIMAL_4 = 4
-NP16 = LooseVersion(np.__version__) < '1.7'
 
 
 @pytest.mark.not_vetted
@@ -55,11 +54,11 @@ def test_arma_acovf_persistent():
 
     # Theoretical variance sig2 given by:
     # sig2 = .9995**2 * sig2 + 1
-    sig2 = 1/(1-.9995**2)
+    sig2 = 1 / (1 - .9995**2)
 
     corrs = .9995**np.arange(10)
-    expected = sig2*corrs
-    assert_equal(res.ndim, 1)
+    expected = sig2 * corrs
+    assert res.ndim == 1
     assert_allclose(res, expected, atol=1e-6)
     # atol=7 breaks at .999, worked at .995
 
@@ -259,19 +258,19 @@ class TestArmaProcess(object):
         process2 = process1 * (np.array([1.0, -0.7]), np.array([1.0]))
         assert_equal(process2.arcoefs, np.array([1.6, -0.7 * 0.9]))
 
-        assert_raises(TypeError, process1.__mul__, [3])
+        with pytest.raises(TypeError):
+            process1 * [3]
 
-    @dec.skipif(NP16)
+    @pytest.mark.skipif("np.__version__ < 1.7")
     def test_str_repr(self):
         process1 = ArmaProcess.from_coeffs([.9], [.2])
         out = process1.__str__()
-        print(out)
-        assert_(out.find('AR: [1.0, -0.9]') != -1)
-        assert_(out.find('MA: [1.0, 0.2]') != -1)
+        assert out.find('AR: [1.0, -0.9]') != -1
+        assert out.find('MA: [1.0, 0.2]') != -1
 
         out = process1.__repr__()
-        assert_(out.find('nobs=100') != -1)
-        assert_(out.find('at ' + str(hex(id(process1)))) != -1)
+        assert out.find('nobs=100') != -1
+        assert out.find('at ' + str(hex(id(process1)))) != -1
 
     def test_acf(self):
         process1 = ArmaProcess.from_coeffs([.9])
@@ -280,7 +279,7 @@ class TestArmaProcess(object):
         assert_array_almost_equal(acf, expected)
 
         acf = process1.acf()
-        assert_(acf.shape[0] == process1.nobs)
+        assert acf.shape[0] == process1.nobs
 
     def test_pacf(self):
         process1 = ArmaProcess.from_coeffs([.9])
@@ -289,18 +288,17 @@ class TestArmaProcess(object):
         assert_array_almost_equal(pacf, expected)
 
         pacf = process1.pacf()
-        assert_(pacf.shape[0] == process1.nobs)
+        assert pacf.shape[0] == process1.nobs
 
     def test_isstationary(self):
         process1 = ArmaProcess.from_coeffs([1.1])
-        assert_equal(process1.isstationary, False)
+        assert process1.isstationary is False
 
         process1 = ArmaProcess.from_coeffs([1.8, -0.9])
-        assert_equal(process1.isstationary, True)
+        assert process1.isstationary is True
 
         process1 = ArmaProcess.from_coeffs([1.5, -0.5])
-        print(np.abs(process1.arroots))
-        assert_equal(process1.isstationary, False)
+        assert process1.isstationary is False
 
     def test_arma2ar(self):
         process1 = ArmaProcess.from_coeffs([], [0.8])
@@ -318,7 +316,7 @@ class TestArmaProcess(object):
 
         process1 = ArmaProcess.from_coeffs([], [2.5])
         roots, invertable = process1.invertroots(False)
-        assert_equal(invertable, False)
+        assert invertable is False
         assert_almost_equal(roots, np.array([1, 0.4]))
 
     def test_generate_sample(self):
@@ -353,8 +351,8 @@ class TestArmaProcess(object):
 
 
         np.random.seed(12345)
-        sample = process.generate_sample(nsample=(100,5))
-        assert_equal(sample.shape, (100,5))
+        sample = process.generate_sample(nsample=(100, 5))
+        assert sample.shape == (100, 5)
 
     def test_impulse_response(self):
         process = ArmaProcess.from_coeffs([0.9])

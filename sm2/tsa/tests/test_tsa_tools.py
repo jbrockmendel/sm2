@@ -7,7 +7,7 @@ from six.moves import zip
 import pytest
 import numpy as np
 from numpy.testing import (assert_array_almost_equal, assert_equal,
-                           assert_raises, assert_array_equal)
+                           assert_array_equal)
 import pandas as pd
 import pandas.util.testing as tm
 
@@ -313,15 +313,18 @@ class TestLagmat(object):
         tm.assert_frame_equal(lead, expected.iloc[:, :4])
 
     def test_too_few_observations(self):
-        assert_raises(ValueError, tools.lagmat, self.macro_df, 300,
-                      use_pandas=True)
-        assert_raises(ValueError, tools.lagmat, self.macro_data, 300)
+        with pytest.raises(ValueError):
+            tools.lagmat(self.macro_df, 300, use_pandas=True)
+
+        with pytest.raises(ValueError):
+            tools.lagmat(self.macro_data, 300)
 
     def test_unknown_trim(self):
-        assert_raises(ValueError, tools.lagmat, self.macro_df, 3,
-                      trim='unknown', use_pandas=True)
-        assert_raises(ValueError, tools.lagmat, self.macro_data, 3,
-                      trim='unknown')
+        with pytest.raises(ValueError):
+            tools.lagmat(self.macro_df, 3, trim='unknown', use_pandas=True)
+
+        with pytest.raises(ValueError):
+            tools.lagmat(self.macro_data, 3, trim='unknown')
 
     def test_dataframe_forward(self):
         data = self.macro_df
@@ -348,14 +351,11 @@ class TestLagmat(object):
         tm.assert_frame_equal(lead, expected.iloc[:, :4])
 
     def test_pandas_errors(self):
-        assert_raises(ValueError, tools.lagmat, self.macro_df, 3,
-                      trim='none', use_pandas=True)
-        assert_raises(ValueError, tools.lagmat, self.macro_df, 3,
-                      trim='backward', use_pandas=True)
-        assert_raises(ValueError, tools.lagmat, self.series, 3,
-                      trim='none', use_pandas=True)
-        assert_raises(ValueError, tools.lagmat, self.series, 3,
-                      trim='backward', use_pandas=True)
+        # TODO: parametrize?
+        for trim in ['none', 'backward']:
+            for data in [self.macro_df, self.series]:
+                with pytest.raises(ValueError):
+                    tools.lagmat(data, 3, trim=trim, use_pandas=True)
 
     def test_series_forward(self):
         expected = pd.DataFrame(index=self.series.index,
@@ -473,7 +473,8 @@ class TestDetrend(object):
                                            columns=columns, index=index))
 
     def test_detrend_dim_too_large(self):
-        assert_raises(NotImplementedError, tools.detrend, np.ones((3, 3, 3)))
+        with pytest.raises(NotImplementedError):
+            tools.detrend(np.ones((3, 3, 3)))
 
 
 @pytest.mark.not_vetted
@@ -555,20 +556,15 @@ class TestAddTrend(object):
         assert_equal(expected, appended)
 
     def test_duplicate_const(self):
-        assert_raises(ValueError,
-                      tools.add_trend, x=self.c, trend='c',
-                      has_constant='raise')
-        assert_raises(ValueError,
-                      tools.add_trend, x=self.c, trend='ct',
-                      has_constant='raise')
+        # TODO: parametrize?
         df = pd.DataFrame(self.c)
-        assert_raises(ValueError,
-                      tools.add_trend, x=df, trend='c', has_constant='raise')
-        assert_raises(ValueError,
-                      tools.add_trend, x=df, trend='ct', has_constant='raise')
+        for trend in ['c', 'ct']:
+            for data in [self.c, df]:
+                with pytest.raises(ValueError):
+                    tools.add_trend(x=data, trend=trend, has_constant='raise')
 
         skipped = tools.add_trend(self.c, trend='c')
-        assert_equal(skipped, self.c[:,None])
+        assert_equal(skipped, self.c[:, None])
 
         skipped_const = tools.add_trend(self.c, trend='ct', has_constant='skip')
         expected = np.vstack((self.c, self.t)).T
@@ -620,8 +616,8 @@ class TestAddTrend(object):
                      base)
 
     def test_unknown_trend(self):
-        assert_raises(ValueError, tools.add_trend,
-                      x=self.arr_1d, trend='unknown')
+        with pytest.raises(ValueError):
+            tools.add_trend(x=self.arr_1d, trend='unknown')
 
 
 @pytest.mark.not_vetted
@@ -729,8 +725,10 @@ class TestLagmat2DS(object):
 
     def test_3d_error(self):
         data = np.array(2)
-        assert_raises(TypeError, tools.lagmat2ds, data, 5)
+        with pytest.raises(TypeError):
+            tools.lagmat2ds(data, 5)
 
-        data = np.zeros((100,2,2))
-        assert_raises(TypeError, tools.lagmat2ds, data, 5)
+        data = np.zeros((100, 2, 2))
+        with pytest.raises(TypeError):
+            tools.lagmat2ds(data, 5)
 

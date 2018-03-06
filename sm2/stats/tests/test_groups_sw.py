@@ -10,7 +10,7 @@ Author: Josef Perktold
 import pytest
 
 import numpy as np
-from numpy.testing import assert_equal, assert_raises
+from numpy.testing import assert_equal
 
 import sm2.stats.sandwich_covariance as sw
 from sm2.tools.grouputils import GroupSorted
@@ -31,9 +31,8 @@ class CheckPanelLagMixin(object):
             assert_equal(y0, ylag + lag)
 
     def test_raises(self):
-        mlag = self.mlag
-        assert_raises(ValueError, sw.lagged_groups, self.x, mlag,
-                      self.g.groupidx)
+        with pytest.raises(ValueError):
+            sw.lagged_groups(self.x, self.mlag, self.g.groupidx)
 
 
 @pytest.mark.not_vetted

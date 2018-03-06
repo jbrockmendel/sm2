@@ -13,27 +13,42 @@ from sm2.regression.linear_model import GLSAR
 from sm2.tools.tools import add_constant
 from sm2.datasets import macrodata
 
+from .results.macro_gr_corc_stata import results
+
 
 @pytest.mark.not_vetted
 class CheckStataResultsMixin(object):
     def test_params_table(self):
-        res, results = self.res, self.results
-        assert_almost_equal(res.params, results.params, 3)
-        assert_almost_equal(res.bse, results.bse, 3)
+        res = self.res
+        assert_almost_equal(res.params,
+                            results.params,
+                            3)
+        assert_almost_equal(res.bse,
+                            results.bse,
+                            3)
         #assert_almost_equal(res.tvalues, results.tvalues, 3) 0.0003
-        assert_allclose(res.tvalues, results.tvalues, atol=0, rtol=0.004)
-        assert_allclose(res.pvalues, results.pvalues, atol=1e-7, rtol=0.004)
+        assert_allclose(res.tvalues,
+                        results.tvalues,
+                        atol=0, rtol=0.004)
+        assert_allclose(res.pvalues,
+                        results.pvalues,
+                        atol=1e-7, rtol=0.004)
 
 
 @pytest.mark.not_vetted
 class CheckStataResultsPMixin(CheckStataResultsMixin):
     def test_predicted(self):
-        res, results = self.res, self.results
-        assert_allclose(res.fittedvalues, results.fittedvalues, rtol=0.002)
-        predicted = res.predict(res.model.exog) #should be equal
-        assert_allclose(predicted, results.fittedvalues, rtol=0.0016)
+        res = self.res
+        assert_allclose(res.fittedvalues,
+                        results.fittedvalues,
+                        rtol=0.002)
+        predicted = res.predict(res.model.exog)  # should be equal
+        assert_allclose(predicted,
+                        results.fittedvalues,
+                        rtol=0.0016)
         # not yet
-        #assert_almost_equal(res.fittedvalues_se, results.fittedvalues_se, 4)
+        #assert_almost_equal(res.fittedvalues_se,
+        #                    results.fittedvalues_se, 4)
 
 
 @pytest.mark.not_vetted
@@ -48,15 +63,12 @@ class TestGLSARCorc(CheckStataResultsPMixin):
         mod1 = GLSAR(g_inv, exogg, 1)
         cls.res = mod1.iterative_fit(5)
 
-        from .results.macro_gr_corc_stata import results
-        cls.results = results
-
     def test_rho(self):
         assert_almost_equal(self.res.model.rho,
-                            self.results.rho,
+                            results.rho,
                             3)
         assert_almost_equal(self.res.llf,
-                            self.results.ll,
+                            results.ll,
                             4)
 
     '''

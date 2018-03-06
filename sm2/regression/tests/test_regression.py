@@ -6,7 +6,6 @@ import warnings
 import os
 import re
 
-from six import PY3
 import pytest
 import pandas as pd
 import numpy as np
@@ -21,8 +20,11 @@ from sm2.regression.linear_model import OLS, WLS, GLS, yule_walker
 from sm2.datasets import longley
 from sm2 import datasets
 
-if PY3:
-    long = int
+from . import glmnet_r_results
+
+cur_dir = os.path.dirname(os.path.abspath(__file__))
+lasso_path = os.path.join(cur_dir, "results", "lasso_data.csv")
+lasso_data = np.loadtxt(lasso_path, delimiter=",")
 
 DECIMAL_4 = 4
 DECIMAL_3 = 3
@@ -94,10 +96,8 @@ class CheckRegressionResults(object):
                             self.decimal_rsquared_adj)
 
     def test_degrees(self):
-        assert_equal(self.res1.model.df_model,
-                     self.res2.df_model)
-        assert_equal(self.res1.model.df_resid,
-                     self.res2.df_resid)
+        assert self.res1.model.df_model == self.res2.df_model
+        assert self.res1.model.df_resid == self.res2.df_resid
 
     decimal_ess = DECIMAL_4
     def test_ess(self):
@@ -266,8 +266,8 @@ class TestOLS(CheckRegressionResults):
         data.exog = add_constant(data.exog, prepend=False)
         data.endog[[3, 7, 14]] = np.nan
         mod = OLS(data.endog, data.exog, missing='drop')
-        assert_equal(mod.endog.shape[0], 13)
-        assert_equal(mod.exog.shape[0], 13)
+        assert mod.endog.shape[0] == 13
+        assert mod.exog.shape[0] == 13
 
     def test_rsquared_adj_overfit(self):
         # Test that if df_resid = 0, rsquared_adj = 0.
@@ -333,16 +333,20 @@ class TestFtest(object):
         cls.Ftest = cls.res1.f_test(R)
 
     def test_F(self):
-        assert_almost_equal(self.Ftest.fvalue, self.res1.fvalue, DECIMAL_4)
+        assert_almost_equal(self.Ftest.fvalue,
+                            self.res1.fvalue,
+                            DECIMAL_4)
 
     def test_p(self):
-        assert_almost_equal(self.Ftest.pvalue, self.res1.f_pvalue, DECIMAL_4)
+        assert_almost_equal(self.Ftest.pvalue,
+                            self.res1.f_pvalue,
+                            DECIMAL_4)
 
     def test_Df_denom(self):
-        assert_equal(self.Ftest.df_denom, self.res1.model.df_resid)
+        assert self.Ftest.df_denom == self.res1.model.df_resid
 
     def test_Df_num(self):
-        assert_equal(self.Ftest.df_num, 6)
+        assert self.Ftest.df_num == 6
 
 
 @pytest.mark.not_vetted
@@ -379,10 +383,10 @@ class TestFTest2(object):
                             DECIMAL_4)
 
     def test_df_denom(self):
-        assert_equal(self.Ftest1.df_denom, 9)
+        assert self.Ftest1.df_denom == 9
 
     def test_df_num(self):
-        assert_equal(self.Ftest1.df_num, 2)
+        assert self.Ftest1.df_num == 2
 
 
 @pytest.mark.not_vetted
@@ -411,10 +415,10 @@ class TestFtestQ(object):
         assert_almost_equal(self.Ftest1.pvalue, 6.229e-07, 10)
 
     def test_df_denom(self):
-        assert_equal(self.Ftest1.df_denom, 9)
+        assert self.Ftest1.df_denom == 9
 
     def test_df_num(self):
-        assert_equal(self.Ftest1.df_num, 5)
+        assert self.Ftest1.df_num == 5
 
 
 @pytest.mark.not_vetted
@@ -484,7 +488,7 @@ class TestTtest2(object):
                             DECIMAL_4)
 
     def test_df_denom(self):
-        assert_equal(self.Ttest1.df_denom, 9)
+        assert self.Ttest1.df_denom == 9
 
     def test_effect(self):
         assert_almost_equal(self.Ttest1.effect, -1829.2025687186533, DECIMAL_4)
@@ -551,9 +555,9 @@ class TestGLS(object):
         endog = self.endog.copy()  # copy or changes endog for other methods
         endog[[4, 7, 14]] = np.nan
         mod = GLS(endog, self.exog, sigma=self.sigma, missing='drop')
-        assert_equal(mod.endog.shape[0], 13)
-        assert_equal(mod.exog.shape[0], 13)
-        assert_equal(mod.sigma.shape, (13, 13))
+        assert mod.endog.shape[0] == 13
+        assert mod.exog.shape[0] == 13
+        assert mod.sigma.shape == (13, 13)
 
 
 @pytest.mark.not_vetted
@@ -762,7 +766,7 @@ class TestNonFit(object):
 
     def test_df_resid(self):
         df_resid = self.endog.shape[0] - self.exog.shape[1]
-        assert_equal(self.ols_model.df_resid, long(9))
+        assert self.ols_model.df_resid == 9
 
 
 @pytest.mark.not_vetted
@@ -870,9 +874,9 @@ def test_wls_missing():
     endog[[10, 25]] = np.nan
     mod = WLS(data.endog, data.exog, weights=1 / data.exog[:, 2],
               missing='drop')
-    assert_equal(mod.endog.shape[0], 70)
-    assert_equal(mod.exog.shape[0], 70)
-    assert_equal(mod.weights.shape[0], 70)
+    assert mod.endog.shape[0] == 70
+    assert mod.exog.shape[0] == 70
+    assert mod.weights.shape[0] == 70
 
 
 @pytest.mark.not_vetted
@@ -1042,7 +1046,7 @@ def test_706():
     x = pd.Series(np.ones(10))
     res = OLS(y, x).fit()
     conf_int = res.conf_int()
-    np.testing.assert_equal(conf_int.shape, (1, 2))
+    assert conf_int.shape == (1, 2) 
     assert isinstance(conf_int, pd.DataFrame)
 
 
@@ -1110,60 +1114,52 @@ class TestRegularizedFit(object):
     # Make sure there are no problems when no variables are selected.
     @pytest.mark.not_vetted
     def test_empty_model(self):
-
         np.random.seed(742)
         n = 100
         endog = np.random.normal(size=n)
         exog = np.random.normal(size=(n, 3))
 
-        for cls in OLS, WLS, GLS:
+        for cls in [OLS, WLS, GLS]:
             model = cls(endog, exog)
             result = model.fit_regularized(alpha=1000)
             assert_equal(result.params, 0.)
 
     @pytest.mark.not_vetted
-    def test_regularized(self):
-        from . import glmnet_r_results
+    @pytest.mark.parametrize('attr', [x for x in dir(glmnet_r_results)
+                                      if x.startswith("rslt_")])
+    def test_regularized(self, attr):
+        vec = getattr(glmnet_r_results, attr)
 
-        cur_dir = os.path.dirname(os.path.abspath(__file__))
-        data = np.loadtxt(os.path.join(cur_dir, "results", "lasso_data.csv"),
-                          delimiter=",")
+        n = vec[0]
+        p = vec[1]
+        L1_wt = float(vec[2])
+        lam = float(vec[3])
+        params = vec[4:].astype(np.float64)
 
-        tests = [x for x in dir(glmnet_r_results) if x.startswith("rslt_")]
+        endog = lasso_data[0:int(n), 0]
+        exog = lasso_data[0:int(n), 1:(int(p) + 1)]
 
-        for test in tests:
+        endog = endog - endog.mean()
+        endog /= endog.std(ddof=1)
+        exog = exog - exog.mean(0)
+        exog /= exog.std(0, ddof=1)
 
-            vec = getattr(glmnet_r_results, test)
+        # TOOD: parametrize another level?
+        for cls in [OLS, WLS, GLS]:
+            mod = cls(endog, exog)
+            rslt = mod.fit_regularized(L1_wt=L1_wt, alpha=lam)
+            assert_almost_equal(rslt.params, params, decimal=3)
 
-            n = vec[0]
-            p = vec[1]
-            L1_wt = float(vec[2])
-            lam = float(vec[3])
-            params = vec[4:].astype(np.float64)
+            # TODO: mark/disable smoke tests
+            # Smoke test for summary
+            rslt.summary()
 
-            endog = data[0:int(n), 0]
-            exog = data[0:int(n), 1:(int(p)+1)]
-
-            endog = endog - endog.mean()
-            endog /= endog.std(ddof=1)
-            exog = exog - exog.mean(0)
-            exog /= exog.std(0, ddof=1)
-
-            for cls in OLS, WLS, GLS:
-                mod = cls(endog, exog)
-                rslt = mod.fit_regularized(L1_wt=L1_wt, alpha=lam)
-                assert_almost_equal(rslt.params, params, decimal=3)
-
-                # Smoke test for summary
-                rslt.summary()
-
-                # Smoke test for profile likeihood
-                mod.fit_regularized(L1_wt=L1_wt, alpha=lam,
-                                    profile_scale=True)
+            # Smoke test for profile likeihood
+            mod.fit_regularized(L1_wt=L1_wt, alpha=lam,
+                                profile_scale=True)
 
     @pytest.mark.not_vetted
     def test_regularized_weights(self):
-
         np.random.seed(1432)
         exog1 = np.random.normal(size=(100, 3))
         endog1 = exog1[:, 0] + exog1[:, 1] + np.random.normal(size=100)
@@ -1178,10 +1174,11 @@ class TestRegularizedFit(object):
         endog_b = np.concatenate((endog1, endog2))
         wgts = np.ones(200)
         wgts[0:100] = 2
-        sigma = np.diag(1/wgts)
+        sigma = np.diag(1 / wgts)
 
-        for L1_wt in 0, 0.5, 1:
-            for alpha in 0, 1:
+        # TODO: parametrize?
+        for L1_wt in [0, 0.5, 1]:
+            for alpha in [0, 1]:
                 mod1 = OLS(endog_a, exog_a)
                 rslt1 = mod1.fit_regularized(L1_wt=L1_wt, alpha=alpha)
 
@@ -1200,20 +1197,18 @@ def test_formula_missing_cat():
     # GH#805
     dta = datasets.grunfeld.load_pandas().data
     dta.loc[dta.index[0], 'firm'] = np.nan
+    formula = 'value ~ invest + capital + firm + year'
 
-    mod = OLS.from_formula(formula='value ~ invest + capital + firm + year',
-              data=dta.dropna())
+    mod = OLS.from_formula(formula=formula, data=dta.dropna())
     res = mod.fit()
 
-    mod2 = OLS.from_formula(formula='value ~ invest + capital + firm + year',
-               data=dta)
+    mod2 = OLS.from_formula(formula=formula, data=dta)
     res2 = mod2.fit()
 
     assert_almost_equal(res.params.values, res2.params.values)
 
     with pytest.raises(PatsyError):
-        OLS.from_formula('value ~ invest + capital + firm + year',
-                         data=dta, missing='raise')
+        OLS.from_formula(formula, data=dta, missing='raise')
 
 
 @pytest.mark.not_vetted
