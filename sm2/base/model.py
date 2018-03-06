@@ -335,17 +335,16 @@ class LikelihoodModel(Model):
         kwargs : keywords
             All kwargs are passed to the chosen solver with one exception. The
             following keyword controls what happens after the fit::
-
-                warn_convergence : bool, optional
-                    If True, checks the model for the converged flag. If the
-                    converged flag is False, a ConvergenceWarning is issued.
+        warn_convergence : bool, optional
+            If True, checks the model for the converged flag. If the
+            converged flag is False, a ConvergenceWarning is issued.
 
         Notes
         -----
         The 'basinhopping' solver ignores `maxiter`, `retall`, `full_output`
         explicit arguments.
 
-        Optional arguments for solvers (see returned Results.mle_settings)::
+        Optional arguments for solvers (see returned Results.mle_settings):
 
             'newton'
                 tol : float
@@ -1139,7 +1138,6 @@ class LikelihoodModelResults(wrap.SaveLoadMixin, Results):
         OR
 
         ``(scale) * (X.T X)^(-1)[column][:,column]`` if column is 1d
-
         """
         if (hasattr(self, 'mle_settings') and
                 self.mle_settings['optimizer'] in ['l1', 'l1_cvxopt_cp']):
@@ -1301,26 +1299,26 @@ class LikelihoodModelResults(wrap.SaveLoadMixin, Results):
             # switch to use_t false if undefined
             use_t = (hasattr(self, 'use_t') and self.use_t)
 
-        _t = _sd = None
+        tstat = _sd = None
 
         _effect = np.dot(r_matrix, self.params)
         # nan_dot multiplies with the convention nan * 0 = 0
 
+        cparams = self.cov_params(r_matrix=r_matrix, cov_p=cov_p)
         # Perform the test
         if num_ttests > 1:
-            _sd = np.sqrt(np.diag(self.cov_params(
-                r_matrix=r_matrix, cov_p=cov_p)))
+            _sd = np.sqrt(np.diag(cparams))
         else:
-            _sd = np.sqrt(self.cov_params(r_matrix=r_matrix, cov_p=cov_p))
-        _t = (_effect - q_matrix) * recipr(_sd)
+            _sd = np.sqrt(cparams)
+        tstat = (_effect - q_matrix) * recipr(_sd)
 
         df_resid = getattr(self, 'df_resid_inference', self.df_resid)
 
         if use_t:
-            return ContrastResults(effect=_effect, t=_t, sd=_sd,
+            return ContrastResults(effect=_effect, t=tstat, sd=_sd,
                                    df_denom=df_resid)
         else:
-            return ContrastResults(effect=_effect, statistic=_t, sd=_sd,
+            return ContrastResults(effect=_effect, statistic=tstat, sd=_sd,
                                    df_denom=df_resid,
                                    distribution='norm')
 
@@ -1574,7 +1572,6 @@ class LikelihoodModelResults(wrap.SaveLoadMixin, Results):
         C(Weight):C(Duration)   0.216694     0.897315972824              2
         Duration               11.187849     0.010752286833              3
         Weight                 30.263368  4.32586407145e-06              4
-
         """
         # lazy import
         from collections import defaultdict
@@ -1612,7 +1609,8 @@ class LikelihoodModelResults(wrap.SaveLoadMixin, Results):
 
             combined_constraints = []
             for cname in combine_terms:
-                combined_constraints.append((cname, np.vstack(combined[cname])))
+                combined_constraints.append((cname,
+                                             np.vstack(combined[cname])))
         else:
             # check by exog/params names if there is no formula info
             for col, name in enumerate(result.model.exog_names):
@@ -1630,14 +1628,16 @@ class LikelihoodModelResults(wrap.SaveLoadMixin, Results):
 
             combined_constraints = []
             for cname in combine_terms:
-                combined_constraints.append((cname, np.vstack(combined[cname])))
+                combined_constraints.append((cname,
+                                             np.vstack(combined[cname])))
 
         use_t = result.use_t
         distribution = ['chi2', 'F'][use_t]
 
         res_wald = []
         index = []
-        for name, constraint in constraints + combined_constraints + extra_constraints:
+        for pair in constraints + combined_constraints + extra_constraints:
+            name, constraint = pair
             wt = result.wald_test(constraint)
             row = [wt.statistic.item(), wt.pvalue, constraint.shape[0]]
             if use_t:
@@ -1645,7 +1645,7 @@ class LikelihoodModelResults(wrap.SaveLoadMixin, Results):
             res_wald.append(row)
             index.append(name)
 
-        # distribution nerutral names
+        # distribution neutral names
         col_names = ['statistic', 'pvalue', 'df_constraint']
         if use_t:
             col_names.append('df_denom')
@@ -1698,7 +1698,6 @@ class LikelihoodModelResults(wrap.SaveLoadMixin, Results):
                [      -1.5179487 ,       -0.54850503],
                [      -0.56251721,        0.460309  ],
                [     798.7875153 ,     2859.51541392]])
-
 
         >>> results.conf_int(cols=(2,3))
         array([[-0.1115811 ,  0.03994274],
