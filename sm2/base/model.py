@@ -15,7 +15,7 @@ from sm2.tools.sm_exceptions import ValueWarning, HessianInversionWarning
 
 from sm2.base.data import handle_data
 import sm2.base.wrapper as wrap
-from sm2.base.optimizer import Optimizer, _fit_doc_notes
+from sm2.base.optimizer import Optimizer, _fit_doc_notes, _fit_param_notes
 
 from sm2.stats.contrast import ContrastResults, WaldTestResults
 from sm2.formula import handle_formula_data
@@ -281,7 +281,8 @@ class LikelihoodModel(Model):
                                  "be specified")
         return start_params
 
-    @Substitution(doc_notes=_fit_doc_notes.strip())
+    @Substitution(doc_notes=_fit_doc_notes.strip(),
+                  fit_params=_fit_param_notes.strip())
     def fit(self, start_params=None, method='newton', maxiter=100,
             full_output=True, disp=True, fargs=(), callback=None, retall=False,
             skip_hessian=False, **kwargs):
@@ -290,45 +291,7 @@ class LikelihoodModel(Model):
 
         Parameters
         ----------
-        start_params : array-like, optional
-            Initial guess of the solution for the loglikelihood maximization.
-            The default is an array of zeros.
-        method : str, optional
-            The `method` determines which solver from `scipy.optimize`
-            is used, and it can be chosen from among the following strings:
-
-            - 'newton' for Newton-Raphson, 'nm' for Nelder-Mead
-            - 'bfgs' for Broyden-Fletcher-Goldfarb-Shanno (BFGS)
-            - 'lbfgs' for limited-memory BFGS with optional box constraints
-            - 'powell' for modified Powell's method
-            - 'cg' for conjugate gradient
-            - 'ncg' for Newton-conjugate gradient
-            - 'basinhopping' for global basin-hopping solver
-            - 'minimize' for generic wrapper of scipy minimize (BFGS by default)
-
-            The explicit arguments in `fit` are passed to the solver,
-            with the exception of the basin-hopping solver. Each
-            solver has several optional arguments that are not the same across
-            solvers. See the notes section below (or scipy.optimize) for the
-            available arguments and for the list of explicit arguments that the
-            basin-hopping solver supports.
-        maxiter : int, optional
-            The maximum number of iterations to perform.
-        full_output : bool, optional
-            Set to True to have all available output in the Results object's
-            mle_retvals attribute. The output is dependent on the solver.
-            See LikelihoodModelResults notes section for more information.
-        disp : bool, optional
-            Set to True to print convergence messages.
-        fargs : tuple, optional
-            Extra arguments passed to the likelihood function, i.e.,
-            loglike(x,*args)
-        callback : callable callback(xk), optional
-            Called after each iteration, as callback(xk), where xk is the
-            current parameter vector.
-        retall : bool, optional
-            Set to True to return list of solutions at each iteration.
-            Available in Results object's mle_retvals attribute.
+        %(fit_params)s
         skip_hessian : bool, optional
             If False (default), then the negative inverse hessian is calculated
             after the optimization. If True, then the hessian will not be
