@@ -65,6 +65,8 @@ def check_ftest_pvalues(results):
     summ = str(res.summary())
     assert_(string_use_t in summ)
 
+    '''
+    # summary2 not ported as of 2018-03-05
     # try except for models that don't have summary2
     try:
         summ2 = str(res.summary2())
@@ -72,6 +74,7 @@ def check_ftest_pvalues(results):
         summ2 = None
     if summ2 is not None:
         assert_(string_use_t in summ2)
+    '''
 
 
 # TODO The following is not (yet) guaranteed across models
