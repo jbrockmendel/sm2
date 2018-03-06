@@ -786,19 +786,21 @@ class TestHasConstantOLS(CheckHasConstant):
         cls.mod = OLS
         cls.y = cls.y_c
 
-
+'''
+# GLM not ported from upstream
 @pytest.mark.not_vetted
 class TestHasConstantGLM(CheckHasConstant):
     @staticmethod
     def mod(y, x):
         raise pytest.skip("GLM, families not implemented")
-        from statsmodels.genmod.generalized_linear_model import GLM
-        from statsmodels.genmod import families
-        return GLM(y, x, family=families.Binomial())
+        # from statsmodels.genmod.generalized_linear_model import GLM
+        # from statsmodels.genmod import families
+        # return GLM(y, x, family=families.Binomial())
 
     @classmethod
     def _initialize(cls):
         cls.y = cls.y_bin
+'''
 
 
 @pytest.mark.not_vetted

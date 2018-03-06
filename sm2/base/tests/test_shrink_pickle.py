@@ -51,7 +51,11 @@ class RemoveDataPickle(object):
         pred1 = results.predict(xf, **pred_kwds)
         # create some cached attributes
         results.summary()
-        res = results.summary2()  # SMOKE test also summary2
+
+        '''
+        # summary2 not ported as of 2018-03-05
+        # res = results.summary2()  # SMOKE test also summary2
+        '''
 
         # uncomment the following to check whether tests run (7 failures now)
         #np.testing.assert_equal(res, 1)

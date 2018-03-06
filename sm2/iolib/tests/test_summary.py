@@ -52,8 +52,11 @@ if __name__ == '__main__':
     r_summary = str(results.summary())
     print(r_summary)
 
+    '''
+    # summary2 not ported from upstream as of 2018-03-05
     #print(results.summary2(return_fmt='latex'))
     #print(results.summary2(return_fmt='csv'))
+    '''
 
     smry = olsres.summary()
     print(smry.as_csv())

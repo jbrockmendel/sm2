@@ -3,7 +3,6 @@
 Created on Sun Apr 20 17:12:53 2014
 
 author: Josef Perktold
-
 """
 import pytest
 import numpy as np
@@ -13,12 +12,21 @@ from sm2.tools.tools import add_constant
 from sm2.regression.linear_model import OLS, WLS
 from sm2.regression._prediction import get_prediction
 
+'''
+# GLM not ported from upstream
+# from statsmodels.genmod.generalized_linear_model import GLM
+# from statsmodels.genmod._prediction import params_transform_univariate
+# from statsmodels.genmod.families import links
+'''
 
+
+'''
+# wls_prediction_std not ported from upstream
+# from statsmodels.sandbox.regression.predstd import wls_prediction_std
 @pytest.mark.not_vetted
 def test_predict_se():
     # this test doesn't use reference values
-    # checks conistency across options, and compares to direct calculation
-    from statsmodels.sandbox.regression.predstd import wls_prediction_std
+    # checks consistency across options, and compares to direct calculation
 
     # generate dataset
     nsample = 50
@@ -115,7 +123,7 @@ def test_predict_se():
     for wv in np.linspace(0.5, 3, 5):
         sew = wls_prediction_std(res3, x2[-3:, :], weights=1. / wv)[0]**2
         assert_allclose(sew, sew1 + res3.scale * (wv - 1))
-
+'''
 
 @pytest.mark.not_vetted
 class TestWLSPrediction(object):
@@ -141,9 +149,9 @@ class TestWLSPrediction(object):
         mod_wls = WLS(y, X, weights=1./w)
         cls.res_wls = mod_wls.fit()
 
+    '''
+    # wls_prediction_std not ported from upstream
     def test_ci(self):
-        from statsmodels.sandbox.regression.predstd import wls_prediction_std
-
         res_wls = self.res_wls
         prstd, iv_l, iv_u = wls_prediction_std(res_wls)
         pred_res = get_prediction(res_wls)
@@ -155,7 +163,7 @@ class TestWLSPrediction(object):
         sf = pred_res.summary_frame()
 
         col_names = ['mean', 'mean_se', 'mean_ci_lower', 'mean_ci_upper',
-                      'obs_ci_lower', 'obs_ci_upper']
+                     'obs_ci_lower', 'obs_ci_upper']
         assert_equal(sf.columns.tolist(), col_names)
 
         pred_res2 = res_wls.get_prediction()
@@ -166,11 +174,12 @@ class TestWLSPrediction(object):
 
         sf2 = pred_res2.summary_frame()
         assert_equal(sf2.columns.tolist(), col_names)
+    '''
 
+    '''
+    # GLM not ported from upstream
     def test_glm(self):
         # prelimnimary, getting started with basic test for GLM.get_prediction
-        from statsmodels.genmod.generalized_linear_model import GLM
-
         res_wls = self.res_wls
         mod_wls = res_wls.model
         y, X, wi = mod_wls.endog, mod_wls.exog, mod_wls.weights
@@ -203,7 +212,6 @@ class TestWLSPrediction(object):
 
         # function for parameter transformation
         # should be separate test method
-        from statsmodels.genmod._prediction import params_transform_univariate
         rates = params_transform_univariate(res_glm.params,
                                             res_glm.cov_params())
 
@@ -211,8 +219,6 @@ class TestWLSPrediction(object):
                                   res_glm.bse * np.exp(res_glm.params),
                                   np.exp(res_glm.conf_int())))
         assert_allclose(rates.summary_frame().values, rates2, rtol=1e-13)
-
-        from statsmodels.genmod.families import links
 
         # with identity transform
         pt = params_transform_univariate(res_glm.params, res_glm.cov_params(),
@@ -227,3 +233,4 @@ class TestWLSPrediction(object):
         # prediction with exog and no weights does not error
         res_glm = mod_glm.fit()
         pred_glm = res_glm.get_prediction(X)
+    '''

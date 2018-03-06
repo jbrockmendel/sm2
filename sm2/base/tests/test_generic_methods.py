@@ -95,6 +95,8 @@ class CheckGenericMixin(object):
         summ = str(res.summary())
         assert string_use_t in summ
 
+        '''
+        # summary2 not ported as of 2017-03-05
         # try except for models that don't have summary2
         try:
             summ2 = str(res.summary2())
@@ -102,6 +104,7 @@ class CheckGenericMixin(object):
             summ2 = None
         if summ2 is not None:
             assert string_use_t in summ2
+        '''
 
     def test_fitted(self):
         # ignore wrapper for isinstance check
@@ -110,8 +113,9 @@ class CheckGenericMixin(object):
             results = self.results._results
         else:
             results = self.results
-        from statsmodels.genmod.generalized_linear_model import GLMResults
-        if isinstance(results, (GLMResults, DiscreteResults)):
+        if (isinstance(results, DiscreteResults) or
+                results.__class__.__name__ == 'GLMResults'):
+            # __name__ check is a kludge to avoid needing import from upstream
             raise pytest.skip('Infeasible for {0}'.format(type(results)))
 
         res = self.results
@@ -132,8 +136,9 @@ class CheckGenericMixin(object):
         else:
             results = self.results
 
-        from statsmodels.genmod.generalized_linear_model import GLMResults
-        if isinstance(results, (GLMResults, DiscreteResults)):
+        if (isinstance(results, DiscreteResults) or
+                results.__class__.__name__ == 'GLMResults'):
+            # __name__ check is a kludge to avoid needing import from upstream
             # SMOKE test only  TODO
             res.predict(p_exog)
             res.predict(p_exog.tolist())

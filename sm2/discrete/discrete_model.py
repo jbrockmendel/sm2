@@ -384,10 +384,10 @@ class DiscreteModel(base.LikelihoodModel):
         # Parameters to pass to super(...).fit()
         # For the 'extra' parameters, pass all that are available,
         # even if we know (at this point) we will only use one.
-        from statsmodels.base.l1_slsqp import fit_l1_slsqp
+        from sm2.base.l1_slsqp import fit_l1_slsqp
         extra_fit_funcs = {'l1': fit_l1_slsqp}
         if have_cvxopt and method == 'l1_cvxopt_cp':
-            from statsmodels.base.l1_cvxopt import fit_l1_cvxopt_cp
+            from sm2.base.l1_cvxopt import fit_l1_cvxopt_cp
             extra_fit_funcs['l1_cvxopt_cp'] = fit_l1_cvxopt_cp
         elif method.lower() == 'l1_cvxopt_cp':
             message = ("Attempt to use l1_cvxopt_cp failed since cvxopt "
@@ -1110,7 +1110,7 @@ class Poisson(CountModel):
         #       patched version
         # TODO: decide whether to move the imports
         from patsy import DesignInfo
-        from statsmodels.base._constraints import fit_constrained
+        from sm2.base._constraints import fit_constrained
 
         # same pattern as in base.LikelihoodModel.t_test
         lc = DesignInfo(self.exog_names).linear_constraint(constraints)
@@ -3531,42 +3531,7 @@ class DiscreteResults(base.LikelihoodModelResults):
 
     def summary2(self, yname=None, xname=None, title=None, alpha=.05,
                  float_format="%.4f"):
-        """Experimental function to summarize regression results
-
-        Parameters
-        -----------
-        xname : List of strings of length equal to the number of parameters
-            Names of the independent variables (optional)
-        yname : string
-            Name of the dependent variable (optional)
-        title : string, optional
-            Title for the top table. If not None, then this replaces the
-            default title
-        alpha : float
-            significance level for the confidence intervals
-        float_format: string
-            print format for floats in parameters summary
-
-        Returns
-        -------
-        smry : Summary instance
-            this holds the summary tables and text, which can be printed or
-            converted to various output formats.
-
-        See Also
-        --------
-        statsmodels.iolib.summary.Summary : class to hold summary
-            results
-        """
-        from statsmodels.iolib import summary2
-        smry = summary2.Summary()
-        smry.add_base(results=self, alpha=alpha, float_format=float_format,
-                      xname=xname, yname=yname, title=title)
-
-        if hasattr(self, 'constraints'):
-            smry.add_text('Model has been estimated subject to linear '
-                          'equality constraints.')
-        return smry
+        raise NotImplementedError("summary2 not ported from upstream")
 
 
 class CountResults(DiscreteResults):
@@ -3999,47 +3964,7 @@ class MultinomialResults(DiscreteResults):
                 self.predict().argmax(1)).astype(float)
 
     def summary2(self, alpha=0.05, float_format="%.4f"):
-        """Experimental function to summarize regression results
-
-        Parameters
-        -----------
-        alpha : float
-            significance level for the confidence intervals
-        float_format: string
-            print format for floats in parameters summary
-
-        Returns
-        -------
-        smry : Summary instance
-            this holds the summary tables and text, which can be printed or
-            converted to various output formats.
-
-        See Also
-        --------
-        statsmodels.iolib.summary2.Summary : class to hold summary
-            results
-        """
-        from statsmodels.iolib import summary2
-        smry = summary2.Summary()
-        smry.add_dict(summary2.summary_model(self))
-        # One data frame per value of endog
-        eqn = self.params.shape[1]
-        confint = self.conf_int(alpha)
-        for i in range(eqn):
-            coefs = summary2.summary_params((self, self.params[:, i],
-                                             self.bse[:, i],
-                                             self.tvalues[:, i],
-                                             self.pvalues[:, i],
-                                             confint[i]),
-                                            alpha=alpha)
-            # Header must show value of endog
-            level_str = self.model.endog_names + ' = ' + str(i)
-            coefs[level_str] = coefs.index
-            coefs = coefs.iloc[:, [-1, 0, 1, 2, 3, 4, 5]]
-            smry.add_df(coefs, index=False, header=True,
-                        float_format=float_format)
-            smry.add_title(results=self)
-        return smry
+        raise NotImplementedError("summary2 not ported from upstream")
 
 
 class L1MultinomialResults(MultinomialResults):

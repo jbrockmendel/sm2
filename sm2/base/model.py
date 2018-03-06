@@ -727,7 +727,6 @@ class GenericLikelihoodModel(LikelihoodModel):
             A 1d weight vector used in the calculation of the Hessian.
             The hessian is obtained by `(exog.T * hessian_factor).dot(exog)`
         """
-
         raise NotImplementedError
 
     def fit(self, start_params=None, method='nm', maxiter=500, full_output=1,

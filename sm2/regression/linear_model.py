@@ -2439,141 +2439,21 @@ class RegressionResults(base.LikelihoodModelResults):
 
     def summary2(self, yname=None, xname=None, title=None, alpha=.05,
                  float_format="%.4f"):
-        """Experimental summary function to summarize the regression results
-
-        Parameters
-        -----------
-        xname : List of strings of length equal to the number of parameters
-            Names of the independent variables (optional)
-        yname : string
-            Name of the dependent variable (optional)
-        title : string, optional
-            Title for the top table. If not None, then this replaces the
-            default title
-        alpha : float
-            significance level for the confidence intervals
-        float_format: string
-            print format for floats in parameters summary
-
-        Returns
-        -------
-        smry : Summary instance
-            this holds the summary tables and text, which can be printed or
-            converted to various output formats.
-
-        See Also
-        --------
-        statsmodels.iolib.summary2.Summary : class to hold summary results
-        """
-        # Diagnostics
-        from sm2.stats.stattools import (jarque_bera, omni_normtest,
-                                         durbin_watson)
-
-        jb, jbpv, skew, kurtosis = jarque_bera(self.wresid)
-        omni, omnipv = omni_normtest(self.wresid)
-        dw = durbin_watson(self.wresid)
-        eigvals = self.eigenvals
-        condno = self.condition_number
-        eigvals = np.sort(eigvals)  # in increasing order
-        diagnostic = collections.OrderedDict([
-            ('Omnibus:', "%.3f" % omni),
-            ('Prob(Omnibus):', "%.3f" % omnipv),
-            ('Skew:', "%.3f" % skew),
-            ('Kurtosis:', "%.3f" % kurtosis),
-            ('Durbin-Watson:', "%.3f" % dw),
-            ('Jarque-Bera (JB):', "%.3f" % jb),
-            ('Prob(JB):', "%.3f" % jbpv),
-            ('Condition No.:', "%.0f" % condno)])
-
-        # Summary
-        from statsmodels.iolib import summary2
-        smry = summary2.Summary()
-        smry.add_base(results=self, alpha=alpha, float_format=float_format,
-                      xname=xname, yname=yname, title=title)
-        smry.add_dict(diagnostic)
-
-        # Warnings
-        if eigvals[-1] < 1e-10:
-            warn = "The smallest eigenvalue is %6.3g. This might indicate that\
-            there are strong multicollinearity problems or that the design\
-            matrix is singular." % eigvals[-1]
-            smry.add_text(warn)
-        if condno > 1000:
-            warn = "* The condition number is large (%.g). This might indicate \
-            strong multicollinearity or other numerical problems." % condno
-            smry.add_text(warn)
-
-        return smry
+        raise NotImplementedError("summary2 not ported from upstream")
 
 
 class OLSResults(RegressionResults):
     """
     Results class for for an OLS model.
 
-    Most of the methods and attributes are inherited from RegressionResults.
-    The special methods that are only available for OLS are:
-
-    - get_influence
-    - outlier_test
-    - el_test
-    - conf_int_el
-
-    See Also
-    --------
-    RegressionResults
+    As of 2018-03-05 none of the OLSResults-specific methods are ported
+    from upstream.
     """
-
     def get_influence(self):
-        """
-        get an instance of Influence with influence and outlier measures
-
-        Returns
-        -------
-        infl : Influence instance
-            the instance has methods to calculate the main influence and
-            outlier measures for the OLS regression
-
-        See also
-        --------
-        statsmodels.stats.outliers_influence.OLSInfluence
-        """
-        from statsmodels.stats.outliers_influence import OLSInfluence
-        return OLSInfluence(self)
+        raise NotImplementedError("get_influence not ported from upstream")
 
     def outlier_test(self, method='bonf', alpha=.05):
-        """
-        Test observations for outliers according to method
-
-        Parameters
-        ----------
-        method : str
-            - `bonferroni` : one-step correction
-            - `sidak` : one-step correction
-            - `holm-sidak` :
-            - `holm` :
-            - `simes-hochberg` :
-            - `hommel` :
-            - `fdr_bh` : Benjamini/Hochberg
-            - `fdr_by` : Benjamini/Yekutieli
-            See `statsmodels.stats.multitest.multipletests` for details.
-        alpha : float
-            familywise error rate
-
-        Returns
-        -------
-        table : ndarray or DataFrame
-            Returns either an ndarray or a DataFrame if labels is not None.
-            Will attempt to get labels from model_results if available. The
-            columns are the Studentized residuals, the unadjusted p-value,
-            and the corrected p-value according to method.
-
-        Notes
-        -----
-        The unadjusted p-value is stats.t.sf(abs(resid), df) where
-        df = df_resid - 1.
-        """
-        from statsmodels.stats.outliers_influence import outlier_test
-        return outlier_test(self, method, alpha)
+        raise NotImplementedError("get_influence not ported from upstream")
 
     def el_test(self, b0_vals, param_nums, return_weights=0,
                 ret_params=0, method='nm',
