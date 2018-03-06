@@ -15,7 +15,7 @@ from sm2.tools.sm_exceptions import ValueWarning, HessianInversionWarning
 
 from sm2.base.data import handle_data
 import sm2.base.wrapper as wrap
-from sm2.base.optimizer import Optimizer, _fit_doc_notes, _fit_param_notes
+from sm2.base.optimizer import Optimizer, _fit_doc_notes, _fit_doc_params
 
 from sm2.stats.contrast import ContrastResults, WaldTestResults
 from sm2.formula import handle_formula_data
@@ -282,7 +282,7 @@ class LikelihoodModel(Model):
         return start_params
 
     @Substitution(doc_notes=_fit_doc_notes.strip(),
-                  fit_params=_fit_param_notes.strip())
+                  fit_params=_fit_doc_params.strip())
     def fit(self, start_params=None, method='newton', maxiter=100,
             full_output=True, disp=True, fargs=(), callback=None, retall=False,
             skip_hessian=False, **kwargs):

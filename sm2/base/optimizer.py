@@ -16,7 +16,7 @@ def _check_method(method, methods):
         raise ValueError("Unknown fit method %s" % method)
 
 
-_fit_param_notes = """
+_fit_doc_params = """
         start_params : array-like, optional
             Initial guess of the solution for the loglikelihood maximization.
             The default is an array of zeros.
@@ -59,7 +59,7 @@ _fit_param_notes = """
 """
 
 
-_fit_doc_notes = """\
+_fit_doc_notes = """
         The 'basinhopping' solver ignores `maxiter`, `retall`, `full_output`
         explicit arguments.
 
@@ -168,7 +168,7 @@ _fit_doc_notes = """\
 
 class Optimizer(object):
     @Substitution(doc_notes=_fit_doc_notes.strip(),
-                  fit_params=_fit_param_notes.strip())
+                  fit_params=_fit_doc_params.strip())
     def _fit(self, objective, gradient, start_params, fargs, kwargs,
              hessian=None, method='newton', maxiter=100, full_output=True,
              disp=True, callback=None, retall=False):
