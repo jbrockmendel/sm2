@@ -25,8 +25,6 @@ import sm2.tools._testing as smt
 # from statsmodels.genmod import families
 # from statsmodels.genmod.families import links
 
-
-# get data and results as module global for now, TODO: move to class
 from .results import results_count_robust_cluster as results_st
 
 cur_dir = os.path.dirname(os.path.abspath(__file__))
@@ -269,6 +267,8 @@ class TestPoissonCluExposureGeneric(CheckCountRobustMixin):
         cls.corr_fact = np.sqrt(corr_fact)
 
 
+'''
+# GLM not ported from upstream
 @pytest.mark.not_vetted
 class TestGLMPoissonClu(CheckCountRobustMixin):
     res2 = results_st.results_poisson_clu
@@ -306,6 +306,7 @@ class TestGLMPoissonCluGeneric(CheckCountRobustMixin):
         cls.corr_fact = np.sqrt(corr_fact)
 
 
+# TODO: refactor xxxFit to full testing results
 @pytest.mark.not_vetted
 class TestGLMPoissonHC1Generic(CheckCountRobustMixin):
     res2 = results_st.results_poisson_hc1
@@ -325,7 +326,6 @@ class TestGLMPoissonHC1Generic(CheckCountRobustMixin):
         cls.corr_fact = np.sqrt(1. / corr_fact)
 
 
-# TODO: refactor xxxFit to full testing results
 @pytest.mark.not_vetted
 class TestGLMPoissonCluFit(CheckCountRobustMixin):
     res2 = results_st.results_poisson_clu
@@ -354,7 +354,6 @@ class TestGLMPoissonCluFit(CheckCountRobustMixin):
         # for bse we need sqrt of correction factor
         cls.corr_fact = np.sqrt(corr_fact)
 
-
 @pytest.mark.not_vetted
 class TestGLMPoissonHC1Fit(CheckCountRobustMixin):
     res2 = results_st.results_poisson_hc1
@@ -370,7 +369,7 @@ class TestGLMPoissonHC1Fit(CheckCountRobustMixin):
         corr_fact = (nobs) / float(nobs - 1.)
         # for bse we need sqrt of correction factor
         cls.corr_fact = np.sqrt(1. / corr_fact)
-
+'''
 
 @pytest.mark.not_vetted
 class TestNegbinClu(CheckCountRobustMixin):
@@ -472,11 +471,13 @@ class TestNegbinCluExposureFit(CheckCountRobustMixin):
 
         nobs, k_vars = mod.exog.shape
         k_params = len(cls.res1.params)
-        corr_fact = (nobs-1.) / float(nobs - k_params)
+        corr_fact = (nobs - 1.) / float(nobs - k_params)
         # for bse we need sqrt of correction factor
         cls.corr_fact = np.sqrt(corr_fact)
 
 
+'''
+# GLM not ported from upstream
 @pytest.mark.not_vetted
 class CheckDiscreteGLM(object):
     # compare GLM with other models, no verified reference results
@@ -702,3 +703,4 @@ class TestGLMGaussHACGroupsum(CheckDiscreteGLM):
     def test_kwd(self):
         # test corrected keyword name
         assert_allclose(self.res1b.bse, self.res1.bse, rtol=1e-12)
+'''

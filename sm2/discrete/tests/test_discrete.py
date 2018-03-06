@@ -24,7 +24,6 @@ from scipy import stats
 import pytest
 
 import sm2.datasets
-
 from sm2.tools.sm_exceptions import (PerfectSeparationError, MissingDataError,
                                      ConvergenceWarning)
 from sm2.tools.tools import add_constant
@@ -60,14 +59,13 @@ prob_path = os.path.join(cur_dir, "results", "predict_prob_poisson.csv")
 probs_res = np.loadtxt(prob_path, delimiter=",")
 
 DECIMAL_14 = 14
-DECIMAL_10 = 10
 DECIMAL_9 = 9
 DECIMAL_4 = 4
 DECIMAL_3 = 3
 DECIMAL_2 = 2
 DECIMAL_1 = 1
-DECIMAL_0 = 0
 
+# ------------------------------------------------------------------
 
 @pytest.mark.not_vetted
 class CheckModelResults(object):
@@ -169,6 +167,736 @@ class CheckModelResults(object):
 
 
 @pytest.mark.not_vetted
+class TestPoissonNewton(CheckModelResults):
+
+    @classmethod
+    def setup_class(cls):
+        data = sm2.datasets.randhie.load()
+        exog = add_constant(data.exog, prepend=False)
+        cls.res1 = Poisson(data.endog, exog).fit(method='newton', disp=0)
+        cls.res2 = RandHIE().poisson()
+
+    def test_margeff_overall(self):
+        me = self.res1.get_margeff()
+        assert_almost_equal(me.margeff,
+                            self.res2.margeff_nodummy_overall,
+                            DECIMAL_4)
+        assert_almost_equal(me.margeff_se,
+                            self.res2.margeff_nodummy_overall_se,
+                            DECIMAL_4)
+
+    def test_margeff_dummy_overall(self):
+        me = self.res1.get_margeff(dummy=True)
+        assert_almost_equal(me.margeff,
+                            self.res2.margeff_dummy_overall,
+                            DECIMAL_4)
+        assert_almost_equal(me.margeff_se,
+                            self.res2.margeff_dummy_overall_se,
+                            DECIMAL_4)
+
+    def test_resid(self):
+        assert_almost_equal(self.res1.resid, self.res2.resid, 2)
+
+    def test_predict_prob(self):
+        # just check the first 100 obs. vs R to save memory
+        probs = self.res1.predict_prob()[:100]
+        assert_almost_equal(probs, probs_res, 8)
+
+
+@pytest.mark.not_vetted
+class TestNegativeBinomialNB2Newton(CheckModelResults):
+
+    @classmethod
+    def setup_class(cls):
+        data = sm2.datasets.randhie.load()
+        exog = add_constant(data.exog, prepend=False)
+        mod = NegativeBinomial(data.endog, exog, 'nb2')
+        cls.res1 = mod.fit(method='newton', disp=0)
+        cls.res2 = RandHIE().negativebinomial_nb2_bfgs()
+
+    def test_jac(self):
+        pass
+
+    # NOTE: The bse is much closer precitions to stata
+    def test_bse(self):
+        assert_almost_equal(self.res1.bse,
+                            self.res2.bse,
+                            DECIMAL_3)
+
+    def test_params(self):
+        assert_almost_equal(self.res1.params,
+                            self.res2.params,
+                            DECIMAL_4)
+
+    def test_alpha(self):
+        self.res1.bse  # attaches alpha_std_err
+        assert_almost_equal(self.res1.lnalpha,
+                            self.res2.lnalpha,
+                            DECIMAL_4)
+        assert_almost_equal(self.res1.lnalpha_std_err,
+                            self.res2.lnalpha_std_err,
+                            DECIMAL_4)
+
+    def test_conf_int(self):
+        assert_almost_equal(self.res1.conf_int(),
+                            self.res2.conf_int,
+                            DECIMAL_3)
+
+    def test_zstat(self):  # Low precision because Z vs. t
+        assert_almost_equal(self.res1.pvalues[:-1],
+                            self.res2.pvalues,
+                            DECIMAL_2)
+
+    def test_fittedvalues(self):
+        assert_almost_equal(self.res1.fittedvalues[:10],
+                            self.res2.fittedvalues[:10],
+                            DECIMAL_3)
+
+    def test_predict(self):
+        assert_almost_equal(self.res1.predict()[:10],
+                            np.exp(self.res2.fittedvalues[:10]),
+                            DECIMAL_3)
+
+    def test_predict_xb(self):
+        assert_almost_equal(self.res1.predict(linear=True)[:10],
+                            self.res2.fittedvalues[:10],
+                            DECIMAL_3)
+
+    def test_jac(self):
+        pass
+
+
+@pytest.mark.not_vetted
+class TestNegativeBinomialNB1Newton(CheckModelResults):
+
+    @classmethod
+    def setup_class(cls):
+        data = sm2.datasets.randhie.load()
+        exog = add_constant(data.exog, prepend=False)
+        mod = NegativeBinomial(data.endog, exog, 'nb1')
+        cls.res1 = mod.fit(method="newton", maxiter=100, disp=0)
+        cls.res2 = RandHIE().negativebinomial_nb1_bfgs()
+
+    def test_zstat(self):
+        assert_almost_equal(self.res1.tvalues,
+                            self.res2.z,
+                            DECIMAL_1)
+
+    def test_lnalpha(self):
+        self.res1.bse  # attaches alpha_std_err
+        assert_almost_equal(self.res1.lnalpha,
+                            self.res2.lnalpha,
+                            3)
+        assert_almost_equal(self.res1.lnalpha_std_err,
+                            self.res2.lnalpha_std_err,
+                            DECIMAL_4)
+
+    def test_params(self):
+        assert_almost_equal(self.res1.params,
+                            self.res2.params,
+                            DECIMAL_4)
+
+    def test_conf_int(self):
+        # the bse for alpha is not high precision from the hessian
+        # approximation
+        assert_almost_equal(self.res1.conf_int(),
+                            self.res2.conf_int,
+                            DECIMAL_2)
+
+    def test_jac(self):
+        pass
+
+    def test_predict(self):
+        pass
+
+    def test_predict_xb(self):
+        pass
+
+
+@pytest.mark.not_vetted
+class TestNegativeBinomialNB2BFGS(CheckModelResults):
+
+    @classmethod
+    def setup_class(cls):
+        data = sm2.datasets.randhie.load()
+        exog = add_constant(data.exog, prepend=False)
+        mod = NegativeBinomial(data.endog, exog, 'nb2')
+        cls.res1 = mod.fit(method='bfgs', disp=0, maxiter=1000)
+        cls.res2 = RandHIE().negativebinomial_nb2_bfgs()
+
+    def test_jac(self):
+        pass
+
+    # NOTE: The bse is much closer precitions to stata
+    def test_bse(self):
+        assert_almost_equal(self.res1.bse,
+                            self.res2.bse,
+                            DECIMAL_3)
+
+    def test_params(self):
+        assert_almost_equal(self.res1.params,
+                            self.res2.params,
+                            DECIMAL_4)
+
+    def test_alpha(self):
+        self.res1.bse  # attaches alpha_std_err
+        assert_almost_equal(self.res1.lnalpha,
+                            self.res2.lnalpha,
+                            DECIMAL_4)
+        assert_almost_equal(self.res1.lnalpha_std_err,
+                            self.res2.lnalpha_std_err,
+                            DECIMAL_4)
+
+    def test_conf_int(self):
+        assert_almost_equal(self.res1.conf_int(),
+                            self.res2.conf_int,
+                            DECIMAL_3)
+
+    def test_zstat(self):  # Low precision because Z vs. t
+        assert_almost_equal(self.res1.pvalues[:-1],
+                            self.res2.pvalues,
+                            DECIMAL_2)
+
+    def test_fittedvalues(self):
+        assert_almost_equal(self.res1.fittedvalues[:10],
+                            self.res2.fittedvalues[:10],
+                            DECIMAL_3)
+
+    def test_predict(self):
+        assert_almost_equal(self.res1.predict()[:10],
+                            np.exp(self.res2.fittedvalues[:10]),
+                            DECIMAL_3)
+
+    def test_predict_xb(self):
+        assert_almost_equal(self.res1.predict(linear=True)[:10],
+                            self.res2.fittedvalues[:10],
+                            DECIMAL_3)
+
+    def test_jac(self):
+        pass
+
+
+@pytest.mark.not_vetted
+class TestNegativeBinomialNB1BFGS(CheckModelResults):
+
+    @classmethod
+    def setup_class(cls):
+        data = sm2.datasets.randhie.load()
+        exog = add_constant(data.exog, prepend=False)
+        mod = NegativeBinomial(data.endog, exog, 'nb1')
+        cls.res1 = mod.fit(method="bfgs", maxiter=100, disp=0)
+        cls.res2 = RandHIE().negativebinomial_nb1_bfgs()
+
+    def test_zstat(self):
+        assert_almost_equal(self.res1.tvalues,
+                            self.res2.z,
+                            DECIMAL_1)
+
+    def test_lnalpha(self):
+        self.res1.bse # attaches alpha_std_err
+        assert_almost_equal(self.res1.lnalpha,
+                            self.res2.lnalpha,
+                            3)
+        assert_almost_equal(self.res1.lnalpha_std_err,
+                            self.res2.lnalpha_std_err,
+                            DECIMAL_4)
+
+    def test_params(self):
+        assert_almost_equal(self.res1.params,
+                            self.res2.params,
+                            DECIMAL_4)
+
+    def test_conf_int(self):
+        # the bse for alpha is not high precision from the hessian
+        # approximation
+        assert_almost_equal(self.res1.conf_int(),
+                            self.res2.conf_int,
+                            DECIMAL_2)
+
+    def test_jac(self):
+        pass
+
+    def test_predict(self):
+        pass
+
+    def test_predict_xb(self):
+        pass
+
+
+@pytest.mark.not_vetted
+class TestNegativeBinomialGeometricBFGS(CheckModelResults):
+    # Cannot find another implementation of the geometric to cross-check
+    # results we only test fitted values because geometric has fewer parameters
+    # than nb1 and nb2
+    # and we want to make sure that predict() np.dot(exog, params) works
+
+    @classmethod
+    def setup_class(cls):
+        data = sm2.datasets.randhie.load()
+        exog = add_constant(data.exog, prepend=False)
+        mod = NegativeBinomial(data.endog, exog, 'geometric')
+        cls.res1 = mod.fit(method='bfgs', disp=0)
+        cls.res2 = RandHIE().negativebinomial_geometric_bfgs()
+
+    # the following are regression tests, could be inherited instead
+    def test_aic(self):
+        assert_almost_equal(self.res1.aic,
+                            self.res2.aic,
+                            DECIMAL_3)
+
+    def test_bic(self):
+        assert_almost_equal(self.res1.bic,
+                            self.res2.bic,
+                            DECIMAL_3)
+
+    def test_conf_int(self):
+        assert_almost_equal(self.res1.conf_int(),
+                            self.res2.conf_int,
+                            DECIMAL_3)
+
+    def test_fittedvalues(self):
+        assert_almost_equal(self.res1.fittedvalues[:10],
+                            self.res2.fittedvalues[:10],
+                            DECIMAL_3)
+
+    def test_jac(self):
+        pass
+
+    def test_predict(self):
+        assert_almost_equal(self.res1.predict()[:10],
+                            np.exp(self.res2.fittedvalues[:10]),
+                            DECIMAL_3)
+
+    def test_params(self):
+        assert_almost_equal(self.res1.params,
+                            self.res2.params,
+                            DECIMAL_3)
+
+    def test_predict_xb(self):
+        assert_almost_equal(self.res1.predict(linear=True)[:10],
+                            self.res2.fittedvalues[:10],
+                            DECIMAL_3)
+
+    def test_zstat(self):  # Low precision because Z vs. t
+        assert_almost_equal(self.res1.tvalues,
+                            self.res2.z,
+                            DECIMAL_1)
+
+    def test_jac(self):
+        pass
+
+    def test_llf(self):
+        assert_almost_equal(self.res1.llf, self.res2.llf, DECIMAL_1)
+
+    def test_llr(self):
+        assert_almost_equal(self.res1.llr, self.res2.llr, DECIMAL_2)
+
+    def test_bse(self):
+        assert_almost_equal(self.res1.bse, self.res2.bse, DECIMAL_3)
+
+
+@pytest.mark.not_vetted
+class TestNegativeBinomialPNB2Newton(CheckModelResults):
+
+    @classmethod
+    def setup_class(cls):
+        data = sm2.datasets.randhie.load()
+        exog = add_constant(data.exog, prepend=False)
+        mod = NegativeBinomialP(data.endog, exog, p=2)
+        cls.res1 = mod.fit(method='newton', disp=0)
+        cls.res2 = RandHIE().negativebinomial_nb2_bfgs()
+
+    # NOTE: The bse is much closer precitions to stata
+    def test_bse(self):
+        assert_allclose(self.res1.bse,
+                        self.res2.bse,
+                        atol=1e-3, rtol=1e-3)
+
+    def test_params(self):
+        assert_allclose(self.res1.params,
+                        self.res2.params,
+                        atol=1e-7)
+
+    def test_alpha(self):
+        self.res1.bse  # attaches alpha_std_err
+        assert_allclose(self.res1.lnalpha,
+                        self.res2.lnalpha)
+        assert_allclose(self.res1.lnalpha_std_err,
+                        self.res2.lnalpha_std_err,
+                        atol=1e-7)
+
+    def test_conf_int(self):
+        assert_allclose(self.res1.conf_int(),
+                        self.res2.conf_int,
+                        atol=1e-3, rtol=1e-3)
+
+    def test_zstat(self):  # Low precision because Z vs. t
+        assert_allclose(self.res1.pvalues[:-1],
+                        self.res2.pvalues,
+                        atol=5e-3, rtol=5e-3)
+
+    def test_fittedvalues(self):
+        assert_allclose(self.res1.fittedvalues[:10],
+                        self.res2.fittedvalues[:10])
+
+    def test_predict(self):
+        assert_allclose(self.res1.predict()[:10],
+                        np.exp(self.res2.fittedvalues[:10]))
+
+    def test_predict_xb(self):
+        assert_allclose(self.res1.predict(which='linear')[:10],
+                        self.res2.fittedvalues[:10])
+
+
+@pytest.mark.not_vetted
+class TestNegativeBinomialPNB1Newton(CheckModelResults):
+
+    @classmethod
+    def setup_class(cls):
+        data = sm2.datasets.randhie.load()
+        exog = add_constant(data.exog, prepend=False)
+        mod = NegativeBinomialP(data.endog, exog, p=1)
+        cls.res1 = mod.fit(method="newton", maxiter=100, disp=0,
+                           use_transparams=True)
+        
+        cls.res2 = RandHIE().negativebinomial_nb1_bfgs()
+
+    def test_zstat(self):
+        assert_allclose(self.res1.tvalues,
+                        self.res2.z,
+                        atol=5e-3, rtol=5e-3)
+
+    def test_lnalpha(self):
+        self.res1.bse # attaches alpha_std_err
+        assert_allclose(self.res1.lnalpha,
+                        self.res2.lnalpha)
+        assert_allclose(self.res1.lnalpha_std_err,
+                        self.res2.lnalpha_std_err)
+
+    def test_params(self):
+        assert_allclose(self.res1.params,
+                        self.res2.params)
+
+    def test_conf_int(self):
+        # the bse for alpha is not high precision from the hessian
+        # approximation
+        assert_allclose(self.res1.conf_int(),
+                        self.res2.conf_int,
+                        atol=1e-3, rtol=1e-3)
+
+    def test_predict(self):
+        assert_allclose(self.res1.predict()[:10],
+                        np.exp(self.res2.fittedvalues[:10]),
+                        atol=1e-3, rtol=1e-3)
+
+    def test_predict_xb(self):
+        assert_allclose(self.res1.predict(which='linear')[:10],
+                        self.res2.fittedvalues[:10],
+                        atol=1e-3, rtol=1e-3)
+
+
+@pytest.mark.not_vetted
+class TestNegativeBinomialPNB2BFGS(CheckModelResults):
+
+    @classmethod
+    def setup_class(cls):
+        data = sm2.datasets.randhie.load()
+        exog = add_constant(data.exog, prepend=False)
+        cls.res1 = NegativeBinomialP(data.endog, exog, p=2).fit(
+                                                method='bfgs', disp=0,
+                                                maxiter=1000,
+                                                use_transparams=True)
+        cls.res2 = RandHIE().negativebinomial_nb2_bfgs()
+
+    # NOTE: The bse is much closer precitions to stata
+    def test_bse(self):
+        assert_allclose(self.res1.bse,
+                        self.res2.bse,
+                        atol=1e-3, rtol=1e-3)
+
+    def test_params(self):
+        assert_allclose(self.res1.params,
+                        self.res2.params,
+                        atol=1e-3, rtol=1e-3)
+
+    def test_alpha(self):
+        self.res1.bse  # attaches alpha_std_err
+        assert_allclose(self.res1.lnalpha,
+                        self.res2.lnalpha,
+                        atol=1e-5, rtol=1e-5)
+        assert_allclose(self.res1.lnalpha_std_err,
+                        self.res2.lnalpha_std_err,
+                        atol=1e-5, rtol=1e-5)
+
+    def test_conf_int(self):
+        assert_allclose(self.res1.conf_int(),
+                        self.res2.conf_int,
+                        atol=1e-3, rtol=1e-3)
+
+    def test_zstat(self):  # Low precision because Z vs. t
+        assert_allclose(self.res1.pvalues[:-1],
+                        self.res2.pvalues,
+                        atol=5e-3, rtol=5e-3)
+
+    def test_fittedvalues(self):
+        assert_allclose(self.res1.fittedvalues[:10],
+                        self.res2.fittedvalues[:10],
+                        atol=1e-4, rtol=1e-4)
+
+    def test_predict(self):
+        assert_allclose(self.res1.predict()[:10],
+                        np.exp(self.res2.fittedvalues[:10]),
+                        atol=1e-3, rtol=1e-3)
+
+    def test_predict_xb(self):
+        assert_allclose(self.res1.predict(which='linear')[:10],
+                        self.res2.fittedvalues[:10],
+                        atol=1e-3, rtol=1e-3)
+
+
+@pytest.mark.not_vetted
+class TestNegativeBinomialPNB1BFGS(CheckModelResults):
+
+    @classmethod
+    def setup_class(cls):
+        data = sm2.datasets.randhie.load()
+        exog = add_constant(data.exog, prepend=False)
+        cls.res1 = NegativeBinomialP(data.endog, exog, p=1).fit(method="bfgs",
+                                                                maxiter=100,
+                                                                disp=0)
+        cls.res2 = RandHIE().negativebinomial_nb1_bfgs()
+
+    def test_bse(self):
+        assert_allclose(self.res1.bse,
+                        self.res2.bse,
+                        atol=5e-3, rtol=5e-3)
+
+    def test_aic(self):
+        assert_allclose(self.res1.aic,
+                        self.res2.aic,
+                        atol=0.5, rtol=0.5)
+
+    def test_bic(self):
+        assert_allclose(self.res1.bic,
+                        self.res2.bic,
+                        atol=0.5, rtol=0.5)
+
+    def test_llf(self):
+        assert_allclose(self.res1.llf,
+                        self.res2.llf,
+                        atol=1e-3, rtol=1e-3)
+
+    def test_llr(self):
+        assert_allclose(self.res1.llf,
+                        self.res2.llf,
+                        atol=1e-3, rtol=1e-3)
+
+    def test_zstat(self):
+        assert_allclose(self.res1.tvalues,
+                        self.res2.z,
+                        atol=0.5, rtol=0.5)
+
+    def test_lnalpha(self):
+        assert_allclose(self.res1.lnalpha,
+                        self.res2.lnalpha,
+                        atol=1e-3, rtol=1e-3)
+        assert_allclose(self.res1.lnalpha_std_err,
+                        self.res2.lnalpha_std_err,
+                        atol=1e-3, rtol=1e-3)
+
+    def test_params(self):
+        assert_allclose(self.res1.params,
+                        self.res2.params,
+                        atol=5e-2, rtol=5e-2)
+
+    def test_conf_int(self):
+        # the bse for alpha is not high precision from the hessian
+        # approximation
+        assert_allclose(self.res1.conf_int(),
+                        self.res2.conf_int,
+                        atol=5e-2, rtol=5e-2)
+
+    def test_predict(self):
+        assert_allclose(self.res1.predict()[:10],
+                        np.exp(self.res2.fittedvalues[:10]),
+                        atol=5e-3, rtol=5e-3)
+
+    def test_predict_xb(self):
+        assert_allclose(self.res1.predict(which='linear')[:10],
+                        self.res2.fittedvalues[:10],
+                        atol=5e-3, rtol=5e-3)
+
+    def test_init_kwds(self):
+        kwds = self.res1.model._get_init_kwds()
+        assert 'p' in kwds
+        assert kwds['p'] == 1
+
+
+# ------------------------------------------------------------------
+# CheckMNLogitBaseZero
+
+@pytest.mark.not_vetted
+class CheckMNLogitBaseZero(CheckModelResults):
+
+    def test_margeff_overall(self):
+        me = self.res1.get_margeff()
+        assert_almost_equal(me.margeff,
+                            self.res2.margeff_dydx_overall,
+                            6)
+        assert_almost_equal(me.margeff_se,
+                            self.res2.margeff_dydx_overall_se,
+                            6)
+
+        me_frame = me.summary_frame()
+        eff = me_frame["dy/dx"].values.reshape(me.margeff.shape, order="F")
+        assert_allclose(eff,
+                        me.margeff,
+                        rtol=1e-13)
+        assert me_frame.shape == (np.size(me.margeff), 6)
+
+    def test_margeff_mean(self):
+        me = self.res1.get_margeff(at='mean')
+        assert_almost_equal(me.margeff,
+                            self.res2.margeff_dydx_mean,
+                            7)
+        assert_almost_equal(me.margeff_se,
+                            self.res2.margeff_dydx_mean_se,
+                            7)
+
+    def test_margeff_dummy(self):
+        data = self.data
+        vote = data.data['vote']
+        exog = np.column_stack((data.exog, vote))
+        exog = add_constant(exog, prepend=False)
+        res = MNLogit(data.endog, exog).fit(method="newton", disp=0)
+
+        me = res.get_margeff(dummy=True)
+        assert_almost_equal(me.margeff,
+                            self.res2.margeff_dydx_dummy_overall,
+                            6)
+        assert_almost_equal(me.margeff_se,
+                            self.res2.margeff_dydx_dummy_overall_se,
+                            6)
+
+        me = res.get_margeff(dummy=True, method="eydx")
+        assert_almost_equal(me.margeff,
+                            self.res2.margeff_eydx_dummy_overall,
+                            5)
+        assert_almost_equal(me.margeff_se,
+                            self.res2.margeff_eydx_dummy_overall_se,
+                            6)
+
+    def test_j(self):
+        assert self.res1.model.J == self.res2.J
+
+    def test_k(self):
+        assert self.res1.model.K == self.res2.K
+
+    def test_endog_names(self):
+        endog_names = self.res1._get_endog_name(None, None)[1]
+        assert endog_names == ['y=1', 'y=2', 'y=3', 'y=4', 'y=5', 'y=6']
+
+    def test_pred_table(self):
+        # fitted results taken from gretl
+        pred = [6, 1, 1, 1, 0, 1, 0, 1, 1, 0, 0, 1, 1, 1, 0, 6, 0, 1, 6, 0, 0,
+                1, 1, 6, 0, 1, 0, 1, 1, 1, 0, 0, 1, 1, 6, 0, 0, 6, 6, 0, 0, 1,
+                1, 6, 1, 6, 0, 0, 0, 1, 0, 1, 0, 0, 0, 6, 0, 0, 6, 0, 0, 0, 1,
+                1, 0, 0, 6, 6, 6, 6, 1, 0, 5, 1, 1, 0, 0, 0, 1, 1, 0, 0, 0, 0,
+                6, 0, 6, 6, 1, 0, 1, 1, 6, 5, 1, 0, 0, 0, 5, 0, 0, 6, 0, 1, 0,
+                0, 0, 0, 0, 1, 1, 0, 6, 6, 6, 6, 5, 0, 1, 1, 0, 1, 0, 6, 6, 0,
+                0, 0, 6, 0, 0, 0, 6, 6, 0, 5, 1, 0, 0, 0, 0, 6, 0, 5, 6, 6, 0,
+                0, 0, 0, 6, 1, 0, 0, 1, 0, 1, 6, 1, 1, 1, 1, 1, 0, 0, 0, 6, 0,
+                5, 1, 0, 6, 6, 6, 0, 0, 0, 0, 1, 6, 6, 0, 0, 0, 1, 1, 5, 6, 0,
+                6, 1, 0, 0, 1, 6, 0, 0, 1, 0, 6, 6, 0, 5, 6, 6, 0, 0, 6, 1, 0,
+                6, 0, 1, 0, 1, 6, 0, 1, 1, 1, 6, 0, 5, 0, 0, 6, 1, 0, 6, 5, 5,
+                0, 6, 1, 1, 1, 0, 0, 6, 0, 0, 5, 0, 0, 6, 6, 6, 6, 6, 0, 1, 0,
+                0, 6, 6, 0, 0, 1, 6, 0, 0, 6, 1, 6, 1, 1, 1, 0, 1, 6, 5, 0, 0,
+                1, 5, 0, 1, 6, 6, 1, 0, 0, 1, 6, 1, 5, 6, 1, 0, 0, 1, 1, 0, 6,
+                1, 6, 0, 1, 1, 5, 6, 6, 5, 1, 1, 1, 0, 6, 1, 6, 1, 0, 1, 0, 0,
+                1, 5, 0, 1, 1, 0, 5, 6, 0, 5, 1, 1, 6, 5, 0, 6, 0, 0, 0, 0, 0,
+                0, 1, 6, 1, 0, 5, 1, 0, 0, 1, 6, 0, 0, 6, 6, 6, 0, 2, 1, 6, 5,
+                6, 1, 1, 0, 5, 1, 1, 1, 6, 1, 6, 6, 5, 6, 0, 1, 0, 1, 6, 0, 6,
+                1, 6, 0, 0, 6, 1, 0, 6, 1, 0, 0, 0, 0, 6, 6, 6, 6, 5, 6, 6, 0,
+                0, 6, 1, 1, 6, 0, 0, 6, 6, 0, 6, 6, 0, 0, 6, 0, 0, 6, 6, 6, 1,
+                0, 6, 0, 0, 0, 6, 1, 1, 0, 1, 5, 0, 0, 5, 0, 0, 0, 1, 1, 6, 1,
+                0, 0, 0, 6, 6, 1, 1, 6, 5, 5, 0, 6, 6, 0, 1, 1, 0, 6, 6, 0, 6,
+                5, 5, 6, 5, 1, 0, 6, 0, 6, 1, 0, 1, 6, 6, 6, 1, 0, 6, 0, 5, 6,
+                6, 5, 0, 5, 1, 0, 6, 0, 6, 1, 5, 5, 0, 1, 5, 5, 2, 6, 6, 6, 5,
+                0, 0, 1, 6, 1, 0, 1, 6, 1, 0, 0, 1, 5, 6, 6, 0, 0, 0, 5, 6, 6,
+                6, 1, 5, 6, 1, 0, 0, 6, 5, 0, 1, 1, 1, 6, 6, 0, 1, 0, 0, 0, 5,
+                0, 0, 6, 1, 6, 0, 6, 1, 5, 5, 6, 5, 0, 0, 0, 0, 1, 1, 0, 5, 5,
+                0, 0, 0, 0, 1, 0, 6, 6, 1, 1, 6, 6, 0, 5, 5, 0, 0, 0, 6, 6, 1,
+                6, 0, 0, 5, 0, 1, 6, 5, 6, 6, 5, 5, 6, 6, 1, 0, 1, 6, 6, 1, 6,
+                0, 6, 0, 6, 5, 0, 6, 6, 0, 5, 6, 0, 6, 6, 5, 0, 1, 6, 6, 1, 0,
+                1, 0, 6, 6, 1, 0, 6, 6, 6, 0, 1, 6, 0, 1, 5, 1, 1, 5, 6, 6, 0,
+                1, 6, 6, 1, 5, 0, 5, 0, 6, 0, 1, 6, 1, 0, 6, 1, 6, 0, 6, 1, 0,
+                0, 0, 6, 6, 0, 1, 1, 6, 6, 6, 1, 6, 0, 5, 6, 0, 5, 6, 6, 5, 5,
+                5, 6, 0, 6, 0, 0, 0, 5, 0, 6, 1, 2, 6, 6, 6, 5, 1, 6, 0, 6, 0,
+                0, 0, 0, 6, 5, 0, 5, 1, 6, 5, 1, 6, 5, 1, 1, 0, 0, 6, 1, 1, 5,
+                6, 6, 0, 5, 2, 5, 5, 0, 5, 5, 5, 6, 5, 6, 6, 5, 2, 6, 5, 6, 0,
+                0, 6, 5, 0, 6, 0, 0, 6, 6, 6, 0, 5, 1, 1, 6, 6, 5, 2, 1, 6, 5,
+                6, 0, 6, 6, 1, 1, 5, 1, 6, 6, 6, 0, 0, 6, 1, 0, 5, 5, 1, 5, 6,
+                1, 6, 0, 1, 6, 5, 0, 0, 6, 1, 5, 1, 0, 6, 0, 6, 6, 5, 5, 6, 6,
+                6, 6, 2, 6, 6, 6, 5, 5, 5, 0, 1, 0, 0, 0, 6, 6, 1, 0, 6, 6, 6,
+                6, 6, 1, 0, 6, 1, 5, 5, 6, 6, 6, 6, 6, 5, 6, 1, 6, 2, 5, 5, 6,
+                5, 6, 6, 5, 6, 6, 5, 5, 6, 1, 5, 1, 6, 0, 2, 5, 0, 5, 0, 2, 1,
+                6, 0, 0, 6, 6, 1, 6, 0, 5, 5, 6, 6, 1, 6, 6, 6, 5, 6, 6, 1, 6,
+                5, 6, 1, 1, 0, 6, 6, 5, 1, 0, 0, 6, 6, 5, 6, 0, 1, 6, 0, 5, 6,
+                5, 2, 5, 2, 0, 0, 1, 6, 6, 1, 5, 6, 6, 0, 6, 6, 6, 6, 6, 5]
+        assert_array_equal(self.res1.predict().argmax(1), pred)
+
+        # the rows should add up for pred table
+        assert_array_equal(self.res1.pred_table().sum(0), np.bincount(pred))
+
+        # note this is just a regression test, gretl doesn't have a prediction
+        # table
+        pred = [[ 126.,   41.,    2.,    0.,    0.,   12.,   19.],
+                [  77.,   73.,    3.,    0.,    0.,   15.,   12.],
+                [  37.,   43.,    2.,    0.,    0.,   19.,    7.],
+                [  12.,    9.,    1.,    0.,    0.,    9.,    6.],
+                [  19.,   10.,    2.,    0.,    0.,   20.,   43.],
+                [  22.,   25.,    1.,    0.,    0.,   31.,   71.],
+                [   9.,    7.,    1.,    0.,    0.,   18.,  140.]]
+        assert_array_equal(self.res1.pred_table(), pred)
+
+    def test_resid(self):
+        assert_array_equal(self.res1.resid_misclassified, self.res2.resid)
+
+
+@pytest.mark.not_vetted
+class TestMNLogitNewtonBaseZero(CheckMNLogitBaseZero):
+    @classmethod
+    def setup_class(cls):
+        data = sm2.datasets.anes96.load()
+        cls.data = data
+        exog = data.exog
+        exog = add_constant(exog, prepend=False)
+        cls.res1 = MNLogit(data.endog, exog).fit(method="newton", disp=0)
+        cls.res2 = Anes().mnlogit_basezero()
+
+
+@pytest.mark.not_vetted
+class TestMNLogitLBFGSBaseZero(CheckMNLogitBaseZero):
+    @classmethod
+    def setup_class(cls):
+        data = sm2.datasets.anes96.load()
+        cls.data = data
+        exog = data.exog
+        exog = add_constant(exog, prepend=False)
+        mymodel = MNLogit(data.endog, exog)
+        cls.res1 = mymodel.fit(method="lbfgs", disp=0, maxiter=50000,
+                               #m=12, pgtol=1e-7, factr=1e3, # 5 failures
+                               #m=20, pgtol=1e-8, factr=1e2, # 3 failures
+                               #m=30, pgtol=1e-9, factr=1e1, # 1 failure
+                               m=40, pgtol=1e-10, factr=5e0,
+                               loglike_and_score=mymodel.loglike_and_score)
+        cls.res2 = Anes().mnlogit_basezero()
+
+
+# ------------------------------------------------------------------
+# BinaryResults
+
+@pytest.mark.not_vetted
 class CheckBinaryResults(CheckModelResults):
     def test_pred_table(self):
         assert_array_equal(self.res1.pred_table(),
@@ -190,247 +918,13 @@ class CheckBinaryResults(CheckModelResults):
 
 
 @pytest.mark.not_vetted
-class CheckMargEff(object):
-    """
-    Test marginal effects (margeff) and its options
-    """
-
-    def test_nodummy_dydxoverall(self):
-        me = self.res1.get_margeff()
-        assert_almost_equal(me.margeff,
-                            self.res2.margeff_nodummy_dydx,
-                            DECIMAL_4)
-        assert_almost_equal(me.margeff_se,
-                            self.res2.margeff_nodummy_dydx_se,
-                            DECIMAL_4)
-
-        me_frame = me.summary_frame()
-        eff = me_frame["dy/dx"].values
-        assert_allclose(eff,
-                        me.margeff,
-                        rtol=1e-13)
-        assert me_frame.shape == (me.margeff.size, 6)
-
-
-    def test_nodummy_dydxmean(self):
-        me = self.res1.get_margeff(at='mean')
-        assert_almost_equal(me.margeff,
-                            self.res2.margeff_nodummy_dydxmean,
-                            DECIMAL_4)
-        assert_almost_equal(me.margeff_se,
-                            self.res2.margeff_nodummy_dydxmean_se,
-                            DECIMAL_4)
-
-    def test_nodummy_dydxmedian(self):
-        me = self.res1.get_margeff(at='median')
-        assert_almost_equal(me.margeff,
-                            self.res2.margeff_nodummy_dydxmedian,
-                            DECIMAL_4)
-        assert_almost_equal(me.margeff_se,
-                            self.res2.margeff_nodummy_dydxmedian_se,
-                            DECIMAL_4)
-
-    def test_nodummy_dydxzero(self):
-        me = self.res1.get_margeff(at='zero')
-        assert_almost_equal(me.margeff,
-                            self.res2.margeff_nodummy_dydxzero,
-                            DECIMAL_4)
-        assert_almost_equal(me.margeff_se,
-                            self.res2.margeff_nodummy_dydxzero,
-                            DECIMAL_4)
-
-    def test_nodummy_dyexoverall(self):
-        me = self.res1.get_margeff(method='dyex')
-        assert_almost_equal(me.margeff,
-                            self.res2.margeff_nodummy_dyex,
-                            DECIMAL_4)
-        assert_almost_equal(me.margeff_se,
-                            self.res2.margeff_nodummy_dyex_se,
-                            DECIMAL_4)
-
-    def test_nodummy_dyexmean(self):
-        me = self.res1.get_margeff(at='mean', method='dyex')
-        assert_almost_equal(me.margeff,
-                            self.res2.margeff_nodummy_dyexmean,
-                            DECIMAL_4)
-        assert_almost_equal(me.margeff_se,
-                            self.res2.margeff_nodummy_dyexmean_se,
-                            DECIMAL_4)
-
-    def test_nodummy_dyexmedian(self):
-        me = self.res1.get_margeff(at='median', method='dyex')
-        assert_almost_equal(me.margeff,
-                            self.res2.margeff_nodummy_dyexmedian,
-                            DECIMAL_4)
-        assert_almost_equal(me.margeff_se,
-                            self.res2.margeff_nodummy_dyexmedian_se,
-                            DECIMAL_4)
-
-    def test_nodummy_dyexzero(self):
-        me = self.res1.get_margeff(at='zero', method='dyex')
-        assert_almost_equal(me.margeff,
-                            self.res2.margeff_nodummy_dyexzero,
-                            DECIMAL_4)
-        assert_almost_equal(me.margeff_se,
-                            self.res2.margeff_nodummy_dyexzero_se,
-                            DECIMAL_4)
-
-    def test_nodummy_eydxoverall(self):
-        me = self.res1.get_margeff(method='eydx')
-        assert_almost_equal(me.margeff,
-                            self.res2.margeff_nodummy_eydx,
-                            DECIMAL_4)
-        assert_almost_equal(me.margeff_se,
-                            self.res2.margeff_nodummy_eydx_se,
-                            DECIMAL_4)
-
-    def test_nodummy_eydxmean(self):
-        me = self.res1.get_margeff(at='mean', method='eydx')
-        assert_almost_equal(me.margeff,
-                            self.res2.margeff_nodummy_eydxmean,
-                            DECIMAL_4)
-        assert_almost_equal(me.margeff_se,
-                            self.res2.margeff_nodummy_eydxmean_se,
-                            DECIMAL_4)
-
-    def test_nodummy_eydxmedian(self):
-        me = self.res1.get_margeff(at='median', method='eydx')
-        assert_almost_equal(me.margeff,
-                            self.res2.margeff_nodummy_eydxmedian,
-                            DECIMAL_4)
-        assert_almost_equal(me.margeff_se,
-                            self.res2.margeff_nodummy_eydxmedian_se,
-                            DECIMAL_4)
-
-    def test_nodummy_eydxzero(self):
-        me = self.res1.get_margeff(at='zero', method='eydx')
-        assert_almost_equal(me.margeff,
-                            self.res2.margeff_nodummy_eydxzero,
-                            DECIMAL_4)
-        assert_almost_equal(me.margeff_se,
-                            self.res2.margeff_nodummy_eydxzero_se,
-                            DECIMAL_4)
-
-    def test_nodummy_eyexoverall(self):
-        me = self.res1.get_margeff(method='eyex')
-        assert_almost_equal(me.margeff,
-                            self.res2.margeff_nodummy_eyex,
-                            DECIMAL_4)
-        assert_almost_equal(me.margeff_se,
-                            self.res2.margeff_nodummy_eyex_se,
-                            DECIMAL_4)
-
-    def test_nodummy_eyexmean(self):
-        me = self.res1.get_margeff(at='mean', method='eyex')
-        assert_almost_equal(me.margeff,
-                            self.res2.margeff_nodummy_eyexmean,
-                            DECIMAL_4)
-        assert_almost_equal(me.margeff_se,
-                            self.res2.margeff_nodummy_eyexmean_se,
-                            DECIMAL_4)
-
-    def test_nodummy_eyexmedian(self):
-        me = self.res1.get_margeff(at='median', method='eyex')
-        assert_almost_equal(me.margeff,
-                            self.res2.margeff_nodummy_eyexmedian,
-                            DECIMAL_4)
-        assert_almost_equal(me.margeff_se,
-                            self.res2.margeff_nodummy_eyexmedian_se,
-                            DECIMAL_4)
-
-    def test_nodummy_eyexzero(self):
-        me = self.res1.get_margeff(at='zero', method='eyex')
-        assert_almost_equal(me.margeff,
-                            self.res2.margeff_nodummy_eyexzero,
-                            DECIMAL_4)
-        assert_almost_equal(me.margeff_se,
-                            self.res2.margeff_nodummy_eyexzero_se,
-                            DECIMAL_4)
-
-    def test_dummy_dydxoverall(self):
-        me = self.res1.get_margeff(dummy=True)
-        assert_almost_equal(me.margeff,
-                            self.res2.margeff_dummy_dydx,
-                            DECIMAL_4)
-        assert_almost_equal(me.margeff_se,
-                            self.res2.margeff_dummy_dydx_se,
-                            DECIMAL_4)
-
-    def test_dummy_dydxmean(self):
-        me = self.res1.get_margeff(at='mean', dummy=True)
-        assert_almost_equal(me.margeff,
-                            self.res2.margeff_dummy_dydxmean,
-                            DECIMAL_4)
-        assert_almost_equal(me.margeff_se,
-                            self.res2.margeff_dummy_dydxmean_se,
-                            DECIMAL_4)
-
-    def test_dummy_eydxoverall(self):
-        me = self.res1.get_margeff(method='eydx', dummy=True)
-        assert_almost_equal(me.margeff,
-                            self.res2.margeff_dummy_eydx,
-                            DECIMAL_4)
-        assert_almost_equal(me.margeff_se,
-                            self.res2.margeff_dummy_eydx_se,
-                            DECIMAL_4)
-
-    def test_dummy_eydxmean(self):
-        me = self.res1.get_margeff(at='mean', method='eydx', dummy=True)
-        assert_almost_equal(me.margeff,
-                            self.res2.margeff_dummy_eydxmean,
-                            DECIMAL_4)
-        assert_almost_equal(me.margeff_se,
-                            self.res2.margeff_dummy_eydxmean_se,
-                            DECIMAL_4)
-
-    def test_count_dydxoverall(self):
-        me = self.res1.get_margeff(count=True)
-        assert_almost_equal(me.margeff,
-                            self.res2.margeff_count_dydx,
-                            DECIMAL_4)
-        assert_almost_equal(me.margeff_se,
-                            self.res2.margeff_count_dydx_se,
-                            DECIMAL_4)
-
-    def test_count_dydxmean(self):
-        me = self.res1.get_margeff(count=True, at='mean')
-        assert_almost_equal(me.margeff,
-                            self.res2.margeff_count_dydxmean,
-                            DECIMAL_4)
-        assert_almost_equal(me.margeff_se,
-                            self.res2.margeff_count_dydxmean_se,
-                            DECIMAL_4)
-
-    def test_count_dummy_dydxoverall(self):
-        me = self.res1.get_margeff(count=True, dummy=True)
-        assert_almost_equal(me.margeff,
-                            self.res2.margeff_count_dummy_dydxoverall,
-                            DECIMAL_4)
-        assert_almost_equal(me.margeff_se,
-                            self.res2.margeff_count_dummy_dydxoverall_se,
-                            DECIMAL_4)
-
-    def test_count_dummy_dydxmean(self):
-        me = self.res1.get_margeff(count=True, dummy=True, at='mean')
-        assert_almost_equal(me.margeff,
-                            self.res2.margeff_count_dummy_dydxmean,
-                            DECIMAL_4)
-        assert_almost_equal(me.margeff_se,
-                            self.res2.margeff_count_dummy_dydxmean_se,
-                            DECIMAL_4)
-
-
-@pytest.mark.not_vetted
 class TestProbitNewton(CheckBinaryResults):
-
     @classmethod
     def setup_class(cls):
         data = sm2.datasets.spector.load()
         data.exog = add_constant(data.exog, prepend=False)
         cls.res1 = Probit(data.endog, data.exog).fit(method="newton", disp=0)
-        res2 = Spector()
-        res2.probit()
-        cls.res2 = res2
+        cls.res2 = Spector().probit()
 
     #def test_predict(self):
     #    assert_almost_equal(self.res1.model.predict(self.res1.params),
@@ -439,27 +933,21 @@ class TestProbitNewton(CheckBinaryResults):
 
 @pytest.mark.not_vetted
 class TestProbitBFGS(CheckBinaryResults):
-
     @classmethod
     def setup_class(cls):
         data = sm2.datasets.spector.load()
         data.exog = add_constant(data.exog, prepend=False)
         cls.res1 = Probit(data.endog, data.exog).fit(method="bfgs", disp=0)
-        res2 = Spector()
-        res2.probit()
-        cls.res2 = res2
+        cls.res2 = Spector().probit()
 
 
 @pytest.mark.not_vetted
 class TestProbitNM(CheckBinaryResults):
-
     @classmethod
     def setup_class(cls):
         data = sm2.datasets.spector.load()
         data.exog = add_constant(data.exog, prepend=False)
-        res2 = Spector()
-        res2.probit()
-        cls.res2 = res2
+        cls.res2 = Spector().probit()
         cls.res1 = Probit(data.endog, data.exog).fit(method="nm",
                                                      disp=0, maxiter=500)
 
@@ -470,9 +958,7 @@ class TestProbitPowell(CheckBinaryResults):
     def setup_class(cls):
         data = sm2.datasets.spector.load()
         data.exog = add_constant(data.exog, prepend=False)
-        res2 = Spector()
-        res2.probit()
-        cls.res2 = res2
+        cls.res2 = Spector().probit()
         cls.res1 = Probit(data.endog, data.exog).fit(method="powell",
                                                      disp=0, ftol=1e-8)
 
@@ -484,9 +970,7 @@ class TestProbitCG(CheckBinaryResults):
     def setup_class(cls):
         data = sm2.datasets.spector.load()
         data.exog = add_constant(data.exog, prepend=False)
-        res2 = Spector()
-        res2.probit()
-        cls.res2 = res2
+        cls.res2 = Spector().probit()
 
         # fmin_cg fails to converge on some machines - reparameterize
         # from statsmodels.tools.transform_model import StandardizeTransform
@@ -508,14 +992,11 @@ class TestProbitCG(CheckBinaryResults):
 
 @pytest.mark.not_vetted
 class TestProbitNCG(CheckBinaryResults):
-
     @classmethod
     def setup_class(cls):
         data = sm2.datasets.spector.load()
         data.exog = add_constant(data.exog, prepend=False)
-        res2 = Spector()
-        res2.probit()
-        cls.res2 = res2
+        cls.res2 = Spector().probit()
         cls.res1 = Probit(data.endog, data.exog).fit(method="ncg",
                                                      disp=0, avextol=1e-8,
                                                      warn_convergence=False)
@@ -537,9 +1018,7 @@ class TestProbitBasinhopping(CheckBinaryResults):
                               " basinhopping solver is not available")
         data = sm2.datasets.spector.load()
         data.exog = add_constant(data.exog, prepend=False)
-        res2 = Spector()
-        res2.probit()
-        cls.res2 = res2
+        cls.res2 = Spector().probit()
         fit = Probit(data.endog, data.exog).fit
         cls.res1 = fit(method="basinhopping", disp=0, niter=5,
                        minimizer={'method': 'L-BFGS-B', 'tol': 1e-8})
@@ -551,9 +1030,7 @@ class TestProbitMinimizeDefault(CheckBinaryResults):
     def setup_class(cls):
         data = sm2.datasets.spector.load()
         data.exog = add_constant(data.exog, prepend=False)
-        res2 = Spector()
-        res2.probit()
-        cls.res2 = res2
+        cls.res2 = Spector().probit()
         fit = Probit(data.endog, data.exog).fit
         cls.res1 = fit(method="minimize", disp=0, niter=5, tol = 1e-8)
 
@@ -568,9 +1045,7 @@ class TestProbitMinimizeDogleg(CheckBinaryResults):
 
         data = sm2.datasets.spector.load()
         data.exog = add_constant(data.exog, prepend=False)
-        res2 = Spector()
-        res2.probit()
-        cls.res2 = res2
+        cls.res2 = Spector().probit()
         fit = Probit(data.endog, data.exog).fit
         cls.res1 = fit(method="minimize", disp=0, niter=5, tol = 1e-8,
                        min_method = 'dogleg')
@@ -578,18 +1053,19 @@ class TestProbitMinimizeDogleg(CheckBinaryResults):
 
 @pytest.mark.not_vetted
 class TestProbitMinimizeAdditionalOptions(CheckBinaryResults):
-
     @classmethod
     def setup_class(cls):
         data = sm2.datasets.spector.load()
         data.exog = add_constant(data.exog, prepend=False)
-        res2 = Spector()
-        res2.probit()
-        cls.res2 = res2
+        cls.res2 = Spector().probit()
         cls.res1 = Probit(data.endog, data.exog).fit(method="minimize", disp=0,
                                                      maxiter=500,
                                                      min_method='Nelder-Mead',
                                                      xtol=1e-4, ftol=1e-4)
+
+
+# ------------------------------------------------------------------
+# CheckLikelihoodModelL1
 
 
 class CheckLikelihoodModelL1(object):
@@ -639,9 +1115,7 @@ class TestProbitL1(CheckLikelihoodModelL1):
                                        disp=0, trim_mode='auto',
                                        auto_trim_tol=0.02, acc=1e-10,
                                        maxiter=1000)
-        res2 = DiscreteL1()
-        res2.probit()
-        cls.res2 = res2
+        cls.res2 = DiscreteL1().probit()
 
     def test_cov_params(self):
         assert_almost_equal(self.res1.cov_params(),
@@ -663,9 +1137,7 @@ class TestMNLogitL1(CheckLikelihoodModelL1):
                                               trim_mode='auto',
                                               auto_trim_tol=0.02,
                                               acc=1e-10, disp=0)
-        res2 = DiscreteL1()
-        res2.mnlogit()
-        cls.res2 = res2
+        cls.res2 = DiscreteL1().mnlogit()
 
 
 @pytest.mark.not_vetted
@@ -680,9 +1152,7 @@ class TestLogitL1(CheckLikelihoodModelL1):
                                        disp=0, trim_mode='size',
                                        size_trim_tol=1e-5, acc=1e-10,
                                        maxiter=1000)
-        res2 = DiscreteL1()
-        res2.logit()
-        cls.res2 = res2
+        cls.res2 = DiscreteL1().logit()
 
     def test_cov_params(self):
         assert_almost_equal(self.res1.cov_params(),
@@ -690,63 +1160,8 @@ class TestLogitL1(CheckLikelihoodModelL1):
                             DECIMAL_4)
 
 
-@pytest.mark.not_vetted
-@pytest.mark.skipif(not has_cvxopt, reason='Skipped test_cvxopt since cvxopt '
-                                           'is not available')
-class TestCVXOPT(object):
-
-    @classmethod
-    def setup_class(cls):
-        if not has_cvxopt:
-            raise pytest.skip('Skipped test_cvxopt since cvxopt '
-                              'is not available')
-        cls.data = sm2.datasets.spector.load()
-        cls.data.exog = add_constant(cls.data.exog, prepend=True)
-
-    def test_cvxopt_versus_slsqp(self):
-        # Compares results from cvxopt to the standard slsqp
-        self.alpha = 3. * np.array([0, 1, 1, 1.])  # / self.data.endog.shape[0]
-        mod = Logit(self.data.endog, self.data.exog)
-        res_slsqp = mod.fit_regularized(method="l1",
-                                        alpha=self.alpha,
-                                        disp=0, acc=1e-10, maxiter=1000,
-                                        trim_mode='auto')
-        mod = Logit(self.data.endog, self.data.exog)
-        res_cvxopt = mod.fit_regularized(method="l1_cvxopt_cp",
-                                         alpha=self.alpha,
-                                         disp=0, abstol=1e-10,
-                                         trim_mode='auto',
-                                         auto_trim_tol=0.01, maxiter=1000)
-        assert_almost_equal(res_slsqp.params,
-                            res_cvxopt.params,
-                            DECIMAL_4)
-
-
-@pytest.mark.not_vetted
-class TestSweepAlphaL1(object):
-
-    @classmethod
-    def setup_class(cls):
-        data = sm2.datasets.spector.load()
-        data.exog = add_constant(data.exog, prepend=True)
-        cls.model = Logit(data.endog, data.exog)
-        cls.alphas = np.array([
-                    [0.1, 0.1, 0.1, 0.1],
-                    [0.4, 0.4, 0.5, 0.5],
-                    [0.5, 0.5, 1, 1]])  # / data.exog.shape[0]
-        cls.res1 = DiscreteL1()
-        cls.res1.sweep()
-
-    def test_sweep_alpha(self):
-        for i in range(3):
-            alpha = self.alphas[i, :]
-            res2 = self.model.fit_regularized(method="l1", alpha=alpha,
-                                              disp=0, acc=1e-10,
-                                              trim_mode='off', maxiter=1000)
-            assert_almost_equal(res2.params,
-                                self.res1.params[i],
-                                DECIMAL_4)
-
+# ------------------------------------------------------------------
+# L1Compatibility -- redundnat with L1 Comparison Tests section?
 
 class CheckL1Compatability(object):
     """
@@ -980,6 +1395,36 @@ class TestProbitL1Compatability(CheckL1Compatability):
         cls.res_unreg = mod.fit(disp=0, tol=1e-15)
 
 
+@pytest.mark.not_vetted
+class TestNegativeBinomialPL1Compatability(CheckL1Compatability):
+    @classmethod
+    def setup_class(cls):
+        cls.kvars = 10  # Number of variables
+        cls.m = 7  # Number of unregularized parameters
+        rand_data = sm2.datasets.randhie.load()
+        rand_exog = rand_data.exog.view(float).reshape(len(rand_data.exog), -1)
+        rand_exog_st = (rand_exog - rand_exog.mean(0)) / rand_exog.std(0)
+        rand_exog = add_constant(rand_exog_st, prepend=True)
+        # Drop some columns and do an unregularized fit
+        exog_no_PSI = rand_exog[:, :cls.m]
+        mod_unreg = NegativeBinomialP(rand_data.endog, exog_no_PSI)
+        cls.res_unreg = mod_unreg.fit(method="newton", disp=False)
+        # Do a regularized fit with alpha, effectively dropping the last column
+        alpha = 10 * len(rand_data.endog) * np.ones(cls.kvars + 1)
+        alpha[:cls.m] = 0
+        alpha[-1] = 0  # don't penalize alpha
+
+        mod_reg = NegativeBinomialP(rand_data.endog, rand_exog)
+        cls.res_reg = mod_reg.fit_regularized(method='l1', alpha=alpha,
+                                              disp=False, acc=1e-10,
+                                              maxiter=2000,
+                                              trim_mode='auto')
+        cls.k_extra = 1  # 1 extra parameter in nb2
+
+
+# ------------------------------------------------------------------
+# L1 Comparison Tests
+
 class CompareL1(object):
     """
     For checking results for l1 regularization.
@@ -1001,11 +1446,21 @@ class CompareL1(object):
         assert_almost_equal(self.res1.pred_table(),
                             self.res2.pred_table(),
                             DECIMAL_4)
-        assert_almost_equal(self.res1.bse, self.res2.bse, DECIMAL_4)
-        assert_almost_equal(self.res1.llf, self.res2.llf, DECIMAL_4)
-        assert_almost_equal(self.res1.aic, self.res2.aic, DECIMAL_4)
-        assert_almost_equal(self.res1.bic, self.res2.bic, DECIMAL_4)
-        assert_almost_equal(self.res1.pvalues, self.res2.pvalues, DECIMAL_4)
+        assert_almost_equal(self.res1.bse,
+                            self.res2.bse,
+                            DECIMAL_4)
+        assert_almost_equal(self.res1.llf,
+                            self.res2.llf,
+                            DECIMAL_4)
+        assert_almost_equal(self.res1.aic,
+                            self.res2.aic,
+                            DECIMAL_4)
+        assert_almost_equal(self.res1.bic,
+                            self.res2.bic,
+                            DECIMAL_4)
+        assert_almost_equal(self.res1.pvalues,
+                            self.res2.pvalues,
+                            DECIMAL_4)
 
         if self.res1.mle_retvals['converged'] == 'True':
             # KLUDGE for older sm returning the wrong thing
@@ -1030,7 +1485,6 @@ class CompareL11D(CompareL1):
 @pytest.mark.not_vetted
 class TestL1AlphaZeroLogit(CompareL11D):
     # Compares l1 model with alpha = 0 to the unregularized model.
-
     @classmethod
     def setup_class(cls):
         data = sm2.datasets.spector.load()
@@ -1058,7 +1512,6 @@ class TestL1AlphaZeroLogit(CompareL11D):
 @pytest.mark.not_vetted
 class TestL1AlphaZeroProbit(CompareL11D):
     # Compares l1 model with alpha = 0 to the unregularized model.
-
     @classmethod
     def setup_class(cls):
         data = sm2.datasets.spector.load()
@@ -1072,7 +1525,6 @@ class TestL1AlphaZeroProbit(CompareL11D):
 
 @pytest.mark.not_vetted
 class TestL1AlphaZeroMNLogit(CompareL1):
-
     @classmethod
     def setup_class(cls):
         data = sm2.datasets.anes96.load()
@@ -1087,6 +1539,240 @@ class TestL1AlphaZeroMNLogit(CompareL1):
                                                       maxiter=1000)
 
 
+# ------------------------------------------------------------------
+# MargEff Tests
+
+@pytest.mark.not_vetted
+class CheckMargEff(object):
+    """
+    Test marginal effects (margeff) and its options
+    """
+
+    def test_nodummy_dydxoverall(self):
+        me = self.res1.get_margeff()
+        assert_almost_equal(me.margeff,
+                            self.res2.margeff_nodummy_dydx,
+                            DECIMAL_4)
+        assert_almost_equal(me.margeff_se,
+                            self.res2.margeff_nodummy_dydx_se,
+                            DECIMAL_4)
+
+        me_frame = me.summary_frame()
+        eff = me_frame["dy/dx"].values
+        assert_allclose(eff,
+                        me.margeff,
+                        rtol=1e-13)
+        assert me_frame.shape == (me.margeff.size, 6)
+
+
+    def test_nodummy_dydxmean(self):
+        me = self.res1.get_margeff(at='mean')
+        assert_almost_equal(me.margeff,
+                            self.res2.margeff_nodummy_dydxmean,
+                            DECIMAL_4)
+        assert_almost_equal(me.margeff_se,
+                            self.res2.margeff_nodummy_dydxmean_se,
+                            DECIMAL_4)
+
+    def test_nodummy_dydxmedian(self):
+        me = self.res1.get_margeff(at='median')
+        assert_almost_equal(me.margeff,
+                            self.res2.margeff_nodummy_dydxmedian,
+                            DECIMAL_4)
+        assert_almost_equal(me.margeff_se,
+                            self.res2.margeff_nodummy_dydxmedian_se,
+                            DECIMAL_4)
+
+    def test_nodummy_dydxzero(self):
+        me = self.res1.get_margeff(at='zero')
+        assert_almost_equal(me.margeff,
+                            self.res2.margeff_nodummy_dydxzero,
+                            DECIMAL_4)
+        assert_almost_equal(me.margeff_se,
+                            self.res2.margeff_nodummy_dydxzero,
+                            DECIMAL_4)
+
+    def test_nodummy_dyexoverall(self):
+        me = self.res1.get_margeff(method='dyex')
+        assert_almost_equal(me.margeff,
+                            self.res2.margeff_nodummy_dyex,
+                            DECIMAL_4)
+        assert_almost_equal(me.margeff_se,
+                            self.res2.margeff_nodummy_dyex_se,
+                            DECIMAL_4)
+
+    def test_nodummy_dyexmean(self):
+        me = self.res1.get_margeff(at='mean', method='dyex')
+        assert_almost_equal(me.margeff,
+                            self.res2.margeff_nodummy_dyexmean,
+                            DECIMAL_4)
+        assert_almost_equal(me.margeff_se,
+                            self.res2.margeff_nodummy_dyexmean_se,
+                            DECIMAL_4)
+
+    def test_nodummy_dyexmedian(self):
+        me = self.res1.get_margeff(at='median', method='dyex')
+        assert_almost_equal(me.margeff,
+                            self.res2.margeff_nodummy_dyexmedian,
+                            DECIMAL_4)
+        assert_almost_equal(me.margeff_se,
+                            self.res2.margeff_nodummy_dyexmedian_se,
+                            DECIMAL_4)
+
+    def test_nodummy_dyexzero(self):
+        me = self.res1.get_margeff(at='zero', method='dyex')
+        assert_almost_equal(me.margeff,
+                            self.res2.margeff_nodummy_dyexzero,
+                            DECIMAL_4)
+        assert_almost_equal(me.margeff_se,
+                            self.res2.margeff_nodummy_dyexzero_se,
+                            DECIMAL_4)
+
+    def test_nodummy_eydxoverall(self):
+        me = self.res1.get_margeff(method='eydx')
+        assert_almost_equal(me.margeff,
+                            self.res2.margeff_nodummy_eydx,
+                            DECIMAL_4)
+        assert_almost_equal(me.margeff_se,
+                            self.res2.margeff_nodummy_eydx_se,
+                            DECIMAL_4)
+
+    def test_nodummy_eydxmean(self):
+        me = self.res1.get_margeff(at='mean', method='eydx')
+        assert_almost_equal(me.margeff,
+                            self.res2.margeff_nodummy_eydxmean,
+                            DECIMAL_4)
+        assert_almost_equal(me.margeff_se,
+                            self.res2.margeff_nodummy_eydxmean_se,
+                            DECIMAL_4)
+
+    def test_nodummy_eydxmedian(self):
+        me = self.res1.get_margeff(at='median', method='eydx')
+        assert_almost_equal(me.margeff,
+                            self.res2.margeff_nodummy_eydxmedian,
+                            DECIMAL_4)
+        assert_almost_equal(me.margeff_se,
+                            self.res2.margeff_nodummy_eydxmedian_se,
+                            DECIMAL_4)
+
+    def test_nodummy_eydxzero(self):
+        me = self.res1.get_margeff(at='zero', method='eydx')
+        assert_almost_equal(me.margeff,
+                            self.res2.margeff_nodummy_eydxzero,
+                            DECIMAL_4)
+        assert_almost_equal(me.margeff_se,
+                            self.res2.margeff_nodummy_eydxzero_se,
+                            DECIMAL_4)
+
+    def test_nodummy_eyexoverall(self):
+        me = self.res1.get_margeff(method='eyex')
+        assert_almost_equal(me.margeff,
+                            self.res2.margeff_nodummy_eyex,
+                            DECIMAL_4)
+        assert_almost_equal(me.margeff_se,
+                            self.res2.margeff_nodummy_eyex_se,
+                            DECIMAL_4)
+
+    def test_nodummy_eyexmean(self):
+        me = self.res1.get_margeff(at='mean', method='eyex')
+        assert_almost_equal(me.margeff,
+                            self.res2.margeff_nodummy_eyexmean,
+                            DECIMAL_4)
+        assert_almost_equal(me.margeff_se,
+                            self.res2.margeff_nodummy_eyexmean_se,
+                            DECIMAL_4)
+
+    def test_nodummy_eyexmedian(self):
+        me = self.res1.get_margeff(at='median', method='eyex')
+        assert_almost_equal(me.margeff,
+                            self.res2.margeff_nodummy_eyexmedian,
+                            DECIMAL_4)
+        assert_almost_equal(me.margeff_se,
+                            self.res2.margeff_nodummy_eyexmedian_se,
+                            DECIMAL_4)
+
+    def test_nodummy_eyexzero(self):
+        me = self.res1.get_margeff(at='zero', method='eyex')
+        assert_almost_equal(me.margeff,
+                            self.res2.margeff_nodummy_eyexzero,
+                            DECIMAL_4)
+        assert_almost_equal(me.margeff_se,
+                            self.res2.margeff_nodummy_eyexzero_se,
+                            DECIMAL_4)
+
+    def test_dummy_dydxoverall(self):
+        me = self.res1.get_margeff(dummy=True)
+        assert_almost_equal(me.margeff,
+                            self.res2.margeff_dummy_dydx,
+                            DECIMAL_4)
+        assert_almost_equal(me.margeff_se,
+                            self.res2.margeff_dummy_dydx_se,
+                            DECIMAL_4)
+
+    def test_dummy_dydxmean(self):
+        me = self.res1.get_margeff(at='mean', dummy=True)
+        assert_almost_equal(me.margeff,
+                            self.res2.margeff_dummy_dydxmean,
+                            DECIMAL_4)
+        assert_almost_equal(me.margeff_se,
+                            self.res2.margeff_dummy_dydxmean_se,
+                            DECIMAL_4)
+
+    def test_dummy_eydxoverall(self):
+        me = self.res1.get_margeff(method='eydx', dummy=True)
+        assert_almost_equal(me.margeff,
+                            self.res2.margeff_dummy_eydx,
+                            DECIMAL_4)
+        assert_almost_equal(me.margeff_se,
+                            self.res2.margeff_dummy_eydx_se,
+                            DECIMAL_4)
+
+    def test_dummy_eydxmean(self):
+        me = self.res1.get_margeff(at='mean', method='eydx', dummy=True)
+        assert_almost_equal(me.margeff,
+                            self.res2.margeff_dummy_eydxmean,
+                            DECIMAL_4)
+        assert_almost_equal(me.margeff_se,
+                            self.res2.margeff_dummy_eydxmean_se,
+                            DECIMAL_4)
+
+    def test_count_dydxoverall(self):
+        me = self.res1.get_margeff(count=True)
+        assert_almost_equal(me.margeff,
+                            self.res2.margeff_count_dydx,
+                            DECIMAL_4)
+        assert_almost_equal(me.margeff_se,
+                            self.res2.margeff_count_dydx_se,
+                            DECIMAL_4)
+
+    def test_count_dydxmean(self):
+        me = self.res1.get_margeff(count=True, at='mean')
+        assert_almost_equal(me.margeff,
+                            self.res2.margeff_count_dydxmean,
+                            DECIMAL_4)
+        assert_almost_equal(me.margeff_se,
+                            self.res2.margeff_count_dydxmean_se,
+                            DECIMAL_4)
+
+    def test_count_dummy_dydxoverall(self):
+        me = self.res1.get_margeff(count=True, dummy=True)
+        assert_almost_equal(me.margeff,
+                            self.res2.margeff_count_dummy_dydxoverall,
+                            DECIMAL_4)
+        assert_almost_equal(me.margeff_se,
+                            self.res2.margeff_count_dummy_dydxoverall_se,
+                            DECIMAL_4)
+
+    def test_count_dummy_dydxmean(self):
+        me = self.res1.get_margeff(count=True, dummy=True, at='mean')
+        assert_almost_equal(me.margeff,
+                            self.res2.margeff_count_dummy_dydxmean,
+                            DECIMAL_4)
+        assert_almost_equal(me.margeff_se,
+                            self.res2.margeff_count_dummy_dydxmean_se,
+                            DECIMAL_4)
+
+
 @pytest.mark.not_vetted
 class TestLogitNewton(CheckBinaryResults, CheckMargEff):
 
@@ -1095,13 +1781,12 @@ class TestLogitNewton(CheckBinaryResults, CheckMargEff):
         data = sm2.datasets.spector.load()
         data.exog = add_constant(data.exog, prepend=False)
         cls.res1 = Logit(data.endog, data.exog).fit(method="newton", disp=0)
-        res2 = Spector()
-        res2.logit()
-        cls.res2 = res2
+        cls.res2 = Spector().logit()
 
     def test_resid_pearson(self):
         assert_almost_equal(self.res1.resid_pearson,
-                            self.res2.resid_pearson, 5)
+                            self.res2.resid_pearson,
+                            5)
 
     def test_nodummy_exog1(self):
         me = self.res1.get_margeff(atexog={0: 2.0, 2: 1.})
@@ -1131,7 +1816,7 @@ class TestLogitNewton(CheckBinaryResults, CheckMargEff):
                             DECIMAL_4)
 
     def test_dummy_exog2(self):
-        me = self.res1.get_margeff(atexog={1 : 21., 2 : 0}, at='mean',
+        me = self.res1.get_margeff(atexog={1: 21., 2: 0}, at='mean',
                                    dummy=True)
         assert_almost_equal(me.margeff,
                             self.res2.margeff_dummy_atexog2,
@@ -1142,18 +1827,26 @@ class TestLogitNewton(CheckBinaryResults, CheckMargEff):
 
 
 @pytest.mark.not_vetted
+class TestLogitBFGS(CheckBinaryResults, CheckMargEff):
+
+    @classmethod
+    def setup_class(cls):
+        data = sm2.datasets.spector.load()
+        data.exog = add_constant(data.exog, prepend=False)
+        cls.res2 = Spector().logit()
+        cls.res1 = Logit(data.endog, data.exog).fit(method="bfgs", disp=0)
+
+
+@pytest.mark.not_vetted
 class TestLogitNewtonPrepend(CheckMargEff):
     # same as previous version but adjusted for add_constant prepend=True
     # bug GH#3695
-
     @classmethod
     def setup_class(cls):
         data = sm2.datasets.spector.load()
         data.exog = add_constant(data.exog, prepend=True)
         cls.res1 = Logit(data.endog, data.exog).fit(method="newton", disp=0)
-        res2 = Spector()
-        res2.logit()
-        cls.res2 = res2
+        cls.res2 = Spector().logit()
         cls.slice = np.roll(np.arange(len(cls.res1.params)), 1) #.astype(int)
 
     def test_resid_pearson(self):
@@ -1199,590 +1892,172 @@ class TestLogitNewtonPrepend(CheckMargEff):
                             DECIMAL_4)
 
 
+# ------------------------------------------------------------------
+# llnull Tests
+
+class CheckNull(object):
+    @classmethod
+    def _get_data(cls):
+        x = np.array([20., 25., 30., 35., 40., 45., 50.])
+        nobs = len(x)
+        exog = np.column_stack((np.ones(nobs), x))
+        endog = np.array([469, 5516, 6854, 6837, 5952, 4066, 3242])
+        return endog, exog
+
+    def test_llnull(self):
+        res = self.model.fit(start_params=self.start_params)
+        res._results._attach_nullmodel = True
+        llf0 = res.llnull
+        res_null0 = res.res_null
+        assert_allclose(llf0, res_null0.llf, rtol=1e-6)
+
+        res_null1 = self.res_null
+        assert_allclose(llf0, res_null1.llf, rtol=1e-6)
+        # Note default convergence tolerance doesn't get lower rtol
+        # from different starting values (using bfgs)
+        assert_allclose(res_null0.params, res_null1.params, rtol=5e-5)
+
+
 @pytest.mark.not_vetted
-class TestLogitBFGS(CheckBinaryResults, CheckMargEff):
+class TestPoissonNull(CheckNull):
+    start_params = [8.5, 0]
 
     @classmethod
     def setup_class(cls):
-        data = sm2.datasets.spector.load()
-        data.exog = add_constant(data.exog, prepend=False)
-        res2 = Spector()
-        res2.logit()
-        cls.res2 = res2
-        cls.res1 = Logit(data.endog, data.exog).fit(method="bfgs", disp=0)
+        endog, exog = cls._get_data()
+        cls.model = Poisson(endog, exog)
+        cls.res_null = Poisson(endog, exog[:, 0]).fit(start_params=[8.5])
+        # use start params to avoid warnings
 
 
 @pytest.mark.not_vetted
-class TestPoissonNewton(CheckModelResults):
+class TestNegativeBinomialNB1Null(CheckNull):
+    # for convergence with bfgs, I needed to round down alpha start_params
+    start_params = np.array([7.730452, 2.01633068e-02, 1763.0])
 
     @classmethod
     def setup_class(cls):
-        data = sm2.datasets.randhie.load()
-        exog = add_constant(data.exog, prepend=False)
-        cls.res1 = Poisson(data.endog, exog).fit(method='newton', disp=0)
-        res2 = RandHIE()
-        res2.poisson()
-        cls.res2 = res2
-
-    def test_margeff_overall(self):
-        me = self.res1.get_margeff()
-        assert_almost_equal(me.margeff,
-                            self.res2.margeff_nodummy_overall,
-                            DECIMAL_4)
-        assert_almost_equal(me.margeff_se,
-                            self.res2.margeff_nodummy_overall_se,
-                            DECIMAL_4)
-
-    def test_margeff_dummy_overall(self):
-        me = self.res1.get_margeff(dummy=True)
-        assert_almost_equal(me.margeff,
-                            self.res2.margeff_dummy_overall,
-                            DECIMAL_4)
-        assert_almost_equal(me.margeff_se,
-                            self.res2.margeff_dummy_overall_se,
-                            DECIMAL_4)
-
-    def test_resid(self):
-        assert_almost_equal(self.res1.resid, self.res2.resid, 2)
-
-    def test_predict_prob(self):
-
-        # just check the first 100 obs. vs R to save memory
-        probs = self.res1.predict_prob()[:100]
-        assert_almost_equal(probs, probs_res, 8)
+        endog, exog = cls._get_data()
+        cls.model = NegativeBinomial(endog, exog, loglike_method='nb1')
+        cls.model_null = NegativeBinomial(endog, exog[:, 0],
+                                          loglike_method='nb1')
+        cls.res_null = cls.model_null.fit(start_params=[8, 1000],
+                                          method='bfgs', gtol=1e-08,
+                                          maxiter=300)
 
 
 @pytest.mark.not_vetted
-class TestNegativeBinomialNB2Newton(CheckModelResults):
+class TestNegativeBinomialNB2Null(CheckNull):
+    start_params = np.array([8.07216448, 0.01087238, 0.44024134])
 
     @classmethod
     def setup_class(cls):
-        data = sm2.datasets.randhie.load()
-        exog = add_constant(data.exog, prepend=False)
-        mod = NegativeBinomial(data.endog, exog, 'nb2')
-        cls.res1 = mod.fit(method='newton', disp=0)
-        res2 = RandHIE()
-        res2.negativebinomial_nb2_bfgs()
-        cls.res2 = res2
-
-    def test_jac(self):
-        pass
-
-    # NOTE: The bse is much closer precitions to stata
-    def test_bse(self):
-        assert_almost_equal(self.res1.bse, self.res2.bse, DECIMAL_3)
-
-    def test_params(self):
-        assert_almost_equal(self.res1.params, self.res2.params, DECIMAL_4)
-
-    def test_alpha(self):
-        self.res1.bse  # attaches alpha_std_err
-        assert_almost_equal(self.res1.lnalpha,
-                            self.res2.lnalpha,
-                            DECIMAL_4)
-        assert_almost_equal(self.res1.lnalpha_std_err,
-                            self.res2.lnalpha_std_err,
-                            DECIMAL_4)
-
-    def test_conf_int(self):
-        assert_almost_equal(self.res1.conf_int(),
-                            self.res2.conf_int,
-                            DECIMAL_3)
-
-    def test_zstat(self):  # Low precision because Z vs. t
-        assert_almost_equal(self.res1.pvalues[:-1],
-                            self.res2.pvalues,
-                            DECIMAL_2)
-
-    def test_fittedvalues(self):
-        assert_almost_equal(self.res1.fittedvalues[:10],
-                            self.res2.fittedvalues[:10],
-                            DECIMAL_3)
-
-    def test_predict(self):
-        assert_almost_equal(self.res1.predict()[:10],
-                            np.exp(self.res2.fittedvalues[:10]),
-                            DECIMAL_3)
-
-    def test_predict_xb(self):
-        assert_almost_equal(self.res1.predict(linear=True)[:10],
-                            self.res2.fittedvalues[:10],
-                            DECIMAL_3)
-
-    def no_info(self):
-        pass
-
-    test_jac = no_info
+        endog, exog = cls._get_data()
+        cls.model = NegativeBinomial(endog, exog, loglike_method='nb2')
+        cls.model_null = NegativeBinomial(endog, exog[:, 0],
+                                          loglike_method='nb2')
+        cls.res_null = cls.model_null.fit(start_params=[8, 0.5],
+                                          method='bfgs', gtol=1e-06,
+                                          maxiter=300)
 
 
 @pytest.mark.not_vetted
-class TestNegativeBinomialNB1Newton(CheckModelResults):
+class TestNegativeBinomialNBP2Null(CheckNull):
+    start_params = np.array([8.07216448, 0.01087238, 0.44024134])
 
     @classmethod
     def setup_class(cls):
-        data = sm2.datasets.randhie.load()
-        exog = add_constant(data.exog, prepend=False)
-        mod = NegativeBinomial(data.endog, exog, 'nb1')
-        cls.res1 = mod.fit(method="newton", maxiter=100, disp=0)
-        res2 = RandHIE()
-        res2.negativebinomial_nb1_bfgs()
-        cls.res2 = res2
+        endog, exog = cls._get_data()
+        cls.model = NegativeBinomialP(endog, exog, p=2)
+        cls.model_null = NegativeBinomialP(endog, exog[:, 0], p=2)
+        cls.res_null = cls.model_null.fit(start_params=[8, 1],
+                                          method='bfgs', gtol=1e-06,
+                                          maxiter=300)
 
-    def test_zstat(self):
-        assert_almost_equal(self.res1.tvalues, self.res2.z, DECIMAL_1)
-
-    def test_lnalpha(self):
-        self.res1.bse  # attaches alpha_std_err
-        assert_almost_equal(self.res1.lnalpha,
-                            self.res2.lnalpha,
-                            3)
-        assert_almost_equal(self.res1.lnalpha_std_err,
-                            self.res2.lnalpha_std_err,
-                            DECIMAL_4)
-
-    def test_params(self):
-        assert_almost_equal(self.res1.params,
-                            self.res2.params,
-                            DECIMAL_4)
-
-    def test_conf_int(self):
-        # the bse for alpha is not high precision from the hessian
-        # approximation
-        assert_almost_equal(self.res1.conf_int(),
-                            self.res2.conf_int,
-                            DECIMAL_2)
-
-    def test_jac(self):
-        pass
-
-    def test_predict(self):
-        pass
-
-    def test_predict_xb(self):
-        pass
+    def test_start_null(self):
+        endog, exog = self.model.endog, self.model.exog
+        model_nb2 = NegativeBinomial(endog, exog, loglike_method='nb2')
+        sp1 = model_nb2._get_start_params_null()
+        sp0 = self.model._get_start_params_null()
+        assert_allclose(sp0, sp1, rtol=1e-12)
 
 
 @pytest.mark.not_vetted
-class TestNegativeBinomialNB2BFGS(CheckModelResults):
+class TestNegativeBinomialNBP1Null(CheckNull):
+    start_params = np.array([7.730452, 2.01633068e-02, 1763.0])
 
     @classmethod
     def setup_class(cls):
-        data = sm2.datasets.randhie.load()
-        exog = add_constant(data.exog, prepend=False)
-        mod = NegativeBinomial(data.endog, exog, 'nb2')
-        cls.res1 = mod.fit(method='bfgs', disp=0, maxiter=1000)
-        res2 = RandHIE()
-        res2.negativebinomial_nb2_bfgs()
-        cls.res2 = res2
+        endog, exog = cls._get_data()
+        cls.model = NegativeBinomialP(endog, exog, p=1.)
+        cls.model_null = NegativeBinomialP(endog, exog[:, 0], p=1)
+        cls.res_null = cls.model_null.fit(start_params=[8, 1],
+                                          method='bfgs', gtol=1e-06,
+                                          maxiter=300)
 
-    def test_jac(self):
-        pass
-
-    # NOTE: The bse is much closer precitions to stata
-    def test_bse(self):
-        assert_almost_equal(self.res1.bse,
-                            self.res2.bse,
-                            DECIMAL_3)
-
-    def test_params(self):
-        assert_almost_equal(self.res1.params,
-                            self.res2.params,
-                            DECIMAL_4)
-
-    def test_alpha(self):
-        self.res1.bse  # attaches alpha_std_err
-        assert_almost_equal(self.res1.lnalpha, self.res2.lnalpha,
-                            DECIMAL_4)
-        assert_almost_equal(self.res1.lnalpha_std_err,
-                            self.res2.lnalpha_std_err,
-                            DECIMAL_4)
-
-    def test_conf_int(self):
-        assert_almost_equal(self.res1.conf_int(),
-                            self.res2.conf_int,
-                            DECIMAL_3)
-
-    def test_zstat(self):  # Low precision because Z vs. t
-        assert_almost_equal(self.res1.pvalues[:-1],
-                            self.res2.pvalues,
-                            DECIMAL_2)
-
-    def test_fittedvalues(self):
-        assert_almost_equal(self.res1.fittedvalues[:10],
-                            self.res2.fittedvalues[:10],
-                            DECIMAL_3)
-
-    def test_predict(self):
-        assert_almost_equal(self.res1.predict()[:10],
-                            np.exp(self.res2.fittedvalues[:10]),
-                            DECIMAL_3)
-
-    def test_predict_xb(self):
-        assert_almost_equal(self.res1.predict(linear=True)[:10],
-                            self.res2.fittedvalues[:10],
-                            DECIMAL_3)
-
-    def no_info(self):
-        pass
-
-    test_jac = no_info
+    def test_start_null(self):
+        endog, exog = self.model.endog, self.model.exog
+        model_nb2 = NegativeBinomial(endog, exog, loglike_method='nb1')
+        sp1 = model_nb2._get_start_params_null()
+        sp0 = self.model._get_start_params_null()
+        assert_allclose(sp0, sp1, rtol=1e-12)
 
 
 @pytest.mark.not_vetted
-class TestNegativeBinomialNB1BFGS(CheckModelResults):
+class TestGeneralizedPoissonNull(CheckNull):
+    start_params = np.array([6.91127148, 0.04501334, 0.88393736])
 
     @classmethod
     def setup_class(cls):
-        data = sm2.datasets.randhie.load()
-        exog = add_constant(data.exog, prepend=False)
-        mod = NegativeBinomial(data.endog, exog, 'nb1')
-        cls.res1 = mod.fit(method="bfgs", maxiter=100, disp=0)
-        res2 = RandHIE()
-        res2.negativebinomial_nb1_bfgs()
-        cls.res2 = res2
-
-    def test_zstat(self):
-        assert_almost_equal(self.res1.tvalues,
-                            self.res2.z,
-                            DECIMAL_1)
-
-    def test_lnalpha(self):
-        self.res1.bse # attaches alpha_std_err
-        assert_almost_equal(self.res1.lnalpha,
-                            self.res2.lnalpha,
-                            3)
-        assert_almost_equal(self.res1.lnalpha_std_err,
-                            self.res2.lnalpha_std_err,
-                            DECIMAL_4)
-
-    def test_params(self):
-        assert_almost_equal(self.res1.params,
-                            self.res2.params,
-                            DECIMAL_4)
-
-    def test_conf_int(self):
-        # the bse for alpha is not high precision from the hessian
-        # approximation
-        assert_almost_equal(self.res1.conf_int(),
-                            self.res2.conf_int,
-                            DECIMAL_2)
-
-    def test_jac(self):
-        pass
-
-    def test_predict(self):
-        pass
-
-    def test_predict_xb(self):
-        pass
+        endog, exog = cls._get_data()
+        cls.model = GeneralizedPoisson(endog, exog, p=1.5)
+        cls.model_null = GeneralizedPoisson(endog, exog[:, 0], p=1.5)
+        cls.res_null = cls.model_null.fit(start_params=[8.4, 1],
+                                          method='bfgs', gtol=1e-08,
+                                          maxiter=300)
 
 
 @pytest.mark.not_vetted
-class TestNegativeBinomialGeometricBFGS(CheckModelResults):
-    # Cannot find another implementation of the geometric to cross-check
-    # results we only test fitted values because geometric has fewer parameters
-    # than nb1 and nb2
-    # and we want to make sure that predict() np.dot(exog, params) works
+def test_null_options():
+    # this is a "nice" case because we only check that options are used
+    # correctly
+    nobs = 10
+    exog = np.ones((20, 2))
+    exog[:nobs // 2, 1] = 0
+    mu = np.exp(exog.sum(1))
+    endog = np.random.poisson(mu)  # Note no size=nobs in np.random
+    res = Poisson(endog, exog).fit(start_params=np.log([1, 1]))
+    llnull0 = res.llnull
+    assert not hasattr(res, 'res_llnull')
+    res.set_null_options(attach_results=True)
+    # default optimization
+    lln = res.llnull  # access to trigger computation
+    assert_allclose(res.res_null.mle_settings['start_params'],
+                    np.log(endog.mean()), rtol=1e-10)
+    assert res.res_null.mle_settings['optimizer'] =='bfgs'
+    assert_allclose(lln, llnull0)
 
-    @classmethod
-    def setup_class(cls):
-        data = sm2.datasets.randhie.load()
-        exog = add_constant(data.exog, prepend=False)
-        mod = NegativeBinomial(data.endog, exog, 'geometric')
-        cls.res1 = mod.fit(method='bfgs', disp=0)
-        res2 = RandHIE()
-        res2.negativebinomial_geometric_bfgs()
-        cls.res2 = res2
+    res.set_null_options(attach_results=True, start_params=[0.5], method='nm')
+    lln = res.llnull  # access to trigger computation
+    assert_allclose(res.res_null.mle_settings['start_params'], [0.5],
+                    rtol=1e-10)
+    assert res.res_null.mle_settings['optimizer'] == 'nm'
 
-    # the following are regression tests, could be inherited instead
-    def test_aic(self):
-        assert_almost_equal(self.res1.aic,
-                            self.res2.aic,
-                            DECIMAL_3)
+    res.summary()  # call to fill cache
+    assert 'prsquared' in res._cache
+    assert_equal(res._cache['llnull'],  lln)
 
-    def test_bic(self):
-        assert_almost_equal(self.res1.bic,
-                            self.res2.bic,
-                            DECIMAL_3)
+    assert 'prsquared' in res._cache
+    assert_equal(res._cache['llnull'],  lln)
 
-    def test_conf_int(self):
-        assert_almost_equal(self.res1.conf_int(),
-                            self.res2.conf_int,
-                            DECIMAL_3)
-
-    def test_fittedvalues(self):
-        assert_almost_equal(self.res1.fittedvalues[:10],
-                            self.res2.fittedvalues[:10],
-                            DECIMAL_3)
-
-    def test_jac(self):
-        pass
-
-    def test_predict(self):
-        assert_almost_equal(self.res1.predict()[:10],
-                            np.exp(self.res2.fittedvalues[:10]),
-                            DECIMAL_3)
-
-    def test_params(self):
-        assert_almost_equal(self.res1.params,
-                            self.res2.params,
-                            DECIMAL_3)
-
-    def test_predict_xb(self):
-        assert_almost_equal(self.res1.predict(linear=True)[:10],
-                            self.res2.fittedvalues[:10],
-                            DECIMAL_3)
-
-    def test_zstat(self):  # Low precision because Z vs. t
-        assert_almost_equal(self.res1.tvalues,
-                            self.res2.z,
-                            DECIMAL_1)
-
-    def no_info(self):
-        pass
-
-    def test_llf(self):
-        assert_almost_equal(self.res1.llf, self.res2.llf, DECIMAL_1)
-
-    def test_llr(self):
-        assert_almost_equal(self.res1.llr, self.res2.llr, DECIMAL_2)
-
-    def test_bse(self):
-        assert_almost_equal(self.res1.bse, self.res2.bse, DECIMAL_3)
-
-    test_jac = no_info
+    # check setting cache
+    res.set_null_options(llnull=999)
+    assert 'prsquared' not in res._cache
+    assert_equal(res._cache['llnull'],  999)
 
 
-@pytest.mark.not_vetted
-class CheckMNLogitBaseZero(CheckModelResults):
-
-    def test_margeff_overall(self):
-        me = self.res1.get_margeff()
-        assert_almost_equal(me.margeff,
-                            self.res2.margeff_dydx_overall,
-                            6)
-        assert_almost_equal(me.margeff_se,
-                            self.res2.margeff_dydx_overall_se,
-                            6)
-
-        me_frame = me.summary_frame()
-        eff = me_frame["dy/dx"].values.reshape(me.margeff.shape, order="F")
-        assert_allclose(eff,
-                        me.margeff,
-                        rtol=1e-13)
-        assert me_frame.shape == (np.size(me.margeff), 6)
-
-    def test_margeff_mean(self):
-        me = self.res1.get_margeff(at='mean')
-        assert_almost_equal(me.margeff,
-                            self.res2.margeff_dydx_mean,
-                            7)
-        assert_almost_equal(me.margeff_se,
-                            self.res2.margeff_dydx_mean_se,
-                            7)
-
-    def test_margeff_dummy(self):
-        data = self.data
-        vote = data.data['vote']
-        exog = np.column_stack((data.exog, vote))
-        exog = add_constant(exog, prepend=False)
-        res = MNLogit(data.endog, exog).fit(method="newton", disp=0)
-
-        me = res.get_margeff(dummy=True)
-        assert_almost_equal(me.margeff,
-                            self.res2.margeff_dydx_dummy_overall,
-                            6)
-        assert_almost_equal(me.margeff_se,
-                            self.res2.margeff_dydx_dummy_overall_se,
-                            6)
-
-        me = res.get_margeff(dummy=True, method="eydx")
-        assert_almost_equal(me.margeff,
-                            self.res2.margeff_eydx_dummy_overall,
-                            5)
-        assert_almost_equal(me.margeff_se,
-                            self.res2.margeff_eydx_dummy_overall_se,
-                            6)
-
-    def test_j(self):
-        assert self.res1.model.J == self.res2.J
-
-    def test_k(self):
-        assert self.res1.model.K == self.res2.K
-
-    def test_endog_names(self):
-        endog_names = self.res1._get_endog_name(None, None)[1]
-        assert endog_names == ['y=1', 'y=2', 'y=3', 'y=4', 'y=5', 'y=6']
-
-    def test_pred_table(self):
-        # fitted results taken from gretl
-        pred = [6, 1, 1, 1, 0, 1, 0, 1, 1, 0, 0, 1, 1, 1, 0, 6, 0, 1, 6, 0, 0,
-                1, 1, 6, 0, 1, 0, 1, 1, 1, 0, 0, 1, 1, 6, 0, 0, 6, 6, 0, 0, 1,
-                1, 6, 1, 6, 0, 0, 0, 1, 0, 1, 0, 0, 0, 6, 0, 0, 6, 0, 0, 0, 1,
-                1, 0, 0, 6, 6, 6, 6, 1, 0, 5, 1, 1, 0, 0, 0, 1, 1, 0, 0, 0, 0,
-                6, 0, 6, 6, 1, 0, 1, 1, 6, 5, 1, 0, 0, 0, 5, 0, 0, 6, 0, 1, 0,
-                0, 0, 0, 0, 1, 1, 0, 6, 6, 6, 6, 5, 0, 1, 1, 0, 1, 0, 6, 6, 0,
-                0, 0, 6, 0, 0, 0, 6, 6, 0, 5, 1, 0, 0, 0, 0, 6, 0, 5, 6, 6, 0,
-                0, 0, 0, 6, 1, 0, 0, 1, 0, 1, 6, 1, 1, 1, 1, 1, 0, 0, 0, 6, 0,
-                5, 1, 0, 6, 6, 6, 0, 0, 0, 0, 1, 6, 6, 0, 0, 0, 1, 1, 5, 6, 0,
-                6, 1, 0, 0, 1, 6, 0, 0, 1, 0, 6, 6, 0, 5, 6, 6, 0, 0, 6, 1, 0,
-                6, 0, 1, 0, 1, 6, 0, 1, 1, 1, 6, 0, 5, 0, 0, 6, 1, 0, 6, 5, 5,
-                0, 6, 1, 1, 1, 0, 0, 6, 0, 0, 5, 0, 0, 6, 6, 6, 6, 6, 0, 1, 0,
-                0, 6, 6, 0, 0, 1, 6, 0, 0, 6, 1, 6, 1, 1, 1, 0, 1, 6, 5, 0, 0,
-                1, 5, 0, 1, 6, 6, 1, 0, 0, 1, 6, 1, 5, 6, 1, 0, 0, 1, 1, 0, 6,
-                1, 6, 0, 1, 1, 5, 6, 6, 5, 1, 1, 1, 0, 6, 1, 6, 1, 0, 1, 0, 0,
-                1, 5, 0, 1, 1, 0, 5, 6, 0, 5, 1, 1, 6, 5, 0, 6, 0, 0, 0, 0, 0,
-                0, 1, 6, 1, 0, 5, 1, 0, 0, 1, 6, 0, 0, 6, 6, 6, 0, 2, 1, 6, 5,
-                6, 1, 1, 0, 5, 1, 1, 1, 6, 1, 6, 6, 5, 6, 0, 1, 0, 1, 6, 0, 6,
-                1, 6, 0, 0, 6, 1, 0, 6, 1, 0, 0, 0, 0, 6, 6, 6, 6, 5, 6, 6, 0,
-                0, 6, 1, 1, 6, 0, 0, 6, 6, 0, 6, 6, 0, 0, 6, 0, 0, 6, 6, 6, 1,
-                0, 6, 0, 0, 0, 6, 1, 1, 0, 1, 5, 0, 0, 5, 0, 0, 0, 1, 1, 6, 1,
-                0, 0, 0, 6, 6, 1, 1, 6, 5, 5, 0, 6, 6, 0, 1, 1, 0, 6, 6, 0, 6,
-                5, 5, 6, 5, 1, 0, 6, 0, 6, 1, 0, 1, 6, 6, 6, 1, 0, 6, 0, 5, 6,
-                6, 5, 0, 5, 1, 0, 6, 0, 6, 1, 5, 5, 0, 1, 5, 5, 2, 6, 6, 6, 5,
-                0, 0, 1, 6, 1, 0, 1, 6, 1, 0, 0, 1, 5, 6, 6, 0, 0, 0, 5, 6, 6,
-                6, 1, 5, 6, 1, 0, 0, 6, 5, 0, 1, 1, 1, 6, 6, 0, 1, 0, 0, 0, 5,
-                0, 0, 6, 1, 6, 0, 6, 1, 5, 5, 6, 5, 0, 0, 0, 0, 1, 1, 0, 5, 5,
-                0, 0, 0, 0, 1, 0, 6, 6, 1, 1, 6, 6, 0, 5, 5, 0, 0, 0, 6, 6, 1,
-                6, 0, 0, 5, 0, 1, 6, 5, 6, 6, 5, 5, 6, 6, 1, 0, 1, 6, 6, 1, 6,
-                0, 6, 0, 6, 5, 0, 6, 6, 0, 5, 6, 0, 6, 6, 5, 0, 1, 6, 6, 1, 0,
-                1, 0, 6, 6, 1, 0, 6, 6, 6, 0, 1, 6, 0, 1, 5, 1, 1, 5, 6, 6, 0,
-                1, 6, 6, 1, 5, 0, 5, 0, 6, 0, 1, 6, 1, 0, 6, 1, 6, 0, 6, 1, 0,
-                0, 0, 6, 6, 0, 1, 1, 6, 6, 6, 1, 6, 0, 5, 6, 0, 5, 6, 6, 5, 5,
-                5, 6, 0, 6, 0, 0, 0, 5, 0, 6, 1, 2, 6, 6, 6, 5, 1, 6, 0, 6, 0,
-                0, 0, 0, 6, 5, 0, 5, 1, 6, 5, 1, 6, 5, 1, 1, 0, 0, 6, 1, 1, 5,
-                6, 6, 0, 5, 2, 5, 5, 0, 5, 5, 5, 6, 5, 6, 6, 5, 2, 6, 5, 6, 0,
-                0, 6, 5, 0, 6, 0, 0, 6, 6, 6, 0, 5, 1, 1, 6, 6, 5, 2, 1, 6, 5,
-                6, 0, 6, 6, 1, 1, 5, 1, 6, 6, 6, 0, 0, 6, 1, 0, 5, 5, 1, 5, 6,
-                1, 6, 0, 1, 6, 5, 0, 0, 6, 1, 5, 1, 0, 6, 0, 6, 6, 5, 5, 6, 6,
-                6, 6, 2, 6, 6, 6, 5, 5, 5, 0, 1, 0, 0, 0, 6, 6, 1, 0, 6, 6, 6,
-                6, 6, 1, 0, 6, 1, 5, 5, 6, 6, 6, 6, 6, 5, 6, 1, 6, 2, 5, 5, 6,
-                5, 6, 6, 5, 6, 6, 5, 5, 6, 1, 5, 1, 6, 0, 2, 5, 0, 5, 0, 2, 1,
-                6, 0, 0, 6, 6, 1, 6, 0, 5, 5, 6, 6, 1, 6, 6, 6, 5, 6, 6, 1, 6,
-                5, 6, 1, 1, 0, 6, 6, 5, 1, 0, 0, 6, 6, 5, 6, 0, 1, 6, 0, 5, 6,
-                5, 2, 5, 2, 0, 0, 1, 6, 6, 1, 5, 6, 6, 0, 6, 6, 6, 6, 6, 5]
-        assert_array_equal(self.res1.predict().argmax(1), pred)
-
-        # the rows should add up for pred table
-        assert_array_equal(self.res1.pred_table().sum(0), np.bincount(pred))
-
-        # note this is just a regression test, gretl doesn't have a prediction
-        # table
-        pred = [[ 126.,   41.,    2.,    0.,    0.,   12.,   19.],
-                [  77.,   73.,    3.,    0.,    0.,   15.,   12.],
-                [  37.,   43.,    2.,    0.,    0.,   19.,    7.],
-                [  12.,    9.,    1.,    0.,    0.,    9.,    6.],
-                [  19.,   10.,    2.,    0.,    0.,   20.,   43.],
-                [  22.,   25.,    1.,    0.,    0.,   31.,   71.],
-                [   9.,    7.,    1.,    0.,    0.,   18.,  140.]]
-        assert_array_equal(self.res1.pred_table(), pred)
-
-    def test_resid(self):
-        assert_array_equal(self.res1.resid_misclassified, self.res2.resid)
-
-
-@pytest.mark.not_vetted
-class TestMNLogitNewtonBaseZero(CheckMNLogitBaseZero):
-    @classmethod
-    def setup_class(cls):
-        data = sm2.datasets.anes96.load()
-        cls.data = data
-        exog = data.exog
-        exog = add_constant(exog, prepend=False)
-        cls.res1 = MNLogit(data.endog, exog).fit(method="newton", disp=0)
-        res2 = Anes()
-        res2.mnlogit_basezero()
-        cls.res2 = res2
-
-
-@pytest.mark.not_vetted
-class TestMNLogitLBFGSBaseZero(CheckMNLogitBaseZero):
-    @classmethod
-    def setup_class(cls):
-        data = sm2.datasets.anes96.load()
-        cls.data = data
-        exog = data.exog
-        exog = add_constant(exog, prepend=False)
-        mymodel = MNLogit(data.endog, exog)
-        cls.res1 = mymodel.fit(method="lbfgs", disp=0, maxiter=50000,
-                #m=12, pgtol=1e-7, factr=1e3, # 5 failures
-                #m=20, pgtol=1e-8, factr=1e2, # 3 failures
-                #m=30, pgtol=1e-9, factr=1e1, # 1 failure
-                m=40, pgtol=1e-10, factr=5e0,
-                loglike_and_score=mymodel.loglike_and_score)
-        res2 = Anes()
-        res2.mnlogit_basezero()
-        cls.res2 = res2
-
-
-@pytest.mark.not_vetted
-def test_perfect_prediction():
-    raise pytest.skip('genmod not ported')
-    iris_dir = os.path.join(cur_dir, '..', '..', 'genmod', 'tests', 'results')
-    iris_dir = os.path.abspath(iris_dir)
-    iris = np.genfromtxt(os.path.join(iris_dir, 'iris.csv'),
-                         delimiter=",", skip_header=1)
-    y = iris[:, -1]
-    X = iris[:, :-1]
-    X = X[y != 2]
-    y = y[y != 2]
-    X = add_constant(X, prepend=True)
-    mod = Logit(y,X)
-    with pytest.raises(PerfectSeparationError):
-        mod.fit(maxiter=1000)
-
-    # turn off raise PerfectSeparationError
-    mod.raise_on_perfect_prediction = False
-    # this will raise if you set maxiter high enough with a singular matrix
-    # this is not thread-safe
-    with tm.assert_produces_warning():
-        warnings.simplefilter('always')
-        mod.fit(disp=False, maxiter=50)  # should not raise but does warn
-
-
-@pytest.mark.not_vetted
-def test_iscount():
-    X = np.random.random((50, 10))
-    X[:, 2] = np.random.randint(1, 10, size=50)
-    X[:, 6] = np.random.randint(1, 10, size=50)
-    X[:, 4] = np.random.randint(0, 2, size=50)
-    X[:, 1] = np.random.randint(-10, 10, size=50)  # not integers
-    count_ind = _iscount(X)
-    assert_equal(count_ind, [2, 6])
-
-
-@pytest.mark.not_vetted
-def test_isdummy():
-    X = np.random.random((50, 10))
-    X[:, 2] = np.random.randint(1, 10, size=50)
-    X[:, 6] = np.random.randint(0, 2, size=50)
-    X[:, 4] = np.random.randint(0, 2, size=50)
-    X[:, 1] = np.random.randint(-10, 10, size=50)  # not integers
-    count_ind = _isdummy(X)
-    assert_equal(count_ind, [4, 6])
-
-
-@pytest.mark.not_vetted
-def test_mnlogit_factor():
-    dta = sm2.datasets.anes96.load_pandas()
-    dta['endog'] = dta.endog.replace(dict(zip(range(7), 'ABCDEFG')))
-    exog = add_constant(dta.exog, prepend=True)
-    mod = MNLogit(dta.endog, exog)
-    res = mod.fit(disp=0)
-    # smoke tests
-    params = res.params
-    summary = res.summary()
-    predicted = res.predict(exog.iloc[:5, :])
-
-    # with patsy
-    mod = MNLogit.from_formula('PID ~ ' + ' + '.join(dta.exog.columns), dta.data)
-    res2 = mod.fit(disp=0)
-    params_f = res2.params
-    summary = res2.summary()
-    assert_allclose(params_f, params, rtol=1e-10)
-    predicted_f = res2.predict(dta.exog.iloc[:5, :])
-    assert_allclose(predicted_f, predicted, rtol=1e-10)
-
+# ------------------------------------------------------------------
+# Generalized Poisson
 
 @pytest.mark.not_vetted
 class TestGeneralizedPoisson_p2(object):
@@ -1794,10 +2069,7 @@ class TestGeneralizedPoisson_p2(object):
         data.exog = add_constant(data.exog, prepend=False)
         mod = GeneralizedPoisson(data.endog, data.exog, p=2)
         cls.res1 = mod.fit(method='newton')
-
-        res2 = RandHIE()
-        res2.generalizedpoisson_gp2()
-        cls.res2 = res2
+        cls.res2 = RandHIE().generalizedpoisson_gp2()
 
     def test_bse(self):
         assert_allclose(self.res1.bse,
@@ -1856,10 +2128,7 @@ class TestGeneralizedPoisson_transparams(object):
         data.exog = add_constant(data.exog, prepend=False)
         gpmod = GeneralizedPoisson(data.endog, data.exog, p=2)
         cls.res1 = gpmod.fit(method='newton', use_transparams=True)
-
-        res2 = RandHIE()
-        res2.generalizedpoisson_gp2()
-        cls.res2 = res2
+        cls.res2 = RandHIE().generalizedpoisson_gp2()
 
     def test_bse(self):
         assert_allclose(self.res1.bse,
@@ -2029,253 +2298,64 @@ class TestGeneralizedPoisson_underdispersion(object):
                         (0.64628806058715882, 0.98578597726324468),
                         rtol=0.01)
 
+# ------------------------------------------------------------------
+# Unsorted
 
 @pytest.mark.not_vetted
-class TestNegativeBinomialPNB2Newton(CheckModelResults):
+@pytest.mark.skipif(not has_cvxopt, reason='Skipped test_cvxopt since cvxopt '
+                                           'is not available')
+class TestCVXOPT(object):
 
     @classmethod
     def setup_class(cls):
-        data = sm2.datasets.randhie.load()
-        exog = add_constant(data.exog, prepend=False)
-        mod = NegativeBinomialP(data.endog, exog, p=2)
-        cls.res1 = mod.fit(method='newton', disp=0)
-        res2 = RandHIE()
-        res2.negativebinomial_nb2_bfgs()
-        cls.res2 = res2
+        if not has_cvxopt:
+            raise pytest.skip('Skipped test_cvxopt since cvxopt '
+                              'is not available')
+        cls.data = sm2.datasets.spector.load()
+        cls.data.exog = add_constant(cls.data.exog, prepend=True)
 
-    # NOTE: The bse is much closer precitions to stata
-    def test_bse(self):
-        assert_allclose(self.res1.bse, self.res2.bse,
-                        atol=1e-3, rtol=1e-3)
-
-    def test_params(self):
-        assert_allclose(self.res1.params, self.res2.params,
-                        atol=1e-7)
-
-    def test_alpha(self):
-        self.res1.bse  # attaches alpha_std_err
-        assert_allclose(self.res1.lnalpha, self.res2.lnalpha)
-        assert_allclose(self.res1.lnalpha_std_err,
-                        self.res2.lnalpha_std_err,
-                        atol=1e-7)
-
-    def test_conf_int(self):
-        assert_allclose(self.res1.conf_int(), self.res2.conf_int,
-                        atol=1e-3, rtol=1e-3)
-
-    def test_zstat(self):  # Low precision because Z vs. t
-        assert_allclose(self.res1.pvalues[:-1], self.res2.pvalues,
-                        atol=5e-3, rtol=5e-3)
-
-    def test_fittedvalues(self):
-        assert_allclose(self.res1.fittedvalues[:10],
-                        self.res2.fittedvalues[:10])
-
-    def test_predict(self):
-        assert_allclose(self.res1.predict()[:10],
-                        np.exp(self.res2.fittedvalues[:10]))
-
-    def test_predict_xb(self):
-        assert_allclose(self.res1.predict(which='linear')[:10],
-                        self.res2.fittedvalues[:10])
+    def test_cvxopt_versus_slsqp(self):
+        # Compares results from cvxopt to the standard slsqp
+        self.alpha = 3. * np.array([0, 1, 1, 1.])  # / self.data.endog.shape[0]
+        mod = Logit(self.data.endog, self.data.exog)
+        res_slsqp = mod.fit_regularized(method="l1",
+                                        alpha=self.alpha,
+                                        disp=0, acc=1e-10, maxiter=1000,
+                                        trim_mode='auto')
+        mod = Logit(self.data.endog, self.data.exog)
+        res_cvxopt = mod.fit_regularized(method="l1_cvxopt_cp",
+                                         alpha=self.alpha,
+                                         disp=0, abstol=1e-10,
+                                         trim_mode='auto',
+                                         auto_trim_tol=0.01, maxiter=1000)
+        assert_almost_equal(res_slsqp.params,
+                            res_cvxopt.params,
+                            DECIMAL_4)
 
 
 @pytest.mark.not_vetted
-class TestNegativeBinomialPNB1Newton(CheckModelResults):
+class TestSweepAlphaL1(object):
 
     @classmethod
     def setup_class(cls):
-        data = sm2.datasets.randhie.load()
-        exog = add_constant(data.exog, prepend=False)
-        mod = NegativeBinomialP(data.endog, exog, p=1)
-        cls.res1 = mod.fit(method="newton", maxiter=100, disp=0,
-                           use_transparams=True)
-        res2 = RandHIE()
-        res2.negativebinomial_nb1_bfgs()
-        cls.res2 = res2
+        data = sm2.datasets.spector.load()
+        data.exog = add_constant(data.exog, prepend=True)
+        cls.model = Logit(data.endog, data.exog)
+        cls.alphas = np.array([
+                    [0.1, 0.1, 0.1, 0.1],
+                    [0.4, 0.4, 0.5, 0.5],
+                    [0.5, 0.5, 1, 1]])  # / data.exog.shape[0]
+        cls.res1 = DiscreteL1().sweep()
 
-    def test_zstat(self):
-        assert_allclose(self.res1.tvalues, self.res2.z,
-                        atol=5e-3, rtol=5e-3)
-
-    def test_lnalpha(self):
-        self.res1.bse # attaches alpha_std_err
-        assert_allclose(self.res1.lnalpha, self.res2.lnalpha)
-        assert_allclose(self.res1.lnalpha_std_err,
-                            self.res2.lnalpha_std_err)
-
-    def test_params(self):
-        assert_allclose(self.res1.params, self.res2.params)
-
-    def test_conf_int(self):
-        # the bse for alpha is not high precision from the hessian
-        # approximation
-        assert_allclose(self.res1.conf_int(), self.res2.conf_int,
-                        atol=1e-3, rtol=1e-3)
-
-    def test_predict(self):
-        assert_allclose(self.res1.predict()[:10],
-                        np.exp(self.res2.fittedvalues[:10]),
-                        atol=1e-3, rtol=1e-3)
-
-    def test_predict_xb(self):
-        assert_allclose(self.res1.predict(which='linear')[:10],
-                        self.res2.fittedvalues[:10],
-                        atol=1e-3, rtol=1e-3)
-
-
-@pytest.mark.not_vetted
-class TestNegativeBinomialPNB2BFGS(CheckModelResults):
-
-    @classmethod
-    def setup_class(cls):
-        data = sm2.datasets.randhie.load()
-        exog = add_constant(data.exog, prepend=False)
-        cls.res1 = NegativeBinomialP(data.endog, exog, p=2).fit(
-                                                method='bfgs', disp=0,
-                                                maxiter=1000,
-                                                use_transparams=True)
-        res2 = RandHIE()
-        res2.negativebinomial_nb2_bfgs()
-        cls.res2 = res2
-
-    # NOTE: The bse is much closer precitions to stata
-    def test_bse(self):
-        assert_allclose(self.res1.bse, self.res2.bse,
-                        atol=1e-3, rtol=1e-3)
-
-    def test_params(self):
-        assert_allclose(self.res1.params, self.res2.params,
-                        atol=1e-3, rtol=1e-3)
-
-    def test_alpha(self):
-        self.res1.bse  # attaches alpha_std_err
-        assert_allclose(self.res1.lnalpha, self.res2.lnalpha,
-                        atol=1e-5, rtol=1e-5)
-        assert_allclose(self.res1.lnalpha_std_err,
-                        self.res2.lnalpha_std_err,
-                        atol=1e-5, rtol=1e-5)
-
-    def test_conf_int(self):
-        assert_allclose(self.res1.conf_int(), self.res2.conf_int,
-                        atol=1e-3, rtol=1e-3)
-
-    def test_zstat(self):  # Low precision because Z vs. t
-        assert_allclose(self.res1.pvalues[:-1], self.res2.pvalues,
-                        atol=5e-3, rtol=5e-3)
-
-    def test_fittedvalues(self):
-        assert_allclose(self.res1.fittedvalues[:10],
-                        self.res2.fittedvalues[:10],
-                        atol=1e-4, rtol=1e-4)
-
-    def test_predict(self):
-        assert_allclose(self.res1.predict()[:10],
-                        np.exp(self.res2.fittedvalues[:10]),
-                        atol=1e-3, rtol=1e-3)
-
-    def test_predict_xb(self):
-        assert_allclose(self.res1.predict(which='linear')[:10],
-                        self.res2.fittedvalues[:10],
-                        atol=1e-3, rtol=1e-3)
-
-
-@pytest.mark.not_vetted
-class TestNegativeBinomialPNB1BFGS(CheckModelResults):
-
-    @classmethod
-    def setup_class(cls):
-        data = sm2.datasets.randhie.load()
-        exog = add_constant(data.exog, prepend=False)
-        cls.res1 = NegativeBinomialP(data.endog, exog, p=1).fit(method="bfgs",
-                                                                maxiter=100,
-                                                                disp=0)
-        res2 = RandHIE()
-        res2.negativebinomial_nb1_bfgs()
-        cls.res2 = res2
-
-    def test_bse(self):
-        assert_allclose(self.res1.bse, self.res2.bse,
-                        atol=5e-3, rtol=5e-3)
-
-    def test_aic(self):
-        assert_allclose(self.res1.aic, self.res2.aic,
-                        atol=0.5, rtol=0.5)
-
-    def test_bic(self):
-        assert_allclose(self.res1.bic, self.res2.bic,
-                        atol=0.5, rtol=0.5)
-
-    def test_llf(self):
-        assert_allclose(self.res1.llf, self.res2.llf,
-                        atol=1e-3, rtol=1e-3)
-
-    def test_llr(self):
-        assert_allclose(self.res1.llf, self.res2.llf,
-                        atol=1e-3, rtol=1e-3)
-
-    def test_zstat(self):
-        assert_allclose(self.res1.tvalues, self.res2.z,
-                        atol=0.5, rtol=0.5)
-
-    def test_lnalpha(self):
-        assert_allclose(self.res1.lnalpha, self.res2.lnalpha,
-                        atol=1e-3, rtol=1e-3)
-        assert_allclose(self.res1.lnalpha_std_err,
-                        self.res2.lnalpha_std_err,
-                        atol=1e-3, rtol=1e-3)
-
-    def test_params(self):
-        assert_allclose(self.res1.params, self.res2.params,
-                        atol=5e-2, rtol=5e-2)
-
-    def test_conf_int(self):
-        # the bse for alpha is not high precision from the hessian
-        # approximation
-        assert_allclose(self.res1.conf_int(), self.res2.conf_int,
-                        atol=5e-2, rtol=5e-2)
-
-    def test_predict(self):
-        assert_allclose(self.res1.predict()[:10],
-                        np.exp(self.res2.fittedvalues[:10]),
-                        atol=5e-3, rtol=5e-3)
-
-    def test_predict_xb(self):
-        assert_allclose(self.res1.predict(which='linear')[:10],
-                        self.res2.fittedvalues[:10],
-                        atol=5e-3, rtol=5e-3)
-
-    def test_init_kwds(self):
-        kwds = self.res1.model._get_init_kwds()
-        assert 'p' in kwds
-        assert kwds['p'] == 1
-
-
-@pytest.mark.not_vetted
-class TestNegativeBinomialPL1Compatability(CheckL1Compatability):
-    @classmethod
-    def setup_class(cls):
-        cls.kvars = 10  # Number of variables
-        cls.m = 7  # Number of unregularized parameters
-        rand_data = sm2.datasets.randhie.load()
-        rand_exog = rand_data.exog.view(float).reshape(len(rand_data.exog), -1)
-        rand_exog_st = (rand_exog - rand_exog.mean(0)) / rand_exog.std(0)
-        rand_exog = add_constant(rand_exog_st, prepend=True)
-        # Drop some columns and do an unregularized fit
-        exog_no_PSI = rand_exog[:, :cls.m]
-        mod_unreg = NegativeBinomialP(rand_data.endog, exog_no_PSI)
-        cls.res_unreg = mod_unreg.fit(method="newton", disp=False)
-        # Do a regularized fit with alpha, effectively dropping the last column
-        alpha = 10 * len(rand_data.endog) * np.ones(cls.kvars + 1)
-        alpha[:cls.m] = 0
-        alpha[-1] = 0  # don't penalize alpha
-
-        mod_reg = NegativeBinomialP(rand_data.endog, rand_exog)
-        cls.res_reg = mod_reg.fit_regularized(method='l1', alpha=alpha,
-                                              disp=False, acc=1e-10,
-                                              maxiter=2000,
-                                              trim_mode='auto')
-        cls.k_extra = 1  # 1 extra parameter in nb2
+    def test_sweep_alpha(self):
+        for i in range(3):
+            alpha = self.alphas[i, :]
+            res2 = self.model.fit_regularized(method="l1", alpha=alpha,
+                                              disp=0, acc=1e-10,
+                                              trim_mode='off', maxiter=1000)
+            assert_almost_equal(res2.params,
+                                self.res1.params[i],
+                                DECIMAL_4)
 
 
 @pytest.mark.not_vetted
@@ -2331,167 +2411,6 @@ class  TestNegativeBinomialPPredictProb(object):
                         atol=1e-2, rtol=1e-2)
 
 
-class CheckNull(object):
-    @classmethod
-    def _get_data(cls):
-        x = np.array([20., 25., 30., 35., 40., 45., 50.])
-        nobs = len(x)
-        exog = np.column_stack((np.ones(nobs), x))
-        endog = np.array([469, 5516, 6854, 6837, 5952, 4066, 3242])
-        return endog, exog
-
-    def test_llnull(self):
-        res = self.model.fit(start_params=self.start_params)
-        res._results._attach_nullmodel = True
-        llf0 = res.llnull
-        res_null0 = res.res_null
-        assert_allclose(llf0, res_null0.llf, rtol=1e-6)
-
-        res_null1 = self.res_null
-        assert_allclose(llf0, res_null1.llf, rtol=1e-6)
-        # Note default convergence tolerance doesn't get lower rtol
-        # from different starting values (using bfgs)
-        assert_allclose(res_null0.params, res_null1.params, rtol=5e-5)
-
-
-@pytest.mark.not_vetted
-class TestPoissonNull(CheckNull):
-    start_params = [8.5, 0]
-
-    @classmethod
-    def setup_class(cls):
-        endog, exog = cls._get_data()
-        cls.model = Poisson(endog, exog)
-        cls.res_null = Poisson(endog, exog[:, 0]).fit(start_params=[8.5])
-        # use start params to avoid warnings
-
-
-@pytest.mark.not_vetted
-class TestNegativeBinomialNB1Null(CheckNull):
-    # for convergence with bfgs, I needed to round down alpha start_params
-    start_params = np.array([7.730452, 2.01633068e-02, 1763.0])
-
-    @classmethod
-    def setup_class(cls):
-        endog, exog = cls._get_data()
-        cls.model = NegativeBinomial(endog, exog, loglike_method='nb1')
-        cls.model_null = NegativeBinomial(endog, exog[:, 0],
-                                          loglike_method='nb1')
-        cls.res_null = cls.model_null.fit(start_params=[8, 1000],
-                                          method='bfgs', gtol=1e-08,
-                                          maxiter=300)
-
-
-@pytest.mark.not_vetted
-class TestNegativeBinomialNB2Null(CheckNull):
-    start_params = np.array([8.07216448, 0.01087238, 0.44024134])
-
-    @classmethod
-    def setup_class(cls):
-        endog, exog = cls._get_data()
-        cls.model = NegativeBinomial(endog, exog, loglike_method='nb2')
-        cls.model_null = NegativeBinomial(endog, exog[:, 0],
-                                          loglike_method='nb2')
-        cls.res_null = cls.model_null.fit(start_params=[8, 0.5],
-                                          method='bfgs', gtol=1e-06,
-                                          maxiter=300)
-
-
-@pytest.mark.not_vetted
-class TestNegativeBinomialNBP2Null(CheckNull):
-    start_params = np.array([8.07216448, 0.01087238, 0.44024134])
-
-    @classmethod
-    def setup_class(cls):
-        endog, exog = cls._get_data()
-        cls.model = NegativeBinomialP(endog, exog, p=2)
-        cls.model_null = NegativeBinomialP(endog, exog[:, 0], p=2)
-        cls.res_null = cls.model_null.fit(start_params=[8, 1],
-                                          method='bfgs', gtol=1e-06,
-                                          maxiter=300)
-
-    def test_start_null(self):
-        endog, exog = self.model.endog, self.model.exog
-        model_nb2 = NegativeBinomial(endog, exog, loglike_method='nb2')
-        sp1 = model_nb2._get_start_params_null()
-        sp0 = self.model._get_start_params_null()
-        assert_allclose(sp0, sp1, rtol=1e-12)
-
-
-@pytest.mark.not_vetted
-class TestNegativeBinomialNBP1Null(CheckNull):
-    start_params = np.array([7.730452, 2.01633068e-02, 1763.0])
-
-    @classmethod
-    def setup_class(cls):
-        endog, exog = cls._get_data()
-        cls.model = NegativeBinomialP(endog, exog, p=1.)
-        cls.model_null = NegativeBinomialP(endog, exog[:, 0], p=1)
-        cls.res_null = cls.model_null.fit(start_params=[8, 1],
-                                          method='bfgs', gtol=1e-06,
-                                          maxiter=300)
-
-    def test_start_null(self):
-        endog, exog = self.model.endog, self.model.exog
-        model_nb2 = NegativeBinomial(endog, exog, loglike_method='nb1')
-        sp1 = model_nb2._get_start_params_null()
-        sp0 = self.model._get_start_params_null()
-        assert_allclose(sp0, sp1, rtol=1e-12)
-
-
-@pytest.mark.not_vetted
-class TestGeneralizedPoissonNull(CheckNull):
-    start_params = np.array([6.91127148, 0.04501334, 0.88393736])
-
-    @classmethod
-    def setup_class(cls):
-        endog, exog = cls._get_data()
-        cls.model = GeneralizedPoisson(endog, exog, p=1.5)
-        cls.model_null = GeneralizedPoisson(endog, exog[:, 0], p=1.5)
-        cls.res_null = cls.model_null.fit(start_params=[8.4, 1],
-                                          method='bfgs', gtol=1e-08,
-                                          maxiter=300)
-
-
-@pytest.mark.not_vetted
-def test_null_options():
-    # this is a "nice" case because we only check that options are used
-    # correctly
-    nobs = 10
-    exog = np.ones((20, 2))
-    exog[:nobs // 2, 1] = 0
-    mu = np.exp(exog.sum(1))
-    endog = np.random.poisson(mu)  # Note no size=nobs in np.random
-    res = Poisson(endog, exog).fit(start_params=np.log([1, 1]))
-    llnull0 = res.llnull
-    assert not hasattr(res, 'res_llnull')
-    res.set_null_options(attach_results=True)
-    # default optimization
-    lln = res.llnull  # access to trigger computation
-    assert_allclose(res.res_null.mle_settings['start_params'],
-                    np.log(endog.mean()), rtol=1e-10)
-    assert res.res_null.mle_settings['optimizer'] =='bfgs'
-    assert_allclose(lln, llnull0)
-
-    res.set_null_options(attach_results=True, start_params=[0.5], method='nm')
-    lln = res.llnull  # access to trigger computation
-    assert_allclose(res.res_null.mle_settings['start_params'], [0.5],
-                    rtol=1e-10)
-    assert res.res_null.mle_settings['optimizer'] == 'nm'
-
-    res.summary()  # call to fill cache
-    assert 'prsquared' in res._cache
-    assert_equal(res._cache['llnull'],  lln)
-
-    assert 'prsquared' in res._cache
-    assert_equal(res._cache['llnull'],  lln)
-
-    # check setting cache
-    res.set_null_options(llnull=999)
-    assert 'prsquared' not in res._cache
-    assert_equal(res._cache['llnull'],  999)
-
-
 @pytest.mark.not_vetted
 def test_optim_kwds_prelim():
     # test that fit options for preliminary fit is correctly transmitted
@@ -2541,6 +2460,74 @@ def test_optim_kwds_prelim():
     # rough check that convergence makes sense
     assert_allclose(res.predict().mean(), y.mean(), rtol=0.1)
 
+
+@pytest.mark.not_vetted
+def test_perfect_prediction():
+    raise pytest.skip('genmod not ported')
+    iris_dir = os.path.join(cur_dir, '..', '..', 'genmod', 'tests', 'results')
+    iris_dir = os.path.abspath(iris_dir)
+    iris = np.genfromtxt(os.path.join(iris_dir, 'iris.csv'),
+                         delimiter=",", skip_header=1)
+    y = iris[:, -1]
+    X = iris[:, :-1]
+    X = X[y != 2]
+    y = y[y != 2]
+    X = add_constant(X, prepend=True)
+    mod = Logit(y,X)
+    with pytest.raises(PerfectSeparationError):
+        mod.fit(maxiter=1000)
+
+    # turn off raise PerfectSeparationError
+    mod.raise_on_perfect_prediction = False
+    # this will raise if you set maxiter high enough with a singular matrix
+    # this is not thread-safe
+    with tm.assert_produces_warning():
+        warnings.simplefilter('always')
+        mod.fit(disp=False, maxiter=50)  # should not raise but does warn
+
+
+@pytest.mark.not_vetted
+def test_iscount():
+    X = np.random.random((50, 10))
+    X[:, 2] = np.random.randint(1, 10, size=50)
+    X[:, 6] = np.random.randint(1, 10, size=50)
+    X[:, 4] = np.random.randint(0, 2, size=50)
+    X[:, 1] = np.random.randint(-10, 10, size=50)  # not integers
+    count_ind = _iscount(X)
+    assert_equal(count_ind, [2, 6])
+
+
+@pytest.mark.not_vetted
+def test_isdummy():
+    X = np.random.random((50, 10))
+    X[:, 2] = np.random.randint(1, 10, size=50)
+    X[:, 6] = np.random.randint(0, 2, size=50)
+    X[:, 4] = np.random.randint(0, 2, size=50)
+    X[:, 1] = np.random.randint(-10, 10, size=50)  # not integers
+    count_ind = _isdummy(X)
+    assert_equal(count_ind, [4, 6])
+
+
+@pytest.mark.not_vetted
+def test_mnlogit_factor():
+    dta = sm2.datasets.anes96.load_pandas()
+    dta['endog'] = dta.endog.replace(dict(zip(range(7), 'ABCDEFG')))
+    exog = add_constant(dta.exog, prepend=True)
+    mod = MNLogit(dta.endog, exog)
+    res = mod.fit(disp=0)
+    # smoke tests
+    params = res.params
+    summary = res.summary()
+    predicted = res.predict(exog.iloc[:5, :])
+
+    # with patsy
+    mod = MNLogit.from_formula('PID ~ ' + ' + '.join(dta.exog.columns), dta.data)
+    res2 = mod.fit(disp=0)
+    params_f = res2.params
+    summary = res2.summary()
+    assert_allclose(params_f, params, rtol=1e-10)
+    predicted_f = res2.predict(dta.exog.iloc[:5, :])
+    assert_allclose(predicted_f, predicted, rtol=1e-10)
 
 # ------------------------------------------------------------------
 # Tests implemented/checked 2017-10-08 or later
