@@ -18,6 +18,8 @@ from sm2.tsa.stattools import (adfuller, acf, pacf_ols, pacf_yw,
 from sm2.datasets import macrodata, sunspots
 from sm2.tsa.arima_process import arma_generate_sample
 
+cur_dir = os.path.dirname(os.path.abspath(__file__))
+
 DECIMAL_8 = 8
 DECIMAL_6 = 6
 DECIMAL_5 = 5
@@ -145,9 +147,9 @@ class CheckCorrGram(object):
     """
     data = macrodata.load_pandas()
     x = data.data['realgdp']
-    filename = os.path.dirname(os.path.abspath(__file__))+\
-            "/results/results_corrgram.csv"
-    results = pd.read_csv(filename, delimiter=',')
+    path = os.path.join(cur_dir, "results", "results_corrgram.csv")
+    results = pd.read_csv(path, delimiter=',')
+    # TODO: should this... do something?
 
     # not needed: add 1. for lag zero
     #self.results['acvar'] = np.concatenate(([1.], self.results['acvar']))

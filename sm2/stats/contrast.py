@@ -141,7 +141,7 @@ class ContrastResults(object):
             yname = 'constraints'  # Not used in params_frame
             if xname is None:
                 xname = ['c%d' % ii for ii in range(len(self.effect))]
-            from statsmodels.iolib.summary import summary_params
+            from sm2.iolib.summary import summary_params
             pvalues = np.atleast_1d(self.pvalue)
             summ = summary_params((self, self.effect, self.sd, self.statistic,
                                    pvalues, self.conf_int(alpha)),
@@ -169,7 +169,7 @@ class ContrastResults(object):
             yname = 'constraints'  # Not used in params_frame
             if xname is None:
                 xname = ['c%d' % ii for ii in range(len(self.effect))]
-            from statsmodels.iolib.summary import summary_params_frame
+            from sm2.iolib.summary import summary_params_frame
             summ = summary_params_frame((self, self.effect, self.sd,
                                          self.statistic, self.pvalue,
                                          self.conf_int(alpha)), yname=yname,

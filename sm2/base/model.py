@@ -2083,7 +2083,7 @@ class GenericLikelihoodModelResults(LikelihoodModelResults, ResultMixin):
 
         See Also
         --------
-        statsmodels.iolib.summary.Summary : class to hold summary results
+        sm2.iolib.summary.Summary : class to hold summary results
         """
         top_left = [('Dep. Variable:', None),
                     ('Model:', None),
@@ -2107,7 +2107,7 @@ class GenericLikelihoodModelResults(LikelihoodModelResults, ResultMixin):
             title = self.model.__class__.__name__ + ' ' + "Results"
 
         # create summary table instance
-        from statsmodels.iolib.summary import Summary
+        from sm2.iolib.summary import Summary
         smry = Summary()
         smry.add_table_2cols(self, gleft=top_left, gright=top_right,
                              yname=yname, xname=xname, title=title)

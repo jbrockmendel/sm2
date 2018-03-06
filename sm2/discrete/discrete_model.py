@@ -3487,8 +3487,7 @@ class DiscreteResults(base.LikelihoodModelResults):
 
         See Also
         --------
-        statsmodels.iolib.summary.Summary : class to hold summary
-            results
+        sm2.iolib.summary.Summary : class to hold summary results
         """
         top_left = [('Dep. Variable:', None),
                     ('Model:', [self.model.__class__.__name__]),
@@ -3510,7 +3509,7 @@ class DiscreteResults(base.LikelihoodModelResults):
             title = self.model.__class__.__name__ + ' ' + "Regression Results"
 
         # boiler plate
-        from statsmodels.iolib.summary import Summary
+        from sm2.iolib.summary import Summary
         smry = Summary()
         yname, yname_list = self._get_endog_name(yname, yname_list)
         # for top of table

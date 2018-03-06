@@ -55,6 +55,8 @@ try:
 except ImportError:
     has_dogleg = False
 
+cur_dir = os.path.dirname(os.path.abspath(__file__))
+
 DECIMAL_14 = 14
 DECIMAL_10 = 10
 DECIMAL_9 = 9
@@ -1243,7 +1245,6 @@ class TestPoissonNewton(CheckModelResults):
         assert_almost_equal(self.res1.resid, self.res2.resid, 2)
 
     def test_predict_prob(self):
-        cur_dir = os.path.dirname(os.path.abspath(__file__))
         path = os.path.join(cur_dir, "results", "predict_prob_poisson.csv")
         probs_res = np.loadtxt(path, delimiter=",")
 
@@ -1719,7 +1720,6 @@ class TestMNLogitLBFGSBaseZero(CheckMNLogitBaseZero):
 @pytest.mark.not_vetted
 def test_perfect_prediction():
     raise pytest.skip('genmod not ported')
-    cur_dir = os.path.dirname(os.path.abspath(__file__))
     iris_dir = os.path.join(cur_dir, '..', '..', 'genmod', 'tests', 'results')
     iris_dir = os.path.abspath(iris_dir)
     iris = np.genfromtxt(os.path.join(iris_dir, 'iris.csv'),
@@ -2497,8 +2497,6 @@ def test_null_options():
 @pytest.mark.not_vetted
 def test_optim_kwds_prelim():
     # test that fit options for preliminary fit is correctly transmitted
-
-    cur_dir = os.path.dirname(os.path.abspath(__file__))
     filepath = os.path.join(cur_dir, "results", "sm3533.csv")
     df = pd.read_csv(filepath)
 
@@ -2583,7 +2581,7 @@ def test_mnlogit_non_square():
 
     # strip the header from the test
     smry = "\n".join(res1.summary().as_text().split('\n')[9:])
-    cur_dir = os.path.dirname(os.path.abspath(__file__))
+
     test_case_file = os.path.join(cur_dir, 'results', 'mn_logit_summary.txt')
     with open(test_case_file, 'r') as fd:
         test_case = fd.read()
