@@ -25,8 +25,6 @@ import sm2.tools._testing as smt
 # from statsmodels.genmod import families
 # from statsmodels.genmod.families import links
 
-
-# get data and results as module global for now, TODO: move to class
 from .results import results_count_robust_cluster as results_st
 
 cur_dir = os.path.dirname(os.path.abspath(__file__))
@@ -128,7 +126,7 @@ class TestPoissonCluGeneric(CheckCountRobustMixin):
         get_robustcov_results(cls.res1._results, 'cluster',
                               groups=group,
                               use_correction=True,
-                              df_correction=True,  #TODO has no effect
+                              df_correction=True,  # TODO has no effect
                               use_t=False, #True,
                               use_self=True)
         cls.bse_rob = cls.res1.bse
@@ -176,7 +174,7 @@ class TestPoissonCluFit(CheckCountRobustMixin):
                            cov_kwds=dict(groups=group,
                                          use_correction=True,
                                          scaling_factor=1. / sc_fact,
-                                         df_correction=True),  #TODO has no effect
+                                         df_correction=True),  # TODO has no effect
                            use_t=False, #True,
                            )
 
@@ -269,6 +267,8 @@ class TestPoissonCluExposureGeneric(CheckCountRobustMixin):
         cls.corr_fact = np.sqrt(corr_fact)
 
 
+'''
+# GLM not ported from upstream
 @pytest.mark.not_vetted
 class TestGLMPoissonClu(CheckCountRobustMixin):
     res2 = results_st.results_poisson_clu
@@ -306,6 +306,7 @@ class TestGLMPoissonCluGeneric(CheckCountRobustMixin):
         cls.corr_fact = np.sqrt(corr_fact)
 
 
+# TODO: refactor xxxFit to full testing results
 @pytest.mark.not_vetted
 class TestGLMPoissonHC1Generic(CheckCountRobustMixin):
     res2 = results_st.results_poisson_hc1
@@ -325,7 +326,6 @@ class TestGLMPoissonHC1Generic(CheckCountRobustMixin):
         cls.corr_fact = np.sqrt(1. / corr_fact)
 
 
-# TODO: refactor xxxFit to full testing results
 @pytest.mark.not_vetted
 class TestGLMPoissonCluFit(CheckCountRobustMixin):
     res2 = results_st.results_poisson_clu
@@ -354,7 +354,6 @@ class TestGLMPoissonCluFit(CheckCountRobustMixin):
         # for bse we need sqrt of correction factor
         cls.corr_fact = np.sqrt(corr_fact)
 
-
 @pytest.mark.not_vetted
 class TestGLMPoissonHC1Fit(CheckCountRobustMixin):
     res2 = results_st.results_poisson_hc1
@@ -370,6 +369,7 @@ class TestGLMPoissonHC1Fit(CheckCountRobustMixin):
         corr_fact = (nobs) / float(nobs - 1.)
         # for bse we need sqrt of correction factor
         cls.corr_fact = np.sqrt(1. / corr_fact)
+'''
 
 
 @pytest.mark.not_vetted
@@ -402,8 +402,8 @@ class TestNegbinCluExposure(CheckCountRobustMixin):
 #        cov_clu_nb = sw.cov_cluster(res_nb, group)
 #        k_params = k_vars + 1
 #        print sw.se_cov(cov_clu_nb / ((nobs-1.) / float(nobs - k_params)))
-#
-#        wt = res_nb.wald_test(np.eye(len(res_nb.params))[1:3], cov_p=cov_clu_nb/((nobs-1.) / float(nobs - k_params)))
+#        cov_p = cov_clu_nb / ((nobs - 1.) / float(nobs - k_params))
+#        wt = res_nb.wald_test(np.eye(len(res_nb.params))[1:3], cov_p=cov_p)
 #        print wt
 #
 #        print dir(results_st)
@@ -419,11 +419,11 @@ class TestNegbinCluGeneric(CheckCountRobustMixin):
         cls.res1 = mod.fit(disp=False, gtol=1e-7)
 
         get_robustcov_results(cls.res1._results, 'cluster',
-                                                  groups=group,
-                                                  use_correction=True,
-                                                  df_correction=True,  # TODO has no effect
-                                                  use_t=False, #True,
-                                                  use_self=True)
+                              groups=group,
+                              use_correction=True,
+                              df_correction=True,  # TODO has no effect
+                              use_t=False, #True,
+                              use_self=True)
         cls.bse_rob = cls.res1.bse
 
         nobs, k_vars = mod.exog.shape
@@ -472,11 +472,13 @@ class TestNegbinCluExposureFit(CheckCountRobustMixin):
 
         nobs, k_vars = mod.exog.shape
         k_params = len(cls.res1.params)
-        corr_fact = (nobs-1.) / float(nobs - k_params)
+        corr_fact = (nobs - 1.) / float(nobs - k_params)
         # for bse we need sqrt of correction factor
         cls.corr_fact = np.sqrt(corr_fact)
 
 
+'''
+# GLM not ported from upstream
 @pytest.mark.not_vetted
 class CheckDiscreteGLM(object):
     # compare GLM with other models, no verified reference results
@@ -702,3 +704,4 @@ class TestGLMGaussHACGroupsum(CheckDiscreteGLM):
     def test_kwd(self):
         # test corrected keyword name
         assert_allclose(self.res1b.bse, self.res1.bse, rtol=1e-12)
+'''

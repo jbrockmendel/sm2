@@ -6,8 +6,8 @@ class Holder(object):
 
 
 armarep = Holder()
-armarep.comment = 'mlab.garchma(-res_armarep.ar[1:], res_armarep.ma[1:], 20)' +\
-'mlab.garchar(-res_armarep.ar[1:], res_armarep.ma[1:], 20)'
+armarep.comment = ('mlab.garchma(-res_armarep.ar[1:], res_armarep.ma[1:], 20)'
+                   'mlab.garchar(-res_armarep.ar[1:], res_armarep.ma[1:], 20)')
 armarep.marep = np.array([
     [-0.1],
     [-0.77],

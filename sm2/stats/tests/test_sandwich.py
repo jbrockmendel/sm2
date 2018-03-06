@@ -20,29 +20,29 @@ from sm2.tools.tools import add_constant
 import sm2.stats.sandwich_covariance as sw
 from sm2.datasets import macrodata
 
+cur_dir = os.path.abspath(os.path.dirname(__file__))
+# Petersen's test_data from:
+# http://www.kellogg.northwestern.edu/faculty/petersen/htm/papers/se/test_data.txt  # noqa:E501
+fpath = os.path.join(cur_dir, "test_data.txt")
+pet_data = np.genfromtxt(fpath)
+
 
 @pytest.mark.not_vetted
 def test_cov_cluster_2groups():
     # comparing cluster robust standard errors to Peterson
-    # requires Petersen's test_data
-    # http://www.kellogg.northwestern.edu/faculty/petersen/htm/papers/se/test_data.txt  # noqa:E501
-    cur_dir = os.path.abspath(os.path.dirname(__file__))
-    fpath = os.path.join(cur_dir, "test_data.txt")
-    pet = np.genfromtxt(fpath)
-    endog = pet[:, -1]
-    group = pet[:, 0].astype(int)
-    time = pet[:, 1].astype(int)
-    exog = add_constant(pet[:, 2])
+    endog = pet_data[:, -1]
+    group = pet_data[:, 0].astype(int)
+    time = pet_data[:, 1].astype(int)
+    exog = add_constant(pet_data[:, 2])
     res = OLS(endog, exog).fit()
 
     cov01, covg, covt = sw.cov_cluster_2groups(res, group, group2=time)
 
     # Reference number from Petersen
     # http://www.kellogg.northwestern.edu/faculty/petersen/htm/papers/se/test_data.htm  # noqa:E501
-
     bse_petw = [0.0284, 0.0284]
     bse_pet0 = [0.0670, 0.0506]
-    bse_pet1 = [0.0234, 0.0334]  # year
+    bse_pet1 = [0.0234, 0.0334]   # year
     bse_pet01 = [0.0651, 0.0536]  # firm and year
     bse_0 = sw.se_cov(covg)
     bse_1 = sw.se_cov(covt)

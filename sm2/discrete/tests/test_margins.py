@@ -50,11 +50,10 @@ class TestPoissonMargin(CheckMarginMixin):
     @classmethod
     def setup_class(cls):
         # here we don't need to check convergence from default start_params
-        start_params = [14.1709, 0.7085, -3.4548, -0.539, 3.2368,  -7.9299,
+        start_params = [14.1709, 0.7085, -3.4548, -0.539, 3.2368, -7.9299,
                         -5.0529]
         mod_poi = sm.Poisson(endog, exog)
         res_poi = mod_poi.fit(start_params=start_params)
-        #res_poi = mod_poi.fit(maxiter=100)
         marge_poi = res_poi.get_margeff()
         cls.res = res_poi
         cls.margeff = marge_poi
@@ -70,7 +69,7 @@ class TestPoissonMarginDummy(CheckMarginMixin):
     @classmethod
     def setup_class(cls):
         # here we don't need to check convergence from default start_params
-        start_params = [14.1709, 0.7085, -3.4548, -0.539, 3.2368,  -7.9299,
+        start_params = [14.1709, 0.7085, -3.4548, -0.539, 3.2368, -7.9299,
                         -5.0529]
         mod_poi = sm.Poisson(endog, exog)
         res_poi = mod_poi.fit(start_params=start_params)
