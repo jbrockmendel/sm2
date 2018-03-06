@@ -12,14 +12,13 @@ from numpy.testing import assert_allclose, assert_equal
 from sm2.tools.tools import add_constant
 from sm2.regression.linear_model import OLS, WLS
 from sm2.regression._prediction import get_prediction
-from statsmodels.sandbox.regression.predstd import wls_prediction_std
-
 
 
 @pytest.mark.not_vetted
 def test_predict_se():
     # this test doesn't use reference values
     # checks conistency across options, and compares to direct calculation
+    from statsmodels.sandbox.regression.predstd import wls_prediction_std
 
     # generate dataset
     nsample = 50
@@ -37,26 +36,34 @@ def test_predict_se():
     # estimate OLS
     res2 = OLS(y2, x2).fit()
 
-    #direct calculation
+    # direct calculation
     covb = res2.cov_params()
     predvar = res2.mse_resid + (x2 * np.dot(covb, x2.T).T).sum(1)
     predstd = np.sqrt(predvar)
 
     prstd, iv_l, iv_u = wls_prediction_std(res2)
-    np.testing.assert_almost_equal(prstd, predstd, 15)
+    np.testing.assert_almost_equal(prstd,
+                                   predstd,
+                                   15)
 
     # stats.t.isf(0.05/2., 50 - 2)
     q = 2.0106347546964458
     ci_half = q * predstd
-    np.testing.assert_allclose(iv_u, res2.fittedvalues + ci_half, rtol=1e-12)
-    np.testing.assert_allclose(iv_l, res2.fittedvalues - ci_half, rtol=1e-12)
+    assert_allclose(iv_u,
+                    res2.fittedvalues + ci_half,
+                    rtol=1e-12)
+    assert_allclose(iv_l,
+                    res2.fittedvalues - ci_half,
+                    rtol=1e-12)
 
-    prstd, iv_l, iv_u = wls_prediction_std(res2, x2[:3,:])
-    np.testing.assert_equal(prstd, prstd[:3])
-    np.testing.assert_allclose(iv_u, res2.fittedvalues[:3] + ci_half[:3],
-                               rtol=1e-12)
-    np.testing.assert_allclose(iv_l, res2.fittedvalues[:3] - ci_half[:3],
-                               rtol=1e-12)
+    prstd, iv_l, iv_u = wls_prediction_std(res2, x2[:3, :])
+    assert_equal(prstd, prstd[:3])
+    assert_allclose(iv_u,
+                    res2.fittedvalues[:3] + ci_half[:3],
+                    rtol=1e-12)
+    assert_allclose(iv_l,
+                    res2.fittedvalues[:3] - ci_half[:3],
+                    rtol=1e-12)
 
 
     # check WLS
@@ -68,44 +75,46 @@ def test_predict_se():
     predstd = np.sqrt(predvar)
 
     prstd, iv_l, iv_u = wls_prediction_std(res3)
-    np.testing.assert_almost_equal(prstd, predstd, 15)
+    np.testing.assert_almost_equal(prstd,
+                                   predstd,
+                                   15)
 
     #stats.t.isf(0.05/2., 50 - 2)
     q = 2.0106347546964458
     ci_half = q * predstd
-    np.testing.assert_allclose(iv_u, res3.fittedvalues + ci_half, rtol=1e-12)
-    np.testing.assert_allclose(iv_l, res3.fittedvalues - ci_half, rtol=1e-12)
+    assert_allclose(iv_u, res3.fittedvalues + ci_half, rtol=1e-12)
+    assert_allclose(iv_l, res3.fittedvalues - ci_half, rtol=1e-12)
 
     # testing shapes of exog
     prstd, iv_l, iv_u = wls_prediction_std(res3, x2[-1:,:], weights=3.)
-    np.testing.assert_equal(prstd, prstd[-1])
+    assert_equal(prstd, prstd[-1])
     prstd, iv_l, iv_u = wls_prediction_std(res3, x2[-1,:], weights=3.)
-    np.testing.assert_equal(prstd, prstd[-1])
+    assert_equal(prstd, prstd[-1])
 
     prstd, iv_l, iv_u = wls_prediction_std(res3, x2[-2:,:], weights=3.)
-    np.testing.assert_equal(prstd, prstd[-2:])
+    assert_equal(prstd, prstd[-2:])
 
     prstd, iv_l, iv_u = wls_prediction_std(res3, x2[-2:,:], weights=[3, 3])
-    np.testing.assert_equal(prstd, prstd[-2:])
+    assert_equal(prstd, prstd[-2:])
 
     prstd, iv_l, iv_u = wls_prediction_std(res3, x2[:3,:])
-    np.testing.assert_equal(prstd, prstd[:3])
-    np.testing.assert_allclose(iv_u, res3.fittedvalues[:3] + ci_half[:3],
-                               rtol=1e-12)
-    np.testing.assert_allclose(iv_l, res3.fittedvalues[:3] - ci_half[:3],
-                               rtol=1e-12)
+    assert_equal(prstd, prstd[:3])
+    assert_allclose(iv_u, res3.fittedvalues[:3] + ci_half[:3],
+                    rtol=1e-12)
+    assert_allclose(iv_l, res3.fittedvalues[:3] - ci_half[:3],
+                    rtol=1e-12)
 
 
     # use wrong size for exog
     # prstd, iv_l, iv_u = wls_prediction_std(res3, x2[-1,0], weights=3.)
-    np.testing.assert_raises(ValueError, wls_prediction_std, res3, x2[-1,0],
-                             weights=3.)
+    with pytest.raises(ValueError):
+        wls_prediction_std(res3, x2[-1,0], weights=3.)
 
     # check some weight values
     sew1 = wls_prediction_std(res3, x2[-3:, :])[0]**2
     for wv in np.linspace(0.5, 3, 5):
         sew = wls_prediction_std(res3, x2[-3:, :], weights=1. / wv)[0]**2
-        np.testing.assert_allclose(sew, sew1 + res3.scale * (wv - 1))
+        assert_allclose(sew, sew1 + res3.scale * (wv - 1))
 
 
 @pytest.mark.not_vetted
@@ -133,6 +142,8 @@ class TestWLSPrediction(object):
         cls.res_wls = mod_wls.fit()
 
     def test_ci(self):
+        from statsmodels.sandbox.regression.predstd import wls_prediction_std
+
         res_wls = self.res_wls
         prstd, iv_l, iv_u = wls_prediction_std(res_wls)
         pred_res = get_prediction(res_wls)
@@ -216,4 +227,3 @@ class TestWLSPrediction(object):
         # prediction with exog and no weights does not error
         res_glm = mod_glm.fit()
         pred_glm = res_glm.get_prediction(X)
-

@@ -6,7 +6,7 @@ import warnings
 import pytest
 import numpy as np
 from numpy.testing import (assert_almost_equal, assert_equal, assert_warns,
-                           assert_raises, dec, assert_, assert_allclose)
+                           assert_allclose)
 import pandas as pd
 
 from sm2.tools.sm_exceptions import ColinearityWarning, MissingDataError
@@ -17,6 +17,8 @@ from sm2.tsa.stattools import (adfuller, acf, pacf_ols, pacf_yw,
                                arma_order_select_ic)
 from sm2.datasets import macrodata, sunspots
 from sm2.tsa.arima_process import arma_generate_sample
+
+cur_dir = os.path.dirname(os.path.abspath(__file__))
 
 DECIMAL_8 = 8
 DECIMAL_6 = 6
@@ -145,9 +147,9 @@ class CheckCorrGram(object):
     """
     data = macrodata.load_pandas()
     x = data.data['realgdp']
-    filename = os.path.dirname(os.path.abspath(__file__))+\
-            "/results/results_corrgram.csv"
-    results = pd.read_csv(filename, delimiter=',')
+    path = os.path.join(cur_dir, "results", "results_corrgram.csv")
+    results = pd.read_csv(path, delimiter=',')
+    # TODO: should this... do something?
 
     # not needed: add 1. for lag zero
     #self.results['acvar'] = np.concatenate(([1.], self.results['acvar']))
@@ -216,8 +218,8 @@ class TestACFMissing(CheckCorrGram):
                            missing='none')
 
     def test_raise(self):
-        assert_raises(MissingDataError, acf, self.x, nlags=40,
-                      qstat=True, alpha=.05, missing='raise')
+        with pytest.raises(MissingDataError):
+            acf(self.x, nlags=40, qstat=True, alpha=0.5, missing='raise')
 
     def test_acf_none(self):
         assert_almost_equal(self.res_none[0][1:41], self.acf_none, DECIMAL_8)
@@ -226,7 +228,8 @@ class TestACFMissing(CheckCorrGram):
         assert_almost_equal(self.res_drop[0][1:41], self.acf, DECIMAL_8)
 
     def test_acf_conservative(self):
-        assert_almost_equal(self.res_conservative[0][1:41], self.acf,
+        assert_almost_equal(self.res_conservative[0][1:41],
+                            self.acf,
                             DECIMAL_8)
 
     def test_qstat_none(self):
@@ -400,7 +403,7 @@ def test_coint_identical_series():
     assert_equal(len(w), 1)
     assert_equal(c[0], 0.0)
     # Limit of table
-    assert_(c[1] > .98)
+    assert c[1] > .98
 
 
 @pytest.mark.not_vetted
@@ -415,7 +418,7 @@ def test_coint_perfect_collinearity():
         c = coint(y, x, trend="c", maxlag=0, autolag=None)
     assert_equal(c[0], 0.0)
     # Limit of table
-    assert_(c[1] > .98)
+    assert c[1] > .98
 
 
 @pytest.mark.not_vetted
@@ -439,7 +442,8 @@ class TestGrangerCausality(object):
         # Test that if maxlag is too large, Granger Test raises a clear error.
         X = np.random.rand(10, 2)
         grangercausalitytests(X, 2, verbose=False)  # This should pass.
-        assert_raises(ValueError, grangercausalitytests, X, 3, verbose=False)
+        with pytest.raises(ValueError):
+            grangercausalitytests(X, 3, verbose=False)
 
 
 @pytest.mark.not_vetted
@@ -466,7 +470,8 @@ class TestKPSS(SetupKPSS):
             kpss(self.x)  # should be fine
 
         x = np.random.rand(20, 2)
-        assert_raises(ValueError, kpss, x)
+        with pytest.raises(ValueError):
+            kpss(x)
 
     def test_fail_unclear_hypothesis(self):
         # these should be fine,
@@ -476,7 +481,8 @@ class TestKPSS(SetupKPSS):
             kpss(self.x, 'ct')
             kpss(self.x, 'CT')
 
-        assert_raises(ValueError, kpss, self.x, "unclear hypothesis")
+        with pytest.raises(ValueError):
+            kpss(self.x, "unclear hypothesis")
 
     def test_teststat(self):
         with warnings.catch_warnings(record=True) as w:
@@ -526,8 +532,9 @@ def test_acovf2d():
     del dta["YEAR"]
     res = acovf(dta)
     assert_equal(res, acovf(dta.values))
-    X = np.random.random((10,2))
-    assert_raises(ValueError, acovf, X)
+    X = np.random.random((10, 2))
+    with pytest.raises(ValueError):
+        acovf(X)
 
 
 @pytest.mark.not_vetted
@@ -573,15 +580,15 @@ def test_arma_order_select_ic():
     assert_almost_equal(res.bic.values, bic.values, 5)
     assert_equal(res.aic_min_order, (1, 2))
     assert_equal(res.bic_min_order, (1, 2))
-    assert_(res.aic.index.equals(aic.index))
-    assert_(res.aic.columns.equals(aic.columns))
-    assert_(res.bic.index.equals(bic.index))
-    assert_(res.bic.columns.equals(bic.columns))
+    assert res.aic.index.equals(aic.index)
+    assert res.aic.columns.equals(aic.columns)
+    assert res.bic.index.equals(bic.index)
+    assert res.bic.columns.equals(bic.columns)
 
     res = arma_order_select_ic(y, ic='aic', trend='nc')
     assert_almost_equal(res.aic.values, aic.values, 5)
-    assert_(res.aic.index.equals(aic.index))
-    assert_(res.aic.columns.equals(aic.columns))
+    assert res.aic.index.equals(aic.index)
+    assert res.aic.columns.equals(aic.columns)
     assert_equal(res.aic_min_order, (1, 2))
 
 
