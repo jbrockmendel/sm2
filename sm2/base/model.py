@@ -4,6 +4,7 @@ import warnings
 from six.moves import range, reduce
 import numpy as np
 import pandas as pd
+from pandas.util._decorators import Substitution
 from scipy import stats
 
 from sm2.tools.data import _is_using_pandas
@@ -14,7 +15,7 @@ from sm2.tools.sm_exceptions import ValueWarning, HessianInversionWarning
 
 from sm2.base.data import handle_data
 import sm2.base.wrapper as wrap
-from sm2.base.optimizer import Optimizer
+from sm2.base.optimizer import Optimizer, _fit_doc_notes
 
 from sm2.stats.contrast import ContrastResults, WaldTestResults
 from sm2.formula import handle_formula_data
@@ -280,6 +281,7 @@ class LikelihoodModel(Model):
                                  "be specified")
         return start_params
 
+    @Substitution(doc_notes=_fit_doc_notes.strip())
     def fit(self, start_params=None, method='newton', maxiter=100,
             full_output=True, disp=True, fargs=(), callback=None, retall=False,
             skip_hessian=False, **kwargs):
