@@ -135,7 +135,8 @@ def test_arma_impulse_response():
 
 
 '''
-from statsmodels.sandbox.tsa.fftarma import ArmaFft
+# ArmaFft not ported from upstream
+# from statsmodels.sandbox.tsa.fftarma import ArmaFft
 
 @pytest.mark.not_vetted
 def test_spectrum():
@@ -220,9 +221,10 @@ class TestArmaProcess(object):
         assert_equal(process.isinvertible, process_direct.isinvertible)
         assert_equal(process.isstationary, process_direct.isstationary)
 
-    @pytest.mark.skip(reason='ARMA not implemented')
+    '''
+    # ARMA not ported from upstream
     def test_from_model(self):
-        from statsmodels.tsa.arima_model import ARMA
+        # from statsmodels.tsa.arima_model import ARMA
 
         process = ArmaProcess([1, -.8], [1, .3], 1000)
         t = 1000
@@ -237,6 +239,7 @@ class TestArmaProcess(object):
         assert_equal(process_model.nobs, process_coef.nobs)
         assert_equal(process_model.isinvertible, process_coef.isinvertible)
         assert_equal(process_model.isstationary, process_coef.isstationary)
+    '''
 
     def test_process_multiplication(self):
         process1 = ArmaProcess.from_coeffs([.9])

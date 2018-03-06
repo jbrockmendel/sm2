@@ -384,10 +384,10 @@ class DiscreteModel(base.LikelihoodModel):
         # Parameters to pass to super(...).fit()
         # For the 'extra' parameters, pass all that are available,
         # even if we know (at this point) we will only use one.
-        from statsmodels.base.l1_slsqp import fit_l1_slsqp
+        from sm2.base.l1_slsqp import fit_l1_slsqp
         extra_fit_funcs = {'l1': fit_l1_slsqp}
         if have_cvxopt and method == 'l1_cvxopt_cp':
-            from statsmodels.base.l1_cvxopt import fit_l1_cvxopt_cp
+            from sm2.base.l1_cvxopt import fit_l1_cvxopt_cp
             extra_fit_funcs['l1_cvxopt_cp'] = fit_l1_cvxopt_cp
         elif method.lower() == 'l1_cvxopt_cp':
             message = ("Attempt to use l1_cvxopt_cp failed since cvxopt "
@@ -1110,7 +1110,7 @@ class Poisson(CountModel):
         #       patched version
         # TODO: decide whether to move the imports
         from patsy import DesignInfo
-        from statsmodels.base._constraints import fit_constrained
+        from sm2.base._constraints import fit_constrained
 
         # same pattern as in base.LikelihoodModel.t_test
         lc = DesignInfo(self.exog_names).linear_constraint(constraints)

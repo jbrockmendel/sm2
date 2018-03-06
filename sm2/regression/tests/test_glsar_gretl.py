@@ -168,7 +168,7 @@ class TestGLSARGretl(object):
     
         '''
         # 2018-03-05 outliers_influence not ported from upstream
-        from statsmodels.stats import outliers_influence
+        # from statsmodels.stats import outliers_influence
         c = outliers_influence.reset_ramsey(res, degree=2)
         compare_ftest(c, reset_2, decimal=(2, 4))
         c = outliers_influence.reset_ramsey(res, degree=3)
@@ -408,7 +408,7 @@ class TestGLSARGretl(object):
         
         '''
         # 2018-03-05 outliers_influence not ported from upstream
-        from statsmodels.stats import outliers_influence
+        # from statsmodels.stats import outliers_influence
         c = outliers_influence.reset_ramsey(res, degree=2)
         compare_ftest(c, reset_2, decimal=(6, 5))
         c = outliers_influence.reset_ramsey(res, degree=3)
@@ -434,7 +434,7 @@ class TestGLSARGretl(object):
 
         '''
         # 2018-03-05 outliers_influence not ported from upstream
-        from statsmodels.stats import outliers_influence
+        # from statsmodels.stats import outliers_influence
         vif2 = [outliers_influence.variance_inflation_factor(res.model.exog, k)
                 for k in [1, 2]]
 
