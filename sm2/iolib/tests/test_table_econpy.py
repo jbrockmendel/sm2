@@ -1,10 +1,10 @@
-'''
+"""
 Unit tests table.py.
 
 :see: http://docs.python.org/lib/minimal-example.html for an intro to unittest
 :see: http://agiletesting.blogspot.com/2005/01/python-unit-testing-part-1-unittest.html
 :see: http://aspn.activestate.com/ASPN/Cookbook/Python/Recipe/305292
-'''
+"""
 from __future__ import absolute_import
 
 from six.moves import zip
@@ -76,10 +76,6 @@ class TestSimpleTable(object):
 *****************************
 """
         actual = '\n%s\n' % tbl.as_text()
-        #print('actual')
-        #print(actual)
-        #print('desired')
-        #print(desired)
         assert_equal(actual, desired)
     def test_ltx_fmt1(self):
         # Limited test of custom ltx_fmt
@@ -96,8 +92,6 @@ class TestSimpleTable(object):
 \end{center}
 """
         actual = '\n%s\n' % tbl.as_latex_tabular()
-        #print(actual)
-        #print(desired)
         assert_equal(actual, desired)
 
     def test_html_fmt1(self):
@@ -116,12 +110,9 @@ class TestSimpleTable(object):
 </table>
 """
         #the previous has significant trailing whitespace that got removed
-        #desired = '''\n<table class="simpletable">\n<tr>\n    <td></td>    <th>header1</th> <th>header2</th>\n</tr>\n<tr>\n  <th>stub1</th>   <td>0.0</td>      <td>1</td>   \n</tr>\n<tr>\n  <th>stub2</th>    <td>2</td>     <td>3.333</td> \n</tr>\n</table>\n'''
+        #desired = """\n<table class="simpletable">\n<tr>\n    <td></td>    <th>header1</th> <th>header2</th>\n</tr>\n<tr>\n  <th>stub1</th>   <td>0.0</td>      <td>1</td>   \n</tr>\n<tr>\n  <th>stub2</th>    <td>2</td>     <td>3.333</td> \n</tr>\n</table>\n"""
         actual = '\n%s\n' % tbl.as_html()
         actual = '\n'.join((line.rstrip() for line in actual.split('\n')))
-        #print(actual)
-        #print(desired)
-        #print len(actual), len(desired)
         assert_equal(actual, desired)
 
     def test_customlabel(self):
@@ -129,7 +120,6 @@ class TestSimpleTable(object):
         tbl = SimpleTable(table1data, test1header, test1stubs, txt_fmt=txt_fmt1)
         tbl[1][1].data = np.nan
         tbl.label_cells(custom_labeller)
-        #print([[c.datatype for c in row] for row in tbl])
         desired = """
 *****************************
 *       * header1 * header2 *

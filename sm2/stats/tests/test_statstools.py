@@ -1,7 +1,7 @@
 # TODO: Test robust skewness
 # TODO: Test robust kurtosis
 import numpy as np
-from numpy.testing import assert_almost_equal, assert_raises
+from numpy.testing import assert_almost_equal
 import pandas as pd
 from scipy import stats
 import pytest
@@ -201,7 +201,8 @@ class TestStattools(object):
 
     def test_medcouple_1d(self):
         x = np.reshape(np.arange(100.0), (50, 2))
-        assert_raises(ValueError, _medcouple_1d, x)
+        with pytest.raises(ValueError):
+            _medcouple_1d(x)
 
     def test_medcouple_symmetric(self):
         mc = medcouple(np.arange(5.0))

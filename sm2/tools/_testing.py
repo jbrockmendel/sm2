@@ -9,7 +9,7 @@ The first group of functions provide consistency checks
 
 """
 import numpy as np
-from numpy.testing import assert_allclose, assert_
+from numpy.testing import assert_allclose
 import pytest
 
 # the following are copied from
@@ -39,7 +39,7 @@ def check_ttest_tvalues(results):
     assert_allclose(table2, table_res, rtol=1e-12)
 
     # move this to test_attributes ?
-    assert_(hasattr(res, 'use_t'))
+    assert hasattr(res, 'use_t')
 
     tt = res.t_test(mat[0])
     tt.summary()   # smoke test for GH#1323
@@ -63,7 +63,7 @@ def check_ftest_pvalues(results):
     # label for pvalues in summary
     string_use_t = 'P>|z|' if use_t is False else 'P>|t|'
     summ = str(res.summary())
-    assert_(string_use_t in summ)
+    assert string_use_t in summ
 
     '''
     # summary2 not ported as of 2018-03-05
@@ -73,7 +73,7 @@ def check_ftest_pvalues(results):
     except AttributeError:
         summ2 = None
     if summ2 is not None:
-        assert_(string_use_t in summ2)
+        assert string_use_t in summ2
     '''
 
 
@@ -134,5 +134,5 @@ def check_predict_types(results):
         # predict doesn't preserve DataFrame, e.g. dot converts to ndarray
         # import pandas
         # predicted = res.predict(pandas.DataFrame(p_exog))
-        # assert_(isinstance(predicted, pandas.DataFrame))
+        # assert isinstance(predicted, pandas.DataFrame)
         # assert_allclose(predicted, fitted, rtol=1e-12)

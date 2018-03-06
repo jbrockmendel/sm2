@@ -98,7 +98,7 @@ def csv2st(csvfile, headers=False, stubs=False, title=None):
     The first column may contain stubs: set stubs=True.
     Can also supply headers and stubs as tuples of strings.
     """
-    rows = list()
+    rows = []
     with open(csvfile, 'r') as fh:
         reader = csv.reader(fh)
         if headers is True:
@@ -111,7 +111,8 @@ def csv2st(csvfile, headers=False, stubs=False, title=None):
                 if row:
                     stubs.append(row[0])
                     rows.append(row[1:])
-        else:  # no stubs, or stubs provided
+        else:
+            # no stubs, or stubs provided
             for row in reader:
                 if row:
                     rows.append(row)
@@ -199,12 +200,10 @@ class SimpleTable(list):
         self._txt_fmt.update(txt_fmt or dict())
         self._latex_fmt.update(ltx_fmt or dict())
         self._html_fmt.update(html_fmt or dict())
-        self.output_formats = dict(
-            txt=self._txt_fmt,
-            csv=self._csv_fmt,
-            html=self._html_fmt,
-            latex=self._latex_fmt
-        )
+        self.output_formats = dict(txt=self._txt_fmt,
+                                   csv=self._csv_fmt,
+                                   html=self._html_fmt,
+                                   latex=self._latex_fmt)
         self._Cell = celltype or Cell
         self._Row = rowtype or Row
         rows = self._data2rows(data)  # a list of Row instances
@@ -286,7 +285,6 @@ class SimpleTable(list):
         """Return list of Row,
         the raw data as rows of cells.
         """
-        
         _Cell = self._Cell
         _Row = self._Row
         rows = []
@@ -405,8 +403,9 @@ class SimpleTable(list):
         return '\n'.join(formatted_rows)
 
     def as_latex_tabular(self, center=True, **fmt_dict):
-        '''Return string, the table as a LaTeX tabular environment.
-        Note: will require the booktabs package.'''
+        """Return string, the table as a LaTeX tabular environment.
+        Note: will require the booktabs package.
+        """
         # fetch the text format, override with fmt_dict
         fmt = self._get_fmt('latex', **fmt_dict)
 
@@ -532,7 +531,7 @@ class Row(list):
         """
         output_format = get_output_format(output_format)
         if output_format not in self.special_fmts:
-            self.special_fmts[output_format] = dict()
+            self.special_fmts[output_format] = {}
         self.special_fmts[output_format].update(fmt_dict)
 
     def insert_stub(self, loc, stub):
@@ -634,11 +633,13 @@ class Cell(object):
     A cell can belong to a Row, but does not have to.
     """
     def __init__(self, data='', datatype=None, row=None, **fmt_dict):
-        try:  # might have passed a Cell instance
+        try:
+            # might have passed a Cell instance
             self.data = data.data
             self._datatype = data.datatype
             self._fmt = data._fmt
-        except (AttributeError, TypeError):  # passed ordinary data
+        except (AttributeError, TypeError):
+            # passed ordinary data
             self.data = data
             self._datatype = datatype
             self._fmt = dict()
@@ -728,17 +729,18 @@ class Cell(object):
         align = self.alignment(output_format, **fmt)
         return pad(content, width, align)
 
-    def get_datatype(self):
+    @property
+    def datatype(self):
         if self._datatype is None:
             dtype = self.row.datatype
         else:
             dtype = self._datatype
         return dtype
 
-    def set_datatype(self, val):
+    @datatype.setter
+    def datatype(self, value):
         # TODO: add checking
-        self._datatype = val
-    datatype = property(get_datatype, set_datatype)
+        self._datatype = value
 
 
 # begin: default formats for SimpleTable
@@ -772,26 +774,25 @@ default_txt_fmt = dict(
     colsep=' ',
     data_aligns="c",
     # data formats
-    # data_fmt="%s",  #deprecated; use data_fmts
+    # data_fmt="%s",     # deprecated; use data_fmts
     data_fmts=["%s"],
     # labeled alignments
-    # stubs_align='l',   #deprecated; use data_fmts
+    # stubs_align='l',   # deprecated; use data_fmts
     stub_align='l',
     header_align='c',
     # labeled formats
-    header_fmt='%s',  # deprecated; just use 'header'
-    stub_fmt='%s',  # deprecated; just use 'stub'
+    header_fmt='%s',     # deprecated; just use 'header'
+    stub_fmt='%s',       # deprecated; just use 'stub'
     header='%s',
     stub='%s',
-    empty_cell='',  # deprecated; just use 'empty'
+    empty_cell='',       # deprecated; just use 'empty'
     empty='',
-    missing='--',
-)
+    missing='--')
 
 default_csv_fmt = dict(
     fmt='csv',
-    table_dec_above=None,  # '',
-    table_dec_below=None,  # '',
+    table_dec_above=None,   # '',
+    table_dec_below=None,   # '',
     # basic row formatting
     row_pre='',
     row_post='',
@@ -802,21 +803,20 @@ default_csv_fmt = dict(
     colwidths=None,
     colsep=',',
     # data formats
-    data_fmt='%s',  # deprecated; use data_fmts
+    data_fmt='%s',       # deprecated; use data_fmts
     data_fmts=['%s'],
     # labeled alignments
     # stubs_align='l',   # deprecated; use data_fmts
     stub_align="l",
     header_align='c',
     # labeled formats
-    header_fmt='"%s"',  # deprecated; just use 'header'
-    stub_fmt='"%s"',  # deprecated; just use 'stub'
-    empty_cell='',  # deprecated; just use 'empty'
+    header_fmt='"%s"',   # deprecated; just use 'header'
+    stub_fmt='"%s"',     # deprecated; just use 'stub'
+    empty_cell='',       # deprecated; just use 'empty'
     header='%s',
     stub='%s',
     empty='',
-    missing='--',
-)
+    missing='--')
 
 default_html_fmt = dict(
     # basic table formatting
@@ -833,20 +833,19 @@ default_html_fmt = dict(
     data_aligns="c",
     # data formats
     data_fmts=['<td>%s</td>'],
-    data_fmt="<td>%s</td>",  # deprecated; use data_fmts
+    data_fmt="<td>%s</td>",    # deprecated; use data_fmts
     # labeled alignments
-    # stubs_align='l',   #deprecated; use data_fmts
+    # stubs_align='l',         # deprecated; use data_fmts
     stub_align='l',
     header_align='c',
     # labeled formats
     header_fmt='<th>%s</th>',  # deprecated; just use `header`
-    stub_fmt='<th>%s</th>',  # deprecated; just use `stub`
-    empty_cell='<td></td>',  # deprecated; just use `empty`
+    stub_fmt='<th>%s</th>',    # deprecated; just use `stub`
+    empty_cell='<td></td>',    # deprecated; just use `empty`
     header='<th>%s</th>',
     stub='<th>%s</th>',
     empty='<td></td>',
-    missing='<td>--</td>',
-)
+    missing='<td>--</td>')
 
 default_latex_fmt = dict(
     fmt='ltx',
@@ -877,21 +876,22 @@ default_latex_fmt = dict(
     stub=r'\textbf{%s}',
     empty='',
     missing='--',
-    #replacements will be processed in lexicographical order
-    replacements={"#" : "\#", "$" : "\$", "%" : "\%", "&" : "\&", ">" : "$>$", "_" : "\_", "|" : "$|$"} 
-)
+    # replacements will be processed in lexicographical order
+    replacements={"#": "\#",
+                  "$": "\$",
+                  "%": "\%",
+                  "&": "\&",
+                  ">": "$>$",
+                  "_": "\_",
+                  "|": "$|$"} )
 
-default_fmts = dict(
-    html=default_html_fmt,
-    txt=default_txt_fmt,
-    latex=default_latex_fmt,
-    csv=default_csv_fmt
-)
-output_format_translations = dict(
-    htm='html',
-    text='txt',
-    ltx='latex'
-)
+default_fmts = dict(html=default_html_fmt,
+                    txt=default_txt_fmt,
+                    latex=default_latex_fmt,
+                    csv=default_csv_fmt)
+output_format_translations = dict(htm='html',
+                                  text='txt',
+                                  ltx='latex')
 
 
 def get_output_format(output_format):

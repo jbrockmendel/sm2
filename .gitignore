@@ -16,3 +16,4 @@ dist
 coverage_html_report/
 y_arma_data.csv
 prof/
+.pytest_cache

@@ -16,17 +16,9 @@ import os
 
 import pandas as pd
 import numpy as np
-from numpy.testing import assert_almost_equal, assert_equal, assert_raises
+from numpy.testing import assert_almost_equal
 
 from sm2.tsa.stattools import bds
-
-DECIMAL_8 = 8
-DECIMAL_6 = 6
-DECIMAL_5 = 5
-DECIMAL_4 = 4
-DECIMAL_3 = 3
-DECIMAL_2 = 2
-DECIMAL_1 = 1
 
 curdir = os.path.dirname(os.path.abspath(__file__))
 data_file = os.path.join(curdir, "results", "bds_data.csv")
@@ -38,20 +30,22 @@ results = pd.read_csv(res_file, header=None)
 
 class CheckBDS(object):
     """
-    Test BDS
-
     Test values from Kanzler's MATLAB program bds.
     """
     def test_stat(self):
-        assert_almost_equal(self.res[0], self.bds_stats, DECIMAL_8)
+        assert_almost_equal(self.res[0],
+                            self.bds_stats,
+                            8)
 
     def test_pvalue(self):
-        assert_almost_equal(self.res[1], self.pvalues, DECIMAL_8)
+        assert_almost_equal(self.res[1],
+                            self.pvalues,
+                            8)
 
 
 class TestBDSSequence(CheckBDS):
     """
-    BDS Test on np.arange(1,26)
+    BDS Test on np.arange(1, 26)
     """
     @classmethod
     def setup_class(cls):

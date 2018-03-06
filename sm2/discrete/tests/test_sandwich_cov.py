@@ -9,7 +9,7 @@ import os
 
 import pytest
 import numpy as np
-from numpy.testing import assert_allclose, assert_equal, assert_
+from numpy.testing import assert_allclose, assert_equal
 import pandas as pd
 
 from sm2.tools.tools import add_constant
@@ -619,7 +619,7 @@ class TestGLMGaussHACUniform(CheckDiscreteGLM):
         bse = np.array([  2.82203924,   4.60199596,  11.01275064])
         assert_allclose(res1a.bse, bse, rtol=1e-6)
 
-        assert_(res1a.cov_kwds['weights_func'] is sw.weights_uniform)
+        assert res1a.cov_kwds['weights_func'] is sw.weights_uniform
 
         kwdsb = {'kernel': sw.weights_bartlett, 'maxlags': 2}
         res1a = self.res1.model.fit(cov_type='HAC', cov_kwds=kwdsb)

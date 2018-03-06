@@ -679,29 +679,36 @@ class TestDiagnosticG(object):
         # this test is slow
         infl = oi.OLSInfluence(res)
 
-        fp = open(os.path.join(cur_dir, "results/influence_lsdiag_R.json"))
-        lsdiag = json.load(fp)
+        path = os.path.join(cur_dir, "results/influence_lsdiag_R.json")
+        with open(path, 'r') as fp:
+            lsdiag = json.load(fp)
 
         # basic
         assert_almost_equal(np.array(lsdiag['cov.scaled']).reshape(3, 3),
-                            res.cov_params(), decimal=14)
+                            res.cov_params(),
+                            decimal=14)
         assert_almost_equal(np.array(lsdiag['cov.unscaled']).reshape(3, 3),
-                            res.normalized_cov_params, decimal=14)
+                            res.normalized_cov_params,
+                            decimal=14)
 
-        c0, c1 = infl.cooks_distance #TODO: what's c1
+        c0, c1 = infl.cooks_distance  # TODO: what's c1
 
 
         assert_almost_equal(c0, lsdiag['cooks'], decimal=14)
         assert_almost_equal(infl.hat_matrix_diag, lsdiag['hat'], decimal=14)
         assert_almost_equal(infl.resid_studentized_internal,
-                            lsdiag['std.res'], decimal=14)
+                            lsdiag['std.res'],
+                            decimal=14)
 
         # slow:
         #infl._get_all_obs()  #slow, nobs estimation loop, called implicitly
         dffits, dffth = infl.dffits
-        assert_almost_equal(dffits, lsdiag['dfits'], decimal=14)
+        assert_almost_equal(dffits,
+                            lsdiag['dfits'],
+                            decimal=14)
         assert_almost_equal(infl.resid_studentized_external,
-                            lsdiag['stud.res'], decimal=14)
+                            lsdiag['stud.res'],
+                            decimal=14)
 
         import pandas
         fn = os.path.join(cur_dir, "results/influence_measures_R.csv")
@@ -795,7 +802,6 @@ def test_outlier_influence_funcs():
     infl.summary_table()
 
 
-# outliers_influence not ported from upstream
 def test_influence_wrapped():
     d = macrodata.load_pandas().data
     # growth rates
@@ -827,8 +833,9 @@ def test_influence_wrapped():
     assert isinstance(df, DataFrame)
 
     # this test is slow
-    fp = open(os.path.join(cur_dir, "results", "influence_lsdiag_R.json"))
-    lsdiag = json.load(fp)
+    path = os.path.join(cur_dir, "results", "influence_lsdiag_R.json")
+    with open(path, 'r') as fp:
+        lsdiag = json.load(fp)
 
     c0, c1 = infl.cooks_distance  # TODO: what's c1, it's pvalues? -ss
 
@@ -857,7 +864,6 @@ def test_influence_wrapped():
     assert_almost_equal(infl.cov_ratio, infl_r2[:, 4], decimal=14)
 
 
-# outliers_influence not ported from upstream
 def test_influence_dtype():
     # see GH#2148  bug when endog is integer
     y = np.ones(20)
@@ -878,7 +884,6 @@ def test_influence_dtype():
     assert_almost_equal(cr1, cr3, decimal=8)
 
 
-# outliers_influence not ported from upstream
 def test_outlier_test():
     # results from R with NA -> 1. Just testing interface here because
     # outlier_test is just a wrapper
