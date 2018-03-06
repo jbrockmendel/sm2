@@ -29,7 +29,7 @@ spector_data = datasets.spector.load()
 spector_data.exog = add_constant(spector_data.exog, prepend=False)
 
 from .results import results_poisson_constrained as results
-from .results import results_glm_logit_constrained as reslogit
+# from .results import results_glm_logit_constrained as reslogit
 
 DEBUG = False
 

@@ -65,6 +65,7 @@ DECIMAL_3 = 3
 DECIMAL_2 = 2
 DECIMAL_1 = 1
 
+
 # ------------------------------------------------------------------
 
 @pytest.mark.not_vetted
@@ -195,12 +196,16 @@ class TestPoissonNewton(CheckModelResults):
                             DECIMAL_4)
 
     def test_resid(self):
-        assert_almost_equal(self.res1.resid, self.res2.resid, 2)
+        assert_almost_equal(self.res1.resid,
+                            self.res2.resid,
+                            2)
 
     def test_predict_prob(self):
         # just check the first 100 obs. vs R to save memory
         probs = self.res1.predict_prob()[:100]
-        assert_almost_equal(probs, probs_res, 8)
+        assert_almost_equal(probs,
+                            probs_res,
+                            8)
 
 
 @pytest.mark.not_vetted
@@ -261,9 +266,6 @@ class TestNegativeBinomialNB2Newton(CheckModelResults):
         assert_almost_equal(self.res1.predict(linear=True)[:10],
                             self.res2.fittedvalues[:10],
                             DECIMAL_3)
-
-    def test_jac(self):
-        pass
 
 
 @pytest.mark.not_vetted
@@ -558,7 +560,7 @@ class TestNegativeBinomialPNB1Newton(CheckModelResults):
         mod = NegativeBinomialP(data.endog, exog, p=1)
         cls.res1 = mod.fit(method="newton", maxiter=100, disp=0,
                            use_transparams=True)
-        
+
         cls.res2 = RandHIE().negativebinomial_nb1_bfgs()
 
     def test_zstat(self):
@@ -850,13 +852,13 @@ class CheckMNLogitBaseZero(CheckModelResults):
 
         # note this is just a regression test, gretl doesn't have a prediction
         # table
-        pred = [[ 126.,   41.,    2.,    0.,    0.,   12.,   19.],
-                [  77.,   73.,    3.,    0.,    0.,   15.,   12.],
-                [  37.,   43.,    2.,    0.,    0.,   19.,    7.],
-                [  12.,    9.,    1.,    0.,    0.,    9.,    6.],
-                [  19.,   10.,    2.,    0.,    0.,   20.,   43.],
-                [  22.,   25.,    1.,    0.,    0.,   31.,   71.],
-                [   9.,    7.,    1.,    0.,    0.,   18.,  140.]]
+        pred = [[126., 41., 2., 0., 0., 12., 19.],
+                [77., 73., 3., 0., 0., 15., 12.],
+                [37., 43., 2., 0., 0., 19., 7.],
+                [12., 9., 1., 0., 0., 9., 6.],
+                [19., 10., 2., 0., 0., 20., 43.],
+                [22., 25., 1., 0., 0., 31., 71.],
+                [9., 7., 1., 0., 0., 18., 140.]]
         assert_array_equal(self.res1.pred_table(), pred)
 
     def test_resid(self):
@@ -1032,7 +1034,7 @@ class TestProbitMinimizeDefault(CheckBinaryResults):
         data.exog = add_constant(data.exog, prepend=False)
         cls.res2 = Spector().probit()
         fit = Probit(data.endog, data.exog).fit
-        cls.res1 = fit(method="minimize", disp=0, niter=5, tol = 1e-8)
+        cls.res1 = fit(method="minimize", disp=0, niter=5, tol=1e-8)
 
 
 @pytest.mark.not_vetted
@@ -1047,8 +1049,8 @@ class TestProbitMinimizeDogleg(CheckBinaryResults):
         data.exog = add_constant(data.exog, prepend=False)
         cls.res2 = Spector().probit()
         fit = Probit(data.endog, data.exog).fit
-        cls.res1 = fit(method="minimize", disp=0, niter=5, tol = 1e-8,
-                       min_method = 'dogleg')
+        cls.res1 = fit(method="minimize", disp=0, niter=5, tol=1e-8,
+                       min_method='dogleg')
 
 
 @pytest.mark.not_vetted
@@ -1132,7 +1134,7 @@ class TestMNLogitL1(CheckLikelihoodModelL1):
         anes_exog = add_constant(anes_exog, prepend=False)
         mlogit_mod = MNLogit(anes_data.endog, anes_exog)
         alpha = 10. * np.ones((mlogit_mod.J - 1, mlogit_mod.K)) # / anes_exog.shape[0]
-        alpha[-1,:] = 0
+        alpha[-1, :] = 0
         cls.res1 = mlogit_mod.fit_regularized(method='l1', alpha=alpha,
                                               trim_mode='auto',
                                               auto_trim_tol=0.02,
@@ -1563,7 +1565,6 @@ class CheckMargEff(object):
                         me.margeff,
                         rtol=1e-13)
         assert me_frame.shape == (me.margeff.size, 6)
-
 
     def test_nodummy_dydxmean(self):
         me = self.res1.get_margeff(at='mean')
@@ -2033,27 +2034,29 @@ def test_null_options():
     # default optimization
     lln = res.llnull  # access to trigger computation
     assert_allclose(res.res_null.mle_settings['start_params'],
-                    np.log(endog.mean()), rtol=1e-10)
-    assert res.res_null.mle_settings['optimizer'] =='bfgs'
+                    np.log(endog.mean()),
+                    rtol=1e-10)
+    assert res.res_null.mle_settings['optimizer'] == 'bfgs'
     assert_allclose(lln, llnull0)
 
     res.set_null_options(attach_results=True, start_params=[0.5], method='nm')
     lln = res.llnull  # access to trigger computation
-    assert_allclose(res.res_null.mle_settings['start_params'], [0.5],
+    assert_allclose(res.res_null.mle_settings['start_params'],
+                    [0.5],
                     rtol=1e-10)
     assert res.res_null.mle_settings['optimizer'] == 'nm'
 
     res.summary()  # call to fill cache
     assert 'prsquared' in res._cache
-    assert_equal(res._cache['llnull'],  lln)
+    assert_equal(res._cache['llnull'], lln)
 
     assert 'prsquared' in res._cache
-    assert_equal(res._cache['llnull'],  lln)
+    assert_equal(res._cache['llnull'], lln)
 
     # check setting cache
     res.set_null_options(llnull=999)
     assert 'prsquared' not in res._cache
-    assert_equal(res._cache['llnull'],  999)
+    assert_equal(res._cache['llnull'], 999)
 
 
 # ------------------------------------------------------------------
@@ -2217,9 +2220,9 @@ class TestGeneralizedPoisson_p1(object):
         alpha = np.ones(len(self.res1.params))
         alpha[-2:] = 0
         # the first prints currently a warning, irrelevant here
-        res_reg1 = model.fit_regularized(alpha=alpha*0.01, disp=0)
-        res_reg2 = model.fit_regularized(alpha=alpha*100, disp=0)
-        res_reg3 = model.fit_regularized(alpha=alpha*1000, disp=0)
+        res_reg1 = model.fit_regularized(alpha=alpha * 0.01, disp=0)
+        res_reg2 = model.fit_regularized(alpha=alpha * 100, disp=0)
+        res_reg3 = model.fit_regularized(alpha=alpha * 1000, disp=0)
 
         assert_allclose(res_reg1.params, self.res1.params, atol=5e-5)
         assert_allclose(res_reg1.bse, self.res1.bse, atol=1e-5)
@@ -2380,8 +2383,8 @@ class  TestNegativeBinomialPPredictProb(object):
 
         probs = res.predict(which='prob')
         assert_allclose(probs,
-            stats.nbinom.pmf(np.arange(8)[:,None], size, prob).T,
-            atol=1e-2, rtol=1e-2)
+                        stats.nbinom.pmf(np.arange(8)[:, None], size, prob).T,
+                        atol=1e-2, rtol=1e-2)
 
         probs_ex = res.predict(exog=exog[[0, -1]], which='prob')
         assert_allclose(probs_ex,
@@ -2452,7 +2455,7 @@ def test_optim_kwds_prelim():
     # GPP with p=1.5 converges correctly,
     # GPP fails when p=2 even with good start_params
     model = GeneralizedPoisson(y, exog, offset=offset, p=1.5)
-    res = model.fit(disp=0, maxiter=200, optim_kwds_prelim=optim_kwds_prelim )
+    res = model.fit(disp=0, maxiter=200, optim_kwds_prelim=optim_kwds_prelim)
 
     assert_allclose(res.mle_settings['start_params'][:-1], res_poi.params,
                     rtol=1e-4)
@@ -2461,6 +2464,8 @@ def test_optim_kwds_prelim():
     assert_allclose(res.predict().mean(), y.mean(), rtol=0.1)
 
 
+'''
+# genmod not ported from upstream
 @pytest.mark.not_vetted
 def test_perfect_prediction():
     raise pytest.skip('genmod not ported')
@@ -2473,7 +2478,7 @@ def test_perfect_prediction():
     X = X[y != 2]
     y = y[y != 2]
     X = add_constant(X, prepend=True)
-    mod = Logit(y,X)
+    mod = Logit(y, X)
     with pytest.raises(PerfectSeparationError):
         mod.fit(maxiter=1000)
 
@@ -2484,6 +2489,7 @@ def test_perfect_prediction():
     with tm.assert_produces_warning():
         warnings.simplefilter('always')
         mod.fit(disp=False, maxiter=50)  # should not raise but does warn
+'''
 
 
 @pytest.mark.not_vetted
@@ -2597,7 +2603,7 @@ def test_mnlogit_2dexog():
 def test_formula_missing_exposure():
     # GH#2083
     d = {'Foo': [1, 2, 10, 149], 'Bar': [1, 2, 3, np.nan],
-         'constant': [1] * 4, 'exposure' : np.random.uniform(size=4),
+         'constant': [1] * 4, 'exposure': np.random.uniform(size=4),
          'x': [1, 3, 2, 1.5]}
     df = pd.DataFrame(d)
 
@@ -2625,7 +2631,7 @@ def test_predict_with_exposure():
 
     # Setup copied from test_formula_missing_exposure
     d = {'Foo': [1, 2, 10, 149], 'Bar': [1, 2, 3, 4],
-         'constant': [1] * 4, 'exposure' : [np.exp(1)]*4,
+         'constant': [1] * 4, 'exposure': [np.exp(1)] * 4,
          'x': [1, 3, 2, 1.5]}
     df = pd.DataFrame(d)
 
@@ -2655,13 +2661,16 @@ def test_poisson_predict():
     pred1 = res.predict()
     pred2 = res.predict(exog)
     assert_almost_equal(pred1, pred2)
+
     # extra options
     pred3 = res.predict(exog, offset=0, exposure=1)
     assert_almost_equal(pred1, pred3)
+
     pred3 = res.predict(exog, offset=0, exposure=2)
-    assert_almost_equal(2*pred1, pred3)
+    assert_almost_equal(2 * pred1, pred3)
+
     pred3 = res.predict(exog, offset=np.log(2), exposure=1)
-    assert_almost_equal(2*pred1, pred3)
+    assert_almost_equal(2 * pred1, pred3)
 
 
 @pytest.mark.xfail(reason="whether the warning is ommitted depends on "
@@ -2688,17 +2697,17 @@ def test_unchanging_degrees_of_freedom():
     # model.df_model inplace.
     data = sm2.datasets.randhie.load()
     model = NegativeBinomial(data.endog, data.exog, loglike_method='nb2')
-    params = np.array([-0.05654134, -0.21213734,  0.08783102, -0.02991825,
-                       0.22902315 ,  0.06210253,  0.06799444,  0.08406794,
-                       0.18530092 ,  1.36645186])
+    params = np.array([-0.05654134, -0.21213734, 0.08783102, -0.02991825,
+                       0.22902315, 0.06210253, 0.06799444, 0.08406794,
+                       0.18530092, 1.36645186])
 
     res1 = model.fit(start_params=params)
     assert res1.df_model == 8
 
-    reg_params = np.array([-0.04854   , -0.15019404,  0.08363671,
-                           -0.03032834,  0.17592454,
-                           0.06440753 ,  0.01584555,  0.        ,
-                           0.         ,  1.36984628])
+    reg_params = np.array([-0.04854, -0.15019404, 0.08363671,
+                           -0.03032834, 0.17592454,
+                           0.06440753, 0.01584555, 0.,
+                           0., 1.36984628])
 
     res2 = model.fit_regularized(alpha=100, start_params=reg_params)
     assert res2.df_model != 8

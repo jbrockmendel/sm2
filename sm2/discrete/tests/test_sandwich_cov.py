@@ -126,7 +126,7 @@ class TestPoissonCluGeneric(CheckCountRobustMixin):
         get_robustcov_results(cls.res1._results, 'cluster',
                               groups=group,
                               use_correction=True,
-                              df_correction=True,  #TODO has no effect
+                              df_correction=True,  # TODO has no effect
                               use_t=False, #True,
                               use_self=True)
         cls.bse_rob = cls.res1.bse
@@ -174,7 +174,7 @@ class TestPoissonCluFit(CheckCountRobustMixin):
                            cov_kwds=dict(groups=group,
                                          use_correction=True,
                                          scaling_factor=1. / sc_fact,
-                                         df_correction=True),  #TODO has no effect
+                                         df_correction=True),  # TODO has no effect
                            use_t=False, #True,
                            )
 
@@ -371,6 +371,7 @@ class TestGLMPoissonHC1Fit(CheckCountRobustMixin):
         cls.corr_fact = np.sqrt(1. / corr_fact)
 '''
 
+
 @pytest.mark.not_vetted
 class TestNegbinClu(CheckCountRobustMixin):
     res2 = results_st.results_negbin_clu
@@ -401,8 +402,8 @@ class TestNegbinCluExposure(CheckCountRobustMixin):
 #        cov_clu_nb = sw.cov_cluster(res_nb, group)
 #        k_params = k_vars + 1
 #        print sw.se_cov(cov_clu_nb / ((nobs-1.) / float(nobs - k_params)))
-#
-#        wt = res_nb.wald_test(np.eye(len(res_nb.params))[1:3], cov_p=cov_clu_nb/((nobs-1.) / float(nobs - k_params)))
+#        cov_p = cov_clu_nb / ((nobs - 1.) / float(nobs - k_params))
+#        wt = res_nb.wald_test(np.eye(len(res_nb.params))[1:3], cov_p=cov_p)
 #        print wt
 #
 #        print dir(results_st)
@@ -418,11 +419,11 @@ class TestNegbinCluGeneric(CheckCountRobustMixin):
         cls.res1 = mod.fit(disp=False, gtol=1e-7)
 
         get_robustcov_results(cls.res1._results, 'cluster',
-                                                  groups=group,
-                                                  use_correction=True,
-                                                  df_correction=True,  # TODO has no effect
-                                                  use_t=False, #True,
-                                                  use_self=True)
+                              groups=group,
+                              use_correction=True,
+                              df_correction=True,  # TODO has no effect
+                              use_t=False, #True,
+                              use_self=True)
         cls.bse_rob = cls.res1.bse
 
         nobs, k_vars = mod.exog.shape
