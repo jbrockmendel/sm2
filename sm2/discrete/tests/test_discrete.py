@@ -14,7 +14,7 @@ import warnings
 from six.moves import range
 
 import numpy as np
-from numpy.testing import (assert_, assert_almost_equal,
+from numpy.testing import (assert_almost_equal,
                            assert_equal, assert_array_equal, assert_allclose,
                            assert_array_less)
 import pandas as pd
@@ -128,10 +128,8 @@ class CheckModelResults(object):
                             DECIMAL_4)
 
     def test_dof(self):
-        assert_equal(self.res1.df_model,
-                     self.res2.df_model)
-        assert_equal(self.res1.df_resid,
-                     self.res2.df_resid)
+        assert self.res1.df_model == self.res2.df_model
+        assert self.res1.df_resid == self.res2.df_resid
 
     def test_aic(self):
         assert_almost_equal(self.res1.aic,
@@ -208,8 +206,10 @@ class CheckMargEff(object):
 
         me_frame = me.summary_frame()
         eff = me_frame["dy/dx"].values
-        assert_allclose(eff, me.margeff, rtol=1e-13)
-        assert_equal(me_frame.shape, (me.margeff.size, 6))
+        assert_allclose(eff,
+                        me.margeff,
+                        rtol=1e-13)
+        assert me_frame.shape == (me.margeff.size, 6)
 
 
     def test_nodummy_dydxmean(self):
@@ -774,10 +774,8 @@ class CheckL1Compatability(object):
                             DECIMAL_1)
 
     def test_df(self):
-        assert_equal(self.res_unreg.df_model,
-                     self.res_reg.df_model)
-        assert_equal(self.res_unreg.df_resid,
-                     self.res_reg.df_resid)
+        assert self.res_unreg.df_model == self.res_reg.df_model
+        assert self.res_unreg.df_resid == self.res_reg.df_resid
 
     def test_t_test(self):
         m = self.m
@@ -1572,8 +1570,7 @@ class CheckMNLogitBaseZero(CheckModelResults):
         assert_allclose(eff,
                         me.margeff,
                         rtol=1e-13)
-        assert_equal(me_frame.shape,
-                     (np.size(me.margeff), 6))
+        assert me_frame.shape == (np.size(me.margeff), 6)
 
     def test_margeff_mean(self):
         me = self.res1.get_margeff(at='mean')
@@ -1608,14 +1605,14 @@ class CheckMNLogitBaseZero(CheckModelResults):
                             6)
 
     def test_j(self):
-        assert_equal(self.res1.model.J, self.res2.J)
+        assert self.res1.model.J == self.res2.J
 
     def test_k(self):
-        assert_equal(self.res1.model.K, self.res2.K)
+        assert self.res1.model.K == self.res2.K
 
     def test_endog_names(self):
-        assert_equal(self.res1._get_endog_name(None, None)[1],
-                     ['y=1', 'y=2', 'y=3', 'y=4', 'y=5', 'y=6'])
+        endog_names = self.res1._get_endog_name(None, None)[1]
+        assert endog_names == ['y=1', 'y=2', 'y=3', 'y=4', 'y=5', 'y=6']
 
     def test_pred_table(self):
         # fitted results taken from gretl
@@ -1830,7 +1827,7 @@ class TestGeneralizedPoisson_p2(object):
         assert_allclose(self.res1.bic, self.res2.bic)
 
     def test_df(self):
-        assert_equal(self.res1.df_model, self.res2.df_model)
+        assert self.res1.df_model == self.res2.df_model
 
     def test_llf(self):
         assert_allclose(self.res1.llf, self.res2.llf)
@@ -1893,7 +1890,7 @@ class TestGeneralizedPoisson_transparams(object):
         assert_allclose(self.res1.bic, self.res2.bic)
 
     def test_df(self):
-        assert_equal(self.res1.df_model, self.res2.df_model)
+        assert self.res1.df_model == self.res2.df_model
 
     def test_llf(self):
         assert_allclose(self.res1.llf, self.res2.llf)
@@ -2473,14 +2470,14 @@ def test_null_options():
     lln = res.llnull  # access to trigger computation
     assert_allclose(res.res_null.mle_settings['start_params'],
                     np.log(endog.mean()), rtol=1e-10)
-    assert_equal(res.res_null.mle_settings['optimizer'], 'bfgs')
+    assert res.res_null.mle_settings['optimizer'] =='bfgs'
     assert_allclose(lln, llnull0)
 
     res.set_null_options(attach_results=True, start_params=[0.5], method='nm')
     lln = res.llnull  # access to trigger computation
     assert_allclose(res.res_null.mle_settings['start_params'], [0.5],
                     rtol=1e-10)
-    assert_equal(res.res_null.mle_settings['optimizer'], 'nm')
+    assert res.res_null.mle_settings['optimizer'] == 'nm'
 
     res.summary()  # call to fill cache
     assert 'prsquared' in res._cache
@@ -2498,6 +2495,7 @@ def test_null_options():
 @pytest.mark.not_vetted
 def test_optim_kwds_prelim():
     # test that fit options for preliminary fit is correctly transmitted
+    # TODO: collect all these import-like things up front
     filepath = os.path.join(cur_dir, "results", "sm3533.csv")
     df = pd.read_csv(filepath)
 
@@ -2605,8 +2603,8 @@ def test_mnlogit_2dexog():
     exog = add_constant(exog, prepend=True)
     res1 = MNLogit(data.endog, exog).fit(method="newton", disp=0)
     x = exog[0]
-    np.testing.assert_equal(res1.predict(x).shape, (1, 7))
-    np.testing.assert_equal(res1.predict(x[None]).shape, (1, 7))
+    assert res1.predict(x).shape == (1, 7)
+    assert res1.predict(x[None]).shape == (1, 7)
 
 
 def test_formula_missing_exposure():
@@ -2708,7 +2706,7 @@ def test_unchanging_degrees_of_freedom():
                        0.18530092 ,  1.36645186])
 
     res1 = model.fit(start_params=params)
-    assert_equal(res1.df_model, 8)
+    assert res1.df_model == 8
 
     reg_params = np.array([-0.04854   , -0.15019404,  0.08363671,
                            -0.03032834,  0.17592454,
@@ -2722,8 +2720,8 @@ def test_unchanging_degrees_of_freedom():
     res3 = model.fit()
     # Test that the call to `fit_regularized` didn't modify model.df_model
     # inplace.
-    assert_equal(res3.df_model, res1.df_model)
-    assert_equal(res3.df_resid, res1.df_resid)
+    assert res3.df_model == res1.df_model
+    assert res3.df_resid == res1.df_resid
 
     check_inherited_attributes(res1)
     check_inherited_attributes(res2)

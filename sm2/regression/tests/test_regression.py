@@ -172,10 +172,10 @@ class TestOLS(CheckRegressionResults):
         data = datasets.longley.load()
         data.exog = add_constant(data.exog, prepend=False)
         res1 = OLS(data.endog, data.exog).fit()
-        res2 = results_regression.Longley()
-        res2.wresid = res1.wresid  # workaround hack
         cls.res1 = res1
-        cls.res2 = res2
+
+        cls.res2 = results_regression.Longley()
+        cls.res2.wresid = res1.wresid  # workaround hack
 
         res_qr = OLS(data.endog, data.exog).fit(method="qr")
 
@@ -287,10 +287,10 @@ class TestRTO(CheckRegressionResults):
     def setup_class(cls):
         data = datasets.longley.load()
         res1 = OLS(data.endog, data.exog).fit()
-        res2 = results_regression.LongleyRTO()
-        res2.wresid = res1.wresid  # workaround hack
         cls.res1 = res1
-        cls.res2 = res2
+
+        cls.res2 = results_regression.LongleyRTO()
+        cls.res2.wresid = res1.wresid  # workaround hack
 
         res_qr = OLS(data.endog, data.exog).fit(method="qr")
         cls.res_qr = res_qr
@@ -531,7 +531,9 @@ class TestGLS(object):
         assert_almost_equal(self.res1.scale, self.res2.scale, DECIMAL_4)
 
     def test_tvalues(self):
-        assert_almost_equal(self.res1.tvalues, self.res2.tvalues, DECIMAL_4)
+        assert_almost_equal(self.res1.tvalues,
+                            self.res2.tvalues,
+                            DECIMAL_4)
 
     def test_standarderrors(self):
         assert_almost_equal(self.res1.bse, self.res2.bse, DECIMAL_4)
@@ -542,7 +544,9 @@ class TestGLS(object):
                             DECIMAL_4)
 
     def test_pvalues(self):
-        assert_almost_equal(self.res1.pvalues, self.res2.pvalues, DECIMAL_4)
+        assert_almost_equal(self.res1.pvalues,
+                            self.res2.pvalues,
+                            DECIMAL_4)
 
     def test_missing(self):
         endog = self.endog.copy()  # copy or changes endog for other methods
@@ -755,36 +759,6 @@ class TestGLS_WLS_equivalence(TestOLS_GLS_WLS_equivalence):
 
 
 @pytest.mark.not_vetted
-class TestNonFit(object):
-    @classmethod
-    def setup_class(cls):
-        data = datasets.longley.load()
-        data.exog = add_constant(data.exog, prepend=False)
-        cls.endog = data.endog
-        cls.exog = data.exog
-        cls.ols_model = OLS(data.endog, data.exog)
-
-    def test_df_resid(self):
-        df_resid = self.endog.shape[0] - self.exog.shape[1]
-        # TODO: do something with df_resid?
-        assert self.ols_model.df_resid == 9
-
-
-@pytest.mark.not_vetted
-class TestWLS_CornerCases(object):
-    @classmethod
-    def setup_class(cls):
-        cls.exog = np.ones((1,))
-        cls.endog = np.ones((1,))
-        weights = 1
-        cls.wls_res = WLS(cls.endog, cls.exog, weights=weights).fit()
-
-    def test_wrong_size_weights(self):
-        with pytest.raises(ValueError):
-            WLS(self.endog, self.exog, weights=np.ones((10, 10)))
-
-
-@pytest.mark.not_vetted
 class TestWLSExogWeights(CheckRegressionResults):
     # Test WLS with Greene's credit card data
     # reg avgexp age income incomesq ownrent [aw=1/incomesq]
@@ -811,34 +785,6 @@ class TestWLSExogWeights(CheckRegressionResults):
 
 
 @pytest.mark.not_vetted
-def test_wls_example():
-    # example from the docstring, there was a note about a bug, should
-    # be fixed now
-    Y = [1, 3, 4, 5, 2, 3, 4]
-    X = list(range(1, 8))
-    X = add_constant(X, prepend=False)
-    wls_model = WLS(Y, X, weights=list(range(1, 8))).fit()
-    # taken from R lm.summary
-    assert_almost_equal(wls_model.fvalue, 0.127337843215, 6)
-    assert_almost_equal(wls_model.scale, 2.44608530786**2, 6)
-
-
-@pytest.mark.not_vetted
-def test_wls_tss():
-    y = np.array([22, 22, 22, 23, 23, 23])
-    X = [[1, 0], [1, 0], [1, 1], [0, 1], [0, 1], [0, 1]]
-
-    ols_mod = OLS(y, add_constant(X, prepend=False)).fit()
-
-    yw = np.array([22, 22, 23.])
-    Xw = [[1, 0], [1, 1], [0, 1]]
-    w = np.array([2, 1, 3.])
-
-    wls_mod = WLS(yw, add_constant(Xw, prepend=False), weights=w).fit()
-    assert_equal(ols_mod.centered_tss, wls_mod.centered_tss)
-
-
-@pytest.mark.not_vetted
 class TestWLSScalarVsArray(CheckRegressionResults):
     @classmethod
     def setup_class(cls):
@@ -849,30 +795,6 @@ class TestWLSScalarVsArray(CheckRegressionResults):
         wls_array = WLS(dta.endog, dta.exog, weights=weights).fit()
         cls.res1 = wls_scalar
         cls.res2 = wls_array
-
-
-# class TestWLS_GLS(CheckRegressionResults):
-#    @classmethod
-#    def setup_class(cls):
-#        data = datasets.ccard.load()
-#        cls.res1 = WLS(data.endog, data.exog,
-#                        weights=1 / data.exog[:, 2]).fit()
-#        cls.res2 = GLS(data.endog, data.exog, sigma=data.exog[:, 2]).fit()
-#
-#    def check_confidenceintervals(self, conf1, conf2):
-#        assert_almost_equal(conf1, conf2(), DECIMAL_4)
-
-
-@pytest.mark.not_vetted
-def test_wls_missing():
-    data = datasets.ccard.load()
-    endog = data.endog
-    endog[[10, 25]] = np.nan
-    mod = WLS(data.endog, data.exog, weights=1 / data.exog[:, 2],
-              missing='drop')
-    assert mod.endog.shape[0] == 70
-    assert mod.exog.shape[0] == 70
-    assert mod.weights.shape[0] == 70
 
 
 @pytest.mark.not_vetted
@@ -902,6 +824,19 @@ class TestGLS_OLS(CheckRegressionResults):
     def check_confidenceintervals(self, conf1, conf2):
         assert_almost_equal(conf1, conf2(), DECIMAL_4)
 
+
+# class TestWLS_GLS(CheckRegressionResults):
+#    @classmethod
+#    def setup_class(cls):
+#        data = datasets.ccard.load()
+#        cls.res1 = WLS(data.endog, data.exog,
+#                        weights=1 / data.exog[:, 2]).fit()
+#        cls.res2 = GLS(data.endog, data.exog, sigma=data.exog[:, 2]).fit()
+#
+#    def check_confidenceintervals(self, conf1, conf2):
+#        assert_almost_equal(conf1, conf2(), DECIMAL_4)
+
+
 # TODO: test AR
 # why the two-stage in AR?
 # class test_ar(object):
@@ -916,20 +851,6 @@ class TestGLS_OLS(CheckRegressionResults):
 #     def test_order(self):
 # In R this can be defined or chosen by minimizing the AIC if aic=True
 #        pass
-
-
-@pytest.mark.not_vetted
-class TestYuleWalker(object):
-    @classmethod
-    def setup_class(cls):
-        data = datasets.sunspots.load()
-        cls.rho, cls.sigma = yule_walker(data.endog, order=4,
-                                         method="mle")
-        cls.R_params = [1.2831003105694765, -0.45240924374091945,
-                        -0.20770298557575195, 0.047943648089542337]
-
-    def test_params(self):
-        assert_almost_equal(self.rho, self.R_params, DECIMAL_4)
 
 
 @pytest.mark.not_vetted
@@ -1015,82 +936,7 @@ class TestNxNxOne(TestDataDimensions):
         cls.res2 = cls.mod2.fit()
 
 
-@pytest.mark.not_vetted
-def test_bad_size():
-    np.random.seed(54321)
-    data = np.random.uniform(0, 20, 31)
-    with pytest.raises(ValueError):
-        OLS(data, data[1:])
-
-
-@pytest.mark.not_vetted
-def test_const_indicator():
-    np.random.seed(12345)
-    X = np.random.randint(0, 3, size=30)
-    X = categorical(X, drop=True)
-    y = np.dot(X, [1., 2., 3.]) + np.random.normal(size=30)
-    modc = OLS(y, add_constant(X[:, 1:], prepend=True)).fit()
-    mod = OLS(y, X, hasconst=True).fit()
-    assert_almost_equal(modc.rsquared, mod.rsquared, 12)
-
-
-@pytest.mark.not_vetted
-def test_summary():
-    # GH#734
-    dta = datasets.longley.load_pandas()
-    X = dta.exog
-    X["constant"] = 1
-    y = dta.endog
-    with warnings.catch_warnings(record=True):
-        res = OLS(y, X).fit()
-        table = res.summary().as_latex()
-    # replace the date and time
-    table = re.sub("(?<=\n\\\\textbf\{Date:\}             &).+?&",
-                   " Sun, 07 Apr 2013 &", table)
-    table = re.sub("(?<=\n\\\\textbf\{Time:\}             &).+?&",
-                   "     13:46:07     &", table)
-
-    expected = """\\begin{center}
-\\begin{tabular}{lclc}
-\\toprule
-\\textbf{Dep. Variable:}    &      TOTEMP      & \\textbf{  R-squared:         } &     0.995   \\\\
-\\textbf{Model:}            &       OLS        & \\textbf{  Adj. R-squared:    } &     0.992   \\\\
-\\textbf{Method:}           &  Least Squares   & \\textbf{  F-statistic:       } &     330.3   \\\\
-\\textbf{Date:}             & Sun, 07 Apr 2013 & \\textbf{  Prob (F-statistic):} &  4.98e-10   \\\\
-\\textbf{Time:}             &     13:46:07     & \\textbf{  Log-Likelihood:    } &   -109.62   \\\\
-\\textbf{No. Observations:} &          16      & \\textbf{  AIC:               } &     233.2   \\\\
-\\textbf{Df Residuals:}     &           9      & \\textbf{  BIC:               } &     238.6   \\\\
-\\textbf{Df Model:}         &           6      & \\textbf{                     } &             \\\\
-\\bottomrule
-\\end{tabular}
-\\begin{tabular}{lcccccc}
-                  & \\textbf{coef} & \\textbf{std err} & \\textbf{t} & \\textbf{P$>$$|$t$|$} & \\textbf{[0.025} & \\textbf{0.975]}  \\\\
-\\midrule
-\\textbf{GNPDEFL}  &      15.0619  &       84.915     &     0.177  &         0.863        &     -177.029    &      207.153     \\\\
-\\textbf{GNP}      &      -0.0358  &        0.033     &    -1.070  &         0.313        &       -0.112    &        0.040     \\\\
-\\textbf{UNEMP}    &      -2.0202  &        0.488     &    -4.136  &         0.003        &       -3.125    &       -0.915     \\\\
-\\textbf{ARMED}    &      -1.0332  &        0.214     &    -4.822  &         0.001        &       -1.518    &       -0.549     \\\\
-\\textbf{POP}      &      -0.0511  &        0.226     &    -0.226  &         0.826        &       -0.563    &        0.460     \\\\
-\\textbf{YEAR}     &    1829.1515  &      455.478     &     4.016  &         0.003        &      798.788    &     2859.515     \\\\
-\\textbf{constant} &   -3.482e+06  &      8.9e+05     &    -3.911  &         0.004        &     -5.5e+06    &    -1.47e+06     \\\\
-\\bottomrule
-\\end{tabular}
-\\begin{tabular}{lclc}
-\\textbf{Omnibus:}       &  0.749 & \\textbf{  Durbin-Watson:     } &    2.559  \\\\
-\\textbf{Prob(Omnibus):} &  0.688 & \\textbf{  Jarque-Bera (JB):  } &    0.684  \\\\
-\\textbf{Skew:}          &  0.420 & \\textbf{  Prob(JB):          } &    0.710  \\\\
-\\textbf{Kurtosis:}      &  2.434 & \\textbf{  Cond. No.          } & 4.86e+09  \\\\
-\\bottomrule
-\\end{tabular}
-%\\caption{OLS Regression Results}
-\\end{center}
-
-Warnings: \\newline
- [1] Standard Errors assume that the covariance matrix of the errors is correctly specified. \\newline
- [2] The condition number is large, 4.86e+09. This might indicate that there are \\newline
- strong multicollinearity or other numerical problems."""
-    assert_equal(table, expected)
-
+# -------------------------------------------------------------
 
 class TestRegularizedFit(object):
 
@@ -1174,6 +1020,171 @@ class TestRegularizedFit(object):
 
                 assert_almost_equal(rslt1.params, rslt2.params, decimal=3)
                 assert_almost_equal(rslt1.params, rslt3.params, decimal=3)
+
+
+# -------------------------------------------------------------
+
+@pytest.mark.not_vetted
+def test_summary():
+    # GH#734
+    dta = datasets.longley.load_pandas()
+    X = dta.exog
+    X["constant"] = 1
+    y = dta.endog
+    with warnings.catch_warnings(record=True):
+        res = OLS(y, X).fit()
+        table = res.summary().as_latex()
+    # replace the date and time
+    table = re.sub("(?<=\n\\\\textbf\{Date:\}             &).+?&",
+                   " Sun, 07 Apr 2013 &", table)
+    table = re.sub("(?<=\n\\\\textbf\{Time:\}             &).+?&",
+                   "     13:46:07     &", table)
+
+    expected = """\\begin{center}
+\\begin{tabular}{lclc}
+\\toprule
+\\textbf{Dep. Variable:}    &      TOTEMP      & \\textbf{  R-squared:         } &     0.995   \\\\
+\\textbf{Model:}            &       OLS        & \\textbf{  Adj. R-squared:    } &     0.992   \\\\
+\\textbf{Method:}           &  Least Squares   & \\textbf{  F-statistic:       } &     330.3   \\\\
+\\textbf{Date:}             & Sun, 07 Apr 2013 & \\textbf{  Prob (F-statistic):} &  4.98e-10   \\\\
+\\textbf{Time:}             &     13:46:07     & \\textbf{  Log-Likelihood:    } &   -109.62   \\\\
+\\textbf{No. Observations:} &          16      & \\textbf{  AIC:               } &     233.2   \\\\
+\\textbf{Df Residuals:}     &           9      & \\textbf{  BIC:               } &     238.6   \\\\
+\\textbf{Df Model:}         &           6      & \\textbf{                     } &             \\\\
+\\bottomrule
+\\end{tabular}
+\\begin{tabular}{lcccccc}
+                  & \\textbf{coef} & \\textbf{std err} & \\textbf{t} & \\textbf{P$>$$|$t$|$} & \\textbf{[0.025} & \\textbf{0.975]}  \\\\
+\\midrule
+\\textbf{GNPDEFL}  &      15.0619  &       84.915     &     0.177  &         0.863        &     -177.029    &      207.153     \\\\
+\\textbf{GNP}      &      -0.0358  &        0.033     &    -1.070  &         0.313        &       -0.112    &        0.040     \\\\
+\\textbf{UNEMP}    &      -2.0202  &        0.488     &    -4.136  &         0.003        &       -3.125    &       -0.915     \\\\
+\\textbf{ARMED}    &      -1.0332  &        0.214     &    -4.822  &         0.001        &       -1.518    &       -0.549     \\\\
+\\textbf{POP}      &      -0.0511  &        0.226     &    -0.226  &         0.826        &       -0.563    &        0.460     \\\\
+\\textbf{YEAR}     &    1829.1515  &      455.478     &     4.016  &         0.003        &      798.788    &     2859.515     \\\\
+\\textbf{constant} &   -3.482e+06  &      8.9e+05     &    -3.911  &         0.004        &     -5.5e+06    &    -1.47e+06     \\\\
+\\bottomrule
+\\end{tabular}
+\\begin{tabular}{lclc}
+\\textbf{Omnibus:}       &  0.749 & \\textbf{  Durbin-Watson:     } &    2.559  \\\\
+\\textbf{Prob(Omnibus):} &  0.688 & \\textbf{  Jarque-Bera (JB):  } &    0.684  \\\\
+\\textbf{Skew:}          &  0.420 & \\textbf{  Prob(JB):          } &    0.710  \\\\
+\\textbf{Kurtosis:}      &  2.434 & \\textbf{  Cond. No.          } & 4.86e+09  \\\\
+\\bottomrule
+\\end{tabular}
+%\\caption{OLS Regression Results}
+\\end{center}
+
+Warnings: \\newline
+ [1] Standard Errors assume that the covariance matrix of the errors is correctly specified. \\newline
+ [2] The condition number is large, 4.86e+09. This might indicate that there are \\newline
+ strong multicollinearity or other numerical problems."""
+    assert_equal(table, expected)
+
+
+# TODO: WTF why is this a class?
+@pytest.mark.not_vetted
+class TestYuleWalker(object):
+    @classmethod
+    def setup_class(cls):
+        data = datasets.sunspots.load()
+        cls.rho, cls.sigma = yule_walker(data.endog, order=4,
+                                         method="mle")
+        cls.R_params = [1.2831003105694765, -0.45240924374091945,
+                        -0.20770298557575195, 0.047943648089542337]
+
+    def test_params(self):
+        assert_almost_equal(self.rho, self.R_params, DECIMAL_4)
+
+
+# TODO: WTF why is this a class?
+@pytest.mark.not_vetted
+class TestNonFit(object):
+    @classmethod
+    def setup_class(cls):
+        data = datasets.longley.load()
+        data.exog = add_constant(data.exog, prepend=False)
+        cls.endog = data.endog
+        cls.exog = data.exog
+        cls.ols_model = OLS(data.endog, data.exog)
+
+    def test_df_resid(self):
+        df_resid = self.endog.shape[0] - self.exog.shape[1]
+        # TODO: do something with df_resid?
+        assert self.ols_model.df_resid == 9
+
+
+# TODO: WTF why is this a class?
+@pytest.mark.not_vetted
+class TestWLS_CornerCases(object):
+    @classmethod
+    def setup_class(cls):
+        cls.exog = np.ones((1,))
+        cls.endog = np.ones((1,))
+        weights = 1
+        cls.wls_res = WLS(cls.endog, cls.exog, weights=weights).fit()
+
+    def test_wrong_size_weights(self):
+        with pytest.raises(ValueError):
+            WLS(self.endog, self.exog, weights=np.ones((10, 10)))
+
+@pytest.mark.not_vetted
+def test_const_indicator():
+    np.random.seed(12345)
+    X = np.random.randint(0, 3, size=30)
+    X = categorical(X, drop=True)
+    y = np.dot(X, [1., 2., 3.]) + np.random.normal(size=30)
+    modc = OLS(y, add_constant(X[:, 1:], prepend=True)).fit()
+    mod = OLS(y, X, hasconst=True).fit()
+    assert_almost_equal(modc.rsquared, mod.rsquared, 12)
+
+
+@pytest.mark.not_vetted
+def test_bad_size():
+    np.random.seed(54321)
+    data = np.random.uniform(0, 20, 31)
+    with pytest.raises(ValueError):
+        OLS(data, data[1:])
+
+
+@pytest.mark.not_vetted
+def test_wls_example():
+    # example from the docstring, there was a note about a bug, should
+    # be fixed now
+    Y = [1, 3, 4, 5, 2, 3, 4]
+    X = list(range(1, 8))
+    X = add_constant(X, prepend=False)
+    wls_model = WLS(Y, X, weights=list(range(1, 8))).fit()
+    # taken from R lm.summary
+    assert_almost_equal(wls_model.fvalue, 0.127337843215, 6)
+    assert_almost_equal(wls_model.scale, 2.44608530786**2, 6)
+
+
+@pytest.mark.not_vetted
+def test_wls_tss():
+    y = np.array([22, 22, 22, 23, 23, 23])
+    X = [[1, 0], [1, 0], [1, 1], [0, 1], [0, 1], [0, 1]]
+
+    ols_mod = OLS(y, add_constant(X, prepend=False)).fit()
+
+    yw = np.array([22, 22, 23.])
+    Xw = [[1, 0], [1, 1], [0, 1]]
+    w = np.array([2, 1, 3.])
+
+    wls_mod = WLS(yw, add_constant(Xw, prepend=False), weights=w).fit()
+    assert_equal(ols_mod.centered_tss, wls_mod.centered_tss)
+
+
+@pytest.mark.not_vetted
+def test_wls_missing():
+    data = datasets.ccard.load()
+    endog = data.endog
+    endog[[10, 25]] = np.nan
+    mod = WLS(data.endog, data.exog, weights=1 / data.exog[:, 2],
+              missing='drop')
+    assert mod.endog.shape[0] == 70
+    assert mod.exog.shape[0] == 70
+    assert mod.weights.shape[0] == 70
 
 
 @pytest.mark.not_vetted
