@@ -56,6 +56,8 @@ except ImportError:
     has_dogleg = False
 
 cur_dir = os.path.dirname(os.path.abspath(__file__))
+prob_path = os.path.join(cur_dir, "results", "predict_prob_poisson.csv")
+probs_res = np.loadtxt(prob_path, delimiter=",")
 
 DECIMAL_14 = 14
 DECIMAL_10 = 10
@@ -1246,8 +1248,6 @@ class TestPoissonNewton(CheckModelResults):
         assert_almost_equal(self.res1.resid, self.res2.resid, 2)
 
     def test_predict_prob(self):
-        path = os.path.join(cur_dir, "results", "predict_prob_poisson.csv")
-        probs_res = np.loadtxt(path, delimiter=",")
 
         # just check the first 100 obs. vs R to save memory
         probs = self.res1.predict_prob()[:100]
@@ -2583,6 +2583,7 @@ def test_mnlogit_non_square():
     # strip the header from the test
     smry = "\n".join(res1.summary().as_text().split('\n')[9:])
 
+    # TODO: can we do this in a self-contained way?
     test_case_file = os.path.join(cur_dir, 'results', 'mn_logit_summary.txt')
     with open(test_case_file, 'r') as fd:
         test_case = fd.read()

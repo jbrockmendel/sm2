@@ -21,6 +21,17 @@ from sm2.datasets import macrodata
 import sm2.stats.sandwich_covariance as sw
 from sm2.stats import diagnostic
 
+cur_dir = os.path.abspath(os.path.dirname(__file__))
+fpath = os.path.join(cur_dir, 'results',
+                     'leverage_influence_ols_nostars.txt')
+lev_data = np.genfromtxt(fpath, skip_header=3, skip_footer=1,
+                         converters={0: lambda s: s})
+# either numpy 1.6 or python 3.2 changed behavior
+if np.isnan(lev_data[-1]['f1']):
+    lev_data = np.genfromtxt(fpath, skip_header=3, skip_footer=2,
+                            converters={0: lambda s: s})
+lev_data.dtype.names = ['date', 'residual', 'leverage', 'influence', 'DFFITS']
+
 
 def compare_ftest(contrast_res, other, decimal=(5,4)):
     assert_almost_equal(contrast_res.fvalue, other[0], decimal=decimal[0])
@@ -359,19 +370,6 @@ class TestGLSARGretl(object):
         reciprocal_condition_number = 0.013826504
         vif = [1.001, 1.001]
 
-        names = 'date   residual        leverage       influence        DFFITS'.split()
-        cur_dir = os.path.abspath(os.path.dirname(__file__))
-        fpath = os.path.join(cur_dir, 'results',
-                             'leverage_influence_ols_nostars.txt')
-        lev = np.genfromtxt(fpath, skip_header=3, skip_footer=1,
-                            converters={0:lambda s: s})
-        # either numpy 1.6 or python 3.2 changed behavior
-        if np.isnan(lev[-1]['f1']):
-            lev = np.genfromtxt(fpath, skip_header=3, skip_footer=2,
-                                converters={0:lambda s: s})
-
-        lev.dtype.names = names
-
         res = res_ols  # for easier copying
 
         cov_hac = sw.cov_hac_simple(res, nlags=4, use_correction=False)
@@ -442,10 +440,18 @@ class TestGLSARGretl(object):
         # just added this based on Gretl
 
         # just rough test, low decimal in Gretl output,
-        assert_almost_equal(lev['residual'], res.resid, decimal=3)
-        assert_almost_equal(lev['DFFITS'], infl.dffits[0], decimal=3)
-        assert_almost_equal(lev['leverage'], infl.hat_matrix_diag, decimal=3)
-        assert_almost_equal(lev['influence'], infl.influence, decimal=4)
+        assert_almost_equal(lev_data['residual'],
+                            res.resid,
+                            decimal=3)
+        assert_almost_equal(lev_data['DFFITS'],
+                            infl.dffits[0],
+                            decimal=3)
+        assert_almost_equal(lev_data['leverage'],
+                            infl.hat_matrix_diag,
+                            decimal=3)
+        assert_almost_equal(lev_data['influence'],
+                            infl.influence,
+                            decimal=4)
         '''
 
 
