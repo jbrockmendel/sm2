@@ -18,7 +18,6 @@ http://www.jstatsoft.org/v33/i01/paper
 This routine should work for any regression model that implements
 loglike, score, and hess.
 """
-
 import numpy as np
 
 from sm2.tools.decorators import cache_readonly
@@ -61,9 +60,9 @@ def _gen_npfuncs(k, L1_wt, alpha, loglike_kwds, score_kwds, hess_kwds):
 
 
 def fit_elasticnet(model, method="coord_descent", maxiter=100,
-         alpha=0., L1_wt=1., start_params=None, cnvrg_tol=1e-7,
-         zero_tol=1e-8, refit=False, check_step=True,
-         loglike_kwds=None, score_kwds=None, hess_kwds=None):
+                   alpha=0., L1_wt=1., start_params=None, cnvrg_tol=1e-7,
+                   zero_tol=1e-8, refit=False, check_step=True,
+                   loglike_kwds=None, score_kwds=None, hess_kwds=None):
     """
     Return an elastic net regularized fit to a regression model.
 
@@ -132,7 +131,6 @@ def fit_elasticnet(model, method="coord_descent", maxiter=100,
     then repeatedly optimize the L1 penalized version of this function
     along coordinate axes.
     """
-
     k_exog = model.exog.shape[1]
     n_exog = model.exog.shape[0]
 
@@ -157,15 +155,14 @@ def fit_elasticnet(model, method="coord_descent", maxiter=100,
                       if k != "offset" and hasattr(model, k)])
     init_args['hasconst'] = False
 
-    fgh_list = [_gen_npfuncs(k, L1_wt, alpha, loglike_kwds, score_kwds, hess_kwds)
+    fgh_list = [_gen_npfuncs(k, L1_wt, alpha, loglike_kwds,
+                             score_kwds, hess_kwds)
                 for k in range(k_exog)]
 
     for itr in range(maxiter):
-
         # Sweep through the parameters
         params_save = params.copy()
         for k in range(k_exog):
-
             # Under the active set method, if a parameter becomes
             # zero we don't try to change it again.
             # TODO : give the user the option to switch this off
@@ -182,12 +179,13 @@ def fit_elasticnet(model, method="coord_descent", maxiter=100,
                 offset += model.offset
 
             # Create a one-variable model for optimization.
-            model_1var = model.__class__(model.endog, model.exog[:, k], offset=offset,
-                                         **init_args)
+            model_1var = model.__class__(model.endog, model.exog[:, k],
+                                         offset=offset, **init_args)
 
             # Do the one-dimensional optimization.
             func, grad, hess = fgh_list[k]
-            params[k] = _opt_1d(func, grad, hess, model_1var, params[k], alpha[k]*L1_wt,
+            params[k] = _opt_1d(func, grad, hess, model_1var, params[k],
+                                alpha[k] * L1_wt,
                                 tol=btol, check_step=check_step)
 
             # Update the active set
@@ -215,7 +213,7 @@ def fit_elasticnet(model, method="coord_descent", maxiter=100,
     init_args = dict([(k, getattr(model, k, None)) for k in model._init_keys])
     if len(ii) > 0:
         model1 = model.__class__(model.endog, model.exog[:, ii],
-                               **init_args)
+                                 **init_args)
         rslt = model1.fit()
         cov[np.ix_(ii, ii)] = rslt.normalized_cov_params
     else:
@@ -241,13 +239,11 @@ def fit_elasticnet(model, method="coord_descent", maxiter=100,
     refit = klass(model, params, cov, scale=scale)
     refit.regularized = True
     refit.method = method
-    refit.fit_history = {'iteration' : itr + 1}
-
+    refit.fit_history = {'iteration': itr + 1}
     return refit
 
 
-def _opt_1d(func, grad, hess, model, start, L1_wt, tol,
-            check_step=True):
+def _opt_1d(func, grad, hess, model, start, L1_wt, tol, check_step=True):
     """
     One-dimensional helper for elastic net.
 
@@ -287,7 +283,6 @@ def _opt_1d(func, grad, hess, model, start, L1_wt, tol,
     -------
     The argmin of the objective function.
     """
-
     # Overview:
     # We want to minimize L(x) + L1_wt*abs(x), where L() is a smooth
     # loss function that includes the log-likelihood and L2 penalty.
@@ -303,7 +298,7 @@ def _opt_1d(func, grad, hess, model, start, L1_wt, tol,
     f = func(x, model)
     b = grad(x, model)
     c = hess(x, model)
-    d = b - c*x
+    d = b - c * x
 
     # The optimum is achieved by hard thresholding to zero
     if L1_wt > np.abs(d):
@@ -322,18 +317,18 @@ def _opt_1d(func, grad, hess, model, start, L1_wt, tol,
     # OLS
     if not check_step:
         return x + h
-    f1 = func(x + h, model) + L1_wt*np.abs(x + h)
+
+    f1 = func(x + h, model) + L1_wt * np.abs(x + h)
     if f1 <= f + L1_wt*np.abs(x) + 1e-10:
         return x + h
 
     # Fallback for models where the loss is not quadratic
     from scipy.optimize import brent
-    x_opt = brent(func, args=(model,), brack=(x-1, x+1), tol=tol)
+    x_opt = brent(func, args=(model,), brack=(x - 1, x + 1), tol=tol)
     return x_opt
 
 
 class RegularizedResults(Results):
-
     def __init__(self, model, params):
         super(RegularizedResults, self).__init__(model, params)
 
@@ -343,12 +338,9 @@ class RegularizedResults(Results):
 
 
 class RegularizedResultsWrapper(wrap.ResultsWrapper):
-    _attrs = {
-        'params': 'columns',
-        'resid': 'rows',
-        'fittedvalues': 'rows',
-    }
-
+    _attrs = {'params': 'columns',
+              'resid': 'rows',
+              'fittedvalues': 'rows'}
     _wrap_attrs = _attrs
 
 wrap.populate_wrapper(RegularizedResultsWrapper,

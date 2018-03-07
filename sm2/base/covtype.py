@@ -8,6 +8,27 @@ License: BSD-3
 import numpy as np
 
 
+def normalize_cov_type(cov_type):
+    # normalize names
+    if cov_type == 'nw-panel':
+        cov_type = 'hac-panel'
+    elif cov_type == 'nw-groupsum':
+        cov_type = 'hac-groupsum'
+    return cov_type
+
+
+def set_df_adjustment(kwds, cov_type):
+    adjust_df = False
+    if cov_type in ['cluster', 'hac-panel', 'hac-groupsum']:
+        df_correction = kwds.get('df_correction', None)
+        # TODO: check also use_correction, do I need all combinations?
+        if df_correction is not False:  # i.e. in [None, True]:
+            # user didn't explicitly set it to False
+            adjust_df = True
+
+    return adjust_df
+
+
 def get_robustcov_results(self, cov_type='HC1', use_t=None, **kwds):
     """create new results instance with robust covariance as default
 
@@ -122,11 +143,8 @@ def get_robustcov_results(self, cov_type='HC1', use_t=None, **kwds):
     """
     import sm2.stats.sandwich_covariance as sw
 
-    # normalize names
-    if cov_type == 'nw-panel':
-        cov_type = 'hac-panel'
-    if cov_type == 'nw-groupsum':
-        cov_type = 'hac-groupsum'
+    cov_type = normalize_cov_type(cov_type)
+
     if 'kernel' in kwds:
         kwds['weights_func'] = kwds.pop('kernel')
 
@@ -150,14 +168,7 @@ def get_robustcov_results(self, cov_type='HC1', use_t=None, **kwds):
     res.cov_kwds = {'use_t': use_t}  # store for information
     res.use_t = use_t
 
-    adjust_df = False
-    if cov_type in ['cluster', 'hac-panel', 'hac-groupsum']:
-        df_correction = kwds.get('df_correction', None)
-        # TODO: check also use_correction, do I need all combinations?
-        if df_correction is not False:  # i.e. in [None, True]:
-            # user didn't explicitely set it to False
-            adjust_df = True
-
+    adjust_df = set_df_adjustment(kwds, cov_type)
     res.cov_kwds['adjust_df'] = adjust_df
 
     # verify and set kwds, and calculate cov

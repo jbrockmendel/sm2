@@ -11,7 +11,8 @@ from sm2.tools.data import _is_using_pandas
 from sm2.tools.tools import recipr, nan_dot
 from sm2.tools.decorators import resettable_cache, cache_readonly
 from sm2.tools.numdiff import approx_fprime
-from sm2.tools.sm_exceptions import ValueWarning, HessianInversionWarning
+from sm2.tools.sm_exceptions import (ValueWarning, HessianInversionWarning,
+                                     ConvergenceWarning)
 
 from sm2.base.data import handle_data
 import sm2.base.wrapper as wrap
@@ -306,109 +307,7 @@ class LikelihoodModel(Model):
 
         Notes
         -----
-        The 'basinhopping' solver ignores `maxiter`, `retall`, `full_output`
-        explicit arguments.
-
-        Optional arguments for solvers (see returned Results.mle_settings):
-
-            'newton'
-                tol : float
-                    Relative error in params acceptable for convergence.
-            'nm' -- Nelder Mead
-                xtol : float
-                    Relative error in params acceptable for convergence
-                ftol : float
-                    Relative error in loglike(params) acceptable for
-                    convergence
-                maxfun : int
-                    Maximum number of function evaluations to make.
-            'bfgs'
-                gtol : float
-                    Stop when norm of gradient is less than gtol.
-                norm : float
-                    Order of norm (np.Inf is max, -np.Inf is min)
-                epsilon
-                    If fprime is approximated, use this value for the step
-                    size. Only relevant if LikelihoodModel.score is None.
-            'lbfgs'
-                m : int
-                    This many terms are used for the Hessian approximation.
-                factr : float
-                    A stop condition that is a variant of relative error.
-                pgtol : float
-                    A stop condition that uses the projected gradient.
-                epsilon
-                    If fprime is approximated, use this value for the step
-                    size. Only relevant if LikelihoodModel.score is None.
-                maxfun : int
-                    Maximum number of function evaluations to make.
-                bounds : sequence
-                    (min, max) pairs for each element in x,
-                    defining the bounds on that parameter.
-                    Use None for one of min or max when there is no bound
-                    in that direction.
-            'cg'
-                gtol : float
-                    Stop when norm of gradient is less than gtol.
-                norm : float
-                    Order of norm (np.Inf is max, -np.Inf is min)
-                epsilon : float
-                    If fprime is approximated, use this value for the step
-                    size. Can be scalar or vector.  Only relevant if
-                    Likelihoodmodel.score is None.
-            'ncg'
-                fhess_p : callable f'(x,*args)
-                    Function which computes the Hessian of f times an arbitrary
-                    vector, p.  Should only be supplied if
-                    LikelihoodModel.hessian is None.
-                avextol : float
-                    Stop when the average relative error in the minimizer
-                    falls below this amount.
-                epsilon : float or ndarray
-                    If fhess is approximated, use this value for the step size.
-                    Only relevant if Likelihoodmodel.hessian is None.
-            'powell'
-                xtol : float
-                    Line-search error tolerance
-                ftol : float
-                    Relative error in loglike(params) for acceptable for
-                    convergence.
-                maxfun : int
-                    Maximum number of function evaluations to make.
-                start_direc : ndarray
-                    Initial direction set.
-            'basinhopping'
-                niter : integer
-                    The number of basin hopping iterations.
-                niter_success : integer
-                    Stop the run if the global minimum candidate remains the
-                    same for this number of iterations.
-                T : float
-                    The "temperature" parameter for the accept or reject
-                    criterion. Higher "temperatures" mean that larger jumps
-                    in function value will be accepted. For best results
-                    `T` should be comparable to the separation (in function
-                    value) between local minima.
-                stepsize : float
-                    Initial step size for use in the random displacement.
-                interval : integer
-                    The interval for how often to update the `stepsize`.
-                minimizer : dict
-                    Extra keyword arguments to be passed to the minimizer
-                    `scipy.optimize.minimize()`, for example 'method' - the
-                    minimization method (e.g. 'L-BFGS-B'), or 'tol' - the
-                    tolerance for termination. Other arguments are mapped from
-                    explicit argument of `fit`:
-                      - `args` <- `fargs`
-                      - `jac` <- `score`
-                      - `hess` <- `hess`
-            'minimize'
-                min_method : str, optional
-                    Name of minimization method to use.
-                    Any method specific arguments can be passed directly.
-                    For a list of methods and their arguments, see
-                    documentation of `scipy.optimize.minimize`.
-                    If no method is specified, then BFGS is used.
+        %(doc_notes)s
         """
         Hinv = None  # JP error if full_output=0, Hinv not defined
 
@@ -487,7 +386,6 @@ class LikelihoodModel(Model):
         if isinstance(retvals, dict):
             mlefit.mle_retvals = retvals
             if warn_convergence and not retvals['converged']:
-                from sm2.tools.sm_exceptions import ConvergenceWarning
                 warnings.warn("Maximum Likelihood optimization failed to "
                               "converge. Check mle_retvals",
                               ConvergenceWarning)
@@ -541,7 +439,6 @@ class GenericLikelihoodModel(LikelihoodModel):
     res = mod.fit(method="nm", maxiter = 500)
     import numpy as np
     np.allclose(res.params, probit_res.params)
-
     """
     def __init__(self, endog, exog=None, loglike=None, score=None,
                  hessian=None, missing='none', extra_params_names=None,
@@ -592,7 +489,8 @@ class GenericLikelihoodModel(LikelihoodModel):
                 pass
         # Initialize is called by
         # sm2.model.LikelihoodModel.__init__
-        # and should contain any preprocessing that needs to be done for a model
+        # and should contain any preprocessing that needs to be done
+        # for a model
         if self.exog is not None:
             # assume constant
             er = np.linalg.matrix_rank(self.exog)
@@ -727,6 +625,7 @@ class GenericLikelihoodModel(LikelihoodModel):
 
         return genericmlefit
     # fit.__doc__ += LikelihoodModel.fit.__doc__
+    # TODO: Should this actually get attached?  Its commented out upstream too
 
 
 class Results(object):
@@ -801,18 +700,17 @@ class Results(object):
         predict_results = self.model.predict(self.params, exog, *args, **kwargs)
 
         if exog_index is not None and not hasattr(predict_results, 'predicted_values'):
-
             if predict_results.ndim == 1:
                 return pd.Series(predict_results, index=exog_index)
             else:
                 return pd.DataFrame(predict_results, index=exog_index)
 
         else:
-
             return predict_results
 
     def summary(self):
-        pass
+        # TODO: Make this raise upstream instead of just "pass"
+        raise NotImplementedError
 
 
 # TODO: public method?
@@ -970,7 +868,7 @@ class LikelihoodModelResults(wrap.SaveLoadMixin, Results):
                 True: converged. False: did not converge.
             allvecs : list
                 Results at each iteration.
-        """
+    """
 
     # by default we use normal distribution
     # can be overwritten by instances or subclasses
@@ -1695,21 +1593,16 @@ class LikelihoodModelResults(wrap.SaveLoadMixin, Results):
 
 
 class LikelihoodResultsWrapper(wrap.ResultsWrapper):
-    _attrs = {
-        'params': 'columns',
-        'bse': 'columns',
-        'pvalues': 'columns',
-        'tvalues': 'columns',
-        'resid': 'rows',
-        'fittedvalues': 'rows',
-        'normalized_cov_params': 'cov',
-    }
-
+    _attrs = {'params': 'columns',
+              'bse': 'columns',
+              'pvalues': 'columns',
+              'tvalues': 'columns',
+              'resid': 'rows',
+              'fittedvalues': 'rows',
+              'normalized_cov_params': 'cov'}
     _wrap_attrs = _attrs
-    _wrap_methods = {
-        'cov_params': 'cov',
-        'conf_int': 'columns'
-    }
+    _wrap_methods = {'cov_params': 'cov',
+                     'conf_int': 'columns'}
 
 wrap.populate_wrapper(LikelihoodResultsWrapper,  # noqa:E305
                       LikelihoodModelResults)
@@ -1741,14 +1634,12 @@ class ResultMixin(object):
 
     @cache_readonly
     def score_obsv(self):
-        """cached Jacobian of log-likelihood
-        """
+        """cached Jacobian of log-likelihood"""
         return self.model.score_obs(self.params)
 
     @cache_readonly
     def hessv(self):
-        """cached Hessian of log-likelihood
-        """
+        """cached Hessian of log-likelihood"""
         return self.model.hessian(self.params)
 
     @cache_readonly
@@ -1756,7 +1647,6 @@ class ResultMixin(object):
         """
         covariance of parameters based on outer product of jacobian of
         log-likelihood
-
         """
         #  if not hasattr(self, '_results'):
         #      raise ValueError('need to call fit first')
@@ -1781,20 +1671,16 @@ class ResultMixin(object):
 
     @cache_readonly
     def bsejhj(self):
-        """standard deviation of parameter estimates based on covHJH
-        """
+        """standard deviation of parameter estimates based on covHJH"""
         return np.sqrt(np.diag(self.covjhj))
 
     @cache_readonly
     def bsejac(self):
-        """standard deviation of parameter estimates based on covjac
-        """
+        """standard deviation of parameter estimates based on covjac"""
         return np.sqrt(np.diag(self.covjac))
 
     def bootstrap(self, nrep=100, method='nm', disp=0, store=1):
         """simple bootstrap to get mean and variance of estimator
-
-        see notes
 
         Parameters
         ----------
@@ -1900,7 +1786,6 @@ class GenericLikelihoodModelResults(LikelihoodModelResults, ResultMixin):
     prsquared : float
         McFadden's pseudo-R-squared. 1 - (`llf`/`llnull`)
     """
-
     def __init__(self, model, mlefit):
         self.model = model
         self.endog = model.endog
