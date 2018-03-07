@@ -1,9 +1,7 @@
 import numpy as np
 
 from scipy.stats import poisson
-from numpy.testing import (assert_, assert_raises, assert_almost_equal,
-                           assert_equal, assert_array_equal, assert_allclose,
-                           assert_array_less)
+from numpy.testing import assert_allclose
 
 from sm2.distributions.discrete import genpoisson_p
 

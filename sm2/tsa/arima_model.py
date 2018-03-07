@@ -5,26 +5,24 @@
 #       packages such as gretl and X12-ARIMA
 
 from __future__ import absolute_import
+
+from datetime import datetime
+import re
+
 from six import string_types, integer_types
 from six.moves import range
 
-from datetime import datetime
-
 import numpy as np
-from scipy import optimize
-from scipy.stats import t, norm
-from scipy.signal import lfilter
-from numpy import dot, log, zeros, pi
-from numpy.linalg import inv
+import pandas as pd
+from scipy import optimize, stats, signal
 
-from sm2.tools.decorators import (cache_readonly,
-                                          resettable_cache)
+from sm2.tools.decorators import cache_readonly, resettable_cache
 import sm2.base.wrapper as wrap
 from sm2.regression.linear_model import yule_walker, GLS
 from sm2.tsa.tsatools import (lagmat, add_trend,
-                                      _ar_transparams, _ar_invtransparams,
-                                      _ma_transparams, _ma_invtransparams,
-                                      unintegrate, unintegrate_levels)
+                              _ar_transparams, _ar_invtransparams,
+                              _ma_transparams, _ma_invtransparams,
+                              unintegrate, unintegrate_levels)
 from sm2.tsa.vector_ar import util
 from sm2.tsa.arima_process import arma2ma
 from sm2.tools.numdiff import approx_hess_cs, approx_fprime_cs
@@ -484,7 +482,7 @@ class ARMA(tsbase.TimeSeriesModel):
         `Review of the International Statistical Institute`. Vol. 28, No. 3
         """
         p, q, k = order
-        start_params = zeros((p+q+k))
+        start_params = np.zeros((p + q + k))
         endog = self.endog.copy()  # copy because overwritten
         exog = self.exog
         if k != 0:
@@ -496,7 +494,7 @@ class ARMA(tsbase.TimeSeriesModel):
                 # make sure we don't run into small data problems in AR fit
                 nobs = len(endog)
                 if start_ar_lags is None:
-                    maxlag = int(round(12*(nobs/100.)**(1/4.)))
+                    maxlag = int(round(12 * (nobs / 100.)**(1 / 4.)))
                     if maxlag >= nobs:
                         maxlag = nobs - 1
                     armod = AR(endog).fit(ic='bic', trend='nc', maxlag=maxlag)
@@ -690,11 +688,12 @@ class ARMA(tsbase.TimeSeriesModel):
                                             paramsdtype)
             if isinstance(errors, tuple):
                 errors = errors[0]  # non-cython version returns a tuple
-        else:  # use scipy.signal.lfilter
+        else:
+            # use scipy.signal.lfilter
             y = self.endog.copy()
             k = self.k_exog + self.k_trend
             if k > 0:
-                y -= dot(self.exog, params[:k])
+                y -= np.dot(self.exog, params[:k])
 
             k_ar = self.k_ar
             k_ma = self.k_ma
@@ -704,10 +703,10 @@ class ARMA(tsbase.TimeSeriesModel):
                                                   self.k_trend, self.k_exog,
                                                   reverse=False)
             b, a = np.r_[1, -arparams], np.r_[1, maparams]
-            zi = zeros((max(k_ar, k_ma)))
+            zi = np.zeros((max(k_ar, k_ma)))
             for i in range(k_ar):
-                zi[i] = sum(-b[:i+1][::-1]*y[:i+1])
-            e = lfilter(b, a, y, zi=zi)
+                zi[i] = sum(-b[:i + 1][::-1] * y[:i + 1])
+            e = signal.lfilter(b, a, y, zi=zi)
             errors = e[0][k_ar:]
         return errors.squeeze()
 
@@ -801,19 +800,19 @@ class ARMA(tsbase.TimeSeriesModel):
         else:
             newparams = params
         if k > 0:
-            y -= dot(self.exog, newparams[:k])
+            y -= np.dot(self.exog, newparams[:k])
         # the order of p determines how many zeros errors to set for lfilter
         b, a = np.r_[1, -newparams[k:k + k_ar]], np.r_[1, newparams[k + k_ar:]]
         zi = np.zeros((max(k_ar, k_ma)), dtype=params.dtype)
         for i in range(k_ar):
             zi[i] = sum(-b[:i + 1][::-1] * y[:i + 1])
-        errors = lfilter(b, a, y, zi=zi)[0][k_ar:]
+        errors = signal.lfilter(b, a, y, zi=zi)[0][k_ar:]
 
         ssr = np.dot(errors, errors)
-        sigma2 = ssr/nobs
+        sigma2 = ssr / nobs
         if set_sigma2:
             self.sigma2 = sigma2
-        llf = -nobs/2.*(log(2*pi) + log(sigma2)) - ssr/(2*sigma2)
+        llf = -nobs / 2. * (np.log(2 * np.pi) + np.log(sigma2)) - ssr / (2 * sigma2)
         return llf
 
     def fit(self, start_params=None, trend='c', method="css-mle",
@@ -1413,7 +1412,7 @@ class ARMAResults(tsbase.TimeSeriesModelResults):
         z = self.arroots
         if not z.size:
             return
-        return np.arctan2(z.imag, z.real) / (2*pi)
+        return np.arctan2(z.imag, z.real) / (2 * np.pi)
 
     @cache_readonly
     def mafreq(self):
@@ -1426,18 +1425,18 @@ class ARMAResults(tsbase.TimeSeriesModelResults):
         z = self.maroots
         if not z.size:
             return
-        return np.arctan2(z.imag, z.real) / (2*pi)
+        return np.arctan2(z.imag, z.real) / (2 * np.pi)
 
     @cache_readonly
     def arparams(self):
         k = self.k_exog + self.k_trend
-        return self.params[k:k+self.k_ar]
+        return self.params[k:k + self.k_ar]
 
     @cache_readonly
     def maparams(self):
         k = self.k_exog + self.k_trend
         k_ar = self.k_ar
-        return self.params[k+k_ar:]
+        return self.params[k + k_ar:]
 
     @cache_readonly
     def llf(self):
@@ -1448,13 +1447,13 @@ class ARMAResults(tsbase.TimeSeriesModelResults):
         params = self.params
         hess = self.model.hessian(params)
         if len(params) == 1:  # can't take an inverse, ensure 1d
-            return np.sqrt(-1./hess[0])
-        return np.sqrt(np.diag(-inv(hess)))
+            return np.sqrt(-1. / hess[0])
+        return np.sqrt(np.diag(-np.linalg.inv(hess)))
 
     def cov_params(self):  # add scale argument?
         params = self.params
         hess = self.model.hessian(params)
-        return -inv(hess)
+        return -np.linalg.inv(hess)
 
     @cache_readonly
     def aic(self):
@@ -1486,7 +1485,7 @@ class ARMAResults(tsbase.TimeSeriesModelResults):
         #k = self.k_exog + self.k_trend
         #TODO: this needs to be commented out for MLE with constant
         #if k != 0:
-        #    fv += dot(exog, self.params[:k])
+        #    fv += np.dot(exog, self.params[:k])
         return fv
 
     @cache_readonly
@@ -1495,9 +1494,9 @@ class ARMAResults(tsbase.TimeSeriesModelResults):
 
     @cache_readonly
     def pvalues(self):
-    #TODO: same for conditional and unconditional?
+        # TODO: same for conditional and unconditional?
         df_resid = self.df_resid
-        return t.sf(np.abs(self.tvalues), df_resid) * 2
+        return stats.t.sf(np.abs(self.tvalues), df_resid) * 2
 
     def predict(self, start=None, end=None, exog=None, dynamic=False):
         return self.model.predict(self.params, start, end, exog, dynamic)
@@ -1512,7 +1511,7 @@ class ARMAResults(tsbase.TimeSeriesModelResults):
         return fcasterr
 
     def _forecast_conf_int(self, forecast, fcasterr, alpha):
-        const = norm.ppf(1 - alpha / 2.)
+        const = stats.norm.ppf(1 - alpha / 2.)
         conf_int = np.c_[forecast - const * fcasterr,
                          forecast + const * fcasterr]
 
@@ -1588,9 +1587,9 @@ class ARMAResults(tsbase.TimeSeriesModelResults):
 
         See Also
         --------
-        statsmodels.iolib.summary.Summary
+        sm2.iolib.summary.Summary
         """
-        from statsmodels.iolib.summary import Summary
+        from sm2.iolib.summary import Summary
         model = self.model
         title = model.__class__.__name__ + ' Model Results'
         method = model.method
@@ -1635,7 +1634,7 @@ class ARMAResults(tsbase.TimeSeriesModelResults):
         smry.add_table_params(self, alpha=alpha, use_t=False)
 
         # Make the roots table
-        from statsmodels.iolib.table import SimpleTable
+        from sm2.iolib.table import SimpleTable
 
         if k_ma and k_ar:
             arstubs = ["AR.%d" % i for i in range(1, k_ar + 1)]
@@ -1672,102 +1671,13 @@ class ARMAResults(tsbase.TimeSeriesModelResults):
         return smry
 
     def summary2(self, title=None, alpha=.05, float_format="%.4f"):
-        """Experimental summary function for ARIMA Results
-
-        Parameters
-        -----------
-        title : string, optional
-            Title for the top table. If not None, then this replaces the
-            default title
-        alpha : float
-            significance level for the confidence intervals
-        float_format: string
-            print format for floats in parameters summary
-
-        Returns
-        -------
-        smry : Summary instance
-            This holds the summary table and text, which can be printed or
-            converted to various output formats.
-
-        See Also
-        --------
-        statsmodels.iolib.summary2.Summary : class to hold summary
-            results
-
-        """
-        from pandas import DataFrame
-        # get sample TODO: make better sample machinery for estimation
-        k_diff = getattr(self, 'k_diff', 0)
-        if 'mle' in self.model.method:
-            start = k_diff
-        else:
-            start = k_diff + self.k_ar
-        if self.data.dates is not None:
-            dates = self.data.dates
-            sample = [dates[start].strftime('%m-%d-%Y')]
-            sample += [dates[-1].strftime('%m-%d-%Y')]
-        else:
-            sample = str(start) + ' - ' + str(len(self.data.orig_endog))
-
-        k_ar, k_ma = self.k_ar, self.k_ma
-
-        # Roots table
-        if k_ma and k_ar:
-            arstubs = ["AR.%d" % i for i in range(1, k_ar + 1)]
-            mastubs = ["MA.%d" % i for i in range(1, k_ma + 1)]
-            stubs = arstubs + mastubs
-            roots = np.r_[self.arroots, self.maroots]
-            freq = np.r_[self.arfreq, self.mafreq]
-        elif k_ma:
-            mastubs = ["MA.%d" % i for i in range(1, k_ma + 1)]
-            stubs = mastubs
-            roots = self.maroots
-            freq = self.mafreq
-        elif k_ar:
-            arstubs = ["AR.%d" % i for i in range(1, k_ar + 1)]
-            stubs = arstubs
-            roots = self.arroots
-            freq = self.arfreq
-        else:  # 0, 0 order
-            stubs = []
-
-        if len(stubs):
-            modulus = np.abs(roots)
-            data = np.column_stack((roots.real, roots.imag, modulus, freq))
-            data = DataFrame(data)
-            data.columns = ['Real', 'Imaginary', 'Modulus', 'Frequency']
-            data.index = stubs
-
-        # Summary
-        from statsmodels.iolib import summary2
-        smry = summary2.Summary()
-
-        # Model info
-        model_info = summary2.summary_model(self)
-        model_info['Method:'] = self.model.method
-        model_info['Sample:'] = sample[0]
-        model_info['   '] = sample[-1]
-        model_info['S.D. of innovations:'] = "%#5.3f" % self.sigma2**.5
-        model_info['HQIC:'] = "%#5.3f" % self.hqic
-        model_info['No. Observations:'] = str(len(self.model.endog))
-
-        # Parameters
-        params = summary2.summary_params(self)
-        smry.add_dict(model_info)
-        smry.add_df(params, float_format=float_format)
-        if len(stubs):
-            smry.add_df(data, float_format="%17.4f")
-        smry.add_title(results=self, title=title)
-
-        return smry
+        raise NotImplementedError("Not ported from upstream")
 
     def plot_predict(self, start=None, end=None, exog=None, dynamic=False,
                      alpha=.05, plot_insample=True, ax=None):
         from statsmodels.graphics.utils import _import_mpl, create_mpl_ax
         _ = _import_mpl()
         fig, ax = create_mpl_ax(ax)
-
 
         # use predict so you set dates
         forecast = self.predict(start, end, exog, dynamic)
@@ -1781,10 +1691,8 @@ class ARMAResults(tsbase.TimeSeriesModelResults):
             conf_int = self._forecast_conf_int(forecast[-steps:], fc_error,
                                                alpha)
 
-
         if hasattr(self.data, "predict_dates"):
-            from pandas import Series
-            forecast = Series(forecast, index=self.data.predict_dates)
+            forecast = pd.Series(forecast, index=self.data.predict_dates)
             ax = forecast.plot(ax=ax, label='forecast')
         else:
             ax.plot(forecast)
@@ -1796,7 +1704,8 @@ class ARMAResults(tsbase.TimeSeriesModelResults):
                             color='gray', alpha=.5, label=label)
 
         if plot_insample:
-            ax.plot(x[:end + 1 - start], self.model.endog[start:end+1],
+            ax.plot(x[:end + 1 - start],
+                    self.model.endog[start:end + 1],
                     label=self.model.endog_names)
 
         ax.legend(loc='best')
@@ -1830,7 +1739,7 @@ class ARIMAResults(ARMAResults):
         return fcerr
 
     def _forecast_conf_int(self, forecast, fcerr, alpha):
-        const = norm.ppf(1 - alpha/2.)
+        const = stats.norm.ppf(1 - alpha / 2.)
         conf_int = np.c_[forecast - const*fcerr, forecast + const*fcerr]
         return conf_int
 
@@ -1907,8 +1816,7 @@ class ARIMAResults(ARMAResults):
                                                alpha)
 
         if hasattr(self.data, "predict_dates"):
-            from pandas import Series
-            forecast = Series(forecast, index=self.data.predict_dates)
+            forecast = pd.Series(forecast, index=self.data.predict_dates)
             ax = forecast.plot(ax=ax, label='forecast')
         else:
             ax.plot(forecast)
@@ -1920,7 +1828,6 @@ class ARIMAResults(ARMAResults):
                             color='gray', alpha=.5, label=label)
 
         if plot_insample:
-            import re
             k_diff = self.k_diff
             label = re.sub("D\d*\.", "", self.model.endog_names)
             levels = unintegrate(self.model.endog,
@@ -1929,7 +1836,6 @@ class ARIMAResults(ARMAResults):
                     levels[start + k_diff:end + k_diff + 1], label=label)
 
         ax.legend(loc='best')
-
         return fig
 
     plot_predict.__doc__ = _arima_plot_predict
@@ -1938,57 +1844,3 @@ class ARIMAResults(ARMAResults):
 class ARIMAResultsWrapper(ARMAResultsWrapper):
     pass
 wrap.populate_wrapper(ARIMAResultsWrapper, ARIMAResults)
-
-
-if __name__ == "__main__":
-    import statsmodels.api as sm
-
-    # simulate arma process
-    from statsmodels.tsa.arima_process import arma_generate_sample
-    y = arma_generate_sample([1., -.75], [1., .25], nsample=1000)
-    arma = ARMA(y)
-    res = arma.fit(trend='nc', order=(1, 1))
-
-    np.random.seed(12345)
-    y_arma22 = arma_generate_sample([1., -.85, .35], [1, .25, -.9],
-                                    nsample=1000)
-    arma22 = ARMA(y_arma22)
-    res22 = arma22.fit(trend='nc', order=(2, 2))
-
-    # test CSS
-    arma22_css = ARMA(y_arma22)
-    res22css = arma22_css.fit(trend='nc', order=(2, 2), method='css')
-
-    data = sm.datasets.sunspots.load()
-    ar = ARMA(data.endog)
-    resar = ar.fit(trend='nc', order=(9, 0))
-
-    y_arma31 = arma_generate_sample([1, -.75, -.35, .25], [.1],
-                                    nsample=1000)
-
-    arma31css = ARMA(y_arma31)
-    res31css = arma31css.fit(order=(3, 1), method="css", trend="nc",
-                             transparams=True)
-
-    y_arma13 = arma_generate_sample([1., -.75], [1, .25, -.5, .8],
-                                    nsample=1000)
-    arma13css = ARMA(y_arma13)
-    res13css = arma13css.fit(order=(1, 3), method='css', trend='nc')
-
-# check css for p < q and q < p
-    y_arma41 = arma_generate_sample([1., -.75, .35, .25, -.3], [1, -.35],
-                                    nsample=1000)
-    arma41css = ARMA(y_arma41)
-    res41css = arma41css.fit(order=(4, 1), trend='nc', method='css')
-
-    y_arma14 = arma_generate_sample([1, -.25], [1., -.75, .35, .25, -.3],
-                                    nsample=1000)
-    arma14css = ARMA(y_arma14)
-    res14css = arma14css.fit(order=(4, 1), trend='nc', method='css')
-
-    # ARIMA Model
-    from statsmodels.datasets import webuse
-    dta = webuse('wpi1')
-    wpi = dta['wpi']
-
-    mod = ARIMA(wpi, (1, 1, 1)).fit()

@@ -43,13 +43,13 @@ def _ar_predict_out_of_sample(y, params, p, k_trend, steps, start=0):
     # dynamic endogenous variable
     endog = np.zeros(p + steps)  # this is one too big but doesn't matter
     if start:
-        endog[:p] = y[start-p:start]
+        endog[:p] = y[start - p:start]
     else:
         endog[:p] = y[-p:]
 
     forecast = np.zeros(steps)
     for i in range(steps):
-        fcast = mu + np.dot(arparams, endog[i:i+p])
+        fcast = mu + np.dot(arparams, endog[i:i + p])
         forecast[i] = fcast
         endog[i + p] = fcast
 
@@ -86,7 +86,7 @@ class AR(tsbase.TimeSeriesModel):
         p = self.k_ar
         k = self.k_trend
         newparams = params.copy()
-        newparams[k:k+p] = _ar_transparams(params[k:k+p].copy())
+        newparams[k:k + p] = _ar_transparams(params[k:k + p].copy())
         return newparams
 
     def _invtransparams(self, start_params):
@@ -96,7 +96,7 @@ class AR(tsbase.TimeSeriesModel):
         p = self.k_ar
         k = self.k_trend
         newparams = start_params.copy()
-        newparams[k:k+p] = _ar_invtransparams(start_params[k:k+p].copy())
+        newparams[k:k + p] = _ar_invtransparams(start_params[k:k + p].copy())
         return newparams
 
     def _presample_fit(self, params, start, p, end, y, predictedvalues):
@@ -115,7 +115,7 @@ class AR(tsbase.TimeSeriesModel):
 
         # Initial State mean and variance
         alpha = np.zeros((p, 1))
-        Q_0 = dot(inv(identity(p**2)-np.kron(T_mat, T_mat)),
+        Q_0 = dot(inv(identity(p**2) - np.kron(T_mat, T_mat)),
                   dot(R_mat, R_mat.T).ravel('F'))
 
         Q_0 = Q_0.reshape(p, p, order='F')  # TODO: order might need to be p+k
@@ -213,11 +213,11 @@ class AR(tsbase.TimeSeriesModel):
         # fit pre-sample
         if method == 'mle':  # use Kalman Filter to get initial values
             if k_trend:
-                mu = params[0]/(1-np.sum(params[k_trend:]))
+                mu = params[0] / (1 - np.sum(params[k_trend:]))
 
             # modifies predictedvalues in place
             if start < k_ar:
-                self._presample_fit(params, start, k_ar, min(k_ar-1, end),
+                self._presample_fit(params, start, k_ar, min(k_ar - 1, end),
                                     endog[:k_ar] - mu, predictedvalues)
                 predictedvalues[:k_ar-start] += mu
 
@@ -229,7 +229,7 @@ class AR(tsbase.TimeSeriesModel):
 
         pv_start = max(k_ar - start, 0)
         fv_start = max(start - k_ar, 0)
-        fv_end = min(len(fittedvalues), end-k_ar+1)
+        fv_end = min(len(fittedvalues), end - k_ar + 1)
         predictedvalues[pv_start:] = fittedvalues[fv_start:fv_end]
 
         if out_of_sample:
@@ -250,15 +250,14 @@ class AR(tsbase.TimeSeriesModel):
         """
         k = self.k_trend
         p = self.k_ar
-        p1 = p+1
 
         # get inv(Vp) Hamilton 5.3.7
         params0 = np.r_[-1, params[k:]]
 
         Vpinv = np.zeros((p, p), dtype=params.dtype)
-        for i in range(1, p1):
-            Vpinv[i-1, i-1:] = np.correlate(params0, params0[:i],)[:-1]
-            Vpinv[i-1, i-1:] -= np.correlate(params0[-i:], params0,)[:-1]
+        for i in range(1, p + 1):
+            Vpinv[i - 1, i - 1:] = np.correlate(params0, params0[:i])[:-1]
+            Vpinv[i - 1, i - 1:] -= np.correlate(params0[-i:], params0,)[:-1]
 
         Vpinv = Vpinv + Vpinv.T - np.diag(Vpinv.diagonal())
         return Vpinv
@@ -271,9 +270,9 @@ class AR(tsbase.TimeSeriesModel):
         Y = self.Y
         X = self.X
         ssr = sumofsq(Y.squeeze() - np.dot(X, params))
-        sigma2 = ssr/nobs
-        return (-nobs/2 * (np.log(2 * np.pi) + np.log(sigma2)) -
-                ssr/(2 * sigma2))
+        sigma2 = ssr / nobs
+        return (-nobs / 2 * (np.log(2 * np.pi) + np.log(sigma2)) -
+                ssr / (2 * sigma2))
 
     def _loglike_mle(self, params):
         """
@@ -305,11 +304,11 @@ class AR(tsbase.TimeSeriesModel):
         ssr = sumofsq(endog[k_ar:].squeeze() - np.dot(X, params))
 
         # concentrating the likelihood means that sigma2 is given by
-        sigma2 = 1./nobs * (diffpVpinv + ssr)
+        sigma2 = 1. / nobs * (diffpVpinv + ssr)
         self.sigma2 = sigma2
         logdet = slogdet(Vpinv)[1]  # TODO: add check for singularity
-        loglike = -1/2. * (nobs * (np.log(2 * np.pi) + np.log(sigma2)) -
-                           logdet + diffpVpinv / sigma2 + ssr / sigma2)
+        loglike = -1 / 2. * (nobs * (np.log(2 * np.pi) + np.log(sigma2)) -
+                             logdet + diffpVpinv / sigma2 + ssr / sigma2)
         return loglike
 
     def loglike(self, params):
@@ -344,10 +343,9 @@ class AR(tsbase.TimeSeriesModel):
         mean of the AR process and :math:`\\sigma^{2}V_{p}` is the (`p` x `p`)
         variance-covariance matrix of the first `p` observations.
         """
-        #TODO: Math is on Hamilton ~pp 124-5
+        # TODO: Math is on Hamilton ~pp 124-5
         if self.method == "cmle":
             return self._loglike_css(params)
-
         else:
             return self._loglike_mle(params)
 
@@ -523,6 +521,7 @@ class AR(tsbase.TimeSeriesModel):
         method = method.lower()
         if method not in ['cmle', 'yw', 'mle']:
             raise ValueError("Method %s not recognized" % method)
+
         self.method = method
         self.trend = trend
         self.transparams = transparams
@@ -556,7 +555,7 @@ class AR(tsbase.TimeSeriesModel):
             arfit = OLS(Y, X).fit()
             params = arfit.params
             self.nobs = nobs - k_ar
-            self.sigma2 = arfit.ssr/arfit.nobs  # needed for predict fcasterr
+            self.sigma2 = arfit.ssr / arfit.nobs  # needed for predict fcasterr
 
         elif method == "mle":
             solver = solver.lower()
@@ -695,7 +694,7 @@ class ARResults(tsbase.TimeSeriesModelResults):
         if k_trend > 0:
             trendorder = k_trend - 1
         self.trendorder = trendorder
-        #TODO: cmle vs mle?
+        # TODO: cmle vs mle?
         self.df_model = k_ar + k_trend
         self.df_resid = self.model.df_resid = n_totobs - self.df_model
 
@@ -724,11 +723,11 @@ class ARResults(tsbase.TimeSeriesModelResults):
 
     @cache_readonly
     def pvalues(self):
-        return norm.sf(np.abs(self.tvalues))*2
+        return norm.sf(np.abs(self.tvalues)) * 2
 
     @cache_readonly
     def aic(self):
-        #JP: this is based on loglike with dropped constant terms ?
+        # JP: this is based on loglike with dropped constant terms ?
         # Lutkepohl
         #return np.log(self.sigma2) + 1./self.model.nobs * self.k_ar
         # Include constant as estimated free parameter and double the loss
@@ -754,7 +753,7 @@ class ARResults(tsbase.TimeSeriesModelResults):
     def fpe(self):
         nobs = self.nobs
         df_model = self.df_model
-        #Lutkepohl
+        # Lutkepohl
         return ((nobs+df_model)/(nobs-df_model))*self.sigma2
 
     @cache_readonly
@@ -770,7 +769,7 @@ class ARResults(tsbase.TimeSeriesModelResults):
 
     @cache_readonly
     def resid(self):
-        #NOTE: uses fittedvalues because it calculate presample values for mle
+        # NOTE: uses fittedvalues because it calculate presample values for mle
         model = self.model
         endog = model.endog.squeeze()
         if model.method == "cmle":  # elimate pre-sample
