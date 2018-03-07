@@ -124,13 +124,13 @@ def parse_lutkepohl_data(path): # pragma: no cover
 
 
 def get_logdet(m):
-    from statsmodels.tools.linalg import logdet_symm
+    from sm2.tools.linalg import logdet_symm
     return logdet_symm(m)
 
 
 get_logdet = np.deprecate(get_logdet,
-                          "statsmodels.tsa.vector_ar.util.get_logdet",
-                          "statsmodels.tools.linalg.logdet_symm",
+                          "sm2.tsa.vector_ar.util.get_logdet",
+                          "sm2.tools.linalg.logdet_symm",
                           "get_logdet is deprecated and will be removed in "
                           "0.8.0")
 

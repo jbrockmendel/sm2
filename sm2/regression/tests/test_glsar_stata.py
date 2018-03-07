@@ -71,10 +71,8 @@ class TestGLSARCorc(CheckStataResultsPMixin):
                             results.ll,
                             4)
 
-    '''
-    # ARMA not ported from upstream
     def test_glsar_arima(self):
-        # from statsmodels.tsa.arima_model import ARMA
+        from sm2.tsa.arima_model import ARMA
 
         endog = self.res.model.endog
         exog = self.res.model.exog
@@ -101,7 +99,6 @@ class TestGLSARCorc(CheckStataResultsPMixin):
         res2 = mod1.iterative_fit(4, rtol=0)
         assert len(res2.history['params']) == 4
         assert len(res2.history['rho']) == 4
-    '''
 
     def test_glsar_iter0(self):
         endog = self.res.model.endog

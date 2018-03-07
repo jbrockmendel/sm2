@@ -12,17 +12,14 @@ from sm2.tools.tools import add_constant
 from sm2.regression.linear_model import OLS, WLS
 from sm2.regression._prediction import get_prediction
 
-'''
-# GLM not ported from upstream
-# from statsmodels.genmod.generalized_linear_model import GLM
-# from statsmodels.genmod._prediction import params_transform_univariate
-# from statsmodels.genmod.families import links
-'''
+# Dummies to avoid flake8 warnings for not-yet-ported genmod names
+GLM = None
+links = None
+params_transform_univariate = None
 
 
-'''
-# wls_prediction_std not ported from upstream
 # from statsmodels.sandbox.regression.predstd import wls_prediction_std
+@pytest.mark.skip(reason="wls_prediction_std not ported from upstream")
 @pytest.mark.not_vetted
 def test_predict_se():
     # this test doesn't use reference values
@@ -123,7 +120,7 @@ def test_predict_se():
     for wv in np.linspace(0.5, 3, 5):
         sew = wls_prediction_std(res3, x2[-3:, :], weights=1. / wv)[0]**2
         assert_allclose(sew, sew1 + res3.scale * (wv - 1))
-'''
+
 
 @pytest.mark.not_vetted
 class TestWLSPrediction(object):
@@ -149,8 +146,7 @@ class TestWLSPrediction(object):
         mod_wls = WLS(y, X, weights=1./w)
         cls.res_wls = mod_wls.fit()
 
-    '''
-    # wls_prediction_std not ported from upstream
+    @pytest.mark.skip(reason="wls_prediction_std not ported from upstream")
     def test_ci(self):
         res_wls = self.res_wls
         prstd, iv_l, iv_u = wls_prediction_std(res_wls)
@@ -174,10 +170,8 @@ class TestWLSPrediction(object):
 
         sf2 = pred_res2.summary_frame()
         assert_equal(sf2.columns.tolist(), col_names)
-    '''
 
-    '''
-    # GLM not ported from upstream
+    @pytest.mark.skip(reason="GLM not ported from upstream")
     def test_glm(self):
         # prelimnimary, getting started with basic test for GLM.get_prediction
         res_wls = self.res_wls
@@ -233,4 +227,3 @@ class TestWLSPrediction(object):
         # prediction with exog and no weights does not error
         res_glm = mod_glm.fit()
         pred_glm = res_glm.get_prediction(X)
-    '''

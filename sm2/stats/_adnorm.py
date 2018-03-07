@@ -5,9 +5,6 @@ Created on Sun Sep 25 21:23:38 2011
 Author: Josef Perktold and Scipy developers
 License : BSD-3
 """
-from __future__ import print_function
-
-from six.moves import range
 import numpy as np
 from scipy import stats
 
@@ -47,7 +44,6 @@ def anderson_statistic(x, dist='norm', fit=True, params=(), axis=0):
         elif hasattr(dist, '__call__'):
             params = dist.fit(x)
             z = dist.cdf(y, *params)
-            print(z)
     else:
         if hasattr(dist, '__call__'):
             z = dist.cdf(y, *params)
@@ -101,21 +97,27 @@ def normal_ad(x, axis=0):
 
     else:
         bounds = np.array([0.0, 0.200, 0.340, 0.600])
-
-        pval0 = lambda ad2a: np.nan * np.ones_like(ad2a)
-        pval1 = lambda ad2a: 1 - np.exp(-13.436 + 101.14 * ad2a -
-                                        223.73 * ad2a**2)
-        pval2 = lambda ad2a: 1 - np.exp(-8.318 + 42.796 * ad2a -
-                                        59.938 * ad2a**2)
-        pval3 = lambda ad2a: np.exp(0.9177 - 4.279 * ad2a - 1.38 * ad2a**2)
-        pval4 = lambda ad2a: np.exp(1.2937 - 5.709 * ad2a + 0.0186 * ad2a**2)
-
-        pvalli = [pval0, pval1, pval2, pval3, pval4]
-
         idx = np.searchsorted(bounds, ad2a, side='right')
         pval = np.nan * np.ones_like(ad2a)
-        for i in range(5):
-            mask = (idx == i)
-            pval[mask] = pvalli[i](ad2a[mask])
+
+        mask = (idx == 0)
+        ad2m = ad2a[mask]
+        pval[mask] = np.nan * np.ones_like(ad2m)
+
+        mask = (idx == 1)
+        ad2m = ad2a[mask]
+        pval[mask] = 1 - np.exp(-13.436 + 101.14 * ad2m - 223.73 * ad2m**2)
+
+        mask = (idx == 2)
+        ad2m = ad2a[mask]
+        pval[mask] = 1 - np.exp(-8.318 + 42.796 * ad2m - 59.938 * ad2m**2)
+
+        mask = (idx == 3)
+        ad2m = ad2a[mask]
+        pval[mask] = np.exp(0.9177 - 4.279 * ad2m - 1.38 * ad2m**2)
+
+        mask = (idx == 4)
+        ad2m = ad2a[mask]
+        pval[mask] = np.exp(1.2937 - 5.709 * ad2m + 0.0186 * ad2m**2)
 
     return ad2, pval

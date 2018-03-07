@@ -35,7 +35,7 @@ from scipy import stats
 
 # from ._lilliefors import (kstest_fit, lilliefors, lillifors, kstest_normal,
 #                           kstest_exponential)  # lillifors is deprecated
-from ._adnorm import normal_ad
+from ._adnorm import normal_ad  # noqa: F401
 
 
 # TODO: The comment below was from upstream.  I _dislike_ this pattern
@@ -81,7 +81,8 @@ def linear_lm(resid, exog, func=None):
     from sm2.regression.linear_model import OLS
 
     if func is None:
-        func = lambda x: np.power(x, 2)
+        # default to f(x) == x**2
+        func = np.square
 
     exog_aux = np.column_stack((exog, func(exog[:, 1:])))
 

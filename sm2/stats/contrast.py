@@ -172,9 +172,9 @@ class ContrastResults(object):
             from sm2.iolib.summary import summary_params_frame
             summ = summary_params_frame((self, self.effect, self.sd,
                                          self.statistic, self.pvalue,
-                                         self.conf_int(alpha)), yname=yname,
-                                         xname=xname, use_t=use_t,
-                                         alpha=alpha)
+                                         self.conf_int(alpha)),
+                                        yname=yname, xname=xname,
+                                        use_t=use_t, alpha=alpha)
             return summ
         else:
             # TODO: create something nicer

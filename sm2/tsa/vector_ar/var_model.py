@@ -6,7 +6,6 @@ References
 ----------
 Lütkepohl (2005) New Introduction to Multiple Time Series Analysis
 """
-
 from __future__ import division, print_function
 
 from six import string_types
@@ -26,8 +25,7 @@ import sm2.base.wrapper as wrap
 from sm2.iolib.table import SimpleTable
 
 from sm2.tsa.tsatools import vec, unvec, duplication_matrix
-import sm2.tsa.tsatools as tsa
-import sm2.tsa.base.tsa_model as tsbase
+from sm2.tsa.base import tsa_model
 
 from . import irf, output, plotting, util
 from .hypothesis_test_results import (CausalityTestResults,
@@ -152,7 +150,7 @@ def _var_acf(coefs, sig_u):
     Lütkepohl (2005) p.29
     """
     p, k, k2 = coefs.shape
-    assert(k == k2)
+    assert k == k2
 
     A = util.comp_matrix(coefs)
     # construct VAR(1) noise covariance
@@ -281,7 +279,7 @@ def _forecast_vars(steps, ma_coefs, sig_u):
 
 def forecast_interval(y, coefs, trend_coefs, sig_u, steps=5, alpha=0.05,
                       exog=1):
-    assert(0 < alpha < 1)
+    assert 0 < alpha < 1
     q = util.norm_signif_level(alpha)
 
     point_forecast = forecast(y, coefs, trend_coefs, steps, exog)
@@ -494,7 +492,7 @@ class LagOrderResults:
 # VARProcess class: for known or unknown VAR process
 
 
-class VAR(tsbase.TimeSeriesModel):
+class VAR(tsa_model.TimeSeriesModel):
     r"""
     Fit VAR(p) process and do lag order selection
 
@@ -990,7 +988,7 @@ class VARProcess(object):
         -------
         (mid, lower, upper) : (ndarray, ndarray, ndarray)
         """
-        assert(0 < alpha < 1)
+        assert 0 < alpha < 1
         q = util.norm_signif_level(alpha)
 
         point_forecast = self.forecast(y, steps, exog_future=exog_future)
@@ -1247,14 +1245,15 @@ class VARResults(VARProcess):
         Estimated covariance matrix of model coefficients w/o exog
         """
         # drop exog
-        return self.cov_params[self.k_trend*self.neqs:, self.k_trend*self.neqs:]
+        return self.cov_params[self.k_trend * self.neqs:,
+                               self.k_trend * self.neqs:]
 
     @cache_readonly
     def _cov_sigma(self):
         """
         Estimated covariance matrix of vech(sigma_u)
         """
-        D_K = tsa.duplication_matrix(self.neqs)
+        D_K = duplication_matrix(self.neqs)
         D_Kinv = np.linalg.pinv(D_K)
 
         sigxsig = np.kron(self.sigma_u, self.sigma_u)
@@ -1272,7 +1271,7 @@ class VARResults(VARProcess):
         stderr = np.sqrt(np.diag(self.cov_params))
         return stderr.reshape((self.df_model, self.neqs), order='C')
 
-    bse = stderr  # statsmodels interface?
+    bse = stderr  # sm2 interface?
 
     @cache_readonly
     def stderr_endog_lagged(self):
@@ -1749,7 +1748,7 @@ class VARResults(VARProcess):
         to be in accordance with test_granger_causality()) may be misleading.
 
         This method is not returning the same result as JMulTi. This is because
-        the test is based on a VAR(k_ar) model in statsmodels (in accordance to
+        the test is based on a VAR(k_ar) model in sm2 (in accordance to
         pp. 104, 320-321 in [1]_) whereas JMulTi seems to be using a
         VAR(k_ar+1) model.
 
@@ -1980,10 +1979,10 @@ class VARResultsWrapper(wrap.ResultsWrapper):
               'sigma_u': 'cov_eq',
               'sigma_u_mle': 'cov_eq',
               'stderr': 'columns_eq'}
-    _wrap_attrs = wrap.union_dicts(tsbase.TimeSeriesResultsWrapper._wrap_attrs,
+    _wrap_attrs = wrap.union_dicts(tsa_model.TimeSeriesResultsWrapper._wrap_attrs,
                                     _attrs)
     _methods = {}
-    _wrap_methods = wrap.union_dicts(tsbase.TimeSeriesResultsWrapper._wrap_methods,
+    _wrap_methods = wrap.union_dicts(tsa_model.TimeSeriesResultsWrapper._wrap_methods,
                                      _methods)
     _wrap_methods.pop('cov_params')  # not yet a method in VARResults
 wrap.populate_wrapper(VARResultsWrapper, VARResults)

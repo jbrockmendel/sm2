@@ -8,59 +8,54 @@ from sm2.iolib.table import SimpleTable
 
 
 _default_table_fmt = dict(
-    empty_cell = '',
+    empty_cell='',
     colsep='  ',
-    row_pre = '',
-    row_post = '',
+    row_pre='',
+    row_post='',
     table_dec_above='=',
     table_dec_below='=',
     header_dec_below='-',
-    header_fmt = '%s',
-    stub_fmt = '%s',
+    header_fmt='%s',
+    stub_fmt='%s',
     title_align='c',
-    header_align = 'r',
-    data_aligns = 'r',
-    stubs_align = 'l',
-    fmt = 'txt'
-)
+    header_align='r',
+    data_aligns='r',
+    stubs_align='l',
+    fmt='txt')
 
 class VARSummary(object):
-    default_fmt = dict(
-        #data_fmts = ["%#12.6g","%#12.6g","%#10.4g","%#5.4g"],
-        #data_fmts = ["%#10.4g","%#10.4g","%#10.4g","%#6.4g"],
-        data_fmts = ["%#15.6F","%#15.6F","%#15.3F","%#14.3F"],
-        empty_cell = '',
-        #colwidths = 10,
-        colsep='  ',
-        row_pre = '',
-        row_post = '',
-        table_dec_above='=',
-        table_dec_below='=',
-        header_dec_below='-',
-        header_fmt = '%s',
-        stub_fmt = '%s',
-        title_align='c',
-        header_align = 'r',
-        data_aligns = 'r',
-        stubs_align = 'l',
-        fmt = 'txt'
-    )
+    default_fmt = dict(data_fmts=["%#15.6F","%#15.6F","%#15.3F","%#14.3F"],
+                       #data_fmts=["%#12.6g","%#12.6g","%#10.4g","%#5.4g"],
+                       #data_fmts=["%#10.4g","%#10.4g","%#10.4g","%#6.4g"],
+                       empty_cell='',
+                       #colwidths=10,
+                       colsep='  ',
+                       row_pre='',
+                       row_post='',
+                       table_dec_above='=',
+                       table_dec_below='=',
+                       header_dec_below='-',
+                       header_fmt='%s',
+                       stub_fmt='%s',
+                       title_align='c',
+                       header_align='r',
+                       data_aligns='r',
+                       stubs_align='l',
+                       fmt='txt')
 
     part1_fmt = dict(default_fmt,
-        data_fmts = ["%s"],
-        colwidths = 15,
-        colsep=' ',
-        table_dec_below='',
-        header_dec_below=None,
-    )
+                     data_fmts=["%s"],
+                     colwidths=15,
+                     colsep=' ',
+                     table_dec_below='',
+                     header_dec_below=None)
     part2_fmt = dict(default_fmt,
-        data_fmts = ["%#12.6g","%#12.6g","%#10.4g","%#5.4g"],
-        colwidths = None,
-        colsep='    ',
-        table_dec_above='-',
-        table_dec_below='-',
-        header_dec_below=None,
-    )
+                     data_fmts=["%#12.6g","%#12.6g","%#10.4g","%#5.4g"],
+                     colwidths=None,
+                     colsep='    ',
+                     table_dec_above='-',
+                     table_dec_below='-',
+                     header_dec_below=None)
 
     def __init__(self, estimator):
         self.model = estimator
@@ -79,7 +74,6 @@ class VARSummary(object):
         buf.write(self._stats_table() + '\n')
         buf.write(self._coef_table() + '\n')
         buf.write(self._resid_info() + '\n')
-
         return buf.getvalue()
 
     def _header_table(self):
@@ -110,9 +104,7 @@ class VARSummary(object):
         # TODO: do we want individual statistics or should users just
         # use results if wanted?
         # Handle overall fit statistics
-
         model = self.model
-
 
         part2Lstubs = ('No. of Equations:',
                        'Nobs:',
@@ -126,9 +118,9 @@ class VARSummary(object):
         part2Rdata = [[model.bic], [model.hqic], [model.fpe], [model.detomega]]
         part2Lheader = None
         part2L = SimpleTable(part2Ldata, part2Lheader, part2Lstubs,
-                             txt_fmt = self.part2_fmt)
+                             txt_fmt=self.part2_fmt)
         part2R = SimpleTable(part2Rdata, part2Lheader, part2Rstubs,
-                             txt_fmt = self.part2_fmt)
+                             txt_fmt=self.part2_fmt)
         part2L.extend_right(part2R)
 
         return str(part2L)
@@ -140,9 +132,9 @@ class VARSummary(object):
         Xnames = self.model.exog_names
 
         data = list(zip(model.params.T.ravel(),
-                   model.stderr.T.ravel(),
-                   model.tvalues.T.ravel(),
-                   model.pvalues.T.ravel()))
+                        model.stderr.T.ravel(),
+                        model.tvalues.T.ravel(),
+                        model.pvalues.T.ravel()))
 
         header = ('coefficient','std. error','t-stat','prob')
 
@@ -167,7 +159,6 @@ class VARSummary(object):
 
         buf.write("Correlation matrix of residuals" + '\n')
         buf.write(pprint_matrix(self.model.resid_corr, names, names) + '\n')
-
         return buf.getvalue()
 
 
@@ -191,12 +182,10 @@ def hypothesis_test_table(results, title, null_hyp):
 
     buf.write(title + '\n')
     buf.write(str(table) + '\n')
-
     buf.write(null_hyp + '\n')
 
     buf.write("Conclusion: %s H_0" % results['conclusion'])
     buf.write(" at %.2f%% significance level" % (results['signif'] * 100))
-
     return buf.getvalue()
 
 

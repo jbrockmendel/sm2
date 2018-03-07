@@ -964,8 +964,8 @@ class TestProbitPowell(CheckBinaryResults):
         cls.res1 = Probit(data.endog, data.exog).fit(method="powell",
                                                      disp=0, ftol=1e-8)
 
-'''
-# tools.transform_model not ported from upstream
+
+@pytest.mark.skip(reason="tools.transform_model not ported from upstream")
 @pytest.mark.not_vetted
 class TestProbitCG(CheckBinaryResults):
     @classmethod
@@ -990,7 +990,7 @@ class TestProbitCG(CheckBinaryResults):
                                                      gtol=1e-05, disp=0)
 
         assert_array_less(cls.res1.mle_retvals['fcalls'], 100)
-'''
+
 
 @pytest.mark.not_vetted
 class TestProbitNCG(CheckBinaryResults):
@@ -2464,8 +2464,7 @@ def test_optim_kwds_prelim():
     assert_allclose(res.predict().mean(), y.mean(), rtol=0.1)
 
 
-'''
-# genmod not ported from upstream
+@pytest.mark.skip(reason="genmod not ported from upstream")
 @pytest.mark.not_vetted
 def test_perfect_prediction():
     raise pytest.skip('genmod not ported')
@@ -2489,7 +2488,7 @@ def test_perfect_prediction():
     with tm.assert_produces_warning():
         warnings.simplefilter('always')
         mod.fit(disp=False, maxiter=50)  # should not raise but does warn
-'''
+
 
 
 @pytest.mark.not_vetted
@@ -2527,13 +2526,15 @@ def test_mnlogit_factor():
     predicted = res.predict(exog.iloc[:5, :])
 
     # with patsy
-    mod = MNLogit.from_formula('PID ~ ' + ' + '.join(dta.exog.columns), dta.data)
+    mod = MNLogit.from_formula('PID ~ ' + ' + '.join(dta.exog.columns),
+                               dta.data)
     res2 = mod.fit(disp=0)
     params_f = res2.params
     summary = res2.summary()
     assert_allclose(params_f, params, rtol=1e-10)
     predicted_f = res2.predict(dta.exog.iloc[:5, :])
     assert_allclose(predicted_f, predicted, rtol=1e-10)
+
 
 # ------------------------------------------------------------------
 # Tests implemented/checked 2017-10-08 or later
@@ -2578,7 +2579,8 @@ def test_mnlogit_non_square():
     test_case_file = os.path.join(cur_dir, 'results', 'mn_logit_summary.txt')
     with open(test_case_file, 'r') as fd:
         test_case = fd.read()
-    np.testing.assert_equal(smry, test_case[:-1])
+
+    assert smry == test_case[:-1]
 
     """
     # summary2 not implemented in sm2 as of 2018-03-04 (also smoketests suck)

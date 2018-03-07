@@ -25,7 +25,7 @@ class MPLConfigurator(object):
         self._inverse_actions.append(revert)
 
 
-#-------------------------------------------------------------------------------
+# ---------------------------------------------------------------
 # Plotting functions
 
 def plot_mts(Y, names=None, index=None):

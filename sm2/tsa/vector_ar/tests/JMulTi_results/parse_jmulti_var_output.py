@@ -60,7 +60,7 @@ def load_results_jmulti(dataset, dt_s_list):
     Parameters
     ----------
     dataset : module
-        A data module in the statsmodels/datasets directory that defines a
+        A data module in the sm2/datasets directory that defines a
         __str__() method returning the dataset's name.
     dt_s_list : list
         A list of strings where each string represents a combination of

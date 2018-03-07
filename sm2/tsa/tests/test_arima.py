@@ -44,11 +44,15 @@ sun_dates = pd.PeriodIndex(start='1700', end='2008', freq='A')
 cpi_predict_dates = pd.PeriodIndex(start='2009q3', end='2015q4', freq='Q')
 sun_predict_dates = pd.PeriodIndex(start='2008', end='2033', freq='A')
 
-'''
-# fa, Arma not ported from upstream
-# import statsmodels.sandbox.tsa.fftarma as fa
-# from statsmodels.tsa.arma_mle import Arma
+
+@pytest.mark.skip(reason="fa, Arma not ported from upstream")
 def test_compare_arma():
+    # dummies to avoid flake8 warnings until porting
+    fa = None
+    Arma = None
+    # import statsmodels.sandbox.tsa.fftarma as fa
+    # from statsmodels.tsa.arma_mle import Arma
+
     #this is a preliminary test to compare arma_kf, arma_cond_ls and arma_cond_mle
     #the results returned by the fit methods are incomplete
     #for now without random.seed
@@ -83,31 +87,36 @@ def test_compare_arma():
     assert_almost_equal(rescm.params[:-1] / dres.params,
                         np.ones(dres.params.shape), decimal=1)
     #return resls[0], d.params, rescm.params
-'''
 
 
 class CheckArmaResultsMixin(object):
     """
     res2 are the results from gretl.  They are in results/results_arma.
-    res1 are from statsmodels
+    res1 are from sm2
     """
     decimal_params = DECIMAL_4
     def test_params(self):
-        assert_almost_equal(self.res1.params, self.res2.params,
-                self.decimal_params)
+        assert_almost_equal(self.res1.params,
+                            self.res2.params,
+                            self.decimal_params)
 
     decimal_aic = DECIMAL_4
     def test_aic(self):
-        assert_almost_equal(self.res1.aic, self.res2.aic, self.decimal_aic)
+        assert_almost_equal(self.res1.aic,
+                            self.res2.aic,
+                            self.decimal_aic)
 
     decimal_bic = DECIMAL_4
     def test_bic(self):
-        assert_almost_equal(self.res1.bic, self.res2.bic, self.decimal_bic)
+        assert_almost_equal(self.res1.bic,
+                            self.res2.bic,
+                            self.decimal_bic)
 
     decimal_arroots = DECIMAL_4
     def test_arroots(self):
-        assert_almost_equal(self.res1.arroots, self.res2.arroots,
-                    self.decimal_arroots)
+        assert_almost_equal(self.res1.arroots,
+                            self.res2.arroots,
+                            self.decimal_arroots)
 
     decimal_maroots = DECIMAL_4
     def test_maroots(self):
@@ -2281,9 +2290,11 @@ def test_long_ar_start_params():
     res = model.fit(method='mle',start_ar_lags=10, disp=0)
     assert_raises(ValueError, model.fit, start_ar_lags=nobs+5, disp=0)
 
-'''
-# fa not ported from upstream
+
+@pytest.mark.skip(reason="fa not ported from upstream")
 def test_arma_pickle():
+    fa = None   # dummy to avoid flake8 complaints until ported
+
     np.random.seed(9876565)
     x = fa.ArmaFft([1, -0.5], [1., 0.4], 40).generate_sample(nsample=200,
                                                              burnin=1000)
@@ -2298,7 +2309,7 @@ def test_arma_pickle():
     assert_almost_equal(res.resid, pkl_res.resid)
     assert_almost_equal(res.fittedvalues, pkl_res.fittedvalues)
     assert_almost_equal(res.pvalues, pkl_res.pvalues)
-'''
+
 
 def test_arima_pickle():
     endog = y_arma[:, 6]

@@ -10,13 +10,12 @@ currently all tests are against R
 
 """
 import os
-import json
+# import json
 
 import numpy as np
 
-from numpy.testing import (assert_almost_equal, assert_equal,
-                           assert_approx_equal, assert_allclose)
-import pandas as pd
+from numpy.testing import assert_almost_equal
+# import pandas as pd
 import pytest
 
 from sm2.regression.linear_model import OLS
@@ -32,11 +31,16 @@ cur_dir = os.path.abspath(os.path.dirname(__file__))
 
 
 def compare_t_est(sp, sp_dict, decimal=(14, 14)):
-    assert_almost_equal(sp[0], sp_dict['statistic'], decimal=decimal[0])
-    assert_almost_equal(sp[1], sp_dict['pvalue'], decimal=decimal[1])
+    assert_almost_equal(sp[0],
+                        sp_dict['statistic'],
+                        decimal=decimal[0])
+    assert_almost_equal(sp[1],
+                        sp_dict['pvalue'],
+                        decimal=decimal[1])
 
 
 '''
+# WTF?  Is this supposed to be "not yet a test"?
 # het_goldfeldquandt not ported from upstream
 def notyet_atst():
     d = macrodata.load().data
@@ -90,7 +94,7 @@ def notyet_atst():
 
     gq = smsdia.het_goldfeldquandt(endog, exog, split=0.5)
     compare_t_est(gq, het_gq_greater, decimal=(13, 14))
-    assert_equal(gq[-1], 'increasing')
+    assert gq[-1] == 'increasing'
 
     harvey_collier = dict(stat=2.28042114041313, df=199,
                           pvalue=0.02364236161988260, distr='t')
@@ -172,8 +176,7 @@ class TestDiagnosticG(object):
                             np.sqrt(np.diag(cov)),
                             decimal=14)
 
-    '''
-    # het_goldfeldquandt not ported from upstream
+    @pytest.mark.skip(reason="het_goldfeldquandt not ported from upstream")
     def test_het_goldfeldquandt(self):
         # TODO: test options missing
 
@@ -211,25 +214,24 @@ class TestDiagnosticG(object):
         # tests
         gq = smsdia.het_goldfeldquandt(endogg, exogg, split=0.5)
         compare_t_est(gq, het_gq_greater, decimal=(14, 14))
-        assert_equal(gq[-1], 'increasing')
+        assert gq[-1] == 'increasing'
 
         gq = smsdia.het_goldfeldquandt(endogg, exogg, split=0.5,
                                        alternative='decreasing')
         compare_t_est(gq, het_gq_less, decimal=(14, 14))
-        assert_equal(gq[-1], 'decreasing')
+        assert gq[-1] == 'decreasing'
 
         gq = smsdia.het_goldfeldquandt(endogg, exogg, split=0.5,
                                        alternative='two-sided')
         compare_t_est(gq, het_gq_two_sided, decimal=(14, 14))
-        assert_equal(gq[-1], 'two-sided')
+        assert gq[-1] == 'two-sided'
 
         # TODO: forcing the same split as R 202-90-90-1=21
         gq = smsdia.het_goldfeldquandt(endogg, exogg, split=90, drop=21,
                                        alternative='two-sided')
         compare_t_est(gq, het_gq_two_sided_01, decimal=(14, 14))
-        assert_equal(gq[-1], 'two-sided')
+        assert gq[-1] == 'two-sided'
         # TODO other options ???
-    '''
 
     def test_het_breusch_pagan(self):
         res = self.res
@@ -291,8 +293,7 @@ class TestDiagnosticG(object):
                             res1[:4],
                             decimal=13)
 
-    '''
-    # acorr_breusch_godfrey not ported from upstream
+    @pytest.mark.skip(reason="acorr_breusch_godfrey not ported from upstream")
     def test_acorr_breusch_godfrey(self):
         res = self.res
 
@@ -317,7 +318,7 @@ class TestDiagnosticG(object):
         bg3 = smsdia.acorr_breusch_godfrey(res, nlags=14)
         assert_almost_equal(bg2, bg3, decimal=13)
 
-    # acorr_ljungbox not ported from upstream
+    @pytest.mark.skip(reason="acorr_ljungbox not ported from upstream")
     def test_acorr_ljung_box(self):
         # unit-test which may be useful later
         # ddof correction for fitted parameters in ARMA(p, q) fitdf=p+q
@@ -353,7 +354,7 @@ class TestDiagnosticG(object):
         compare_t_est([lb[-1], lbpval[-1]], ljung_box_4, decimal=(13, 13))
         compare_t_est([bp[-1], bppval[-1]], ljung_box_bp_4, decimal=(13, 13))
 
-    # acorr_ljungbox not ported from upstrea
+    @pytest.mark.skip(reason="acorr_ljungbox not ported from upstream")
     def test_acorr_ljung_box_big_default(self):
         res = self.res
         # test with big dataset and default lag
@@ -378,7 +379,7 @@ class TestDiagnosticG(object):
                       ljung_box_bp_none,
                       decimal=(13, 13))
 
-    # acorr_ljungbox not ported from upstream
+    @pytest.mark.skip(reason="acorr_ljungbox not ported from upstream")
     def test_acorr_ljung_box_small_default(self):
         res = self.res
         # test with small dataset and default lag
@@ -404,7 +405,7 @@ class TestDiagnosticG(object):
                       ljung_box_bp_small,
                       decimal=(13, 13))
 
-    # linear_harvey_collier not ported from upstream
+    @pytest.mark.skip(reason="linear_harvey_collier not ported from upstream")
     def test_harvey_collier(self):
         # > hc = harvtest(fm, order.by = NULL, data = list())
         # > mkhtest_f(hc, 'harvey_collier', 't')
@@ -421,7 +422,7 @@ class TestDiagnosticG(object):
         hc = smsdia.linear_harvey_collier(self.res)
         compare_t_est(hc, harvey_collier, decimal=(12, 12))
 
-    # linear_rainbow not ported from upstream
+    @pytest.mark.skip(reason="linear_rainbow not ported from upstream")
     def test_rainbow(self):
         # rainbow test
         # > rt = raintest(fm)
@@ -454,7 +455,6 @@ class TestDiagnosticG(object):
         compare_t_est(rb, raintest, decimal=(13, 14))
         rb = smsdia.linear_rainbow(self.res, frac=0.4)
         compare_t_est(rb, raintest_fraction_04, decimal=(13, 14))
-    '''
 
     def test_compare_lr(self):
         res = self.res
@@ -486,8 +486,7 @@ class TestDiagnosticG(object):
                             waldtest['pvalue'],
                             decimal=11)
 
-    '''
-    # compare_cox, compare_j not ported from upstream
+    @pytest.mark.skip(reason="compare_cox, compare_j not ported from upstream")
     def test_compare_nonnested(self):
         res = self.res
         res2 = self.res2
@@ -529,7 +528,7 @@ class TestDiagnosticG(object):
                   ('M2 + fit(M1)-exp(fit(M2))', 0.000634664704814,
                    0.0000462387010349, 13.72583, 1.319536115230356e-30)]
 
-    # breaks_cusumolsresid not ported from upstream
+    @pytest.mark.skip(reason="breaks_cusumolsresid not ported from upstream")
     def test_cusum_ols(self):
         # R library(strucchange)
         # > sc = sctest(ginv ~ ggdp + lint, type="OLS-CUSUM")
@@ -541,7 +540,7 @@ class TestDiagnosticG(object):
         cs_ols = smsdia.breaks_cusumolsresid(self.res.resid, ddof=k_vars) #
         compare_t_est(cs_ols, cusum_ols, decimal=(12, 12))
 
-    # breaks_hansen not ported from upstream
+    @pytest.mark.skip(reason="breaks_hansen not ported from upstream")
     def test_breaks_hansen(self):
         # > sc = sctest(ginv ~ ggdp + lint, type="Nyblom-Hansen")
         # > mkhtest(sc, 'breaks_nyblom_hansen', 'BB')
@@ -554,7 +553,7 @@ class TestDiagnosticG(object):
                             decimal=13)
         # TODO: breaks_hansen doesn't return pvalues
 
-    # recursive_olsresiduals not ported from upstream
+    @pytest.mark.skip(reason="recursive_olsresiduals not ported from upstream")
     def test_recursive_residuals(self):
         reccumres_standardize = np.array([
             -2.151, -3.748, -3.114, -3.096, -1.865, -2.230, -1.194, -3.500,
@@ -584,9 +583,10 @@ class TestDiagnosticG(object):
             6.975])
 
         rr = smsdia.recursive_olsresiduals(self.res, skip=3, alpha=0.95)
-        assert_equal(np.round(rr[5][1:], 3),
+        np.testing.assert_equal(np.round(rr[5][1:], 3),
                      reccumres_standardize)  # extra zero in front
-        #assert_equal(np.round(rr[3][4:], 3), np.diff(reccumres_standardize))
+        #np.testing.assert_equal(np.round(rr[3][4:], 3),
+        #                        np.diff(reccumres_standardize))
         assert_almost_equal(rr[3][4:], np.diff(reccumres_standardize), 3)
         assert_almost_equal(rr[4][3:].std(ddof=1), 10.7242, decimal=4)
 
@@ -613,7 +613,6 @@ class TestDiagnosticG(object):
         assert_almost_equal(rr[2][3:10], ypred, decimal=12)
         assert_almost_equal(rr[0][3:10], endog[3:10] - ypred, decimal=12)
         assert_almost_equal(rr[1][2:9], params, decimal=12)
-    '''
 
     def test_normality(self):
         res = self.res
@@ -644,7 +643,9 @@ class TestDiagnosticG(object):
 
         compare_t_est(lf1, lilliefors1, decimal=(14, 14))
         compare_t_est(lf2, lilliefors2, decimal=(14, 14)) #pvalue very small
-        assert_approx_equal(lf2[1], lilliefors2['pvalue'], significant=10)
+        np.testing.assert_approx_equal(lf2[1],
+                                       lilliefors2['pvalue'],
+                                       significant=10)
         compare_t_est(lf3, lilliefors3, decimal=(14, 1))
         # R uses different approximation for pvalue in last case
         '''
@@ -671,8 +672,7 @@ class TestDiagnosticG(object):
         ad3 = smsdia.normal_ad(res.resid[:20])
         compare_t_est(ad3, adr3, decimal=(11, 12))
 
-    '''
-    # outliers_influence not ported from upstream as of 2018-03-05
+    @pytest.mark.skip(reason="outliers_influence not ported from upstream")
     def test_influence(self):
         res = self.res
 
@@ -739,7 +739,6 @@ class TestDiagnosticG(object):
         >>> np.nonzero(np.asarray(infl_bool_r["hat"]))[0]
         array([ 62, 76, 84, 90, 91, 92, 95, 108, 197, 199])
         """
-    '''
 
 
 class TestDiagnosticGPandas(TestDiagnosticG):
@@ -783,8 +782,8 @@ def grangertest():
                        df=(198, 193))
 
 
-'''
 # outliers_influence not ported from upstream
+@pytest.mark.skip(reason="outliers_influence not ported from upstream")
 @pytest.mark.smoke
 def test_outlier_influence_funcs():
     x = add_constant(np.random.randn(10, 2))
@@ -802,6 +801,7 @@ def test_outlier_influence_funcs():
     infl.summary_table()
 
 
+@pytest.mark.skip(reason="outliers_influence not ported from upstream")
 def test_influence_wrapped():
     d = macrodata.load_pandas().data
     # growth rates
@@ -864,6 +864,7 @@ def test_influence_wrapped():
     assert_almost_equal(infl.cov_ratio, infl_r2[:, 4], decimal=14)
 
 
+@pytest.mark.skip(reason="outliers_influence not ported from upstream")
 def test_influence_dtype():
     # see GH#2148  bug when endog is integer
     y = np.ones(20)
@@ -874,7 +875,7 @@ def test_influence_dtype():
     res2 = OLS(y * 1., x).fit()
     cr1 = res1.get_influence().cov_ratio
     cr2 = res2.get_influence().cov_ratio
-    assert_allclose(cr1, cr2, rtol=1e-14)
+    np.testing.assert_allclose(cr1, cr2, rtol=1e-14)
     # regression test for values
     cr3 = np.array(
       [ 1.22239215, 1.31551021, 1.52671069, 1.05003921, 0.89099323,
@@ -884,6 +885,7 @@ def test_influence_dtype():
     assert_almost_equal(cr1, cr3, decimal=8)
 
 
+@pytest.mark.skip(reason="outliers_influence not ported from upstream")
 def test_outlier_test():
     # results from R with NA -> 1. Just testing interface here because
     # outlier_test is just a wrapper
@@ -969,5 +971,4 @@ def test_outlier_test():
 
     res = oi.outlier_test(ndarray_mod, method='b', labels=labels, order=True)
     np.testing.assert_almost_equal(res.values, res2, 7)
-    np.testing.assert_equal(res.index.tolist(), sorted_labels)
-'''
+    assert res.index.tolist() == sorted_labels

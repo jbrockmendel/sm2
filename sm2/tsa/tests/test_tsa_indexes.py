@@ -13,6 +13,8 @@ from __future__ import division, absolute_import, print_function
 import warnings
 
 import numpy as np
+from numpy.testing import assert_equal
+
 import pandas as pd
 import pytest
 
@@ -187,12 +189,12 @@ def test_instantiation_valid():
             warnings.simplefilter('error')
 
             mod = tsa_model.TimeSeriesModel(endog)
-            assert_equal(type(mod._index) == pd.Int64Index, True)
-            assert_equal(mod._index_none, True)
-            assert_equal(mod._index_dates, False)
-            assert_equal(mod._index_generated, True)
-            assert_equal(mod.data.dates, None)
-            assert_equal(mod.data.freq, None)
+            assert type(mod._index) == pd.Int64Index
+            assert mod._index_none is True
+            assert mod._index_dates is False
+            assert mod._index_generated is True
+            assert mod.data.dates is None
+            assert mod.data.freq is None
 
     # Test list, numpy endog, pandas w/o index; with dates / freq argument
     for endog in dta:
@@ -206,15 +208,14 @@ def test_instantiation_valid():
                     freq = ix.freq
                 if not isinstance(freq, str):
                     freq = freq.freqstr
-                assert_equal(
-                    isinstance(mod._index, (pd.DatetimeIndex, pd.PeriodIndex)),
-                    True)
-                assert_equal(mod._index_none, False)
-                assert_equal(mod._index_dates, True)
-                assert_equal(mod._index_generated, False)
-                assert_equal(mod._index.freq, mod._index_freq)
-                assert_equal(mod.data.dates.equals(mod._index), True)
-                assert_equal(mod.data.freq, freq)
+                assert isinstance(mod._index, (pd.DatetimeIndex,
+                                               pd.PeriodIndex))
+                assert mod._index_none is False
+                assert mod._index_dates is True
+                assert mod._index_generated is False
+                assert mod._index.freq == mod._index_freq
+                assert mod.data.dates.equals(mod._index) is True
+                assert mod.data.freq == freq
 
         # Supported date indexes, should not raise warnings, can use valid freq
         with warnings.catch_warnings():

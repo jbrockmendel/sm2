@@ -97,16 +97,20 @@ class CheckGenericMixin(object):
         summ = str(res.summary())
         assert string_use_t in summ
 
-        '''
-        # summary2 not ported as of 2017-03-05
+    @pytest.mark.skip(reason="summary2 not ported from upstream")
+    def test_summary2(self):
+        res = self.results
+        use_t = res.use_t
+         # label for pvalues in summary
+        string_use_t = 'P>|z|' if use_t is False else 'P>|t|'
+
         # try except for models that don't have summary2
         try:
             summ2 = str(res.summary2())
         except AttributeError:
-            summ2 = None
-        if summ2 is not None:
-            assert string_use_t in summ2
-        '''
+            raise pytest.skip(reason="summary2 not implemented for class {cls}"
+                                     .format(cls=res.__class__.__name__))
+        assert string_use_t in summ2
 
     def test_fitted(self):
         # ignore wrapper for isinstance check
@@ -255,8 +259,9 @@ class TestGenericLogit(CheckGenericMixin):
         self.results = model.fit(start_params=start_params,
                                  method='bfgs', disp=0)
 
-'''
+
 # GLM, RLM not ported from upstream
+@pytest.mark.skip(reason="RLM not ported from upstream")
 @pytest.mark.not_vetted
 class TestGenericRLM(CheckGenericMixin):
     def setup(self):
@@ -268,6 +273,7 @@ class TestGenericRLM(CheckGenericMixin):
         self.results = sm.RLM(y, self.exog).fit()
 
 
+@pytest.mark.skip(reason="GLM not ported from upstream")
 @pytest.mark.not_vetted
 class TestGenericGLM(CheckGenericMixin):
     def setup(self):
@@ -279,6 +285,7 @@ class TestGenericGLM(CheckGenericMixin):
         self.results = sm.GLM(y, self.exog).fit()
 
 
+@pytest.mark.skip(reason="GEE not ported from upstream")
 @pytest.mark.not_vetted
 class TestGenericGEEPoisson(CheckGenericMixin):
     def setup(self):
@@ -297,6 +304,7 @@ class TestGenericGEEPoisson(CheckGenericMixin):
                               cov_struct=vi).fit(start_params=start_params)
 
 
+@pytest.mark.skip(reason="GEE not ported from upstream")
 @pytest.mark.not_vetted
 class TestGenericGEEPoissonNaive(CheckGenericMixin):
     def setup(self):
@@ -316,6 +324,7 @@ class TestGenericGEEPoissonNaive(CheckGenericMixin):
                                                  cov_type='naive')
 
 
+@pytest.mark.skip(reason="GEE not ported from upstream")
 @pytest.mark.not_vetted
 class TestGenericGEEPoissonBC(CheckGenericMixin):
     def setup(self):
@@ -334,7 +343,7 @@ class TestGenericGEEPoissonBC(CheckGenericMixin):
         mod = sm.GEE(y_count, self.exog, groups, family=family, cov_struct=vi)
         self.results = mod.fit(start_params=start_params,
                                cov_type='bias_reduced')
-'''
+
 
 # ------------------------------------------------------------------
 # Other test classes
@@ -485,8 +494,7 @@ class TestWaldAnovaOLSF(CheckAnovaMixin):
         assert_equal(predicted1.values[0], np.nan)
 
 
-'''
-# GLM not ported from upstream
+@pytest.mark.skip(reason="GLM not ported from upstream")
 @pytest.mark.not_vetted
 class TestWaldAnovaGLM(CheckAnovaMixin):
     @classmethod
@@ -495,7 +503,7 @@ class TestWaldAnovaGLM(CheckAnovaMixin):
         formula = "np.log(Days+1) ~ C(Duration, Sum)*C(Weight, Sum)"
         mod = sm.GLM.from_formula(formula, cls.data)
         cls.res = mod.fit(use_t=False)
-'''
+
 
 @pytest.mark.not_vetted
 class TestWaldAnovaPoisson(CheckAnovaMixin):
