@@ -31,15 +31,15 @@ cur_dir = os.path.dirname(os.path.abspath(__file__))
 
 filepath = os.path.join(cur_dir, "results", "ships.csv")
 data_raw = pd.read_csv(filepath, index_col=False)
-data = data_raw.dropna()
+ships_data = data_raw.dropna()
 
 #mod = smd.Poisson.from_formula('accident ~ yr_con + op_75_79', data=dat)
 # Don't use formula for tests against Stata because intercept needs to be last
-endog = data['accident']
-exog_data = data['yr_con op_75_79'.split()]
+endog = ships_data['accident']
+exog_data = ships_data['yr_con op_75_79'.split()]
 exog = add_constant(exog_data, prepend=False)
-group = np.asarray(data['ship'], int)
-exposure = np.asarray(data['service'])
+group = np.asarray(ships_data['ship'], int)
+exposure = np.asarray(ships_data['service'])
 
 
 # TODO get the test methods from regression/tests
@@ -394,7 +394,8 @@ class TestNegbinCluExposure(CheckCountRobustMixin):
         cls.get_robust_clu()
 
 
-#        mod_nbe = smd.NegativeBinomial(endog, exog, exposure=data['service'])
+#        mod_nbe = smd.NegativeBinomial(endog, exog,
+#                                        exposure=ships_data['service'])
 #        res_nbe = mod_nbe.fit()
 #        mod_nb = smd.NegativeBinomial(endog, exog)
 #        res_nb = mod_nb.fit()

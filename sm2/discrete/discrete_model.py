@@ -932,8 +932,7 @@ class Poisson(CountModel):
 
         The parameter `X` is :math:`X\\beta` in the above formula.
         """
-        y = self.endog
-        return stats.poisson.cdf(y, np.exp(X))
+        return stats.poisson.cdf(self.endog, np.exp(X))
 
     def pdf(self, X):
         """
@@ -962,8 +961,7 @@ class Poisson(CountModel):
 
         The parameter `X` is :math:`x_{i}\\beta` in the above formula.
         """
-        y = self.endog
-        return np.exp(stats.poisson.logpmf(y, np.exp(X)))
+        return np.exp(stats.poisson.logpmf(self.endog, np.exp(X)))
 
     def loglike(self, params):
         """
@@ -986,9 +984,10 @@ class Poisson(CountModel):
         """
         offset = getattr(self, "offset", 0)
         exposure = getattr(self, "exposure", 0)
-        XB = np.dot(self.exog, params) + offset + exposure
+        Xb = np.dot(self.exog, params)
+        linpred = Xb + offset + exposure
         endog = self.endog
-        return np.sum(-np.exp(XB) +  endog * XB - gammaln(endog + 1))
+        return np.sum(-np.exp(linpred) +  endog * linpred - gammaln(endog + 1))
 
     def loglikeobs(self, params):
         """
@@ -1013,10 +1012,11 @@ class Poisson(CountModel):
         """
         offset = getattr(self, "offset", 0)
         exposure = getattr(self, "exposure", 0)
-        XB = np.dot(self.exog, params) + offset + exposure
+        Xb = np.dot(self.exog, params)
+        linpred = Xb + offset + exposure
         endog = self.endog
         # np.sum(stats.poisson.logpmf(endog, np.exp(XB)))
-        return -np.exp(XB) +  endog * XB - gammaln(endog + 1)
+        return -np.exp(linpred) +  endog * linpred - gammaln(endog + 1)
 
     def _get_start_params_null(self):
         offset = getattr(self, "offset", 0)
@@ -1144,9 +1144,10 @@ class Poisson(CountModel):
         """
         offset = getattr(self, "offset", 0)
         exposure = getattr(self, "exposure", 0)
-        X = self.exog
-        L = np.exp(np.dot(X, params) + offset + exposure)
-        return np.dot(self.endog - L, X)
+        Xb = np.dot(self.exog, params)
+        linpred = Xb + offset + exposure
+        L = np.exp(linpred)
+        return np.dot(self.endog - L, self.exog)
 
     def score_obs(self, params):
         """
@@ -1174,9 +1175,10 @@ class Poisson(CountModel):
         """
         offset = getattr(self, "offset", 0)
         exposure = getattr(self, "exposure", 0)
-        X = self.exog
-        L = np.exp(np.dot(X, params) + offset + exposure)
-        return (self.endog - L)[:, None] * X
+        Xb = np.dot(self.exog, params)
+        linpred = Xb + offset + exposure
+        L = np.exp(linpred)
+        return (self.endog - L)[:, None] * self.exog
 
     def hessian(self, params):
         """
@@ -1203,9 +1205,10 @@ class Poisson(CountModel):
         """
         offset = getattr(self, "offset", 0)
         exposure = getattr(self, "exposure", 0)
-        X = self.exog
-        L = np.exp(np.dot(X, params) + exposure + offset)
-        return -np.dot(L * X.T, X)
+        Xb = np.dot(self.exog, params)
+        linpred = Xb + offset + exposure
+        L = np.exp(linpred)
+        return -np.dot(L * self.exog.T, self.exog)
 
 
 class GeneralizedPoisson(CountModel):
@@ -1691,7 +1694,8 @@ class Logit(BinaryModel):
         .. math:: \\lambda\\left(x^{\\prime}\\beta\\right)=\\frac{e^{-x^{\\prime}\\beta}}{\\left(1+e^{-x^{\\prime}\\beta}\\right)^{2}}
         """
         X = np.asarray(X)
-        return np.exp(-X) / (1 + np.exp(-X))**2
+        negexp = np.exp(-X)
+        return negexp / (1 + negexp)**2
 
     def loglike(self, params):
         """
@@ -1716,8 +1720,8 @@ class Logit(BinaryModel):
         logistic distribution is symmetric.
         """
         q = 2 * self.endog - 1
-        X = self.exog
-        return np.sum(np.log(self.cdf(q * np.dot(X, params))))
+        Xb = np.dot(self.exog, params)
+        return np.sum(np.log(self.cdf(q * Xb)))
 
     def loglikeobs(self, params):
         """
@@ -1744,8 +1748,8 @@ class Logit(BinaryModel):
         logistic distribution is symmetric.
         """
         q = 2 * self.endog - 1
-        X = self.exog
-        return np.log(self.cdf(q * np.dot(X, params)))
+        Xb = np.dot(self.exog, params)
+        return np.log(self.cdf(q * Xb))
 
     def score(self, params):
         """
@@ -1766,10 +1770,9 @@ class Logit(BinaryModel):
         -----
         .. math:: \\frac{\\partial\\ln L}{\\partial\\beta}=\\sum_{i=1}^{n}\\left(y_{i}-\\Lambda_{i}\\right)x_{i}
         """
-        y = self.endog
-        X = self.exog
-        L = self.cdf(np.dot(X, params))
-        return np.dot(y - L, X)
+        Xb = np.dot(self.exog, params)
+        L = self.cdf(Xb)
+        return np.dot(self.endog - L, self.exog)
 
     def score_obs(self, params):
         """
@@ -1793,10 +1796,10 @@ class Logit(BinaryModel):
         for observations :math:`i=1, ..., n`
 
         """
-        y = self.endog
+        Xb = np.dot(self.exog, params)
         X = self.exog
-        L = self.cdf(np.dot(X, params))
-        return (y - L)[:, None] * X
+        L = self.cdf(Xb)
+        return (self.endog - L)[:, None] * self.exog
 
     def hessian(self, params):
         """
@@ -1817,8 +1820,9 @@ class Logit(BinaryModel):
         -----
         .. math:: \\frac{\\partial^{2}\\ln L}{\\partial\\beta\\partial\\beta^{\\prime}}=-\\sum_{i}\\Lambda_{i}\\left(1-\\Lambda_{i}\\right)x_{i}x_{i}^{\\prime}
         """
+        Xb = np.dot(self.exog, params)
         X = self.exog
-        L = self.cdf(np.dot(X, params))
+        L = self.cdf(Xb)
         return -np.dot(L * (1 - L) * X.T, X)
 
 
@@ -1906,9 +1910,10 @@ class Probit(BinaryModel):
         Where :math:`q=2y-1`. This simplification comes from the fact that the
         normal distribution is symmetric.
         """
+        Xb = np.dot(self.exog, params)
         q = 2 * self.endog - 1
-        X = self.exog
-        return np.sum(np.log(np.clip(self.cdf(q * np.dot(X, params)), FLOAT_EPS, 1)))
+        prob = self.cdf(q * Xb)
+        return np.sum(np.log(np.clip(prob, FLOAT_EPS, 1)))
 
     def loglikeobs(self, params):
         """
@@ -1936,7 +1941,9 @@ class Probit(BinaryModel):
         """
         q = 2 * self.endog - 1
         X = self.exog
-        return np.log(np.clip(self.cdf(q * np.dot(X, params)), FLOAT_EPS, 1))
+        Xb = np.dot(self.exog, params)
+        prob = self.cdf(q * Xb)
+        return np.log(np.clip(prob, FLOAT_EPS, 1))
 
     def score(self, params):
         """
@@ -1960,13 +1967,11 @@ class Probit(BinaryModel):
         Where :math:`q=2y-1`. This simplification comes from the fact that the
         normal distribution is symmetric.
         """
-        y = self.endog
-        X = self.exog
-        XB = np.dot(X, params)
-        q = 2 * y - 1
+        Xb = np.dot(self.exog, params)
+        q = 2 * self.endog - 1
         # clip to get rid of invalid divide complaint
-        L = q * self.pdf(q * XB) / np.clip(self.cdf(q * XB), FLOAT_EPS, 1 - FLOAT_EPS)
-        return np.dot(L, X)
+        L = q * self.pdf(q * Xb) / np.clip(self.cdf(q * Xb), FLOAT_EPS, 1 - FLOAT_EPS)
+        return np.dot(L, self.exog)
 
     def score_obs(self, params):
         """
@@ -1992,13 +1997,11 @@ class Probit(BinaryModel):
         Where :math:`q=2y-1`. This simplification comes from the fact that the
         normal distribution is symmetric.
         """
-        y = self.endog
-        X = self.exog
-        XB = np.dot(X, params)
-        q = 2 * y - 1
+        Xb = np.dot(self.exog, params)
+        q = 2 * self.endog - 1
         # clip to get rid of invalid divide complaint
-        L = q * self.pdf(q * XB) / np.clip(self.cdf(q * XB), FLOAT_EPS, 1 - FLOAT_EPS)
-        return L[:, None] * X
+        L = q * self.pdf(q * Xb) / np.clip(self.cdf(q * Xb), FLOAT_EPS, 1 - FLOAT_EPS)
+        return L[:, None] * self.exog
 
     def hessian(self, params):
         """
@@ -2026,10 +2029,10 @@ class Probit(BinaryModel):
         and :math:`q=2y-1`
         """
         X = self.exog
-        XB = np.dot(X, params)
+        Xb = np.dot(self.exog, params)
         q = 2 * self.endog - 1
-        L = q * self.pdf(q * XB) / self.cdf(q * XB)
-        return np.dot(-L * (L + XB) * X.T, X)
+        L = q * self.pdf(q * Xb) / self.cdf(q * Xb)
+        return np.dot(-L * (L + Xb) * X.T, X)
 
 
 class MNLogit(MultinomialModel):
@@ -2126,9 +2129,9 @@ class MNLogit(MultinomialModel):
         if not.
         """
         params = params.reshape(self.K, -1, order='F')
-        d = self.wendog
-        logprob = np.log(self.cdf(np.dot(self.exog, params)))
-        return np.sum(d * logprob)
+        Xb = np.dot(self.exog, params)
+        logprob = np.log(self.cdf(Xb))
+        return np.sum(self.wendog * logprob)
 
     def loglikeobs(self, params):
         """
@@ -2155,9 +2158,9 @@ class MNLogit(MultinomialModel):
         if not.
         """
         params = params.reshape(self.K, -1, order='F')
-        d = self.wendog
-        logprob = np.log(self.cdf(np.dot(self.exog, params)))
-        return d * logprob
+        Xb = np.dot(self.exog, params)
+        logprob = np.log(self.cdf(Xb))
+        return self.wendog * logprob
 
     def score(self, params):
         """
@@ -2185,8 +2188,8 @@ class MNLogit(MultinomialModel):
         as a flattened array to work with the solvers.
         """
         params = params.reshape(self.K, -1, order='F')
-        firstterm = self.wendog[:, 1:] - self.cdf(np.dot(self.exog,
-                                                  params))[:, 1:]
+        Xb = np.dot(self.exog, params)
+        firstterm = self.wendog[:, 1:] - self.cdf(Xb)[:, 1:]
         # NOTE: might need to switch terms if params is reshaped
         return np.dot(firstterm.T, self.exog).flatten()
 
@@ -2198,7 +2201,8 @@ class MNLogit(MultinomialModel):
         before being minimized by the maximum likelihood fitting machinery.
         """
         params = params.reshape(self.K, -1, order='F')
-        cdf_dot_exog_params = self.cdf(np.dot(self.exog, params))
+        Xb = np.dot(self.exog, params)
+        cdf_dot_exog_params = self.cdf(Xb)
         loglike_value = np.sum(self.wendog * np.log(cdf_dot_exog_params))
         firstterm = self.wendog[:, 1:] - cdf_dot_exog_params[:, 1:]
         score_array = np.dot(firstterm.T, self.exog).flatten()
@@ -2230,7 +2234,8 @@ class MNLogit(MultinomialModel):
         the flatteded array of derivatives in columns.
         """
         params = params.reshape(self.K, -1, order='F')
-        firstterm = self.wendog[:, 1:] - self.cdf(np.dot(self.exog, params))[:, 1:]
+        Xb = np.dot(self.exog, params)
+        firstterm = self.wendog[:, 1:] - self.cdf(Xb)[:, 1:]
         # NOTE: might need to switch terms if params is reshaped
         return (firstterm[:, :, None] * self.exog[:, None, :]).reshape(self.exog.shape[0], -1)
 
@@ -2265,7 +2270,8 @@ class MNLogit(MultinomialModel):
         """
         params = params.reshape(self.K, -1, order='F')
         X = self.exog
-        pr = self.cdf(np.dot(X, params))
+        Xb = np.dot(self.exog, params)
+        pr = self.cdf(Xb)
         partials = []
         J = self.J
         K = self.K
@@ -2445,10 +2451,9 @@ class NegativeBinomial(CountModel):
         return llf
 
     def _score_geom(self, params):
-        exog = self.exog
         y = self.endog[:, None]
         mu = self.predict(params)[:, None]
-        dparams = exog * (y - mu) / (mu + 1)
+        dparams = self.exog * (y - mu) / (mu + 1)
         return dparams.sum(0)
 
     def _score_nbin(self, params, Q=0):
@@ -3590,8 +3595,9 @@ class L1CountResults(DiscreteResults):
         # extra parameter is not included in df_model
         k_extra = getattr(self.model, 'k_extra', 0)
 
+        nobs = self.model.endog.shape[0]
         self.df_model = self.nnz_params - 1 - k_extra
-        self.df_resid = float(self.model.endog.shape[0] - self.nnz_params) + k_extra
+        self.df_resid = float(nobs - self.nnz_params) + k_extra
 
 
 class PoissonResults(CountResults):
@@ -3903,12 +3909,12 @@ class MultinomialResults(DiscreteResults):
 
     @cache_readonly
     def aic(self):
-        return -2 * (self.llf - (self.df_model + self.model.J - 1))
+        return -2 * (self.llf - (self.df_model + self.J - 1))
 
     @cache_readonly
     def bic(self):
         return -2 * self.llf + np.log(self.nobs) * (self.df_model +
-                                                    self.model.J - 1)
+                                                    self.J - 1)
 
     def conf_int(self, alpha=.05, cols=None):
         confint = super(DiscreteResults, self).conf_int(alpha=alpha,
@@ -3958,7 +3964,7 @@ class L1MultinomialResults(MultinomialResults):
         self.nnz_params = (self.trimmed == False).sum()
 
         # Note: J-1 constants
-        self.df_model = self.nnz_params - (self.model.J - 1)
+        self.df_model = self.nnz_params - (self.J - 1)
         self.df_resid = float(self.model.endog.shape[0] - self.nnz_params)
 
 

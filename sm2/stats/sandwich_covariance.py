@@ -105,7 +105,7 @@ from six.moves import range
 import pandas as pd
 import numpy as np
 
-from sm2.tools.grouputils import Group
+from sm2.tools.grouputils import combine_indices
 
 __all__ = ['cov_cluster', 'cov_cluster_2groups', 'cov_hac', 'cov_nw_panel',
            'cov_white_simple',
@@ -595,10 +595,10 @@ def cov_cluster_2groups(results, group, group2=None, use_correction=True):
     # [0] because we get still also returns bse
     cov1 = cov_cluster(results, group1, use_correction=use_correction)
 
-    group_intersection = Group(group)
+    group_int = combine_indices(group)[0]
     # cov of cluster formed by intersection of two groups
     cov01 = cov_cluster(results,
-                        group_intersection.group_int,
+                        group_int,
                         use_correction=use_correction)
 
     # robust cov matrix for union of groups

@@ -393,7 +393,6 @@ def _medcouple_1d(y):
        distributions" Computational Statistics & Data Analysis, vol. 52, pp.
        5186-5201, August 2008.
     """
-
     # Parameter changes the algorithm to the slower for large n
 
     y = np.squeeze(np.asarray(y))

@@ -40,7 +40,6 @@ class TransformRestriction(object):
     raise and exception if the constraint doesn't hold.
     TODO: maybe change this, what's the behavior in this case?
 
-
     The `reduce` transform is applied to the array of explanatory variables,
     `exog`, when transforming a linear model to impose the constraints.
     """

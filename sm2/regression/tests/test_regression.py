@@ -653,7 +653,7 @@ class TestFTest2(object):
     GNP = the coefficient on UNEMP  and that the coefficient on
     POP = the coefficient on YEAR for the Longley dataset.
 
-    Ftest1 is from statsmodels.  Results are from Rpy using R's car library.
+    Ftest1 is from sm.  Results are from Rpy using R's car library.
     """
     @classmethod
     def setup_class(cls):

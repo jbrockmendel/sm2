@@ -1,8 +1,3 @@
-# TODO: Determine which tests are valid for GLSAR, and under what conditions
-# TODO: Fix issue with constant and GLS
-# TODO: GLS: add options Iterative GLS, for iterative fgls if sigma is None
-# TODO: GLS: default if sigma is none should be two-step GLS
-# TODO: Check nesting when performing model based tests, lr, wald, lm
 """
 This module implements standard regression models:
 
@@ -31,6 +26,11 @@ R. Davidson and J.G. MacKinnon.  "Econometric Theory and Methods," Oxford,
 W. Green.  "Econometric Analysis," 5th ed., Pearson, 2003.
 """
 from __future__ import print_function
+# TODO: Determine which tests are valid for GLSAR, and under what conditions
+# TODO: Fix issue with constant and GLS
+# TODO: GLS: add options Iterative GLS, for iterative fgls if sigma is None
+# TODO: GLS: default if sigma is none should be two-step GLS
+# TODO: Check nesting when performing model based tests, lr, wald, lm
 
 import collections
 import warnings
@@ -48,6 +48,7 @@ from sm2.tools.decorators import (resettable_cache,
                                   cache_writable)
 import sm2.base.model as base
 import sm2.base.wrapper as wrap
+from sm2.base import covtype
 
 # need import in module instead of lazily to copy `__doc__`
 from ._prediction import PredictionResults
@@ -2110,11 +2111,8 @@ class RegressionResults(base.LikelihoodModelResults):
         """
         import sm2.stats.sandwich_covariance as sw
 
-        # normalize names
-        if cov_type == 'nw-panel':
-            cov_type = 'hac-panel'
-        if cov_type == 'nw-groupsum':
-            cov_type = 'hac-groupsum'
+        cov_type = covtype.normalize_cov_type(cov_type)
+
         if 'kernel' in kwds:
             kwds['weights_func'] = kwds.pop('kernel')
 
@@ -2135,14 +2133,7 @@ class RegressionResults(base.LikelihoodModelResults):
         res.cov_kwds = {'use_t': use_t}  # store for information
         res.use_t = use_t
 
-        adjust_df = False
-        if cov_type in ['cluster', 'hac-panel', 'hac-groupsum']:
-            df_correction = kwds.get('df_correction', None)
-            # TODO: check also use_correction, do I need all combinations?
-            if df_correction is not False:  # i.e. in [None, True]:
-                # user didn't explicitely set it to False
-                adjust_df = True
-
+        adjust_df = covtype.set_df_adjustment(kwds, cov_type)
         res.cov_kwds['adjust_df'] = adjust_df
 
         # verify and set kwds, and calculate cov
@@ -2150,14 +2141,14 @@ class RegressionResults(base.LikelihoodModelResults):
         #       other models
         # TODO: make it DRYer   repeated code for checking kwds
         if cov_type in ['fixed scale', 'fixed_scale']:
-            res.cov_kwds['description'] = ('Standard Errors are based on ' +
+            res.cov_kwds['description'] = ('Standard Errors are based on '
                                            'fixed scale')
 
             res.cov_kwds['scale'] = scale = kwds.get('scale', 1.)
             res.cov_params_default = scale * res.normalized_cov_params
         elif cov_type.upper() in ('HC0', 'HC1', 'HC2', 'HC3'):
             if kwds:
-                raise ValueError('heteroscedasticity robust covarians ' +
+                raise ValueError('heteroscedasticity robust covarians '
                                  'does not use keywords')
             res.cov_kwds['description'] = (
                 'Standard Errors are heteroscedasticity ' +
@@ -2408,7 +2399,7 @@ class RegressionResults(base.LikelihoodModelResults):
             wstr += "matrix is singular."
             wstr = wstr % eigvals[-1]
             etext.append(wstr)
-        elif condno > 1000:  # TODO: what is recommended
+        elif condno > 1000:  # TODO: what is recommended?
             wstr = "The condition number is large, %6.3g. This might "
             wstr += "indicate that there are\n"
             wstr += "strong multicollinearity or other numerical "

@@ -477,6 +477,7 @@ def test_GLSARlag():
     assert len(mod4.rho) == 4
 
 
+# TODO: WTF is the rest of this below (from upstream) testing?
 """
 Model 5: OLS, using observations 1959:2-2009:3 (T = 202)
 Dependent variable: ds_l_realinv
