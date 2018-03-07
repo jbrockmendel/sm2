@@ -3590,8 +3590,9 @@ class L1CountResults(DiscreteResults):
         # extra parameter is not included in df_model
         k_extra = getattr(self.model, 'k_extra', 0)
 
+        nobs = self.model.endog.shape[0]
         self.df_model = self.nnz_params - 1 - k_extra
-        self.df_resid = float(self.model.endog.shape[0] - self.nnz_params) + k_extra
+        self.df_resid = float(nobs - self.nnz_params) + k_extra
 
 
 class PoissonResults(CountResults):

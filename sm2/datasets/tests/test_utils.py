@@ -13,8 +13,7 @@ cur_dir = os.path.dirname(os.path.abspath(__file__))
 @pytest.mark.not_vetted
 @pytest.mark.smoke
 def test_get_rdataset():
-    test_url = ("https://raw.githubusercontent.com/"
-                "vincentarelbundock/Rdatasets/master/csv/datasets/cars.csv")
+    test_url = "https://raw.githubusercontent.com/vincentarelbundock/Rdatasets/master/csv/datasets/cars.csv"  # noqa: E501
     internet_available = check_internet(test_url)
     if not internet_available:
         raise pytest.skip('Unable to retrieve file - skipping test')
@@ -26,8 +25,7 @@ def test_get_rdataset():
 @pytest.mark.not_vetted
 def test_webuse():
     # test copied and adjusted from iolib/tests/test_foreign
-    base_gh = ("http://github.com/statsmodels/statsmodels/"
-               "raw/master/statsmodels/datasets/macrodata/")
+    base_gh = "http://github.com/statsmodels/statsmodels/raw/master/statsmodels/datasets/macrodata/"  # noqa: E501
     internet_available = check_internet(base_gh)
     if not internet_available:
         raise pytest.skip('Unable to retrieve file - skipping test')
@@ -45,8 +43,7 @@ def test_webuse():
 def test_webuse_pandas():
     # test copied and adjusted from iolib/tests/test_foreign
     dta = macrodata.load_pandas().data
-    base_gh = ("http://github.com/statsmodels/statsmodels/"
-               "raw/master/statsmodels/datasets/macrodata/")
+    base_gh = "http://github.com/statsmodels/statsmodels/raw/master/statsmodels/datasets/macrodata/"    # noqa: E501
     internet_available = check_internet(base_gh)
     if not internet_available:
         raise pytest.skip('Unable to retrieve file - skipping test')
