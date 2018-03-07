@@ -3909,12 +3909,12 @@ class MultinomialResults(DiscreteResults):
 
     @cache_readonly
     def aic(self):
-        return -2 * (self.llf - (self.df_model + self.model.J - 1))
+        return -2 * (self.llf - (self.df_model + self.J - 1))
 
     @cache_readonly
     def bic(self):
         return -2 * self.llf + np.log(self.nobs) * (self.df_model +
-                                                    self.model.J - 1)
+                                                    self.J - 1)
 
     def conf_int(self, alpha=.05, cols=None):
         confint = super(DiscreteResults, self).conf_int(alpha=alpha,
@@ -3964,7 +3964,7 @@ class L1MultinomialResults(MultinomialResults):
         self.nnz_params = (self.trimmed == False).sum()
 
         # Note: J-1 constants
-        self.df_model = self.nnz_params - (self.model.J - 1)
+        self.df_model = self.nnz_params - (self.J - 1)
         self.df_resid = float(self.model.endog.shape[0] - self.nnz_params)
 
 

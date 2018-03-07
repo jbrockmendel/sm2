@@ -1,8 +1,3 @@
-# TODO: Determine which tests are valid for GLSAR, and under what conditions
-# TODO: Fix issue with constant and GLS
-# TODO: GLS: add options Iterative GLS, for iterative fgls if sigma is None
-# TODO: GLS: default if sigma is none should be two-step GLS
-# TODO: Check nesting when performing model based tests, lr, wald, lm
 """
 This module implements standard regression models:
 
@@ -31,6 +26,11 @@ R. Davidson and J.G. MacKinnon.  "Econometric Theory and Methods," Oxford,
 W. Green.  "Econometric Analysis," 5th ed., Pearson, 2003.
 """
 from __future__ import print_function
+# TODO: Determine which tests are valid for GLSAR, and under what conditions
+# TODO: Fix issue with constant and GLS
+# TODO: GLS: add options Iterative GLS, for iterative fgls if sigma is None
+# TODO: GLS: default if sigma is none should be two-step GLS
+# TODO: Check nesting when performing model based tests, lr, wald, lm
 
 import collections
 import warnings
