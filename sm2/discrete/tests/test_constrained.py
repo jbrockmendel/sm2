@@ -11,7 +11,7 @@ from __future__ import division
 from six import StringIO
 
 import numpy as np
-from numpy.testing import assert_allclose, assert_equal
+from numpy.testing import assert_allclose
 
 import pandas as pd
 import patsy
@@ -62,7 +62,6 @@ class CheckPoissonConstrainedMixin(object):
         mask = (bse1 == 0) & np.isnan(res2.bse[self.idx])
         assert_allclose(bse1[~mask], res2.bse[self.idx][~mask], rtol=1e-6)
 
-
     def test_basic_method(self):
         if hasattr(self, 'res1m'):
             res1 = (self.res1m if not hasattr(self.res1m, '_results')
@@ -95,10 +94,10 @@ class CheckPoissonConstrainedMixin(object):
 
             # other
             assert_allclose(res1.llf, res2.ll, rtol=1e-6)
-            assert_equal(res1.df_model, res2.df_m)
+            assert res1.df_model == res2.df_m
             # Stata doesn't have df_resid
             df_r = res2.N - res2.df_m - 1
-            assert_equal(res1.df_resid, df_r)
+            assert res1.df_resid == df_r
         else:
             raise pytest.skip("not available yet")
 
