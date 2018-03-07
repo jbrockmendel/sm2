@@ -8,8 +8,8 @@ from six import string_types, integer_types
 from six.moves import range
 
 import numpy as np
-import scipy.stats as stats
-import scipy.linalg.decomp as decomp
+from scipy import stats
+from scipy.linalg import decomp
 
 import pandas as pd
 from pandas.tseries import frequencies
@@ -18,6 +18,7 @@ import sm2.tsa.tsatools as tsa
 
 #-------------------------------------------------------------------------------
 # Auxiliary functions for estimation
+
 def get_var_endog(y, lags, trend='c', has_constant='skip'):
     """
     Make predictor matrix for VAR(p) process
@@ -40,6 +41,7 @@ def get_var_endog(y, lags, trend='c', has_constant='skip'):
 
     return Z
 
+
 def get_trendorder(trend='c'):
     # Handle constant, etc.
     if trend == 'c':
@@ -51,6 +53,7 @@ def get_trendorder(trend='c'):
     elif trend == 'ctt':
         trendorder = 3
     return trendorder
+
 
 def make_lag_names(names, lag_order, trendorder=1, exog=None):
     """
@@ -85,6 +88,7 @@ def make_lag_names(names, lag_order, trendorder=1, exog=None):
             lag_names.insert(trendorder + i, "exog" + str(i))
     return lag_names
 
+
 def comp_matrix(coefs):
     """
     Return compansion matrix for the VAR(1) representation for a VAR(p) process
@@ -108,6 +112,7 @@ def comp_matrix(coefs):
         result[np.arange(k, kp), np.arange(kp-k)] = 1
 
     return result
+
 
 #-------------------------------------------------------------------------------
 # Miscellaneous stuff
@@ -209,9 +214,10 @@ def varsim(coefs, intercept, sig_u, steps=100, initvalues=None, seed=None):
     for t in range(p, steps):
         ygen = result[t]
         for j in range(p):
-            ygen += np.dot(coefs[j], result[t-j-1])
+            ygen += np.dot(coefs[j], result[t - j - 1])
 
     return result
+
 
 def get_index(lst, name):
     try:
@@ -221,7 +227,9 @@ def get_index(lst, name):
             raise
         result = name
     return result
-    #method used repeatedly in Sims-Zha error bands
+
+#method used repeatedly in Sims-Zha error bands
+
 def eigval_decomp(sym_array):
     """
     Returns
@@ -235,6 +243,7 @@ def eigval_decomp(sym_array):
     k = np.argmax(eigva)
     return W, eigva, k
 
+
 def vech(A):
     """
     Simple vech operator
@@ -242,14 +251,13 @@ def vech(A):
     -------
     vechvec: vector of all elements on and below diagonal
     """
-
-    length=A.shape[1]
-    vechvec=[]
+    length = A.shape[1]
+    vechvec = []
     for i in range(length):
-        b=i
+        b = i
         while b < length:
-            vechvec.append(A[b,i])
-            b=b+1
+            vechvec.append(A[b, i])
+            b = b + 1
     vechvec=np.asarray(vechvec)
     return vechvec
 
