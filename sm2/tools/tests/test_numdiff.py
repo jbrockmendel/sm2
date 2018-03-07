@@ -208,7 +208,7 @@ class CheckDerivativeMixin(object):
             if hetrue is not None:  # Hessian doesn't work for 2d return of fun
                 fun = self.fun()
                 # default works, epsilon 1e-6 or 1e-8 is not precise enough
-                hefd = numdiff.approx_hess1(test_params, fun,  #epsilon=1e-8,
+                hefd = numdiff.approx_hess1(test_params, fun,  # epsilon=1e-8,
                                             args=self.args)
                 # TODO:should be kwds
                 assert_almost_equal(hetrue, hefd, decimal=DEC3)
