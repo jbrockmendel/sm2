@@ -4,20 +4,22 @@ from __future__ import division
 from six.moves import range
 
 import numpy as np
-from numpy import dot, identity
-from numpy.linalg import inv, slogdet
-from scipy.stats import norm
+from scipy import stats
+
+from sm2.tools.numdiff import approx_fprime, approx_hess
+from sm2.tools.decorators import (resettable_cache,
+                                  cache_readonly, cache_writable)
+
+import sm2.base.model as base
+import sm2.base.wrapper as wrap
 
 from sm2.regression.linear_model import OLS
+
 from sm2.tsa.tsatools import (lagmat, add_trend,
-                                      _ar_transparams, _ar_invtransparams)
-import sm2.base.model as base
-from sm2.tools.decorators import (resettable_cache,
-                                          cache_readonly, cache_writable)
-from sm2.tools.numdiff import approx_fprime, approx_hess
-import sm2.base.wrapper as wrap
+                              _ar_transparams, _ar_invtransparams)
+
+from sm2.tsa.base import tsa_model
 from sm2.tsa.vector_ar import util
-import sm2.tsa.base.tsa_model as tsbase
 
 from statsmodels.tsa.kalmanf.kalmanfilter import KalmanFilter
 
@@ -56,12 +58,12 @@ def _ar_predict_out_of_sample(y, params, p, k_trend, steps, start=0):
     return forecast
 
 
-class AR(tsbase.TimeSeriesModel):
-    __doc__ = tsbase._tsa_doc % {"model" : "Autoregressive AR(p) model",
-                                 "params" : """endog : array-like
+class AR(tsa_model.TimeSeriesModel):
+    __doc__ = tsa_model._tsa_doc % {"model": "Autoregressive AR(p) model",
+                                    "params": """endog : array-like
         1-d endogenous response variable. The independent variable.""",
-                                 "extra_params" : base._missing_param_doc,
-                                 "extra_sections" : ""}
+                                    "extra_params": base._missing_param_doc,
+                                    "extra_sections": ""}
 
     def __init__(self, endog, dates=None, freq=None, missing='none'):
         super(AR, self).__init__(endog, None, dates, freq, missing=missing)
@@ -115,24 +117,24 @@ class AR(tsbase.TimeSeriesModel):
 
         # Initial State mean and variance
         alpha = np.zeros((p, 1))
-        Q_0 = dot(inv(identity(p**2) - np.kron(T_mat, T_mat)),
-                  dot(R_mat, R_mat.T).ravel('F'))
+        Q_0 = np.dot(np.linalg.inv(np.identity(p**2) - np.kron(T_mat, T_mat)),
+                  np.dot(R_mat, R_mat.T).ravel('F'))
 
         Q_0 = Q_0.reshape(p, p, order='F')  # TODO: order might need to be p+k
         P = Q_0
         Z_mat = KalmanFilter.Z(p)
         for i in range(end):  # iterate p-1 times to fit presample
-            v_mat = y[i] - dot(Z_mat, alpha)
-            F_mat = dot(dot(Z_mat, P), Z_mat.T)
-            Finv = 1./F_mat  # inv. always scalar
-            K = dot(dot(dot(T_mat, P), Z_mat.T), Finv)
+            v_mat = y[i] - np.dot(Z_mat, alpha)
+            F_mat = np.dot(np.dot(Z_mat, P), Z_mat.T)
+            Finv = 1. / F_mat  # inv. always scalar
+            K = np.dot(np.dot(np.dot(T_mat, P), Z_mat.T), Finv)
             # update state
-            alpha = dot(T_mat, alpha) + dot(K, v_mat)
-            L = T_mat - dot(K, Z_mat)
-            P = dot(dot(T_mat, P), L.T) + dot(R_mat, R_mat.T)
+            alpha = np.dot(T_mat, alpha) + np.dot(K, v_mat)
+            L = T_mat - np.dot(K, Z_mat)
+            P = np.dot(np.dot(T_mat, P), L.T) + np.dot(R_mat, R_mat.T)
             #P[0,0] += 1 # for MA part, R_mat.R_mat.T above
             if i >= start - 1:  # only record if we ask for it
-                predictedvalues[i + 1 - start] = dot(Z_mat, alpha)
+                predictedvalues[i + 1 - start] = np.dot(Z_mat, alpha)
 
     def _get_prediction_index(self, start, end, dynamic, index=None):
         method = getattr(self, 'method', 'mle')
@@ -225,7 +227,7 @@ class AR(tsbase.TimeSeriesModel):
             return predictedvalues
 
         # just do the whole thing and truncate
-        fittedvalues = dot(self.X, params)
+        fittedvalues = np.dot(self.X, params)
 
         pv_start = max(k_ar - start, 0)
         fv_start = max(start - k_ar, 0)
@@ -306,7 +308,7 @@ class AR(tsbase.TimeSeriesModel):
         # concentrating the likelihood means that sigma2 is given by
         sigma2 = 1. / nobs * (diffpVpinv + ssr)
         self.sigma2 = sigma2
-        logdet = slogdet(Vpinv)[1]  # TODO: add check for singularity
+        logdet = np.linalg.slogdet(Vpinv)[1]  # TODO: add check for singularity
         loglike = -1 / 2. * (nobs * (np.log(2 * np.pi) + np.log(sigma2)) -
                              logdet + diffpVpinv / sigma2 + ssr / sigma2)
         return loglike
@@ -600,7 +602,7 @@ class AR(tsbase.TimeSeriesModel):
         return ARResultsWrapper(arfit)
 
 
-class ARResults(tsbase.TimeSeriesModelResults):
+class ARResults(tsa_model.TimeSeriesModelResults):
     """
     Class to hold results from fitting an AR model.
 
@@ -611,7 +613,7 @@ class ARResults(tsbase.TimeSeriesModelResults):
     params : array
         The fitted parameters from the AR Model.
     normalized_cov_params : array
-        inv(dot(X.T,X)) where X is the lagged values.
+        np.linalg.inv(np.dot(X.T,X)) where X is the lagged values.
     scale : float, optional
         An estimate of the scale of the model.
 
@@ -723,7 +725,7 @@ class ARResults(tsbase.TimeSeriesModelResults):
 
     @cache_readonly
     def pvalues(self):
-        return norm.sf(np.abs(self.tvalues)) * 2
+        return stats.norm.sf(np.abs(self.tvalues)) * 2
 
     @cache_readonly
     def aic(self):
@@ -821,9 +823,9 @@ class ARResults(tsbase.TimeSeriesModelResults):
 
 class ARResultsWrapper(wrap.ResultsWrapper):
     _attrs = {}
-    _wrap_attrs = wrap.union_dicts(tsbase.TimeSeriesResultsWrapper._wrap_attrs,
+    _wrap_attrs = wrap.union_dicts(tsa_model.TimeSeriesResultsWrapper._wrap_attrs,
                                    _attrs)
     _methods = {}
-    _wrap_methods = wrap.union_dicts(tsbase.TimeSeriesResultsWrapper._wrap_methods,
+    _wrap_methods = wrap.union_dicts(tsa_model.TimeSeriesResultsWrapper._wrap_methods,
                                      _methods)
 wrap.populate_wrapper(ARResultsWrapper, ARResults)

@@ -21,6 +21,17 @@ import pandas.util.testing as tm
 import sm2.api as sm
 
 
+# TODO: Is this implement (better) elsewhere?
+def assert_equal(left, right):
+    if isinstance(left, pd.Series) and isinstance(right, pd.Series):
+        tm.assert_series_equal(left, right)
+    elif isinstance(left, pd.DataFrame) and isinstance(right, pd.DataFrame):
+        assert left.equals(right)
+    else:
+        # TODO: Index?
+        np.testing.assert_equal(right, left)
+
+
 def check_pickle(obj):
     fh = BytesIO()
     cPickle.dump(obj, fh, protocol=cPickle.HIGHEST_PROTOCOL)
@@ -50,7 +61,7 @@ class RemoveDataPickle(object):
         pred_kwds = self.predict_kwds
         pred1 = results.predict(xf, **pred_kwds)
         # create some cached attributes
-        results.summary()
+        results.summary()  # OK with this smoke test?
 
         '''
         # summary2 not ported as of 2018-03-05
@@ -62,39 +73,27 @@ class RemoveDataPickle(object):
 
         # check pickle unpickle works on full results
         # TODO: drop of load save is tested
-        res, l = check_pickle(results._results)
+        res, _ = check_pickle(results._results)
 
         # remove data arrays, check predict still works
         with warnings.catch_warnings(record=True) as w:
             results.remove_data()
 
         pred2 = results.predict(xf, **pred_kwds)
+        assert_equal(pred1, pred2)
 
-        if isinstance(pred1, pd.Series) and isinstance(pred2, pd.Series):
-            tm.assert_series_equal(pred1, pred2)
-        elif isinstance(pred1, pd.DataFrame) and isinstance(pred2, pd.DataFrame):
-            assert pred1.equals(pred2)
-        else:
-            np.testing.assert_equal(pred2, pred1)
-
-        #pickle, unpickle reduced array
-        res, l = check_pickle(results._results)
+        # pickle, unpickle reduced array
+        res, plen = check_pickle(results._results)
 
         # for testing attach res
         self.res = res
 
         # Note: l_max is just a guess for the limit on the length of the pickle
         l_max = self.l_max
-        assert_(l < l_max, msg='pickle length not %d < %d' % (l, l_max))
+        assert_(plen < l_max, msg='pickle length not %d < %d' % (plen, l_max))
 
         pred3 = results.predict(xf, **pred_kwds)
-
-        if isinstance(pred1, pd.Series) and isinstance(pred3, pd.Series):
-            tm.assert_series_equal(pred1, pred3)
-        elif isinstance(pred1, pd.DataFrame) and isinstance(pred3, pd.DataFrame):
-            assert pred1.equals(pred3)
-        else:
-            np.testing.assert_equal(pred3, pred1)
+        assert_equal(pred1, pred3)
 
     def test_remove_data_docstring(self):
         assert self.results.remove_data.__doc__ is not None

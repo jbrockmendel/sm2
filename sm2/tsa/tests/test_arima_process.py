@@ -133,12 +133,12 @@ def test_arma_impulse_response():
     assert_array_almost_equal(-armarep.arrep.ravel(), arrep, 14)
 
 
-'''
-# ArmaFft not ported from upstream
-# from statsmodels.sandbox.tsa.fftarma import ArmaFft
-
+@pytest.mark.skip(reason="ArmaFft not ported from upstream")
 @pytest.mark.not_vetted
 def test_spectrum():
+    ArmaFft = None  # dummy to avoid flake8 warnings
+    # from statsmodels.sandbox.tsa.fftarma import ArmaFft
+
     nfreq = 20
     w = np.linspace(0, np.pi, nfreq, endpoint=False)
     for ar in arlist:
@@ -158,9 +158,12 @@ def test_spectrum():
                                         % (ar, ma))
 
 
+@pytest.mark.skip(reason="ArmaFft not ported from upstream")
 @pytest.mark.not_vetted
 def test_armafft():
     # test other methods
+    ArmaFft = None  # dummy to avoid flake8 warnings
+    # from statsmodels.sandbox.tsa.fftarma import ArmaFft
     nfreq = 20
     w = np.linspace(0, np.pi, nfreq, endpoint=False)
     for ar in arlist:
@@ -171,7 +174,6 @@ def test_armafft():
             assert_almost_equal(ac1, ac2, decimal=7,
                                 err_msg='acovf not equal for %s, %s'
                                         % (ar, ma))
-'''
 
 
 @pytest.mark.not_vetted
@@ -223,10 +225,8 @@ class TestArmaProcess(object):
         assert_equal(process.isinvertible, process_direct.isinvertible)
         assert_equal(process.isstationary, process_direct.isstationary)
 
-    '''
-    # ARMA not ported from upstream
     def test_from_model(self):
-        # from statsmodels.tsa.arima_model import ARMA
+        from sm2.tsa.arima_model import ARMA
 
         process = ArmaProcess([1, -.8], [1, .3], 1000)
         t = 1000
@@ -241,7 +241,6 @@ class TestArmaProcess(object):
         assert_equal(process_model.nobs, process_coef.nobs)
         assert_equal(process_model.isinvertible, process_coef.isinvertible)
         assert_equal(process_model.isstationary, process_coef.isstationary)
-    '''
 
     def test_process_multiplication(self):
         process1 = ArmaProcess.from_coeffs([.9])

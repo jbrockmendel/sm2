@@ -30,6 +30,7 @@ __all__ = ['acovf', 'acf', 'pacf', 'pacf_yw', 'pacf_ols', 'ccovf', 'ccf',
            'adfuller', 'kpss', 'bds']
 
 
+# TODO: The comments below are from upstream.  I dislike this pattern
 # NOTE: now in two places to avoid circular import
 # TODO: I like the bunch pattern for this too.
 class ResultsStore(object):

@@ -4,7 +4,6 @@ Created on Fri May 30 16:22:29 2014
 
 Author: Josef Perktold
 License: BSD-3
-
 """
 from __future__ import division
 
@@ -24,6 +23,9 @@ from sm2.base._constraints import fit_constrained
 from sm2.tools.tools import add_constant
 from sm2 import datasets
 
+# dummies for not-yet-ported names
+GLM = None
+families = None
 
 spector_data = datasets.spector.load()
 spector_data.exog = add_constant(spector_data.exog, prepend=False)
@@ -152,17 +154,20 @@ class TestPoissonConstrained1a(CheckPoissonConstrainedMixin):
         cls.res1m = mod.fit_constrained(constr, start_params=start_params,
                                         method='bfgs', disp=0)
 
-    def test_smoke(self):
+    @pytest.mark.smoke
+    def test_summary(self):
         # trailing text in summary, assumes it's the first extra string
         # NOTE: see comment about convergence in llnull for self.res1m
         summ = self.res1m.summary()
         assert 'linear equality constraints' in summ.extra_txt
 
-        '''
-        # summary2 not ported from upstream
+    @pytest.mark.skip(reason="summary2 not ported from upstream")
+    @pytest.mark.smoke
+    def test_summary2(self):
+        # trailing text in summary, assumes it's the first extra string
+        # NOTE: see comment about convergence in llnull for self.res1m
         summ = self.res1m.summary2()
         assert 'linear equality constraints' in summ.extra_txt[0]
-        '''
 
 
 class TestPoissonConstrained1b(CheckPoissonConstrainedMixin):
@@ -325,11 +330,8 @@ class TestPoissonConstrained2c(CheckPoissonConstrainedMixin):
                                         start_params=cls.res1[0])
 
 
-'''
-# GLM not ported from upstream
-# from statsmodels.genmod.generalized_linear_model import GLM
-# from statsmodels.genmod import families
-
+@pytest.mark.skip(reason="GLM not ported from upstream")
+@pytest.mark.not_vetted
 class TestGLMPoissonConstrained1a(CheckPoissonConstrainedMixin):
     @classmethod
     def setup_class(cls):
@@ -349,6 +351,8 @@ class TestGLMPoissonConstrained1a(CheckPoissonConstrainedMixin):
         cls.res1m = mod.fit_constrained(constr, atol=1e-10)
 
 
+@pytest.mark.skip(reason="GLM not ported from upstream")
+@pytest.mark.not_vetted
 class TestGLMPoissonConstrained1b(CheckPoissonConstrainedMixin):
     @classmethod
     def setup_class(cls):
@@ -400,6 +404,9 @@ class TestGLMPoissonConstrained1b(CheckPoissonConstrainedMixin):
         assert_allclose(res2.predict(linear=True), res2.predict(linear=True),
                         rtol=1e-10)
 
+
+@pytest.mark.skip(reason="GLM not ported from upstream")
+@pytest.mark.not_vetted
 class CheckGLMConstrainedMixin(CheckPoissonConstrainedMixin):
     # add tests for some GLM specific attributes
 
@@ -421,6 +428,8 @@ class CheckGLMConstrainedMixin(CheckPoissonConstrainedMixin):
         #assert_allclose(res1.pearson_chi2, res2.chi2, rtol=1e-10)
 
 
+@pytest.mark.skip(reason="GLM not ported from upstream")
+@pytest.mark.not_vetted
 class TestGLMLogitConstrained1(CheckGLMConstrainedMixin):
     @classmethod
     def setup_class(cls):
@@ -441,6 +450,8 @@ class TestGLMLogitConstrained1(CheckGLMConstrainedMixin):
         cls.res1 = fit_constrained(mod1, R, q)
 
 
+@pytest.mark.skip(reason="GLM not ported from upstream")
+@pytest.mark.not_vetted
 class TestGLMLogitConstrained2(CheckGLMConstrainedMixin):
     @classmethod
     def setup_class(cls):
@@ -458,7 +469,6 @@ class TestGLMLogitConstrained2(CheckGLMConstrainedMixin):
         cls.res1 = fit_constrained(mod1, R, q, fit_kwds={'atol': 1e-10})
         cls.constraints_rq = (R, q)
 
-
     def test_predict(self):
         # results only available for this case
         res2 = self.res2  # reference results
@@ -470,13 +480,16 @@ class TestGLMLogitConstrained2(CheckGLMConstrainedMixin):
         assert_allclose(res1.fittedvalues, predicted, rtol=1e-10)
 
     @pytest.mark.smoke
-    def test_smoke(self):
+    def test_summary(self):
         # trailing text in summary, assumes it's the first extra string
         summ = self.res1m.summary()
         assert 'linear equality constraints' in summ.extra_txt
-        # summary2 not ported from upstream
-        # summ = self.res1m.summary2()
-        # assert 'linear equality constraints' in summ.extra_txt[0]
+
+    @pytest.mark.skip(reason="summary2 not ported from upstream")
+    @pytest.mark.smoke
+    def test_summary2(self):
+        summ = self.res1m.summary2()
+        assert 'linear equality constraints' in summ.extra_txt[0]
 
     def test_fit_constrained_wrap(self):
         # minimal test
@@ -488,8 +501,9 @@ class TestGLMLogitConstrained2(CheckGLMConstrainedMixin):
         assert_allclose(res_wrap.params, res2.params, rtol=1e-6)
 
 
+@pytest.mark.skip(reason="GLM not ported from upstream")
+@pytest.mark.not_vetted
 class TestGLMLogitConstrained2HC(CheckGLMConstrainedMixin):
-
     @classmethod
     def setup_class(cls):
         cls.idx = slice(None)  # params sequence same as Stata
@@ -514,7 +528,7 @@ class TestGLMLogitConstrained2HC(CheckGLMConstrainedMixin):
                                                          'cov_type': cov_type,
                                                          'cov_kwds': cov_kwds})
         cls.constraints_rq = (R, q)
-'''
+
 
 
 # WTF?

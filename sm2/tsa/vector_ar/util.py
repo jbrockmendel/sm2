@@ -8,16 +8,18 @@ from six import string_types, integer_types
 from six.moves import range
 
 import numpy as np
-import scipy.stats as stats
-import scipy.linalg.decomp as decomp
+from scipy import stats
+from scipy.linalg import decomp
 
 import pandas as pd
 from pandas.tseries import frequencies
 
 import sm2.tsa.tsatools as tsa
 
-#-------------------------------------------------------------------------------
+
+# ---------------------------------------------------------------
 # Auxiliary functions for estimation
+
 def get_var_endog(y, lags, trend='c', has_constant='skip'):
     """
     Make predictor matrix for VAR(p) process
@@ -40,6 +42,7 @@ def get_var_endog(y, lags, trend='c', has_constant='skip'):
 
     return Z
 
+
 def get_trendorder(trend='c'):
     # Handle constant, etc.
     if trend == 'c':
@@ -51,6 +54,7 @@ def get_trendorder(trend='c'):
     elif trend == 'ctt':
         trendorder = 3
     return trendorder
+
 
 def make_lag_names(names, lag_order, trendorder=1, exog=None):
     """
@@ -85,6 +89,7 @@ def make_lag_names(names, lag_order, trendorder=1, exog=None):
             lag_names.insert(trendorder + i, "exog" + str(i))
     return lag_names
 
+
 def comp_matrix(coefs):
     """
     Return compansion matrix for the VAR(1) representation for a VAR(p) process
@@ -96,7 +101,7 @@ def comp_matrix(coefs):
          0 ...       I_K   0]
     """
     p, k, k2 = coefs.shape
-    assert(k == k2)
+    assert k == k2
 
     kp = k * p
 
@@ -109,73 +114,23 @@ def comp_matrix(coefs):
 
     return result
 
-#-------------------------------------------------------------------------------
+
+# ---------------------------------------------------------------
 # Miscellaneous stuff
 
 
 def parse_lutkepohl_data(path): # pragma: no cover
-    """
-    Parse data files from Lütkepohl (2005) book
-
-    Source for data files: www.jmulti.de
-    """
-
-    from collections import deque
-    from datetime import datetime
-    import pandas
-    import re
-
-    regex = re.compile(b'<(.*) (\w)([\d]+)>.*')
-    with open(path, 'rb') as f:
-        lines = deque(f)
-
-    to_skip = 0
-    while b'*/' not in lines.popleft():
-        #while '*/' not in lines.popleft():
-        to_skip += 1
-
-    while True:
-        to_skip += 1
-        line = lines.popleft()
-        m = regex.match(line)
-        if m:
-            year, freq, start_point = m.groups()
-            break
-
-    data = (pd.read_csv(path, delimiter=r"\s+", header=to_skip+1)
-            .to_records(index=False))
-
-    n = len(data)
-
-    # generate the corresponding date range (using pandas for now)
-    start_point = int(start_point)
-    year = int(year)
-
-    offsets = {b'Q': frequencies.BQuarterEnd(),
-               b'M': frequencies.BMonthEnd(),
-               b'A': frequencies.BYearEnd()}
-
-    # create an instance
-    offset = offsets[freq]
-
-    inc = offset * (start_point - 1)
-    start_date = offset.rollforward(datetime(year, 1, 1)) + inc
-
-    offset = offsets[freq]
-    from pandas import DatetimeIndex   # pylint: disable=E0611
-    date_range = DatetimeIndex(start=start_date, freq=offset, periods=n)
-
-    return data, date_range
+    raise NotImplementedError("Not ported from upstream")
 
 
 def get_logdet(m):
-    from statsmodels.tools.linalg import logdet_symm
+    from sm2.tools.linalg import logdet_symm
     return logdet_symm(m)
 
 
 get_logdet = np.deprecate(get_logdet,
-                          "statsmodels.tsa.vector_ar.util.get_logdet",
-                          "statsmodels.tools.linalg.logdet_symm",
+                          "sm2.tsa.vector_ar.util.get_logdet",
+                          "sm2.tools.linalg.logdet_symm",
                           "get_logdet is deprecated and will be removed in "
                           "0.8.0")
 
@@ -209,9 +164,10 @@ def varsim(coefs, intercept, sig_u, steps=100, initvalues=None, seed=None):
     for t in range(p, steps):
         ygen = result[t]
         for j in range(p):
-            ygen += np.dot(coefs[j], result[t-j-1])
+            ygen += np.dot(coefs[j], result[t - j - 1])
 
     return result
+
 
 def get_index(lst, name):
     try:
@@ -221,7 +177,9 @@ def get_index(lst, name):
             raise
         result = name
     return result
-    #method used repeatedly in Sims-Zha error bands
+
+#method used repeatedly in Sims-Zha error bands
+
 def eigval_decomp(sym_array):
     """
     Returns
@@ -235,6 +193,7 @@ def eigval_decomp(sym_array):
     k = np.argmax(eigva)
     return W, eigva, k
 
+
 def vech(A):
     """
     Simple vech operator
@@ -242,14 +201,13 @@ def vech(A):
     -------
     vechvec: vector of all elements on and below diagonal
     """
-
-    length=A.shape[1]
-    vechvec=[]
+    length = A.shape[1]
+    vechvec = []
     for i in range(length):
-        b=i
+        b = i
         while b < length:
-            vechvec.append(A[b,i])
-            b=b+1
+            vechvec.append(A[b, i])
+            b = b + 1
     vechvec=np.asarray(vechvec)
     return vechvec
 
@@ -281,6 +239,7 @@ def seasonal_dummies(n_seasons, len_endog, first_period=0, centered=False):
     """
     if n_seasons == 0:
         return np.empty((len_endog, 0))
+
     if n_seasons > 0:
         season_exog = np.zeros((len_endog, n_seasons - 1))
         for i in range(n_seasons - 1):

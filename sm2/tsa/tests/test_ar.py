@@ -1,6 +1,7 @@
 """
 Test AR Model
 """
+from six import BytesIO
 from six.moves import range
 
 import numpy as np
@@ -38,7 +39,6 @@ class CheckARMixin(object):
         assert_almost_equal(self.res1.fpe, self.res2.fpe, DECIMAL_6)
 
     def test_pickle(self):
-        from statsmodels.compat.python import BytesIO
         fh = BytesIO()
         #test wrapped results load save pickle
         self.res1.save(fh)

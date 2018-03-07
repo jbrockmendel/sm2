@@ -16,17 +16,22 @@ import numpy as np
 import pandas as pd
 from scipy import optimize, stats, signal
 
+
 from sm2.tools.decorators import cache_readonly, resettable_cache
+from sm2.tools.numdiff import approx_hess_cs, approx_fprime_cs
+
 import sm2.base.wrapper as wrap
+
 from sm2.regression.linear_model import yule_walker, GLS
+
+from sm2.tsa.base import tsa_model
+
 from sm2.tsa.tsatools import (lagmat, add_trend,
                               _ar_transparams, _ar_invtransparams,
                               _ma_transparams, _ma_invtransparams,
                               unintegrate, unintegrate_levels)
 from sm2.tsa.vector_ar import util
 from sm2.tsa.arima_process import arma2ma
-from sm2.tools.numdiff import approx_hess_cs, approx_fprime_cs
-import sm2.tsa.base.tsa_model as tsbase
 from sm2.tsa.ar_model import AR
 
 from statsmodels.tsa.kalmanf import KalmanFilter
@@ -46,7 +51,7 @@ _armax_notes = """
     or ARMAX model. This specification is used, whether or not the model
     is fit using conditional sum of square or maximum-likelihood, using
     the `method` argument in
-    :meth:`statsmodels.tsa.arima_model.%(Model)s.fit`. Therefore, for
+    :meth:`sm2.tsa.arima_model.%(Model)s.fit`. Therefore, for
     now, `css` and `mle` refer to estimation methods only. This may
     change for the case of the `css` model in future versions.
 """
@@ -178,7 +183,7 @@ _arima_results_predict = _predict % {"Model" : "ARIMA",
 
 _arima_plot_predict_example = """        Examples
         --------
-        >>> import statsmodels.api as sm
+        >>> import sm2.api as sm
         >>> import matplotlib.pyplot as plt
         >>> import pandas as pd
         >>>
@@ -423,12 +428,12 @@ def _check_estimable(nobs, n_params):
         raise ValueError("Insufficient degrees of freedom to estimate")
 
 
-class ARMA(tsbase.TimeSeriesModel):
-
-    __doc__ = tsbase._tsa_doc % {"model" : _arma_model,
-                                 "params" : _arma_params, "extra_params" : "",
-                                 "extra_sections" : _armax_notes %
-                                 {"Model" : "ARMA"}}
+class ARMA(tsa_model.TimeSeriesModel):
+    __doc__ = tsa_model._tsa_doc % {"model": _arma_model,
+                                    "params": _arma_params,
+                                    "extra_params": "",
+                                    "extra_sections": _armax_notes %
+                                                       {"Model": "ARMA"}}
 
     def __init__(self, endog, order, exog=None, dates=None, freq=None,
                  missing='none'):
@@ -877,11 +882,11 @@ class ARMA(tsbase.TimeSeriesModel):
 
         Returns
         -------
-        statsmodels.tsa.arima_model.ARMAResults class
+        sm2.tsa.arima_model.ARMAResults class
 
         See also
         --------
-        statsmodels.base.model.LikelihoodModel.fit : for more information
+        sm2.base.model.LikelihoodModel.fit : for more information
             on using the solvers.
         ARMAResults : results class returned by fit
 
@@ -977,10 +982,11 @@ class ARMA(tsbase.TimeSeriesModel):
 #so model methods are not the same on unfit models as fit ones
 #starting to think that order of model should be put in instantiation...
 class ARIMA(ARMA):
-    __doc__ = tsbase._tsa_doc % {"model" : _arima_model,
-                                 "params" : _arima_params, "extra_params" : "",
-                                 "extra_sections" : _armax_notes %
-                                 {"Model" : "ARIMA"}}
+    __doc__ = tsa_model._tsa_doc % {"model": _arima_model,
+                                    "params": _arima_params,
+                                    "extra_params": "",
+                                    "extra_sections" : _armax_notes %
+                                                       {"Model": "ARIMA"}}
 
     def __new__(cls, endog, order, exog=None, dates=None, freq=None,
                 missing='none'):
@@ -1131,11 +1137,11 @@ class ARIMA(ARMA):
 
         Returns
         -------
-        `statsmodels.tsa.arima.ARIMAResults` class
+        `sm2.tsa.arima.ARIMAResults` class
 
         See also
         --------
-        statsmodels.base.model.LikelihoodModel.fit : for more information
+        sm2.base.model.LikelihoodModel.fit : for more information
             on using the solvers.
         ARIMAResults : results class returned by fit
 
@@ -1266,7 +1272,7 @@ class ARIMA(ARMA):
     predict.__doc__ = _arima_predict
 
 
-class ARMAResults(tsbase.TimeSeriesModelResults):
+class ARMAResults(tsa_model.TimeSeriesModelResults):
     """
     Class to hold results from fitting an ARMA model.
 
@@ -1716,10 +1722,10 @@ class ARMAResults(tsbase.TimeSeriesModelResults):
 
 class ARMAResultsWrapper(wrap.ResultsWrapper):
     _attrs = {}
-    _wrap_attrs = wrap.union_dicts(tsbase.TimeSeriesResultsWrapper._wrap_attrs,
+    _wrap_attrs = wrap.union_dicts(tsa_model.TimeSeriesResultsWrapper._wrap_attrs,
                                    _attrs)
     _methods = {}
-    _wrap_methods = wrap.union_dicts(tsbase.TimeSeriesResultsWrapper._wrap_methods,
+    _wrap_methods = wrap.union_dicts(tsa_model.TimeSeriesResultsWrapper._wrap_methods,
                                      _methods)
 wrap.populate_wrapper(ARMAResultsWrapper, ARMAResults)
 
