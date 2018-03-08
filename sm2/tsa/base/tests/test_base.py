@@ -11,6 +11,7 @@ from sm2.tsa.base.tsa_model import TimeSeriesModel
 from statsmodels.tools.testing import assert_equal
 
 
+@pytest.mark.not_vetted
 def test_pandas_nodates_index():
     data = [988, 819, 964]
     dates = ['a', 'b', 'c']
@@ -43,9 +44,11 @@ def test_pandas_nodates_index():
         start, end, out_of_sample, _ = mod._get_prediction_index(0, 4)
         assert len(mod.data.predict_dates) == 5
 
+
+@pytest.mark.not_vetted
 def test_predict_freq():
     # test that predicted dates have same frequency
-    x = np.arange(1,36.)
+    x = np.arange(1, 36.)
 
     # there's a bug in pandas up to 0.10.2 for YearBegin
     #dates = date_range("1972-4-1", "2007-4-1", freq="AS-APR")
@@ -67,8 +70,9 @@ def test_predict_freq():
     #ptesting.assert_series_equal(predict_dates, expected_dates)
 
 
+@pytest.mark.not_vetted
 def test_keyerror_start_date():
-    x = np.arange(1,36.)
+    x = np.arange(1, 36.)
 
     # there's a bug in pandas up to 0.10.2 for YearBegin
     #dates = date_range("1972-4-1", "2007-4-1", freq="AS-APR")
@@ -80,8 +84,9 @@ def test_keyerror_start_date():
         model._get_prediction_index("1970-4-30", None)
 
 
+@pytest.mark.not_vetted
 def test_period_index():
-    # test 1285
+    # test GH#1285
 
     dates = pd.PeriodIndex(start="1/1/1990", periods=20, freq="M")
     x = np.arange(1, 21.)
@@ -92,6 +97,7 @@ def test_period_index():
     assert model.data.freq == "M"
 
 
+@pytest.mark.not_vetted
 def test_pandas_dates():
     data = [988, 819, 964]
     dates = ['2016-01-01 12:00:00',
@@ -108,6 +114,7 @@ def test_pandas_dates():
     tm.assert_index_equal(result.index, model.data.dates)
 
 
+@pytest.mark.not_vetted
 def test_get_predict_start_end():
     index = pd.DatetimeIndex(start='1970-01-01', end='1990-01-01', freq='AS')
     endog = pd.Series(np.zeros(10), index[:10])

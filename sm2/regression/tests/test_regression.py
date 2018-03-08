@@ -1284,8 +1284,10 @@ def test_regularized_refit():
     yvec = xmat.sum(1) + np.random.normal(size=n)
     model1 = OLS(yvec, xmat)
     result1 = model1.fit_regularized(alpha=2., L1_wt=0.5, refit=True)
+
     model2 = OLS(yvec, xmat)
     result2 = model2.fit_regularized(alpha=2., L1_wt=0.5, refit=True)
+
     assert_allclose(result1.params, result2.params)
     assert_allclose(result1.bse, result2.bse)
 
@@ -1320,11 +1322,14 @@ def test_regularized_options():
     np.random.seed(3132)
     xmat = np.random.normal(size=(n, p))
     yvec = xmat.sum(1) + np.random.normal(size=n)
+
     model1 = OLS(yvec - 1, xmat)
     result1 = model1.fit_regularized(alpha=1., L1_wt=0.5)
+
     model2 = OLS(yvec, xmat, offset=1)
     result2 = model2.fit_regularized(alpha=1., L1_wt=0.5,
                                      start_params=np.zeros(5))
+
     assert_allclose(result1.params, result2.params)
 
 
@@ -1352,7 +1357,7 @@ def test_fvalue_only_constant():
 
 
 def test_fvalue_implicit_constant():
-    # GH#2444 if constant is implicit, return nan see 
+    # GH#2444 if constant is implicit, return nan see
     nobs = 100
     np.random.seed(2)
     x = np.random.randn(nobs, 1)

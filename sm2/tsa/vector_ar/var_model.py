@@ -62,12 +62,12 @@ def ma_rep(coefs, maxn=10):
     phis : ndarray (maxn + 1 x k x k)
     """
     p, k, k = coefs.shape
-    phis = np.zeros((maxn+1, k, k))
+    phis = np.zeros((maxn + 1, k, k))
     phis[0] = np.eye(k)
 
     # recursively compute Phi matrices
     for i in range(1, maxn + 1):
-        for j in range(1, i+1):
+        for j in range(1, i + 1):
             if j > p:
                 break
 
@@ -136,7 +136,7 @@ def var_acf(coefs, sig_u, nlags=None):
         # G(h) = A_1 G(h-1) + ... + A_p G(h-p)
 
         for j in range(p):
-            result[h] += np.dot(coefs[j], result[h-j-1])
+            result[h] += np.dot(coefs[j], result[h - j - 1])
 
     return result
 
@@ -154,11 +154,11 @@ def _var_acf(coefs, sig_u):
 
     A = util.comp_matrix(coefs)
     # construct VAR(1) noise covariance
-    SigU = np.zeros((k*p, k*p))
+    SigU = np.zeros((k * p, k * p))
     SigU[:k, :k] = sig_u
 
     # vec(ACF) = (I_(kp)^2 - kron(A, A))^-1 vec(Sigma_U)
-    vecACF = scipy.linalg.solve(np.eye((k*p)**2) - np.kron(A, A), vec(SigU))
+    vecACF = scipy.linalg.solve(np.eye((k * p)**2) - np.kron(A, A), vec(SigU))
 
     acf = unvec(vecACF)
     acf = acf[:k].T.reshape((p, k, k))
@@ -354,6 +354,7 @@ def _reordered(self, order):
         for j in range(k_ar):
             params_new_inc[i+j*num_end+k, :] = self.params[c+j*num_end+k, :]
             endog_lagged_new[:, i+j*num_end+k] = endog_lagged[:, c+j*num_end+k]
+
         sigma_u_new_inc[i, :] = sigma_u[c, :]
         names_new.append(names[c])
     for i, c in enumerate(order):
@@ -411,7 +412,8 @@ def test_normality(results, signif=0.05):
 
     References
     ----------
-    .. [1] Lütkepohl, H. 2005. *New Introduction to Multiple Time Series Analysis*. Springer.
+    .. [1] Lütkepohl, H. 2005.*New Introduction to Multiple Time
+       Series Analysis*. Springer.
 
     .. [2] Kilian, L. & Demiroglu, U. (2000). "Residual-Based Tests for
        Normality in Autoregressions: Asymptotic Theory and Simulation
@@ -434,7 +436,7 @@ def test_normality(results, signif=0.05):
     crit_omni = float(omni_dist.ppf(1 - signif))
 
     return NormalityTestResults(lam_omni, crit_omni, omni_pvalue,
-                                results.neqs*2, signif)
+                                results.neqs * 2, signif)
 
 
 class LagOrderResults:
@@ -553,7 +555,7 @@ class VAR(tsa_model.TimeSeriesModel):
 
         fv_start = start - k_ar
         pv_end = min(len(predictedvalues), len(fittedvalues) - fv_start)
-        fv_end = min(len(fittedvalues), end-k_ar+1)
+        fv_end = min(len(fittedvalues), end - k_ar + 1)
         predictedvalues[:pv_end] = fittedvalues[fv_start:fv_end]
 
         if not out_of_sample:
@@ -669,10 +671,10 @@ class VAR(tsa_model.TimeSeriesModel):
             x = np.column_stack((x, x_inst))
             del x_inst  # free memory
             temp_z = z
-            z = np.empty((x.shape[0], x.shape[1]+z.shape[1]))
+            z = np.empty((x.shape[0], x.shape[1] + z.shape[1]))
             z[:, :self.k_trend] = temp_z[:, :self.k_trend]
-            z[:, self.k_trend:self.k_trend+x.shape[1]] = x
-            z[:, self.k_trend+x.shape[1]:] = temp_z[:, self.k_trend:]
+            z[:, self.k_trend:self.k_trend + x.shape[1]] = x
+            z[:, self.k_trend + x.shape[1]:] = temp_z[:, self.k_trend:]
             del temp_z, x  # free memory
         # the following modification of z is necessary to get the same results
         # as JMulTi for the constant-term-parameter...
@@ -729,7 +731,7 @@ class VAR(tsa_model.TimeSeriesModel):
         selections : LagOrderResults
         """
         if maxlags is None:
-            maxlags = int(round(12*(len(self.endog)/100.)**(1/4.)))
+            maxlags = int(round(12 * (len(self.endog) / 100.)**(1 / 4.)))
             # TODO: This expression shows up in a bunch of places, but
             # in some it is `int` and in others `np.ceil`.  Also in some
             # it multiplies by 4 instead of 12.  Let's put these all in
@@ -780,7 +782,7 @@ class VARProcess(object):
 
     def __str__(self):
         out = ('VAR(%d) process for %d-dimensional response y_t'
-                  % (self.k_ar, self.neqs))
+               % (self.k_ar, self.neqs))
         out += '\nstable: %s' % self.is_stable()
         out += '\nmean: %s' % self.mean()
 
@@ -796,8 +798,8 @@ class VARProcess(object):
 
         Notes
         -----
-        Checks if det(I - Az) = 0 for any mod(z) <= 1, so all the eigenvalues of
-        the companion matrix must lie outside the unit circle
+        Checks if det(I - Az) = 0 for any mod(z) <= 1, so all the
+        eigenvalues of the companion matrix must lie outside the unit circle
         """
         return is_stable(self.coefs, verbose=verbose)
 
@@ -1004,13 +1006,13 @@ class VARProcess(object):
         p = self.coefs.shape[0]
         A = self.coefs
         pi = -(np.identity(k) - np.sum(A, 0))
-        gamma = np.zeros((p-1, k, k))
-        for i in range(p-1):
-            gamma[i] = -(np.sum(A[i+1:], 0))
+        gamma = np.zeros((p - 1, k, k))
+        for i in range(p - 1):
+            gamma[i] = -(np.sum(A[i + 1:], 0))
         gamma = np.concatenate(gamma, 1)
         return {"Gamma": gamma, "Pi": pi}
 
-# -------------------------------------------------------------------------------
+# -------------------------------------------------------------------
 # VARResults class
 
 
@@ -1027,7 +1029,8 @@ class VARResults(VARProcess):
     model : VAR model instance
     trend : str {'nc', 'c', 'ct'}
     names : array-like
-        List of names of the endogenous variables in order of appearance in `endog`.
+        List of names of the endogenous variables in order of
+        appearance in `endog`.
     dates
     exog : array
 
@@ -1285,8 +1288,8 @@ class VARResults(VARProcess):
 
     @cache_readonly
     def tvalues(self):
-        """Compute t-statistics. Use Student-t(T - Kp - 1) = t(df_resid) to test
-        significance.
+        """Compute t-statistics. Use Student-t(T - Kp - 1) = t(df_resid)
+        to test significance.
         """
         return self.params / self.stderr
 
@@ -1302,7 +1305,8 @@ class VARResults(VARProcess):
 
     @cache_readonly
     def pvalues(self):
-        """Two-sided p-values for model coefficients from Student t-distribution
+        """Two-sided p-values for model coefficients from
+        Student t-distribution
         """
         # return stats.t.sf(np.abs(self.tvalues), self.df_resid)*2
         return 2 * stats.norm.sf(np.abs(self.tvalues))
@@ -1317,7 +1321,7 @@ class VARResults(VARProcess):
         end = self.k_trend
         return self.pvalues[:end]
 
-    # todo: --------------------------------------------------------------------
+    # TODO: -------------------------------------------------------------
 
     def plot_forecast(self, steps, alpha=0.05, plot_stderr=True):
         """
@@ -1383,7 +1387,6 @@ class VARResults(VARProcess):
         Returns
         -------
         Tuple of lower and upper arrays of ma_rep monte carlo standard errors
-
         """
         neqs = self.neqs
         # mean = self.mean()
@@ -1409,7 +1412,8 @@ class VARResults(VARProcess):
             ma_coll[i, :, :, :] = fill_coll(sim)
 
         ma_sort = np.sort(ma_coll, axis=0)  # sort to get quantiles
-        index = round(signif/2*repl)-1, round((1-signif/2)*repl)-1
+        index = (int(round(signif / 2 * repl) - 1),
+                 int(round((1 - signif / 2) * repl) - 1))
         lower = ma_sort[index[0], :, :, :]
         upper = ma_sort[index[1], :, :, :]
         return lower, upper
@@ -1439,12 +1443,12 @@ class VARResults(VARProcess):
 
         Notes
         -----
-        Sims, Christoper A., and Tao Zha. 1999. "Error Bands for Impulse Response." Econometrica 67: 1113-1155.
+        Sims, Christoper A., and Tao Zha. 1999.
+            "Error Bands for Impulse Response." Econometrica 67: 1113-1155.
 
         Returns
         -------
         Array of simulated impulse response functions
-
         """
         neqs = self.neqs
         # mean = self.mean()
@@ -1493,7 +1497,7 @@ class VARResults(VARProcess):
         omegas = np.zeros((steps, self.neqs, self.neqs))
         for h in range(1, steps + 1):
             if h == 1:
-                omegas[h-1] = self.df_model * self.sigma_u
+                omegas[h - 1] = self.df_model * self.sigma_u
                 continue
 
             om = omegas[h-1]
@@ -1535,8 +1539,8 @@ class VARResults(VARProcess):
         ----------
         periods : int
         var_decomp : ndarray (k x k), lower triangular
-            Must satisfy Omega = P P', where P is the passed matrix. Defaults to
-            Cholesky decomposition of Omega
+            Must satisfy Omega = P P', where P is the passed matrix.
+            Defaults to Cholesky decomposition of Omega
         var_order : sequence
             Alternate variable order for Cholesky decomposition
 
@@ -1641,7 +1645,6 @@ class VARResults(VARProcess):
         caused_ind = [util.get_index(self.names, c) for c in caused]
 
         if causing is not None:
-
             if isinstance(causing, allowed_types):
                 causing = [causing]
             if not all(isinstance(c, allowed_types) for c in causing):
@@ -1766,6 +1769,7 @@ class VARResults(VARProcess):
         if not all(isinstance(c, allowed_types) for c in causing):
             raise TypeError("causing has to be of type string or int (or a "
                             "a sequence of these types).")
+
         causing = [self.names[c] if type(c) == int else c for c in causing]
         causing_ind = [util.get_index(self.names, c) for c in causing]
 
@@ -1979,11 +1983,11 @@ class VARResultsWrapper(wrap.ResultsWrapper):
               'sigma_u': 'cov_eq',
               'sigma_u_mle': 'cov_eq',
               'stderr': 'columns_eq'}
-    _wrap_attrs = wrap.union_dicts(tsa_model.TimeSeriesResultsWrapper._wrap_attrs,
-                                    _attrs)
+    _wrap_attrs = wrap.union_dicts(
+        tsa_model.TimeSeriesResultsWrapper._wrap_attrs, _attrs)
     _methods = {}
-    _wrap_methods = wrap.union_dicts(tsa_model.TimeSeriesResultsWrapper._wrap_methods,
-                                     _methods)
+    _wrap_methods = wrap.union_dicts(
+        tsa_model.TimeSeriesResultsWrapper._wrap_methods, _methods)
     _wrap_methods.pop('cov_params')  # not yet a method in VARResults
 wrap.populate_wrapper(VARResultsWrapper, VARResults)
 
@@ -2031,11 +2035,7 @@ class FEVD(object):
         print(buf.getvalue())
 
     def cov(self):
-        """Compute asymptotic standard errors
-
-        Returns
-        -------
-        """
+        """Compute asymptotic standard errors"""
         raise NotImplementedError
 
     def plot(self, periods=None, figsize=(10, 10), **plot_kwds):
