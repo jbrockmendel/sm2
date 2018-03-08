@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 """
-
 Created on Mon Dec 09 21:29:20 2013
 
 Author: Josef Perktold

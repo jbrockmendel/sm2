@@ -398,11 +398,8 @@ def test_coint():
 
         for i in range(4):
             res = res_egranger[trend]
-
             assert_allclose(res1[i][0], res[i][0], rtol=1e-11)
-            r2 = res[i][1:]
-            r1 = res1[i][2]
-            assert_allclose(r1, r2, rtol=0, atol=6e-7)
+            assert_allclose(res1[i][2], res[i][1:], rtol=0, atol=6e-7)
 
 
 @pytest.mark.not_vetted

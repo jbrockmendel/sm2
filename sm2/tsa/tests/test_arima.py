@@ -45,6 +45,7 @@ cpi_predict_dates = pd.PeriodIndex(start='2009q3', end='2015q4', freq='Q')
 sun_predict_dates = pd.PeriodIndex(start='2008', end='2033', freq='A')
 
 
+@pytest.mark.not_vetted
 @pytest.mark.skip(reason="fa, Arma not ported from upstream")
 def test_compare_arma():
     # dummies to avoid flake8 warnings until porting
@@ -89,6 +90,7 @@ def test_compare_arma():
     #return resls[0], d.params, rescm.params
 
 
+@pytest.mark.not_vetted
 class CheckArmaResultsMixin(object):
     """
     res2 are the results from gretl.  They are in results/results_arma.
@@ -170,7 +172,7 @@ class CheckArmaResultsMixin(object):
         table = self.res1.summary()
 
 
-
+@pytest.mark.not_vetted
 class CheckForecastMixin(object):
     decimal_forecast = DECIMAL_4
     def test_forecast(self):
@@ -183,6 +185,7 @@ class CheckForecastMixin(object):
                 self.decimal_forecasterr)
 
 
+@pytest.mark.not_vetted
 class CheckDynamicForecastMixin(object):
     decimal_forecast_dyn = 4
     def test_dynamic_forecast(self):
@@ -195,6 +198,7 @@ class CheckDynamicForecastMixin(object):
     #                        DECIMAL_4)
 
 
+@pytest.mark.not_vetted
 class CheckArimaResultsMixin(CheckArmaResultsMixin):
     def test_order(self):
         assert self.res1.k_diff == self.res2.k_diff
@@ -207,6 +211,7 @@ class CheckArimaResultsMixin(CheckArmaResultsMixin):
                 self.decimal_predict_levels)
 
 
+@pytest.mark.not_vetted
 class Test_Y_ARMA11_NoConst(CheckArmaResultsMixin, CheckForecastMixin):
     @classmethod
     def setup_class(cls):
@@ -225,6 +230,7 @@ class Test_Y_ARMA11_NoConst(CheckArmaResultsMixin, CheckForecastMixin):
         assert type(res_unpickled) is type(self.res1)
 
 
+@pytest.mark.not_vetted
 class Test_Y_ARMA14_NoConst(CheckArmaResultsMixin):
     @classmethod
     def setup_class(cls):
@@ -233,6 +239,7 @@ class Test_Y_ARMA14_NoConst(CheckArmaResultsMixin):
         cls.res2 = results_arma.Y_arma14()
 
 
+@pytest.mark.not_vetted
 @pytest.mark.slow
 class Test_Y_ARMA41_NoConst(CheckArmaResultsMixin, CheckForecastMixin):
     @classmethod
@@ -245,6 +252,7 @@ class Test_Y_ARMA41_NoConst(CheckArmaResultsMixin, CheckForecastMixin):
         cls.decimal_maroots = DECIMAL_3
 
 
+@pytest.mark.not_vetted
 class Test_Y_ARMA22_NoConst(CheckArmaResultsMixin):
     @classmethod
     def setup_class(cls):
@@ -253,6 +261,7 @@ class Test_Y_ARMA22_NoConst(CheckArmaResultsMixin):
         cls.res2 = results_arma.Y_arma22()
 
 
+@pytest.mark.not_vetted
 class Test_Y_ARMA50_NoConst(CheckArmaResultsMixin, CheckForecastMixin):
     @classmethod
     def setup_class(cls):
@@ -263,6 +272,7 @@ class Test_Y_ARMA50_NoConst(CheckArmaResultsMixin, CheckForecastMixin):
         cls.res2 = results_arma.Y_arma50()
 
 
+@pytest.mark.not_vetted
 class Test_Y_ARMA02_NoConst(CheckArmaResultsMixin):
     @classmethod
     def setup_class(cls):
@@ -271,6 +281,7 @@ class Test_Y_ARMA02_NoConst(CheckArmaResultsMixin):
         cls.res2 = results_arma.Y_arma02()
 
 
+@pytest.mark.not_vetted
 class Test_Y_ARMA11_Const(CheckArmaResultsMixin, CheckForecastMixin):
     @classmethod
     def setup_class(cls):
@@ -281,6 +292,7 @@ class Test_Y_ARMA11_Const(CheckArmaResultsMixin, CheckForecastMixin):
         cls.res2 = results_arma.Y_arma11c()
 
 
+@pytest.mark.not_vetted
 class Test_Y_ARMA14_Const(CheckArmaResultsMixin):
     @classmethod
     def setup_class(cls):
@@ -289,6 +301,7 @@ class Test_Y_ARMA14_Const(CheckArmaResultsMixin):
         cls.res2 = results_arma.Y_arma14c()
 
 
+@pytest.mark.not_vetted
 class Test_Y_ARMA41_Const(CheckArmaResultsMixin, CheckForecastMixin):
     @classmethod
     def setup_class(cls):
@@ -304,6 +317,7 @@ class Test_Y_ARMA41_Const(CheckArmaResultsMixin, CheckForecastMixin):
         cls.decimal_params = DECIMAL_3
 
 
+@pytest.mark.not_vetted
 class Test_Y_ARMA22_Const(CheckArmaResultsMixin):
     @classmethod
     def setup_class(cls):
@@ -312,6 +326,7 @@ class Test_Y_ARMA22_Const(CheckArmaResultsMixin):
         cls.res2 = results_arma.Y_arma22c()
 
 
+@pytest.mark.not_vetted
 class Test_Y_ARMA50_Const(CheckArmaResultsMixin, CheckForecastMixin):
     @classmethod
     def setup_class(cls):
@@ -322,6 +337,7 @@ class Test_Y_ARMA50_Const(CheckArmaResultsMixin, CheckForecastMixin):
         cls.res2 = results_arma.Y_arma50c()
 
 
+@pytest.mark.not_vetted
 class Test_Y_ARMA02_Const(CheckArmaResultsMixin):
     @classmethod
     def setup_class(cls):
@@ -331,6 +347,7 @@ class Test_Y_ARMA02_Const(CheckArmaResultsMixin):
 
 
 # cov_params and tvalues are off still but not as much vs. R
+@pytest.mark.not_vetted
 class Test_Y_ARMA11_NoConst_CSS(CheckArmaResultsMixin):
     @classmethod
     def setup_class(cls):
@@ -342,6 +359,7 @@ class Test_Y_ARMA11_NoConst_CSS(CheckArmaResultsMixin):
 
 
 # better vs. R
+@pytest.mark.not_vetted
 class Test_Y_ARMA14_NoConst_CSS(CheckArmaResultsMixin):
     @classmethod
     def setup_class(cls):
@@ -356,6 +374,7 @@ class Test_Y_ARMA14_NoConst_CSS(CheckArmaResultsMixin):
 
 # bse, etc. better vs. R
 # maroot is off because maparams is off a bit (adjust tolerance?)
+@pytest.mark.not_vetted
 class Test_Y_ARMA41_NoConst_CSS(CheckArmaResultsMixin):
     @classmethod
     def setup_class(cls):
@@ -370,6 +389,7 @@ class Test_Y_ARMA41_NoConst_CSS(CheckArmaResultsMixin):
 
 
 #same notes as above
+@pytest.mark.not_vetted
 class Test_Y_ARMA22_NoConst_CSS(CheckArmaResultsMixin):
     @classmethod
     def setup_class(cls):
@@ -389,6 +409,7 @@ class Test_Y_ARMA22_NoConst_CSS(CheckArmaResultsMixin):
 # with no adjustment for p and no extra sigma estimate
 #NOTE: so our tests use x-12 arima results which agree with us and are
 # consistent with the rest of the models
+@pytest.mark.not_vetted
 class Test_Y_ARMA50_NoConst_CSS(CheckArmaResultsMixin):
     @classmethod
     def setup_class(cls):
@@ -400,6 +421,7 @@ class Test_Y_ARMA50_NoConst_CSS(CheckArmaResultsMixin):
         cls.decimal_llf = DECIMAL_1 # looks like rounding error?
 
 
+@pytest.mark.not_vetted
 class Test_Y_ARMA02_NoConst_CSS(CheckArmaResultsMixin):
     @classmethod
     def setup_class(cls):
@@ -410,6 +432,7 @@ class Test_Y_ARMA02_NoConst_CSS(CheckArmaResultsMixin):
 
 
 # NOTE: our results are close to --x-12-arima option and R
+@pytest.mark.not_vetted
 class Test_Y_ARMA11_Const_CSS(CheckArmaResultsMixin):
     @classmethod
     def setup_class(cls):
@@ -422,6 +445,7 @@ class Test_Y_ARMA11_Const_CSS(CheckArmaResultsMixin):
         cls.decimal_t = DECIMAL_1
 
 
+@pytest.mark.not_vetted
 class Test_Y_ARMA14_Const_CSS(CheckArmaResultsMixin):
     @classmethod
     def setup_class(cls):
@@ -433,6 +457,7 @@ class Test_Y_ARMA14_Const_CSS(CheckArmaResultsMixin):
         cls.decimal_pvalues = DECIMAL_1
 
 
+@pytest.mark.not_vetted
 class Test_Y_ARMA41_Const_CSS(CheckArmaResultsMixin):
     @classmethod
     def setup_class(cls):
@@ -446,6 +471,7 @@ class Test_Y_ARMA41_Const_CSS(CheckArmaResultsMixin):
         cls.decimal_bse = DECIMAL_1
 
 
+@pytest.mark.not_vetted
 class Test_Y_ARMA22_Const_CSS(CheckArmaResultsMixin):
     @classmethod
     def setup_class(cls):
@@ -457,6 +483,7 @@ class Test_Y_ARMA22_Const_CSS(CheckArmaResultsMixin):
         cls.decimal_pvalues = DECIMAL_1
 
 
+@pytest.mark.not_vetted
 class Test_Y_ARMA50_Const_CSS(CheckArmaResultsMixin):
     @classmethod
     def setup_class(cls):
@@ -469,6 +496,7 @@ class Test_Y_ARMA50_Const_CSS(CheckArmaResultsMixin):
         cls.decimal_cov_params = DECIMAL_2
 
 
+@pytest.mark.not_vetted
 class Test_Y_ARMA02_Const_CSS(CheckArmaResultsMixin):
     @classmethod
     def setup_class(cls):
@@ -478,6 +506,7 @@ class Test_Y_ARMA02_Const_CSS(CheckArmaResultsMixin):
         cls.res2 = results_arma.Y_arma02c("css")
 
 
+@pytest.mark.not_vetted
 def test_reset_trend():
     endog = y_arma[:, 0]
     mod = ARMA(endog, order=(1, 1))
@@ -486,6 +515,7 @@ def test_reset_trend():
     assert len(res1.params) == len(res2.params) + 1
 
 
+@pytest.mark.not_vetted
 @pytest.mark.slow
 def test_start_params_bug():
     data = np.array([1368., 1187, 1090, 1439, 2362, 2783, 2869, 2512, 1804,
@@ -553,6 +583,7 @@ def test_start_params_bug():
         res = ARMA(data, order=(4,1)).fit(start_ar_lags=5, disp=-1)
 
 
+@pytest.mark.not_vetted
 class Test_ARIMA101(CheckArmaResultsMixin):
     # just make sure this works
     @classmethod
@@ -567,6 +598,7 @@ class Test_ARIMA101(CheckArmaResultsMixin):
         cls.res2.k_ma = 1
 
 
+@pytest.mark.not_vetted
 class Test_ARIMA111(CheckArimaResultsMixin, CheckForecastMixin,
                     CheckDynamicForecastMixin):
     @classmethod
@@ -598,6 +630,7 @@ class Test_ARIMA111(CheckArimaResultsMixin, CheckForecastMixin,
         assert_almost_equal(self.res1.mafreq, [0.0000], 4)
 
 
+@pytest.mark.not_vetted
 class Test_ARIMA111CSS(CheckArimaResultsMixin, CheckForecastMixin,
                        CheckDynamicForecastMixin):
     @classmethod
@@ -630,6 +663,7 @@ class Test_ARIMA111CSS(CheckArimaResultsMixin, CheckForecastMixin,
         cls.decimal_predict_levels = DECIMAL_2
 
 
+@pytest.mark.not_vetted
 class Test_ARIMA112CSS(CheckArimaResultsMixin):
     @classmethod
     def setup_class(cls):
@@ -683,6 +717,7 @@ class Test_ARIMA112CSS(CheckArimaResultsMixin):
 #         conf_int)              = cls.res1.forecast(25)
 
 
+@pytest.mark.not_vetted
 def test_arima_predict_mle_dates():
     cpi = datasets.macrodata.load().data['cpi']
     res1 = ARIMA(cpi, (4, 1, 1), dates=cpi_dates, freq='Q').fit(disp=-1)
@@ -716,9 +751,9 @@ def test_arima_predict_mle_dates():
     assert_almost_equal(fv, fcdyn2[24:227 + 1], DECIMAL_4)
 
 
+@pytest.mark.not_vetted
 def test_arma_predict_mle_dates():
-    from sm2.datasets.sunspots import load
-    sunspots = load().data['SUNACTIVITY']
+    sunspots = datasets.sunspots.load().data['SUNACTIVITY']
     mod = ARMA(sunspots, (9, 0), dates=sun_dates, freq='A')
     mod.method = 'mle'
 
@@ -733,6 +768,7 @@ def test_arma_predict_mle_dates():
     tm.assert_index_equal(mod.data.predict_dates, sun_predict_dates)
 
 
+@pytest.mark.not_vetted
 def test_arima_predict_css_dates():
     cpi = datasets.macrodata.load().data['cpi']
     res1 = ARIMA(cpi, (4, 1, 1), dates=cpi_dates, freq='Q').fit(disp=-1,
@@ -773,14 +809,15 @@ def test_arima_predict_css_dates():
     assert_almost_equal(fv, fcdyn2[24:227+1], DECIMAL_4)
 
 
+@pytest.mark.not_vetted
 def test_arma_predict_css_dates():
-    from sm2.datasets.sunspots import load
-    sunspots = load().data['SUNACTIVITY']
+    sunspots = datasets.sunspots.load().data['SUNACTIVITY']
     mod = ARMA(sunspots, (9,0), dates=sun_dates, freq='A')
     mod.method = 'css'
     assert_raises(ValueError, mod._get_prediction_index, *('1701', '1751', False))
 
 
+@pytest.mark.not_vetted
 def test_arima_predict_mle():
     cpi = datasets.macrodata.load().data['cpi']
     res1 = ARIMA(cpi, (4,1,1)).fit(disp=-1)
@@ -937,9 +974,10 @@ def _check_end(model, given, end_expect, out_of_sample_expect):
     assert end == end_expect
     assert out_of_sample == out_of_sample_expect
 
+
+@pytest.mark.not_vetted
 def test_arma_predict_indices():
-    from sm2.datasets.sunspots import load
-    sunspots = load().data['SUNACTIVITY']
+    sunspots = datasets.sunspots.load().data['SUNACTIVITY']
     model = ARMA(sunspots, (9, 0), dates=sun_dates, freq='A')
     model.method = 'mle'
 
@@ -1008,9 +1046,10 @@ def test_arma_predict_indices():
         _check_end(*((model,)+case))
 
 
+@pytest.mark.not_vetted
 def test_arima_predict_indices():
     cpi = datasets.macrodata.load().data['cpi']
-    model = ARIMA(cpi, (4,1,1), dates=cpi_dates, freq='Q')
+    model = ARIMA(cpi, (4, 1, 1), dates=cpi_dates, freq='Q')
     model.method = 'mle'
 
     # starting indices
@@ -1142,6 +1181,7 @@ def test_arima_predict_indices():
         _check_end(*((model,)+case))
 
 
+@pytest.mark.not_vetted
 def test_arima_predict_indices_css():
     cpi = datasets.macrodata.load().data['cpi']
     #NOTE: Doing no-constant for now to kick the conditional exogenous
@@ -1156,6 +1196,7 @@ def test_arima_predict_indices_css():
     assert_raises(ValueError, model._get_prediction_index, *(2, None, True))
 
 
+@pytest.mark.not_vetted
 def test_arima_predict_css():
     cpi = datasets.macrodata.load().data['cpi']
     #NOTE: Doing no-constant for now to kick the conditional exogenous
@@ -1293,6 +1334,7 @@ def test_arima_predict_css():
     assert_almost_equal(fv, fcdyn[5:203], DECIMAL_4)
 
 
+@pytest.mark.not_vetted
 def test_arima_predict_css_diffs():
 
     cpi = datasets.macrodata.load().data['cpi']
@@ -1434,6 +1476,7 @@ def test_arima_predict_css_diffs():
     assert_almost_equal(fv, fcdyn[5:203], DECIMAL_4)
 
 
+@pytest.mark.not_vetted
 def test_arima_predict_mle_diffs():
 
     cpi = datasets.macrodata.load().data['cpi']
@@ -1572,6 +1615,7 @@ def test_arima_predict_mle_diffs():
     assert_almost_equal(fv, fcdyn[5:203], DECIMAL_4)
 
 
+@pytest.mark.not_vetted
 def test_arima_wrapper():
     cpi = datasets.macrodata.load_pandas().data['cpi']
     cpi.index = pd.Index(cpi_dates)
@@ -1583,6 +1627,7 @@ def test_arima_wrapper():
     assert res.model.endog_names == 'D.cpi'
 
 
+@pytest.mark.not_vetted
 def test_1dexog():
     # smoke test, this will raise an error if broken
     dta = datasets.macrodata.load_pandas().data
@@ -1604,6 +1649,7 @@ def test_1dexog():
         mod.predict(dta.index[-10], dta.index[-1], exog=dta['m1'][-10:], dynamic=True)
 
 
+@pytest.mark.not_vetted
 def test_arima_predict_bug():
     #predict_start_date wasn't getting set on start = None
     from sm2.datasets import sunspots
@@ -1623,6 +1669,7 @@ def test_arima_predict_bug():
     assert predict.index.equals(predict_dates)
 
 
+@pytest.mark.not_vetted
 def test_arima_predict_q2():
     # bug with q > 1 for arima predict
     inv = datasets.macrodata.load().data['realinv']
@@ -1634,6 +1681,7 @@ def test_arima_predict_q2():
                         5)
 
 
+@pytest.mark.not_vetted
 def test_arima_predict_pandas_nofreq():
     # this is issue 712
     dates = ["2010-01-04", "2010-01-05", "2010-01-06", "2010-01-07",
@@ -1677,6 +1725,7 @@ def test_arima_predict_pandas_nofreq():
     assert predict.index.equals(data.index[2:10])
 
 
+@pytest.mark.not_vetted
 def test_arima_predict_exog():
     # check 625 and 626
     #from sm2.tsa.arima_process import arma_generate_sample
@@ -1736,6 +1785,7 @@ def test_arima_predict_exog():
     #assert_almost_equal(predict, predict_expected.values, 3)
 
 
+@pytest.mark.not_vetted
 def test_arima_no_diff():
     # issue 736
     # smoke test, predict will break if we have ARIMAResults but
@@ -1750,6 +1800,7 @@ def test_arima_no_diff():
     res.predict()
 
 
+@pytest.mark.not_vetted
 def test_arima_predict_noma():
     # issue 657
     # smoke test
@@ -1761,6 +1812,7 @@ def test_arima_predict_noma():
     arma_res.forecast(1)
 
 
+@pytest.mark.not_vetted
 def test_arimax():
     dta = datasets.macrodata.load_pandas().data
     dates = pd.date_range("1959", periods=len(dta), freq='Q')
@@ -1808,6 +1860,7 @@ def test_arimax():
     assert_almost_equal(res.params.values, params, 3)
 
 
+@pytest.mark.not_vetted
 def test_bad_start_params():
     endog = np.array([820.69093, 781.0103028, 785.8786988, 767.64282267,
          778.9837648 ,   824.6595702 ,   813.01877867,   751.65598567,
@@ -1829,6 +1882,7 @@ def test_bad_start_params():
     assert_raises(ValueError, mod.fit)
 
 
+@pytest.mark.not_vetted
 def test_arima_small_data_bug():
     # Issue GH#1038, too few observations with given order
     vals = [96.2, 98.3, 99.1, 95.5, 94.0, 87.1, 87.9, 86.7402777504474]
@@ -1840,6 +1894,7 @@ def test_arima_small_data_bug():
     assert_raises(ValueError, mod.fit)
 
 
+@pytest.mark.not_vetted
 @pytest.mark.smoke
 def test_arima_dataframe_integer_name():
     # Smoke Test for GH#1038
@@ -1852,6 +1907,7 @@ def test_arima_dataframe_integer_name():
     mod = ARIMA(df, (2, 0, 2))
 
 
+@pytest.mark.not_vetted
 def test_arima_exog_predict_1d():
     # test GH#1067
     np.random.seed(12345)
@@ -1862,6 +1918,7 @@ def test_arima_exog_predict_1d():
     results = mod.forecast(steps=10, alpha=0.05, exog=newx)
 
 
+@pytest.mark.not_vetted
 def test_arima_1123():
     # test ARMAX predict when trend is none
     np.random.seed(12345)
@@ -1905,6 +1962,7 @@ def test_arima_1123():
     assert_almost_equal(fc[2][0], [0.582485, 4.379952], 6)
 
 
+@pytest.mark.not_vetted
 def test_small_data():
     # GH#1146
     y = [-1214.360173, -1848.209905, -2100.918158, -3647.483678, -4711.186773]
@@ -1926,6 +1984,7 @@ def test_small_data():
         res = mod.fit(disp=0, start_params=[np.mean(y), .1, .1, .1])
 
 
+@pytest.mark.not_vetted
 class TestARMA00(object):
 
     @classmethod
@@ -1994,6 +2053,7 @@ class TestARMA00(object):
         pass
 
 
+@pytest.mark.not_vetted
 def test_arima_dates_startatend():
     # bug
     np.random.seed(18)
@@ -2007,8 +2067,8 @@ def test_arima_dates_startatend():
     assert_almost_equal(pred.values[0], fc)
 
 
+@pytest.mark.not_vetted
 def test_arma_missing():
-    
     # GH#1343
     y = np.random.random(40)
     y[-1] = np.nan
@@ -2016,6 +2076,7 @@ def test_arma_missing():
         ARMA(y, (1, 0), missing='raise')
 
 
+@pytest.mark.not_vetted
 @pytest.mark.skipif('not have_matplotlib')
 def test_plot_predict():
     from sm2.datasets.sunspots import load_pandas
@@ -2031,7 +2092,7 @@ def test_plot_predict():
     plt.close(fig)
 
 
-
+@pytest.mark.not_vetted
 def test_arima_diff2():
     dta = datasets.macrodata.load_pandas().data['cpi']
     dates = pd.date_range("1959", periods=len(dta), freq='Q')
@@ -2068,6 +2129,8 @@ def test_arima_diff2():
                      229.457]
     assert_almost_equal(predicted, predicted_res, 3)
 
+
+@pytest.mark.not_vetted
 @pytest.mark.skipif("scipy.__version__ < '0.16'")
 def test_arima111_predict_exog_2127():
     # regression test for issue GH#2127
@@ -2126,6 +2189,7 @@ def test_arima111_predict_exog_2127():
     assert_allclose(predicts, predicts_res, atol=5e-6)
 
 
+@pytest.mark.not_vetted
 def test_ARIMA_exog_predict():
     # test forecasting and dynamic prediction with exog against Stata
 
@@ -2239,6 +2303,7 @@ def test_ARIMA_exog_predict():
     assert_allclose(dpredict_002, res_d002[-len(dpredict_002):], rtol=1e-4, atol=1e-6)
 
 
+@pytest.mark.not_vetted
 def test_arima_fit_multiple_calls():
     y = [-1214.360173, -1848.209905, -2100.918158, -3647.483678, -4711.186773]
     mod = ARIMA(y, (1, 0, 2))
@@ -2274,6 +2339,7 @@ def test_arima_fit_multiple_calls():
     '''
 
 
+@pytest.mark.not_vetted
 def test_long_ar_start_params():
     np.random.seed(12345)
     arparams = np.array([1, -.75, .25])
@@ -2291,6 +2357,7 @@ def test_long_ar_start_params():
     assert_raises(ValueError, model.fit, start_ar_lags=nobs+5, disp=0)
 
 
+@pytest.mark.not_vetted
 @pytest.mark.skip(reason="fa not ported from upstream")
 def test_arma_pickle():
     fa = None   # dummy to avoid flake8 complaints until ported
@@ -2311,6 +2378,7 @@ def test_arma_pickle():
     assert_almost_equal(res.pvalues, pkl_res.pvalues)
 
 
+@pytest.mark.not_vetted
 def test_arima_pickle():
     endog = y_arma[:, 6]
     mod = ARIMA(endog, (1, 1, 1))
@@ -2326,6 +2394,7 @@ def test_arima_pickle():
     assert_almost_equal(res.pvalues, pkl_res.pvalues)
 
 
+@pytest.mark.not_vetted
 def test_arima_not_implemented():
     formula = ' WUE ~ 1 + SFO3 '
     data = [-1214.360173, -1848.209905, -2100.918158]

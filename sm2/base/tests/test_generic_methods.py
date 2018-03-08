@@ -564,6 +564,7 @@ def compare_waldres(res, wa, constrasts):
     '''
 
 
+@pytest.mark.not_vetted
 @pytest.mark.xfail
 class TestWaldAnovaOLSNoFormula(object):
     @classmethod

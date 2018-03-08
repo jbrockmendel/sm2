@@ -14,6 +14,7 @@ http://ideas.repec.org/c/boc/bocode/t871803.html.
 
 import os
 
+import pytest
 import pandas as pd
 import numpy as np
 from numpy.testing import assert_almost_equal
@@ -28,6 +29,7 @@ res_file = os.path.join(curdir, "results", "bds_results.csv")
 results = pd.read_csv(res_file, header=None)
 
 
+@pytest.mark.not_vetted
 class CheckBDS(object):
     """
     Test values from Kanzler's MATLAB program bds.
@@ -43,6 +45,7 @@ class CheckBDS(object):
                             8)
 
 
+@pytest.mark.not_vetted
 class TestBDSSequence(CheckBDS):
     """
     BDS Test on np.arange(1, 26)
@@ -57,6 +60,7 @@ class TestBDSSequence(CheckBDS):
         cls.res = bds(cls.data, 5)
 
 
+@pytest.mark.not_vetted
 class TestBDSNormal(CheckBDS):
     """
     BDS Test on np.random.normal(size=25)
@@ -71,6 +75,7 @@ class TestBDSNormal(CheckBDS):
         cls.res = bds(cls.data, 5)
 
 
+@pytest.mark.not_vetted
 class TestBDSCombined(CheckBDS):
     """
     BDS Test on np.r_[np.random.normal(size=25), np.random.uniform(size=25)]
@@ -85,6 +90,7 @@ class TestBDSCombined(CheckBDS):
         cls.res = bds(cls.data, 5)
 
 
+@pytest.mark.not_vetted
 class TestBDSGDPC1(CheckBDS):
     """
     BDS Test on GDPC1: 1947Q1 - 2013Q1

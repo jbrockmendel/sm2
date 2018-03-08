@@ -58,28 +58,20 @@ try:
 except:
     pass
 
-date_indexes = [
-    (x, None) for x in base_date_indexes]
-period_indexes = [
-    (x, None) for x in base_period_indexes]
+date_indexes = [(x, None) for x in base_date_indexes]
+period_indexes = [(x, None) for x in base_period_indexes]
 
-numpy_datestr_indexes = [
-    (x.map(str), x.freq) for x in base_date_indexes]
-list_datestr_indexes = [
-    (x.tolist(), y) for x, y in numpy_datestr_indexes]
-series_datestr_indexes = [
-    (pd.Series(x), y) for x, y in list_datestr_indexes]
+numpy_datestr_indexes = [(x.map(str), x.freq) for x in base_date_indexes]
+list_datestr_indexes = [(x.tolist(), y) for x, y in numpy_datestr_indexes]
+series_datestr_indexes = [(pd.Series(x), y) for x, y in list_datestr_indexes]
 
-numpy_datetime_indexes = [
-    (x.to_datetime().to_pydatetime(), x.freq)
-    for x in base_date_indexes]
-list_datetime_indexes = [
-    (x.tolist(), y) for x, y in numpy_datetime_indexes]
-series_datetime_indexes = [
-    (pd.Series(x, dtype=object), y) for x, y in list_datetime_indexes]
+numpy_datetime_indexes = [(x.to_datetime().to_pydatetime(), x.freq)
+                          for x in base_date_indexes]
+list_datetime_indexes = [(x.tolist(), y) for x, y in numpy_datetime_indexes]
+series_datetime_indexes = [(pd.Series(x, dtype=object), y)
+                           for x, y in list_datetime_indexes]
 
-series_timestamp_indexes = [
-    (pd.Series(x), x.freq) for x in base_date_indexes]
+series_timestamp_indexes = [(pd.Series(x), x.freq) for x in base_date_indexes]
 
 # Supported increment indexes
 supported_increment_indexes = [(pd.Int64Index(np.arange(nobs)), None)]
@@ -87,11 +79,10 @@ supported_increment_indexes = [(pd.Int64Index(np.arange(nobs)), None)]
 # Supported date indexes
 # Only the Int64Index and the `date_indexes` are valid without
 # frequency information
-supported_date_indexes = (
-    numpy_datestr_indexes +
-    list_datestr_indexes + series_datestr_indexes +
-    numpy_datetime_indexes + list_datetime_indexes +
-    series_datetime_indexes + series_timestamp_indexes)
+supported_date_indexes = (numpy_datestr_indexes +
+                          list_datestr_indexes + series_datestr_indexes +
+                          numpy_datetime_indexes + list_datetime_indexes +
+                          series_datetime_indexes + series_timestamp_indexes)
 
 # Unsupported (but still valid) indexes
 unsupported_indexes = [
@@ -103,17 +94,15 @@ unsupported_indexes = [
     # Non-date-string indexes
     ([x for x in 'abcde'], None),
     # Non-date-object indexes
-    ([str, 1, 'a', -30.1, {}], None),
-]
+    ([str, 1, 'a', -30.1, {}], None)]
 
 # Unsupported date indexes (i.e. those without inferrable frequency)
-unsupported_date_indexes = [
-    (['1950', '1952', '1941', '1954', '1991'], None),
-    (['1950-01-01', '1950-01-02', '1950-01-03',
-      '1950-01-04', '1950-01-06'], None)
-]
+unsupported_date_indexes = [(['1950', '1952', '1941', '1954', '1991'], None),
+                            (['1950-01-01', '1950-01-02', '1950-01-03',
+                              '1950-01-04', '1950-01-06'], None)]
 
 
+@pytest.mark.not_vetted
 def test_instantiation_valid():
     tsa_model.__warningregistry__ = {}
 
@@ -449,6 +438,7 @@ def test_instantiation_valid():
         tsa_model.TimeSeriesModel(endog, freq=date_indexes[1][0].freq)
 
 
+@pytest.mark.not_vetted
 def test_prediction_increment_unsupported():
     # a. Generated from unsupported index
     endog = dta[2].copy()
@@ -503,6 +493,7 @@ def test_prediction_increment_unsupported():
     assert_equal(prediction_index.equals(pd.Index(np.arange(1, 6))), True)
 
 
+@pytest.mark.not_vetted
 def test_prediction_increment_nonpandas():
     endog = dta[0]
     mod = tsa_model.TimeSeriesModel(endog)
@@ -544,6 +535,7 @@ def test_prediction_increment_nonpandas():
     assert_equal(prediction_index is None, True)
 
 
+@pytest.mark.not_vetted
 def test_prediction_increment_pandas_noindex():
     endog = dta[2].copy()
     mod = tsa_model.TimeSeriesModel(endog)
@@ -588,6 +580,7 @@ def test_prediction_increment_pandas_noindex():
     assert_equal(prediction_index.equals(pd.Index(np.arange(1, 6))), True)
 
 
+@pytest.mark.not_vetted
 def test_prediction_increment_pandas_dates():
     # Date-based index
     endog = dta[2].copy()
@@ -643,6 +636,7 @@ def test_prediction_increment_pandas_dates():
     assert_equal(prediction_index.equals(desired_index), True)
 
 
+@pytest.mark.not_vetted
 def test_prediction_increment_pandas_dates_nanosecond():
     # This test is only valid if the version of Pandas has nanosecond support
     # and is > 0.14
@@ -705,6 +699,7 @@ def test_prediction_increment_pandas_dates_nanosecond():
     assert_equal(prediction_index.equals(desired_index), True)
 
 
+@pytest.mark.not_vetted
 def test_custom_index():
     tsa_model.__warningregistry__ = {}
 

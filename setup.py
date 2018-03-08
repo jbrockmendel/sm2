@@ -61,6 +61,8 @@ min_versions = {'numpy': '1.13.0',
                 'pandas': '0.22.0',
                 'patsy': '0.4.0'}
 
+setuptools_kwargs = {"zip_safe": False,
+                     "test_suite": "nose.collector"}
 
 # TODO: Can we just put this with the next (only) use of CYTHON_INSTALLED?
 min_cython_ver = '0.24'
@@ -71,8 +73,6 @@ try:
 except ImportError:
     _CYTHON_INSTALLED = False
 
-setuptools_kwargs = {"zip_safe": False,
-                     "test_suite": "nose.collector"}
 
 
 
@@ -507,30 +507,47 @@ for name, data in ext_data.items():
 '''
 
 
-'''
+
 def get_data_files():
-    sep = os.path.sep
-    # install the datasets
+    # this adds *.csv and *.dta files in datasets folders
+    # and *.csv and *.txt files in test/results folders
     data_files = {}
     root = os.path.join(curdir, "sm2", "datasets")
+    if not os.path.exists(root):
+        return []
     for i in os.listdir(root):
         if i is "tests":
             continue
         path = os.path.join(root, i)
         if os.path.isdir(path):
-            data_files.update({os.path.relpath(path, start=curdir).replace(sep, ".") : ["*.csv",
-                                                                  "*.dta"]})
+            key = os.path.relpath(path, start=curdir).replace(os.sep, ".")
+            data_files.update({key: ["*.csv", "*.dta"]})
+
     # add all the tests and results files
     for r, ds, fs in os.walk(os.path.join(curdir, "sm2")):
-        r_ = os.path.relpath(r, start=curdir)
-        if r_.endswith('results'):
-            data_files.update({r_.replace(sep, ".") : ["*.csv",
-                                                       "*.txt",
-                                                       "*.dta"]})
+        relpath = os.path.relpath(r, start=curdir)
+        if relpath.endswith('results'):
+            key = relpath.replace(os.sep, ".")
+            data_files.update({key: ["*.csv", "*.txt", "*.dta"]})
 
+    # Manually fill in the rest.  Upstream this was done _outside_ this call
+    data_files["sm2.datasets.tests"].append("*.zip")
+    data_files["sm2.iolib.tests.results"].append("*.dta")
+    data_files["sm2.stats.tests.results"].append("*.json")
+    data_files["sm2.tsa.vector_ar.tests.results"].append("*.npz")
+    # data files that don't follow the tests/results pattern. should fix.
+    data_files.update({"sm2.stats.tests" : ["*.txt"]})
+
+    data_files.update({"sm2.stats.libqsturng" : ["*.r", "*.txt", "*.dat"]})
+    data_files.update({"sm2.stats.libqsturng.tests" : ["*.csv", "*.dat"]})
+    data_files.update({"sm2.tsa.vector_ar.data" : ["*.dat"]})
+    data_files.update({"sm2.tsa.vector_ar.data" : ["*.dat"]})
+    # temporary, until moved:
+    data_files.update({"sm2.sandbox.regression.tests" : ["*.dta", "*.csv"]})
     return data_files
 
 
+'''
 if __name__ == "__main__":
     if os.path.exists('MANIFEST'):
         os.unlink('MANIFEST')
@@ -540,24 +557,6 @@ if __name__ == "__main__":
     setuptools_kwargs['setup_requires'] = setup_requires
     setuptools_kwargs['install_requires'] = install_requires
     write_version_py()
-
-    # this adds *.csv and *.dta files in datasets folders
-    # and *.csv and *.txt files in test/results folders
-    package_data = get_data_files()
-
-    package_data["sm2.datasets.tests"].append("*.zip")
-    package_data["sm2.iolib.tests.results"].append("*.dta")
-    package_data["sm2.stats.tests.results"].append("*.json")
-    package_data["sm2.tsa.vector_ar.tests.results"].append("*.npz")
-    # data files that don't follow the tests/results pattern. should fix.
-    package_data.update({"sm2.stats.tests" : ["*.txt"]})
-
-    package_data.update({"sm2.stats.libqsturng" : ["*.r", "*.txt", "*.dat"]})
-    package_data.update({"sm2.stats.libqsturng.tests" : ["*.csv", "*.dat"]})
-    package_data.update({"sm2.tsa.vector_ar.data" : ["*.dat"]})
-    package_data.update({"sm2.tsa.vector_ar.data" : ["*.dat"]})
-    # temporary, until moved:
-    package_data.update({"sm2.sandbox.regression.tests" : ["*.dta", "*.csv"]})
 
     #TODO: deal with this. Not sure if it ever worked for bdists
     #('docs/build/htmlhelp/statsmodelsdoc.chm',
@@ -584,7 +583,7 @@ setup(name=DISTNAME,
       platforms='any',
       cmdclass=cmdclass,
       packages=find_packages(),
-      # package_data=package_data,
+      # package_data=get_data_files(),
       include_package_data=False,  # True will install all files in repo
       extras_require=extras,
       **setuptools_kwargs)
