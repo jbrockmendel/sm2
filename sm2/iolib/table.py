@@ -894,6 +894,7 @@ output_format_translations = dict(htm='html',
                                   ltx='latex')
 
 
+# TODO: privatize?
 def get_output_format(output_format):
     if output_format not in ('html', 'txt', 'latex', 'csv'):
         try:

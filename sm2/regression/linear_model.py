@@ -268,8 +268,8 @@ class RegressionModel(base.LikelihoodModel):
                     hasattr(self, 'rank')):
 
                 self.pinv_wexog, singular_values = pinv_extended(self.wexog)
-                self.normalized_cov_params = np.dot(
-                    self.pinv_wexog, np.transpose(self.pinv_wexog))
+                self.normalized_cov_params = np.dot(self.pinv_wexog,
+                                                    self.pinv_wexog.T)
 
                 # Cache these singular values for use later.
                 self.wexog_singular_values = singular_values

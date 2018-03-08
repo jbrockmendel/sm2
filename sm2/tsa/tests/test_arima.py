@@ -124,20 +124,25 @@ class CheckArmaResultsMixin(object):
     decimal_maroots = DECIMAL_4
     def test_maroots(self):
         assert_almost_equal(self.res1.maroots, self.res2.maroots,
-                    self.decimal_maroots)
+                            self.decimal_maroots)
 
     decimal_bse = DECIMAL_2
     def test_bse(self):
-        assert_almost_equal(self.res1.bse, self.res2.bse, self.decimal_bse)
+        assert_almost_equal(self.res1.bse,
+                            self.res2.bse,
+                            self.decimal_bse)
 
     decimal_cov_params = DECIMAL_4
     def test_covparams(self):
-        assert_almost_equal(self.res1.cov_params(), self.res2.cov_params,
-                self.decimal_cov_params)
+        assert_almost_equal(self.res1.cov_params(),
+                            self.res2.cov_params,
+                            self.decimal_cov_params)
 
     decimal_hqic = DECIMAL_4
     def test_hqic(self):
-        assert_almost_equal(self.res1.hqic, self.res2.hqic, self.decimal_hqic)
+        assert_almost_equal(self.res1.hqic,
+                            self.res2.hqic,
+                            self.decimal_hqic)
 
     decimal_llf = DECIMAL_4
     def test_llf(self):
@@ -150,24 +155,29 @@ class CheckArmaResultsMixin(object):
 
     decimal_fittedvalues = DECIMAL_4
     def test_fittedvalues(self):
-        assert_almost_equal(self.res1.fittedvalues, self.res2.fittedvalues,
-                self.decimal_fittedvalues)
+        assert_almost_equal(self.res1.fittedvalues,
+                            self.res2.fittedvalues,
+                            self.decimal_fittedvalues)
 
     decimal_pvalues = DECIMAL_2
     def test_pvalues(self):
-        assert_almost_equal(self.res1.pvalues, self.res2.pvalues,
-                    self.decimal_pvalues)
+        assert_almost_equal(self.res1.pvalues,
+                            self.res2.pvalues,
+                            self.decimal_pvalues)
 
     decimal_t = DECIMAL_2 # only 2 decimal places in gretl output
     def test_tvalues(self):
-        assert_almost_equal(self.res1.tvalues, self.res2.tvalues,
+        assert_almost_equal(self.res1.tvalues,
+                            self.res2.tvalues,
                             self.decimal_t)
 
     decimal_sigma2 = DECIMAL_4
     def test_sigma2(self):
-        assert_almost_equal(self.res1.sigma2, self.res2.sigma2,
-                self.decimal_sigma2)
+        assert_almost_equal(self.res1.sigma2,
+                            self.res2.sigma2,
+                            self.decimal_sigma2)
 
+    @pytest.mark.smoke
     def test_summary(self):
         # smoke tests
         table = self.res1.summary()
@@ -177,20 +187,23 @@ class CheckArmaResultsMixin(object):
 class CheckForecastMixin(object):
     decimal_forecast = DECIMAL_4
     def test_forecast(self):
-        assert_almost_equal(self.res1.forecast_res, self.res2.forecast,
-                self.decimal_forecast)
+        assert_almost_equal(self.res1.forecast_res,
+                            self.res2.forecast,
+                            self.decimal_forecast)
 
     decimal_forecasterr = DECIMAL_4
     def test_forecasterr(self):
-        assert_almost_equal(self.res1.forecast_err, self.res2.forecasterr,
-                self.decimal_forecasterr)
+        assert_almost_equal(self.res1.forecast_err,
+                            self.res2.forecasterr,
+                            self.decimal_forecasterr)
 
 
 @pytest.mark.not_vetted
 class CheckDynamicForecastMixin(object):
     decimal_forecast_dyn = 4
     def test_dynamic_forecast(self):
-        assert_almost_equal(self.res1.forecast_res_dyn, self.res2.forecast_dyn,
+        assert_almost_equal(self.res1.forecast_res_dyn,
+                            self.res2.forecast_dyn,
                             self.decimal_forecast_dyn)
 
     #def test_forecasterr(self):
@@ -208,8 +221,9 @@ class CheckArimaResultsMixin(CheckArmaResultsMixin):
 
     decimal_predict_levels = DECIMAL_4
     def test_predict_levels(self):
-        assert_almost_equal(self.res1.predict(typ='levels'), self.res2.linear,
-                self.decimal_predict_levels)
+        assert_almost_equal(self.res1.predict(typ='levels'),
+                            self.res2.linear,
+                            self.decimal_predict_levels)
 
 
 @pytest.mark.not_vetted
@@ -217,7 +231,7 @@ class Test_Y_ARMA11_NoConst(CheckArmaResultsMixin, CheckForecastMixin):
     @classmethod
     def setup_class(cls):
         endog = y_arma[:,0]
-        cls.res1 = ARMA(endog, order=(1,1)).fit(trend='nc', disp=-1)
+        cls.res1 = ARMA(endog, order=(1, 1)).fit(trend='nc', disp=-1)
         (cls.res1.forecast_res, cls.res1.forecast_err,
                 confint) = cls.res1.forecast(10)
         cls.res2 = results_arma.Y_arma11()
@@ -236,21 +250,22 @@ class Test_Y_ARMA14_NoConst(CheckArmaResultsMixin):
     @classmethod
     def setup_class(cls):
         endog = y_arma[:,1]
-        cls.res1 = ARMA(endog, order=(1,4)).fit(trend='nc', disp=-1)
+        cls.res1 = ARMA(endog, order=(1, 4)).fit(trend='nc', disp=-1)
         cls.res2 = results_arma.Y_arma14()
 
 
 @pytest.mark.not_vetted
 @pytest.mark.slow
 class Test_Y_ARMA41_NoConst(CheckArmaResultsMixin, CheckForecastMixin):
+    decimal_maroots = DECIMAL_3
+
     @classmethod
     def setup_class(cls):
         endog = y_arma[:,2]
-        cls.res1 = ARMA(endog, order=(4,1)).fit(trend='nc', disp=-1)
+        cls.res1 = ARMA(endog, order=(4, 1)).fit(trend='nc', disp=-1)
         (cls.res1.forecast_res, cls.res1.forecast_err,
                 confint) = cls.res1.forecast(10)
         cls.res2 = results_arma.Y_arma41()
-        cls.decimal_maroots = DECIMAL_3
 
 
 @pytest.mark.not_vetted
@@ -258,7 +273,7 @@ class Test_Y_ARMA22_NoConst(CheckArmaResultsMixin):
     @classmethod
     def setup_class(cls):
         endog = y_arma[:,3]
-        cls.res1 = ARMA(endog, order=(2,2)).fit(trend='nc', disp=-1)
+        cls.res1 = ARMA(endog, order=(2, 2)).fit(trend='nc', disp=-1)
         cls.res2 = results_arma.Y_arma22()
 
 
@@ -267,7 +282,7 @@ class Test_Y_ARMA50_NoConst(CheckArmaResultsMixin, CheckForecastMixin):
     @classmethod
     def setup_class(cls):
         endog = y_arma[:,4]
-        cls.res1 = ARMA(endog, order=(5,0)).fit(trend='nc', disp=-1)
+        cls.res1 = ARMA(endog, order=(5, 0)).fit(trend='nc', disp=-1)
         (cls.res1.forecast_res, cls.res1.forecast_err,
                 confint) = cls.res1.forecast(10)
         cls.res2 = results_arma.Y_arma50()
@@ -278,7 +293,7 @@ class Test_Y_ARMA02_NoConst(CheckArmaResultsMixin):
     @classmethod
     def setup_class(cls):
         endog = y_arma[:,5]
-        cls.res1 = ARMA(endog, order=(0,2)).fit(trend='nc', disp=-1)
+        cls.res1 = ARMA(endog, order=(0, 2)).fit(trend='nc', disp=-1)
         cls.res2 = results_arma.Y_arma02()
 
 
@@ -287,7 +302,7 @@ class Test_Y_ARMA11_Const(CheckArmaResultsMixin, CheckForecastMixin):
     @classmethod
     def setup_class(cls):
         endog = y_arma[:,6]
-        cls.res1 = ARMA(endog, order=(1,1)).fit(trend="c", disp=-1)
+        cls.res1 = ARMA(endog, order=(1, 1)).fit(trend="c", disp=-1)
         (cls.res1.forecast_res, cls.res1.forecast_err,
                 confint) = cls.res1.forecast(10)
         cls.res2 = results_arma.Y_arma11c()
@@ -298,24 +313,25 @@ class Test_Y_ARMA14_Const(CheckArmaResultsMixin):
     @classmethod
     def setup_class(cls):
         endog = y_arma[:,7]
-        cls.res1 = ARMA(endog, order=(1,4)).fit(trend="c", disp=-1)
+        cls.res1 = ARMA(endog, order=(1, 4)).fit(trend="c", disp=-1)
         cls.res2 = results_arma.Y_arma14c()
 
 
 @pytest.mark.not_vetted
 class Test_Y_ARMA41_Const(CheckArmaResultsMixin, CheckForecastMixin):
+    decimal_cov_params = DECIMAL_3
+    decimal_fittedvalues = DECIMAL_3
+    decimal_resid = DECIMAL_3
+    decimal_params = DECIMAL_3
+
     @classmethod
     def setup_class(cls):
         endog = y_arma[:,8]
         cls.res2 = results_arma.Y_arma41c()
-        cls.res1 = ARMA(endog, order=(4,1)).fit(trend="c", disp=-1,
+        cls.res1 = ARMA(endog, order=(4, 1)).fit(trend="c", disp=-1,
                                                 start_params=cls.res2.params)
         (cls.res1.forecast_res, cls.res1.forecast_err,
                 confint) = cls.res1.forecast(10)
-        cls.decimal_cov_params = DECIMAL_3
-        cls.decimal_fittedvalues = DECIMAL_3
-        cls.decimal_resid = DECIMAL_3
-        cls.decimal_params = DECIMAL_3
 
 
 @pytest.mark.not_vetted
@@ -323,7 +339,7 @@ class Test_Y_ARMA22_Const(CheckArmaResultsMixin):
     @classmethod
     def setup_class(cls):
         endog = y_arma[:,9]
-        cls.res1 = ARMA(endog, order=(2,2)).fit(trend="c", disp=-1)
+        cls.res1 = ARMA(endog, order=(2, 2)).fit(trend="c", disp=-1)
         cls.res2 = results_arma.Y_arma22c()
 
 
@@ -332,7 +348,7 @@ class Test_Y_ARMA50_Const(CheckArmaResultsMixin, CheckForecastMixin):
     @classmethod
     def setup_class(cls):
         endog = y_arma[:,10]
-        cls.res1 = ARMA(endog, order=(5,0)).fit(trend="c", disp=-1)
+        cls.res1 = ARMA(endog, order=(5, 0)).fit(trend="c", disp=-1)
         (cls.res1.forecast_res, cls.res1.forecast_err,
                 confint) = cls.res1.forecast(10)
         cls.res2 = results_arma.Y_arma50c()
@@ -343,65 +359,69 @@ class Test_Y_ARMA02_Const(CheckArmaResultsMixin):
     @classmethod
     def setup_class(cls):
         endog = y_arma[:,11]
-        cls.res1 = ARMA(endog, order=(0,2)).fit(trend="c", disp=-1)
+        cls.res1 = ARMA(endog, order=(0, 2)).fit(trend="c", disp=-1)
         cls.res2 = results_arma.Y_arma02c()
 
 
 # cov_params and tvalues are off still but not as much vs. R
 @pytest.mark.not_vetted
 class Test_Y_ARMA11_NoConst_CSS(CheckArmaResultsMixin):
+    decimal_t = DECIMAL_1
+
     @classmethod
     def setup_class(cls):
         endog = y_arma[:,0]
-        cls.res1 = ARMA(endog, order=(1,1)).fit(method="css", trend='nc',
+        cls.res1 = ARMA(endog, order=(1, 1)).fit(method="css", trend='nc',
                             disp=-1)
         cls.res2 = results_arma.Y_arma11("css")
-        cls.decimal_t = DECIMAL_1
 
 
 # better vs. R
 @pytest.mark.not_vetted
 class Test_Y_ARMA14_NoConst_CSS(CheckArmaResultsMixin):
+    decimal_fittedvalues = DECIMAL_3
+    decimal_resid = DECIMAL_3
+    decimal_t = DECIMAL_1
+
     @classmethod
     def setup_class(cls):
         endog = y_arma[:,1]
-        cls.res1 = ARMA(endog, order=(1,4)).fit(method="css", trend='nc',
-                            disp=-1)
+        cls.res1 = ARMA(endog, order=(1, 4)).fit(method="css", trend='nc',
+                        disp=-1)
         cls.res2 = results_arma.Y_arma14("css")
-        cls.decimal_fittedvalues = DECIMAL_3
-        cls.decimal_resid = DECIMAL_3
-        cls.decimal_t = DECIMAL_1
 
 
 # bse, etc. better vs. R
 # maroot is off because maparams is off a bit (adjust tolerance?)
 @pytest.mark.not_vetted
 class Test_Y_ARMA41_NoConst_CSS(CheckArmaResultsMixin):
+    decimal_t = DECIMAL_1
+    decimal_pvalues = 0
+    decimal_cov_params = DECIMAL_3
+    decimal_maroots = DECIMAL_1
+
     @classmethod
     def setup_class(cls):
         endog = y_arma[:,2]
-        cls.res1 = ARMA(endog, order=(4,1)).fit(method="css", trend='nc',
+        cls.res1 = ARMA(endog, order=(4, 1)).fit(method="css", trend='nc',
                         disp=-1)
         cls.res2 = results_arma.Y_arma41("css")
-        cls.decimal_t = DECIMAL_1
-        cls.decimal_pvalues = 0
-        cls.decimal_cov_params = DECIMAL_3
-        cls.decimal_maroots = DECIMAL_1
 
 
 #same notes as above
 @pytest.mark.not_vetted
 class Test_Y_ARMA22_NoConst_CSS(CheckArmaResultsMixin):
+    decimal_t = DECIMAL_1
+    decimal_resid = DECIMAL_3
+    decimal_pvalues = DECIMAL_1
+    decimal_fittedvalues = DECIMAL_3
+
     @classmethod
     def setup_class(cls):
         endog = y_arma[:,3]
-        cls.res1 = ARMA(endog, order=(2,2)).fit(method="css", trend='nc',
+        cls.res1 = ARMA(endog, order=(2, 2)).fit(method="css", trend='nc',
                             disp=-1)
         cls.res2 = results_arma.Y_arma22("css")
-        cls.decimal_t = DECIMAL_1
-        cls.decimal_resid = DECIMAL_3
-        cls.decimal_pvalues = DECIMAL_1
-        cls.decimal_fittedvalues = DECIMAL_3
 
 
 #NOTE: gretl just uses least squares for AR CSS
@@ -412,14 +432,15 @@ class Test_Y_ARMA22_NoConst_CSS(CheckArmaResultsMixin):
 # consistent with the rest of the models
 @pytest.mark.not_vetted
 class Test_Y_ARMA50_NoConst_CSS(CheckArmaResultsMixin):
+    decimal_t = 0
+    decimal_llf = DECIMAL_1 # looks like rounding error?
+
     @classmethod
     def setup_class(cls):
         endog = y_arma[:,4]
         cls.res1 = ARMA(endog, order=(5,0)).fit(method="css", trend='nc',
                             disp=-1)
         cls.res2 = results_arma.Y_arma50("css")
-        cls.decimal_t = 0
-        cls.decimal_llf = DECIMAL_1 # looks like rounding error?
 
 
 @pytest.mark.not_vetted
@@ -435,66 +456,71 @@ class Test_Y_ARMA02_NoConst_CSS(CheckArmaResultsMixin):
 # NOTE: our results are close to --x-12-arima option and R
 @pytest.mark.not_vetted
 class Test_Y_ARMA11_Const_CSS(CheckArmaResultsMixin):
+    decimal_params = DECIMAL_3
+    decimal_cov_params = DECIMAL_3
+    decimal_t = DECIMAL_1
+
     @classmethod
     def setup_class(cls):
         endog = y_arma[:,6]
         cls.res1 = ARMA(endog, order=(1,1)).fit(trend="c", method="css",
                         disp=-1)
         cls.res2 = results_arma.Y_arma11c("css")
-        cls.decimal_params = DECIMAL_3
-        cls.decimal_cov_params = DECIMAL_3
-        cls.decimal_t = DECIMAL_1
 
 
 @pytest.mark.not_vetted
 class Test_Y_ARMA14_Const_CSS(CheckArmaResultsMixin):
+    decimal_t = DECIMAL_1
+    decimal_pvalues = DECIMAL_1
+
     @classmethod
     def setup_class(cls):
         endog = y_arma[:,7]
         cls.res1 = ARMA(endog, order=(1,4)).fit(trend="c", method="css",
                         disp=-1)
         cls.res2 = results_arma.Y_arma14c("css")
-        cls.decimal_t = DECIMAL_1
-        cls.decimal_pvalues = DECIMAL_1
 
 
 @pytest.mark.not_vetted
 class Test_Y_ARMA41_Const_CSS(CheckArmaResultsMixin):
+    decimal_t = DECIMAL_1
+    decimal_cov_params = DECIMAL_1
+    decimal_maroots = DECIMAL_3
+    decimal_bse = DECIMAL_1
+
     @classmethod
     def setup_class(cls):
         endog = y_arma[:,8]
         cls.res1 = ARMA(endog, order=(4,1)).fit(trend="c", method="css",
                         disp=-1)
         cls.res2 = results_arma.Y_arma41c("css")
-        cls.decimal_t = DECIMAL_1
-        cls.decimal_cov_params = DECIMAL_1
-        cls.decimal_maroots = DECIMAL_3
-        cls.decimal_bse = DECIMAL_1
 
 
 @pytest.mark.not_vetted
 class Test_Y_ARMA22_Const_CSS(CheckArmaResultsMixin):
+    decimal_t = 0
+    decimal_pvalues = DECIMAL_1
+
     @classmethod
     def setup_class(cls):
         endog = y_arma[:,9]
         cls.res1 = ARMA(endog, order=(2,2)).fit(trend="c", method="css",
                         disp=-1)
         cls.res2 = results_arma.Y_arma22c("css")
-        cls.decimal_t = 0
-        cls.decimal_pvalues = DECIMAL_1
 
 
 @pytest.mark.not_vetted
 class Test_Y_ARMA50_Const_CSS(CheckArmaResultsMixin):
+    decimal_t = DECIMAL_1
+    decimal_params = DECIMAL_3
+    decimal_cov_params = DECIMAL_2
+
     @classmethod
     def setup_class(cls):
         endog = y_arma[:,10]
         cls.res1 = ARMA(endog, order=(5,0)).fit(trend="c", method="css",
                         disp=-1)
         cls.res2 = results_arma.Y_arma50c("css")
-        cls.decimal_t = DECIMAL_1
-        cls.decimal_params = DECIMAL_3
-        cls.decimal_cov_params = DECIMAL_2
 
 
 @pytest.mark.not_vetted
@@ -602,17 +628,18 @@ class Test_ARIMA101(CheckArmaResultsMixin):
 @pytest.mark.not_vetted
 class Test_ARIMA111(CheckArimaResultsMixin, CheckForecastMixin,
                     CheckDynamicForecastMixin):
+    decimal_llf = 3
+    decimal_aic = 3
+    decimal_bic = 3
+    decimal_cov_params = 2 # this used to be better?
+    decimal_t = 0
+
     @classmethod
     def setup_class(cls):
         cpi = datasets.macrodata.load().data['cpi']
         cls.res1 = ARIMA(cpi, (1,1,1)).fit(disp=-1)
         cls.res2 = results_arima.ARIMA111()
         # make sure endog names changes to D.cpi
-        cls.decimal_llf = 3
-        cls.decimal_aic = 3
-        cls.decimal_bic = 3
-        cls.decimal_cov_params = 2 # this used to be better?
-        cls.decimal_t = 0
         (cls.res1.forecast_res,
          cls.res1.forecast_err,
          conf_int)              = cls.res1.forecast(25)
@@ -634,6 +661,22 @@ class Test_ARIMA111(CheckArimaResultsMixin, CheckForecastMixin,
 @pytest.mark.not_vetted
 class Test_ARIMA111CSS(CheckArimaResultsMixin, CheckForecastMixin,
                        CheckDynamicForecastMixin):
+    decimal_forecast = 2
+    decimal_forecast_dyn = 2
+    decimal_forecasterr = 3
+    # precisions
+    decimal_arroots = 3
+    decimal_cov_params = 3
+    decimal_hqic = 3
+    decimal_maroots = 3
+    decimal_t = 1
+    decimal_fittedvalues = 2 # because of rounding when copying
+    decimal_resid = 2
+    #decimal_llf = 3
+    #decimal_aic = 3
+    #decimal_bic = 3
+    decimal_predict_levels = DECIMAL_2
+
     @classmethod
     def setup_class(cls):
         cpi = datasets.macrodata.load().data['cpi']
@@ -644,28 +687,23 @@ class Test_ARIMA111CSS(CheckArimaResultsMixin, CheckForecastMixin,
         (cls.res1.forecast_res,
          cls.res1.forecast_err,
          conf_int)              = cls.res1.forecast(25)
-        cls.decimal_forecast = 2
-        cls.decimal_forecast_dyn = 2
-        cls.decimal_forecasterr = 3
         cls.res1.forecast_res_dyn = cls.res1.predict(start=164, end=164+63,
                                                  typ='levels', dynamic=True)
 
-        # precisions
-        cls.decimal_arroots = 3
-        cls.decimal_cov_params = 3
-        cls.decimal_hqic = 3
-        cls.decimal_maroots = 3
-        cls.decimal_t = 1
-        cls.decimal_fittedvalues = 2 # because of rounding when copying
-        cls.decimal_resid = 2
-        #cls.decimal_llf = 3
-        #cls.decimal_aic = 3
-        #cls.decimal_bic = 3
-        cls.decimal_predict_levels = DECIMAL_2
 
 
 @pytest.mark.not_vetted
 class Test_ARIMA112CSS(CheckArimaResultsMixin):
+    decimal_llf = 3
+    decimal_aic = 3
+    decimal_bic = 3
+    decimal_arroots = 3
+    decimal_maroots = 2
+    decimal_t = 1
+    decimal_resid = 2
+    decimal_fittedvalues = 3
+    decimal_predict_levels = DECIMAL_3
+
     @classmethod
     def setup_class(cls):
         cpi = datasets.macrodata.load().data['cpi']
@@ -675,9 +713,6 @@ class Test_ARIMA112CSS(CheckArimaResultsMixin):
         cls.res2 = results_arima.ARIMA112(method='css')
         cls.res2.fittedvalues = - cpi[1:-1] + cls.res2.linear
         # make sure endog names changes to D.cpi
-        cls.decimal_llf = 3
-        cls.decimal_aic = 3
-        cls.decimal_bic = 3
         #(cls.res1.forecast_res,
         # cls.res1.forecast_err,
         # conf_int)              = cls.res1.forecast(25)
@@ -691,12 +726,6 @@ class Test_ARIMA112CSS(CheckArimaResultsMixin):
         #cls.res1.forecast_res_dyn = self.predict(start=164, end=164+63,
         #                                         typ='levels', dynamic=True)
         # since we got from gretl don't have linear prediction in differences
-        cls.decimal_arroots = 3
-        cls.decimal_maroots = 2
-        cls.decimal_t = 1
-        cls.decimal_resid = 2
-        cls.decimal_fittedvalues = 3
-        cls.decimal_predict_levels = DECIMAL_3
 
     def test_freq(self):
         assert_almost_equal(self.res1.arfreq, [0.5000], 4)
@@ -1702,13 +1731,18 @@ def test_arima_predict_pandas_nofreq():
     assert predict.index.equals(data.index)
 
     # check that this raises an exception when date not on index
-    assert_raises(KeyError, arma.predict, start="2010-1-9", end=10)
-    assert_raises(KeyError, arma.predict, start="2010-1-9", end="2010-1-17")
+    with pytest.raises(KeyError):
+        arma.predict(start="2010-1-9", end=10)
+
+    with pytest.raises(KeyError):
+        arma.predict(start="2010-1-9", end="2010-1-17")
 
     # raise because end not on index
-    assert_raises(KeyError, arma.predict, start="2010-1-4", end="2010-1-10")
+    with pytest.raises(KeyError):
+        arma.predict(start="2010-1-4", end="2010-1-10")
     # raise because end not on index
-    assert_raises(KeyError, arma.predict, start=3, end="2010-1-10")
+    with pytest.raises(KeyError):
+        arma.predict(start=3, end="2010-1-10")
 
     predict = arma.predict(start="2010-1-7", end=10) # should be of length 10
     assert len(predict) == 8
@@ -1730,7 +1764,7 @@ def test_arima_predict_pandas_nofreq():
 
 @pytest.mark.not_vetted
 def test_arima_predict_exog():
-    # check 625 and 626
+    # check GH#625 and GH#626
     #from sm2.tsa.arima_process import arma_generate_sample
     #arparams = np.array([1, -.45, .25])
     #maparams = np.array([1, .15])
@@ -1865,7 +1899,9 @@ def test_arimax():
 
 @pytest.mark.not_vetted
 def test_bad_start_params():
-    endog = np.array([820.69093, 781.0103028, 785.8786988, 767.64282267,
+    # TODO: what is bad about these params??
+    endog = np.array([
+         820.69093, 781.0103028, 785.8786988, 767.64282267,
          778.9837648 ,   824.6595702 ,   813.01877867,   751.65598567,
          753.431091  ,   746.920813  ,   795.6201904 ,   772.65732833,
          793.4486454 ,   868.8457766 ,   823.07226547,   783.09067747,
@@ -1874,27 +1910,19 @@ def test_bad_start_params():
          773.70552987,   777.3726522 ,   811.83444853,   840.95489133,
          777.51031933,   745.90077307,   806.95113093,   805.77521973,
          756.70927733,   749.89091773,  1694.2266924 ,  2398.4802244 ,
-        1434.6728516 ,   909.73940427,   929.01291907,   769.07561453,
+         1434.6728516 ,   909.73940427,   929.01291907,   769.07561453,
          801.1112548 ,   796.16163313,   817.2496376 ,   857.73046447,
          838.849345  ,   761.92338873,   731.7842242 ,   770.4641844 ])
     mod = ARMA(endog, (15, 0))
-    assert_raises(ValueError, mod.fit)
+    with pytest.raises(ValueError):
+        mod.fit()
 
     inv = datasets.macrodata.load().data['realinv']
-    arima_mod = ARIMA(np.log(inv), (1,1,2))
-    assert_raises(ValueError, mod.fit)
+    arima_mod = ARIMA(np.log(inv), (1, 1, 2))
+    with pytest.raises(ValueError):
+        mod.fit()  # WTF is this supposed to be arima_mod.fit()?
 
 
-@pytest.mark.not_vetted
-def test_arima_small_data_bug():
-    # Issue GH#1038, too few observations with given order
-    vals = [96.2, 98.3, 99.1, 95.5, 94.0, 87.1, 87.9, 86.7402777504474]
-
-    dr = pd.date_range("1990", periods=len(vals), freq='Q')
-    ts = pd.Series(vals, index=dr)
-    df = pd.DataFrame(ts)
-    mod = ARIMA(df, (2, 0, 2))
-    assert_raises(ValueError, mod.fit)
 
 
 @pytest.mark.not_vetted
@@ -1939,7 +1967,7 @@ def test_arima_1123():
 
     X = np.random.randn(nobs)
     y += 5 * X
-    mod = ARMA(y[:-1], order=(1,0), exog=X[:-1])
+    mod = ARMA(y[:-1], order=(1, 0), exog=X[:-1])
     res = mod.fit(trend='nc', disp=False)
     fc = res.forecast(exog=X[-1:])
     # results from gretl
@@ -2003,7 +2031,8 @@ class TestARMA00(object):
 
     def test_predictions(self):
         predictions = self.arma_00_res.predict()
-        assert_almost_equal(self.y.mean() * np.ones_like(predictions), predictions)
+        assert_almost_equal(self.y.mean() * np.ones_like(predictions),
+                            predictions)
 
     @pytest.mark.skip(reason=' This test is invalid since the ICs differ due '
                              'to df_model differences between OLS and ARIMA')
@@ -2038,9 +2067,9 @@ class TestARMA00(object):
         y_lead = y[1:]
         y_lag = y[:-1]
         T = y_lag.shape[0]
-        X = np.hstack((np.ones((T,1)), y_lag[:,None]))
+        X = np.hstack((np.ones((T,1)), y_lag[:, None]))
         ols_res = OLS(y_lead, X).fit()
-        arma_res = ARMA(y_lead,order=(0,0),exog=y_lag).fit(trend='c', disp=-1)
+        arma_res = ARMA(y_lead,order=(0, 0), exog=y_lag).fit(trend='c', disp=-1)
         assert_almost_equal(ols_res.params, arma_res.params)
 
     def test_arma_exog_no_constant(self):
@@ -2049,7 +2078,7 @@ class TestARMA00(object):
         y_lag = y[:-1]
         X = y_lag[:,None]
         ols_res = OLS(y_lead, X).fit()
-        arma_res = ARMA(y_lead,order=(0,0),exog=y_lag).fit(trend='nc', disp=-1)
+        arma_res = ARMA(y_lead,order=(0, 0), exog=y_lag).fit(trend='nc', disp=-1)
         assert_almost_equal(ols_res.params, arma_res.params)
         pass
 
@@ -2068,8 +2097,7 @@ def test_arima_dates_startatend():
     assert_almost_equal(pred.values[0], fc)
 
 
-
-
+@pytest.mark.smoke
 @pytest.mark.not_vetted
 @pytest.mark.skipif('not have_matplotlib')
 def test_plot_predict():
@@ -2269,17 +2297,23 @@ def test_ARIMA_exog_predict():
              7.5941274688 ,  7.59021764836,  7.59739267775])
 
     assert_allclose(predicted_arma_dp,
-                    res_d101[-len(predicted_arma_d):], atol=1e-4)
+                    res_d101[-len(predicted_arma_d):],
+                    atol=1e-4)
     assert_allclose(predicted_arma_fp,
-                    res_f101[-len(predicted_arma_f):], atol=1e-4)
+                    res_f101[-len(predicted_arma_f):],
+                    atol=1e-4)
     assert_allclose(predicted_arma_d,
-                    res_d101[-len(predicted_arma_d):], atol=1e-4)
+                    res_d101[-len(predicted_arma_d):],
+                    atol=1e-4)
     assert_allclose(predicted_arma_f,
-                    res_f101[-len(predicted_arma_f):], atol=1e-4)
+                    res_f101[-len(predicted_arma_f):],
+                    atol=1e-4)
     assert_allclose(predicted_arima_d,
-                    res_d111[-len(predicted_arima_d):], rtol=1e-4, atol=1e-4)
+                    res_d111[-len(predicted_arima_d):],
+                    rtol=1e-4, atol=1e-4)
     assert_allclose(predicted_arima_f,
-                    res_f111[-len(predicted_arima_f):], rtol=1e-4, atol=1e-4)
+                    res_f111[-len(predicted_arima_f):],
+                    rtol=1e-4, atol=1e-4)
 
     # test for forecast with 0 ar fix in #2457 numbers again from Stata
 
@@ -2307,13 +2341,16 @@ def test_ARIMA_exog_predict():
     forecast_002 = res_002.forecast(steps=len(exog_full.values[197:]),
                                     exog=exog_full.values[197:])
     forecast_002 = forecast_002[0]  # TODO we are not checking the other results
-    assert_allclose(fpredict_002, res_f002[-len(fpredict_002):], rtol=1e-4, atol=1e-6)
-    assert_allclose(forecast_002, res_f002[-len(forecast_002):], rtol=1e-4, atol=1e-6)
+    assert_allclose(fpredict_002, res_f002[-len(fpredict_002):],
+                    rtol=1e-4, atol=1e-6)
+    assert_allclose(forecast_002, res_f002[-len(forecast_002):],
+                    rtol=1e-4, atol=1e-6)
 
     # dynamic predict
     dpredict_002 = res_002.predict(start=193, end=202, exog=exog_full.values[197:],
                                    dynamic=True)
-    assert_allclose(dpredict_002, res_d002[-len(dpredict_002):], rtol=1e-4, atol=1e-6)
+    assert_allclose(dpredict_002, res_d002[-len(dpredict_002):],
+                    rtol=1e-4, atol=1e-6)
 
 
 @pytest.mark.not_vetted
@@ -2409,8 +2446,9 @@ def test_arima_pickle():
     assert_almost_equal(res.pvalues, pkl_res.pvalues)
 
 
-@pytest.mark.not_vetted
 def test_arima_not_implemented():
+    # from_formula is not implemented
+    # TOOD: GH reference?
     formula = ' WUE ~ 1 + SFO3 '
     data = [-1214.360173, -1848.209905, -2100.918158]
     with pytest.raises(NotImplementedError):
@@ -2419,6 +2457,17 @@ def test_arima_not_implemented():
 
 # ----------------------------------------------------------------
 # Issue-specific regression tests
+
+def test_arima_too_few_observations_raises():
+    # GH#1038, too few observations with given order should raise
+    vals = [96.2, 98.3, 99.1, 95.5, 94.0, 87.1, 87.9, 86.7402777504474]
+
+    dr = pd.date_range("1990", periods=len(vals), freq='Q')
+    ts = pd.Series(vals, index=dr)
+    df = pd.DataFrame(ts)
+    mod = ARIMA(df, (2, 0, 2))
+    with pytest.raises(ValueError):
+        mod.fit()
 
 def test_arma_missing():
     # GH#1343

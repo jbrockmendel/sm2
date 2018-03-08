@@ -7,7 +7,7 @@ import pandas.util.testing as tm
 from sm2.base import data as sm_data
 from sm2.api import Logit, OLS
 from sm2.formula import handle_formula_data
-from sm2.datasets import macrodata
+from sm2.datasets import macrodata, longley
 from sm2.tools.sm_exceptions import MissingDataError
 
 
@@ -630,8 +630,7 @@ class TestMissingPandas(object):
 class TestConstant(object):
     @classmethod
     def setup_class(cls):
-        from sm2.datasets.longley import load_pandas
-        cls.data = load_pandas()
+        cls.data = longley.load_pandas()
 
     def test_array_constant(self):
         exog = self.data.exog.copy()
@@ -722,6 +721,9 @@ class TestHandleMissing(object):
 
 @pytest.mark.not_vetted
 class CheckHasConstant(object):
+    np.random.seed(0)
+    y_c = np.random.randn(20)
+    y_bin = (y_c > 0).astype(int)
 
     def test_hasconst(self):
         for x, result in zip(self.exogs, self.results):
@@ -733,21 +735,20 @@ class CheckHasConstant(object):
             else:
                 np.testing.assert_equal(mod.data.const_idx, result[1])
 
-            # extra check after fit, some models raise on singular
-            fit_kwds = getattr(self, 'fit_kwds', {})
+            # extra check after fit
+            fit_kwds = self.fit_kwds
             try:
                 res = mod.fit(**fit_kwds)
+            except:
+                # some models raise on singular
+                pass
+            else:
                 np.testing.assert_equal(res.model.k_constant, result[0])
                 np.testing.assert_equal(res.model.data.k_constant, result[0])
-            except:
-                pass
 
     @classmethod
     def setup_class(cls):
         # create data
-        np.random.seed(0)
-        cls.y_c = np.random.randn(20)
-        cls.y_bin = (cls.y_c > 0).astype(int)
         x1 = np.column_stack((np.ones(20), np.zeros(20)))
         result1 = (1, 0)
         x2 = np.column_stack((np.arange(20) < 10.5,
@@ -774,26 +775,34 @@ class CheckHasConstant(object):
         result7 = (1, None)
 
         cls.exogs = (x1, x2, x3, x4, x5, x5b, x5c, x6, x7)
-        cls.results = (result1, result2, result3, result4, result5, result5b,
+        cls.results = (result1, result2, result3,
+                       result4, result5, result5b,
                        result5c, result6, result7)
         cls._initialize()
 
 
 @pytest.mark.not_vetted
 class TestHasConstantOLS(CheckHasConstant):
+    mod = OLS
+    fit_kwds = {}
+
     @classmethod
     def _initialize(cls):
-        cls.mod = OLS
         cls.y = cls.y_c
 
 
 @pytest.mark.skip(reason="GLM not ported from upstream")
 @pytest.mark.not_vetted
 class TestHasConstantGLM(CheckHasConstant):
+    fit_kwds = {}
+
     @staticmethod
     def mod(y, x):
-        from statsmodels.genmod.generalized_linear_model import GLM
-        from statsmodels.genmod import families
+        # dummies to prevent flake8 complaints until these are ported
+        GLM = None
+        families = None
+        # from statsmodels.genmod.generalized_linear_model import GLM
+        # from statsmodels.genmod import families
         return GLM(y, x, family=families.Binomial())
 
     @classmethod
@@ -803,11 +812,12 @@ class TestHasConstantGLM(CheckHasConstant):
 
 @pytest.mark.not_vetted
 class TestHasConstantLogit(CheckHasConstant):
+    mod = Logit
+    fit_kwds = {'disp': False}
+
     @classmethod
     def _initialize(cls):
-        cls.mod = Logit
         cls.y = cls.y_bin
-        cls.fit_kwds = {'disp': False}
 
 
 @pytest.mark.not_vetted
@@ -888,6 +898,9 @@ def test_formula_missing_extra_arrays():
     with pytest.raises(ValueError):
         sm_data.handle_data(endog, exog, **kwargs)
 
+
+# ------------------------------------------------------------------
+# Reviewed as of 2018-03-08
 
 def test_raise_nonfinite_exog():
     # TODO: Is there a GH issue for this?

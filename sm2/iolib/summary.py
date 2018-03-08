@@ -61,12 +61,11 @@ def summary(self, yname=None, xname=None, title=0, alpha=.05,
 
     Option :
     returns='latex'
-    Not implimented yet
+    Not implemented yet
 
     Option :
     returns='HTML'
-    Not implimented yet
-
+    Not implemented yet
 
     Examples (needs updating)
     --------
@@ -149,10 +148,9 @@ def summary(self, yname=None, xname=None, title=0, alpha=.05,
                                  )
 
     gen_stubs_right = ('Method:',
-                      'Time:',
-                      'Number of Obs:',
-                      'df resid'
-                      )
+                       'Time:',
+                       'Number of Obs:',
+                       'df resid')
     gen_data_right = ([modeltype], #was dist family need to look at more
                       time_of_day,
                       [nobs],
@@ -161,32 +159,29 @@ def summary(self, yname=None, xname=None, title=0, alpha=.05,
     gen_table_right = SimpleTable(gen_data_right,
                                  gen_header,
                                  gen_stubs_right,
-                                 title = gen_title,
-                                 txt_fmt = gen_fmt
-                                 )
+                                 title=gen_title,
+                                 txt_fmt=gen_fmt)
     gen_table_left.extend_right(gen_table_right)
     general_table = gen_table_left
 
-    #Parameters part of the summary table
-    #------------------------------------
-    #Note: this is not necessary since we standardized names, only t versus normal
-    tstats = {'OLS' : self.t(),
-            'GLS' : self.t(),
-            'GLSAR' : self.t(),
-            'WLS' : self.t(),
-            'RLM' : self.t(),
-            'GLM' : self.t()
-            }
-    prob_stats = {'OLS' : self.pvalues,
-                 'GLS' : self.pvalues,
-                 'GLSAR' : self.pvalues,
-                 'WLS' : self.pvalues,
-                 'RLM' : self.pvalues,
-                 'GLM' : self.pvalues
-                }
+    # Parameters part of the summary table
+    # ------------------------------------
+    # Note: this is not necessary since we standardized names, only t versus normal
+    tstats = {'OLS': self.t(),
+              'GLS': self.t(),
+              'GLSAR': self.t(),
+              'WLS': self.t(),
+              'RLM': self.t(),
+              'GLM': self.t()}
+    prob_stats = {'OLS': self.pvalues,
+                  'GLS': self.pvalues,
+                  'GLSAR': self.pvalues,
+                  'WLS': self.pvalues,
+                  'RLM': self.pvalues,
+                  'GLM': self.pvalues}
     #Dictionary to store the header names for the parameter part of the
     #summary table. look up by modeltype
-    alp = str((1-alpha)*100)+'%'
+    alp = str((1 - alpha) * 100) + '%'
     param_header = {
          'OLS'   : ['coef', 'std err', 't', 'P>|t|', alp + ' Conf. Interval'],
          'GLS'   : ['coef', 'std err', 't', 'P>|t|', alp + ' Conf. Interval'],
@@ -240,14 +235,14 @@ def summary(self, yname=None, xname=None, title=0, alpha=.05,
         exports ols summary data to csv
         """
         pass
+
     def glm_printer():
-        table = str(general_table)+'\n'+str(parameter_table)
+        table = str(general_table) + '\n' + str(parameter_table)
         return table
         pass
 
     printers  = {'OLS': ols_printer,
-                'GLM' : glm_printer
-                }
+                 'GLM': glm_printer}
 
     if returns=='print':
         try:
@@ -430,14 +425,14 @@ def summary_params(results, yname=None, xname=None, alpha=.05, use_t=True,
     params_table : SimpleTable instance
     """
 
-    #Parameters part of the summary table
-    #------------------------------------
-    #Note: this is not necessary since we standardized names, only t versus normal
+    # Parameters part of the summary table
+    # ------------------------------------
+    # Note: this is not necessary since we standardized names, only t versus normal
 
     if isinstance(results, tuple):
-        #for multivariate endog
-        #TODO: check whether I don't want to refactor this
-        #we need to give parameter alpha to conf_int
+        # for multivariate endog
+        # TODO: check whether I don't want to refactor this
+        # we need to give parameter alpha to conf_int
         results, params, std_err, tvalues, pvalues, conf_int = results
     else:
         params = results.params
@@ -447,14 +442,14 @@ def summary_params(results, yname=None, xname=None, alpha=.05, use_t=True,
         conf_int = results.conf_int(alpha)
 
 
-    #Dictionary to store the header names for the parameter part of the
-    #summary table. look up by modeltype
+    # Dictionary to store the header names for the parameter part of the
+    # summary table. look up by modeltype
     if use_t:
         param_header = ['coef', 'std err', 't', 'P>|t|',
-                        '[' + str(alpha/2), str(1-alpha/2) + ']']
+                        '[' + str(alpha / 2), str(1-alpha / 2) + ']']
     else:
         param_header = ['coef', 'std err', 'z', 'P>|z|',
-                        '[' + str(alpha/2), str(1-alpha/2) + ']']
+                        '[' + str(alpha / 2), str(1 - alpha / 2) + ']']
 
     if skip_header:
         param_header = None
@@ -510,13 +505,13 @@ def summary_params_frame(results, yname=None, xname=None, alpha=.05,
     params_table : SimpleTable instance
     """
 
-    #Parameters part of the summary table
-    #------------------------------------
-    #Note: this is not necessary since we standardized names, only t versus normal
+    # Parameters part of the summary table
+    # ------------------------------------
+    # Note: this is not necessary since we standardized names, only t versus normal
 
     if isinstance(results, tuple):
-        #for multivariate endog
-        #TODO: check whether I don't want to refactor this
+        # for multivariate endog
+        # TODO: check whether I don't want to refactor this
         #we need to give parameter alpha to conf_int
         results, params, std_err, tvalues, pvalues, conf_int = results
     else:
@@ -568,18 +563,17 @@ def summary_params_2d(result, extras=None, endog_names=None, exog_names=None,
     tables : list of SimpleTable
         this contains a list of all seperate Subtables
     table_all : SimpleTable
-        the merged table with results concatenated for each row of the parameter
-        array
-
+        the merged table with results concatenated for each row of the
+        parameter array
     """
     if endog_names is None:
-        #TODO: note the [1:] is specific to current MNLogit
+        # TODO: note the [1:] is specific to current MNLogit
         endog_names = ['endog_%d' % i for i in
                             np.unique(result.model.endog)[1:]]
     if exog_names is None:
-        exog_names = ['var%d' %i for i in range(len(result.params))]
+        exog_names = ['var%d' % i for i in range(len(result.params))]
 
-    #TODO: check formatting options with different values
+    # TODO: check formatting options with different values
     #res_params = [['%10.4f'%item for item in row] for row in result.params]
     res_params = [[forg(item, prec=4) for item in row] for row in result.params]
     if extras: #not None or non-empty
@@ -592,21 +586,21 @@ def summary_params_2d(result, extras=None, endog_names=None, exog_names=None,
                                 ]
         data = list(zip(res_params, *extras_list))
         data = [i for j in data for i in j]  #flatten
-        stubs = list(zip(endog_names, *[['']*len(endog_names)]*len(extras)))
+        stubs = list(zip(endog_names, *[[''] * len(endog_names)] * len(extras)))
         stubs = [i for j in stubs for i in j] #flatten
         #return SimpleTable(data, headers=exog_names, stubs=stubs)
     else:
         data = res_params
         stubs = endog_names
-#        return SimpleTable(data, headers=exog_names, stubs=stubs,
-#                       data_fmts=['%10.4f'])
+        #return SimpleTable(data, headers=exog_names, stubs=stubs,
+        #               data_fmts=['%10.4f'])
 
     txt_fmt = copy.deepcopy(fmt_params)
     txt_fmt.update(dict(data_fmts = ["%s"]*result.params.shape[1]))
     return SimpleTable(data, headers=exog_names,
                              stubs=stubs,
                              title=title,
-#                             data_fmts = ["%s"]),
+                             #data_fmts = ["%s"]),
                              txt_fmt = txt_fmt)
 
 
@@ -633,22 +627,20 @@ def summary_params_2dflat(result, endog_names=None, exog_names=None, alpha=0.05,
         only the first headers are kept, the other headerse are blanked out
     endog_cols : bool
         If false (default) then params and other result statistics have
-        equations by rows. If true, then equations are assumed to be in columns.
-        Not implemented yet.
+        equations by rows. If true, then equations are assumed to be in
+        columns.  Not implemented yet.
 
     Returns
     -------
     tables : list of SimpleTable
         this contains a list of all seperate Subtables
     table_all : SimpleTable
-        the merged table with results concatenated for each row of the parameter
-        array
-
+        the merged table with results concatenated for each row of the
+        parameter array
     """
-
     res = result
     params = res.params
-    if params.ndim == 2: # we've got multiple equations
+    if params.ndim == 2:  # we've got multiple equations
         n_equ = params.shape[1]
         if not len(endog_names) == params.shape[1]:
             raise ValueError('endog_names has wrong length')
@@ -666,10 +658,10 @@ def summary_params_2dflat(result, endog_names=None, exog_names=None, alpha=0.05,
             endog_basename = 'endog'
         else:
             endog_basename = endog_names
-        #TODO: note, the [1:] is specific to current MNLogit
+        # TODO: note, the [1:] is specific to current MNLogit
         endog_names = res.model.endog_names[1:]
 
-    #check if we have the right length of names
+    # check if we have the right length of names
 
     tables = []
     for eq in range(n_equ):
@@ -677,10 +669,10 @@ def summary_params_2dflat(result, endog_names=None, exog_names=None, alpha=0.05,
                   res.pvalues[:,eq], res.conf_int(alpha)[eq])
 
         #not used anymore in current version
-#        if skip_headers2:
-#            skiph = (row != 0)
-#        else:
-#            skiph = False
+        #if skip_headers2:
+        #    skiph = (row != 0)
+        #else:
+        #    skiph = False
         skiph = False
         tble = summary_params(restup, yname=endog_names[eq],
                               xname=exog_names, alpha=alpha, use_t=use_t,
@@ -727,7 +719,7 @@ def table_extend(tables, keep_headers=True):
                 for c in t[0][1:]:
                     c.data = ''
 
-        #add separating line and extend tables
+        # add separating line and extend tables
         if ii == 0:
             table_all = t
         else:
@@ -740,11 +732,10 @@ def table_extend(tables, keep_headers=True):
 
 
 def summary_return(tables, return_fmt='text'):
-    ########  Return Summary Tables ########
-        # join table parts then print
+    # join table parts then print
     if return_fmt == 'text':
         strdrop = lambda x: str(x).rsplit('\n',1)[0]
-        #convert to string drop last line
+        # convert to string drop last line
         return '\n'.join(list(map(strdrop, tables[:-1])) + [str(tables[-1])])
     elif return_fmt == 'tables':
         return tables
@@ -817,9 +808,7 @@ class Summary(object):
         Returns
         -------
         None : tables are attached
-
         """
-
         table = summary_top(res, title=title, gleft=gleft, gright=gright,
                             yname=yname, xname=xname)
         self.tables.append(table)
@@ -846,14 +835,13 @@ class Summary(object):
         Returns
         -------
         None : table is attached
-
         """
         if res.params.ndim == 1:
             table = summary_params(res, yname=yname, xname=xname, alpha=alpha,
                                    use_t=use_t)
         elif res.params.ndim == 2:
-#            _, table = summary_params_2dflat(res, yname=yname, xname=xname,
-#                                             alpha=alpha, use_t=use_t)
+            #_, table = summary_params_2dflat(res, yname=yname, xname=xname,
+            #                                 alpha=alpha, use_t=use_t)
             _, table = summary_params_2dflat(res, endog_names=yname,
                                              exog_names=xname,
                                              alpha=alpha, use_t=use_t)
@@ -868,7 +856,6 @@ class Summary(object):
         ----------
         etext : list[str]
             string with lines that are added to the text output.
-
         """
         self.extra_txt = '\n'.join(etext)
 
@@ -879,7 +866,6 @@ class Summary(object):
         -------
         txt : string
             summary tables and extra text as one string
-
         """
         txt = summary_return(self.tables, return_fmt='text')
         if not self.extra_txt is None:
@@ -899,7 +885,6 @@ class Summary(object):
         This currently merges tables with different number of columns.
         It is recommended to use `as_latex_tabular` directly on the individual
         tables.
-
         """
         latex = summary_return(self.tables, return_fmt='latex')
         if not self.extra_txt is None:
@@ -913,7 +898,6 @@ class Summary(object):
         -------
         csv : string
             concatenated summary tables in comma delimited format
-
         """
         csv = summary_return(self.tables, return_fmt='csv')
         if not self.extra_txt is None:
@@ -927,7 +911,6 @@ class Summary(object):
         -------
         html : string
             concatenated summary tables in HTML format
-
         """
         html = summary_return(self.tables, return_fmt='html')
         if not self.extra_txt is None:

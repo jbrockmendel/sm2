@@ -99,7 +99,7 @@ def _get_epsilon(x, s, epsilon, n):
         if np.isscalar(epsilon):
             h = np.empty(n)
             h.fill(epsilon)
-        else:  # pragma : no cover
+        else:  # pragma: no cover
             h = np.asarray(epsilon)
             if h.shape != x.shape:
                 raise ValueError("If h is not a scalar it must have the same"

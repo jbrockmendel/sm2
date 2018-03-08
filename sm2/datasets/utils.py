@@ -170,10 +170,12 @@ def _cache_it(data, cache_path):
         # for some reason encode("zip") won't work for me in Python 3?
         import zlib
         # use protocol 2 so can open with python 2.x if cached in 3.x
-        open(cache_path, "wb").write(zlib.compress(cPickle.dumps(data,
-                                                                 protocol=2)))
+        dumped = zlib.compress(cPickle.dumps(data, protocol=2))
     else:
-        open(cache_path, "wb").write(cPickle.dumps(data).encode("zip"))
+        dumped = cPickle.dumps(data).encode("zip")
+
+    with open(cache_path, "wb") as fd:
+        fd.write(dumped)
 
 
 def _open_cache(cache_path):
@@ -291,8 +293,10 @@ def get_rdataset(dataname, package="datasets", cache=False):
     title = _get_dataset_meta(dataname, package, cache)
     doc, _ = _get_data(docs_base_url, dataname, cache, "rst")
 
-    return Dataset(data=data, __doc__=doc.read(), package=package, title=title,
+    return Dataset(data=data, __doc__=doc.read(),
+                   package=package, title=title,
                    from_cache=from_cache)
+
 
 # The below function were taken from sklearn
 
@@ -325,6 +329,7 @@ def clear_data_home(data_home=None):
     """Delete all the content of the data home cache."""
     data_home = get_data_home(data_home)
     shutil.rmtree(data_home)
+
 
 def check_internet(url=None):
     """Check if internet is available"""
