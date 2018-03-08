@@ -3,7 +3,7 @@ Tests for discrete models
 
 Notes
 -----
-atol=1.5e-3 is used because it seems that there is a loss of precision
+atol=1e-3 is used because it seems that there is a loss of precision
 in the Stata *.dta -> *.csv output, NOT the estimator for the Poisson
 tests.
 """
@@ -85,12 +85,12 @@ class CheckModelResults(object):
     def test_params(self):
         assert_allclose(self.res1.params,
                         self.res2.params,
-                        atol=1.5e-4)
+                        atol=1e-4)
 
     def test_zstat(self):
         assert_allclose(self.res1.tvalues,
                         self.res2.z,
-                        atol=1.5e-4)
+                        atol=1e-4)
 
     # FIXME: the reason it is mangled upstream is because the tests fail!
     # TODO: upstream fix the name "pvalues" --> "test_pvalues"
@@ -98,34 +98,34 @@ class CheckModelResults(object):
     #    # not overriden --> parametrize?
     #    assert_allclose(self.res1.pvalues,
     #                    self.res2.pvalues,
-    #                    atol=1.5e-4)
+    #                    atol=1e-4)
 
     def test_llf(self):
         assert_allclose(self.res1.llf,
                         self.res2.llf,
-                        atol=1.5e-4)
+                        atol=1e-4)
 
     def test_llnull(self):
         # not overriden --> parametrize?
         assert_allclose(self.res1.llnull,
                         self.res2.llnull,
-                        atol=1.5e-4)
+                        atol=1e-4)
 
     def test_llr(self):
         assert_allclose(self.res1.llr,
                         self.res2.llr,
-                        atol=1.5e-4)
+                        atol=1e-4)
 
     def test_llr_pvalue(self):
         # not overriden --> parametrize?
         assert_allclose(self.res1.llr_pvalue,
                         self.res2.llr_pvalue,
-                        atol=1.5e-4)
+                        atol=1e-4)
 
     def test_bse(self):
         assert_allclose(self.res1.bse,
                         self.res2.bse,
-                        atol=1.5e-4)
+                        atol=1e-4)
 
     def test_dof(self):
         # not overriden --> parametrize?
@@ -135,31 +135,31 @@ class CheckModelResults(object):
     def test_aic(self):
         assert_allclose(self.res1.aic,
                         self.res2.aic,
-                        atol=1.5e-3)
+                        atol=1e-3)
 
     def test_bic(self):
         assert_allclose(self.res1.bic,
                         self.res2.bic,
-                        atol=1.5e-3)
+                        atol=1e-3)
 
     def test_predict(self):
         yhat = self.res1.model.predict(self.res1.params)
         assert_allclose(yhat,
                         self.res2.phat,
-                        atol=1.5e-4)
+                        atol=1e-4)
 
     def test_predict_xb(self):
         yhat = self.res1.model.predict(self.res1.params, linear=True)
         assert_allclose(yhat,
                         self.res2.yhat,
-                        atol=1.5e-4)
+                        atol=1e-4)
 
     def test_loglikeobs(self):
         # basic cross check
         llobssum = self.res1.model.loglikeobs(self.res1.params).sum()
         assert_allclose(llobssum,
                         self.res1.llf,
-                        atol=1.5e-14)
+                        atol=1e-14)
 
     def test_jac(self):
         # basic cross check
@@ -167,7 +167,7 @@ class CheckModelResults(object):
         score = self.res1.model.score(self.res1.params)
         assert_allclose(jacsum,
                         score,
-                        atol=1.5e-9)  # Poisson has low precision ?
+                        atol=1e-9)  # Poisson has low precision ?
 
     def test_normalized_cov_params(self):
         pass
@@ -175,7 +175,7 @@ class CheckModelResults(object):
     #def test_cov_params(self):
     #    assert_allclose(self.res1.cov_params(),
     #                    self.res2.cov_params,
-    #                    atol=1.5e-4)
+    #                    atol=1e-4)
 
 
 @pytest.mark.not_vetted
@@ -197,31 +197,31 @@ class TestPoissonNewton(CheckModelResults):
         me = self.res1.get_margeff()
         assert_allclose(me.margeff,
                         self.res2.margeff_nodummy_overall,
-                        atol=1.5e-4)
+                        atol=1e-4)
         assert_allclose(me.margeff_se,
                         self.res2.margeff_nodummy_overall_se,
-                        atol=1.5e-4)
+                        atol=1e-4)
 
     def test_margeff_dummy_overall(self):
         me = self.res1.get_margeff(dummy=True)
         assert_allclose(me.margeff,
                         self.res2.margeff_dummy_overall,
-                        atol=1.5e-4)
+                        atol=1e-4)
         assert_allclose(me.margeff_se,
                         self.res2.margeff_dummy_overall_se,
-                        atol=1.5e-4)
+                        atol=1e-4)
 
     def test_resid(self):
         assert_allclose(self.res1.resid,
                         self.res2.resid,
-                        atol=1.5e-2)
+                        atol=1e-2)
 
     def test_predict_prob(self):
         # just check the first 100 obs. vs R to save memory
         probs = self.res1.predict_prob()[:100]
         assert_allclose(probs,
                         probs_res,
-                        atol=1.5e-8)
+                        atol=1e-8)
 
 
 @pytest.mark.not_vetted
@@ -246,41 +246,41 @@ class TestNegativeBinomialNB2Newton(CheckModelResults):
     def test_bse(self):
         assert_allclose(self.res1.bse,
                         self.res2.bse,
-                        atol=1.5e-3)
+                        atol=1e-3)
 
     def test_alpha(self):
         self.res1.bse  # attaches alpha_std_err
         assert_allclose(self.res1.lnalpha,
                         self.res2.lnalpha,
-                        atol=1.5e-4)
+                        atol=1e-4)
         assert_allclose(self.res1.lnalpha_std_err,
                         self.res2.lnalpha_std_err,
-                        atol=1.5e-4)
+                        atol=1e-4)
 
     def test_conf_int(self):
         assert_allclose(self.res1.conf_int(),
                         self.res2.conf_int,
-                        atol=1.5e-3)
+                        atol=1e-3)
 
     def test_zstat(self):  # Low precision because Z vs. t
         assert_allclose(self.res1.pvalues[:-1],
                         self.res2.pvalues,
-                        atol=1.5e-2)
+                        atol=1e-2)
 
     def test_fittedvalues(self):
         assert_allclose(self.res1.fittedvalues[:10],
                         self.res2.fittedvalues[:10],
-                        atol=1.5e-3)
+                        atol=1e-3)
 
     def test_predict(self):
         assert_allclose(self.res1.predict()[:10],
                         np.exp(self.res2.fittedvalues[:10]),
-                        atol=1.5e-3)
+                        atol=1e-3)
 
     def test_predict_xb(self):
         assert_allclose(self.res1.predict(linear=True)[:10],
                         self.res2.fittedvalues[:10],
-                        atol=1.5e-3)
+                        atol=1e-3)
 
 
 @pytest.mark.not_vetted
@@ -301,23 +301,23 @@ class TestNegativeBinomialNB1Newton(CheckModelResults):
     def test_zstat(self):
         assert_allclose(self.res1.tvalues,
                         self.res2.z,
-                        atol=1.5e-1)
+                        atol=1e-1)
 
     def test_lnalpha(self):
         self.res1.bse  # attaches alpha_std_err
         assert_allclose(self.res1.lnalpha,
                         self.res2.lnalpha,
-                        atol=1.5e-3)
+                        atol=1e-3)
         assert_allclose(self.res1.lnalpha_std_err,
                         self.res2.lnalpha_std_err,
-                        atol=1.5e-4)
+                        atol=1e-4)
 
     def test_conf_int(self):
         # the bse for alpha is not high precision from the hessian
         # approximation
         assert_allclose(self.res1.conf_int(),
                         self.res2.conf_int,
-                        atol=1.5e-2)
+                        atol=1e-2)
 
     def test_jac(self):
         pass
@@ -348,41 +348,41 @@ class TestNegativeBinomialNB2BFGS(CheckModelResults):
     def test_bse(self):
         assert_allclose(self.res1.bse,
                         self.res2.bse,
-                        atol=1.5e-3)
+                        atol=1e-3)
 
     def test_alpha(self):
         self.res1.bse  # attaches alpha_std_err
         assert_allclose(self.res1.lnalpha,
                         self.res2.lnalpha,
-                        atol=1.5e-4)
+                        atol=1e-4)
         assert_allclose(self.res1.lnalpha_std_err,
                         self.res2.lnalpha_std_err,
-                        atol=1.5e-4)
+                        atol=1e-4)
 
     def test_conf_int(self):
         assert_allclose(self.res1.conf_int(),
                         self.res2.conf_int,
-                        atol=1.5e-3)
+                        atol=1e-3)
 
     def test_zstat(self):  # Low precision because Z vs. t
         assert_allclose(self.res1.pvalues[:-1],
                         self.res2.pvalues,
-                        atol=1.5e-2)
+                        atol=1e-2)
 
     def test_fittedvalues(self):
         assert_allclose(self.res1.fittedvalues[:10],
                         self.res2.fittedvalues[:10],
-                        atol=1.5e-3)
+                        atol=1e-3)
 
     def test_predict(self):
         assert_allclose(self.res1.predict()[:10],
                         np.exp(self.res2.fittedvalues[:10]),
-                        atol=1.5e-3)
+                        atol=1e-3)
 
     def test_predict_xb(self):
         assert_allclose(self.res1.predict(linear=True)[:10],
                         self.res2.fittedvalues[:10],
-                        atol=1.5e-3)
+                        atol=1e-3)
 
     def test_jac(self):
         pass
@@ -403,23 +403,23 @@ class TestNegativeBinomialNB1BFGS(CheckModelResults):
     def test_zstat(self):
         assert_allclose(self.res1.tvalues,
                         self.res2.z,
-                        atol=1.5e-1)
+                        atol=1e-1)
 
     def test_lnalpha(self):
         self.res1.bse # attaches alpha_std_err
         assert_allclose(self.res1.lnalpha,
                         self.res2.lnalpha,
-                        atol=1.5e-3)
+                        atol=1e-3)
         assert_allclose(self.res1.lnalpha_std_err,
                         self.res2.lnalpha_std_err,
-                        atol=1.5e-4)
+                        atol=1e-4)
 
     def test_conf_int(self):
         # the bse for alpha is not high precision from the hessian
         # approximation
         assert_allclose(self.res1.conf_int(),
                         self.res2.conf_int,
-                        atol=1.5e-2)
+                        atol=1e-2)
 
     def test_jac(self):
         pass
@@ -450,12 +450,12 @@ class TestNegativeBinomialGeometricBFGS(CheckModelResults):
     def test_conf_int(self):
         assert_allclose(self.res1.conf_int(),
                         self.res2.conf_int,
-                        atol=1.5e-3)
+                        atol=1e-3)
 
     def test_fittedvalues(self):
         assert_allclose(self.res1.fittedvalues[:10],
                         self.res2.fittedvalues[:10],
-                        atol=1.5e-3)
+                        atol=1e-3)
 
     def test_jac(self):
         pass
@@ -463,22 +463,22 @@ class TestNegativeBinomialGeometricBFGS(CheckModelResults):
     def test_predict(self):
         assert_allclose(self.res1.predict()[:10],
                         np.exp(self.res2.fittedvalues[:10]),
-                        atol=1.5e-3)
+                        atol=1e-3)
 
     def test_params(self):
         assert_allclose(self.res1.params,
                         self.res2.params,
-                        atol=1.5e-3)
+                        atol=1e-3)
 
     def test_predict_xb(self):
         assert_allclose(self.res1.predict(linear=True)[:10],
                         self.res2.fittedvalues[:10],
-                        atol=1.5e-3)
+                        atol=1e-3)
 
     def test_zstat(self):  # Low precision because Z vs. t
         assert_allclose(self.res1.tvalues,
                         self.res2.z,
-                        atol=1.5e-1)
+                        atol=1e-1)
 
     def test_jac(self):
         pass
@@ -486,17 +486,17 @@ class TestNegativeBinomialGeometricBFGS(CheckModelResults):
     def test_llf(self):
         assert_allclose(self.res1.llf,
                         self.res2.llf,
-                        atol=1.5e-1)
+                        atol=1e-1)
 
     def test_llr(self):
         assert_allclose(self.res1.llr,
                         self.res2.llr,
-                        atol=1.5e-2)
+                        atol=1e-2)
 
     def test_bse(self):
         assert_allclose(self.res1.bse,
                         self.res2.bse,
-                        atol=1.5e-3)
+                        atol=1e-3)
 
 
 @pytest.mark.not_vetted
@@ -762,10 +762,10 @@ class CheckMNLogitBaseZero(CheckModelResults):
         me = self.res1.get_margeff()
         assert_allclose(me.margeff,
                         self.res2.margeff_dydx_overall,
-                        atol=1.5e-6)
+                        atol=1e-6)
         assert_allclose(me.margeff_se,
                         self.res2.margeff_dydx_overall_se,
-                        atol=1.5e-6)
+                        atol=1e-6)
 
         me_frame = me.summary_frame()
         eff = me_frame["dy/dx"].values.reshape(me.margeff.shape, order="F")
@@ -778,10 +778,10 @@ class CheckMNLogitBaseZero(CheckModelResults):
         me = self.res1.get_margeff(at='mean')
         assert_allclose(me.margeff,
                         self.res2.margeff_dydx_mean,
-                        atol=1.5e-7)
+                        atol=1e-7)
         assert_allclose(me.margeff_se,
                         self.res2.margeff_dydx_mean_se,
-                        atol=1.5e-7)
+                        atol=1e-7)
 
     def test_margeff_dummy(self):
         data = self.data
@@ -793,18 +793,18 @@ class CheckMNLogitBaseZero(CheckModelResults):
         me = res.get_margeff(dummy=True)
         assert_allclose(me.margeff,
                         self.res2.margeff_dydx_dummy_overall,
-                        atol=1.5e-6)
+                        atol=1e-6)
         assert_allclose(me.margeff_se,
                         self.res2.margeff_dydx_dummy_overall_se,
-                        atol=1.5e-6)
+                        atol=1e-6)
 
         me = res.get_margeff(dummy=True, method="eydx")
         assert_allclose(me.margeff,
                         self.res2.margeff_eydx_dummy_overall,
-                        atol=1.5e-5)
+                        atol=1e-5)
         assert_allclose(me.margeff_se,
                         self.res2.margeff_eydx_dummy_overall_se,
-                        atol=1.5e-6)
+                        atol=1e-6)
 
     def test_endog_names(self):
         endog_names = self.res1._get_endog_name(None, None)[1]
@@ -922,12 +922,12 @@ class CheckBinaryResults(CheckModelResults):
     def test_resid_dev(self):
         assert_allclose(self.res1.resid_dev,
                         self.res2.resid_dev,
-                        atol=1.5e-4)
+                        atol=1e-4)
 
     def test_resid_generalized(self):
         assert_allclose(self.res1.resid_generalized,
                         self.res2.resid_generalized,
-                        atol=1.5e-4)
+                        atol=1e-4)
 
     @pytest.mark.smoke
     def test_resid_response_smoke(self):
@@ -948,7 +948,7 @@ class TestProbitNewton(CheckBinaryResults):
     #def test_predict(self):
     #    assert_allclose(self.res1.model.predict(self.res1.params),
     #                    self.res2.predict,
-    #                    atol=1.5e-4)
+    #                    atol=1e-4)
 
 
 @pytest.mark.not_vetted
@@ -1107,32 +1107,32 @@ class CheckLikelihoodModelL1(object):
     def test_params(self):
         assert_allclose(self.res1.params,
                         self.res2.params,
-                        atol=1.5e-4)
+                        atol=1e-4)
 
     def test_conf_int(self):
         assert_allclose(self.res1.conf_int(),
                         self.res2.conf_int,
-                        atol=1.5e-4)
+                        atol=1e-4)
 
     def test_bse(self):
         assert_allclose(self.res1.bse,
                         self.res2.bse,
-                        atol=1.5e-4)
+                        atol=1e-4)
 
     def test_nnz_params(self):
         assert_allclose(self.res1.nnz_params,
                         self.res2.nnz_params,
-                        atol=1.5e-4)
+                        atol=1e-4)
 
     def test_aic(self):
         assert_allclose(self.res1.aic,
                         self.res2.aic,
-                        atol=1.5e-3)
+                        atol=1e-3)
 
     def test_bic(self):
         assert_allclose(self.res1.bic,
                         self.res2.bic,
-                        atol=1.5e-3)
+                        atol=1e-3)
 
 
 @pytest.mark.not_vetted
@@ -1153,7 +1153,7 @@ class TestProbitL1(CheckLikelihoodModelL1):
     def test_cov_params(self):
         assert_allclose(self.res1.cov_params(),
                         self.res2.cov_params,
-                        atol=1.5e-4)
+                        atol=1e-4)
 
 
 @pytest.mark.not_vetted
@@ -1192,7 +1192,7 @@ class TestLogitL1(CheckLikelihoodModelL1):
     def test_cov_params(self):
         assert_allclose(self.res1.cov_params(),
                         self.res2.cov_params,
-                        atol=1.5e-4)
+                        atol=1e-4)
 
 
 # ------------------------------------------------------------------
@@ -1208,20 +1208,20 @@ class CheckL1Compatability(object):
         m = self.m
         assert_allclose(self.res_unreg.params[:m],
                         self.res_reg.params[:m],
-                        atol=1.5e-4)
+                        atol=1e-4)
         # The last entry should be close to zero
         # handle extra parameter of NegativeBinomial
         kvars = self.res_reg.model.exog.shape[1]
         assert_allclose(0,
                         self.res_reg.params[m:kvars],
-                        atol=1.5e-4)
+                        atol=1e-4)
 
     def test_cov_params(self):
         m = self.m
         # The restricted cov_params should be equal
         assert_allclose(self.res_unreg.cov_params()[:m, :m],
                         self.res_reg.cov_params()[:m, :m],
-                        atol=1.5e-1)
+                        atol=1e-1)
 
     def test_df(self):
         assert self.res_unreg.df_model == self.res_reg.df_model
@@ -1236,10 +1236,10 @@ class CheckL1Compatability(object):
         t_reg = self.res_reg.t_test(np.eye(kvars + extra))
         assert_allclose(t_unreg.effect[:m],
                         t_reg.effect[:m],
-                        atol=1.5e-3)
+                        atol=1e-3)
         assert_allclose(t_unreg.sd[:m],
                         t_reg.sd[:m],
-                        atol=1.5e-3)
+                        atol=1e-3)
         assert np.isnan(t_reg.sd[m])
         assert_allclose(t_unreg.tvalue[:m],
                         t_reg.tvalue[:m],
@@ -1258,7 +1258,7 @@ class CheckL1Compatability(object):
                         rtol=3e-5, atol=1e-3)
         assert_allclose(f_unreg.pvalue,
                         f_reg.pvalue,
-                        atol=1.5e-3)
+                        atol=1e-3)
 
     def test_bad_r_matrix(self):
         kvars = self.kvars
@@ -1393,14 +1393,14 @@ class TestMNLogitL1Compatability(CheckL1Compatability):
         t_reg = self.res_reg.t_test(np.eye(kvars))
         assert_allclose(t_unreg.effect,
                         t_reg.effect[:m],
-                        atol=1.5e-3)
+                        atol=1e-3)
         assert_allclose(t_unreg.sd,
                         t_reg.sd[:m],
-                        atol=1.5e-3)
+                        atol=1e-3)
         assert np.isnan(t_reg.sd[m])
         assert_allclose(t_unreg.tvalue,
                         t_reg.tvalue[:m, :m],
-                        atol=1.5e-3)
+                        atol=1e-3)
 
     @pytest.mark.skip("Skipped test_f_test for MNLogit")
     def test_f_test(self):
@@ -1465,34 +1465,34 @@ class CompareL1(object):
     def test_basic_results(self):
         assert_allclose(self.res1.params,
                         self.res2.params,
-                        atol=1.5e-4)
+                        atol=1e-4)
         assert_allclose(self.res1.cov_params(),
                         self.res2.cov_params(),
-                        atol=1.5e-4)
+                        atol=1e-4)
         assert_allclose(self.res1.conf_int(),
                         self.res2.conf_int(),
-                        atol=1.5e-4)
+                        atol=1e-4)
         assert_allclose(self.res1.pvalues,
                         self.res2.pvalues,
-                        atol=1.5e-4)
+                        atol=1e-4)
         assert_allclose(self.res1.pred_table(),
                         self.res2.pred_table(),
-                        atol=1.5e-4)
+                        atol=1e-4)
         assert_allclose(self.res1.bse,
                         self.res2.bse,
-                        atol=1.5e-4)
+                        atol=1e-4)
         assert_allclose(self.res1.llf,
                         self.res2.llf,
-                        atol=1.5e-4)
+                        atol=1e-4)
         assert_allclose(self.res1.aic,
                         self.res2.aic,
-                        atol=1.5e-4)
+                        atol=1e-4)
         assert_allclose(self.res1.bic,
                         self.res2.bic,
-                        atol=1.5e-4)
+                        atol=1e-4)
         assert_allclose(self.res1.pvalues,
                         self.res2.pvalues,
-                        atol=1.5e-4)
+                        atol=1e-4)
 
         if self.res1.mle_retvals['converged'] == 'True':
             # KLUDGE for older sm returning the wrong thing
@@ -1508,10 +1508,10 @@ class CompareL11D(CompareL1):
         restrictmat = np.eye(len(self.res1.params.ravel()))
         assert_allclose(self.res1.t_test(restrictmat).pvalue,
                         self.res2.t_test(restrictmat).pvalue,
-                        atol=1.5e-4)
+                        atol=1e-4)
         assert_allclose(self.res1.f_test(restrictmat).pvalue,
                         self.res2.f_test(restrictmat).pvalue,
-                        atol=1.5e-4)
+                        atol=1e-4)
 
 
 @pytest.mark.not_vetted
@@ -1584,10 +1584,10 @@ class CheckMargEff(object):
         me = self.res1.get_margeff()
         assert_allclose(me.margeff,
                         self.res2.margeff_nodummy_dydx,
-                        atol=1.5e-4)
+                        atol=1e-4)
         assert_allclose(me.margeff_se,
                         self.res2.margeff_nodummy_dydx_se,
-                        atol=1.5e-4)
+                        atol=1e-4)
 
         me_frame = me.summary_frame()
         eff = me_frame["dy/dx"].values
@@ -1600,208 +1600,208 @@ class CheckMargEff(object):
         me = self.res1.get_margeff(at='mean')
         assert_allclose(me.margeff,
                         self.res2.margeff_nodummy_dydxmean,
-                        atol=1.5e-4)
+                        atol=1e-4)
         assert_allclose(me.margeff_se,
                         self.res2.margeff_nodummy_dydxmean_se,
-                        atol=1.5e-4)
+                        atol=1e-4)
 
     def test_nodummy_dydxmedian(self):
         me = self.res1.get_margeff(at='median')
         assert_allclose(me.margeff,
                         self.res2.margeff_nodummy_dydxmedian,
-                        atol=1.5e-4)
+                        atol=1e-4)
         assert_allclose(me.margeff_se,
                         self.res2.margeff_nodummy_dydxmedian_se,
-                        atol=1.5e-4)
+                        atol=1e-4)
 
     def test_nodummy_dydxzero(self):
         me = self.res1.get_margeff(at='zero')
         assert_allclose(me.margeff,
                         self.res2.margeff_nodummy_dydxzero,
-                        atol=1.5e-4)
+                        atol=1e-4)
         assert_allclose(me.margeff_se,
                         self.res2.margeff_nodummy_dydxzero,
-                        atol=1.5e-4)
+                        atol=1e-4)
 
     def test_nodummy_dyexoverall(self):
         me = self.res1.get_margeff(method='dyex')
         assert_allclose(me.margeff,
                         self.res2.margeff_nodummy_dyex,
-                        atol=1.5e-4)
+                        atol=1e-4)
         assert_allclose(me.margeff_se,
                         self.res2.margeff_nodummy_dyex_se,
-                        atol=1.5e-4)
+                        atol=1e-4)
 
     def test_nodummy_dyexmean(self):
         me = self.res1.get_margeff(at='mean', method='dyex')
         assert_allclose(me.margeff,
                         self.res2.margeff_nodummy_dyexmean,
-                        atol=1.5e-4)
+                        atol=1e-4)
         assert_allclose(me.margeff_se,
                         self.res2.margeff_nodummy_dyexmean_se,
-                        atol=1.5e-4)
+                        atol=1e-4)
 
     def test_nodummy_dyexmedian(self):
         me = self.res1.get_margeff(at='median', method='dyex')
         assert_allclose(me.margeff,
                         self.res2.margeff_nodummy_dyexmedian,
-                        atol=1.5e-4)
+                        atol=1e-4)
         assert_allclose(me.margeff_se,
                         self.res2.margeff_nodummy_dyexmedian_se,
-                        atol=1.5e-4)
+                        atol=1e-4)
 
     def test_nodummy_dyexzero(self):
         me = self.res1.get_margeff(at='zero', method='dyex')
         assert_allclose(me.margeff,
                         self.res2.margeff_nodummy_dyexzero,
-                        atol=1.5e-4)
+                        atol=1e-4)
         assert_allclose(me.margeff_se,
                         self.res2.margeff_nodummy_dyexzero_se,
-                        atol=1.5e-4)
+                        atol=1e-4)
 
     def test_nodummy_eydxoverall(self):
         me = self.res1.get_margeff(method='eydx')
         assert_allclose(me.margeff,
                         self.res2.margeff_nodummy_eydx,
-                        atol=1.5e-4)
+                        atol=1e-4)
         assert_allclose(me.margeff_se,
                         self.res2.margeff_nodummy_eydx_se,
-                        atol=1.5e-4)
+                        atol=1e-4)
 
     def test_nodummy_eydxmean(self):
         me = self.res1.get_margeff(at='mean', method='eydx')
         assert_allclose(me.margeff,
                         self.res2.margeff_nodummy_eydxmean,
-                        atol=1.5e-4)
+                        atol=1e-4)
         assert_allclose(me.margeff_se,
                         self.res2.margeff_nodummy_eydxmean_se,
-                        atol=1.5e-4)
+                        atol=1e-4)
 
     def test_nodummy_eydxmedian(self):
         me = self.res1.get_margeff(at='median', method='eydx')
         assert_allclose(me.margeff,
                         self.res2.margeff_nodummy_eydxmedian,
-                        atol=1.5e-4)
+                        atol=1e-4)
         assert_allclose(me.margeff_se,
                         self.res2.margeff_nodummy_eydxmedian_se,
-                        atol=1.5e-4)
+                        atol=1e-4)
 
     def test_nodummy_eydxzero(self):
         me = self.res1.get_margeff(at='zero', method='eydx')
         assert_allclose(me.margeff,
                         self.res2.margeff_nodummy_eydxzero,
-                        atol=1.5e-4)
+                        atol=1e-4)
         assert_allclose(me.margeff_se,
                         self.res2.margeff_nodummy_eydxzero_se,
-                        atol=1.5e-4)
+                        atol=1e-4)
 
     def test_nodummy_eyexoverall(self):
         me = self.res1.get_margeff(method='eyex')
         assert_allclose(me.margeff,
                         self.res2.margeff_nodummy_eyex,
-                        atol=1.5e-4)
+                        atol=1e-4)
         assert_allclose(me.margeff_se,
                         self.res2.margeff_nodummy_eyex_se,
-                        atol=1.5e-4)
+                        atol=1e-4)
 
     def test_nodummy_eyexmean(self):
         me = self.res1.get_margeff(at='mean', method='eyex')
         assert_allclose(me.margeff,
                         self.res2.margeff_nodummy_eyexmean,
-                        atol=1.5e-4)
+                        atol=1e-4)
         assert_allclose(me.margeff_se,
                         self.res2.margeff_nodummy_eyexmean_se,
-                        atol=1.5e-4)
+                        atol=1e-4)
 
     def test_nodummy_eyexmedian(self):
         me = self.res1.get_margeff(at='median', method='eyex')
         assert_allclose(me.margeff,
                         self.res2.margeff_nodummy_eyexmedian,
-                        atol=1.5e-4)
+                        atol=1e-4)
         assert_allclose(me.margeff_se,
                         self.res2.margeff_nodummy_eyexmedian_se,
-                        atol=1.5e-4)
+                        atol=1e-4)
 
     def test_nodummy_eyexzero(self):
         me = self.res1.get_margeff(at='zero', method='eyex')
         assert_allclose(me.margeff,
                         self.res2.margeff_nodummy_eyexzero,
-                        atol=1.5e-4)
+                        atol=1e-4)
         assert_allclose(me.margeff_se,
                         self.res2.margeff_nodummy_eyexzero_se,
-                        atol=1.5e-4)
+                        atol=1e-4)
 
     def test_dummy_dydxoverall(self):
         me = self.res1.get_margeff(dummy=True)
         assert_allclose(me.margeff,
                         self.res2.margeff_dummy_dydx,
-                        atol=1.5e-4)
+                        atol=1e-4)
         assert_allclose(me.margeff_se,
                         self.res2.margeff_dummy_dydx_se,
-                        atol=1.5e-4)
+                        atol=1e-4)
 
     def test_dummy_dydxmean(self):
         me = self.res1.get_margeff(at='mean', dummy=True)
         assert_allclose(me.margeff,
                         self.res2.margeff_dummy_dydxmean,
-                        atol=1.5e-4)
+                        atol=1e-4)
         assert_allclose(me.margeff_se,
                         self.res2.margeff_dummy_dydxmean_se,
-                        atol=1.5e-4)
+                        atol=1e-4)
 
     def test_dummy_eydxoverall(self):
         me = self.res1.get_margeff(method='eydx', dummy=True)
         assert_allclose(me.margeff,
                         self.res2.margeff_dummy_eydx,
-                        atol=1.5e-4)
+                        atol=1e-4)
         assert_allclose(me.margeff_se,
                         self.res2.margeff_dummy_eydx_se,
-                        atol=1.5e-4)
+                        atol=1e-4)
 
     def test_dummy_eydxmean(self):
         me = self.res1.get_margeff(at='mean', method='eydx', dummy=True)
         assert_allclose(me.margeff,
                         self.res2.margeff_dummy_eydxmean,
-                        atol=1.5e-4)
+                        atol=1e-4)
         assert_allclose(me.margeff_se,
                         self.res2.margeff_dummy_eydxmean_se,
-                        atol=1.5e-4)
+                        atol=1e-4)
 
     def test_count_dydxoverall(self):
         me = self.res1.get_margeff(count=True)
         assert_allclose(me.margeff,
                         self.res2.margeff_count_dydx,
-                        atol=1.5e-4)
+                        atol=1e-4)
         assert_allclose(me.margeff_se,
                         self.res2.margeff_count_dydx_se,
-                        atol=1.5e-4)
+                        atol=1e-4)
 
     def test_count_dydxmean(self):
         me = self.res1.get_margeff(count=True, at='mean')
         assert_allclose(me.margeff,
                         self.res2.margeff_count_dydxmean,
-                        atol=1.5e-4)
+                        atol=1e-4)
         assert_allclose(me.margeff_se,
                         self.res2.margeff_count_dydxmean_se,
-                        atol=1.5e-4)
+                        atol=1e-4)
 
     def test_count_dummy_dydxoverall(self):
         me = self.res1.get_margeff(count=True, dummy=True)
         assert_allclose(me.margeff,
                         self.res2.margeff_count_dummy_dydxoverall,
-                        atol=1.5e-4)
+                        atol=1e-4)
         assert_allclose(me.margeff_se,
                         self.res2.margeff_count_dummy_dydxoverall_se,
-                        atol=1.5e-4)
+                        atol=1e-4)
 
     def test_count_dummy_dydxmean(self):
         me = self.res1.get_margeff(count=True, dummy=True, at='mean')
         assert_allclose(me.margeff,
                         self.res2.margeff_count_dummy_dydxmean,
-                        atol=1.5e-4)
+                        atol=1e-4)
         assert_allclose(me.margeff_se,
                         self.res2.margeff_count_dummy_dydxmean_se,
-                        atol=1.5e-4)
+                        atol=1e-4)
 
 
 @pytest.mark.not_vetted
@@ -1818,44 +1818,44 @@ class TestLogitNewton(CheckBinaryResults, CheckMargEff):
     def test_resid_pearson(self):
         assert_allclose(self.res1.resid_pearson,
                         self.res2.resid_pearson,
-                        atol=1.5e-5)
+                        atol=1e-5)
 
     def test_nodummy_exog1(self):
         me = self.res1.get_margeff(atexog={0: 2.0, 2: 1.})
         assert_allclose(me.margeff,
                         self.res2.margeff_nodummy_atexog1,
-                        atol=1.5e-4)
+                        atol=1e-4)
         assert_allclose(me.margeff_se,
                         self.res2.margeff_nodummy_atexog1_se,
-                        atol=1.5e-4)
+                        atol=1e-4)
 
     def test_nodummy_exog2(self):
         me = self.res1.get_margeff(atexog={1: 21., 2: 0}, at='mean')
         assert_allclose(me.margeff,
                         self.res2.margeff_nodummy_atexog2,
-                        atol=1.5e-4)
+                        atol=1e-4)
         assert_allclose(me.margeff_se,
                         self.res2.margeff_nodummy_atexog2_se,
-                        atol=1.5e-4)
+                        atol=1e-4)
 
     def test_dummy_exog1(self):
         me = self.res1.get_margeff(atexog={0: 2.0, 2: 1.}, dummy=True)
         assert_allclose(me.margeff,
                         self.res2.margeff_dummy_atexog1,
-                        atol=1.5e-4)
+                        atol=1e-4)
         assert_allclose(me.margeff_se,
                         self.res2.margeff_dummy_atexog1_se,
-                        atol=1.5e-4)
+                        atol=1e-4)
 
     def test_dummy_exog2(self):
         me = self.res1.get_margeff(atexog={1: 21., 2: 0}, at='mean',
                                    dummy=True)
         assert_allclose(me.margeff,
                         self.res2.margeff_dummy_atexog2,
-                        atol=1.5e-4)
+                        atol=1e-4)
         assert_allclose(me.margeff_se,
                         self.res2.margeff_dummy_atexog2_se,
-                        atol=1.5e-4)
+                        atol=1e-4)
 
 
 @pytest.mark.not_vetted
@@ -1888,44 +1888,44 @@ class TestLogitNewtonPrepend(CheckMargEff):
     def test_resid_pearson(self):
         assert_allclose(self.res1.resid_pearson,
                         self.res2.resid_pearson,
-                        atol=1.5e-5)
+                        atol=1e-5)
 
     def test_nodummy_exog1(self):
         me = self.res1.get_margeff(atexog={1: 2.0, 3: 1.})
         assert_allclose(me.margeff,
                         self.res2.margeff_nodummy_atexog1,
-                        atol=1.5e-4)
+                        atol=1e-4)
         assert_allclose(me.margeff_se,
                         self.res2.margeff_nodummy_atexog1_se,
-                        atol=1.5e-4)
+                        atol=1e-4)
 
     def test_nodummy_exog2(self):
         me = self.res1.get_margeff(atexog={2: 21., 3: 0}, at='mean')
         assert_allclose(me.margeff,
                         self.res2.margeff_nodummy_atexog2,
-                        atol=1.5e-4)
+                        atol=1e-4)
         assert_allclose(me.margeff_se,
                         self.res2.margeff_nodummy_atexog2_se,
-                        atol=1.5e-4)
+                        atol=1e-4)
 
     def test_dummy_exog1(self):
         me = self.res1.get_margeff(atexog={1: 2.0, 3: 1.}, dummy=True)
         assert_allclose(me.margeff,
                         self.res2.margeff_dummy_atexog1,
-                        atol=1.5e-4)
+                        atol=1e-4)
         assert_allclose(me.margeff_se,
                         self.res2.margeff_dummy_atexog1_se,
-                        atol=1.5e-4)
+                        atol=1e-4)
 
     def test_dummy_exog2(self):
         me = self.res1.get_margeff(atexog={2: 21., 3: 0}, at='mean',
                                    dummy=True)
         assert_allclose(me.margeff,
                         self.res2.margeff_dummy_atexog2,
-                        atol=1.5e-4)
+                        atol=1e-4)
         assert_allclose(me.margeff_se,
                         self.res2.margeff_dummy_atexog2_se,
-                        atol=1.5e-4)
+                        atol=1e-4)
 
 
 # ------------------------------------------------------------------
@@ -2392,6 +2392,7 @@ class TestSweepAlphaL1(object):
             assert_allclose(res1.params,
                             self.res2.params[i],
                             atol=1.5e-4)
+            # 2018-03-08: 1.5e-4 vs 1e-4 makes a difference
 
 
 @pytest.mark.not_vetted
@@ -2599,7 +2600,7 @@ def test_cvxopt_versus_slsqp():
 
     assert_allclose(res_slsqp.params,
                     res_cvxopt.params,
-                    atol=1.5e-4)
+                    atol=1e-4)
 
 
 # ------------------------------------------------------------------
@@ -2728,17 +2729,17 @@ def test_poisson_predict():
     res = Poisson(data.endog, exog).fit(method='newton', disp=0)
     pred1 = res.predict()
     pred2 = res.predict(exog)
-    assert_allclose(pred1, pred2, atol=1.5e-7)
+    assert_allclose(pred1, pred2, atol=1e-7)
 
     # extra options
     pred3 = res.predict(exog, offset=0, exposure=1)
-    assert_allclose(pred1, pred3, atol=1.5e-7)
+    assert_allclose(pred1, pred3, atol=1e-7)
 
     pred3 = res.predict(exog, offset=0, exposure=2)
-    assert_allclose(2 * pred1, pred3, atol=1.5e-7)
+    assert_allclose(2 * pred1, pred3, atol=1e-7)
 
     pred3 = res.predict(exog, offset=np.log(2), exposure=1)
-    assert_allclose(2 * pred1, pred3, atol=1.5e-7)
+    assert_allclose(2 * pred1, pred3, atol=1e-7)
 
 
 @pytest.mark.xfail(reason="whether the warning is ommitted depends on "
