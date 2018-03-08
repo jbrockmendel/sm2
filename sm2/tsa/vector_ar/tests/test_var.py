@@ -25,13 +25,16 @@ DECIMAL_3 = 3
 DECIMAL_2 = 2
 
 
+@pytest.mark.not_vetted
 class CheckVAR(object):
     # just so pylint won't complain
     res1 = None
     res2 = None
 
     def test_params(self):
-        assert_almost_equal(self.res1.params, self.res2.params, DECIMAL_3)
+        assert_almost_equal(self.res1.params,
+                            self.res2.params,
+                            DECIMAL_3)
 
     def test_neqs(self):
         assert self.res1.neqs == self.res2.neqs
@@ -79,12 +82,14 @@ class CheckVAR(object):
     def test_bse(self):
         assert_almost_equal(self.res1.bse, self.res2.bse, DECIMAL_4)
 
+
 def get_macrodata():
-    data = sm.datasets.macrodata.load_pandas().data[['realgdp','realcons','realinv']]
+    data = sm.datasets.macrodata.load_pandas().data[['realgdp', 'realcons', 'realinv']]
     data = data.to_records(index=False)
     nd = data.view((float,3), type=np.ndarray)
     nd = np.diff(np.log(nd), axis=0)
     return nd.ravel().view(data.dtype, type=np.ndarray)
+
 
 def generate_var():
     from rpy2.robjects import r
@@ -92,9 +97,11 @@ def generate_var():
     r.source('tests/var.R')
     return prp.convert_robj(r['result'], use_pandas=False)
 
+
 def write_generate_var():
     result = generate_var()
     np.savez('tests/results/vars_results.npz', **result)
+
 
 class RResults(object):
     """
@@ -155,6 +162,8 @@ try:
 except ImportError:
     pass
 
+
+@pytest.mark.not_vetted
 class CheckIRF(object):
 
     ref = None; res = None; irf = None
@@ -213,8 +222,8 @@ class CheckIRF(object):
         close_plots()
 
 
+@pytest.mark.not_vetted
 class CheckFEVD(object):
-
     fevd = None
 
     #---------------------------------------------------------------------------
@@ -238,8 +247,9 @@ class CheckFEVD(object):
 
         pass
 
-class TestVARResults(CheckIRF, CheckFEVD):
 
+@pytest.mark.not_vetted
+class TestVARResults(CheckIRF, CheckFEVD):
     @classmethod
     def setup_class(cls):
         cls.p = 2
@@ -345,7 +355,7 @@ class TestVARResults(CheckIRF, CheckFEVD):
         ma_rep = self.res.ma_rep(self.nahead)
         assert_almost_equal(ma_rep, self.ref.ma_rep)
 
-    #--------------------------------------------------
+    # --------------------------------------------------
     # Lots of tests to make sure stuff works...need to check correctness
 
     def test_causality(self):
@@ -354,12 +364,16 @@ class TestVARResults(CheckIRF, CheckFEVD):
         for i, name in enumerate(self.names):
             variables = self.names[:i] + self.names[i + 1:]
             result = self.res.test_causality(name, variables, kind='f')
-            assert_almost_equal(result.pvalue, causedby[i], DECIMAL_4)
+            assert_almost_equal(result.pvalue,
+                                causedby[i],
+                                DECIMAL_4)
 
             rng = list(range(self.k))
             rng.remove(i)
             result2 = self.res.test_causality(i, rng, kind='f')
-            assert_almost_equal(result.pvalue, result2.pvalue, DECIMAL_12)
+            assert_almost_equal(result.pvalue,
+                                result2.pvalue,
+                                DECIMAL_12)
 
             # make sure works
             result = self.res.test_causality(name, variables, kind='wald')
@@ -425,17 +439,20 @@ class TestVARResults(CheckIRF, CheckFEVD):
         #manually reorder
         data = self.data.view((float,3), type=np.ndarray)
         names = self.names
-        data2 = np.append(np.append(data[:,2,None], data[:,0,None], axis=1), data[:,1,None], axis=1)
+        data2 = np.append(np.append(data[:, 2, None], data[:, 0, None],
+                                    axis=1),
+                          data[:, 1, None],
+                          axis=1)
         names2 = []
         names2.append(names[2])
         names2.append(names[0])
         names2.append(names[1])
         res2 = VAR(data2).fit(maxlags=self.p)
 
-        #use reorder function
+        # use reorder function
         res3 = self.res.reorder(['realinv','realgdp', 'realcons'])
 
-        #check if the main results match
+        # check if the main results match
         assert_almost_equal(res2.params, res3.params)
         assert_almost_equal(res2.sigma_u, res3.sigma_u)
         assert_almost_equal(res2.bic, res3.bic)
@@ -455,7 +472,6 @@ class E1_Results(object):
     """
     Results from Lütkepohl (2005) using E2 dataset
     """
-
     def __init__(self):
         # Lutkepohl p. 120 results
 
@@ -502,18 +518,18 @@ def get_lutkepohl_data(name='e2'):
     return util.parse_lutkepohl_data(path)
 
 
+@pytest.mark.not_vetted
 def test_lutkepohl_parse():
     files = ['e%d' % i for i in range(1, 7)]
     for f in files:
         get_lutkepohl_data(f)
 
 
-
+@pytest.mark.not_vetted
 class TestVARResultsLutkepohl(object):
     """
     Verify calculations using results from Lütkepohl's book
     """
-
     @classmethod
     def setup_class(cls):
         cls.p = 2
@@ -565,8 +581,9 @@ def test_get_trendorder():
         assert util.get_trendorder(t) == trendorder
 
 
+@pytest.mark.not_vetted
 def test_var_constant():
-    # see GH#2043
+    # GH#2043
     import datetime
     from pandas import DataFrame, DatetimeIndex
 
@@ -586,6 +603,7 @@ def test_var_constant():
     with pytest.raises(ValueError):
         model.fit(1)
 
+@pytest.mark.not_vetted
 def test_var_trend():
     # GH#2271
     data = get_macrodata().view((float,3), type=np.ndarray)
@@ -594,7 +612,6 @@ def test_var_trend():
     results = model.fit(4) #, trend = 'c')
     irf = results.irf(10)
 
-
     data_nc = data - data.mean(0)
     model_nc = VAR(data_nc)
     results_nc = model_nc.fit(4, trend = 'nc')
@@ -602,6 +619,7 @@ def test_var_trend():
         model.fit(4, trend='t')
 
 
+@pytest.mark.not_vetted
 def test_irf_trend():
     # test for irf with different trend see GH#1636
     # this is a rough comparison by adding trend or subtracting mean to data
@@ -626,7 +644,12 @@ def test_irf_trend():
     data_t = data + trend[:,None]
 
     model_t = VAR(data_t)
-    results_t = model_t.fit(4, trend = 'ct')
+    results_t = model_t.fit(4, trend='ct')
     irf_t = results_t.irf(10)
 
-    assert_allclose(irf_t.stderr()[1:4], irf.stderr()[1:4], rtol=0.03)
+    assert_allclose(irf_t.stderr()[1:4],
+                    irf.stderr()[1:4],
+                    rtol=0.03)
+
+# ----------------------------------------------------------------
+# Issue-Specific Regression Tests

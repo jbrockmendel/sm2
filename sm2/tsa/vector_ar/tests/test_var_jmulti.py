@@ -3,7 +3,8 @@ from __future__ import absolute_import, print_function
 from six.moves import range
 
 import numpy as np
-from numpy.testing import assert_, assert_allclose, assert_raises
+from numpy.testing import assert_allclose
+import pytest
 
 import sm2.datasets.macrodata.data as macro
 from sm2.tsa.vector_ar.var_model import VAR
@@ -116,7 +117,7 @@ def generate_exog_from_season(seasons, endog_len):
     return exog
 
 
-def load_results_statsmodels(dataset):
+def load_results_sm(dataset):
     results_per_deterministic_terms = dict.fromkeys(dt_s_list)
     for dt_s_tup in dt_s_list:
         endog = data[dataset]
@@ -141,11 +142,10 @@ def build_err_msg(ds, dt_s, parameter_str):
 
 def setup():
     datasets.append(macro)  # TODO: append more data sets for more test cases.
-
     for ds in datasets:
         load_data(ds, data)
         results_ref[ds] = load_results_jmulti(ds, dt_s_list)
-        results_sm[ds] = load_results_statsmodels(ds)
+        results_sm[ds] = load_results_sm(ds)
 
 setup()
 
@@ -195,10 +195,10 @@ def test_ols_det_terms():
             det_key_ref = "Deterministic term"
             # If there are no det. terms, just make sure we don't compute any:
             if det_key_ref not in results_ref[ds][dt_s]["est"].keys():
-                assert_((results_sm[ds][dt_s].coefs_exog.size == 0 and
-                         results_sm[ds][dt_s].stderr_dt.size == 0 and
-                         results_sm[ds][dt_s].tvalues_dt.size == 0 and
-                         results_sm[ds][dt_s].pvalues_dt.size == 0), err_msg)
+                assert results_sm[ds][dt_s].coefs_exog.size == 0
+                assert results_sm[ds][dt_s].stderr_dt.size == 0
+                assert results_sm[ds][dt_s].tvalues_dt.size == 0
+                assert results_sm[ds][dt_s].pvalues_dt.size == 0
                 continue
             obtained = results_sm[ds][dt_s].coefs_exog
             desired = results_ref[ds][dt_s]["est"][det_key_ref]
@@ -540,6 +540,9 @@ def test_exceptions():
 
             # instant causality:
             ### 0<signif<1
-            assert_raises(ValueError, results_sm[ds][dt].test_inst_causality, 0, 0) # this means signif=0
+            with pytest.raises(ValueError):
+                results_sm[ds][dt].test_inst_causality(0, 0)  # this means signif=0
+            
             ### causing must be int, str or iterable of int or str
-            assert_raises(TypeError, results_sm[ds][dt].test_inst_causality, [0.5])  # 0.5 not an int
+            with pytest.raises(TypeError):
+                results_sm[ds][dt].test_inst_causality([0.5])  # 0.5 not an int

@@ -189,17 +189,18 @@ class Contrast(object):
     combination of columns of the design matrix. The matrix attribute of
     Contrast is a contrast matrix C so that
 
-    colspan(dot(D, C)) = colspan(dot(D, dot(pinv(D), T)))
+    colspan(np.dot(D, C)) = colspan(np.dot(D, np.dot(np.linalg.pinv(D), T)))
 
-    where pinv(D) is the generalized inverse of D. Further, the matrix
+    where np.linalg.pinv(D) is the generalized inverse of D. Further,
+    the matrix
 
-    Tnew = dot(C, D)
+    Tnew = np.dot(C, D)
 
     is full rank. The rank attribute is the rank of
 
-    dot(D, dot(pinv(D), T))
+    np.dot(D, np.dot(np.linalg.pinv(D), T))
 
-    In a regression model, the contrast tests that E(dot(Tnew, Y)) = 0
+    In a regression model, the contrast tests that E(np.dot(Tnew, Y)) = 0
     for each column of Tnew.
 
     Parameters
@@ -265,9 +266,9 @@ class Contrast(object):
         """
         Construct a contrast matrix C so that
 
-        colspan(dot(D, C)) = colspan(dot(D, dot(pinv(D), T)))
+        colspan(np.dot(D, C)) = colspan(np.dot(D, np.dot(np.linalg.pinv(D), T)))
 
-        where pinv(D) is the generalized inverse of D=design.
+        where np.linalg.pinv(D) is the generalized inverse of D=design.
         """
         T = self.term
         if T.ndim == 1:
@@ -290,7 +291,7 @@ def contrastfromcols(L, D, pseudo=None):
     determines a contrast of full rank, i.e. the
     n x q matrix
 
-    dot(transpose(C), pinv(D))
+    np.dot(np.transpose(C), np.linalg.pinv(D))
 
     is full rank.
 
@@ -301,7 +302,7 @@ def contrastfromcols(L, D, pseudo=None):
 
     If L.shape[1] == p, then L is thought of as what is known
     as a contrast matrix. In this case, this function returns an estimable
-    contrast corresponding to the dot(D, L.T)
+    contrast corresponding to the np.dot(D, L.T)
 
     Note that this always produces a meaningful contrast, not always
     with the intended properties because q is always non-zero unless

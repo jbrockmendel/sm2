@@ -8,8 +8,6 @@ import pytest
 
 from sm2.tsa.base.tsa_model import TimeSeriesModel
 
-from statsmodels.tools.testing import assert_equal
-
 
 @pytest.mark.not_vetted
 def test_pandas_nodates_index():
@@ -66,8 +64,8 @@ def test_predict_freq():
     #expected_dates = date_range("2006-12-31", "2016-12-31",
     #                            freq="AS-APR")
     expected_dates = pd.date_range("2006-4-30", "2016-4-30", freq="A-APR")
-    assert_equal(predict_dates, expected_dates)
-    #ptesting.assert_series_equal(predict_dates, expected_dates)
+    tm.assert_index_equal(predict_dates, expected_dates)
+    #tm.assert_series_equal(predict_dates, expected_dates)
 
 
 @pytest.mark.not_vetted
@@ -126,4 +124,4 @@ def test_get_predict_start_end():
     desired = (1, 9, 11)
     for start in predict_starts:
         for end in predict_ends:
-            assert_equal(model._get_prediction_index(start, end)[:3], desired)
+            assert model._get_prediction_index(start, end)[:3] ==desired

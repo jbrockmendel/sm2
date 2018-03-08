@@ -398,7 +398,7 @@ def test_normality(results, signif=0.05):
 
     Parameters
     ----------
-    results : VARResults or statsmodels.tsa.vecm.vecm.VECMResults
+    results : VARResults or vecm.VECMResults
     signif : float
         The test's significance level.
 
