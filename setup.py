@@ -38,11 +38,9 @@ DOWNLOAD_URL = ''
 classifiers = ['Development Status :: 4 - Beta',
                'Environment :: Console',
                'Programming Language :: Cython',
-               'Programming Language :: Python :: 2.6',
                'Programming Language :: Python :: 2.7',
-               'Programming Language :: Python :: 3.3',
-               'Programming Language :: Python :: 3.4',
                'Programming Language :: Python :: 3.5',
+               'Programming Language :: Python :: 3.6',
                'Operating System :: OS Independent',
                'Intended Audience :: End Users/Desktop',
                'Intended Audience :: Developers',
@@ -56,13 +54,8 @@ ISRELEASED = False
 
 
 extras = {'docs': ['sphinx>=1.3.5',
-                   'nbconvert>=4.2.0',
-                   'jupyter_client',
-                   'ipykernel',
                    'matplotlib',
-                   'nbformat>=4.0.1',
-                   'numpydoc>=0.6.0',
-                   'pandas-datareader']}
+                   'numpydoc>=0.6.0']}
 min_versions = {'numpy': '1.13.0',
                 'scipy': '0.19.0',
                 'pandas': '0.22.0',
