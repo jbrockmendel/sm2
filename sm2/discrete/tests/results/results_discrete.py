@@ -17,7 +17,7 @@ class Namespace(object):
 
 class Anes(object):
     """Results are from Stata 11 (checked vs R nnet package)."""
-    def mnlogit_basezero(self):
+    def mnlogit_basezero():
         obj = Namespace()
         obj.nobs = 944
         params = [-.01153598, .29771435, -.024945, .08249144, .00519655,
@@ -231,6 +231,7 @@ class Anes(object):
         obj.resid = np.loadtxt(os.path.join(cur_dir, 'mnlogit_resid.csv'),
                                delimiter=",")
         return obj
+    mnlogit_basezero = mnlogit_basezero()
 
 
 class DiscreteL1(object):
@@ -239,7 +240,7 @@ class DiscreteL1(object):
     Uses the Spector data and a script to generate the baseline results
     """
 
-    def logit(self):
+    def logit():
         """
         Results generated with:
             data = sm.datasets.spector.load()
@@ -266,8 +267,9 @@ class DiscreteL1(object):
             [-0.28636261, np.nan, 0.01263751, np.nan],
             [np.nan, np.nan, np.nan, np.nan]]
         return obj
+    logit = logit()
 
-    def sweep(self):
+    def sweep():
         """
         Results generated with
             params = np.zeros((3, 4))
@@ -289,8 +291,9 @@ class DiscreteL1(object):
             [-5.32670811, 1.18216019, 0.01402395, 1.45178712],
             [-3.92630318, 0.90126958, -0., 1.09498178]]
         return obj
+    sweep = sweep()
 
-    def probit(self):
+    def probit():
         """
         Results generated with
             data = sm.datasets.spector.load()
@@ -318,8 +321,9 @@ class DiscreteL1(object):
             [-0.06827915, -0.01700249, 0.00545216, nan],
             [nan, nan, nan, nan]]
         return obj
+    probit = probit()
 
-    def mnlogit(self):
+    def mnlogit():
         """
         Results generated with
             anes_data = sm.datasets.anes96.load()
@@ -405,6 +409,7 @@ class DiscreteL1(object):
         obj.aic = 3019.4391360294126
         obj.bic = 3174.6431733460686
         return obj
+    mnlogit = mnlogit()
 
 
 class Spector(object):
@@ -413,9 +418,9 @@ class Spector(object):
     """
     nobs = 32
 
-    def logit(self):
+    def logit():
         obj = Namespace()
-        obj.nobs = self.nobs
+        obj.nobs = 32
         obj.params = [2.82611297201, .0951576702557, 2.37868772835,
                       -13.0213483201]
         obj.cov_params = [
@@ -678,10 +683,11 @@ class Spector(object):
         # Gretl Output matched the Stata output here for params and SE
         obj.pred_table = np.array([[18, 3], [3, 8]])
         return obj
+    logit = logit()
 
-    def probit(self):
+    def probit():
         obj = Namespace()
-        obj.nobs = self.nobs
+        obj.nobs = 32
         obj.params = [1.62581025407, .051728948442, 1.42633236818,
                       -7.45232041607]
         obj.cov_params = [
@@ -768,7 +774,7 @@ class Spector(object):
                                  -0.862836, 1.652638]
         obj.pred_table = np.array([[18, 3], [3, 8]])
         return obj
-
+    probit = probit()
 
 class RandHIE(object):
     """
@@ -776,9 +782,9 @@ class RandHIE(object):
     """
     nobs = 20190
 
-    def poisson(self):
+    def poisson():
         obj = Namespace()
-        obj.nobs = self.nobs
+        obj.nobs = 20190
         obj.params = [
             -.052535114675, -.247086797633, .035290201794,
             -.03457750643, .271713973711, .033941474461, -.012635035534,
@@ -845,11 +851,12 @@ class RandHIE(object):
         obj.resid = np.loadtxt(os.path.join(cur_dir, 'poisson_resid.csv'),
                                delimiter=",")
         return obj
+    poisson = poisson()
 
-    def negativebinomial_nb2_bfgs(self):
+    def negativebinomial_nb2_bfgs():
         # R 2.15.1 MASS 7.3-22 glm.nb()
         obj = Namespace()
-        obj.nobs = self.nobs
+        obj.nobs = 20190
         obj.params = [
             -0.0579469537244314,
             -0.267787718814838, 0.0412060770911646, -0.0381376804392121,
@@ -909,13 +916,14 @@ class RandHIE(object):
         obj.df_model = 9.0
         obj.llr_pvalue = 0.0
         return obj
+    negativebinomial_nb2_bfgs = negativebinomial_nb2_bfgs()
 
-    def negativebinomial_nb1_bfgs(self):
+    def negativebinomial_nb1_bfgs():
         # Unpublished implementation intended for R's COUNT package. Sent by
         # J.Hilbe (of Cambridge UP NBin book) and Andrew Robinson to Vincent
         # Arel-Bundock on 2012-12-06.
         obj = Namespace()
-        obj.nobs = self.nobs
+        obj.nobs = 20190
         # obj.params = [-0.065309744899923, -0.296016207412261,
         #        0.0411724098925173, -0.0320460533573259, 0.19083354227553,
         #        0.0318566232844115, -0.0331972813313092, -0.0484691550721231,
@@ -995,11 +1003,12 @@ class RandHIE(object):
             0.8487497, 0.88201746, 0.88201746, 0.88201746, 0.88201746,
             0.88201746]
         return obj
+    negativebinomial_nb1_bfgs = negativebinomial_nb1_bfgs()
 
-    def negativebinomial_geometric_bfgs(self):
+    def negativebinomial_geometric_bfgs():
         # Smoke tests TODO: Cross check with other stats package
         obj = Namespace()
-        obj.nobs = self.nobs
+        obj.nobs = 20190
         obj.params = [-0.05768894, -0.26646696, 0.04088528, -0.03795503,
                       0.26885821, 0.03802523, -0.04308456, 0.01931675,
                       0.18051684, 0.66469896]
@@ -1036,11 +1045,12 @@ class RandHIE(object):
                         [0.04986111, 0.31117258],
                         [0.62059873, 0.70879919]]
         return obj
+    negativebinomial_geometric_bfgs = negativebinomial_geometric_bfgs()
 
-    def generalizedpoisson_gp2(self):
+    def generalizedpoisson_gp2():
         # Stata gnpoisson function
         obj = Namespace()
-        obj.nobs = self.nobs
+        obj.nobs = 20190
         obj.llf = -43326.42720093228
         obj.params = [-0.0604495342, -0.277717228, 0.0438136144,
                       -0.0395811744, 0.273044906, 0.0399108677, -0.0552626543,
@@ -1067,10 +1077,11 @@ class RandHIE(object):
         obj.wald_pvalue = 4.8795019354e-254
         obj.wald_statistic = 1206.46339591254
         return obj
+    generalizedpoisson_gp2 = generalizedpoisson_gp2()
 
-    def zero_inflated_poisson_logit(self):
+    def zero_inflated_poisson_logit():
         obj = Namespace()
-        obj.nobs = self.nobs
+        obj.nobs = 20190
         obj.params = [.1033783, -1.045983, -.0821979, .0085692,
                       -.0267957, 1.482363]
         obj.llf = -57005.72199826186
@@ -1085,10 +1096,11 @@ class RandHIE(object):
         obj.aic = 114023.444
         obj.bic = 114070.9
         return obj
+    zero_inflated_poisson_logit = zero_inflated_poisson_logit()
 
-    def zero_inflated_poisson_probit(self):
+    def zero_inflated_poisson_probit():
         obj = Namespace()
-        obj.nobs = self.nobs
+        obj.nobs = 20190
         obj.params = [.0622534, -.6429324, -.0821788, .0085673,
                       -.0267952, 1.482369]
         obj.llf = -57006.05
@@ -1103,10 +1115,11 @@ class RandHIE(object):
         obj.aic = 114024.1
         obj.bic = 114071.6
         return obj
+    zero_inflated_poisson_probit = zero_inflated_poisson_probit()
 
-    def zero_inflated_poisson_offset(self):
+    def zero_inflated_poisson_offset():
         obj = Namespace()
-        obj.nobs = self.nobs
+        obj.nobs = 20190
         obj.params = [.1052014, -1.082434, -.0922822, .0115868,
                       -.0283842, 1.347514]
         obj.llf = -58207.67
@@ -1120,10 +1133,11 @@ class RandHIE(object):
         obj.aic = 116427.3
         obj.bic = 116474.8
         return obj
+    zero_inflated_poisson_offset = zero_inflated_poisson_offset()
 
-    def zero_inflated_generalized_poisson(self):
+    def zero_inflated_generalized_poisson():
         obj = Namespace()
-        obj.nobs = self.nobs
+        obj.nobs = 20190
         obj.params = [3.57337, -17.95797, -0.21380, 0.03847,
                       -0.05348, 1.15666, 1.36468]
         obj.llf = -43630.6
@@ -1131,13 +1145,15 @@ class RandHIE(object):
                    0.00289, 0.01680, 0.01606]
         obj.aic = 87275
         return obj
+    zero_inflated_generalized_poisson = zero_inflated_generalized_poisson()
 
-    def zero_inflated_negative_binomial(self):
+    def zero_inflated_negative_binomial():
         obj = Namespace()
-        obj.nobs = self.nobs
+        obj.nobs = 20190
         obj.params = [1.883859, -10.280888, -0.204769,
                       1.137985, 1.344457]
         obj.llf = -44077.91
         obj.bse = [0.3653, 1.6694, 0.02178, 0.01163, 0.0217496]
         obj.aic = 88165.81
         return obj
+    zero_inflated_negative_binomial = zero_inflated_negative_binomial()

@@ -19,6 +19,8 @@ from sm2.datasets import macrodata, sunspots
 from sm2.tsa.arima_process import arma_generate_sample
 
 cur_dir = os.path.dirname(os.path.abspath(__file__))
+path = os.path.join(cur_dir, "results", "results_corrgram.csv")
+results_corrgram = pd.read_csv(path, delimiter=',')
 
 DECIMAL_8 = 8
 DECIMAL_6 = 6
@@ -153,10 +155,7 @@ class CheckCorrGram(object):
     """
     data = macrodata.load_pandas()
     x = data.data['realgdp']
-    path = os.path.join(cur_dir, "results", "results_corrgram.csv")
-    results = pd.read_csv(path, delimiter=',')
-    # TODO: should this... do something?
-
+    results = results_corrgram
     # not needed: add 1. for lag zero
     #self.results['acvar'] = np.concatenate(([1.], self.results['acvar']))
 
@@ -185,9 +184,9 @@ class TestACF(CheckCorrGram):
         assert_almost_equal(self.res1[2][:40], self.qstat, DECIMAL_3)
         # 3 decimal places because of stata rounding
 
-#    def pvalue(self):
-#        pass
-# NOTE: shouldn't need testing if Q stat is correct
+    #def pvalue(self):
+    #     pass
+    # NOTE: shouldn't need testing if Q stat is correct
 
 
 @pytest.mark.not_vetted
@@ -248,11 +247,10 @@ class TestACFMissing(CheckCorrGram):
                             self.qstat_none,
                             DECIMAL_3)
 
-
-# how to do this test? the correct q_stat depends on whether nobs=len(x) is
-# used when x contains NaNs or whether nobs<len(x) when x contains NaNs
-#    def test_qstat_drop(self):
-#        assert_almost_equal(self.res_drop[2][:40], self.qstat, DECIMAL_3)
+    # how to do this test? the correct q_stat depends on whether nobs=len(x) is
+    # used when x contains NaNs or whether nobs<len(x) when x contains NaNs
+    #def test_qstat_drop(self):
+    #    assert_almost_equal(self.res_drop[2][:40], self.qstat, DECIMAL_3)
 
 
 @pytest.mark.not_vetted

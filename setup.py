@@ -130,15 +130,6 @@ def generate_cython():
     if p != 0:
         raise RuntimeError("Running cythonize failed!")
 
-
-def init_cython_exclusion(filename):
-    with open(filename, 'w') as f:
-        pass
-
-
-def append_cython_exclusion(path, filename):
-    with open(filename, 'a') as f:
-        f.write(path + "\n")
 '''
 
 
@@ -246,17 +237,13 @@ else:
     suffix = '.c'
     cmdclass['build_src'] = DummyBuildSrc
 
+
 '''
-
-
 # some linux distros require it
 # NOTE: we are not currently using this but add it to Extension, if needed.
 # libraries = ['m'] if 'win32' not in sys.platform else []
 
 from numpy.distutils.misc_util import get_info
-
-# Reset the cython exclusions file
-init_cython_exclusion(CYTHON_EXCLUSION_FILE)
 
 npymath_info = get_info("npymath")
 ext_data = {
