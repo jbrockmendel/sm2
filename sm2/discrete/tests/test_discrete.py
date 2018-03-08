@@ -77,15 +77,20 @@ class CheckModelResults(object):
     res2 should be the test results from RModelWrap
     or the results as defined in model_results_data
     """
+
+    tols = {
+        "params": {"atol": 1e-4}
+    }
+    @pytest.mark.parametrize('name', list(tols.keys()))
+    def test_attr(self, name):
+        result = getattr(self.res1, name)
+        expected = getattr(self.res2, name)
+        assert_allclose(result, expected, **self.tols[name])
+
     def test_conf_int(self):
         assert_allclose(self.res1.conf_int(),
                         self.res2.conf_int,
                         rtol=8e-5)
-
-    def test_params(self):
-        assert_allclose(self.res1.params,
-                        self.res2.params,
-                        atol=1e-4)
 
     def test_zstat(self):
         assert_allclose(self.res1.tvalues,
@@ -449,6 +454,11 @@ class TestNegativeBinomialGeometricBFGS(CheckModelResults):
     mod_kwargs = {'loglike_method': 'geometric'}
     fit_kwargs = {'method': 'bfgs', 'disp': False}
 
+    tols = CheckModelResults.tols.copy()
+    tols.update({
+        "params": {"atol": 1e-3}
+        })
+
     @classmethod
     def setup_class(cls):
         data = sm2.datasets.randhie.load()
@@ -472,11 +482,6 @@ class TestNegativeBinomialGeometricBFGS(CheckModelResults):
     def test_predict(self):
         assert_allclose(self.res1.predict()[:10],
                         np.exp(self.res2.fittedvalues[:10]),
-                        atol=1e-3)
-
-    def test_params(self):
-        assert_allclose(self.res1.params,
-                        self.res2.params,
                         atol=1e-3)
 
     def test_predict_xb(self):
@@ -516,6 +521,11 @@ class TestNegativeBinomialPNB2Newton(CheckModelResults):
     mod_kwargs = {'p': 2}
     fit_kwargs = {'method': 'newton', 'disp': False}
 
+    tols = CheckModelResults.tols.copy()
+    tols.update({
+        "params": {"atol": 1e-7}
+        })
+
     @classmethod
     def setup_class(cls):
         data = sm2.datasets.randhie.load()
@@ -528,11 +538,6 @@ class TestNegativeBinomialPNB2Newton(CheckModelResults):
         assert_allclose(self.res1.bse,
                         self.res2.bse,
                         atol=1e-3, rtol=1e-3)
-
-    def test_params(self):
-        assert_allclose(self.res1.params,
-                        self.res2.params,
-                        atol=1e-7)
 
     def test_alpha(self):
         self.res1.bse  # attaches alpha_std_err
@@ -577,6 +582,11 @@ class TestNegativeBinomialPNB1Newton(CheckModelResults):
     fit_kwargs = {'method': 'newton', 'maxiter': 100,
                   'disp': False, 'use_transparams': True}
 
+    tols = CheckModelResults.tols.copy()
+    tols.update({
+        "params": {"atol": 1e-7}
+        })
+
     @classmethod
     def setup_class(cls):
         data = sm2.datasets.randhie.load()
@@ -596,11 +606,6 @@ class TestNegativeBinomialPNB1Newton(CheckModelResults):
                         rtol=1e-7)
         assert_allclose(self.res1.lnalpha_std_err,
                         self.res2.lnalpha_std_err,
-                        rtol=1e-7)
-
-    def test_params(self):
-        assert_allclose(self.res1.params,
-                        self.res2.params,
                         rtol=1e-7)
 
     def test_conf_int(self):
@@ -630,6 +635,11 @@ class TestNegativeBinomialPNB2BFGS(CheckModelResults):
     fit_kwargs = {'method': 'bfgs', 'maxiter': 1000,
                   'disp': False, 'use_transparams': True}
 
+    tols = CheckModelResults.tols.copy()
+    tols.update({
+        "params": {"atol": 1e-3, "rtol": 1e-3},
+        })
+
     @classmethod
     def setup_class(cls):
         data = sm2.datasets.randhie.load()
@@ -641,11 +651,6 @@ class TestNegativeBinomialPNB2BFGS(CheckModelResults):
     def test_bse(self):
         assert_allclose(self.res1.bse,
                         self.res2.bse,
-                        atol=1e-3, rtol=1e-3)
-
-    def test_params(self):
-        assert_allclose(self.res1.params,
-                        self.res2.params,
                         atol=1e-3, rtol=1e-3)
 
     def test_alpha(self):
@@ -692,6 +697,11 @@ class TestNegativeBinomialPNB1BFGS(CheckModelResults):
     fit_kwargs = {'method': 'bfgs', 'maxiter': 100,
                   'disp': False}
 
+    tols = CheckModelResults.tols.copy()
+    tols.update({
+        "params": {"atol": 5e-2, "rtol": 5e-2},
+        })
+
     @classmethod
     def setup_class(cls):
         data = sm2.datasets.randhie.load()
@@ -736,11 +746,6 @@ class TestNegativeBinomialPNB1BFGS(CheckModelResults):
         assert_allclose(self.res1.lnalpha_std_err,
                         self.res2.lnalpha_std_err,
                         atol=1e-3, rtol=1e-3)
-
-    def test_params(self):
-        assert_allclose(self.res1.params,
-                        self.res2.params,
-                        atol=5e-2, rtol=5e-2)
 
     def test_conf_int(self):
         # the bse for alpha is not high precision from the hessian
