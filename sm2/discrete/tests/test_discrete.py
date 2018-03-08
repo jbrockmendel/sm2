@@ -2056,7 +2056,7 @@ def test_null_options():
     # check setting cache
     res.set_null_options(llnull=999)
     assert 'prsquared' not in res._cache
-    assert_equal(res._cache['llnull'], 999)
+    assert res._cache['llnull'] == 999
 
 
 # ------------------------------------------------------------------

@@ -63,13 +63,13 @@ extras = {'docs': ['sphinx>=1.3.5',
                    'nbformat>=4.0.1',
                    'numpydoc>=0.6.0',
                    'pandas-datareader']}
-min_versions = {'numpy' : '1.6.2',
-                'scipy' : '0.11',
-                'pandas' : '0.13',
-                'patsy' : '0.2.1'}
+min_versions = {'numpy': '1.6.2',
+                'scipy': '0.11',
+                'pandas': '0.13',
+                'patsy': '0.2.1'}
 if sys.version_info[0] == 3 and sys.version_info[1] >= 3:
     # 3.3 needs numpy 1.7+
-    min_versions.update({"numpy" : "1.7.0"})
+    min_versions.update({"numpy": "1.7.0"})
 
 
 # TODO: Can we just put this with the next (only) use of CYTHON_INSTALLED?
@@ -578,24 +578,6 @@ if __name__ == "__main__":
         # Generate Cython sources, unless building from source release
         generate_cython()
     
-    setup(name=DISTNAME,
-          version=versioneer.get_version(),
-          maintainer=MAINTAINER,
-          ext_modules=extensions,
-          maintainer_email=MAINTAINER_EMAIL,
-          description=DESCRIPTION,
-          license=LICENSE,
-          # url=URL,
-          download_url=DOWNLOAD_URL,
-          long_description=LONG_DESCRIPTION,
-          classifiers=classifiers,
-          platforms='any',
-          cmdclass=cmdclass,
-          packages=find_packages(),
-          package_data=package_data,
-          include_package_data=False,  # True will install all files in repo
-          extras_require=extras,
-          **setuptools_kwargs)
 '''
 
 setup(name=DISTNAME,

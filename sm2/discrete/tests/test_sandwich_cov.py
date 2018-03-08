@@ -9,7 +9,7 @@ import os
 
 import pytest
 import numpy as np
-from numpy.testing import assert_allclose, assert_equal
+from numpy.testing import assert_allclose
 import pandas as pd
 
 from sm2.tools.tools import add_constant
@@ -491,8 +491,8 @@ class CheckDiscreteGLM(object):
         res1 = self.res1
         res2 = self.res2
 
-        assert_equal(res1.cov_type, self.cov_type)
-        assert_equal(res2.cov_type, self.cov_type)
+        assert res1.cov_type == self.cov_type
+        assert res2.cov_type == self.cov_type
 
         assert_allclose(res1.params, res2.params, rtol=1e-13)
         # bug TODO res1.scale missing ?  in Gaussian/OLS
