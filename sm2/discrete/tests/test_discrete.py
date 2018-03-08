@@ -333,13 +333,16 @@ class TestNegativeBinomialNB1Newton(CheckModelResults):
 @pytest.mark.match_stata11
 class TestNegativeBinomialNB2BFGS(CheckModelResults):
     res2 = RandHIE.negativebinomial_nb2_bfgs
+    model_cls = NegativeBinomial
+    mod_kwargs = {'loglike_method': 'nb2'}
+    fit_kwargs = {'method': 'bfgs', 'maxiter': 1000, 'disp': False}
 
     @classmethod
     def setup_class(cls):
         data = sm2.datasets.randhie.load()
         exog = add_constant(data.exog, prepend=False)
-        mod = NegativeBinomial(data.endog, exog, 'nb2')
-        cls.res1 = mod.fit(method='bfgs', disp=0, maxiter=1000)
+        model = cls.model_cls(data.endog, exog, **cls.mod_kwargs)
+        cls.res1 = model.fit(**cls.fit_kwargs)
 
     def test_jac(self):
         pass
@@ -392,13 +395,16 @@ class TestNegativeBinomialNB2BFGS(CheckModelResults):
 @pytest.mark.match_stata11
 class TestNegativeBinomialNB1BFGS(CheckModelResults):
     res2 = RandHIE.negativebinomial_nb1_bfgs
+    model_cls = NegativeBinomial
+    mod_kwargs = {'loglike_method': 'nb1'}
+    fit_kwargs = {'method': 'bfgs', 'maxiter': 100, 'disp': False}
 
     @classmethod
     def setup_class(cls):
         data = sm2.datasets.randhie.load()
         exog = add_constant(data.exog, prepend=False)
-        mod = NegativeBinomial(data.endog, exog, 'nb1')
-        cls.res1 = mod.fit(method="bfgs", maxiter=100, disp=0)
+        model = cls.model_cls(data.endog, exog, **cls.mod_kwargs)
+        cls.res1 = model.fit(**cls.fit_kwargs)
 
     def test_zstat(self):
         assert_allclose(self.res1.tvalues,
@@ -439,13 +445,16 @@ class TestNegativeBinomialGeometricBFGS(CheckModelResults):
     # than nb1 and nb2
     # and we want to make sure that predict() np.dot(exog, params) works
     res2 = RandHIE.negativebinomial_geometric_bfgs
+    model_cls = NegativeBinomial
+    mod_kwargs = {'loglike_method': 'geometric'}
+    fit_kwargs = {'method': 'bfgs', 'disp': False}
 
     @classmethod
     def setup_class(cls):
         data = sm2.datasets.randhie.load()
         exog = add_constant(data.exog, prepend=False)
-        mod = NegativeBinomial(data.endog, exog, 'geometric')
-        cls.res1 = mod.fit(method='bfgs', disp=0)
+        model = cls.model_cls(data.endog, exog, **cls.mod_kwargs)
+        cls.res1 = model.fit(**cls.fit_kwargs)
 
     def test_conf_int(self):
         assert_allclose(self.res1.conf_int(),
@@ -503,13 +512,16 @@ class TestNegativeBinomialGeometricBFGS(CheckModelResults):
 @pytest.mark.match_stata11
 class TestNegativeBinomialPNB2Newton(CheckModelResults):
     res2 = RandHIE.negativebinomial_nb2_bfgs
+    model_cls = NegativeBinomialP
+    mod_kwargs = {'p': 2}
+    fit_kwargs = {'method': 'newton', 'disp': False}
 
     @classmethod
     def setup_class(cls):
         data = sm2.datasets.randhie.load()
         exog = add_constant(data.exog, prepend=False)
-        mod = NegativeBinomialP(data.endog, exog, p=2)
-        cls.res1 = mod.fit(method='newton', disp=0)
+        model = cls.model_cls(data.endog, exog, **cls.mod_kwargs)
+        cls.res1 = model.fit(**cls.fit_kwargs)
 
     # NOTE: The bse is much closer precitions to stata
     def test_bse(self):
@@ -560,14 +572,17 @@ class TestNegativeBinomialPNB2Newton(CheckModelResults):
 @pytest.mark.match_stata11
 class TestNegativeBinomialPNB1Newton(CheckModelResults):
     res2 = RandHIE.negativebinomial_nb1_bfgs
+    model_cls = NegativeBinomialP
+    mod_kwargs = {'p': 1}
+    fit_kwargs = {'method': 'newton', 'maxiter': 100,
+                  'disp': False, 'use_transparams': True}
 
     @classmethod
     def setup_class(cls):
         data = sm2.datasets.randhie.load()
         exog = add_constant(data.exog, prepend=False)
-        mod = NegativeBinomialP(data.endog, exog, p=1)
-        cls.res1 = mod.fit(method="newton", maxiter=100, disp=0,
-                           use_transparams=True)
+        model = cls.model_cls(data.endog, exog, **cls.mod_kwargs)
+        cls.res1 = model.fit(**cls.fit_kwargs)
 
     def test_zstat(self):
         assert_allclose(self.res1.tvalues,
@@ -610,15 +625,17 @@ class TestNegativeBinomialPNB1Newton(CheckModelResults):
 @pytest.mark.match_stata11
 class TestNegativeBinomialPNB2BFGS(CheckModelResults):
     res2 = RandHIE.negativebinomial_nb2_bfgs
+    model_cls = NegativeBinomialP
+    mod_kwargs = {'p': 2}
+    fit_kwargs = {'method': 'bfgs', 'maxiter': 1000,
+                  'disp': False, 'use_transparams': True}
 
     @classmethod
     def setup_class(cls):
         data = sm2.datasets.randhie.load()
         exog = add_constant(data.exog, prepend=False)
-        cls.res1 = NegativeBinomialP(data.endog, exog, p=2).fit(
-                                                method='bfgs', disp=0,
-                                                maxiter=1000,
-                                                use_transparams=True)
+        model = cls.model_cls(data.endog, exog, **cls.mod_kwargs)
+        cls.res1 = model.fit(**cls.fit_kwargs)
 
     # NOTE: The bse is much closer precitions to stata
     def test_bse(self):
@@ -670,14 +687,17 @@ class TestNegativeBinomialPNB2BFGS(CheckModelResults):
 @pytest.mark.match_stata11
 class TestNegativeBinomialPNB1BFGS(CheckModelResults):
     res2 = RandHIE.negativebinomial_nb1_bfgs
+    model_cls = NegativeBinomialP
+    mod_kwargs = {'p': 1}
+    fit_kwargs = {'method': 'bfgs', 'maxiter': 100,
+                  'disp': False}
 
     @classmethod
     def setup_class(cls):
         data = sm2.datasets.randhie.load()
         exog = add_constant(data.exog, prepend=False)
-        cls.res1 = NegativeBinomialP(data.endog, exog, p=1).fit(method="bfgs",
-                                                                maxiter=100,
-                                                                disp=0)
+        model = cls.model_cls(data.endog, exog, **cls.mod_kwargs)
+        cls.res1 = model.fit(**cls.fit_kwargs)
 
     def test_bse(self):
         assert_allclose(self.res1.bse,
@@ -938,12 +958,16 @@ class CheckBinaryResults(CheckModelResults):
 @pytest.mark.match_stata11
 class TestProbitNewton(CheckBinaryResults):
     res2 = Spector.probit
+    model_cls = Probit
+    mod_kwargs = {}
+    fit_kwargs = {'method': 'newton', 'disp': False}
 
     @classmethod
     def setup_class(cls):
         data = sm2.datasets.spector.load()
         data.exog = add_constant(data.exog, prepend=False)
-        cls.res1 = Probit(data.endog, data.exog).fit(method="newton", disp=0)
+        model = cls.model_cls(data.endog, data.exog, **cls.mod_kwargs)
+        cls.res1 = model.fit(**cls.fit_kwargs)
 
     #def test_predict(self):
     #    assert_allclose(self.res1.model.predict(self.res1.params),
@@ -955,53 +979,66 @@ class TestProbitNewton(CheckBinaryResults):
 @pytest.mark.match_stata11
 class TestProbitBFGS(CheckBinaryResults):
     res2 = Spector.probit
+    model_cls = Probit
+    mod_kwargs = {}
+    fit_kwargs = {'method': 'bfgs', 'disp': False}
 
     @classmethod
     def setup_class(cls):
         data = sm2.datasets.spector.load()
         data.exog = add_constant(data.exog, prepend=False)
-        cls.res1 = Probit(data.endog, data.exog).fit(method="bfgs", disp=0)
+        model = cls.model_cls(data.endog, data.exog, **cls.mod_kwargs)
+        cls.res1 = model.fit(**cls.fit_kwargs)
 
 
 @pytest.mark.not_vetted
 @pytest.mark.match_stata11
 class TestProbitNM(CheckBinaryResults):
     res2 = Spector.probit
+    model_cls = Probit
+    mod_kwargs = {}
+    fit_kwargs = {'method': 'nm', 'disp': False, 'maxiter': 500}
 
     @classmethod
     def setup_class(cls):
         data = sm2.datasets.spector.load()
         data.exog = add_constant(data.exog, prepend=False)
-        cls.res1 = Probit(data.endog, data.exog).fit(method="nm",
-                                                     disp=0, maxiter=500)
+        model = cls.model_cls(data.endog, data.exog, **cls.mod_kwargs)
+        cls.res1 = model.fit(**cls.fit_kwargs)
 
 
 @pytest.mark.not_vetted
 @pytest.mark.match_stata11
 class TestProbitPowell(CheckBinaryResults):
     res2 = Spector.probit
+    model_cls = Probit
+    mod_kwargs = {}
+    fit_kwargs = {'method': 'powell', 'disp': False, 'ftol': 1e-8}
 
     @classmethod
     def setup_class(cls):
         data = sm2.datasets.spector.load()
         data.exog = add_constant(data.exog, prepend=False)
-        cls.res1 = Probit(data.endog, data.exog).fit(method="powell",
-                                                     disp=0, ftol=1e-8)
+        model = cls.model_cls(data.endog, data.exog, **cls.mod_kwargs)
+        cls.res1 = model.fit(**cls.fit_kwargs)
 
 
 @pytest.mark.not_vetted
 @pytest.mark.match_stata11
 class TestProbitNCG(CheckBinaryResults):
     res2 = Spector.probit
+    model_cls = Probit
+    mod_kwargs = {}
+    fit_kwargs = {'method': 'ncg', 'disp': False,
+                  'avextol': 1e-8, 'warn_convergence': False}
+    # converges close enough but warnflag is 2 for precision loss
 
     @classmethod
     def setup_class(cls):
         data = sm2.datasets.spector.load()
         data.exog = add_constant(data.exog, prepend=False)
-        cls.res1 = Probit(data.endog, data.exog).fit(method="ncg",
-                                                     disp=0, avextol=1e-8,
-                                                     warn_convergence=False)
-        # converges close enough but warnflag is 2 for precision loss
+        model = cls.model_cls(data.endog, data.exog, **cls.mod_kwargs)
+        cls.res1 = model.fit(**cls.fit_kwargs)
 
 
 @pytest.mark.not_vetted
@@ -1012,29 +1049,36 @@ class TestProbitNCG(CheckBinaryResults):
 @pytest.mark.match_stata11
 class TestProbitBasinhopping(CheckBinaryResults):
     res2 = Spector.probit
+    model_cls = Probit
+    mod_kwargs = {}
+    fit_kwargs = {'method': 'basinhopping', 'disp': False,
+                  'niter': 5,
+                  'minimizer': {'method': 'L-BFGS-B', 'tol': 1e-8}}
 
     @classmethod
     def setup_class(cls):
         data = sm2.datasets.spector.load()
         data.exog = add_constant(data.exog, prepend=False)
-        fit = Probit(data.endog, data.exog).fit
-        cls.res1 = fit(method="basinhopping", disp=0, niter=5,
-                       minimizer={'method': 'L-BFGS-B', 'tol': 1e-8})
+        model = cls.model_cls(data.endog, data.exog, **cls.mod_kwargs)
+        cls.res1 = model.fit(**cls.fit_kwargs)
 
 
 @pytest.mark.not_vetted
 @pytest.mark.match_stata11
 class TestProbitMinimizeDefault(CheckBinaryResults):
     res2 = Spector.probit
+    model_cls = Probit
+    mod_kwargs = {}
+    fit_kwargs = {'method': 'minimize', 'disp': False,
+                  'niter': 5, 'tol': 1e-8}
 
     @classmethod
     def setup_class(cls):
         # default min_method is "BFGS"
         data = sm2.datasets.spector.load()
         data.exog = add_constant(data.exog, prepend=False)
-        fit = Probit(data.endog, data.exog).fit
-        cls.res1 = Probit(data.endog, data.exog).fit(method="minimize", disp=0,
-                                                     niter=5, tol=1e-8)
+        model = cls.model_cls(data.endog, data.exog, **cls.mod_kwargs)
+        cls.res1 = model.fit(**cls.fit_kwargs)
 
 
 @pytest.mark.not_vetted
@@ -1044,40 +1088,48 @@ class TestProbitMinimizeDefault(CheckBinaryResults):
 @pytest.mark.match_stata11
 class TestProbitMinimizeDogleg(CheckBinaryResults):
     res2 = Spector.probit
+    model_cls = Probit
+    mod_kwargs = {}
+    fit_kwargs = {'method': 'minimize', 'disp': False,
+                  'niter': 5, 'tol': 1e-8, 'min_method': 'dogleg'}
 
     @classmethod
     def setup_class(cls):
         data = sm2.datasets.spector.load()
         data.exog = add_constant(data.exog, prepend=False)
-        cls.res1 = Probit(data.endog, data.exog).fit(method="minimize", disp=0,
-                                                     niter=5, tol=1e-8,
-                                                     min_method='dogleg')
+        model = cls.model_cls(data.endog, data.exog, **cls.mod_kwargs)
+        cls.res1 = model.fit(**cls.fit_kwargs)
 
 
 @pytest.mark.not_vetted
 @pytest.mark.match_stata11
 class TestProbitMinimizeAdditionalOptions(CheckBinaryResults):
     res2 = Spector.probit
+    model_cls = Probit
+    mod_kwargs = {}
+    fit_kwargs = {'method': 'minimize', 'disp': False,
+                  'maxiter': 500,
+                  'min_method': 'Nelder-Mead',
+                  'xtol': 1e-4, 'ftol': 1e-4}
 
     @classmethod
     def setup_class(cls):
         data = sm2.datasets.spector.load()
         data.exog = add_constant(data.exog, prepend=False)
-        cls.res1 = Probit(data.endog, data.exog).fit(method="minimize", disp=0,
-                                                     maxiter=500,
-                                                     min_method='Nelder-Mead',
-                                                     xtol=1e-4, ftol=1e-4)
+        model = cls.model_cls(data.endog, data.exog, **cls.mod_kwargs)
+        cls.res1 = model.fit(**cls.fit_kwargs)
 
 
 @pytest.mark.skip(reason="tools.transform_model not ported from upstream")
 @pytest.mark.not_vetted
 @pytest.mark.match_stata11
 class TestProbitCG(CheckBinaryResults):
+    res2 = Spector.probit
+
     @classmethod
     def setup_class(cls):
         data = sm2.datasets.spector.load()
         data.exog = add_constant(data.exog, prepend=False)
-        cls.res2 = Spector.probit
 
         # fmin_cg fails to converge on some machines - reparameterize
         # from statsmodels.tools.transform_model import StandardizeTransform
@@ -1087,7 +1139,7 @@ class TestProbitCG(CheckBinaryResults):
                                                   maxiter=1000, gtol=1e-08)
         start_params = transf.transform_params(res1_st.params)
         assert_allclose(start_params,
-                        res2.params,
+                        cls.res2.params,
                         rtol=1e-5, atol=1e-6)
 
         cls.res1 = Probit(data.endog, data.exog).fit(start_params=start_params,
@@ -2100,6 +2152,7 @@ def test_null_options():
 @pytest.mark.not_vetted
 @pytest.mark.match_stata11
 class TestGeneralizedPoisson_p2(object):
+    res2 = RandHIE.generalizedpoisson_gp2
 
     @classmethod
     def setup_class(cls):
@@ -2107,7 +2160,6 @@ class TestGeneralizedPoisson_p2(object):
         data.exog = add_constant(data.exog, prepend=False)
         mod = GeneralizedPoisson(data.endog, data.exog, p=2)
         cls.res1 = mod.fit(method='newton')
-        cls.res2 = RandHIE.generalizedpoisson_gp2
 
     def test_bse(self):
         assert_allclose(self.res1.bse,
@@ -2554,7 +2606,7 @@ def test_mnlogit_factor():
     exog = add_constant(dta.exog, prepend=True)
     mod = MNLogit(dta.endog, exog)
     res = mod.fit(disp=0)
-    
+
     # smoke tests
     params = res.params
     summary = res.summary()
