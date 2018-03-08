@@ -63,13 +63,10 @@ extras = {'docs': ['sphinx>=1.3.5',
                    'nbformat>=4.0.1',
                    'numpydoc>=0.6.0',
                    'pandas-datareader']}
-min_versions = {'numpy': '1.6.2',
-                'scipy': '0.11',
-                'pandas': '0.13',
-                'patsy': '0.2.1'}
-if sys.version_info[0] == 3 and sys.version_info[1] >= 3:
-    # 3.3 needs numpy 1.7+
-    min_versions.update({"numpy": "1.7.0"})
+min_versions = {'numpy': '1.13.0',
+                'scipy': '0.19.0',
+                'pandas': '0.22.0',
+                'patsy': '0.4.0'}
 
 
 # TODO: Can we just put this with the next (only) use of CYTHON_INSTALLED?
