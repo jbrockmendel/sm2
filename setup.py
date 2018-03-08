@@ -12,7 +12,6 @@ import os
 import shutil
 import sys
 import subprocess
-import re
 from distutils.version import LooseVersion
 from setuptools import setup, Command, find_packages
 import pkg_resources
@@ -251,7 +250,7 @@ else:
 
 
 # some linux distros require it
-#NOTE: we are not currently using this but add it to Extension, if needed.
+# NOTE: we are not currently using this but add it to Extension, if needed.
 # libraries = ['m'] if 'win32' not in sys.platform else []
 
 from numpy.distutils.misc_util import get_info
@@ -260,125 +259,12 @@ from numpy.distutils.misc_util import get_info
 init_cython_exclusion(CYTHON_EXCLUSION_FILE)
 
 npymath_info = get_info("npymath")
-ext_data = dict(
-    kalman_loglike = {
-              "name": "sm2/tsa/kalmanf/kalman_loglike.c",
-              "depends" : ["sm2/src/capsule.h"],
-              "include_dirs": ["sm2/src"],
-              "sources" : []},
-    _hamilton_filter = {
-              "name": "sm2/tsa/regime_switching/_hamilton_filter.c",
-              "depends" : [],
-              "include_dirs": [],
-              "sources" : []},
-    _kim_smoother = {
-              "name": "sm2/tsa/regime_switching/_kim_smoother.c",
-              "depends" : [],
-              "include_dirs": [],
-              "sources" : []},
-    _statespace = {
-              "name": "sm2/tsa/statespace/_statespace.c",
-              "depends" : ["sm2/src/capsule.h"],
-              "include_dirs": ["sm2/src"] + npymath_info['include_dirs'],
-              "libraries": npymath_info['libraries'],
-              "library_dirs": npymath_info['library_dirs'],
-              "sources" : []},
-    linbin = {
-             "name": "sm2/nonparametric/linbin.c",
-             "depends" : [],
-             "sources" : []},
-    _smoothers_lowess = {
-             "name": "sm2/nonparametric/_smoothers_lowess.c",
-             "depends" : [],
-             "sources" : []})
-
-statespace_ext_data = dict(
-    _representation = {
-              "name": "sm2/tsa/statespace/_representation.c",
-              "include_dirs": ['sm2/src'] + npymath_info['include_dirs'],
-              "libraries": npymath_info['libraries'],
-              "library_dirs": npymath_info['library_dirs'],
-              "sources": []},
-    _kalman_filter = {
-              "name": "sm2/tsa/statespace/_kalman_filter.c",
-              "include_dirs": ['sm2/src'] + npymath_info['include_dirs'],
-              "libraries": npymath_info['libraries'],
-              "library_dirs": npymath_info['library_dirs'],
-              "sources": []},
-    _kalman_filter_conventional = {
-              "name": "sm2/tsa/statespace/_filters/_conventional.c",
-              "filename": "_conventional",
-              "include_dirs": ['sm2/src'] + npymath_info['include_dirs'],
-              "libraries": npymath_info['libraries'],
-              "library_dirs": npymath_info['library_dirs'],
-              "sources": []},
-    _kalman_filter_inversions = {
-              "name": "sm2/tsa/statespace/_filters/_inversions.c",
-              "filename": "_inversions",
-              "include_dirs": ['sm2/src'] + npymath_info['include_dirs'],
-              "libraries": npymath_info['libraries'],
-              "library_dirs": npymath_info['library_dirs'],
-              "sources": []},
-    _kalman_filter_univariate = {
-              "name": "sm2/tsa/statespace/_filters/_univariate.c",
-              "filename": "_univariate",
-              "include_dirs": ['sm2/src'] + npymath_info['include_dirs'],
-              "libraries": npymath_info['libraries'],
-              "library_dirs": npymath_info['library_dirs'],
-              "sources": []},
-    _kalman_smoother = {
-              "name": "sm2/tsa/statespace/_kalman_smoother.c",
-              "include_dirs": ['sm2/src'] + npymath_info['include_dirs'],
-              "libraries": npymath_info['libraries'],
-              "library_dirs": npymath_info['library_dirs'],
-              "sources": []},
-    _kalman_smoother_alternative = {
-              "name": "sm2/tsa/statespace/_smoothers/_alternative.c",
-              "filename": "_alternative",
-              "include_dirs": ['sm2/src'] + npymath_info['include_dirs'],
-              "libraries": npymath_info['libraries'],
-              "library_dirs": npymath_info['library_dirs'],
-              "sources": []},
-    _kalman_smoother_classical = {
-              "name": "sm2/tsa/statespace/_smoothers/_classical.c",
-              "filename": "_classical",
-              "include_dirs": ['sm2/src'] + npymath_info['include_dirs'],
-              "libraries": npymath_info['libraries'],
-              "library_dirs": npymath_info['library_dirs'],
-              "sources": []},
-    _kalman_smoother_conventional = {
-              "name": "sm2/tsa/statespace/_smoothers/_conventional.c",
-              "filename": "_conventional",
-              "include_dirs": ['sm2/src'] + npymath_info['include_dirs'],
-              "libraries": npymath_info['libraries'],
-              "library_dirs": npymath_info['library_dirs'],
-              "sources": []},
-    _kalman_smoother_univariate = {
-              "name": "sm2/tsa/statespace/_smoothers/_univariate.c",
-              "filename": "_univariate",
-              "include_dirs": ['sm2/src'] + npymath_info['include_dirs'],
-              "libraries": npymath_info['libraries'],
-              "library_dirs": npymath_info['library_dirs'],
-              "sources": []},
-    _kalman_simulation_smoother = {
-              "name": "sm2/tsa/statespace/_simulation_smoother.c",
-              "filename": "_simulation_smoother",
-              "include_dirs": ['sm2/src'] + npymath_info['include_dirs'],
-              "libraries": npymath_info['libraries'],
-              "library_dirs": npymath_info['library_dirs'],
-              "sources": []},
-    _kalman_tools = {
-              "name": "sm2/tsa/statespace/_tools.c",
-              "filename": "_tools",
-              "sources": []})
-try:
-    from scipy.linalg import cython_blas
-    ext_data.update(statespace_ext_data)
-except ImportError:
-    for name, data in statespace_ext_data.items():
-        path = '.'.join([data["name"].split('.')[0], 'pyx.in'])
-        append_cython_exclusion(path.replace('/', os.path.sep),
-                                CYTHON_EXCLUSION_FILE)
+ext_data = {
+    "kalman_loglike": {
+        "name": "sm2/tsa/kalmanf/kalman_loglike.c",
+        "depends" : ["sm2/src/capsule.h"],
+        "include_dirs": ["sm2/src"],
+        "sources" : []}}
 
 '''
 extensions = []
@@ -440,9 +326,9 @@ def get_data_files():
 # 'sm2/statsmodelsdoc.chm')
 
 cwd = os.path.abspath(os.path.dirname(__file__))
-if not os.path.exists(os.path.join(cwd, 'PKG-INFO')) and not no_frills:
-    # Generate Cython sources, unless building from source release
-    generate_cython()
+#if not os.path.exists(os.path.join(cwd, 'PKG-INFO')) and not no_frills:
+#    # Generate Cython sources, unless building from source release
+#    generate_cython()
 
 setup(name=DISTNAME,
       version=versioneer.get_version(),
