@@ -60,29 +60,29 @@ def test_compare_arma():
     #for now without random.seed
 
     np.random.seed(9876565)
-    x = fa.ArmaFft([1, -0.5], [1., 0.4], 40).generate_sample(nsample=200,
-            burnin=1000)
+    x = fa.ArmaFft([1, -0.5], [1., 0.4], 40).generate_sample(nsample=200, burnin=1000)
 
     # this used kalman filter through descriptive
     #d = ARMA(x)
     #d.fit((1,1), trend='nc')
     #dres = d.res
 
-    modkf = ARMA(x, (1,1))
-    ##rkf = mkf.fit((1,1))
+    modkf = ARMA(x, (1, 1))
+    ##rkf = mkf.fit((1, 1))
     ##rkf.params
     reskf = modkf.fit(trend='nc', disp=-1)
     dres = reskf
 
     modc = Arma(x)
-    resls = modc.fit(order=(1,1))
-    rescm = modc.fit_mle(order=(1,1), start_params=[0.4,0.4, 1.], disp=0)
+    resls = modc.fit(order=(1, 1))
+    rescm = modc.fit_mle(order=(1, 1), start_params=[0.4, 0.4, 1.], disp=0)
 
     #decimal 1 corresponds to threshold of 5% difference
     #still different sign  corrcted
     #assert_almost_equal(np.abs(resls[0] / d.params), np.ones(d.params.shape), decimal=1)
-    assert_almost_equal(resls[0] / dres.params, np.ones(dres.params.shape),
-        decimal=1)
+    assert_almost_equal(resls[0] / dres.params,
+                        np.ones(dres.params.shape),
+                        decimal=1)
     #rescm also contains variance estimate as last element of params
 
     #assert_almost_equal(np.abs(rescm.params[:-1] / d.params), np.ones(d.params.shape), decimal=1)
@@ -123,7 +123,8 @@ class CheckArmaResultsMixin(object):
 
     decimal_maroots = DECIMAL_4
     def test_maroots(self):
-        assert_almost_equal(self.res1.maroots, self.res2.maroots,
+        assert_almost_equal(self.res1.maroots,
+                            self.res2.maroots,
                             self.decimal_maroots)
 
     decimal_bse = DECIMAL_2
@@ -146,7 +147,9 @@ class CheckArmaResultsMixin(object):
 
     decimal_llf = DECIMAL_4
     def test_llf(self):
-        assert_almost_equal(self.res1.llf, self.res2.llf, self.decimal_llf)
+        assert_almost_equal(self.res1.llf,
+                            self.res2.llf,
+                            self.decimal_llf)
 
     decimal_resid = DECIMAL_4
     def test_resid(self):
@@ -230,7 +233,7 @@ class CheckArimaResultsMixin(CheckArmaResultsMixin):
 class Test_Y_ARMA11_NoConst(CheckArmaResultsMixin, CheckForecastMixin):
     @classmethod
     def setup_class(cls):
-        endog = y_arma[:,0]
+        endog = y_arma[:, 0]
         cls.res1 = ARMA(endog, order=(1, 1)).fit(trend='nc', disp=-1)
         (cls.res1.forecast_res, cls.res1.forecast_err,
                 confint) = cls.res1.forecast(10)
@@ -240,7 +243,7 @@ class Test_Y_ARMA11_NoConst(CheckArmaResultsMixin, CheckForecastMixin):
         fh = BytesIO()
         #test wrapped results load save pickle
         self.res1.save(fh)
-        fh.seek(0,0)
+        fh.seek(0, 0)
         res_unpickled = self.res1.__class__.load(fh)
         assert type(res_unpickled) is type(self.res1)
 
@@ -249,7 +252,7 @@ class Test_Y_ARMA11_NoConst(CheckArmaResultsMixin, CheckForecastMixin):
 class Test_Y_ARMA14_NoConst(CheckArmaResultsMixin):
     @classmethod
     def setup_class(cls):
-        endog = y_arma[:,1]
+        endog = y_arma[:, 1]
         cls.res1 = ARMA(endog, order=(1, 4)).fit(trend='nc', disp=-1)
         cls.res2 = results_arma.Y_arma14()
 
@@ -261,7 +264,7 @@ class Test_Y_ARMA41_NoConst(CheckArmaResultsMixin, CheckForecastMixin):
 
     @classmethod
     def setup_class(cls):
-        endog = y_arma[:,2]
+        endog = y_arma[:, 2]
         cls.res1 = ARMA(endog, order=(4, 1)).fit(trend='nc', disp=-1)
         (cls.res1.forecast_res, cls.res1.forecast_err,
                 confint) = cls.res1.forecast(10)
@@ -272,7 +275,7 @@ class Test_Y_ARMA41_NoConst(CheckArmaResultsMixin, CheckForecastMixin):
 class Test_Y_ARMA22_NoConst(CheckArmaResultsMixin):
     @classmethod
     def setup_class(cls):
-        endog = y_arma[:,3]
+        endog = y_arma[:, 3]
         cls.res1 = ARMA(endog, order=(2, 2)).fit(trend='nc', disp=-1)
         cls.res2 = results_arma.Y_arma22()
 
@@ -281,7 +284,7 @@ class Test_Y_ARMA22_NoConst(CheckArmaResultsMixin):
 class Test_Y_ARMA50_NoConst(CheckArmaResultsMixin, CheckForecastMixin):
     @classmethod
     def setup_class(cls):
-        endog = y_arma[:,4]
+        endog = y_arma[:, 4]
         cls.res1 = ARMA(endog, order=(5, 0)).fit(trend='nc', disp=-1)
         (cls.res1.forecast_res, cls.res1.forecast_err,
                 confint) = cls.res1.forecast(10)
@@ -292,7 +295,7 @@ class Test_Y_ARMA50_NoConst(CheckArmaResultsMixin, CheckForecastMixin):
 class Test_Y_ARMA02_NoConst(CheckArmaResultsMixin):
     @classmethod
     def setup_class(cls):
-        endog = y_arma[:,5]
+        endog = y_arma[:, 5]
         cls.res1 = ARMA(endog, order=(0, 2)).fit(trend='nc', disp=-1)
         cls.res2 = results_arma.Y_arma02()
 
@@ -301,7 +304,7 @@ class Test_Y_ARMA02_NoConst(CheckArmaResultsMixin):
 class Test_Y_ARMA11_Const(CheckArmaResultsMixin, CheckForecastMixin):
     @classmethod
     def setup_class(cls):
-        endog = y_arma[:,6]
+        endog = y_arma[:, 6]
         cls.res1 = ARMA(endog, order=(1, 1)).fit(trend="c", disp=-1)
         (cls.res1.forecast_res, cls.res1.forecast_err,
                 confint) = cls.res1.forecast(10)
@@ -312,7 +315,7 @@ class Test_Y_ARMA11_Const(CheckArmaResultsMixin, CheckForecastMixin):
 class Test_Y_ARMA14_Const(CheckArmaResultsMixin):
     @classmethod
     def setup_class(cls):
-        endog = y_arma[:,7]
+        endog = y_arma[:, 7]
         cls.res1 = ARMA(endog, order=(1, 4)).fit(trend="c", disp=-1)
         cls.res2 = results_arma.Y_arma14c()
 
@@ -326,10 +329,10 @@ class Test_Y_ARMA41_Const(CheckArmaResultsMixin, CheckForecastMixin):
 
     @classmethod
     def setup_class(cls):
-        endog = y_arma[:,8]
+        endog = y_arma[:, 8]
         cls.res2 = results_arma.Y_arma41c()
         cls.res1 = ARMA(endog, order=(4, 1)).fit(trend="c", disp=-1,
-                                                start_params=cls.res2.params)
+                                                 start_params=cls.res2.params)
         (cls.res1.forecast_res, cls.res1.forecast_err,
                 confint) = cls.res1.forecast(10)
 
@@ -338,7 +341,7 @@ class Test_Y_ARMA41_Const(CheckArmaResultsMixin, CheckForecastMixin):
 class Test_Y_ARMA22_Const(CheckArmaResultsMixin):
     @classmethod
     def setup_class(cls):
-        endog = y_arma[:,9]
+        endog = y_arma[:, 9]
         cls.res1 = ARMA(endog, order=(2, 2)).fit(trend="c", disp=-1)
         cls.res2 = results_arma.Y_arma22c()
 
@@ -347,7 +350,7 @@ class Test_Y_ARMA22_Const(CheckArmaResultsMixin):
 class Test_Y_ARMA50_Const(CheckArmaResultsMixin, CheckForecastMixin):
     @classmethod
     def setup_class(cls):
-        endog = y_arma[:,10]
+        endog = y_arma[:, 10]
         cls.res1 = ARMA(endog, order=(5, 0)).fit(trend="c", disp=-1)
         (cls.res1.forecast_res, cls.res1.forecast_err,
                 confint) = cls.res1.forecast(10)
@@ -358,7 +361,7 @@ class Test_Y_ARMA50_Const(CheckArmaResultsMixin, CheckForecastMixin):
 class Test_Y_ARMA02_Const(CheckArmaResultsMixin):
     @classmethod
     def setup_class(cls):
-        endog = y_arma[:,11]
+        endog = y_arma[:, 11]
         cls.res1 = ARMA(endog, order=(0, 2)).fit(trend="c", disp=-1)
         cls.res2 = results_arma.Y_arma02c()
 
@@ -370,9 +373,9 @@ class Test_Y_ARMA11_NoConst_CSS(CheckArmaResultsMixin):
 
     @classmethod
     def setup_class(cls):
-        endog = y_arma[:,0]
-        cls.res1 = ARMA(endog, order=(1, 1)).fit(method="css", trend='nc',
-                            disp=-1)
+        endog = y_arma[:, 0]
+        cls.res1 = ARMA(endog, order=(1, 1)).fit(method="css",
+                                                 trend='nc', disp=-1)
         cls.res2 = results_arma.Y_arma11("css")
 
 
@@ -385,9 +388,9 @@ class Test_Y_ARMA14_NoConst_CSS(CheckArmaResultsMixin):
 
     @classmethod
     def setup_class(cls):
-        endog = y_arma[:,1]
-        cls.res1 = ARMA(endog, order=(1, 4)).fit(method="css", trend='nc',
-                        disp=-1)
+        endog = y_arma[:, 1]
+        cls.res1 = ARMA(endog, order=(1, 4)).fit(method="css",
+                                                 trend='nc', disp=-1)
         cls.res2 = results_arma.Y_arma14("css")
 
 
@@ -403,8 +406,8 @@ class Test_Y_ARMA41_NoConst_CSS(CheckArmaResultsMixin):
     @classmethod
     def setup_class(cls):
         endog = y_arma[:,2]
-        cls.res1 = ARMA(endog, order=(4, 1)).fit(method="css", trend='nc',
-                        disp=-1)
+        cls.res1 = ARMA(endog, order=(4, 1)).fit(method="css",
+                                                 trend='nc', disp=-1)
         cls.res2 = results_arma.Y_arma41("css")
 
 
@@ -419,8 +422,8 @@ class Test_Y_ARMA22_NoConst_CSS(CheckArmaResultsMixin):
     @classmethod
     def setup_class(cls):
         endog = y_arma[:,3]
-        cls.res1 = ARMA(endog, order=(2, 2)).fit(method="css", trend='nc',
-                            disp=-1)
+        cls.res1 = ARMA(endog, order=(2, 2)).fit(method="css",
+                                                 trend='nc', disp=-1)
         cls.res2 = results_arma.Y_arma22("css")
 
 
@@ -437,9 +440,9 @@ class Test_Y_ARMA50_NoConst_CSS(CheckArmaResultsMixin):
 
     @classmethod
     def setup_class(cls):
-        endog = y_arma[:,4]
-        cls.res1 = ARMA(endog, order=(5,0)).fit(method="css", trend='nc',
-                            disp=-1)
+        endog = y_arma[:, 4]
+        cls.res1 = ARMA(endog, order=(5, 0)).fit(method="css",
+                                                 trend='nc', disp=-1)
         cls.res2 = results_arma.Y_arma50("css")
 
 
@@ -447,9 +450,9 @@ class Test_Y_ARMA50_NoConst_CSS(CheckArmaResultsMixin):
 class Test_Y_ARMA02_NoConst_CSS(CheckArmaResultsMixin):
     @classmethod
     def setup_class(cls):
-        endog = y_arma[:,5]
-        cls.res1 = ARMA(endog, order=(0,2)).fit(method="css", trend='nc',
-                            disp=-1)
+        endog = y_arma[:, 5]
+        cls.res1 = ARMA(endog, order=(0, 2)).fit(method="css",
+                                                 trend='nc', disp=-1)
         cls.res2 = results_arma.Y_arma02("css")
 
 
@@ -462,9 +465,9 @@ class Test_Y_ARMA11_Const_CSS(CheckArmaResultsMixin):
 
     @classmethod
     def setup_class(cls):
-        endog = y_arma[:,6]
-        cls.res1 = ARMA(endog, order=(1,1)).fit(trend="c", method="css",
-                        disp=-1)
+        endog = y_arma[:, 6]
+        cls.res1 = ARMA(endog, order=(1, 1)).fit(trend="c",
+                                                 method="css", disp=-1)
         cls.res2 = results_arma.Y_arma11c("css")
 
 
@@ -475,9 +478,9 @@ class Test_Y_ARMA14_Const_CSS(CheckArmaResultsMixin):
 
     @classmethod
     def setup_class(cls):
-        endog = y_arma[:,7]
-        cls.res1 = ARMA(endog, order=(1,4)).fit(trend="c", method="css",
-                        disp=-1)
+        endog = y_arma[:, 7]
+        cls.res1 = ARMA(endog, order=(1, 4)).fit(trend="c",
+                                                 method="css", disp=-1)
         cls.res2 = results_arma.Y_arma14c("css")
 
 
@@ -491,8 +494,8 @@ class Test_Y_ARMA41_Const_CSS(CheckArmaResultsMixin):
     @classmethod
     def setup_class(cls):
         endog = y_arma[:,8]
-        cls.res1 = ARMA(endog, order=(4,1)).fit(trend="c", method="css",
-                        disp=-1)
+        cls.res1 = ARMA(endog, order=(4, 1)).fit(trend="c",
+                                                 method="css", disp=-1)
         cls.res2 = results_arma.Y_arma41c("css")
 
 
@@ -504,8 +507,8 @@ class Test_Y_ARMA22_Const_CSS(CheckArmaResultsMixin):
     @classmethod
     def setup_class(cls):
         endog = y_arma[:,9]
-        cls.res1 = ARMA(endog, order=(2,2)).fit(trend="c", method="css",
-                        disp=-1)
+        cls.res1 = ARMA(endog, order=(2, 2)).fit(trend="c",
+                                                 method="css", disp=-1)
         cls.res2 = results_arma.Y_arma22c("css")
 
 
@@ -518,8 +521,8 @@ class Test_Y_ARMA50_Const_CSS(CheckArmaResultsMixin):
     @classmethod
     def setup_class(cls):
         endog = y_arma[:,10]
-        cls.res1 = ARMA(endog, order=(5,0)).fit(trend="c", method="css",
-                        disp=-1)
+        cls.res1 = ARMA(endog, order=(5, 0)).fit(trend="c",
+                                                 method="css", disp=-1)
         cls.res2 = results_arma.Y_arma50c("css")
 
 
@@ -528,8 +531,8 @@ class Test_Y_ARMA02_Const_CSS(CheckArmaResultsMixin):
     @classmethod
     def setup_class(cls):
         endog = y_arma[:,11]
-        cls.res1 = ARMA(endog, order=(0,2)).fit(trend="c", method="css",
-                        disp=-1)
+        cls.res1 = ARMA(endog, order=(0, 2)).fit(trend="c",
+                                                 method="css", disp=-1)
         cls.res2 = results_arma.Y_arma02c("css")
 
 
@@ -546,68 +549,68 @@ def test_reset_trend():
 @pytest.mark.slow
 def test_start_params_bug():
     data = np.array([1368., 1187, 1090, 1439, 2362, 2783, 2869, 2512, 1804,
-    1544, 1028, 869, 1737, 2055, 1947, 1618, 1196, 867, 997, 1862, 2525,
-    3250, 4023, 4018, 3585, 3004, 2500, 2441, 2749, 2466, 2157, 1847, 1463,
-    1146, 851, 993, 1448, 1719, 1709, 1455, 1950, 1763, 2075, 2343, 3570,
-    4690, 3700, 2339, 1679, 1466, 998, 853, 835, 922, 851, 1125, 1299, 1105,
-    860, 701, 689, 774, 582, 419, 846, 1132, 902, 1058, 1341, 1551, 1167,
-    975, 786, 759, 751, 649, 876, 720, 498, 553, 459, 543, 447, 415, 377,
-    373, 324, 320, 306, 259, 220, 342, 558, 825, 994, 1267, 1473, 1601,
-    1896, 1890, 2012, 2198, 2393, 2825, 3411, 3406, 2464, 2891, 3685, 3638,
-    3746, 3373, 3190, 2681, 2846, 4129, 5054, 5002, 4801, 4934, 4903, 4713,
-    4745, 4736, 4622, 4642, 4478, 4510, 4758, 4457, 4356, 4170, 4658, 4546,
-    4402, 4183, 3574, 2586, 3326, 3948, 3983, 3997, 4422, 4496, 4276, 3467,
-    2753, 2582, 2921, 2768, 2789, 2824, 2482, 2773, 3005, 3641, 3699, 3774,
-    3698, 3628, 3180, 3306, 2841, 2014, 1910, 2560, 2980, 3012, 3210, 3457,
-    3158, 3344, 3609, 3327, 2913, 2264, 2326, 2596, 2225, 1767, 1190, 792,
-    669, 589, 496, 354, 246, 250, 323, 495, 924, 1536, 2081, 2660, 2814, 2992,
-    3115, 2962, 2272, 2151, 1889, 1481, 955, 631, 288, 103, 60, 82, 107, 185,
-    618, 1526, 2046, 2348, 2584, 2600, 2515, 2345, 2351, 2355, 2409, 2449,
-    2645, 2918, 3187, 2888, 2610, 2740, 2526, 2383, 2936, 2968, 2635, 2617,
-    2790, 3906, 4018, 4797, 4919, 4942, 4656, 4444, 3898, 3908, 3678, 3605,
-    3186, 2139, 2002, 1559, 1235, 1183, 1096, 673, 389, 223, 352, 308, 365,
-    525, 779, 894, 901, 1025, 1047, 981, 902, 759, 569, 519, 408, 263, 156,
-    72, 49, 31, 41, 192, 423, 492, 552, 564, 723, 921, 1525, 2768, 3531, 3824,
-    3835, 4294, 4533, 4173, 4221, 4064, 4641, 4685, 4026, 4323, 4585, 4836,
-    4822, 4631, 4614, 4326, 4790, 4736, 4104, 5099, 5154, 5121, 5384, 5274,
-    5225, 4899, 5382, 5295, 5349, 4977, 4597, 4069, 3733, 3439, 3052, 2626,
-    1939, 1064, 713, 916, 832, 658, 817, 921, 772, 764, 824, 967, 1127, 1153,
-    824, 912, 957, 990, 1218, 1684, 2030, 2119, 2233, 2657, 2652, 2682, 2498,
-    2429, 2346, 2298, 2129, 1829, 1816, 1225, 1010, 748, 627, 469, 576, 532,
-    475, 582, 641, 605, 699, 680, 714, 670, 666, 636, 672, 679, 446, 248, 134,
-    160, 178, 286, 413, 676, 1025, 1159, 952, 1398, 1833, 2045, 2072, 1798,
-    1799, 1358, 727, 353, 347, 844, 1377, 1829, 2118, 2272, 2745, 4263, 4314,
-    4530, 4354, 4645, 4547, 5391, 4855, 4739, 4520, 4573, 4305, 4196, 3773,
-    3368, 2596, 2596, 2305, 2756, 3747, 4078, 3415, 2369, 2210, 2316, 2263,
-    2672, 3571, 4131, 4167, 4077, 3924, 3738, 3712, 3510, 3182, 3179, 2951,
-    2453, 2078, 1999, 2486, 2581, 1891, 1997, 1366, 1294, 1536, 2794, 3211,
-    3242, 3406, 3121, 2425, 2016, 1787, 1508, 1304, 1060, 1342, 1589, 2361,
-    3452, 2659, 2857, 3255, 3322, 2852, 2964, 3132, 3033, 2931, 2636, 2818,
-    3310, 3396, 3179, 3232, 3543, 3759, 3503, 3758, 3658, 3425, 3053, 2620,
-    1837, 923, 712, 1054, 1376, 1556, 1498, 1523, 1088, 728, 890, 1413, 2524,
-    3295, 4097, 3993, 4116, 3874, 4074, 4142, 3975, 3908, 3907, 3918, 3755,
-    3648, 3778, 4293, 4385, 4360, 4352, 4528, 4365, 3846, 4098, 3860, 3230,
-    2820, 2916, 3201, 3721, 3397, 3055, 2141, 1623, 1825, 1716, 2232, 2939,
-    3735, 4838, 4560, 4307, 4975, 5173, 4859, 5268, 4992, 5100, 5070, 5270,
-    4760, 5135, 5059, 4682, 4492, 4933, 4737, 4611, 4634, 4789, 4811, 4379,
-    4689, 4284, 4191, 3313, 2770, 2543, 3105, 2967, 2420, 1996, 2247, 2564,
-    2726, 3021, 3427, 3509, 3759, 3324, 2988, 2849, 2340, 2443, 2364, 1252,
-    623, 742, 867, 684, 488, 348, 241, 187, 279, 355, 423, 678, 1375, 1497,
-    1434, 2116, 2411, 1929, 1628, 1635, 1609, 1757, 2090, 2085, 1790, 1846,
-    2038, 2360, 2342, 2401, 2920, 3030, 3132, 4385, 5483, 5865, 5595, 5485,
-    5727, 5553, 5560, 5233, 5478, 5159, 5155, 5312, 5079, 4510, 4628, 4535,
-    3656, 3698, 3443, 3146, 2562, 2304, 2181, 2293, 1950, 1930, 2197, 2796,
-    3441, 3649, 3815, 2850, 4005, 5305, 5550, 5641, 4717, 5131, 2831, 3518,
-    3354, 3115, 3515, 3552, 3244, 3658, 4407, 4935, 4299, 3166, 3335, 2728,
-    2488, 2573, 2002, 1717, 1645, 1977, 2049, 2125, 2376, 2551, 2578, 2629,
-    2750, 3150, 3699, 4062, 3959, 3264, 2671, 2205, 2128, 2133, 2095, 1964,
-    2006, 2074, 2201, 2506, 2449, 2465, 2064, 1446, 1382, 983, 898, 489, 319,
-    383, 332, 276, 224, 144, 101, 232, 429, 597, 750, 908, 960, 1076, 951,
-    1062, 1183, 1404, 1391, 1419, 1497, 1267, 963, 682, 777, 906, 1149, 1439,
-    1600, 1876, 1885, 1962, 2280, 2711, 2591, 2411])
+        1544, 1028, 869, 1737, 2055, 1947, 1618, 1196, 867, 997, 1862, 2525,
+        3250, 4023, 4018, 3585, 3004, 2500, 2441, 2749, 2466, 2157, 1847, 1463,
+        1146, 851, 993, 1448, 1719, 1709, 1455, 1950, 1763, 2075, 2343, 3570,
+        4690, 3700, 2339, 1679, 1466, 998, 853, 835, 922, 851, 1125, 1299, 1105,
+        860, 701, 689, 774, 582, 419, 846, 1132, 902, 1058, 1341, 1551, 1167,
+        975, 786, 759, 751, 649, 876, 720, 498, 553, 459, 543, 447, 415, 377,
+        373, 324, 320, 306, 259, 220, 342, 558, 825, 994, 1267, 1473, 1601,
+        1896, 1890, 2012, 2198, 2393, 2825, 3411, 3406, 2464, 2891, 3685, 3638,
+        3746, 3373, 3190, 2681, 2846, 4129, 5054, 5002, 4801, 4934, 4903, 4713,
+        4745, 4736, 4622, 4642, 4478, 4510, 4758, 4457, 4356, 4170, 4658, 4546,
+        4402, 4183, 3574, 2586, 3326, 3948, 3983, 3997, 4422, 4496, 4276, 3467,
+        2753, 2582, 2921, 2768, 2789, 2824, 2482, 2773, 3005, 3641, 3699, 3774,
+        3698, 3628, 3180, 3306, 2841, 2014, 1910, 2560, 2980, 3012, 3210, 3457,
+        3158, 3344, 3609, 3327, 2913, 2264, 2326, 2596, 2225, 1767, 1190, 792,
+        669, 589, 496, 354, 246, 250, 323, 495, 924, 1536, 2081, 2660, 2814, 2992,
+        3115, 2962, 2272, 2151, 1889, 1481, 955, 631, 288, 103, 60, 82, 107, 185,
+        618, 1526, 2046, 2348, 2584, 2600, 2515, 2345, 2351, 2355, 2409, 2449,
+        2645, 2918, 3187, 2888, 2610, 2740, 2526, 2383, 2936, 2968, 2635, 2617,
+        2790, 3906, 4018, 4797, 4919, 4942, 4656, 4444, 3898, 3908, 3678, 3605,
+        3186, 2139, 2002, 1559, 1235, 1183, 1096, 673, 389, 223, 352, 308, 365,
+        525, 779, 894, 901, 1025, 1047, 981, 902, 759, 569, 519, 408, 263, 156,
+        72, 49, 31, 41, 192, 423, 492, 552, 564, 723, 921, 1525, 2768, 3531, 3824,
+        3835, 4294, 4533, 4173, 4221, 4064, 4641, 4685, 4026, 4323, 4585, 4836,
+        4822, 4631, 4614, 4326, 4790, 4736, 4104, 5099, 5154, 5121, 5384, 5274,
+        5225, 4899, 5382, 5295, 5349, 4977, 4597, 4069, 3733, 3439, 3052, 2626,
+        1939, 1064, 713, 916, 832, 658, 817, 921, 772, 764, 824, 967, 1127, 1153,
+        824, 912, 957, 990, 1218, 1684, 2030, 2119, 2233, 2657, 2652, 2682, 2498,
+        2429, 2346, 2298, 2129, 1829, 1816, 1225, 1010, 748, 627, 469, 576, 532,
+        475, 582, 641, 605, 699, 680, 714, 670, 666, 636, 672, 679, 446, 248, 134,
+        160, 178, 286, 413, 676, 1025, 1159, 952, 1398, 1833, 2045, 2072, 1798,
+        1799, 1358, 727, 353, 347, 844, 1377, 1829, 2118, 2272, 2745, 4263, 4314,
+        4530, 4354, 4645, 4547, 5391, 4855, 4739, 4520, 4573, 4305, 4196, 3773,
+        3368, 2596, 2596, 2305, 2756, 3747, 4078, 3415, 2369, 2210, 2316, 2263,
+        2672, 3571, 4131, 4167, 4077, 3924, 3738, 3712, 3510, 3182, 3179, 2951,
+        2453, 2078, 1999, 2486, 2581, 1891, 1997, 1366, 1294, 1536, 2794, 3211,
+        3242, 3406, 3121, 2425, 2016, 1787, 1508, 1304, 1060, 1342, 1589, 2361,
+        3452, 2659, 2857, 3255, 3322, 2852, 2964, 3132, 3033, 2931, 2636, 2818,
+        3310, 3396, 3179, 3232, 3543, 3759, 3503, 3758, 3658, 3425, 3053, 2620,
+        1837, 923, 712, 1054, 1376, 1556, 1498, 1523, 1088, 728, 890, 1413, 2524,
+        3295, 4097, 3993, 4116, 3874, 4074, 4142, 3975, 3908, 3907, 3918, 3755,
+        3648, 3778, 4293, 4385, 4360, 4352, 4528, 4365, 3846, 4098, 3860, 3230,
+        2820, 2916, 3201, 3721, 3397, 3055, 2141, 1623, 1825, 1716, 2232, 2939,
+        3735, 4838, 4560, 4307, 4975, 5173, 4859, 5268, 4992, 5100, 5070, 5270,
+        4760, 5135, 5059, 4682, 4492, 4933, 4737, 4611, 4634, 4789, 4811, 4379,
+        4689, 4284, 4191, 3313, 2770, 2543, 3105, 2967, 2420, 1996, 2247, 2564,
+        2726, 3021, 3427, 3509, 3759, 3324, 2988, 2849, 2340, 2443, 2364, 1252,
+        623, 742, 867, 684, 488, 348, 241, 187, 279, 355, 423, 678, 1375, 1497,
+        1434, 2116, 2411, 1929, 1628, 1635, 1609, 1757, 2090, 2085, 1790, 1846,
+        2038, 2360, 2342, 2401, 2920, 3030, 3132, 4385, 5483, 5865, 5595, 5485,
+        5727, 5553, 5560, 5233, 5478, 5159, 5155, 5312, 5079, 4510, 4628, 4535,
+        3656, 3698, 3443, 3146, 2562, 2304, 2181, 2293, 1950, 1930, 2197, 2796,
+        3441, 3649, 3815, 2850, 4005, 5305, 5550, 5641, 4717, 5131, 2831, 3518,
+        3354, 3115, 3515, 3552, 3244, 3658, 4407, 4935, 4299, 3166, 3335, 2728,
+        2488, 2573, 2002, 1717, 1645, 1977, 2049, 2125, 2376, 2551, 2578, 2629,
+        2750, 3150, 3699, 4062, 3959, 3264, 2671, 2205, 2128, 2133, 2095, 1964,
+        2006, 2074, 2201, 2506, 2449, 2465, 2064, 1446, 1382, 983, 898, 489, 319,
+        383, 332, 276, 224, 144, 101, 232, 429, 597, 750, 908, 960, 1076, 951,
+        1062, 1183, 1404, 1391, 1419, 1497, 1267, 963, 682, 777, 906, 1149, 1439,
+        1600, 1876, 1885, 1962, 2280, 2711, 2591, 2411])
     with warnings.catch_warnings():
         warnings.simplefilter("ignore")
-        res = ARMA(data, order=(4,1)).fit(start_ar_lags=5, disp=-1)
+        res = ARMA(data, order=(4, 1)).fit(start_ar_lags=5, disp=-1)
 
 
 @pytest.mark.not_vetted
@@ -619,6 +622,7 @@ class Test_ARIMA101(CheckArmaResultsMixin):
         cls.res1 = ARIMA(endog, (1,0,1)).fit(trend="c", disp=-1)
         (cls.res1.forecast_res, cls.res1.forecast_err,
                 confint) = cls.res1.forecast(10)
+
         cls.res2 = results_arma.Y_arma11c()
         cls.res2.k_diff = 0
         cls.res2.k_ar = 1
@@ -651,7 +655,8 @@ class Test_ARIMA111(CheckArimaResultsMixin, CheckForecastMixin,
         # note that the first one counts in the count so 164 + 64 is 65
         # predictions
         cls.res1.forecast_res_dyn = cls.res1.predict(start=164, end=164+63,
-                                            typ='levels', dynamic=True)
+                                                     typ='levels',
+                                                     dynamic=True)
 
     def test_freq(self):
         assert_almost_equal(self.res1.arfreq, [0.0000], 4)
@@ -680,15 +685,16 @@ class Test_ARIMA111CSS(CheckArimaResultsMixin, CheckForecastMixin,
     @classmethod
     def setup_class(cls):
         cpi = datasets.macrodata.load().data['cpi']
-        cls.res1 = ARIMA(cpi, (1,1,1)).fit(disp=-1, method='css')
+        cls.res1 = ARIMA(cpi, (1, 1, 1)).fit(disp=-1, method='css')
         cls.res2 = results_arima.ARIMA111(method='css')
         cls.res2.fittedvalues = - cpi[1:-1] + cls.res2.linear
         # make sure endog names changes to D.cpi
-        (cls.res1.forecast_res,
-         cls.res1.forecast_err,
-         conf_int)              = cls.res1.forecast(25)
+        (fc_res, fc_err, conf_int) = cls.res1.forecast(25)
+        cls.res1.forecast_res = fc_res
+        cls.res1.forecast_err = fc_err
         cls.res1.forecast_res_dyn = cls.res1.predict(start=164, end=164+63,
-                                                 typ='levels', dynamic=True)
+                                                     typ='levels',
+                                                     dynamic=True)
 
 
 
@@ -707,9 +713,9 @@ class Test_ARIMA112CSS(CheckArimaResultsMixin):
     @classmethod
     def setup_class(cls):
         cpi = datasets.macrodata.load().data['cpi']
-        cls.res1 = ARIMA(cpi, (1,1,2)).fit(disp=-1, method='css',
-                                start_params = [.905322, -.692425, 1.07366,
-                                                0.172024])
+        cls.res1 = ARIMA(cpi, (1, 1, 2)).fit(disp=-1, method='css',
+                                             start_params=[.905322, -.692425,
+                                                           1.07366, 0.172024])
         cls.res2 = results_arima.ARIMA112(method='css')
         cls.res2.fittedvalues = - cpi[1:-1] + cls.res2.linear
         # make sure endog names changes to D.cpi
@@ -730,6 +736,7 @@ class Test_ARIMA112CSS(CheckArimaResultsMixin):
     def test_freq(self):
         assert_almost_equal(self.res1.arfreq, [0.5000], 4)
         assert_almost_equal(self.res1.mafreq, [0.5000, 0.5000], 4)
+
 
 #class Test_ARIMADates(CheckArmaResults, CheckForecast, CheckDynamicForecast):
 #    @classmethod
@@ -752,11 +759,9 @@ def test_arima_predict_mle_dates():
     cpi = datasets.macrodata.load().data['cpi']
     res1 = ARIMA(cpi, (4, 1, 1), dates=cpi_dates, freq='Q').fit(disp=-1)
 
-    path = os.path.join(current_path, 'results', 'results_arima_forecasts_all_mle.csv')
-    with open(path, "rb") as test_data:
-        arima_forecasts = np.genfromtxt(test_data, delimiter=",",
-                                        skip_header=1, dtype=float)
-
+    path = os.path.join(current_path, 'results',
+                        'results_arima_forecasts_all_mle.csv')
+    arima_forecasts = pd.read_csv(path).values
     fc = arima_forecasts[:, 0]
     fcdyn = arima_forecasts[:, 1]
     fcdyn2 = arima_forecasts[:, 2]
@@ -788,7 +793,8 @@ def test_arma_predict_mle_dates():
     mod = ARMA(sunspots, (9, 0), dates=sun_dates, freq='A')
     mod.method = 'mle'
 
-    assert_raises(ValueError, mod._get_prediction_index, *('1701', '1751', True))
+    with pytest.raises(ValueError):
+        mod._get_prediction_index('1701', '1751', True)
 
     start, end = 2, 51
     _, _, _, _ = mod._get_prediction_index('1702', '1751', False)
@@ -803,7 +809,8 @@ def test_arma_predict_mle_dates():
 def test_arima_predict_css_dates():
     cpi = datasets.macrodata.load().data['cpi']
     res1 = ARIMA(cpi, (4, 1, 1), dates=cpi_dates, freq='Q').fit(disp=-1,
-            method='css', trend='nc')
+                                                                method='css',
+                                                                trend='nc')
 
     params = np.array([1.231272508473910,
                        -0.282516097759915,
@@ -811,13 +818,12 @@ def test_arima_predict_css_dates():
                        -0.118203728504945,
                        -0.938783134717947])
 
-    with open(current_path + '/results/results_arima_forecasts_all_css.csv', "rb") as test_data:
-        arima_forecasts = np.genfromtxt(test_data, delimiter=",",
-                                        skip_header=1, dtype=float)
-
-    fc = arima_forecasts[:,0]
-    fcdyn = arima_forecasts[:,1]
-    fcdyn2 = arima_forecasts[:,2]
+    path = os.path.join(current_path, 'results',
+                        'results_arima_forecasts_all_css.csv')
+    arima_forecasts = pd.read_csv(path).values
+    fc = arima_forecasts[:, 0]
+    fcdyn = arima_forecasts[:, 1]
+    fcdyn2 = arima_forecasts[:, 2]
 
     start, end = 5, 51
     fv = res1.model.predict(params, '1960Q2', '1971Q4', typ='levels')
@@ -843,23 +849,25 @@ def test_arima_predict_css_dates():
 @pytest.mark.not_vetted
 def test_arma_predict_css_dates():
     sunspots = datasets.sunspots.load().data['SUNACTIVITY']
-    mod = ARMA(sunspots, (9,0), dates=sun_dates, freq='A')
+    mod = ARMA(sunspots, (9, 0), dates=sun_dates, freq='A')
     mod.method = 'css'
-    assert_raises(ValueError, mod._get_prediction_index, *('1701', '1751', False))
+    with pytest.raises(ValueError):
+        mod._get_prediction_index('1701', '1751', False)
 
 
 @pytest.mark.not_vetted
 def test_arima_predict_mle():
     cpi = datasets.macrodata.load().data['cpi']
-    res1 = ARIMA(cpi, (4,1,1)).fit(disp=-1)
+    res1 = ARIMA(cpi, (4, 1, 1)).fit(disp=-1)
     # fit the model so that we get correct endog length but use
-    with open(current_path + '/results/results_arima_forecasts_all_mle.csv', "rb") as test_data:
-        arima_forecasts = np.genfromtxt(test_data, delimiter=",", skip_header=1, dtype=float)
-    fc = arima_forecasts[:,0]
-    fcdyn = arima_forecasts[:,1]
-    fcdyn2 = arima_forecasts[:,2]
-    fcdyn3 = arima_forecasts[:,3]
-    fcdyn4 = arima_forecasts[:,4]
+    path = os.path.join(current_path, 'results',
+                        'results_arima_forecasts_all_mle.csv')
+    arima_forecasts = pd.read_csv(path).values
+    fc = arima_forecasts[:, 0]
+    fcdyn = arima_forecasts[:, 1]
+    fcdyn2 = arima_forecasts[:, 2]
+    fcdyn3 = arima_forecasts[:, 3]
+    fcdyn4 = arima_forecasts[:, 4]
 
     # 0 indicates the first sample-observation below
     # ie., the index after the pre-sample, these are also differenced once
@@ -1215,23 +1223,27 @@ def test_arima_predict_indices():
 @pytest.mark.not_vetted
 def test_arima_predict_indices_css():
     cpi = datasets.macrodata.load().data['cpi']
-    #NOTE: Doing no-constant for now to kick the conditional exogenous
-    #issue 274 down the road
+    # NOTE: Doing no-constant for now to kick the conditional exogenous
+    # GH#274 down the road
     # go ahead and git the model to set up necessary variables
-    model = ARIMA(cpi, (4,1,1))
+    model = ARIMA(cpi, (4, 1, 1))
     model.method = 'css'
 
-    assert_raises(ValueError, model._get_prediction_index, *(0, None, False))
-    assert_raises(ValueError, model._get_prediction_index, *(0, None, True))
-    assert_raises(ValueError, model._get_prediction_index, *(2, None, False))
-    assert_raises(ValueError, model._get_prediction_index, *(2, None, True))
+    with pytest.raises(ValueError):
+        model._get_prediction_index(0, None, False)
+    with pytest.raises(ValueError):
+        model._get_prediction_index(0, None, True)
+    with pytest.raises(ValueError):
+        model._get_prediction_index(2, None, False)
+    with pytest.raises(ValueError):
+        model._get_prediction_index(2, None, True)
 
 
 @pytest.mark.not_vetted
 def test_arima_predict_css():
     cpi = datasets.macrodata.load().data['cpi']
-    #NOTE: Doing no-constant for now to kick the conditional exogenous
-    #issue 274 down the road
+    # NOTE: Doing no-constant for now to kick the conditional exogenous
+    # GH#274 down the road
     # go ahead and git the model to set up necessary variables
     res1 = ARIMA(cpi, (4,1,1)).fit(disp=-1, method="css",
                             trend="nc")
@@ -1239,16 +1251,17 @@ def test_arima_predict_css():
     params = np.array([ 1.231272508473910,
                        -0.282516097759915,
                        0.170052755782440,
-                      -0.118203728504945,
-                      -0.938783134717947])
+                       -0.118203728504945,
+                       -0.938783134717947])
 
-    with open(current_path + '/results/results_arima_forecasts_all_css.csv', "rb") as test_data:
-        arima_forecasts = np.genfromtxt(test_data, delimiter=",", skip_header=1, dtype=float)
-    fc = arima_forecasts[:,0]
-    fcdyn = arima_forecasts[:,1]
-    fcdyn2 = arima_forecasts[:,2]
-    fcdyn3 = arima_forecasts[:,3]
-    fcdyn4 = arima_forecasts[:,4]
+    path = os.path.join(current_path, 'results',
+                        'results_arima_forecasts_all_css.csv')
+    arima_forecasts = pd.read_csv(path).values
+    fc = arima_forecasts[:, 0]
+    fcdyn = arima_forecasts[:, 1]
+    fcdyn2 = arima_forecasts[:, 2]
+    fcdyn3 = arima_forecasts[:, 3]
+    fcdyn4 = arima_forecasts[:, 4]
 
     #NOTE: should raise
     #start, end = 1,3
@@ -1384,13 +1397,14 @@ def test_arima_predict_css_diffs():
     # we report mean, should we report constant?
     params[0] = params[0] / (1 - params[1:5].sum())
 
-    with open(current_path + '/results/results_arima_forecasts_all_css_diff.csv', "rb") as test_data:
-        arima_forecasts = np.genfromtxt(test_data, delimiter=",", skip_header=1, dtype=float)
-    fc = arima_forecasts[:,0]
-    fcdyn = arima_forecasts[:,1]
-    fcdyn2 = arima_forecasts[:,2]
-    fcdyn3 = arima_forecasts[:,3]
-    fcdyn4 = arima_forecasts[:,4]
+    path = os.path.join(current_path, 'results',
+                        'results_arima_forecasts_all_css_diff.csv')
+    arima_forecasts = pd.read_csv(path).values
+    fc = arima_forecasts[:, 0]
+    fcdyn = arima_forecasts[:, 1]
+    fcdyn2 = arima_forecasts[:, 2]
+    fcdyn3 = arima_forecasts[:, 3]
+    fcdyn4 = arima_forecasts[:, 4]
 
     #NOTE: should raise
     #start, end = 1,3
@@ -1523,10 +1537,9 @@ def test_arima_predict_mle_diffs():
                        0.113624958031799,
                        0.939144026934634])
 
-    path = os.path.join(current_path, 'results', 'results_arima_forecasts_all_mle_diff.csv')
-    with open(path, "rb") as test_data:
-        arima_forecasts = np.genfromtxt(test_data, delimiter=",", skip_header=1, dtype=float)
-
+    path = os.path.join(current_path, 'results',
+                        'results_arima_forecasts_all_mle_diff.csv')
+    arima_forecasts = pd.read_csv(path).values
     fc = arima_forecasts[:,0]
     fcdyn = arima_forecasts[:,1]
     fcdyn2 = arima_forecasts[:,2]
@@ -1661,6 +1674,7 @@ def test_arima_wrapper():
 
 
 @pytest.mark.not_vetted
+@pytest.mark.smoke
 def test_1dexog():
     # smoke test, this will raise an error if broken
     dta = datasets.macrodata.load_pandas().data
@@ -1668,29 +1682,31 @@ def test_1dexog():
     exog = dta['m1'].values.squeeze()
     with warnings.catch_warnings():
         warnings.simplefilter("ignore")
-        mod = ARMA(endog, (1,1), exog).fit(disp=-1)
+        mod = ARMA(endog, (1, 1), exog).fit(disp=-1)
         mod.predict(193, 203, exog[-10:])
 
         # check for dynamic is true and pandas Series  see #2589
         mod.predict(193, 202, exog[-10:], dynamic=True)
 
         dta.index = pd.Index(cpi_dates)
-        mod = ARMA(dta['realcons'], (1,1), dta['m1']).fit(disp=-1)
-        mod.predict(dta.index[-10], dta.index[-1], exog=dta['m1'][-10:], dynamic=True)
+        mod = ARMA(dta['realcons'], (1, 1), dta['m1']).fit(disp=-1)
+        mod.predict(dta.index[-10], dta.index[-1],
+                    exog=dta['m1'][-10:], dynamic=True)
 
-        mod = ARMA(dta['realcons'], (1,1), dta['m1']).fit(trend='nc', disp=-1)
-        mod.predict(dta.index[-10], dta.index[-1], exog=dta['m1'][-10:], dynamic=True)
+        mod = ARMA(dta['realcons'], (1, 1), dta['m1']).fit(trend='nc', disp=-1)
+        mod.predict(dta.index[-10], dta.index[-1],
+                    exog=dta['m1'][-10:], dynamic=True)
 
 
 @pytest.mark.not_vetted
 def test_arima_predict_bug():
-    #predict_start_date wasn't getting set on start = None
+    # predict_start_date wasn't getting set on start = None
     dta = datasets.sunspots.load_pandas().data.SUNACTIVITY
     dta.index = pd.DatetimeIndex(start='1700', end='2009', freq='A')[:309]
     arma_mod20 = ARMA(dta, (2,0)).fit(disp=-1)
     arma_mod20.predict(None, None)
 
-    # test prediction with time stamp, see #2587
+    # test prediction with time stamp, see GH#2587
     predict = arma_mod20.predict(dta.index[-20], dta.index[-1])
     assert predict.index.equals(dta.index[-20:])
     predict = arma_mod20.predict(dta.index[-20], dta.index[-1], dynamic=True)
@@ -1715,7 +1731,7 @@ def test_arima_predict_q2():
 
 @pytest.mark.not_vetted
 def test_arima_predict_pandas_nofreq():
-    # this is issue 712
+    # this is issue GH#712
     dates = ["2010-01-04", "2010-01-05", "2010-01-06", "2010-01-07",
              "2010-01-08", "2010-01-11", "2010-01-12", "2010-01-11",
              "2010-01-12", "2010-01-13", "2010-01-17"]
@@ -1723,8 +1739,8 @@ def test_arima_predict_pandas_nofreq():
              589.85, 580.0,587.62]
     data = pd.DataFrame(close, index=pd.DatetimeIndex(dates), columns=["close"])
 
-    #TODO: fix this names bug for non-string names names
-    arma = ARMA(data, order=(1,0)).fit(disp=-1)
+    # TODO: fix this names bug for non-string names names
+    arma = ARMA(data, order=(1, 0)).fit(disp=-1)
 
     # first check that in-sample prediction works
     predict = arma.predict()
@@ -1777,8 +1793,9 @@ def test_arima_predict_exog():
     ## add a constant
     #y += 2.5
 
-    arima_forecasts = pd.read_csv(current_path + "/results/"
-                                  "results_arima_exog_forecasts_mle.csv")
+    path = os.path.join(current_path, 'results',
+                        'results_arima_exog_forecasts_mle.csv')
+    arima_forecasts = pd.read_csv(path)
     y = arima_forecasts["y"].dropna()
     X = np.arange(len(y) + 25) / 20.
     predict_expected = arima_forecasts["predict"]
@@ -1822,8 +1839,9 @@ def test_arima_predict_exog():
 
 
 @pytest.mark.not_vetted
+@pytest.mark.smoke
 def test_arima_no_diff():
-    # issue 736
+    # GH#736
     # smoke test, predict will break if we have ARIMAResults but
     # ARMA model, need ARIMA(p, 0, q) to return an ARMA in init.
     ar = [1, -.75, .15, .35]
@@ -1834,19 +1852,6 @@ def test_arima_no_diff():
     res = mod.fit(disp=-1)
     # smoke test just to be sure
     res.predict()
-
-
-@pytest.mark.smoke
-@pytest.mark.not_vetted
-def test_arima_predict_noma():
-    # GH#657
-    # smoke test
-    ar = [1, .75]
-    ma = [1]
-    data = arma_generate_sample(ar, ma, 100)
-    arma = ARMA(data, order=(0,1))
-    arma_res = arma.fit(disp=-1)
-    arma_res.forecast(1)
 
 
 @pytest.mark.not_vetted
@@ -1900,6 +1905,7 @@ def test_arimax():
 @pytest.mark.not_vetted
 def test_bad_start_params():
     # TODO: what is bad about these params??
+    # TODO: GH reference?
     endog = np.array([
          820.69093, 781.0103028, 785.8786988, 767.64282267,
          778.9837648 ,   824.6595702 ,   813.01877867,   751.65598567,
@@ -1921,32 +1927,6 @@ def test_bad_start_params():
     arima_mod = ARIMA(np.log(inv), (1, 1, 2))
     with pytest.raises(ValueError):
         mod.fit()  # WTF is this supposed to be arima_mod.fit()?
-
-
-
-
-@pytest.mark.not_vetted
-@pytest.mark.smoke
-def test_arima_dataframe_integer_name():
-    # Smoke Test for GH#1038
-    vals = [96.2, 98.3, 99.1, 95.5, 94.0, 87.1, 87.9, 86.7402777504474,
-            94.0, 96.5, 93.3, 97.5, 96.3, 92.]
-
-    dr = pd.date_range("1990", periods=len(vals), freq='Q')
-    ts = pd.Series(vals, index=dr)
-    df = pd.DataFrame(ts)
-    mod = ARIMA(df, (2, 0, 2))
-
-
-@pytest.mark.not_vetted
-def test_arima_exog_predict_1d():
-    # test GH#1067
-    np.random.seed(12345)
-    y = np.random.random(100)
-    x = np.random.random(100)
-    mod = ARMA(y, (2, 1), x).fit(disp=-1)
-    newx = np.random.random(10)
-    results = mod.forecast(steps=10, alpha=0.05, exog=newx)
 
 
 @pytest.mark.not_vetted
@@ -1999,16 +1979,20 @@ def test_small_data():
     y = [-1214.360173, -1848.209905, -2100.918158, -3647.483678, -4711.186773]
 
     # refuse to estimate these
-    assert_raises(ValueError, ARIMA, y, (2, 0, 3))
-    assert_raises(ValueError, ARIMA, y, (1, 1, 3))
+    with pytest.raises(ValueError):
+        ARIMA(y, (2, 0, 3))
+    with pytest.raises(ValueError):
+        ARIMA(y, (1, 1, 3))
+
     mod = ARIMA(y, (1, 0, 3))
-    assert_raises(ValueError, mod.fit, trend="c")
+    with pytest.raises(ValueError):
+        mod.fit(trend="c")
 
     # try to estimate these...leave it up to the user to check for garbage
     # and be clear, these are garbage parameters.
     # X-12 arima will estimate, gretl refuses to estimate likely a problem
     # in start params regression.
-    res = mod.fit(trend="nc", disp=0, start_params=[.1,.1,.1,.1])
+    res = mod.fit(trend="nc", disp=0, start_params=[.1, .1, .1, .1])
     mod = ARIMA(y, (1, 0, 2))
     with warnings.catch_warnings():
         warnings.simplefilter("ignore")
@@ -2086,6 +2070,7 @@ class TestARMA00(object):
 @pytest.mark.not_vetted
 def test_arima_dates_startatend():
     # bug
+    # TODO: GH reference?
     np.random.seed(18)
     x = pd.Series(np.random.random(36),
                   index=pd.DatetimeIndex(start='1/1/1990',
@@ -2095,21 +2080,6 @@ def test_arima_dates_startatend():
     assert pred.index[0] == x.index.shift(1)[-1]
     fc = res.forecast()[0]
     assert_almost_equal(pred.values[0], fc)
-
-
-@pytest.mark.smoke
-@pytest.mark.not_vetted
-@pytest.mark.skipif('not have_matplotlib')
-def test_plot_predict():
-    dta = datasets.sunspots.load_pandas().data[['SUNACTIVITY']]
-    dta.index = pd.DatetimeIndex(start='1700', end='2009', freq='A')[:309]
-    res = ARMA(dta, (3, 0)).fit(disp=-1)
-    fig = res.plot_predict('1990', '2012', dynamic=True, plot_insample=False)
-    plt.close(fig)
-
-    res = ARIMA(dta, (3, 1, 0)).fit(disp=-1)
-    fig = res.plot_predict('1990', '2012', dynamic=True, plot_insample=False)
-    plt.close(fig)
 
 
 @pytest.mark.not_vetted
@@ -2130,7 +2100,6 @@ def test_arima_diff2():
                      (219.924,  233.759),
                      (220.559,  235.735),
                      (221.206,  237.709)]
-
 
     fc_res = [217.685, 218.996, 220.356, 221.656, 222.945, 224.243, 225.541,
               226.841, 228.147, 229.457]
@@ -2196,13 +2165,13 @@ def test_arima111_predict_exog_2127():
     # regression test, not verified numbers
     # if exog=ue in predict, which values are used ?
     predicts_res = np.array(
-          [ 0.02612291,  0.02361929,  0.024966  ,  0.02448193,  0.0248772 ,
+           [0.02612291,  0.02361929,  0.024966  ,  0.02448193,  0.0248772 ,
             0.0248762 ,  0.02506319,  0.02516542,  0.02531214,  0.02544654,
             0.02559099,  0.02550931])
 
     # if exog=ue[-11:] in predict
     predicts_res = np.array(
-          [ 0.02591112,  0.02321336,  0.02436593,  0.02368773,  0.02389767,
+           [0.02591112,  0.02321336,  0.02436593,  0.02368773,  0.02389767,
             0.02372018,  0.02374833,  0.02367407,  0.0236443 ,  0.02362868,
             0.02362312])
 
@@ -2243,14 +2212,15 @@ def test_ARIMA_exog_predict():
                                     exog=exog_full[197:], dynamic=True)
 
     # numpy
-    mod2 = ARIMA(np.asarray(data_sample['loginv']), (1,0,1),
+    mod2 = ARIMA(np.asarray(data_sample['loginv']),
+                 (1, 0, 1),
                  exog=np.asarray(data_sample[['loggdp', 'logcons']]))
     res2 = mod2.fit(start_params=res.params, disp=0,
                     solver='bfgs', maxiter=5000)
 
     exog_full = data[['loggdp', 'logcons']]
     predicted_arma_f = res2.predict(start=197, end=202,
-        exog=exog_full.values[197:])
+                                    exog=exog_full.values[197:])
     predicted_arma_d = res2.predict(start=193, end=202,
                                     exog=exog_full[197:], dynamic=True)
 
@@ -2260,9 +2230,10 @@ def test_ARIMA_exog_predict():
     # a Lapack problem
     # Intel MKL ERROR: Parameter 5 was incorrect on entry to DLASCL.
     ex[0] = 0
-    mod111 = ARIMA(np.asarray(data_sample['loginv']), (1,1,1),
-                       # Stata differences also the exog
-                       exog=ex)
+    mod111 = ARIMA(np.asarray(data_sample['loginv']),
+                   (1, 1, 1),
+                   # Stata differences also the exog
+                   exog=ex)
 
     res111 = mod111.fit(disp=0, solver='bfgs', maxiter=5000)
     exog_full_d = data[['loggdp', 'logcons']].diff()
@@ -2337,7 +2308,8 @@ def test_ARIMA_exog_predict():
                           disp=0, solver='bfgs', maxiter=5000)
 
     # forecast
-    fpredict_002 = res_002.predict(start=197, end=202, exog=exog_full.values[197:])
+    fpredict_002 = res_002.predict(start=197, end=202,
+                                   exog=exog_full.values[197:])
     forecast_002 = res_002.forecast(steps=len(exog_full.values[197:]),
                                     exog=exog_full.values[197:])
     forecast_002 = forecast_002[0]  # TODO we are not checking the other results
@@ -2347,7 +2319,8 @@ def test_ARIMA_exog_predict():
                     rtol=1e-4, atol=1e-6)
 
     # dynamic predict
-    dpredict_002 = res_002.predict(start=193, end=202, exog=exog_full.values[197:],
+    dpredict_002 = res_002.predict(start=193, end=202,
+                                   exog=exog_full.values[197:],
                                    dynamic=True)
     assert_allclose(dpredict_002, res_d002[-len(dpredict_002):],
                     rtol=1e-4, atol=1e-6)
@@ -2430,8 +2403,65 @@ def test_arma_pickle():
     assert_almost_equal(res.pvalues, pkl_res.pvalues)
 
 
-@pytest.mark.not_vetted
+# ----------------------------------------------------------------
+# Smoke Tests Aimed at a specific issue/method
+
+
+@pytest.mark.smoke
+@pytest.mark.skipif('not have_matplotlib')
+def test_plot_predict():
+    dta = datasets.sunspots.load_pandas().data[['SUNACTIVITY']]
+    dta.index = pd.DatetimeIndex(start='1700', end='2009', freq='A')[:309]
+    res = ARMA(dta, (3, 0)).fit(disp=-1)
+    fig = res.plot_predict('1990', '2012', dynamic=True, plot_insample=False)
+    plt.close(fig)
+
+    res = ARIMA(dta, (3, 1, 0)).fit(disp=-1)
+    fig = res.plot_predict('1990', '2012', dynamic=True, plot_insample=False)
+    plt.close(fig)
+
+
+@pytest.mark.smoke
+def test_arima_exog_predict_1d():
+    # GH#1067
+    np.random.seed(12345)
+    y = np.random.random(100)
+    x = np.random.random(100)
+    mod = ARMA(y, (2, 1), x).fit(disp=-1)
+    newx = np.random.random(10)
+    results = mod.forecast(steps=10, alpha=0.05, exog=newx)
+
+
+@pytest.mark.smoke
+def test_arima_predict_noma():
+    # GH#657
+    ar = [1, .75]
+    ma = [1]
+    data = arma_generate_sample(ar, ma, 100)
+    arma = ARMA(data, order=(0,1))
+    arma_res = arma.fit(disp=-1)
+    arma_res.forecast(1)
+
+
+@pytest.mark.smoke
+def test_arima_dataframe_integer_name():
+    # GH#1038
+    vals = [96.2, 98.3, 99.1, 95.5, 94.0, 87.1, 87.9, 86.7402777504474,
+            94.0, 96.5, 93.3, 97.5, 96.3, 92.]
+
+    dr = pd.date_range("1990", periods=len(vals), freq='Q')
+    ts = pd.Series(vals, index=dr)
+    df = pd.DataFrame(ts)
+    mod = ARIMA(df, (2, 0, 2))
+
+
+# ----------------------------------------------------------------
+# Issue-specific tests -- Need to find GH references
+
+
 def test_arima_pickle():
+    # pickle+unpickle should give back an identical model
+    # TODO: GH reference?
     endog = y_arma[:, 6]
     mod = ARIMA(endog, (1, 1, 1))
     pkl_mod = cPickle.loads(cPickle.dumps(mod))

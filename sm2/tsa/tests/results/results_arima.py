@@ -1,12 +1,11 @@
 import os
 
 import numpy as np
+import pandas as pd
 
 cur_dir = os.path.dirname(os.path.abspath(__file__))
 path = os.path.join(cur_dir, "results_arima_forecasts.csv")
-with open(path, "rb") as fd:
-    forecast_results = np.genfromtxt(fd, names=True, delimiter=",", dtype=float)
-
+forecast_results = pd.read_csv(path)
 
 # NOTE:
 # stata gives no indication of no convergence for 112 CSS but gives a
@@ -16,6 +15,7 @@ with open(path, "rb") as fd:
 # it looks like stata uses a different formula for the CSS likelihood
 # they appear to be using a larger sample than R, gretl, or us.
 # CSS results are therefore taken from R and gretl
+
 
 class ARIMA111(object):
     def __init__(self, method="mle"):
@@ -186,6 +186,7 @@ class ARIMA111(object):
             self.forecast_dyn = forecast_results['fc111cdyn_css']
             self.forecasterr_dyn = forecast_results['fc111cdynse_css']
 
+
 class ARIMA211(object):
     def __init__(self, method="mle"):
         if method == 'mle':
@@ -260,6 +261,7 @@ class ARIMA211(object):
             self.forecasterr = forecast_results['fc111cse_css'][-25:]
             self.forecast_dyn = forecast_results['fc111cdyn_css']
             self.forecasterr_dyn = forecast_results['fc111cdynse_css']
+
 
 class ARIMA112(object):
     def __init__(self, method="mle"):
