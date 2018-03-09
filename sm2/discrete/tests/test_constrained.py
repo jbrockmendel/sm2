@@ -7,8 +7,6 @@ License: BSD-3
 """
 from __future__ import division
 
-from six import StringIO
-
 import numpy as np
 from numpy.testing import assert_allclose
 
@@ -35,21 +33,19 @@ from .results import results_poisson_constrained as results
 
 DEBUG = False
 
-ss = """\
-agecat	smokes	deaths	pyears
-1	1	32	52407
-2	1	104	43248
-3	1	206	28612
-4	1	186	12663
-5	1	102	5317
-1	0	2	18790
-2	0	12	10673
-3	0	28	5710
-4	0	28	2585
-5	0	31	1462"""
-
-data = pd.read_csv(StringIO(ss), delimiter='\t')
-data = data.astype(int)
+# TODO: This used to be here in string form and loaded with pd.read_csv.
+#       Is there an original source/reference for it?
+data = pd.DataFrame([[1, 1, 32, 52407],
+                     [2, 1, 104, 43248],
+                     [3, 1, 206, 28612],
+                     [4, 1, 186, 12663],
+                     [5, 1, 102, 5317],
+                     [1, 0, 2, 18790],
+                     [2, 0, 12, 10673],
+                     [3, 0, 28, 5710],
+                     [4, 0, 28, 2585],
+                     [5, 0, 31, 1462]],
+                    columns=['agecat', 'smokes', 'deaths', 'pyears'])
 data['logpyears'] = np.log(data['pyears'])
 
 
@@ -65,71 +61,66 @@ class CheckPoissonConstrainedMixin(object):
         assert_allclose(bse1[~mask], res2.bse[self.idx][~mask], rtol=1e-6)
 
     def test_basic_method(self):
-        if hasattr(self, 'res1m'):
-            res1 = (self.res1m if not hasattr(self.res1m, '_results')
-                               else self.res1m._results)
-            res2 = self.res2
-            assert_allclose(res1.params, res2.params[self.idx], rtol=1e-6)
-
-            # when a parameter is fixed, the Stata has bse=nan, we have bse=0
-            mask = (res1.bse == 0) & np.isnan(res2.bse[self.idx])
-            assert_allclose(res1.bse[~mask], res2.bse[self.idx][~mask], rtol=1e-6)
-
-            tvalues = res2.params_table[self.idx, 2]
-            # when a parameter is fixed, the Stata has tvalue=nan, we have tvalue=inf
-            mask = np.isinf(res1.tvalues) & np.isnan(tvalues)
-            assert_allclose(res1.tvalues[~mask], tvalues[~mask], rtol=1e-6)
-            pvalues = res2.params_table[self.idx, 3]
-            # note most pvalues are very small
-            # examples so far agree at 8 or more decimal, but rtol is stricter
-            # see above
-            mask = (res1.pvalues == 0) & np.isnan(pvalues)
-            assert_allclose(res1.pvalues[~mask], pvalues[~mask], rtol=5e-5)
-
-            ci_low = res2.params_table[self.idx, 4]
-            ci_upp = res2.params_table[self.idx, 5]
-            ci = np.column_stack((ci_low, ci_upp))
-            # note most pvalues are very small
-            # examples so far agree at 8 or more decimal, but rtol is stricter
-            # see above: nan versus value
-            assert_allclose(res1.conf_int()[~np.isnan(ci)], ci[~np.isnan(ci)], rtol=5e-5)
-
-            # other
-            assert_allclose(res1.llf, res2.ll, rtol=1e-6)
-            assert res1.df_model == res2.df_m
-            # Stata doesn't have df_resid
-            df_r = res2.N - res2.df_m - 1
-            assert res1.df_resid == df_r
-        else:
+        if not hasattr(self, 'res1m'):
             raise pytest.skip("not available yet")
+        res1 = (self.res1m if not hasattr(self.res1m, '_results')
+                           else self.res1m._results)
+        res2 = self.res2
+        assert_allclose(res1.params, res2.params[self.idx], rtol=1e-6)
+
+        # when a parameter is fixed, the Stata has bse=nan, we have bse=0
+        mask = (res1.bse == 0) & np.isnan(res2.bse[self.idx])
+        assert_allclose(res1.bse[~mask], res2.bse[self.idx][~mask], rtol=1e-6)
+
+        tvalues = res2.params_table[self.idx, 2]
+        # when a parameter is fixed, the Stata has tvalue=nan, we have tvalue=inf
+        mask = np.isinf(res1.tvalues) & np.isnan(tvalues)
+        assert_allclose(res1.tvalues[~mask], tvalues[~mask], rtol=1e-6)
+        pvalues = res2.params_table[self.idx, 3]
+        # note most pvalues are very small
+        # examples so far agree at 8 or more decimal, but rtol is stricter
+        # see above
+        mask = (res1.pvalues == 0) & np.isnan(pvalues)
+        assert_allclose(res1.pvalues[~mask], pvalues[~mask], rtol=5e-5)
+
+        ci_low = res2.params_table[self.idx, 4]
+        ci_upp = res2.params_table[self.idx, 5]
+        ci = np.column_stack((ci_low, ci_upp))
+        # note most pvalues are very small
+        # examples so far agree at 8 or more decimal, but rtol is stricter
+        # see above: nan versus value
+        assert_allclose(res1.conf_int()[~np.isnan(ci)], ci[~np.isnan(ci)], rtol=5e-5)
+
+        # other
+        assert_allclose(res1.llf, res2.ll, rtol=1e-6)
+        assert res1.df_model == res2.df_m
+        # Stata doesn't have df_resid
+        df_r = res2.N - res2.df_m - 1
+        assert res1.df_resid == df_r
 
     def test_other(self):
         # some results may not be valid or available for all models
-        if hasattr(self, 'res1m'):
-            res1 = self.res1m
-            res2 = self.res2
-
-            if hasattr(res2, 'll_0'):
-                assert_allclose(res1.llnull, res2.ll_0, rtol=1e-6)
-            else:
-                if DEBUG:
-                    import warnings
-                    message = ('test: ll_0 not available, llnull=%6.4F'
-                                                                % res1.llnull)
-                    warnings.warn(message)
-
-        else:
+        if not hasattr(self, 'res1m'):
             raise pytest.skip("not available yet")
+
+        res1 = self.res1m
+        res2 = self.res2
+
+        if hasattr(res2, 'll_0'):
+            assert_allclose(res1.llnull, res2.ll_0, rtol=1e-6)
+        else:
+            if DEBUG:
+                import warnings
+                warnings.warn('test: ll_0 not available, llnull=%6.4F' %
+                              res1.llnull)
 
 
 class TestPoissonConstrained1a(CheckPoissonConstrainedMixin):
+    res2 = results.results_noexposure_constraint
+    idx = [7, 3, 4, 5, 6, 0, 1]  # 2 is dropped baseline for categorical
 
     @classmethod
     def setup_class(cls):
-
-        cls.res2 = results.results_noexposure_constraint
-        cls.idx = [7, 3, 4, 5, 6, 0, 1]  # 2 is dropped baseline for categorical
-
         # example without offset
         formula = 'deaths ~ logpyears + smokes + C(agecat)'
         mod = Poisson.from_formula(formula, data=data)
@@ -171,11 +162,10 @@ class TestPoissonConstrained1a(CheckPoissonConstrainedMixin):
 
 
 class TestPoissonConstrained1b(CheckPoissonConstrainedMixin):
+    res2 = results.results_exposure_constraint
 
     @classmethod
     def setup_class(cls):
-
-        cls.res2 = results.results_exposure_constraint
         #cls.idx = [3, 4, 5, 6, 0, 1]  # 2 is dropped baseline for categorical
         cls.idx = [6, 2, 3, 4, 5, 0]  # 2 is dropped baseline for categorical
 
@@ -198,11 +188,10 @@ class TestPoissonConstrained1b(CheckPoissonConstrainedMixin):
 
 
 class TestPoissonConstrained1c(CheckPoissonConstrainedMixin):
+    res2 = results.results_exposure_constraint
 
     @classmethod
     def setup_class(cls):
-
-        cls.res2 = results.results_exposure_constraint
         #cls.idx = [3, 4, 5, 6, 0, 1]  # 2 is dropped baseline for categorical
         cls.idx = [6, 2, 3, 4, 5, 0]  # 2 is dropped baseline for categorical
 
@@ -224,13 +213,11 @@ class TestPoissonConstrained1c(CheckPoissonConstrainedMixin):
 
 
 class TestPoissonNoConstrained(CheckPoissonConstrainedMixin):
+    res2 = results.results_exposure_noconstraint
+    idx = [6, 2, 3, 4, 5, 0] # 1 is dropped baseline for categorical
 
     @classmethod
     def setup_class(cls):
-
-        cls.res2 = results.results_exposure_noconstraint
-        cls.idx = [6, 2, 3, 4, 5, 0] # 1 is dropped baseline for categorical
-
         # example without offset
         formula = 'deaths ~ smokes + C(agecat)'
         mod = Poisson.from_formula(formula, data=data,
@@ -243,16 +230,15 @@ class TestPoissonNoConstrained(CheckPoissonConstrainedMixin):
 
 
 class TestPoissonConstrained2a(CheckPoissonConstrainedMixin):
+    res2 = results.results_noexposure_constraint2
+    idx = [7, 3, 4, 5, 6, 0, 1]  # 2 is dropped baseline for categorical
+    model_cls = Poisson
 
     @classmethod
     def setup_class(cls):
-
-        cls.res2 = results.results_noexposure_constraint2
-        cls.idx = [7, 3, 4, 5, 6, 0, 1]  # 2 is dropped baseline for categorical
-
         # example without offset
         formula = 'deaths ~ logpyears + smokes + C(agecat)'
-        mod = Poisson.from_formula(formula, data=data)
+        mod = cls.model_cls.from_formula(formula, data=data)
 
         # get start_params, example fails to converge on one py TravisCI
         k_vars = len(mod.exog_names)
@@ -275,17 +261,17 @@ class TestPoissonConstrained2a(CheckPoissonConstrainedMixin):
 
 
 class TestPoissonConstrained2b(CheckPoissonConstrainedMixin):
+    res2 = results.results_exposure_constraint2
+    model_cls = Poisson
 
     @classmethod
     def setup_class(cls):
-
-        cls.res2 = results.results_exposure_constraint2
         #cls.idx = [3, 4, 5, 6, 0, 1]  # 2 is dropped baseline for categorical
         cls.idx = [6, 2, 3, 4, 5, 0]  # 2 is dropped baseline for categorical
 
         # example without offset
         formula = 'deaths ~ smokes + C(agecat)'
-        mod = Poisson.from_formula(formula, data=data,
+        mod = cls.model_cls.from_formula(formula, data=data,
                                    exposure=data['pyears'].values)
                                    #offset=np.log(data['pyears'].values))
         #res1a = mod1a.fit()
@@ -303,17 +289,17 @@ class TestPoissonConstrained2b(CheckPoissonConstrainedMixin):
 
 
 class TestPoissonConstrained2c(CheckPoissonConstrainedMixin):
+    res2 = results.results_exposure_constraint2
+    model_cls = Poisson
 
     @classmethod
     def setup_class(cls):
-
-        cls.res2 = results.results_exposure_constraint2
         #cls.idx = [3, 4, 5, 6, 0, 1]  # 2 is dropped baseline for categorical
         cls.idx = [6, 2, 3, 4, 5, 0]  # 2 is dropped baseline for categorical
 
         # example without offset
         formula = 'deaths ~ smokes + C(agecat)'
-        mod = Poisson.from_formula(formula, data=data,
+        mod = cls.model_cls.from_formula(formula, data=data,
                                    offset=np.log(data['pyears'].values))
 
         constr = 'C(agecat)[T.5] - C(agecat)[T.4] = 0.5'
@@ -333,14 +319,15 @@ class TestPoissonConstrained2c(CheckPoissonConstrainedMixin):
 @pytest.mark.skip(reason="GLM not ported from upstream")
 @pytest.mark.not_vetted
 class TestGLMPoissonConstrained1a(CheckPoissonConstrainedMixin):
+    res2 = results.results_noexposure_constraint
+    idx = [7, 3, 4, 5, 6, 0, 1]  # 2 is dropped baseline for categorical
+    model_cls = GLM
+
     @classmethod
     def setup_class(cls):
-        cls.res2 = results.results_noexposure_constraint
-        cls.idx = [7, 3, 4, 5, 6, 0, 1]  # 2 is dropped baseline for categorical
-
         # example without offset
         formula = 'deaths ~ logpyears + smokes + C(agecat)'
-        mod = GLM.from_formula(formula, data=data,
+        mod = cls.model_cls.from_formula(formula, data=data,
                                     family=families.Poisson())
 
         constr = 'C(agecat)[T.4] = C(agecat)[T.5]'
@@ -354,16 +341,15 @@ class TestGLMPoissonConstrained1a(CheckPoissonConstrainedMixin):
 @pytest.mark.skip(reason="GLM not ported from upstream")
 @pytest.mark.not_vetted
 class TestGLMPoissonConstrained1b(CheckPoissonConstrainedMixin):
+    res2 = results.results_exposure_constraint
+    idx = [6, 2, 3, 4, 5, 0]  # 2 is dropped baseline for categorical
+    model_cls = GLM
+
     @classmethod
     def setup_class(cls):
-        
-
-        cls.res2 = results.results_exposure_constraint
-        cls.idx = [6, 2, 3, 4, 5, 0]  # 2 is dropped baseline for categorical
-
         # example with offset
         formula = 'deaths ~ smokes + C(agecat)'
-        mod = GLM.from_formula(formula, data=data,
+        mod = model_cls.from_formula(formula, data=data,
                                family=families.Poisson(),
                                offset=np.log(data['pyears'].values))
 
@@ -417,7 +403,7 @@ class CheckGLMConstrainedMixin(CheckPoissonConstrainedMixin):
         #assert_allclose(res1.aic, res2.aic, rtol=1e-10)  # far away
         # Stata aic in ereturn and in estat ic are very different
         # we have the same as estat ic
-        # see issue #1733
+        # see issue GH#1733
         assert_allclose(res1.aic, res2.infocrit[4], rtol=1e-10)
 
         assert_allclose(res1.bic, res2.bic, rtol=1e-10)
@@ -431,16 +417,17 @@ class CheckGLMConstrainedMixin(CheckPoissonConstrainedMixin):
 @pytest.mark.skip(reason="GLM not ported from upstream")
 @pytest.mark.not_vetted
 class TestGLMLogitConstrained1(CheckGLMConstrainedMixin):
+    idx = slice(None)
+    # params sequence same as Stata, but Stata reports param = nan
+    # and we have param = value = 0
+    model_cls = GLM
+
     @classmethod
     def setup_class(cls):
-        cls.idx = slice(None)
-        # params sequence same as Stata, but Stata reports param = nan
-        # and we have param = value = 0
-
-        #res1ul = Logit(data.endog, data.exog).fit(method="newton", disp=0)
         cls.res2 = reslogit.results_constraint1
+        #res1ul = Logit(data.endog, data.exog).fit(method="newton", disp=0)
 
-        mod1 = GLM(spector_data.endog, spector_data.exog,
+        mod1 = cls.model_cls(spector_data.endog, spector_data.exog,
                    family=families.Binomial())
 
         constr = 'x1 = 2.8'
@@ -453,13 +440,14 @@ class TestGLMLogitConstrained1(CheckGLMConstrainedMixin):
 @pytest.mark.skip(reason="GLM not ported from upstream")
 @pytest.mark.not_vetted
 class TestGLMLogitConstrained2(CheckGLMConstrainedMixin):
+    idx = slice(None)  # params sequence same as Stata
+    model_cls = GLM
+
     @classmethod
     def setup_class(cls):
-        cls.idx = slice(None)  # params sequence same as Stata
-        #res1ul = Logit(data.endog, data.exog).fit(method="newton", disp=0)
         cls.res2 = reslogit.results_constraint2
-
-        mod1 = GLM(spector_data.endog, spector_data.exog,
+        #res1ul = Logit(data.endog, data.exog).fit(method="newton", disp=0)
+        mod1 = cls.model_cls(spector_data.endog, spector_data.exog,
                    family=families.Binomial())
 
         constr = 'x1 - x3 = 0'
@@ -504,20 +492,22 @@ class TestGLMLogitConstrained2(CheckGLMConstrainedMixin):
 @pytest.mark.skip(reason="GLM not ported from upstream")
 @pytest.mark.not_vetted
 class TestGLMLogitConstrained2HC(CheckGLMConstrainedMixin):
+    idx = slice(None)  # params sequence same as Stata
+    model_cls = GLM
+
     @classmethod
     def setup_class(cls):
-        cls.idx = slice(None)  # params sequence same as Stata
-        #res1ul = Logit(data.endog, data.exog).fit(method="newton", disp=0)
         cls.res2 = reslogit.results_constraint2_robust
+        #res1ul = Logit(data.endog, data.exog).fit(method="newton", disp=0)
 
-        mod1 = GLM(spector_data.endog, spector_data.exog,
+        mod1 = cls.model_cls(spector_data.endog, spector_data.exog,
                    family=families.Binomial())
 
         # not used to match Stata for HC
         # nobs, k_params = mod1.exog.shape
         # k_params -= 1   # one constraint
         cov_type = 'HC0'
-        cov_kwds = {'scaling_factor': 32/31}
+        cov_kwds = {'scaling_factor': 32 / 31}
         # looks like nobs / (nobs - 1) and not (nobs - 1.) / (nobs - k_params)}
         constr = 'x1 - x3 = 0'
         cls.res1m = mod1.fit_constrained(constr, cov_type=cov_type,

@@ -24,118 +24,106 @@ exog /= np.round(exog.max(0), 3)
 
 @pytest.mark.not_vetted
 class CheckMarginMixin(object):
+    res2_slice = slice(None, None, None)
     rtol_fac = 1
+    dummy = False
+
+    @classmethod
+    def setup_class(cls):
+        mod = cls.model_cls(endog, exog)
+        res = mod.fit(**cls.fit_kwargs)
+        cls.res = res
+        cls.margeff = res.get_margeff(dummy=cls.dummy)
 
     def test_margins_table(self):
-        res1 = self.res1
-        sl = self.res1_slice
+        res2 = self.res2
+        sl = self.res2_slice
         rf = self.rtol_fac
         assert_allclose(self.margeff.margeff,
-                        self.res1.params[sl],
+                        res2.params[sl],
                         rtol=1e-5 * rf)
         assert_allclose(self.margeff.margeff_se,
-                        self.res1.bse[sl],
+                        res2.bse[sl],
                         rtol=1e-6 * rf)
         assert_allclose(self.margeff.pvalues,
-                        self.res1.pvalues[sl],
+                        res2.pvalues[sl],
                         rtol=5e-6 * rf)
         assert_allclose(self.margeff.conf_int(),
-                        res1.margins_table[sl, 4:6],
+                        res2.margins_table[sl, 4:6],
                         rtol=1e-6 * rf)
 
 
 @pytest.mark.not_vetted
 class TestPoissonMargin(CheckMarginMixin):
+    res2 = res_stata.results_poisson_margins_cont
 
-    @classmethod
-    def setup_class(cls):
+    model_cls = sm.Poisson
+    fit_kwargs = {
         # here we don't need to check convergence from default start_params
-        start_params = [14.1709, 0.7085, -3.4548, -0.539, 3.2368, -7.9299,
-                        -5.0529]
-        mod_poi = sm.Poisson(endog, exog)
-        res_poi = mod_poi.fit(start_params=start_params)
-        marge_poi = res_poi.get_margeff()
-        cls.res = res_poi
-        cls.margeff = marge_poi
-
-        cls.rtol_fac = 1
-        cls.res1_slice = slice(None, None, None)
-        cls.res1 = res_stata.results_poisson_margins_cont
+        'start_params': [14.1709, 0.7085, -3.4548, -0.539, 3.2368, -7.9299,
+                         -5.0529]
+        }
 
 
 @pytest.mark.not_vetted
 class TestPoissonMarginDummy(CheckMarginMixin):
+    res2 = res_stata.results_poisson_margins_dummy
+    res2_slice = [0, 1, 2, 3, 5, 6]
 
-    @classmethod
-    def setup_class(cls):
+    model_cls = sm.Poisson
+    fit_kwargs = {
         # here we don't need to check convergence from default start_params
-        start_params = [14.1709, 0.7085, -3.4548, -0.539, 3.2368, -7.9299,
-                        -5.0529]
-        mod_poi = sm.Poisson(endog, exog)
-        res_poi = mod_poi.fit(start_params=start_params)
-        marge_poi = res_poi.get_margeff(dummy=True)
-        cls.res = res_poi
-        cls.margeff = marge_poi
-
-        cls.res1_slice = [0, 1, 2, 3, 5, 6]
-        cls.res1 = res_stata.results_poisson_margins_dummy
+        'start_params': [14.1709, 0.7085, -3.4548, -0.539, 3.2368, -7.9299,
+                         -5.0529]
+    }
+    dummy = True
 
 
 @pytest.mark.not_vetted
 class TestNegBinMargin(CheckMarginMixin):
+    res2 = res_stata.results_negbin_margins_cont
 
-    @classmethod
-    def setup_class(cls):
+    model_cls = sm.NegativeBinomial
+    fit_kwargs = {
+        'method': 'nm',
+        'maxiter': 2000,
         # here we don't need to check convergence from default start_params
-        start_params = [13.1996, 0.8582, -2.8005, -1.5031, 2.3849, -8.5552,
-                        -2.88, 1.14]
-        mod = sm.NegativeBinomial(endog, exog)
-        res = mod.fit(start_params=start_params, method='nm', maxiter=2000)
-        marge = res.get_margeff()
-        cls.res = res
-        cls.margeff = marge
-
-        cls.res1_slice = slice(None, None, None)
-        cls.res1 = res_stata.results_negbin_margins_cont
-        cls.rtol_fac = 5e1
-        # negbin has lower agreement with Stata in this case
+        'start_params': [13.1996, 0.8582, -2.8005, -1.5031, 2.3849, -8.5552,
+                         -2.88, 1.14]
+    }
+    rtol_fac = 5e1 # negbin has lower agreement with Stata in this case
 
 
 @pytest.mark.not_vetted
 class TestNegBinMarginDummy(CheckMarginMixin):
+    res2 = res_stata.results_negbin_margins_dummy
+    res2_slice = [0, 1, 2, 3, 5, 6]
 
-    @classmethod
-    def setup_class(cls):
+    model_cls = sm.NegativeBinomial
+    fit_kwargs = {
+        'method': 'nm',
+        'maxiter': 2000,
         # here we don't need to check convergence from default start_params
-        start_params = [13.1996, 0.8582, -2.8005, -1.5031, 2.3849, -8.5552,
-                        -2.88, 1.14]
-        mod = sm.NegativeBinomial(endog, exog)
-        res = mod.fit(start_params=start_params, method='nm', maxiter=2000)
-        marge = res.get_margeff(dummy=True)
-        cls.res = res
-        cls.margeff = marge
-
-        cls.res1_slice = cls.res1_slice = [0, 1, 2, 3, 5, 6]
-        cls.res1 = res_stata.results_negbin_margins_dummy
-        cls.rtol_fac = 5e1
+        'start_params': [13.1996, 0.8582, -2.8005, -1.5031, 2.3849, -8.5552,
+                         -2.88, 1.14]
+    }
+    dummy = True
+    rtol_fac = 5e1 # negbin has lower agreement with Stata in this case
 
 
 @pytest.mark.not_vetted
 class TestNegBinPMargin(CheckMarginMixin):
     # this is the same as the nb2 version above for NB-P, p=2
+    # by not specifically passing p=2 this implicitly tests for the default
+    # being 2
+    res2 = res_stata.results_negbin_margins_cont
 
-    @classmethod
-    def setup_class(cls):
+    model_cls = NegativeBinomialP
+    fit_kwargs = {
+        'method': 'nm',
+        'maxiter': 2000,
         # here we don't need to check convergence from default start_params
-        start_params = [13.1996, 0.8582, -2.8005, -1.5031, 2.3849, -8.5552,
-                        -2.88, 1.14]
-        mod = NegativeBinomialP(endog, exog)   # checks also that default p=2
-        res = mod.fit(start_params=start_params, method='nm', maxiter=2000)
-        marge = res.get_margeff()
-        cls.res = res
-        cls.margeff = marge
-
-        cls.res1_slice = slice(None, None, None)
-        cls.res1 = res_stata.results_negbin_margins_cont
-        cls.rtol_fac = 5e1
-        # negbin has lower agreement with Stata in this case
+        'start_params': [13.1996, 0.8582, -2.8005, -1.5031, 2.3849, -8.5552,
+                         -2.88, 1.14]
+    }
+    rtol_fac = 5e1  # negbin has lower agreement with Stata in this case

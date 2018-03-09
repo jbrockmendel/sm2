@@ -3346,13 +3346,14 @@ class DiscreteResults(base.LikelihoodModelResults):
         if optim_kwds:
             res_null = mod_null.fit(start_params=sp_null, **opt_kwds)
         else:
-            # this should be a reasonably method case across versions
+            # this should be a reasonable method case across versions
             res_null = mod_null.fit(start_params=sp_null, method='nm',
                                     warn_convergence=False,
                                     maxiter=10000, disp=0)
             res_null = mod_null.fit(start_params=res_null.params, method='bfgs',
                                     warn_convergence=False,
                                     maxiter=10000, disp=0)
+            # TODO: Why is maxiter=10000 here reasonable while elsewhere its 35?
 
         if getattr(self, '_attach_nullmodel', False) is not False:
             self.res_null = res_null
