@@ -564,7 +564,7 @@ class KalmanFilter(object):
         Currently only returns a 1 x r vector [1,0,0,...0].  Will need to
         be generalized when the Kalman Filter becomes more flexible.
         """
-        arr = np.zeros((1,r), order="F")
+        arr = np.zeros((1, r), order="F")
         arr[:, 0] = 1.
         return arr
 
