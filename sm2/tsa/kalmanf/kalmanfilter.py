@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """
 State Space Analysis using the Kalman Filter
 
@@ -8,8 +9,8 @@ Durbin., J and Koopman, S.J.  `Time Series Analysis by State Space Methods`.
 
 Hamilton, J.D.  `Time Series Analysis`.  Princeton, 1994.
 
-Harvey, A.C. `Forecasting, Structural Time Series Models and the Kalman Filter`.
-    Cambridge, 1989.
+Harvey, A.C. `Forecasting, Structural Time Series Models
+    and the Kalman Filter`.  Cambridge, 1989.
 
 Notes
 -----
@@ -41,7 +42,9 @@ from . import kalman_loglike
 def _init_diffuse(T,R):
     m = T.shape[1]  # number of states
     r = R.shape[1]  # should also be the number of states?
-    Q_0 = np.dot(np.linalg.inv(np.identity(m**2) - np.kron(T, T)), np.dot(R, R.T).ravel('F'))
+
+    Q_0 = np.dot(np.linalg.inv(np.identity(m**2) - np.kron(T, T)),
+                 np.dot(R, R.T).ravel('F'))
     return np.zeros((m, 1)), Q_0.reshape(r, r, order='F')
 
 
@@ -104,18 +107,19 @@ def kalmanfilter(F, A, H, Q, R, y, X, xi10, ntrain, history=False):
         y = y[:,None]
     nobs = y.shape[0]
     xi10 = np.atleast_2d(np.asarray(xi10))
-#    if xi10.ndim == 1:
-#        xi10[:,None]
+    #if xi10.ndim == 1:
+    #    xi10[:, None]
     if history:
         state_vector = [xi10]
     Q = np.asarray(Q)
     r = xi10.shape[0]
-# Eq. 12.2.21, other version says P0 = Q
-#    p10 = np.dot(np.linalg.inv(np.eye(r**2)-np.kron(F,F)),Q.ravel('F'))
-#    p10 = np.reshape(P0, (r,r), order='F')
-# Assume a fixed, known intial point and set P0 = Q
-#TODO: this looks *slightly * different than Durbin-Koopman exact likelihood
-# initialization p 112 unless I've misunderstood the notational translation.
+    # Eq. 12.2.21, other version says P0 = Q
+    #    p10 = np.dot(np.linalg.inv(np.eye(r**2)-np.kron(F, F)),Q.ravel('F'))
+    #    p10 = np.reshape(P0, (r,r), order='F')
+    # Assume a fixed, known intial point and set P0 = Q
+    # TODO: this looks *slightly * different than Durbin-Koopman
+    #       exact likelihood initialization p 112 unless I've
+    #       misunderstood the notational translation.
     p10 = Q
 
     loglikelihood = 0
@@ -124,13 +128,13 @@ def kalmanfilter(F, A, H, Q, R, y, X, xi10, ntrain, history=False):
         if HTPHR.ndim == 1:
             HTPHRinv = 1. / HTPHR
         else:
-            HTPHRinv = np.linalg.inv(HTPHR) # correct
+            HTPHRinv = np.linalg.inv(HTPHR)  # correct
 
-        part1 = y[i] - np.dot(A.T, X) - np.dot(H.T, xi10) # correct
-        if i >= ntrain: # zero-index, but ntrain isn't
-            HTPHRdet = np.linalg.det(np.atleast_2d(HTPHR)) # correct
-            part2 = -.5 * chain_dot(part1.T, HTPHRinv, part1) # correct
-            #TODO: Need to test with ill-conditioned problem.
+        part1 = y[i] - np.dot(A.T, X) - np.dot(H.T, xi10)  # correct
+        if i >= ntrain:  # zero-index, but ntrain isn't
+            HTPHRdet = np.linalg.det(np.atleast_2d(HTPHR))  # correct
+            part2 = -.5 * chain_dot(part1.T, HTPHRinv, part1)  # correct
+            # TODO: Need to test with ill-conditioned problem.
             loglike_interm = (-n / 2.) * np.log(2 * np.pi) - .5 * np.log(HTPHRdet) + part2
             loglikelihood += loglike_interm
 
@@ -150,7 +154,7 @@ def kalmanfilter(F, A, H, Q, R, y, X, xi10, ntrain, history=False):
         return -loglikelihood, np.asarray(state_vector[:-1])
 
 
-#TODO: this works if it gets refactored, but it's not quite as accurate
+# TODO: this works if it gets refactored, but it's not quite as accurate
 # as KalmanFilter
 #    def loglike_exact(self, params):
 #        """
@@ -228,7 +232,6 @@ def kalmanfilter(F, A, H, Q, R, y, X, xi10, ntrain, history=False):
 #        llf = -nobs/2.*np.log(2*np.pi*sigma2) - 1/(2.*sigma2)*se_n - \
 #            1/2.*logdet(Sigma_a) + 1/(2*sigma2)*s_n_prime*sigma_a*s_n
 #        return llf
-#
 
 
 class StateSpaceModel(object):
@@ -338,7 +341,7 @@ class StateSpaceModel(object):
         # are the bounds binding?
         if penalty:
             params = np.min((np.max((lowerbounds, params), axis=0), upperbounds), axis=0)
-        #TODO: does it make sense for all of these to be allowed to be None?
+        # TODO: does it make sense for all of these to be allowed to be None?
         if F != None and callable(F):
             F = F(params)
         elif F == None:
@@ -370,23 +373,23 @@ class StateSpaceModel(object):
             loglike += penalty * np.sum((paramsorig-params)**2)
         return loglike
 
-#        r = self.r
-#        n = self.n
-#        F = np.diagonal(np.ones(r-1), k=-1) # think this will be wrong for VAR
-                                            # cf. 13.1.22 but think VAR
-#        F[0] = params[:p] # assumes first p start_params are coeffs
-                                # of obs. vector, needs to be nxp for VAR?
-#        self.F = F
-#        cholQ = np.diag(start_params[p:]) # fails for bivariate
-                                                        # MA(1) section
-                                                        # 13.4.2
-#        Q = np.dot(cholQ,cholQ.T)
-#        self.Q = Q
-#        HT = np.zeros((n,r))
-#        xi10 = self.xi10
-#        y = self.endog
-#        ntrain = self.ntrain
- #       loglike = kalmanfilter(F,H,y,xi10,Q,ntrain)
+        #r = self.r
+        #n = self.n
+        #F = np.diagonal(np.ones(r-1), k=-1) # think this will be wrong for VAR
+        #                                   # cf. 13.1.22 but think VAR
+        #F[0] = params[:p] # assumes first p start_params are coeffs
+        #                       # of obs. vector, needs to be nxp for VAR?
+        #self.F = F
+        #cholQ = np.diag(start_params[p:]) # fails for bivariate
+        #                                               # MA(1) section
+        #                                               # 13.4.2
+        #Q = np.dot(cholQ,cholQ.T)
+        #self.Q = Q
+        #HT = np.zeros((n,r))
+        #xi10 = self.xi10
+        #y = self.endog
+        #ntrain = self.ntrain
+        #loglike = kalmanfilter(F,H,y,xi10,Q,ntrain)
 
     def fit_kalman(self, start_params, xi10, ntrain=1, F=None, A=None, H=None,
                    Q=None, R=None, method="bfgs", penalty=True,
@@ -508,14 +511,16 @@ class KalmanFilter(object):
         # handle zero coefficients if necessary
         # NOTE: squeeze added for cg optimizer
         params_padded[:p] = params[k:p + k]
-        arr[:, 0] = params_padded   # first p params are AR coeffs w/ short params
+        # first p params are AR coeffs w/ short params
+        arr[:, 0] = params_padded 
         arr[:-1, 1:] = np.eye(r - 1)
         return arr
 
     @classmethod
     def R(cls, params, r, k, q, p):  # R is H in Hamilton
         """
-        The coefficient matrix for the state vector in the observation equation.
+        The coefficient matrix for the state vector in the observation
+        equation.
 
         Its dimension is r+k x 1.
 
@@ -578,7 +583,7 @@ class KalmanFilter(object):
                                                         k_lags, int(nobs),
                                                         Z_mat, R_mat, T_mat)[0]
         else:
-            raise TypeError("dtype %s is not supported "
+            raise TypeError("dtype %s is not supported.  "
                             "Please file a bug report" % paramsdtype)
 
     @classmethod
@@ -622,7 +627,7 @@ class KalmanFilter(object):
             The coefficients of the ARMA model, assumed to be in the order of
             trend variables and `k` exogenous coefficients, the `p` AR
             coefficients, then the `q` MA coefficients.
-        arma_model : `statsmodels.tsa.arima.ARMA` instance
+        arma_model : `sm2.tsa.arima.ARMA` instance
             A reference to the ARMA model instance.
         set_sigma2 : bool, optional
             True if arma_model.sigma2 should be set.
@@ -635,9 +640,9 @@ class KalmanFilter(object):
         complex values being used to compute the numerical derivative. If
         available will use a Cython version of the Kalman Filter.
         """
-        #TODO: see section 3.4.6 in Harvey for computing the derivatives in the
-        # recursion itself.
-        #TODO: this won't work for time-varying parameters
+        # TODO: see section 3.4.6 in Harvey for computing the derivatives in
+        # the recursion itself.
+        # TODO: this won't work for time-varying parameters
         (y, k, nobs, k_ar, k_ma, k_lags, newparams, Z_mat, m, R_mat, T_mat,
                 paramsdtype) = cls._init_kalman_state(params, arma_model)
         if np.issubdtype(paramsdtype, np.float64):
@@ -650,8 +655,8 @@ class KalmanFilter(object):
                                     Z_mat.astype(complex),
                                     R_mat, T_mat)
         else:
-            raise TypeError("This dtype %s is not supported "
-                            " Please files a bug report." % paramsdtype)
+            raise TypeError("This dtype %s is not supported.  "
+                            "Please file a bug report." % paramsdtype)
         if set_sigma2:
             arma_model.sigma2 = sigma2
 

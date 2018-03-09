@@ -776,6 +776,7 @@ class Spector(object):
         return obj
     probit = probit()
 
+
 class RandHIE(object):
     """
     Results obtained from Stata 11

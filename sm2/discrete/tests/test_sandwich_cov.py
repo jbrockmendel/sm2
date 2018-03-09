@@ -130,7 +130,7 @@ class TestPoissonCluGeneric(CheckCountRobustMixin):
                               groups=group,
                               use_correction=True,
                               df_correction=True,  # TODO has no effect
-                              use_t=False, #True,
+                              use_t=False,  # True,
                               use_self=True)
         cls.bse_rob = cls.res1.bse
 
@@ -176,12 +176,14 @@ class TestPoissonCluFit(CheckCountRobustMixin):
         nobs, k_params = mod.exog.shape
         sc_fact = (nobs - 1.) / float(nobs - k_params)
 
+        cov_kwds = dict(groups=group,
+                        use_correction=True,
+                        scaling_factor=1. / sc_fact,
+                        df_correction=True)  # TODO has no effect
+
         cls.res1 = mod.fit(disp=False, cov_type=cls.cov_type,
-                           cov_kwds=dict(groups=group,
-                                         use_correction=True,
-                                         scaling_factor=1. / sc_fact,
-                                         df_correction=True),  # TODO has no effect
-                           use_t=False, #True,
+                           cov_kwds=cov_kwds,
+                           use_t=False,  # True,
                            )
 
         # The model results, t_test, ... should also work without
@@ -269,7 +271,7 @@ class TestPoissonCluExposureGeneric(CheckCountRobustMixin):
                               groups=group,
                               use_correction=True,
                               df_correction=True,   # TODO has no effect
-                              use_t=False, #True,
+                              use_t=False,  # True,
                               use_self=True)
         cls.bse_rob = cls.res1.bse
 
@@ -309,7 +311,7 @@ class TestGLMPoissonCluGeneric(CheckCountRobustMixin):
                               groups=group,
                               use_correction=True,
                               df_correction=True,  # TODO has no effect
-                              use_t=False, #True,
+                              use_t=False,  # True,
                               use_self=True)
         cls.bse_rob = cls.res1.bse
 
@@ -356,7 +358,7 @@ class TestGLMPoissonCluFit(CheckCountRobustMixin):
         mod = cls.model_cls(endog, exog, family=families.Poisson())
         cls.res1 = mod.fit(cov_type=cls.cov_type,
                            cov_kwds=cls.cov_kwds,
-                           use_t=False, #True,
+                           use_t=False,  # True,
                            )
 
         # The model results, t_test, ... should also work without
@@ -442,7 +444,7 @@ class TestNegbinCluGeneric(CheckCountRobustMixin):
                               groups=group,
                               use_correction=True,
                               df_correction=True,  # TODO has no effect
-                              use_t=False, #True,
+                              use_t=False,  # True,
                               use_self=True)
         cls.bse_rob = cls.res1.bse
 
@@ -467,7 +469,7 @@ class TestNegbinCluFit(CheckCountRobustMixin):
         mod = cls.model_cls(endog, exog)
         cls.res1 = mod.fit(disp=False, cov_type=cls.cov_type,
                            cov_kwds=cls.cov_kwds,
-                           use_t=False, #True,
+                           use_t=False,  # True,
                            gtol=1e-7)
         cls.bse_rob = cls.res1.bse
 
@@ -493,7 +495,7 @@ class TestNegbinCluExposureFit(CheckCountRobustMixin):
         cls.res1 = mod.fit(disp=False,
                            cov_type=cls.cov_type,
                            cov_kwds=cls.cov_kwds,
-                           use_t=False, #True,
+                           use_t=False,  # True,
                            )
         cls.bse_rob = cls.res1.bse
 
@@ -556,7 +558,7 @@ class TestGLMProbit(CheckDiscreteGLM):
         endog_bin = (endog > endog.mean()).astype(int)
 
         mod1 = cls.model_cls(endog_bin, exog,
-                   family=families.Gaussian(link=links.CDFLink()))
+                             family=families.Gaussian(link=links.CDFLink()))
         cls.res1 = mod1.fit(cov_type=cls.cov_type, cov_kwds=cls.cov_kwds)
 
         mod1 = smd.Probit(endog_bin, exog)
@@ -654,7 +656,7 @@ class TestGLMGaussHACUniform(CheckDiscreteGLM):
         assert_allclose(res2a.bse, self.res2.bse, rtol=1e-12)
 
         # regression test for bse values
-        bse = np.array([  2.82203924,   4.60199596,  11.01275064])
+        bse = np.array([2.82203924, 4.60199596, 11.01275064])
         assert_allclose(res1a.bse, bse, rtol=1e-6)
 
         assert res1a.cov_kwds['weights_func'] is sw.weights_uniform
@@ -665,7 +667,7 @@ class TestGLMGaussHACUniform(CheckDiscreteGLM):
         assert_allclose(res1a.bse, res2a.bse, rtol=1e-12)
 
         # regression test for bse values
-        bse = np.array([  2.502264,  3.697807,  9.193303])
+        bse = np.array([2.502264, 3.697807, 9.193303])
         assert_allclose(res1a.bse, bse, rtol=1e-6)
 
 

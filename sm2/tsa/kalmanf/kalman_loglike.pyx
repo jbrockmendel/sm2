@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 
 cimport cython
 
@@ -19,12 +20,18 @@ from sm2.src.blas_lapack cimport (dgemm_t, zgemm_t,
                                   zgemv_t, zdotu_t)
 
 
-cdef dgemm_t *dgemm = <dgemm_t*>Capsule_AsVoidPtr(scipy.linalg.blas.get_blas_funcs('gemm', dtype=np.float64)._cpointer)
-cdef zgemm_t *zgemm = <zgemm_t*>Capsule_AsVoidPtr(scipy.linalg.blas.get_blas_funcs('gemm', dtype=np.complex128)._cpointer)
-cdef ddot_t *ddot = <ddot_t*>Capsule_AsVoidPtr(scipy.linalg.blas.get_blas_funcs('dot', dtype=np.float64)._cpointer)
-cdef dgemv_t *dgemv = <dgemv_t*>Capsule_AsVoidPtr(scipy.linalg.blas.get_blas_funcs('gemv', dtype=np.float64)._cpointer)
-cdef zdotu_t *zdotu = <zdotu_t*>Capsule_AsVoidPtr(scipy.linalg.blas.get_blas_funcs('dotu', dtype=np.complex128)._cpointer)
-cdef zgemv_t *zgemv = <zgemv_t*>Capsule_AsVoidPtr(scipy.linalg.blas.get_blas_funcs('gemv', dtype=np.complex128)._cpointer)
+cdef dgemm_t *dgemm = <dgemm_t*>Capsule_AsVoidPtr(
+    scipy.linalg.blas.get_blas_funcs('gemm', dtype=np.float64)._cpointer)
+cdef zgemm_t *zgemm = <zgemm_t*>Capsule_AsVoidPtr(
+    scipy.linalg.blas.get_blas_funcs('gemm', dtype=np.complex128)._cpointer)
+cdef ddot_t *ddot = <ddot_t*>Capsule_AsVoidPtr(
+    scipy.linalg.blas.get_blas_funcs('dot', dtype=np.float64)._cpointer)
+cdef dgemv_t *dgemv = <dgemv_t*>Capsule_AsVoidPtr(
+    scipy.linalg.blas.get_blas_funcs('gemv', dtype=np.float64)._cpointer)
+cdef zdotu_t *zdotu = <zdotu_t*>Capsule_AsVoidPtr(
+    scipy.linalg.blas.get_blas_funcs('dotu', dtype=np.complex128)._cpointer)
+cdef zgemv_t *zgemv = <zgemv_t*>Capsule_AsVoidPtr(
+    scipy.linalg.blas.get_blas_funcs('gemv', dtype=np.complex128)._cpointer)
 
 cdef int FORTRAN = 1
 
