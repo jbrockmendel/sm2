@@ -12,10 +12,10 @@ currently all tests are against R
 import os
 # import json
 
+import pandas as pd
 import numpy as np
 
 from numpy.testing import assert_almost_equal
-# import pandas as pd
 import pytest
 
 from sm2.regression.linear_model import OLS
@@ -710,14 +710,13 @@ class TestDiagnosticG(object):
                             lsdiag['stud.res'],
                             decimal=14)
 
-        import pandas
-        fn = os.path.join(cur_dir, "results/influence_measures_R.csv")
-        infl_r = pandas.read_csv(fn, index_col=0)
+        fn = os.path.join(cur_dir, "results", "influence_measures_R.csv")
+        infl_r = pd.read_csv(fn, index_col=0)
         conv = lambda s: 1 if s=='TRUE' else 0
-        fn = os.path.join(cur_dir, "results/influence_measures_bool_R.csv")
+        fn = os.path.join(cur_dir, "results", "influence_measures_bool_R.csv")
         # not used yet:
         #converters = dict(zip(lrange(7), [conv] * 7))
-        #infl_bool_r  = pandas.read_csv(fn, index_col=0, converters=converters)
+        #infl_bool_r  = pd.read_csv(fn, index_col=0, converters=converters)
         infl_r2 = np.asarray(infl_r)
         assert_almost_equal(infl.dfbetas, infl_r2[:, :3], decimal=13)
         assert_almost_equal(infl.cov_ratio, infl_r2[:, 4], decimal=14)
@@ -790,7 +789,7 @@ def test_outlier_influence_funcs():
     y = x.sum(1) + np.random.randn(10)
     res = OLS(y, x).fit()
     out_05 = oi.summary_table(res)
-    # GH3344 : Check alpha has an effect
+    # GH#3344 : Check alpha has an effect
     out_01 = oi.summary_table(res, alpha=0.01)
     assert np.all(out_01[1][:, 6] <= out_05[1][:, 6])
     assert np.all(out_01[1][:, 7] >= out_05[1][:, 7])

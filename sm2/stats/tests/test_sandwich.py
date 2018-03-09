@@ -14,6 +14,7 @@ import os
 import pytest
 import numpy as np
 from numpy.testing import assert_almost_equal
+import pandas as pd
 
 from sm2.regression.linear_model import OLS
 from sm2.tools.tools import add_constant
@@ -24,7 +25,7 @@ cur_dir = os.path.abspath(os.path.dirname(__file__))
 # Petersen's test_data from:
 # http://www.kellogg.northwestern.edu/faculty/petersen/htm/papers/se/test_data.txt  # noqa:E501
 fpath = os.path.join(cur_dir, "test_data.txt")
-pet_data = np.genfromtxt(fpath)
+pet_data = pd.read_csv(fpath, delimiter='\s+', header=None).values
 
 
 @pytest.mark.not_vetted
