@@ -20,8 +20,7 @@ from sm2.tsa.tsatools import (lagmat, add_trend,
 
 from sm2.tsa.base import tsa_model
 from sm2.tsa.vector_ar import util
-
-from statsmodels.tsa.kalmanf.kalmanfilter import KalmanFilter
+from sm2.tsa.kalmanf.kalmanfilter import KalmanFilter
 
 
 __all__ = ['AR']

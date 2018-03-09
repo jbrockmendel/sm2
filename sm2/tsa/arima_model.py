@@ -33,8 +33,19 @@ from sm2.tsa.tsatools import (lagmat, add_trend,
 from sm2.tsa.vector_ar import util
 from sm2.tsa.arima_process import arma2ma
 from sm2.tsa.ar_model import AR
+from sm2.tsa.kalmanf import KalmanFilter
 
-from statsmodels.tsa.kalmanf import KalmanFilter
+
+def _create_mpl_ax(ax):
+    # kludge to avoid needing import from statsmodels.graphics.util;
+    # this does not belong here long-term
+    if ax is None:
+        import matplotlib.pyplot as plt
+        fig = plt.figure()
+        ax = fig.add_subplot(111)
+    else:
+        fig = ax.figure
+    return fig, ax
 
 
 _armax_notes = """
@@ -1681,9 +1692,8 @@ class ARMAResults(tsa_model.TimeSeriesModelResults):
 
     def plot_predict(self, start=None, end=None, exog=None, dynamic=False,
                      alpha=.05, plot_insample=True, ax=None):
-        from statsmodels.graphics.utils import _import_mpl, create_mpl_ax
-        _ = _import_mpl()
-        fig, ax = create_mpl_ax(ax)
+        import matplotlib.pyplot as plt
+        fig, ax = _create_mpl_ax(ax)
 
         # use predict so you set dates
         forecast = self.predict(start, end, exog, dynamic)
@@ -1722,11 +1732,11 @@ class ARMAResults(tsa_model.TimeSeriesModelResults):
 
 class ARMAResultsWrapper(wrap.ResultsWrapper):
     _attrs = {}
-    _wrap_attrs = wrap.union_dicts(tsa_model.TimeSeriesResultsWrapper._wrap_attrs,
-                                   _attrs)
+    _wrap_attrs = wrap.union_dicts(
+        tsa_model.TimeSeriesResultsWrapper._wrap_attrs, _attrs)
     _methods = {}
-    _wrap_methods = wrap.union_dicts(tsa_model.TimeSeriesResultsWrapper._wrap_methods,
-                                     _methods)
+    _wrap_methods = wrap.union_dicts(
+        tsa_model.TimeSeriesResultsWrapper._wrap_methods, _methods)
 wrap.populate_wrapper(ARMAResultsWrapper, ARMAResults)
 
 
@@ -1805,9 +1815,8 @@ class ARIMAResults(ARMAResults):
 
     def plot_predict(self, start=None, end=None, exog=None, dynamic=False,
                      alpha=.05, plot_insample=True, ax=None):
-        from statsmodels.graphics.utils import _import_mpl, create_mpl_ax
-        _ = _import_mpl()
-        fig, ax = create_mpl_ax(ax)
+        import matplotlib.pyplot as plt
+        fig, ax = _create_mpl_ax(ax)
 
         # use predict so you set dates
         forecast = self.predict(start, end, exog, 'levels', dynamic)
