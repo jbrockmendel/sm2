@@ -9,6 +9,8 @@ dist
 .cache/
 ./*.egg-info
 
+*.c
+
 .git
 
 # Coverage report output

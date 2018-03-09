@@ -32,6 +32,7 @@ from .hypothesis_test_results import (CausalityTestResults,
                                       NormalityTestResults,
                                       WhitenessTestResults)
 
+
 # --------------------------------------------------------------------
 # VAR process routines
 
@@ -71,7 +72,7 @@ def ma_rep(coefs, maxn=10):
             if j > p:
                 break
 
-            phis[i] += np.dot(phis[i-j], coefs[j-1])
+            phis[i] += np.dot(phis[i - j], coefs[j - 1])
 
     return phis
 
@@ -352,8 +353,8 @@ def _reordered(self, order):
             params_new_inc[0, i] = params[0, i]
             endog_lagged_new[:, 0] = endog_lagged[:, 0]
         for j in range(k_ar):
-            params_new_inc[i+j*num_end+k, :] = self.params[c+j*num_end+k, :]
-            endog_lagged_new[:, i+j*num_end+k] = endog_lagged[:, c+j*num_end+k]
+            params_new_inc[i + j * num_end + k, :] = self.params[c + j * num_end + k, :]
+            endog_lagged_new[:, i + j * num_end + k] = endog_lagged[:, c + j * num_end + k]
 
         sigma_u_new_inc[i, :] = sigma_u[c, :]
         names_new.append(names[c])
@@ -475,7 +476,7 @@ class LagOrderResults:
     def summary(self):  # basically copied from (now deleted) print_ic_table()
         cols = sorted(self.ics)  # ["aic", "bic", "hqic", "fpe"]
         str_data = np.array([["%#10.4g" % v for v in self.ics[c]] for c in cols],
-                       dtype=object).T
+                            dtype=object).T
         # mark minimum with an asterisk
         for i, col in enumerate(cols):
             idx = int(self.selected_orders[col]), i
@@ -635,9 +636,8 @@ class VAR(tsa_model.TimeSeriesModel):
         if self.exog is not None:
             x_names_to_add = [("exog%d" % i)
                               for i in range(self.exog.shape[1])]
-            self.data.xnames = self.data.xnames[:k_trend] + \
-                               x_names_to_add + \
-                               self.data.xnames[k_trend:]
+            self.data.xnames = (self.data.xnames[:k_trend] + x_names_to_add +
+                                self.data.xnames[k_trend:])
 
         return self._estimate_var(lags, trend=trend)
 
@@ -742,7 +742,7 @@ class VAR(tsa_model.TimeSeriesModel):
         for p in range(p_min, maxlags + 1):
             # exclude some periods to same amount of data used for each lag
             # order
-            result = self._estimate_var(p, offset=maxlags-p, trend=trend)
+            result = self._estimate_var(p, offset=maxlags - p, trend=trend)
 
             for k, v in result.info_criteria.items():
                 ics[k].append(v)
@@ -1397,7 +1397,7 @@ class VARResults(VARProcess):
         # df_model = self.df_model
         nobs = self.nobs
 
-        ma_coll = np.zeros((repl, T+1, neqs, neqs))
+        ma_coll = np.zeros((repl, T + 1, neqs, neqs))
 
         def fill_coll(sim):
             ret = VAR(sim, exog=self.exog).fit(maxlags=k_ar, trend=self.trend)
@@ -1407,7 +1407,7 @@ class VARResults(VARProcess):
         for i in range(repl):
             # discard first hundred to eliminate correct for starting bias
             sim = util.varsim(coefs, intercept, sigma_u,
-                              seed=seed, steps=nobs+burn)
+                              seed=seed, steps=nobs + burn)
             sim = sim[burn:]
             ma_coll[i, :, :, :] = fill_coll(sim)
 
@@ -1419,7 +1419,7 @@ class VARResults(VARProcess):
         return lower, upper
 
     def irf_resim(self, orth=False, repl=1000, T=10,
-                      seed=None, burn=100, cum=False):
+                  seed=None, burn=100, cum=False):
         """
         Simulates impulse response function, returning an array of simulations.
         Used for Sims-Zha error band calculation.
@@ -1459,7 +1459,7 @@ class VARResults(VARProcess):
         # df_model = self.df_model
         nobs = self.nobs
 
-        ma_coll = np.zeros((repl, T+1, neqs, neqs))
+        ma_coll = np.zeros((repl, T + 1, neqs, neqs))
 
         def fill_coll(sim):
             ret = VAR(sim, exog=self.exog).fit(maxlags=k_ar, trend=self.trend)
@@ -1469,7 +1469,7 @@ class VARResults(VARProcess):
         for i in range(repl):
             # discard first hundred to eliminate correct for starting bias
             sim = util.varsim(coefs, intercept, sigma_u,
-                              seed=seed, steps=nobs+burn)
+                              seed=seed, steps=nobs + burn)
             sim = sim[burn:]
             ma_coll[i, :, :, :] = fill_coll(sim)
 
@@ -1485,6 +1485,7 @@ class VARResults(VARProcess):
         # TODO: much lower-hanging fruit in caching `np.trace` and `chain_dot` below.
         B = self._bmat_forc_cov()
         _B = {}
+
         def bpow(i):
             if i not in _B:
                 _B[i] = np.linalg.matrix_power(B, i)
@@ -1500,14 +1501,14 @@ class VARResults(VARProcess):
                 omegas[h - 1] = self.df_model * self.sigma_u
                 continue
 
-            om = omegas[h-1]
+            om = omegas[h - 1]
             for i in range(h):
                 for j in range(h):
                     Bi = bpow(h - 1 - i)
                     Bj = bpow(h - 1 - j)
                     mult = np.trace(chain_dot(Bi.T, Ginv, Bj, G))
                     om += mult * chain_dot(phis[i], sig_u, phis[j].T)
-            omegas[h-1] = om
+            omegas[h - 1] = om
 
         return omegas
 
@@ -1757,7 +1758,7 @@ class VARResults(VARProcess):
 
         References
         ----------
-        .. [1] Lütkepohl, H. 2005. 
+        .. [1] Lütkepohl, H. 2005.
                *New Introduction to Multiple Time Series Analysis*. Springer.
         """
         if not (0 < signif < 1):
@@ -1872,7 +1873,7 @@ class VARResults(VARProcess):
 
         if (np.abs(acorrs) > bound).any():
             print('FAIL: Some autocorrelations exceed %.4f bound. '
-                   'See plot' % bound)
+                  'See plot' % bound)
         else:
             print('PASS: No autocorrelations exceed %.4f bound' % bound)
 
@@ -1968,7 +1969,7 @@ class VARResults(VARProcess):
         p = neqs * k_ar
         arr = np.zeros((p, p))
         arr[:neqs, :] = np.column_stack(self.coefs)
-        arr[neqs:, :-neqs] = np.eye(p-neqs)
+        arr[neqs:, :-neqs] = np.eye(p - neqs)
         roots = np.linalg.eig(arr)[0]**-1
         idx = np.argsort(np.abs(roots))[::-1]  # sort by reverse modulus
         return roots[idx]
@@ -2008,7 +2009,7 @@ class FEVD(object):
         self.orth_irfs = self.irfobj.orth_irfs
 
         # cumulative impulse responses
-        irfs = (self.orth_irfs[:periods] ** 2).cumsum(axis=0)
+        irfs = (self.orth_irfs[:periods]**2).cumsum(axis=0)
 
         rng = list(range(self.neqs))
         mse = self.model.mse(periods)[:, rng, rng]

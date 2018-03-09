@@ -560,7 +560,7 @@ class KalmanFilter(object):
         be generalized when the Kalman Filter becomes more flexible.
         """
         arr = np.zeros((1,r), order="F")
-        arr[:,0] = 1.
+        arr[:, 0] = 1.
         return arr
 
     @classmethod

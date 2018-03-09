@@ -9,7 +9,6 @@ from six.moves import range
 
 import numpy as np
 import scipy.linalg  # TODO: can we just use np.linalg.inv?
-from scipy import stats
 
 from sm2.tools.decorators import cache_readonly
 from sm2.tools.tools import chain_dot
@@ -69,7 +68,6 @@ class BaseIRAnalysis(object):
             else:
                 self.orth_lr_effects = np.dot(model.long_run_effects(), P)
 
-
         # auxiliary stuff
         if vecm:
             self._A = util.comp_matrix(model.var_rep)
@@ -100,8 +98,8 @@ class BaseIRAnalysis(object):
         signif : float (0 < signif < 1)
             Significance level for error bars, defaults to 95% CI
         subplot_params : dict
-            To pass to subplot plotting funcions. Example: if fonts are too big,
-            pass {'fontsize' : 8} or some number to your taste.
+            To pass to subplot plotting funcions. Example: if fonts are
+            too big, pass {'fontsize' : 8} or some number to your taste.
         plot_params : dict
 
         plot_stderr: bool, default True
@@ -115,8 +113,6 @@ class BaseIRAnalysis(object):
             np.random.seed for Monte Carlo replications
         component: array or vector of principal component indices
         """
-        periods = self.periods
-        model = self.model
         svar = self.svar
 
         if orth and svar:
@@ -132,11 +128,12 @@ class BaseIRAnalysis(object):
             title = 'Impulse responses'
             irfs = self.irfs
 
-        if plot_stderr == False:
+        if plot_stderr is False:
             stderr = None
 
-        elif stderr_type not in ['asym', 'mc', 'sz1', 'sz2','sz3']:
-            raise ValueError("Error type must be either 'asym', 'mc','sz1','sz2', or 'sz3'")
+        elif stderr_type not in ['asym', 'mc', 'sz1', 'sz2', 'sz3']:
+            raise ValueError("Error type must be either "
+                             "'asym', 'mc', 'sz1', 'sz2', or 'sz3'")
         else:
             if stderr_type == 'asym':
                 stderr = self.cov(orth=orth)
@@ -163,7 +160,8 @@ class BaseIRAnalysis(object):
         plotting.irf_grid_plot(irfs, stderr, impulse, response,
                                self.model.names, title, signif=signif,
                                subplot_params=subplot_params,
-                               plot_params=plot_params, stderr_type=stderr_type)
+                               plot_params=plot_params,
+                               stderr_type=stderr_type)
 
     def plot_cum_effects(self, orth=False, impulse=None, response=None,
                          signif=0.05, plot_params=None,
@@ -183,8 +181,8 @@ class BaseIRAnalysis(object):
         signif : float (0 < signif < 1)
             Significance level for error bars, defaults to 95% CI
         subplot_params : dict
-            To pass to subplot plotting funcions. Example: if fonts are too big,
-            pass {'fontsize' : 8} or some number to your taste.
+            To pass to subplot plotting funcions. Example: if fonts are
+            too big, pass {'fontsize' : 8} or some number to your taste.
         plot_params : dict
 
         plot_stderr: bool, default True
@@ -198,7 +196,6 @@ class BaseIRAnalysis(object):
             np.random.seed for Monte Carlo replications
 
         """
-
         if orth:
             title = 'Cumulative responses responses (orthogonalized)'
             cum_effects = self.orth_cum_effects
@@ -215,14 +212,17 @@ class BaseIRAnalysis(object):
                 stderr = self.cum_effect_cov(orth=orth)
             if stderr_type == 'mc':
                 stderr = self.cum_errband_mc(orth=orth, repl=repl,
-                                                signif=signif, seed=seed)
+                                             signif=signif, seed=seed)
         if not plot_stderr:
             stderr = None
 
         plotting.irf_grid_plot(cum_effects, stderr, impulse, response,
                                self.model.names, title, signif=signif,
-                               hlines=lr_effects, subplot_params=subplot_params,
-                               plot_params=plot_params, stderr_type=stderr_type)
+                               hlines=lr_effects,
+                               subplot_params=subplot_params,
+                               plot_params=plot_params,
+                               stderr_type=stderr_type)
+
 
 class IRAnalysis(BaseIRAnalysis):
     """
@@ -280,14 +280,15 @@ class IRAnalysis(BaseIRAnalysis):
         """
         model = self.model
         periods = self.periods
-        if svar == True:
+        if svar:
             return model.sirf_errband_mc(orth=orth, repl=repl, T=periods,
-                                        signif=signif, seed=seed,
-                                        burn=burn, cum=False)
+                                         signif=signif, seed=seed,
+                                         burn=burn, cum=False)
         else:
             return model.irf_errband_mc(orth=orth, repl=repl, T=periods,
                                         signif=signif, seed=seed,
                                         burn=burn, cum=False)
+
     def err_band_sz1(self, orth=False, svar=False, repl=1000,
                      signif=0.05, seed=None, burn=100, component=None):
         """
@@ -316,7 +317,6 @@ class IRAnalysis(BaseIRAnalysis):
         Sims, Christopher A., and Tao Zha. 1999. "Error Bands for Impulse
         Response". Econometrica 67: 1113-1155.
         """
-
         model = self.model
         periods = self.periods
         if orth:
@@ -327,27 +327,30 @@ class IRAnalysis(BaseIRAnalysis):
             irfs = self.irfs
         neqs = self.neqs
         irf_resim = model.irf_resim(orth=orth, repl=repl, T=periods, seed=seed,
-                                   burn=100)
+                                    burn=100)
         q = util.norm_signif_level(signif)
 
-        W, eigva, k =self._eigval_decomp_SZ(irf_resim)
+        W, eigva, k = self._eigval_decomp_SZ(irf_resim)
 
-        if component != None:
-            if np.shape(component) != (neqs,neqs):
-                raise ValueError("Component array must be " + str(neqs) + " x " + str(neqs))
-            if np.argmax(component) >= neqs*periods:
-                raise ValueError("Atleast one of the components does not exist")
+        if component is not None:
+            if np.shape(component) != (neqs, neqs):
+                raise ValueError("Component array must be {neqs}x{neqs}"
+                                 .format(neqs=neqs))
+            if np.argmax(component) >= neqs * periods:
+                raise ValueError("At least one of the components "
+                                 "does not exist")
             else:
                 k = component
 
-        # here take the kth column of W, which we determine by finding the largest eigenvalue of the covaraince matrix
+        # here take the kth column of W, which we determine by finding
+        # the largest eigenvalue of the covariance matrix
         lower = np.copy(irfs)
         upper = np.copy(irfs)
         for i in range(neqs):
             for j in range(neqs):
-                lower[1:,i,j] = irfs[1:,i,j] + W[i,j,:,k[i,j]]*q*np.sqrt(eigva[i,j,k[i,j]])
-                upper[1:,i,j] = irfs[1:,i,j] - W[i,j,:,k[i,j]]*q*np.sqrt(eigva[i,j,k[i,j]])
-
+                band = W[i, j, :, k[i, j]] * q * np.sqrt(eigva[i, j, k[i, j]])
+                lower[1:, i, j] = irfs[1:, i, j] + band
+                upper[1:, i, j] = irfs[1:, i, j] - band
 
         return lower, upper
 
@@ -390,40 +393,43 @@ class IRAnalysis(BaseIRAnalysis):
             irfs = self.irfs
         neqs = self.neqs
         irf_resim = model.irf_resim(orth=orth, repl=repl, T=periods, seed=seed,
-                                   burn=100)
+                                    burn=100)
 
         W, eigva, k = self._eigval_decomp_SZ(irf_resim)
 
-        if component != None:
-            if np.shape(component) != (neqs,neqs):
-                raise ValueError("Component array must be " + str(neqs) + " x " + str(neqs))
-            if np.argmax(component) >= neqs*periods:
-                raise ValueError("Atleast one of the components does not exist")
+        if component is not None:
+            if np.shape(component) != (neqs, neqs):
+                raise ValueError("Component array must be {neqs}x{neqs}"
+                                 .format(neqs=neqs))
+            if np.argmax(component) >= neqs * periods:
+                raise ValueError("At least one of the components "
+                                 "does not exist")
             else:
                 k = component
 
-        gamma = np.zeros((repl, periods+1, neqs, neqs))
+        gamma = np.zeros((repl, periods + 1, neqs, neqs))
         for p in range(repl):
             for i in range(neqs):
                 for j in range(neqs):
-                    gamma[p,1:,i,j] = W[i,j,k[i,j],:] * irf_resim[p,1:,i,j]
+                    gamma[p, 1:, i, j] = W[i, j, k[i, j], :] * irf_resim[p, 1:, i, j]
 
-        gamma_sort = np.sort(gamma, axis=0) #sort to get quantiles
-        indx = round(signif/2*repl)-1,round((1-signif/2)*repl)-1
+        gamma_sort = np.sort(gamma, axis=0)  # sort to get quantiles
+        indx = round(signif / 2 * repl) - 1, round((1 - signif / 2) * repl) - 1
 
         lower = np.copy(irfs)
         upper = np.copy(irfs)
         for i in range(neqs):
             for j in range(neqs):
-                lower[:,i,j] = irfs[:,i,j] + gamma_sort[indx[0],:,i,j]
-                upper[:,i,j] = irfs[:,i,j] + gamma_sort[indx[1],:,i,j]
+                lower[:, i, j] = irfs[:, i, j] + gamma_sort[indx[0], :, i, j]
+                upper[:, i, j] = irfs[:, i, j] + gamma_sort[indx[1], :, i, j]
 
         return lower, upper
 
     def err_band_sz3(self, orth=False, svar=False, repl=1000, signif=0.05,
                      seed=None, burn=100, component=None):
         """
-        IRF Sims-Zha error band method 3. Does not assume symmetric error bands around mean.
+        IRF Sims-Zha error band method 3. Does not assume symmetric
+        error bands around mean.
 
         Parameters
         ----------
@@ -447,7 +453,6 @@ class IRAnalysis(BaseIRAnalysis):
         Sims, Christopher A., and Tao Zha. 1999. "Error Bands for Impulse
         Response". Econometrica 67: 1113-1155.
         """
-
         model = self.model
         periods = self.periods
         if orth:
@@ -458,51 +463,52 @@ class IRAnalysis(BaseIRAnalysis):
             irfs = self.irfs
         neqs = self.neqs
         irf_resim = model.irf_resim(orth=orth, repl=repl, T=periods, seed=seed,
-                                   burn=100)
-        stack = np.zeros((neqs, repl, periods*neqs))
+                                    burn=100)
+        stack = np.zeros((neqs, repl, periods * neqs))
 
-        #stack left to right, up and down
+        # stack left to right, up and down
 
         for p in range(repl):
             for i in range(neqs):
-                stack[i, p,:] = np.ravel(irf_resim[p,1:,:,i].T)
+                stack[i, p, :] = np.ravel(irf_resim[p, 1:, :, i].T)
 
-        stack_cov=np.zeros((neqs, periods*neqs, periods*neqs))
-        W = np.zeros((neqs, periods*neqs, periods*neqs))
-        eigva = np.zeros((neqs, periods*neqs))
+        stack_cov = np.zeros((neqs, periods * neqs, periods * neqs))
+        W = np.zeros((neqs, periods * neqs, periods * neqs))
+        eigva = np.zeros((neqs, periods * neqs))
         k = np.zeros((neqs))
 
-        if component != None:
+        if component is not None:
             if np.size(component) != (neqs):
-                raise ValueError("Component array must be of length " + str(neqs))
-            if np.argmax(component) >= neqs*periods:
-                raise ValueError("Atleast one of the components does not exist")
+                raise ValueError("Component array must be of length {neqs}"
+                                 .format(neqs=neqs))
+            if np.argmax(component) >= neqs * periods:
+                raise ValueError("At least one of the components "
+                                 "does not exist")
             else:
                 k = component
 
-        #compute for eigen decomp for each stack
+        # compute for eigen decomp for each stack
         for i in range(neqs):
-            stack_cov[i] = np.cov(stack[i],rowvar=0)
+            stack_cov[i] = np.cov(stack[i], rowvar=0)
             W[i], eigva[i], k[i] = util.eigval_decomp(stack_cov[i])
 
-        gamma = np.zeros((repl, periods+1, neqs, neqs))
+        gamma = np.zeros((repl, periods + 1, neqs, neqs))
         for p in range(repl):
-            c=0
             for j in range(neqs):
                 for i in range(neqs):
-                        gamma[p,1:,i,j] = W[j,k[j],i*periods:(i+1)*periods] * irf_resim[p,1:,i,j]
-                        if i == neqs-1:
-                            gamma[p,1:,i,j] = W[j,k[j],i*periods:] * irf_resim[p,1:,i,j]
+                    gamma[p, 1:, i, j] = W[j, k[j], i * periods:(i + 1) * periods] * irf_resim[p, 1:, i, j]
+                    if i == neqs - 1:
+                        gamma[p, 1:, i, j] = W[j, k[j], i * periods:] * irf_resim[p, 1:, i, j]
 
-        gamma_sort = np.sort(gamma, axis=0) #sort to get quantiles
-        indx = round(signif/2*repl)-1,round((1-signif/2)*repl)-1
+        gamma_sort = np.sort(gamma, axis=0)  # sort to get quantiles
+        indx = round(signif / 2 * repl) - 1, round((1 - signif / 2) * repl) - 1
 
         lower = np.copy(irfs)
         upper = np.copy(irfs)
         for i in range(neqs):
             for j in range(neqs):
-                lower[:,i,j] = irfs[:,i,j] + gamma_sort[indx[0],:,i,j]
-                upper[:,i,j] = irfs[:,i,j] + gamma_sort[indx[1],:,i,j]
+                lower[:, i, j] = irfs[:, i, j] + gamma_sort[indx[0], :, i, j]
+                upper[:, i, j] = irfs[:, i, j] + gamma_sort[indx[1], :, i, j]
 
         return lower, upper
 
@@ -512,8 +518,7 @@ class IRAnalysis(BaseIRAnalysis):
         -------
         W: array of eigenvectors
         eigva: list of eigenvalues
-        k: matrix indicating column # of largest eigenvalue for each c_i,j
-
+        k: matrix indicating column # of largest eigenvalue for each c_i, j
         """
         neqs = self.neqs
         periods = self.periods
@@ -521,7 +526,7 @@ class IRAnalysis(BaseIRAnalysis):
         cov_hold = np.zeros((neqs, neqs, periods, periods))
         for i in range(neqs):
             for j in range(neqs):
-                cov_hold[i,j,:,:] = np.cov(irf_resim[:,1:,i,j],rowvar=0)
+                cov_hold[i, j, :, :] = np.cov(irf_resim[:, 1:, i, j], rowvar=0)
 
         W = np.zeros((neqs, neqs, periods, periods))
         eigva = np.zeros((neqs, neqs, periods, 1))
@@ -529,13 +534,15 @@ class IRAnalysis(BaseIRAnalysis):
 
         for i in range(neqs):
             for j in range(neqs):
-                W[i,j,:,:], eigva[i,j,:,0], k[i,j] = util.eigval_decomp(cov_hold[i,j,:,:])
+                tup = util.eigval_decomp(cov_hold[i, j, :, :])
+                W[i, j, :, :] = tup[0]
+                eigva[i, j, :, 0] = tup[1]
+                k[i, j] = tup[2]
         return W, eigva, k
 
     @cache_readonly
     def G(self):
         # Gi matrices as defined on p. 111
-
         K = self.neqs
 
         # nlags = self.model.p
@@ -565,7 +572,6 @@ class IRAnalysis(BaseIRAnalysis):
 
     def _orth_cov(self):
         # Lutkepohl 3.7.8
-
         Ik = np.eye(self.neqs)
         PIk = np.kron(self.P.T, Ik)
         H = self.H
@@ -575,7 +581,7 @@ class IRAnalysis(BaseIRAnalysis):
             if i == 0:
                 apiece = 0
             else:
-                Ci = np.dot(PIk, self.G[i-1])
+                Ci = np.dot(PIk, self.G[i - 1])
                 apiece = chain_dot(Ci, self.cov_a, Ci.T)
 
             Cibar = np.dot(np.kron(Ik, self.irfs[i]), H)
@@ -633,21 +639,17 @@ class IRAnalysis(BaseIRAnalysis):
         return covs
 
     def cum_errband_mc(self, orth=False, repl=1000,
-                          signif=0.05, seed=None, burn=100):
+                       signif=0.05, seed=None, burn=100):
         """
         IRF Monte Carlo integrated error bands of cumulative effect
         """
         model = self.model
         periods = self.periods
         return model.irf_errband_mc(orth=orth, repl=repl,
-                                    T=periods, signif=signif, seed=seed, burn=burn, cum=True)
+                                    T=periods, signif=signif,
+                                    seed=seed, burn=burn, cum=True)
 
     def lr_effect_cov(self, orth=False):
-        """
-        Returns
-        -------
-
-        """
         lre = self.lr_effects
         Finfty = np.kron(np.tile(lre.T, self.lags), lre)
         Ik = np.eye(self.neqs)
@@ -697,5 +699,3 @@ class IRAnalysis(BaseIRAnalysis):
 
     def fevd_table(self):
         pass
-
-

@@ -1,7 +1,7 @@
 from __future__ import print_function
 import warnings
 
-from six.moves import range, reduce
+from six.moves import range
 import numpy as np
 import pandas as pd
 from pandas.util._decorators import Substitution

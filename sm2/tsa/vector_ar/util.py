@@ -11,9 +11,6 @@ import numpy as np
 from scipy import stats
 from scipy.linalg import decomp
 
-import pandas as pd
-from pandas.tseries import frequencies
-
 import sm2.tsa.tsatools as tsa
 
 
@@ -33,13 +30,12 @@ def get_var_endog(y, lags, trend='c', has_constant='skip'):
     """
     nobs = len(y)
     # Ravel C order, need to put in descending order
-    Z = np.array([y[t-lags : t][::-1].ravel() for t in range(lags, nobs)])
+    Z = np.array([y[t - lags: t][::-1].ravel() for t in range(lags, nobs)])
 
     # Add constant, trend, etc.
     if trend != 'nc':
         Z = tsa.add_trend(Z, prepend=True, trend=trend,
                           has_constant=has_constant)
-
     return Z
 
 
@@ -74,8 +70,8 @@ def make_lag_names(names, lag_order, trendorder=1, exog=None):
     for i in range(1, lag_order + 1):
         for name in names:
             if not isinstance(name, string_types):
-                name = str(name) # will need consistent unicode handling
-            lag_names.append('L'+str(i)+'.'+name)
+                name = str(name)  # will need consistent unicode handling
+            lag_names.append('L' + str(i) + '.' + name)
 
     # handle the constant name
     if trendorder != 0:
@@ -92,8 +88,8 @@ def make_lag_names(names, lag_order, trendorder=1, exog=None):
 
 def comp_matrix(coefs):
     """
-    Return compansion matrix for the VAR(1) representation for a VAR(p) process
-    (companion form)
+    Return compansion matrix for the VAR(1) representation for a VAR(p)
+    process (companion form)
 
     A = [A_1 A_2 ... A_p-1 A_p
          I_K 0       0     0
@@ -110,7 +106,7 @@ def comp_matrix(coefs):
 
     # Set I_K matrices
     if p > 1:
-        result[np.arange(k, kp), np.arange(kp-k)] = 1
+        result[np.arange(k, kp), np.arange(kp - k)] = 1
 
     return result
 
@@ -208,7 +204,7 @@ def vech(A):
         while b < length:
             vechvec.append(A[b, i])
             b = b + 1
-    vechvec=np.asarray(vechvec)
+    vechvec = np.asarray(vechvec)
     return vechvec
 
 
@@ -243,7 +239,7 @@ def seasonal_dummies(n_seasons, len_endog, first_period=0, centered=False):
     if n_seasons > 0:
         season_exog = np.zeros((len_endog, n_seasons - 1))
         for i in range(n_seasons - 1):
-            season_exog[(i-first_period) % n_seasons::n_seasons, i] = 1
+            season_exog[(i - first_period) % n_seasons::n_seasons, i] = 1
 
         if centered:
             season_exog -= 1 / n_seasons

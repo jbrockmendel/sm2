@@ -2,7 +2,6 @@
 """
 Test VAR Model
 """
-import os
 import sys
 
 from six import BytesIO
@@ -15,7 +14,6 @@ import pytest
 
 import sm2.api as sm
 import sm2.tsa.vector_ar.util as util
-import sm2.tools.data as data_util
 from sm2.tsa.vector_ar.var_model import VAR
 
 
@@ -27,7 +25,7 @@ DECIMAL_2 = 2
 
 have_matplotlib = False
 try:
-    import matplotlib
+    import matplotlib  # noqa:F401
     have_matplotlib = True
 except ImportError:
     pass
@@ -66,7 +64,7 @@ class E1_Results(object):
         # I asked the author about these results and there is probably rounding
         # error in the book, so I adjusted these test results to match what is
         # coming out of the Python (double-checked) calculations
-        self.irf_stderr = np.array([[[.125, 0.546, 0.664 ],
+        self.irf_stderr = np.array([[[.125, 0.546, 0.664],
                                      [0.032, 0.139, 0.169],
                                      [0.026, 0.112, 0.136]],
 
@@ -78,7 +76,7 @@ class E1_Results(object):
                                      [.016, .079, .095],
                                      [.016, .078, .103]]])
 
-        self.cum_irf_stderr = np.array([[[.125, 0.546, 0.664 ],
+        self.cum_irf_stderr = np.array([[[.125, 0.546, 0.664],
                                          [0.032, 0.139, 0.169],
                                          [0.026, 0.112, 0.136]],
 
@@ -105,8 +103,10 @@ class RResults(object):
         data = var_results.__dict__
 
         self.names = data['coefs'].dtype.names
-        self.params = data['coefs'].view((float, len(self.names)), type=np.ndarray)
-        self.stderr = data['stderr'].view((float, len(self.names)), type=np.ndarray)
+        self.params = data['coefs'].view((float, len(self.names)),
+                                         type=np.ndarray)
+        self.stderr = data['stderr'].view((float, len(self.names)),
+                                          type=np.ndarray)
 
         self.irf = data['irf'].item()
         self.orth_irf = data['orthirf'].item()
@@ -157,14 +157,14 @@ class CheckVAR(object):
         results = self.res1.results
         for i in range(len(results)):
             assert_almost_equal(results[i].mse_resid**.5,
-                                eval('self.res2.rmse_'+str(i+1)),
+                                eval('self.res2.rmse_' + str(i + 1)),
                                 DECIMAL_6)
 
     def test_rsquared(self):
         results = self.res1.results
         for i in range(len(results)):
             assert_almost_equal(results[i].rsquared,
-                                eval('self.res2.rsquared_'+str(i+1)),
+                                eval('self.res2.rsquared_' + str(i + 1)),
                                 DECIMAL_3)
 
     def test_llf(self):
@@ -172,7 +172,7 @@ class CheckVAR(object):
         assert_almost_equal(self.res1.llf, self.res2.llf, DECIMAL_2)
         for i in range(len(results)):
             assert_almost_equal(results[i].llf,
-                                eval('self.res2.llf_'+str(i+1)),
+                                eval('self.res2.llf_' + str(i + 1)),
                                 DECIMAL_2)
 
     def test_aic(self):
@@ -195,7 +195,8 @@ class CheckVAR(object):
 
 
 def get_macrodata():
-    data = sm.datasets.macrodata.load_pandas().data[['realgdp', 'realcons', 'realinv']]
+    dataset = sm.datasets.macrodata.load_pandas()
+    data = dataset.data[['realgdp', 'realcons', 'realinv']]
     data = data.to_records(index=False)
     nd = data.view((float, 3), type=np.ndarray)
     nd = np.diff(np.log(nd), axis=0)
@@ -237,7 +238,8 @@ class CheckIRF(object):
             res_irfs = py_irfs[:, :, i]
             assert_almost_equal(ref_irfs, res_irfs)
 
-    @pytest.mark.skipif("not have_matplotlib", reason="matplotlib not available")
+    @pytest.mark.smoke
+    @pytest.mark.skipif(not have_matplotlib, reason="matplotlib not available")
     def test_plot_irf(self):
         import matplotlib.pyplot as plt
         self.irf.plot()
@@ -257,7 +259,8 @@ class CheckIRF(object):
         self.irf.plot(impulse=0, response=1, orth=True)
         close_plots()
 
-    @pytest.mark.skipif("not have_matplotlib", reason="matplotlib not available")
+    @pytest.mark.smoke
+    @pytest.mark.skipif(not have_matplotlib, reason="matplotlib not available")
     def test_plot_cum_effects(self):
         # I need close after every plot to avoid segfault, see GH#3158
         import matplotlib.pyplot as plt
@@ -283,7 +286,7 @@ class CheckFEVD(object):
     # FEVD tests
 
     @pytest.mark.smoke
-    @pytest.mark.skipif("not have_matplotlib", reason="matplotlib not available")
+    @pytest.mark.skipif(not have_matplotlib, reason="matplotlib not available")
     def test_fevd_plot(self):
         self.fevd.plot()
         close_plots()
@@ -352,11 +355,13 @@ class TestVARResults(CheckIRF, CheckFEVD):
     @pytest.mark.smoke
     def test_repr(self):
         # just want this to work
-        foo = str(self.res)
-        bar = repr(self.res)
+        str(self.res)
+        repr(self.res)
 
     def test_params(self):
-        assert_almost_equal(self.res.params, self.ref.params, DECIMAL_3)
+        assert_almost_equal(self.res.params,
+                            self.ref.params,
+                            DECIMAL_3)
 
     @pytest.mark.smoke
     def test_cov_params(self):
@@ -377,7 +382,7 @@ class TestVARResults(CheckIRF, CheckFEVD):
 
     @pytest.mark.smoke
     def test_summary(self):
-        summ = self.res.summary()
+        self.res.summary()
 
     def test_detsig(self):
         assert_almost_equal(self.res.detomega, self.ref.detomega)
@@ -394,11 +399,12 @@ class TestVARResults(CheckIRF, CheckFEVD):
     def test_fpe(self):
         assert_almost_equal(self.res.fpe, self.ref.fpe)
 
+    #@pytest.mark.smoke  # only half of this tests
     def test_lagorder_select(self):
         ics = ['aic', 'fpe', 'hqic', 'bic']
 
         for ic in ics:
-            res = self.model.fit(maxlags=10, ic=ic, verbose=True)
+            self.model.fit(maxlags=10, ic=ic, verbose=True)
 
         with pytest.raises(Exception):
             self.model.fit(ic='foo')
@@ -440,8 +446,8 @@ class TestVARResults(CheckIRF, CheckFEVD):
             result = self.res.test_causality(name, variables, kind='wald')
 
         # corner cases
-        _ = self.res.test_causality(self.names[0], self.names[1])
-        _ = self.res.test_causality(0, 1)
+        self.res.test_causality(self.names[0], self.names[1])
+        self.res.test_causality(0, 1)
 
         with pytest.raises(Exception):
             self.res.test_causality(0, 1, kind='foo')
@@ -473,33 +479,33 @@ class TestVARResults(CheckIRF, CheckFEVD):
 
     @pytest.mark.smoke
     def test_forecast(self):
-        point = self.res.forecast(self.res.y[-5:], 5)
+        self.res.forecast(self.res.y[-5:], 5)
 
     @pytest.mark.smoke
     def test_forecast_interval(self):
         y = self.res.y[:-self.p:]
-        point, lower, upper = self.res.forecast_interval(y, 5)
+        self.res.forecast_interval(y, 5)
 
     @pytest.mark.smoke
-    @pytest.mark.skipif("not have_matplotlib", reason="matplotlib not available")
+    @pytest.mark.skipif(not have_matplotlib, reason="matplotlib not available")
     def test_plot_sim(self):
         self.res.plotsim(steps=100)
         close_plots()
 
     @pytest.mark.smoke
-    @pytest.mark.skipif("not have_matplotlib", reason="matplotlib not available")
+    @pytest.mark.skipif(not have_matplotlib, reason="matplotlib not available")
     def test_plot(self):
         self.res.plot()
         close_plots()
 
     @pytest.mark.smoke
-    @pytest.mark.skipif("not have_matplotlib", reason="matplotlib not available")
+    @pytest.mark.skipif(not have_matplotlib, reason="matplotlib not available")
     def test_plot_acorr(self):
         self.res.plot_acorr()
         close_plots()
 
     @pytest.mark.smoke
-    @pytest.mark.skipif("not have_matplotlib", reason="matplotlib not available")
+    @pytest.mark.skipif(not have_matplotlib, reason="matplotlib not available")
     def test_plot_forecast(self):
         self.res.plot_forecast(5)
         close_plots()
@@ -532,7 +538,7 @@ class TestVARResults(CheckIRF, CheckFEVD):
         #test wrapped results load save pickle
         del self.res.model.data.orig_endog
         self.res.save(fh)
-        fh.seek(0,0)
+        fh.seek(0, 0)
         res_unpickled = self.res.__class__.load(fh)
         assert type(res_unpickled) is type(self.res)
 
@@ -540,6 +546,7 @@ class TestVARResults(CheckIRF, CheckFEVD):
 '''
 # parse_lutkepohl_data not ported from upstream
 def get_lutkepohl_data(name='e2'):
+    import os
     basepath = os.path.split(sm.__file__)[0]
     lut_data = basepath + '/tsa/vector_ar/data/'
     path = lut_data + '%s.dat' % name
@@ -564,6 +571,7 @@ class TestVARResultsLutkepohl(object):
         cls.p = 2
         sdata, dates = get_lutkepohl_data('e1')
 
+        import sm2.tools.data as data_util
         data = data_util.struct_to_ndarray(sdata)
         adj_data = np.diff(np.log(data), axis=0)
         # est = VAR(adj_data, p=2, dates=dates[1:], names=names)
@@ -625,7 +633,7 @@ def test_irf_trend():
     data = get_macrodata().view((float, 3), type=np.ndarray)
 
     model = VAR(data)
-    results = model.fit(4) #, trend = 'c')
+    results = model.fit(4)  #, trend = 'c')
     irf = results.irf(10)
 
 
