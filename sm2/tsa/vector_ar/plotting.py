@@ -42,7 +42,7 @@ def plot_mts(Y, names=None, index=None):
     for j in range(k):
         ts = Y[:, j]
 
-        ax = plt.subplot(rows, cols, j+1)
+        ax = plt.subplot(rows, cols, j + 1)
         if index is not None:
             ax.plot(index, ts)
         else:
@@ -50,6 +50,7 @@ def plot_mts(Y, names=None, index=None):
 
         if names is not None:
             ax.set_title(names[j])
+
 
 def plot_var_forc(prior, forc, err_upper, err_lower,
                   index=None, names=None, plot_stderr=True,
@@ -66,15 +67,15 @@ def plot_var_forc(prior, forc, err_upper, err_lower,
     rng_err = np.arange(n, n + len(forc))
 
     for j in range(k):
-        ax = plt.subplot(rows, cols, j+1)
+        ax = plt.subplot(rows, cols, j + 1)
 
-        p1 = ax.plot(prange, prior[:, j], 'k', label='Observed')
-        p2 = ax.plot(rng_f, np.r_[prior[-1:, j], forc[:, j]], 'k--',
-                        label='Forecast')
+        ax.plot(prange, prior[:, j], 'k', label='Observed')
+        ax.plot(rng_f, np.r_[prior[-1:, j], forc[:, j]], 'k--',
+                label='Forecast')
 
         if plot_stderr:
-            p3 = ax.plot(rng_err, err_upper[:, j], 'k-.',
-                            label='Forc 2 STD err')
+            ax.plot(rng_err, err_upper[:, j], 'k-.',
+                    label='Forc 2 STD err')
             ax.plot(rng_err, err_lower[:, j], 'k-.')
 
         if names is not None:
@@ -85,8 +86,9 @@ def plot_var_forc(prior, forc, err_upper, err_lower,
         ax.legend(**legend_options)
     return fig
 
+
 def plot_with_error(y, error, x=None, axes=None, value_fmt='k',
-                    error_fmt='k--', alpha=0.05, stderr_type = 'asym'):
+                    error_fmt='k--', alpha=0.05, stderr_type='asym'):
     """
     Make plot with optional error bars
 
@@ -113,7 +115,7 @@ def plot_with_error(y, error, x=None, axes=None, value_fmt='k',
             q = util.norm_signif_level(alpha)
             plot_action(y - q * error, error_fmt)
             plot_action(y + q * error, error_fmt)
-        if stderr_type in ('mc','sz1','sz2','sz3'):
+        if stderr_type in ('mc', 'sz1', 'sz2', 'sz3'):
             plot_action(error[0], error_fmt)
             plot_action(error[1], error_fmt)
 
@@ -181,7 +183,7 @@ def adjust_subplots(**kwds):
 
 def irf_grid_plot(values, stderr, impcol, rescol, names, title,
                   signif=0.05, hlines=None, subplot_params=None,
-                  plot_params=None, figsize=(10,10), stderr_type='asym'):
+                  plot_params=None, figsize=(10, 10), stderr_type='asym'):
     """
     Reusable function to make flexible grid plots of impulse responses and
     comulative effects
@@ -224,7 +226,7 @@ def irf_grid_plot(values, stderr, impcol, rescol, names, title,
                                 alpha=signif, value_fmt='b',
                                 stderr_type=stderr_type)
 
-            if stderr_type in ('mc','sz1','sz2','sz3'):
+            if stderr_type in ('mc', 'sz1', 'sz2', 'sz3'):
                 errs = stderr[0][:, i, j], stderr[1][:, i, j]
                 plot_with_error(values[:, i, j], errs,
                                 x=rng, axes=ax,
@@ -271,4 +273,3 @@ def _get_irf_plot_config(names, impcol, rescol):
 
 # ---------------------------------------------------------------
 # Forecast error variance decomposition
-

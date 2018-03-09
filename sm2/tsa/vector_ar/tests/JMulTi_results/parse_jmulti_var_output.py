@@ -82,7 +82,7 @@ def load_results_jmulti(dataset, dt_s_list):
 
     for dt_s in dt_s_list:
         dt_string = dt_s_tup_to_string(dt_s)
-        params_file = dataset.__str__()+"_"+source+"_"+dt_string+".txt"
+        params_file = dataset.__str__() + "_" + source + "_" + dt_string + ".txt"
         params_file = os.path.join(os.path.dirname(os.path.realpath(__file__)),
                                    params_file)
         # sections in jmulti output:
@@ -111,10 +111,10 @@ def load_results_jmulti(dataset, dt_s_list):
         section = -1
         params_file = open(params_file, encoding='latin_1')
         for line in params_file:
-            if section == -1 and section_headers[section+1] not in line:
+            if section == -1 and section_headers[section + 1] not in line:
                 continue
             if section < len(section_headers)-1 \
-                    and section_headers[section+1] in line:  # new section
+                    and section_headers[section + 1] in line:  # new section
                 section += 1
                 continue
             if not started_reading_section:

@@ -16,6 +16,9 @@ from distutils.version import LooseVersion
 from setuptools import setup, Command, find_packages
 import pkg_resources
 
+# ------------------------------------------------------------------
+# Administrative
+
 # versioning
 import versioneer
 cmdclass = versioneer.get_cmdclass()
@@ -72,6 +75,8 @@ setuptools_kwargs = {
         'numpy >= {version}'.format(version=min_versions['numpy'])
     ]}
 
+# ------------------------------------------------------------------
+
 # TODO: Can we just put this with the next (only) use of CYTHON_INSTALLED?
 min_cython_ver = '0.24'
 try:
@@ -103,13 +108,40 @@ try:
     except ImportError:
         # Pre 0.25
         from Cython.Distutils import build_ext as _build_ext
+    from Cython.Build import cythonize
     cython = True
 except ImportError:
     cython = False
 
 
+_pxifiles = []
+
+
 class build_ext(_build_ext):
+    @classmethod
+    def render_templates(cls):
+        # if builing from c files, don't need to
+        # generate template output
+        if cython:
+            for pxifile in _pxifiles:
+                # build pxifiles first, template extension must be .pxi.in
+                assert pxifile.endswith('.pxi.in')
+                outfile = pxifile[:-3]
+
+                if (os.path.exists(outfile) and
+                        os.stat(pxifile).st_mtime < os.stat(outfile).st_mtime):
+                    # if .pxi.in is not updated, no need to output .pxi
+                    continue
+
+                with open(pxifile, "r") as f:
+                    tmpl = f.read()
+                pyxcontent = tempita.sub(tmpl)
+
+                with open(outfile, "w") as f:
+                    f.write(pyxcontent)
+
     def build_extensions(self):
+        self.render_templates()
         numpy_incl = pkg_resources.resource_filename('numpy', 'core/include')
 
         for ext in self.extensions:
@@ -117,20 +149,6 @@ class build_ext(_build_ext):
                     numpy_incl not in ext.include_dirs):
                 ext.include_dirs.append(numpy_incl)
         _build_ext.build_extensions(self)
-
-
-'''
-def generate_cython():
-    cwd = os.path.abspath(os.path.dirname(__file__))
-    print("Cythonizing sources")
-    p = subprocess.call([sys.executable,
-                          os.path.join(cwd, 'tools', 'cythonize.py'),
-                          'sm2'],
-                         cwd=cwd)
-    if p != 0:
-        raise RuntimeError("Running cythonize failed!")
-
-'''
 
 
 class CleanCommand(Command):
@@ -238,6 +256,53 @@ else:
     cmdclass['build_src'] = DummyBuildSrc
 
 
+# ------------------------------------------------------------------
+# Cython Preparation & Specification
+
+def _cythonize(extensions, *args, **kwargs):
+    """
+    Render tempita templates before calling cythonize
+
+    Avoid running cythonize on `python setup.py clean`
+    See https://github.com/cython/cython/issues/1495
+    """
+    if len(sys.argv) > 1 and 'clean' in sys.argv:
+        return
+
+    for ext in extensions:
+        if (hasattr(ext, 'include_dirs') and
+                numpy_incl not in ext.include_dirs):
+            ext.include_dirs.append(numpy_incl)
+
+    if cython:
+        build_ext.render_templates()
+        return cythonize(extensions, *args, **kwargs)
+    else:
+        return extensions
+
+# Set linetrace environment variable to enable coverage measurement
+# for cython files
+linetrace = os.environ.get('linetrace', False)
+CYTHON_TRACE = str(int(bool(linetrace)))
+
+directives = {'linetrace': False}
+macros = []
+if linetrace:
+    # https://pypkg.com/pypi/pytest-cython/f/tests/example-project/setup.py
+    directives['linetrace'] = True
+    macros = [('CYTHON_TRACE', '1'), ('CYTHON_TRACE_NOGIL', '1')]
+
+numpy_incl = pkg_resources.resource_filename('numpy', 'core/include')
+
+extensions = [
+    Extension("sm2.tsa.kalmanf.kalman_loglike",
+              ["sm2/tsa/kalmanf/kalman_loglike.pyx"],
+              include_dirs=["sm2/src", numpy_incl],
+              depends=["sm2/src/capsule.h"],
+              define_macros=macros)]
+
+# ------------------------------------------------------------------
+
 '''
 # some linux distros require it
 # NOTE: we are not currently using this but add it to Extension, if needed.
@@ -254,7 +319,6 @@ ext_data = {
         "sources" : []}}
 
 '''
-extensions = []
 '''
 for name, data in ext_data.items():
     data['sources'] = data.get('sources', []) + [data['name']]
@@ -320,7 +384,8 @@ cwd = os.path.abspath(os.path.dirname(__file__))
 setup(name=DISTNAME,
       version=versioneer.get_version(),
       maintainer=MAINTAINER,
-      ext_modules=extensions,
+      ext_modules=_cythonize(extensions, compiler_directives=directives),
+      # https://medium.com/@dfdeshom/better-test-coverage-workflow-for-cython-modules-631615eb197a
       maintainer_email=MAINTAINER_EMAIL,
       description=DESCRIPTION,
       license=LICENSE,

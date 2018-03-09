@@ -2,6 +2,8 @@
 import inspect
 import functools
 
+from six.moves import reduce
+
 
 class SaveLoadMixin(object):
     """Mixin defining save and load methods"""

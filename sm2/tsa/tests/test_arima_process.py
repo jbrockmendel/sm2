@@ -263,7 +263,7 @@ class TestArmaProcess(object):
         with pytest.raises(TypeError):
             process1 * [3]
 
-    @pytest.mark.skipif("np.__version__ < 1.7")
+    @pytest.mark.skipif("np.__version__ < '1.7'")
     def test_str_repr(self):
         process1 = ArmaProcess.from_coeffs([.9], [.2])
         out = process1.__str__()

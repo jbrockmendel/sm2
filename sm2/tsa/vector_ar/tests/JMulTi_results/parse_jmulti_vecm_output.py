@@ -7,6 +7,8 @@ import numpy as np
 
 debug_mode = False
 
+cur_dir = os.path.dirname(os.path.realpath(__file__))
+
 
 def print_debug_output(results, dt):
         print("\n\n\nDETERMINISTIC TERMS: " + dt)
@@ -77,7 +79,7 @@ def sublists(lst, min_elmts=0, max_elmts=None):
     # https://docs.python.org/dev/library/itertools.html#itertools-recipes
     result = itertools.chain.from_iterable(
                 itertools.combinations(lst, sublist_len)
-                for sublist_len in range(min_elmts, max_elmts+1))
+                for sublist_len in range(min_elmts, max_elmts + 1))
     if type(result) != list:
         result = list(result)
     return result
@@ -127,12 +129,11 @@ def load_results_jmulti(dataset):
     source = "jmulti"
 
     results_dict_per_det_terms = dict.fromkeys(dataset.dt_s_list)
-        
+
     for dt_s in dataset.dt_s_list:
         dt_string = dt_s_tup_to_string(dt_s)
-        params_file = "vecm_"+dataset.__str__()+"_"+source+"_"+dt_string+".txt"
-        params_file = os.path.join(os.path.dirname(os.path.realpath(__file__)),
-                                   params_file)
+        params_file = "vecm_" + dataset.__str__() + "_" + source + "_" + dt_string + ".txt"
+        params_file = os.path.join(cur_dir, params_file)
         # sections in jmulti output:
         section_header = ["Lagged endogenous term",  # Gamma
                           "Deterministic term",      # co, s, lo
@@ -184,10 +185,10 @@ def load_results_jmulti(dataset):
         # and A_i and deterministic of corresponding VAR:
         params_file = open(params_file)
         for line in params_file:
-            if section == -1 and section_header[section+1] not in line:
+            if section == -1 and section_header[section + 1] not in line:
                 continue
-            if section < len(section_header)-1 \
-                    and section_header[section+1] in line:  # new section
+            if section < len(section_header) - 1 \
+                    and section_header[section + 1] in line:  # new section
                 section += 1
                 continue
             if not started_reading_section:
@@ -274,8 +275,7 @@ def load_results_jmulti(dataset):
         # parse information regarding \Sigma_u
         sigmau_file = "vecm_" + dataset.__str__() + "_" + source + "_" + \
                       dt_string + "_Sigmau" + ".txt"
-        sigmau_file = os.path.join(os.path.dirname(os.path.realpath(__file__)),
-                                   sigmau_file)
+        sigmau_file = os.path.join(cur_dir, sigmau_file)
         rows_to_parse = 0
         # all numbers of Sigma_u in notation with e (e.g. 2.283862e-05)
         regex_est = re.compile("\s+\S+e\S+")
@@ -304,8 +304,7 @@ def load_results_jmulti(dataset):
         # parse forecast related output:
         fc_file = "vecm_" + dataset.__str__() + "_" + source + "_" + \
                   dt_string + "_fc5" + ".txt"
-        fc_file = os.path.join(os.path.dirname(os.path.realpath(__file__)),
-                               fc_file)
+        fc_file = os.path.join(cur_dir, fc_file)
         fc, lower, upper, plu_min = [], [], [], []
         fc_file = open(fc_file, encoding='latin_1')
         for line in fc_file:
@@ -344,8 +343,7 @@ def load_results_jmulti(dataset):
                 + dt_string + "_granger_causality_" \
                 + stringify_var_names(causing) + "_" \
                 + stringify_var_names(caused) + ".txt"
-            granger_file = os.path.join(os.path.dirname(
-                    os.path.realpath(__file__)), granger_file)
+            granger_file = os.path.join(cur_dir, granger_file)
             granger_file = open(granger_file)
             granger_results = []
             for line in granger_file:
@@ -384,8 +382,7 @@ def load_results_jmulti(dataset):
                 + dt_string + "_inst_causality_" \
                 + stringify_var_names(causing) + "_" \
                 + stringify_var_names(caused) + ".txt"
-            inst_file = os.path.join(os.path.dirname(
-                    os.path.realpath(__file__)), inst_file)
+            inst_file = os.path.join(cur_dir, inst_file)
             inst_file = open(inst_file)
             inst_results = []
             for line in inst_file:
@@ -407,8 +404,7 @@ def load_results_jmulti(dataset):
         # parse output related to impulse-response analysis:
         ir_file = "vecm_" + dataset.__str__() + "_" + source + "_" + \
                   dt_string + "_ir" + ".txt"
-        ir_file = os.path.join(os.path.dirname(os.path.realpath(__file__)),
-                               ir_file)
+        ir_file = os.path.join(cur_dir, ir_file)
         ir_file = open(ir_file, encoding='latin_1')
         causing = None
         caused = None
@@ -444,8 +440,7 @@ def load_results_jmulti(dataset):
         # parse output related to lag order selection:
         lagorder_file = "vecm_" + dataset.__str__() + "_" + source + "_" + \
                         dt_string + "_lagorder" + ".txt"
-        lagorder_file = os.path.join(os.path.dirname(
-            os.path.realpath(__file__)), lagorder_file)
+        lagorder_file = os.path.join(cur_dir, lagorder_file)
         lagorder_file = open(lagorder_file, encoding='latin_1')
         results["lagorder"] = dict()
         aic_start = "Akaike Info Criterion:"
@@ -462,13 +457,12 @@ def load_results_jmulti(dataset):
             elif line.startswith(bic_start):
                 results["lagorder"]["bic"] = int(line[len(bic_start):])
         lagorder_file.close()
-        
+
         # ---------------------------------------------------------------------
         # parse output related to non-normality-test:
         test_norm_file = "vecm_" + dataset.__str__() + "_" + source + "_" + \
                          dt_string + "_diag" + ".txt"
-        test_norm_file = os.path.join(os.path.dirname(
-            os.path.realpath(__file__)), test_norm_file)
+        test_norm_file = os.path.join(cur_dir, test_norm_file)
         test_norm_file = open(test_norm_file, encoding='latin_1')
         results["test_norm"] = dict()
         reading_values = False
@@ -493,8 +487,7 @@ def load_results_jmulti(dataset):
         # parse output related to testing the whiteness of the residuals:
         whiteness_file = "vecm_" + dataset.__str__() + "_" + source + "_" + \
                          dt_string + "_diag" + ".txt"
-        whiteness_file = os.path.join(os.path.dirname(
-            os.path.realpath(__file__)), whiteness_file)
+        whiteness_file = os.path.join(cur_dir, whiteness_file)
         whiteness_file = open(whiteness_file, encoding='latin_1')
         results["whiteness"] = dict()
         section_start_marker = "PORTMANTEAU TEST"

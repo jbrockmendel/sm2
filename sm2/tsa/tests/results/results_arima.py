@@ -52,11 +52,6 @@ class ARIMA111(object):
                                [0.00262911, -0.0035068, 0.00805622]]
             self.bse = np.diag(np.sqrt(self.cov_params))
             # from stata
-            #forecast = np.genfromtxt(open(cur_dir+"/arima111_forecasts.csv"),
-            #                delimiter=",", skip_header=1, usecols=[1,2,3,4,5])
-            #self.forecast = forecast[203:,1]
-            #self.fcerr = forecast[203:,2]
-            #self.fc_conf_int = forecast[203:,3:]
             # from gretl
             self.forecast = forecast_results['fc111c'][-25:]
             self.forecasterr = forecast_results['fc111cse'][-25:]

@@ -73,23 +73,23 @@ class TestGLSARGretl(object):
 
         # coefficient   std. error   t-ratio    p-value 95% CONFIDENCE INTERVAL
         partable = np.array([
-            [-9.50990,  0.990456, -9.602, 3.65e-018, -11.4631, -7.55670],
-            [ 4.37040,  0.208146, 21.00,  2.93e-052,  3.95993, 4.78086],
+            [-9.50990,0.990456, -9.602, 3.65e-018, -11.4631, -7.55670],
+            [ 4.37040,0.208146, 21.00,2.93e-052,3.95993, 4.78086],
             [-0.579253, 0.268009, -2.161, 0.0319, -1.10777, -0.0507346]])
 
         # Statistics based on the rho-differenced data:
 
         result_gretl_g1 = dict(
-            endog_mean = ("Mean dependent var", 3.113973),
-            endog_std = ("S.D. dependent var", 18.67447),
-            ssr = ("Sum squared resid", 22530.90),
-            mse_resid_sqrt = ("S.E. of regression", 10.66735),
-            rsquared = ("R-squared", 0.676973),
-            rsquared_adj = ("Adjusted R-squared", 0.673710),
-            fvalue = ("F(2, 198)", 221.0475),
-            f_pvalue = ("P-value(F)", 3.56e-51),
-            resid_acf1 = ("rho", -0.003481),
-            dw = ("Durbin-Watson", 1.993858))
+            endog_mean=("Mean dependent var", 3.113973),
+            endog_std=("S.D. dependent var", 18.67447),
+            ssr=("Sum squared resid", 22530.90),
+            mse_resid_sqrt=("S.E. of regression", 10.66735),
+            rsquared=("R-squared", 0.676973),
+            rsquared_adj=("Adjusted R-squared", 0.673710),
+            fvalue=("F(2, 198)", 221.0475),
+            f_pvalue=("P-value(F)", 3.56e-51),
+            resid_acf1=("rho", -0.003481),
+            dw=("Durbin-Watson", 1.993858))
 
         # fstatistic, p-value, df1, df2
         reset_2_3 = [5.219019, 0.00619, 2, 197, "f"]
@@ -315,25 +315,25 @@ class TestGLSARGretl(object):
         # for confidence interval t(199, 0.025) = 1.972
 
         partable = np.array([
-            [-9.48167,      1.17709,     -8.055,    7.17e-014, -11.8029, -7.16049],
-            [4.37422,      0.328787,    13.30,     2.62e-029, 3.72587, 5.02258],
-            [-0.613997,     0.293619,    -2.091,    0.0378, -1.19300, -0.0349939]])
+            [-9.48167,1.17709,-8.055,7.17e-014, -11.8029, -7.16049],
+            [4.37422,0.328787,13.30,2.62e-029, 3.72587, 5.02258],
+            [-0.613997,0.293619,-2.091,0.0378, -1.19300, -0.0349939]])
 
         result_gretl_g1 = dict(
-                    endog_mean = ("Mean dependent var",   3.257395),
-                    endog_std = ("S.D. dependent var",   18.73915),
-                    ssr = ("Sum squared resid",    22799.68),
-                    mse_resid_sqrt = ("S.E. of regression",   10.70380),
-                    rsquared = ("R-squared",            0.676978),
-                    rsquared_adj = ("Adjusted R-squared",   0.673731),
-                    fvalue = ("F(2, 199)",            90.79971),
-                    f_pvalue = ("P-value(F)",           9.53e-29),
-                    llf = ("Log-likelihood",      -763.9752),
-                    aic = ("Akaike criterion",     1533.950),
-                    bic = ("Schwarz criterion",    1543.875),
-                    hqic = ("Hannan-Quinn",         1537.966),
-                    resid_acf1 = ("rho",                 -0.107341),
-                    dw = ("Durbin-Watson",        2.213805))
+                    endog_mean = ("Mean dependent var",3.257395),
+                    endog_std = ("S.D. dependent var",18.73915),
+                    ssr = ("Sum squared resid",22799.68),
+                    mse_resid_sqrt = ("S.E. of regression",10.70380),
+                    rsquared = ("R-squared",0.676978),
+                    rsquared_adj = ("Adjusted R-squared",0.673731),
+                    fvalue = ("F(2, 199)",90.79971),
+                    f_pvalue = ("P-value(F)",9.53e-29),
+                    llf = ("Log-likelihood",-763.9752),
+                    aic = ("Akaike criterion",1533.950),
+                    bic = ("Schwarz criterion",1543.875),
+                    hqic = ("Hannan-Quinn",1537.966),
+                    resid_acf1 = ("rho",-0.107341),
+                    dw = ("Durbin-Watson",2.213805))
 
         linear_logs = [1.68351, 0.430953, 2, "chi2"]
         # for logs: dropping 70 nan or incomplete observations, T=133

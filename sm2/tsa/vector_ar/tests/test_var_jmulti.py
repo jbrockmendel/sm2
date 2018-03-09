@@ -15,7 +15,7 @@ from .JMulTi_results.parse_jmulti_var_output import dt_s_tup_to_string
 from .JMulTi_results.parse_jmulti_var_output import load_results_jmulti
 
 atol = 0.001  # absolute tolerance
-rtol = 0.01  # relative tolerance
+rtol = 0.01   # relative tolerance
 datasets = []
 data = {}
 results_ref = {}
@@ -30,7 +30,7 @@ dt_s_list = [(det, s) for det in deterministic_terms_list
 all_tests = ["coefs", "det", "Sigma_u", "log_like", "fc", "causality",
              "impulse-response", "lag order", "test normality", "whiteness",
              "exceptions"]
-to_test = all_tests  #["coefs", "det", "Sigma_u", "log_like", "fc", "causality"]  # all_tests
+to_test = all_tests  # ["coefs","det","Sigma_u","log_like","fc","causality"]
 
 
 def load_data(dataset, data_dict):
@@ -92,7 +92,6 @@ def generate_exog_from_season(seasons, endog_len):
         returned.
         Otherwise, None is returned.
     """
-
     exog_stack = []
     if seasons > 0:
         season_exog = np.zeros((seasons - 1, endog_len))
@@ -123,8 +122,9 @@ def load_results_sm(dataset):
         endog = data[dataset]
         exog = generate_exog_from_season(dt_s_tup[1], len(endog))
         model = VAR(endog, exog)
-        results_per_deterministic_terms[dt_s_tup] = model.fit(
-                maxlags=4, trend=dt_s_tup[0], method="ols")
+        results_per_deterministic_terms[dt_s_tup] = model.fit(maxlags=4,
+                                                              trend=dt_s_tup[0],
+                                                              method="ols")
     return results_per_deterministic_terms
 
 
@@ -164,21 +164,25 @@ def test_ols_coefs():
             err_msg = build_err_msg(ds, dt_s, "PARAMETER MATRICES ENDOG")
             obtained = np.hstack(results_sm[ds][dt_s].coefs)
             desired = results_ref[ds][dt_s]["est"]["Lagged endogenous term"]
-            assert_allclose(obtained, desired, rtol, atol, False, err_msg)
+            assert_allclose(obtained, desired,
+                            rtol, atol, False, err_msg)
             if debug_mode and dont_test_se_t_p:
                 continue
             # standard errors
             obt = results_sm[ds][dt_s].stderr_endog_lagged
             des = results_ref[ds][dt_s]["se"]["Lagged endogenous term"].T
-            assert_allclose(obt, des, rtol, atol, False, "STANDARD ERRORS\n" + err_msg)
+            assert_allclose(obt, des,
+                            rtol, atol, False, "STANDARD ERRORS\n" + err_msg)
             # t-values
             obt = results_sm[ds][dt_s].tvalues_endog_lagged
             des = results_ref[ds][dt_s]["t"]["Lagged endogenous term"].T
-            assert_allclose(obt, des, rtol, atol, False, "t-VALUES\n" + err_msg)
+            assert_allclose(obt, des,
+                            rtol, atol, False, "t-VALUES\n" + err_msg)
             # p-values
             obt = results_sm[ds][dt_s].pvalues_endog_lagged
             des = results_ref[ds][dt_s]["p"]["Lagged endogenous term"].T
-            assert_allclose(obt, des, rtol, atol, False, "p-VALUES\n" + err_msg)
+            assert_allclose(obt, des,
+                            rtol, atol, False, "p-VALUES\n" + err_msg)
 
 
 def test_ols_det_terms():
@@ -204,7 +208,8 @@ def test_ols_det_terms():
             desired = results_ref[ds][dt_s]["est"][det_key_ref]
             desired = reorder_jmultis_det_terms(
                     desired, dt_s[0].startswith("c"), dt_s[1])
-            assert_allclose(obtained, desired, rtol, atol, False, err_msg)
+            assert_allclose(obtained, desired,
+                            rtol, atol, False, err_msg)
             if debug_mode and dont_test_se_t_p:
                 continue
             # standard errors
@@ -212,19 +217,22 @@ def test_ols_det_terms():
             des = results_ref[ds][dt_s]["se"][det_key_ref]
             des = reorder_jmultis_det_terms(des, dt_s[0].startswith("c"),
                                             dt_s[1]).T
-            assert_allclose(obt, des, rtol, atol, False, "STANDARD ERRORS\n" + err_msg)
+            assert_allclose(obt, des,
+                            rtol, atol, False, "STANDARD ERRORS\n" + err_msg)
             # t-values
             obt = results_sm[ds][dt_s].tvalues_dt
             des = results_ref[ds][dt_s]["t"][det_key_ref]
             des = reorder_jmultis_det_terms(des, dt_s[0].startswith("c"),
                                             dt_s[1]).T
-            assert_allclose(obt, des, rtol, atol, False, "t-VALUES\n" + err_msg)
+            assert_allclose(obt, des,
+                            rtol, atol, False, "t-VALUES\n" + err_msg)
             # p-values
             obt = results_sm[ds][dt_s].pvalues_dt
             des = results_ref[ds][dt_s]["p"][det_key_ref]
             des = reorder_jmultis_det_terms(des, dt_s[0].startswith("c"),
                                             dt_s[1]).T
-            assert_allclose(obt, des, rtol, atol, False, "p-VALUES\n" + err_msg)
+            assert_allclose(obt, des,
+                            rtol, atol, False, "p-VALUES\n" + err_msg)
 
 
 def test_ols_sigma():
@@ -240,7 +248,8 @@ def test_ols_sigma():
             err_msg = build_err_msg(ds, dt, "Sigma_u")
             obtained = results_sm[ds][dt].sigma_u
             desired = results_ref[ds][dt]["est"]["Sigma_u"]
-            assert_allclose(obtained, desired, rtol, atol, False, err_msg)
+            assert_allclose(obtained, desired,
+                            rtol, atol, False, err_msg)
 
 
 def test_log_like():
@@ -257,7 +266,8 @@ def test_log_like():
             err_msg = build_err_msg(ds, dt, "Log Likelihood")
             obtained = results_sm[ds][dt].llf
             desired = results_ref[ds][dt]["log_like"]
-            assert_allclose(obtained, desired, rtol, atol, False, err_msg)
+            assert_allclose(obtained, desired,
+                            rtol, atol, False, err_msg)
 
 
 def test_fc():
@@ -287,7 +297,8 @@ def test_fc():
             obtained = results_sm[ds][dt].forecast(
                 y=last_observations, steps=steps, exog_future=exog_future)
             desired = results_ref[ds][dt]["fc"]["fc"]
-            assert_allclose(obtained, desired, rtol, atol, False, err_msg)
+            assert_allclose(obtained, desired,
+                            rtol, atol, False, err_msg)
 
             # test forecast method with confidence interval calculation
             err_msg = build_err_msg(ds, dt, "FORECAST WITH INTERVALS")
@@ -321,15 +332,15 @@ def test_causality():  # test Granger- and instantaneous causality
             err_msg_i_p = build_err_msg(ds, dt, "INSTANT. CAUS. - p-VALUE")
             err_msg_i_t = build_err_msg(ds, dt, "INSTANT. CAUS. - TEST STAT.")
             v_ind = range(len(ds.variable_names))
-            for causing_ind in sublists(v_ind, 1, len(v_ind)-1):
-                causing_names = ["y" + str(i+1) for i in causing_ind]
+            for causing_ind in sublists(v_ind, 1, len(v_ind) - 1):
+                causing_names = ["y" + str(i + 1) for i in causing_ind]
                 causing_key = tuple(ds.variable_names[i] for i in causing_ind)
 
                 caused_ind = [i for i in v_ind if i not in causing_ind]
-                caused_names = ["y" + str(i+1) for i in caused_ind]
+                caused_names = ["y" + str(i + 1) for i in caused_ind]
                 caused_key = tuple(ds.variable_names[i] for i in caused_ind)
 
-                # test Granger-causality ######################################
+                # test Granger-causality
                 granger_sm_ind = results_sm[ds][
                     dt].test_causality(caused_ind, causing_ind)
                 granger_sm_str = results_sm[ds][
@@ -339,12 +350,15 @@ def test_causality():  # test Granger- and instantaneous causality
                 g_t_obt = granger_sm_ind.test_statistic
                 g_t_des = results_ref[ds][dt]["granger_caus"][
                     "test_stat"][(causing_key, caused_key)]
-                assert_allclose(g_t_obt, g_t_des, rtol, atol, False, err_msg_g_t)
+                assert_allclose(g_t_obt, g_t_des,
+                                rtol, atol, False, err_msg_g_t)
                 # check whether string sequences as args work in the same way:
                 g_t_obt_str = granger_sm_str.test_statistic
-                assert_allclose(g_t_obt_str, g_t_obt, 1e-07, 0, False,
-                                err_msg_g_t + " - sequences of integers and ".upper() +
-                                "strings as arguments don't yield the same result!".upper())
+                msg = err_msg_g_t + (" - sequences of integers and "
+                                     "strings as arguments don't yield "
+                                     "the same result!").upper()
+                assert_allclose(g_t_obt_str, g_t_obt,
+                                1e-07, 0, False, msg)
                 # check if int (e.g. 0) as index and list of int ([0]) yield
                 # the same result:
                 if len(causing_ind) == 1 or len(caused_ind) == 1:
@@ -353,29 +367,36 @@ def test_causality():  # test Granger- and instantaneous causality
                     granger_sm_single_ind = results_sm[ds][
                         dt].test_causality(ce, ci)
                     g_t_obt_single = granger_sm_single_ind.test_statistic
-                    assert_allclose(g_t_obt_single, g_t_obt, 1e-07, 0, False,
-                                    err_msg_g_t + " - list of int and int as ".upper() +
-                                    "argument don't yield the same result!".upper())
+                    msg = err_msg_g_t + (" - list of int and int as "
+                                         "argument don't yield "
+                                         "the same result!").upper()
+                    assert_allclose(g_t_obt_single, g_t_obt,
+                                    1e-07, 0, False, msg)
 
                 # test p-value for Granger non-causality:
                 g_p_obt = granger_sm_ind.pvalue
                 g_p_des = results_ref[ds][dt]["granger_caus"]["p"][(
                     causing_key, caused_key)]
-                assert_allclose(g_p_obt, g_p_des, rtol, atol, False, err_msg_g_p)
+                assert_allclose(g_p_obt, g_p_des,
+                                rtol, atol, False, err_msg_g_p)
                 # check whether string sequences as args work in the same way:
                 g_p_obt_str = granger_sm_str.pvalue
-                assert_allclose(g_p_obt_str, g_p_obt, 1e-07, 0, False,
-                                err_msg_g_t + " - sequences of integers and ".upper() +
-                                "strings as arguments don't yield the same result!".upper())
+                msg = err_msg_g_t + (" - sequences of integers and "
+                                     "strings as arguments don't yield "
+                                     "the same result!").upper()
+                assert_allclose(g_p_obt_str, g_p_obt,
+                                1e-07, 0, False, msg)
                 # check if int (e.g. 0) as index and list of int ([0]) yield
                 # the same result:
                 if len(causing_ind) == 1:
                     g_p_obt_single = granger_sm_single_ind.pvalue
-                    assert_allclose(g_p_obt_single, g_p_obt, 1e-07, 0, False,
-                        err_msg_g_t + " - list of int and int as ".upper() + \
-                                    "argument don't yield the same result!".upper())
+                    msg = err_msg_g_t + (" - list of int and int as "
+                                         "argument don't yield "
+                                         "the same result!").upper()
+                    assert_allclose(g_p_obt_single, g_p_obt,
+                                    1e-07, 0, False, msg)
 
-                # test instantaneous causality ################################
+                # test instantaneous causality
                 inst_sm_ind = results_sm[ds][dt].test_inst_causality(
                     causing_ind)
                 inst_sm_str = results_sm[ds][dt].test_inst_causality(
@@ -384,42 +405,51 @@ def test_causality():  # test Granger- and instantaneous causality
                 t_obt = inst_sm_ind.test_statistic
                 t_des = results_ref[ds][dt]["inst_caus"][
                     "test_stat"][(causing_key, caused_key)]
-                assert_allclose(t_obt, t_des, rtol, atol, False, err_msg_i_t)
+                assert_allclose(t_obt, t_des,
+                                rtol, atol, False, err_msg_i_t)
                 # check whether string sequences as args work in the same way:
                 t_obt_str = inst_sm_str.test_statistic
-                assert_allclose(t_obt_str, t_obt, 1e-07, 0, False,
-                                err_msg_i_t + " - sequences of integers and ".upper() +
-                                "strings as arguments don't yield the same result!".upper())
+                msg = err_msg_i_t + (" - sequences of integers and "
+                                     "strings as arguments don't "
+                                     "yield the same result!").upper()
+                assert_allclose(t_obt_str, t_obt,
+                                1e-07, 0, False, msg)
                 # check if int (e.g. 0) as index and list of int ([0]) yield
                 # the same result:
                 if len(causing_ind) == 1:
                     inst_sm_single_ind = results_sm[ds][
                         dt].test_inst_causality(causing_ind[0])
                     t_obt_single = inst_sm_single_ind.test_statistic
-                    assert_allclose(t_obt_single, t_obt, 1e-07, 0, False,
-                                    err_msg_i_t + " - list of int and int as ".upper() +
-                                    "argument don't yield the same result!".upper())
+                    msg = err_msg_i_t + (" - list of int and int as "
+                                         "argument don't yield "
+                                         "the same result!").upper()
+                    assert_allclose(t_obt_single, t_obt,
+                                    1e-07, 0, False, err_msg_i_t)
 
                 # test p-value for instantaneous non-causality
                 p_obt = results_sm[ds][dt].test_inst_causality(
                     causing_ind).pvalue
                 p_des = results_ref[ds][dt]["inst_caus"]["p"][(
                     causing_key, caused_key)]
-                assert_allclose(p_obt, p_des, rtol, atol, False, err_msg_i_p)
+                assert_allclose(p_obt, p_des,
+                                rtol, atol, False, err_msg_i_p)
                 # check whether string sequences as args work in the same way:
                 p_obt_str = inst_sm_str.pvalue
-                assert_allclose(p_obt_str, p_obt, 1e-07, 0, False,
-                                err_msg_i_p + " - sequences of integers and ".upper() +
-                                "strings as arguments don't yield the same result!".upper())
+                msg = err_msg_i_p + (" - sequences of integers and "
+                                     "strings as arguments don't yield "
+                                     "the same result!").upper()
+                assert_allclose(p_obt_str, p_obt,
+                                1e-07, 0, False, msg)
                 # check if int (e.g. 0) as index and list of int ([0]) yield
                 # the same result:
                 if len(causing_ind) == 1:
                     inst_sm_single_ind = results_sm[ds][
                         dt].test_inst_causality(causing_ind[0])
                     p_obt_single = inst_sm_single_ind.pvalue
-                    assert_allclose(p_obt_single, p_obt, 1e-07, 0, False,
-                                    err_msg_i_p + " - list of int and int as ".upper() +
-                                    "argument don't yield the same result!".upper())
+                    msg = (err_msg_i_p + " - list of int and int as ".upper() +
+                           "argument don't yield the same result!".upper())
+                    assert_allclose(p_obt_single, p_obt,
+                                    1e-07, 0, False, msg)
 
 
 def test_impulse_response():
@@ -438,7 +468,8 @@ def test_impulse_response():
             # flatten inner arrays to make them comparable to parsed results:
             obtained_all = obtained_all.reshape(periods+1, -1)
             desired_all = results_ref[ds][dt]["ir"]
-            assert_allclose(obtained_all, desired_all, rtol, atol, False, err_msg)
+            assert_allclose(obtained_all, desired_all,
+                            rtol, atol, False, err_msg)
 
 
 def test_lag_order_selection():
@@ -460,7 +491,8 @@ def test_lag_order_selection():
                                         "LAG ORDER SELECTION - " + ic.upper())
                 obtained = getattr(obtained_all, ic)
                 desired = results_ref[ds][dt]["lagorder"][ic]
-                assert_allclose(obtained, desired, rtol, atol, False, err_msg)
+                assert_allclose(obtained, desired,
+                                rtol, atol, False, err_msg)
 
 
 def test_normality():
@@ -479,11 +511,13 @@ def test_normality():
             obt_statistic = obtained.test_statistic
             des_statistic = results_ref[ds][dt]["test_norm"][
                 "joint_test_statistic"]
-            assert_allclose(obt_statistic, des_statistic, rtol, atol, False, err_msg)
+            assert_allclose(obt_statistic, des_statistic,
+                            rtol, atol, False, err_msg)
             err_msg = build_err_msg(ds, dt, "TEST NON-NORMALITY - P-VALUE")
             obt_pvalue = obtained.pvalue
             des_pvalue = results_ref[ds][dt]["test_norm"]["joint_pvalue"]
-            assert_allclose(obt_pvalue, des_pvalue, rtol, atol, False, err_msg)
+            assert_allclose(obt_pvalue, des_pvalue,
+                            rtol, atol, False, err_msg)
             # call methods to assure they don't raise exceptions
             obtained.summary()
             str(obtained)  # __str__()
@@ -506,12 +540,14 @@ def test_whiteness():
             err_msg = build_err_msg(ds, dt, "WHITENESS OF RESIDUALS - "
                                             "TEST STATISTIC")
             desired = results_ref[ds][dt]["whiteness"]["test statistic"]
-            assert_allclose(obtained.test_statistic, desired, rtol, atol, False, err_msg)
+            assert_allclose(obtained.test_statistic, desired,
+                            rtol, atol, False, err_msg)
             # p-value
             err_msg = build_err_msg(ds, dt, "WHITENESS OF RESIDUALS - "
                                             "P-VALUE")
             desired = results_ref[ds][dt]["whiteness"]["p-value"]
-            assert_allclose(obtained.pvalue, desired, rtol, atol, False, err_msg)
+            assert_allclose(obtained.pvalue, desired,
+                           rtol, atol, False, err_msg)
 
             obtained = results_sm[ds][dt].test_whiteness_new(nlags=lags,
                                                              adjusted=True)
@@ -519,12 +555,14 @@ def test_whiteness():
             err_msg = build_err_msg(ds, dt, "WHITENESS OF RESIDUALS - "
                                             "TEST STATISTIC (ADJUSTED TEST)")
             desired = results_ref[ds][dt]["whiteness"]["test statistic adj."]
-            assert_allclose(obtained.test_statistic, desired, rtol, atol, False, err_msg)
+            assert_allclose(obtained.test_statistic, desired,
+                            rtol, atol, False, err_msg)
             # p-value (adjusted Portmanteau test)
             err_msg = build_err_msg(ds, dt, "WHITENESS OF RESIDUALS - "
                                             "P-VALUE (ADJUSTED TEST)")
             desired = results_ref[ds][dt]["whiteness"]["p-value adjusted"]
-            assert_allclose(obtained.pvalue, desired, rtol, atol, False, err_msg)
+            assert_allclose(obtained.pvalue, desired,
+                            rtol, atol, False, err_msg)
 
 
 def test_exceptions():
@@ -539,10 +577,12 @@ def test_exceptions():
                 print("\n" + dt_s_tup_to_string(dt) + ": ", end="")
 
             # instant causality:
-            ### 0<signif<1
+            # 0<signif<1
             with pytest.raises(ValueError):
-                results_sm[ds][dt].test_inst_causality(0, 0)  # this means signif=0
+                results_sm[ds][dt].test_inst_causality(0, 0)
+                # this means signif=0
             
-            ### causing must be int, str or iterable of int or str
+            # causing must be int, str or iterable of int or str
             with pytest.raises(TypeError):
-                results_sm[ds][dt].test_inst_causality([0.5])  # 0.5 not an int
+                results_sm[ds][dt].test_inst_causality([0.5])
+                # 0.5 not an int

@@ -33,8 +33,19 @@ from sm2.tsa.tsatools import (lagmat, add_trend,
 from sm2.tsa.vector_ar import util
 from sm2.tsa.arima_process import arma2ma
 from sm2.tsa.ar_model import AR
+from sm2.tsa.kalmanf import KalmanFilter
 
-from statsmodels.tsa.kalmanf import KalmanFilter
+
+def _create_mpl_ax(ax):
+    # kludge to avoid needing import from statsmodels.graphics.util;
+    # this does not belong here long-term
+    if ax is None:
+        import matplotlib.pyplot as plt
+        fig = plt.figure()
+        ax = fig.add_subplot(111)
+    else:
+        fig = ax.figure
+    return fig, ax
 
 
 _armax_notes = """
@@ -150,17 +161,18 @@ _predict_returns = """predict : array
 
 """
 
-_arma_predict = _predict % {"Model" : "ARMA",
-                            "params" : """params : array-like
+_arma_predict = _predict % {"Model": "ARMA",
+                            "params": """params : array-like
             The fitted parameters of the model.""",
-                            "extra_params" : "",
-                            "returns" : _predict_returns,
-                            "extra_section" : _predict_notes}
+                            "extra_params": "",
+                            "returns": _predict_returns,
+                            "extra_section": _predict_notes}
 
-_arma_results_predict = _predict % {"Model" : "ARMA", "params" : "",
-                                    "extra_params" : "",
-                                    "returns" : _predict_returns,
-                                    "extra_section" : _results_notes}
+_arma_results_predict = _predict % {"Model": "ARMA",
+                                    "params": "",
+                                    "extra_params": "",
+                                    "returns": _predict_returns,
+                                    "extra_section": _results_notes}
 _arima_extras = """typ : str {'linear', 'levels'}
 
             - 'linear' : Linear prediction in terms of the differenced
@@ -168,18 +180,18 @@ _arima_extras = """typ : str {'linear', 'levels'}
             - 'levels' : Predict the levels of the original endogenous
               variables.\n"""
 
-_arima_predict = _predict % {"Model" : "ARIMA",
-                             "params" : """params : array-like
+_arima_predict = _predict % {"Model": "ARIMA",
+                             "params": """params : array-like
             The fitted parameters of the model.""",
-                             "extra_params" : _arima_extras,
-                             "returns" : _predict_returns,
-                             "extra_section" : _predict_notes}
+                             "extra_params": _arima_extras,
+                             "returns": _predict_returns,
+                             "extra_section": _predict_notes}
 
-_arima_results_predict = _predict % {"Model" : "ARIMA",
-                                     "params" : "",
-                                     "extra_params" :_arima_extras,
-                                     "returns" : _predict_returns,
-                                     "extra_section" : _results_notes}
+_arima_results_predict = _predict % {"Model": "ARIMA",
+                                     "params": "",
+                                     "extra_params":_arima_extras,
+                                     "returns": _predict_returns,
+                                     "extra_section": _results_notes}
 
 _arima_plot_predict_example = """        Examples
         --------
@@ -201,7 +213,7 @@ _arima_plot_predict_example = """        Examples
 
 _plot_extras = """alpha : float, optional
             The confidence intervals for the forecasts are (1 - alpha)%
-        plot_insample : bool, optional
+        plot_insample: bool, optional
             Whether to plot the in-sample series. Default is True.
         ax : matplotlib.Axes, optional
             Existing axes to plot with."""
@@ -209,22 +221,22 @@ _plot_extras = """alpha : float, optional
 _plot_predict = ("""
         Plot forecasts
                       """ + '\n'.join(_predict.split('\n')[2:])) % {
-                      "params" : "",
-                          "extra_params" : _plot_extras,
-                      "returns" : """fig : matplotlib.Figure
+                      "params": "",
+                      "extra_params": _plot_extras,
+                      "returns": """fig : matplotlib.Figure
             The plotted Figure instance""",
-                      "extra_section" : ('\n' + _arima_plot_predict_example +
+                      "extra_section": ('\n' + _arima_plot_predict_example +
                                          '\n' + _results_notes)
                       }
 
 _arima_plot_predict = ("""
         Plot forecasts
                       """ + '\n'.join(_predict.split('\n')[2:])) % {
-    "params" : "",
-    "extra_params" : _plot_extras,
-    "returns" : """fig : matplotlib.Figure
+    "params": "",
+    "extra_params": _plot_extras,
+    "returns": """fig: matplotlib.Figure
             The plotted Figure instance""",
-    "extra_section" : ('\n' + _arima_plot_predict_example +
+    "extra_section": ('\n' + _arima_plot_predict_example +
                                    '\n' +
                                    '\n'.join(_results_notes.split('\n')[:3]) +
                               ("""
@@ -985,7 +997,7 @@ class ARIMA(ARMA):
     __doc__ = tsa_model._tsa_doc % {"model": _arima_model,
                                     "params": _arima_params,
                                     "extra_params": "",
-                                    "extra_sections" : _armax_notes %
+                                    "extra_sections": _armax_notes %
                                                        {"Model": "ARIMA"}}
 
     def __new__(cls, endog, order, exog=None, dates=None, freq=None,
@@ -1681,9 +1693,8 @@ class ARMAResults(tsa_model.TimeSeriesModelResults):
 
     def plot_predict(self, start=None, end=None, exog=None, dynamic=False,
                      alpha=.05, plot_insample=True, ax=None):
-        from statsmodels.graphics.utils import _import_mpl, create_mpl_ax
-        _ = _import_mpl()
-        fig, ax = create_mpl_ax(ax)
+        import matplotlib.pyplot as plt
+        fig, ax = _create_mpl_ax(ax)
 
         # use predict so you set dates
         forecast = self.predict(start, end, exog, dynamic)
@@ -1722,11 +1733,11 @@ class ARMAResults(tsa_model.TimeSeriesModelResults):
 
 class ARMAResultsWrapper(wrap.ResultsWrapper):
     _attrs = {}
-    _wrap_attrs = wrap.union_dicts(tsa_model.TimeSeriesResultsWrapper._wrap_attrs,
-                                   _attrs)
+    _wrap_attrs = wrap.union_dicts(
+        tsa_model.TimeSeriesResultsWrapper._wrap_attrs, _attrs)
     _methods = {}
-    _wrap_methods = wrap.union_dicts(tsa_model.TimeSeriesResultsWrapper._wrap_methods,
-                                     _methods)
+    _wrap_methods = wrap.union_dicts(
+        tsa_model.TimeSeriesResultsWrapper._wrap_methods, _methods)
 wrap.populate_wrapper(ARMAResultsWrapper, ARMAResults)
 
 
@@ -1805,9 +1816,8 @@ class ARIMAResults(ARMAResults):
 
     def plot_predict(self, start=None, end=None, exog=None, dynamic=False,
                      alpha=.05, plot_insample=True, ax=None):
-        from statsmodels.graphics.utils import _import_mpl, create_mpl_ax
-        _ = _import_mpl()
-        fig, ax = create_mpl_ax(ax)
+        import matplotlib.pyplot as plt
+        fig, ax = _create_mpl_ax(ax)
 
         # use predict so you set dates
         forecast = self.predict(start, end, exog, 'levels', dynamic)
