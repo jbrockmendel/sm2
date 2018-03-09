@@ -16,7 +16,7 @@ p = 5
 
 np.random.seed(83423)
 
-exog = np.random.normal(size=(n,p))
+exog = np.random.normal(size=(n, p))
 params = (-1.)**np.arange(p)
 params[::3] = 0
 expval = np.dot(exog, params)

@@ -13,7 +13,7 @@ fit_funcs = {
     'lbfgs': _fit_lbfgs}
 
 try:
-    from scipy.optimize import basinhopping
+    from scipy.optimize import basinhopping  # noqa: F401
     fit_funcs['basinhopping'] = _fit_basinhopping
 except ImportError:
     pass

@@ -2,22 +2,22 @@
 
 __docformat__ = 'restructuredtext'
 
-COPYRIGHT   = """This is public domain."""
-TITLE       = """Nile River flows at Ashwan 1871-1970"""
-SOURCE      = """
+COPYRIGHT = """This is public domain."""
+TITLE = """Nile River flows at Ashwan 1871-1970"""
+SOURCE = """
 This data is first analyzed in:
 
     Cobb, G. W. 1978. "The Problem of the Nile: Conditional Solution to a
         Changepoint Problem." *Biometrika*. 65.2, 243-51.
 """
 
-DESCRSHORT  = """This dataset contains measurements on the annual flow of
+DESCRSHORT = """This dataset contains measurements on the annual flow of
 the Nile as measured at Ashwan for 100 years from 1871-1970."""
 
-DESCRLONG   = DESCRSHORT + " There is an apparent changepoint near 1898."
+DESCRLONG = DESCRSHORT + " There is an apparent changepoint near 1898."
 
 #suggested notes
-NOTE        = """::
+NOTE = """::
 
     Number of observations: 100
     Number of variables: 2
@@ -32,6 +32,7 @@ from pandas import Series, DataFrame
 
 from sm2.datasets.utils import Dataset
 from os.path import dirname, abspath
+
 
 def load():
     """
@@ -50,6 +51,7 @@ def load():
                       endog_name=endog_name)
     return dataset
 
+
 def load_pandas():
     data = DataFrame(_get_data())
     # TODO: time series
@@ -57,6 +59,7 @@ def load_pandas():
     dataset = Dataset(data=data, names=list(data.columns),
                       endog=endog, endog_name='volume')
     return dataset
+
 
 def _get_data():
     filepath = dirname(abspath(__file__))

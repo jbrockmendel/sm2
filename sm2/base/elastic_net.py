@@ -52,11 +52,10 @@ def _gen_npfuncs(k, L1_wt, alpha, loglike_kwds, score_kwds, hess_kwds):
     def nphess(params, model):
         nobs = model.nobs
         pen_hess = alpha[k] * (1 - L1_wt)
-        h = -model.hessian(np.r_[params], **hess_kwds)[0,0] / nobs + pen_hess
+        h = -model.hessian(np.r_[params], **hess_kwds)[0, 0] / nobs + pen_hess
         return h
 
     return nploglike, npscore, nphess
-
 
 
 def fit_elasticnet(model, method="coord_descent", maxiter=100,
@@ -319,7 +318,7 @@ def _opt_1d(func, grad, hess, model, start, L1_wt, tol, check_step=True):
         return x + h
 
     f1 = func(x + h, model) + L1_wt * np.abs(x + h)
-    if f1 <= f + L1_wt*np.abs(x) + 1e-10:
+    if f1 <= f + L1_wt * np.abs(x) + 1e-10:
         return x + h
 
     # Fallback for models where the loss is not quadratic
@@ -343,5 +342,5 @@ class RegularizedResultsWrapper(wrap.ResultsWrapper):
               'fittedvalues': 'rows'}
     _wrap_attrs = _attrs
 
-wrap.populate_wrapper(RegularizedResultsWrapper,
+wrap.populate_wrapper(RegularizedResultsWrapper,  # noqa:E305
                       RegularizedResults)

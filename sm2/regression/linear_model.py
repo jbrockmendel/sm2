@@ -31,15 +31,13 @@ from __future__ import print_function
 # TODO: GLS: add options Iterative GLS, for iterative fgls if sigma is None
 # TODO: GLS: default if sigma is none should be two-step GLS
 # TODO: Check nesting when performing model based tests, lr, wald, lm
-
-import collections
 import warnings
 
 from six.moves import range
 
 import numpy as np
 from scipy.linalg import toeplitz
-from scipy import stats, optimize
+from scipy import stats
 
 from sm2.tools.sm_exceptions import InvalidTestWarning
 from sm2.tools.tools import chain_dot, pinv_extended
@@ -2070,7 +2068,7 @@ class RegressionResults(base.LikelihoodModelResults):
             - `time` array_like (required) : index of time periods
             - `maxlag` integer (required) : number of lags to use
             - `kernel` string (optional) : kernel, default is Bartlett
-            - `use_correction` False or string in ['hac', 'cluster'] (optional) :
+            - `use_correction` {False, 'hac', 'cluster'} (optional) :
                   If False the the sandwich covariance is calulated without
                   small sample correction.
                   If `use_correction = 'cluster'` (default), then the same
@@ -2095,7 +2093,7 @@ class RegressionResults(base.LikelihoodModelResults):
               `time` : index of time periods
             - `maxlag` integer (required) : number of lags to use
             - `kernel` string (optional) : kernel, default is Bartlett
-            - `use_correction` False or string in ['hac', 'cluster'] (optional) :
+            - `use_correction` {False, 'hac', 'cluster'} (optional) :
                   If False the sandwich covariance is calculated without
                   small sample correction.
             - `df_correction` bool (optional)
@@ -2340,7 +2338,7 @@ class RegressionResults(base.LikelihoodModelResults):
                     ('Date:', None),
                     ('Time:', None),
                     ('No. Observations:', None),
-                    ('Df Residuals:', None),  # [self.df_resid]), TODO: spelling
+                    ('Df Residuals:', None),  # [self.df_resid]) TODO: spelling
                     ('Df Model:', None),  # [self.df_model])
                     ]
 
@@ -2475,5 +2473,5 @@ class RegressionResultsWrapper(wrap.ResultsWrapper):
     _wrap_methods = wrap.union_dicts(
         base.LikelihoodResultsWrapper._wrap_methods, _methods)
 
-wrap.populate_wrapper(RegressionResultsWrapper,
+wrap.populate_wrapper(RegressionResultsWrapper,  # noqa:E305
                       RegressionResults)

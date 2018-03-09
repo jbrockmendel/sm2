@@ -2,24 +2,24 @@
 
 __docformat__ = 'restructuredtext'
 
-COPYRIGHT   = """Used with express permission from the original author,
+COPYRIGHT = """Used with express permission from the original author,
 who retains all rights."""
-TITLE       = "World Copper Market 1951-1975 Dataset"
-SOURCE      = """
+TITLE = "World Copper Market 1951-1975 Dataset"
+SOURCE = """
 Jeff Gill's `Generalized Linear Models: A Unified Approach`
 
 http://jgill.wustl.edu/research/books.html
 """
 
-DESCRSHORT  = """World Copper Market 1951-1975"""
+DESCRSHORT = """World Copper Market 1951-1975"""
 
-DESCRLONG   = """This data describes the world copper market from 1951 through 1975.  In an
-example, in Gill, the outcome variable (of a 2 stage estimation) is the world
-consumption of copper for the 25 years.  The explanatory variables are the
-world consumption of copper in 1000 metric tons, the constant dollar adjusted
-price of copper, the price of a substitute, aluminum, an index of real per
-capita income base 1970, an annual measure of manufacturer inventory change,
-and a time trend.
+DESCRLONG = """This data describes the world copper market from 1951 through
+1975.  In an example, in Gill, the outcome variable (of a 2 stage estimation)
+is the world consumption of copper for the 25 years.  The explanatory
+variables are the world consumption of copper in 1000 metric tons, the
+constant dollar adjusted price of copper, the price of a substitute,
+aluminum, an index of real per capita income base 1970, an annual measure
+of manufacturer inventory change, and a time trend.
 """
 
 NOTE = """
@@ -43,6 +43,7 @@ from numpy import recfromtxt, column_stack, array
 from sm2.datasets import utils as du
 from os.path import dirname, abspath
 
+
 def load():
     """
     Load the copper data and returns a Dataset class.
@@ -55,12 +56,14 @@ def load():
     data = _get_data()
     return du.process_recarray(data, endog_idx=0, dtype=float)
 
+
 def _get_data():
     filepath = dirname(abspath(__file__))
     with open(filepath + '/copper.csv', 'rb') as f:
         data = recfromtxt(f, delimiter=",",
-                          names=True, dtype=float, usecols=(1,2,3,4,5,6))
+                          names=True, dtype=float, usecols=(1, 2, 3, 4, 5, 6))
     return data
+
 
 def load_pandas():
     """

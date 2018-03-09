@@ -26,7 +26,6 @@ cmdclass = versioneer.get_cmdclass()
 
 curdir = os.path.abspath(os.path.dirname(__file__))
 README = open(os.path.join(curdir, "README.md")).read()
-CYTHON_EXCLUSION_FILE = 'cythonize_exclusions.dat'
 
 DISTNAME = 'sm2'
 DESCRIPTION = 'Bugfix Fork of statsmodels'

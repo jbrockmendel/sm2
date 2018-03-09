@@ -2,9 +2,9 @@
 
 __docformat__ = 'restructuredtext'
 
-COPYRIGHT   = """This is public domain."""
-TITLE       = __doc__
-SOURCE      = """
+COPYRIGHT = """This is public domain."""
+TITLE = __doc__
+SOURCE = """
 Compiled by Skipper Seabold. All data are from the Federal Reserve Bank of St.
 Louis [1] except the unemployment rate which was taken from the National
 Bureau of Labor Statistics [2]. ::
@@ -17,11 +17,11 @@ Bureau of Labor Statistics [2]. ::
         http://www.bls.gov/data/; accessed December 15, 2009.
 """
 
-DESCRSHORT  = """US Macroeconomic Data for 1959Q1 - 2009Q3"""
+DESCRSHORT = """US Macroeconomic Data for 1959Q1 - 2009Q3"""
 
-DESCRLONG   = DESCRSHORT
+DESCRLONG = DESCRSHORT
 
-NOTE        = """::
+NOTE = """::
     Number of Observations - 203
 
     Number of Variables - 14
@@ -59,6 +59,7 @@ from pandas import DataFrame
 from sm2.datasets.utils import Dataset
 from os.path import dirname, abspath
 
+
 def load():
     """
     Load the US macro data and return a Dataset class.
@@ -77,10 +78,12 @@ def load():
     dataset = Dataset(data=data, names=names)
     return dataset
 
+
 def load_pandas():
     dataset = load()
     dataset.data = DataFrame(dataset.data)
     return dataset
+
 
 def _get_data():
     filepath = dirname(abspath(__file__))
@@ -88,6 +91,7 @@ def _get_data():
         data = recfromtxt(f, delimiter=",",
                           names=True, dtype=float)
     return data
+
 
 variable_names = ["realcons", "realgdp", "realinv"]
 

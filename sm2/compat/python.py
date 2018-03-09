@@ -1,10 +1,7 @@
 """
 Compatibility tools for differences between Python 2 and 3
 """
-import functools
-import itertools
 import sys
-import urllib
 
 PY3 = (sys.version_info[0] >= 3)
 PY3_2 = sys.version_info[:2] == (3, 2)

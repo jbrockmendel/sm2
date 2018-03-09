@@ -2,9 +2,9 @@
 
 __docformat__ = 'restructuredtext'
 
-COPYRIGHT   = """This is in the public domain."""
-TITLE       = __doc__
-SOURCE      = """
+COPYRIGHT = """This is in the public domain."""
+TITLE = __doc__
+SOURCE = """
 The data was collected by the RAND corporation as part of the Health
 Insurance Experiment (HIE).
 
@@ -22,11 +22,11 @@ here contains only a subset of the original data.  The data varies slightly
 compared to that reported in Cameron and Trivedi.
 """
 
-DESCRSHORT  = """The RAND Co. Health Insurance Experiment Data"""
+DESCRSHORT = """The RAND Co. Health Insurance Experiment Data"""
 
-DESCRLONG   = """"""
+DESCRLONG = """"""
 
-NOTE        = """::
+NOTE = """::
 
     Number of observations - 20,190
     Number of variables - 10
@@ -51,6 +51,7 @@ from os.path import dirname, abspath
 
 PATH = '%s/%s' % (dirname(abspath(__file__)), 'randhie.csv')
 
+
 def load():
     """
     Loads the RAND HIE data and returns a Dataset class.
@@ -65,6 +66,7 @@ def load():
     """
     data = _get_data()
     return du.process_recarray(data, endog_idx=0, dtype=float)
+
 
 def load_pandas():
     """
@@ -81,6 +83,7 @@ def load_pandas():
     from pandas import read_csv
     data = read_csv(PATH)
     return du.process_recarray_pandas(data, endog_idx=0)
+
 
 def _get_data():
     with open(PATH, "rb") as f:

@@ -697,9 +697,11 @@ class Results(object):
                 exog = exog[:, None]
             exog = np.atleast_2d(exog)  # needed in count model shape[1]
 
-        predict_results = self.model.predict(self.params, exog, *args, **kwargs)
+        predict_results = self.model.predict(self.params, exog,
+                                             *args, **kwargs)
 
-        if exog_index is not None and not hasattr(predict_results, 'predicted_values'):
+        if exog_index is not None and not hasattr(predict_results,
+                                                  'predicted_values'):
             if predict_results.ndim == 1:
                 return pd.Series(predict_results, index=exog_index)
             else:
@@ -893,9 +895,9 @@ class LikelihoodModelResults(wrap.SaveLoadMixin, Results):
 
             if cov_type == 'nonrobust':
                 self.cov_type = 'nonrobust'
-                self.cov_kwds = {'description': 'Standard Errors assume that the '
-                                 'covariance matrix of the errors is correctly '
-                                 'specified.'}
+                self.cov_kwds = {'description': 'Standard Errors assume that '
+                                 'the covariance matrix of the errors is '
+                                 'correctly specified.'}
             else:
                 from sm2.base.covtype import get_robustcov_results
                 if cov_kwds is None:
@@ -1230,7 +1232,8 @@ class LikelihoodModelResults(wrap.SaveLoadMixin, Results):
         significantly different from zero.
 
         >>> print(results.f_test(A))
-        <F test: F=array([[ 330.28533923]]), p=4.984030528700946e-10, df_denom=9, df_num=6>
+        <F test: F=array([[ 330.28533923]]), \
+                         p=4.984030528700946e-10, df_denom=9, df_num=6>
 
         Compare this to
 
@@ -1239,14 +1242,15 @@ class LikelihoodModelResults(wrap.SaveLoadMixin, Results):
         >>> results.f_pvalue
         4.98403096572e-10
 
-        >>> B = np.array(([0,0,1,-1,0,0,0],[0,0,0,0,0,1,-1]))
+        >>> B = np.array(([0, 0, 1, -1, 0, 0, 0], [0, 0, 0, 0, 0, 1, -1]))
 
         This tests that the coefficient on the 2nd and 3rd regressors are
         equal and jointly that the coefficient on the 5th and 6th regressors
         are equal.
 
         >>> print(results.f_test(B))
-        <F test: F=array([[ 9.74046187]]), p=0.005605288531708235, df_denom=9, df_num=2>
+        <F test: F=array([[ 9.74046187]]), \
+                         p=0.005605288531708235, df_denom=9, df_num=2>
 
         Alternatively, you can specify the hypothesis tests using a string
 
@@ -1257,7 +1261,8 @@ class LikelihoodModelResults(wrap.SaveLoadMixin, Results):
         >>> hypotheses = '(GNPDEFL = GNP), (UNEMP = 2), (YEAR/1829 = 1)'
         >>> f_test = results.f_test(hypotheses)
         >>> print(f_test)
-        <F test: F=array([[ 144.17976065]]), p=6.322026217355609e-08, df_denom=9, df_num=3>
+        <F test: F=array([[ 144.17976065]]), \
+                         p=6.322026217355609e-08, df_denom=9, df_num=3>
 
         See Also
         --------
@@ -1307,9 +1312,9 @@ class LikelihoodModelResults(wrap.SaveLoadMixin, Results):
         use_f : bool
             If True, then the F-distribution is used. If False, then the
             asymptotic distribution, chisquare is used. If use_f is None, then
-            the F distribution is used if the model specifies that use_t is True.
-            The test statistic is proportionally adjusted for the distribution
-            by the number of constraints in the hypothesis.
+            the F distribution is used if the model specifies that use_t
+            is True.  The test statistic is proportionally adjusted for the
+            distribution by the number of constraints in the hypothesis.
 
         Returns
         -------
@@ -1414,7 +1419,8 @@ class LikelihoodModelResults(wrap.SaveLoadMixin, Results):
 
         Examples
         --------
-        >>> res_ols = ols("np.log(Days+1) ~ C(Duration, Sum)*C(Weight, Sum)", data).fit()
+        >>> formula = "np.log(Days+1) ~ C(Duration, Sum)*C(Weight, Sum)"
+        >>> res_ols = ols(formula, data).fit()
         >>> res_ols.wald_test_terms()
         <class 'sm2.stats.contrast.WaldTestResults'>
                                                   F                P>F  df constraint  df denom

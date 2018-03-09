@@ -57,7 +57,7 @@ class Bunch(dict):
         self.__dict__ = self
 
         for i, att in enumerate(['params', 'bse', 'tvalues', 'pvalues']):
-            self[att] = self.params_table[:,i]
+            self[att] = self.params_table[:, i]
 
 
 results_hc0 = Bunch(
@@ -85,7 +85,7 @@ est = dict(df_m=2,
            predict="newey_p",
            vcetype="Newey-West",
            depvar="g_realinv",
-           properties="b V",)
+           properties="b V")
 
 params_table = np.array([
     4.3742216647032, .33125644884286, 13.204940401864, 5.282334606e-29,
@@ -326,7 +326,7 @@ est = dict(N=202,
            small="small",
            inexog="g_realgdp L.realint",
            insts="g_realgdp L.realint",
-           properties="b V",)
+           properties="b V")
 
 params_table = np.array([
     4.3742216647032, .32355452428856, 13.519272136038, 5.703151404e-30,
@@ -344,7 +344,7 @@ params_table_rownames = 'g_realgdp L.realint _cons'.split()
 cov = np.array([
     .1046875301876, -.00084230205782, -.34205013876828, -.00084230205782,
     .10740590623772, -.14114426417778, -.34205013876828, -.14114426417778,
-    1.8743234233252]).reshape(3,3)
+    1.8743234233252]).reshape(3, 3)
 
 cov_colnames = 'g_realgdp L.realint _cons'.split()
 
@@ -359,7 +359,6 @@ results_ivhc0_small = Bunch(
     cov_rownames=cov_rownames,
     **est)
 
-###################
 
 est = dict(N=202,
            inexog_ct=2,
@@ -416,7 +415,6 @@ params_table = np.array([
     np.nan, 1.9599639845401, 0]).reshape(3, 9)
 
 params_table_colnames = 'b se z pvalue ll ul df crit eform'.split()
-
 params_table_rownames = 'g_realgdp L.realint _cons'.split()
 
 cov = np.array([
