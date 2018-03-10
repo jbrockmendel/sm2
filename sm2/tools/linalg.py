@@ -7,8 +7,6 @@ The only changes are that additional results are returned
 """
 # TODO: This is only needed (so far) by var_model.  Maybe avoid porting?
 
-from six.moves import range
-
 import numpy as np
 import scipy.linalg
 
@@ -20,15 +18,15 @@ _array_precision = {'f': 0, 'd': 1, 'F': 0, 'D': 1}
 # Linear Least Squares
 
 def lstsq(a, b, cond=None, overwrite_a=0, overwrite_b=0):
-    raise NotImplementedError("not ported from upstream")
+    raise NotImplementedError("lstsq not ported from upstream")
 
 
 def pinv(a, cond=None, rcond=None):
-    raise NotImplementedError("not ported from upstream")
+    raise NotImplementedError("pinv not ported from upstream")
 
 
 def pinv2(a, cond=None, rcond=None):
-    raise NotImplementedError("not ported from upstream")
+    raise NotImplementedError("pinv2 not ported from upstream")
 
 
 def logdet_symm(m, check_symm=False):
@@ -53,4 +51,4 @@ def logdet_symm(m, check_symm=False):
 
 
 def stationary_solve(r, b):
-    raise NotImplementedError("not ported from upstream")
+    raise NotImplementedError("stationary_solve not ported from upstream")

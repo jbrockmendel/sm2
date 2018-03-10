@@ -140,11 +140,9 @@ def categorical(data, col=None, dictnames=False, drop=False, ):
     >>> design2 = sm.tools.categorical(struct_ar, col='str_instr', drop=True)
     """
     if isinstance(col, (list, tuple)):
-        try:
-            assert len(col) == 1
-            col = col[0]
-        except:
+        if len(col) != 1:
             raise ValueError("Can only convert one column at a time")
+        col = col[0]
 
     # TODO: add a NameValidator function
     # catch recarrays and structured arrays
@@ -202,7 +200,9 @@ def categorical(data, col=None, dictnames=False, drop=False, ):
 
     # handle ndarrays and catch array-like for an error
     elif data.__class__ is np.ndarray or not isinstance(data, np.ndarray):
+        # TODO: Do we not allow subclasses of ndarray?  why not just isinstance?
         if not isinstance(data, np.ndarray):
+            # TODO: WTF isnt the error message the exact opposite of correct?
             raise NotImplementedError("Array-like objects are not supported")
 
         if isinstance(col, integer_types):

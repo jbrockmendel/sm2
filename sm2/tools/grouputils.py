@@ -80,7 +80,8 @@ for name in ['Group', 'Grouping', 'GroupSorted',
              '_make_generic_names']:
     def func(*args, **kwargs):
         """placeholder for function not ported from upstream"""
-        raise NotImplementedError("Not ported from upstream")
+        raise NotImplementedError("{name} not ported from upstream"
+                                  .format(name=name))
 
     func.__name__ = name
     setattr(module, name, func)

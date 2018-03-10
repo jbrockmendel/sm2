@@ -35,6 +35,7 @@ def check_ttest_tvalues(results):
                                  res.pvalues, res.conf_int()))
     table1 = np.column_stack((tt.effect, tt.sd, tt.tvalue, tt.pvalue,
                               tt.conf_int()))
+    # TODO: was there an intent to _do_ something with table1?
     table2 = tt.summary_frame().values
     assert_allclose(table2, table_res, rtol=1e-12)
 
