@@ -375,19 +375,8 @@ def recipr(x):
 
 
 def recipr0(x):
-    """
-    Return the reciprocal of an array, setting all entries equal to 0
-    as 0. It does not assume that X should be positive in
-    general.
-    """
-    x = np.asarray(x)
-    out = np.zeros_like(x, dtype=np.float64)
-    nans = np.isnan(x.flat)
-    non_zero = ~nans
-    non_zero[non_zero] = non_zero[non_zero] & (x.flat[non_zero] != 0)
-    out.flat[non_zero] = 1.0 / x.flat[non_zero]
-    out.flat[nans] = np.nan
-    return out
+    raise NotImplementedError("recipr0 not ported from upstream, "
+                              "as it is unused and barely-tested.")
 
 
 def clean0(matrix):
@@ -421,23 +410,7 @@ def fullrank(X, r=None):
 
 
 def unsqueeze(data, axis, oldshape):
-    """
-    Unsqueeze a collapsed array
-
-    >>> from numpy import mean
-    >>> from numpy.random import standard_normal
-    >>> x = standard_normal((3,4,5))
-    >>> m = mean(x, axis=1)
-    >>> m.shape
-    (3, 5)
-    >>> m = unsqueeze(m, 1, x.shape)
-    >>> m.shape
-    (3, 1, 5)
-    >>>
-    """
-    newshape = list(oldshape)
-    newshape[axis] = 1
-    return data.reshape(newshape)
+    raise NotImplementedError("unsqueeze not ported from upstream")
 
 
 def chain_dot(*arrs):
@@ -510,43 +483,5 @@ class Bunch(dict):
 
 
 def _ensure_2d(x, ndarray=False):
-    """
-
-    Parameters
-    ----------
-    x : array, Series, DataFrame or None
-        Input to verify dimensions, and to transform as necesary
-    ndarray : bool
-        Flag indicating whether to always return a NumPy array. Setting False
-        will return an pandas DataFrame when the input is a Series or a
-        DataFrame.
-
-    Returns
-    -------
-    out : array, DataFrame or None
-        array or DataFrame with 2 dimensiona.  One dimensional arrays are
-        returned as nobs by 1. None is returned if x is None.
-    names : list of str or None
-        list containing variables names when the input is a pandas datatype.
-        Returns None if the input is an ndarray.
-
-    Notes
-    -----
-    Accepts None for simplicity
-    """
-    if x is None:
-        return x
-    is_pandas = _is_using_pandas(x, None)
-    if x.ndim == 2:
-        if is_pandas:
-            return x, x.columns
-        else:
-            return x, None
-    elif x.ndim > 2:
-        raise ValueError('x mst be 1 or 2-dimensional.')
-
-    name = x.name if is_pandas else None
-    if ndarray:
-        return np.asarray(x)[:, None], name
-    else:
-        return pd.DataFrame(x), name
+    raise NotImplementedError("_ensure_2d not ported from upstream as it "
+                              "is only used in one sandbox module.")

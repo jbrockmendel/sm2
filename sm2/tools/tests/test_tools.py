@@ -134,6 +134,7 @@ class TestTools(object):
         Y = tools.recipr(X)
         assert_almost_equal(Y, np.array([[0.5, 1], [0, 0]]))
 
+    @pytest.mark.skip(reason="recipr0 not ported from upstream")
     def test_recipr0(self):
         X = np.array([[2, 1], [-4, 0]])
         Y = tools.recipr0(X)
@@ -526,6 +527,7 @@ class TestNanDot(object):
         assert_array_equal(test_res, expected_res)
 
 
+@pytest.mark.skip(reason="_ensure_2d not ported from upstream")
 @pytest.mark.not_vetted
 class TestEnsure2d(object):
     @classmethod
