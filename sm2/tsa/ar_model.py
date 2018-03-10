@@ -370,6 +370,7 @@ class AR(tsa_model.TimeSeriesModel):
         """
         Not Implemented Yet
         """
+        # TODO: This just passes upstream; fix it there
         raise NotImplementedError
 
     def hessian(self, params):

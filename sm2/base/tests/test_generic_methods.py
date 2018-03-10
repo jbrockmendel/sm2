@@ -266,7 +266,6 @@ class TestGenericLogit(CheckGenericMixin):
 class TestGenericRLM(CheckGenericMixin):
     def setup(self):
         # fit for each test, because results will be changed by test
-        raise pytest.skip("RLM not implemented")
         x = self.exog
         np.random.seed(987689)
         y = x.sum(1) + np.random.randn(x.shape[0])
@@ -278,7 +277,6 @@ class TestGenericRLM(CheckGenericMixin):
 class TestGenericGLM(CheckGenericMixin):
     def setup(self):
         # fit for each test, because results will be changed by test
-        raise pytest.skip("GLM not implemented")
         x = self.exog
         np.random.seed(987689)
         y = x.sum(1) + np.random.randn(x.shape[0])
@@ -297,7 +295,6 @@ class TestGenericGEEPoisson(CheckGenericMixin):
         # use start_params to speed up test, difficult convergence not tested
         start_params = np.array([0., 1., 1., 1.])
 
-        raise pytest.skip("cov_struct not implemented")
         vi = sm.cov_struct.Independence()
         family = sm.families.Poisson()
         self.results = sm.GEE(y_count, self.exog, groups, family=family,
@@ -316,7 +313,6 @@ class TestGenericGEEPoissonNaive(CheckGenericMixin):
         # use start_params to speed up test, difficult convergence not tested
         start_params = np.array([0., 1., 1., 1.])
 
-        raise pytest.skip("cov_struct not implemented")
         vi = sm.cov_struct.Independence()
         family = sm.families.Poisson()
         self.results = sm.GEE(y_count, self.exog, groups, family=family,
@@ -337,7 +333,6 @@ class TestGenericGEEPoissonBC(CheckGenericMixin):
         start_params = np.array([0., 1., 1., 1.])
         # params_est = np.array([-0.0063238 , 0.99463752, 1.02790201, 0.98080081])
 
-        raise pytest.skip("cov_struct not implemented")
         vi = sm.cov_struct.Independence()
         family = sm.families.Poisson()
         mod = sm.GEE(y_count, self.exog, groups, family=family, cov_struct=vi)
@@ -499,7 +494,6 @@ class TestWaldAnovaOLSF(CheckAnovaMixin):
 class TestWaldAnovaGLM(CheckAnovaMixin):
     @classmethod
     def initialize(cls):
-        raise pytest.skip("GLM not implemented")
         formula = "np.log(Days+1) ~ C(Duration, Sum)*C(Weight, Sum)"
         mod = sm.GLM.from_formula(formula, cls.data)
         cls.res = mod.fit(use_t=False)

@@ -203,22 +203,22 @@ class TestRemoveDataPickleLogit(RemoveDataPickle):
                                  method='bfgs', disp=0)
 
 
+@pytest.mark.skip(reason="RLM not ported from upstream")
 @pytest.mark.not_vetted
 class TestRemoveDataPickleRLM(RemoveDataPickle):
     def setup(self):
         # fit for each test, because results will be changed by test
-        raise pytest.skip("RLM not ported")
         x = self.exog
         np.random.seed(987689)
         y = x.sum(1) + np.random.randn(x.shape[0])
         self.results = sm.RLM(y, self.exog).fit()
 
 
+@pytest.mark.skip(reason="GLM not ported from upstream")
 @pytest.mark.not_vetted
 class TestRemoveDataPickleGLM(RemoveDataPickle):
     def setup(self):
         # fit for each test, because results will be changed by test
-        raise pytest.skip("GLM not ported")
         x = self.exog
         np.random.seed(987689)
         y = x.sum(1) + np.random.randn(x.shape[0])
