@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 cimport cython
+from cython cimport Py_ssize_t
 
 cdef extern from "math.h":
     double log(double x)
@@ -48,18 +49,29 @@ def kalman_filter_double(double[:] y not None,
     """
     Cython version of the Kalman filter recursions for an ARMA process.
     """
-    cdef cnp.npy_intp yshape[2]
+    cdef:
+        Py_ssize_t i, ii, jj, kk
+        double one_d = 1.0
+        double beta = 0.0
+        int one = 1  # univariate filter
+
+        double F_mat = 0.
+        double Finv = 0.
+        double loglikelihood = 0
+        double v_mat = 0
+
+        cnp.npy_intp yshape[2]
+        cnp.npy_intp mshape[2]
+        cnp.npy_intp r2shape[2]
+
     yshape[0] = <cnp.npy_intp> nobs
     yshape[1] = <cnp.npy_intp> 1
-    cdef cnp.npy_intp mshape[2]
     mshape[0] = <cnp.npy_intp> r
     mshape[1] = <cnp.npy_intp> 1
-    cdef cnp.npy_intp r2shape[2]
     r2shape[0] = <cnp.npy_intp> r
     r2shape[1] = <cnp.npy_intp> r
 
     cdef:
-        int one = 1  # univariate filter
         int ldz = Z_mat.strides[1] / sizeof(float64_t)
         int ldt = T_mat.strides[1] / sizeof(float64_t)
         int ldr = R_mat.strides[1] / sizeof(float64_t)
@@ -68,22 +80,17 @@ def kalman_filter_double(double[:] y not None,
                                                          cnp.NPY_DOUBLE, FORTRAN)
         # store variance of forecast errors
         double[::1, :] F = np.ones((nobs, 1), order='F')  # variance of forecast errors
-        double loglikelihood = 0
-        int i = 0
         # initial state
         double[::1, :] alpha = cnp.PyArray_ZEROS(2, mshape,
                                                  cnp.NPY_DOUBLE, FORTRAN)
         int lda = alpha.strides[1] / sizeof(float64_t)
         # initial variance
-        double[::1, :] P = np.asfortranarray(np.dot(np.linalg.pinv(np.identity(r**2)-
+        double[::1, :] P = np.asfortranarray(np.dot(np.linalg.pinv(np.identity(r**2) -
                                                   np.kron(T_mat, T_mat)),
                                              np.dot(R_mat, R_mat.T).ravel('F')
                                              ).reshape(r, r, order='F'))
         int ldp = P.strides[1] / sizeof(float64_t)
-        double F_mat = 0.
-        double Finv = 0.
         #ndarray[float64_t, ndim=2] v_mat = cnp.PyArray_Zeros(2, [1,1], cnp.NPY_FLOAT64, 0)
-        double v_mat = 0
         double[::1, :] K = cnp.PyArray_ZEROS(2, r2shape,
                                              cnp.NPY_DOUBLE, FORTRAN)
         int ldk = K.strides[1] / sizeof(float64_t)
@@ -93,7 +100,7 @@ def kalman_filter_double(double[:] y not None,
         double[::1, :] tmp1 = cnp.PyArray_ZEROS(2, r2shape,
                                                 cnp.NPY_DOUBLE, FORTRAN)
         int ldt1 = tmp1.strides[1] / sizeof(float64_t)
-        double[::1, :] tmp2 = np.zeros_like(alpha, order='F') # K rows x v_mat cols
+        double[::1, :] tmp2 = np.zeros_like(alpha, order='F')  # K rows x v_mat cols
         int ldt2 = tmp2.strides[1] / sizeof(float64_t)
         double[::1, :] L = np.zeros_like(T_mat, order='F')
         int ldl = L.strides[1] / sizeof(float64_t)
@@ -101,9 +108,6 @@ def kalman_filter_double(double[:] y not None,
         double[::1, :] tmp3 = cnp.PyArray_ZEROS(2, r2shape,
                                                 cnp.NPY_DOUBLE, FORTRAN)
         int ldt3 = tmp3.strides[1] / sizeof(float64_t)
-
-        double alph = 1.0
-        double beta = 0.0
 
     #NOTE: not sure about just checking F_mat[0, 0], didn't appear to work
     while not F_mat == 1. and i < nobs:
@@ -116,7 +120,7 @@ def kalman_filter_double(double[:] y not None,
         v[i, 0] = v_mat
 
         # one-step forecast error
-        #dgemm("N", "N", &one, &r, &r, &alph, &Z_mat[0, 0], &ldz, &P[0, 0], &ldp,
+        #dgemm("N", "N", &one, &r, &r, &one_d, &Z_mat[0, 0], &ldz, &P[0, 0], &ldp,
         #      &beta, &tmp1[0, 0], &ldt1)
         #F_mat = ddot(&r, &tmp1[0, 0], &one, &Z_mat[0, 0], &one)
         #Z_mat is just a selector matrix
@@ -131,27 +135,27 @@ def kalman_filter_double(double[:] y not None,
         # K = np.dot(tmp3, Finv) or tmp3*Finv
 
         #print "Finv: ", np.asarray(<float64_t[:1, :1] *> &Finv[0,0])
-        dgemm("N", "N", &r, &r, &r, &alph, &T_mat[0, 0], &ldt, &P[0, 0], &ldp,
+        dgemm("N", "N", &r, &r, &r, &one_d, &T_mat[0, 0], &ldt, &P[0, 0], &ldp,
               &beta, &tmp1[0, 0], &ldt1)
         #print "tmp1: ", np.asarray(<float64_t[:r, :r] *> &tmp1[0,0])
         # tmp1 . Z_mat.T
 
-        dgemv("N", &r, &r, &Finv, &tmp1[0, 0], &ldt1, &Z_mat[0, 0], &one, &beta,
-              &K[0, 0], &one)
+        dgemv("N", &r, &r, &Finv, &tmp1[0, 0], &ldt1, &Z_mat[0, 0], &one,
+              &beta, &K[0, 0], &one)
 
         # update state
         #alpha = np.dot(T_mat, alpha) + np.dot(K, v_mat)
         #alpha = np.dot(T_mat, alpha) + K*v_mat
         #np.dot(T_mat, alpha)
-        dgemv("N", &r, &r, &alph, &T_mat[0, 0], &ldt, &alpha[0, 0], &one, &beta,
-              &tmp2[0, 0], &one)
+        dgemv("N", &r, &r, &one_d, &T_mat[0, 0], &ldt, &alpha[0, 0], &one,
+              &beta, &tmp2[0, 0], &one)
 
         #np.dot(K, v_mat) + tmp2
         for ii in range(r):
             alpha[ii, 0] = K[ii, 0] * v_mat + tmp2[ii, 0]
 
         #L = T_mat - np.dot(K,Z_mat)
-        dgemm("N", "N", &r, &r, &one, &alph, &K[0, 0], &ldk, &Z_mat[0, 0], &ldz,
+        dgemm("N", "N", &r, &r, &one, &one_d, &K[0, 0], &ldk, &Z_mat[0, 0], &ldz,
               &beta, &L[0, 0], &ldl)
         # L = T_mat - L
         # L = -(L - T_mat)
@@ -163,12 +167,12 @@ def kalman_filter_double(double[:] y not None,
         # tmp5 = np.dot(R_mat, R_mat.T)
         # tmp3 = np.dot(T_mat, P)
         # P = np.dot(tmp3, L.T) + tmp5
-        dgemm("N", "N", &r, &r, &r, &alph, &T_mat[0, 0], &ldt, &P[0, 0],
-              &ldp, &beta, &tmp3[0, 0], &ldt3)
-        dgemm("N", "T", &r, &r, &one, &alph, &R_mat[0, 0], &ldr, &R_mat[0, 0],
-              &ldr, &beta, &P[0, 0], &ldp)
-        dgemm("N", "T", &r, &r, &r, &alph, &tmp3[0, 0], &ldt3, &L[0, 0],
-              &ldl, &alph, &P[0, 0], &ldp)
+        dgemm("N", "N", &r, &r, &r, &one_d, &T_mat[0, 0], &ldt, &P[0, 0], &ldp,
+              &beta, &tmp3[0, 0], &ldt3)
+        dgemm("N", "T", &r, &r, &one, &one_d, &R_mat[0, 0], &ldr, &R_mat[0, 0], &ldr,
+              &beta, &P[0, 0], &ldp)
+        dgemm("N", "T", &r, &r, &r, &one_d, &tmp3[0, 0], &ldt3, &L[0, 0], &ldl,
+              &one_d, &P[0, 0], &ldp)
 
         # 101 = c-order, 122 - lower triangular of R, "N" - no trans (XX')
         #dsyrk(101, 122, "N", r, 1, 1.0, &R_mat[0, 0],
@@ -183,11 +187,11 @@ def kalman_filter_double(double[:] y not None,
         v_mat = y[i] - alpha[0, 0]
         v[i, 0] = v_mat
         #alpha = np.dot(T_mat, alpha) + np.dot(K, v_mat)
-        dgemm("N", "N", &r, &one, &r, &alph, &T_mat[0, 0], &ldt, &alpha[0, 0],
-              &lda, &beta, &tmp2[0, 0], &ldt2)
+        dgemm("N", "N", &r, &one, &r, &one_d, &T_mat[0, 0], &ldt, &alpha[0, 0], &lda,
+              &beta, &tmp2[0, 0], &ldt2)
         #np.dot(K, v_mat) + tmp2
         for ii in range(r):
-            alpha[ii, 0] = K[ii, 0]*v_mat + tmp2[ii, 0]
+            alpha[ii, 0] = K[ii, 0] * v_mat + tmp2[ii, 0]
     return v, F, loglikelihood
 
 
@@ -204,42 +208,47 @@ def kalman_filter_complex(complex128_t[:] y,
     Cython version of the Kalman filter recursions for an ARMA process.
     """
     cdef:
+        Py_ssize_t i, ii, jj, kk
+
+        complex128_t one_z = 1 + 0j
+        complex128_t beta = 0
+        int one = 1
+
+        complex128_t F_mat = 0
+        complex128_t Finv = 0
+        complex128_t loglikelihood = 0 + 0j
+        complex128_t v_mat = 0
+
         cnp.npy_intp yshape[2]
+        cnp.npy_intp mshape[2]
+        cnp.npy_intp r2shape[2]
 
     yshape[0] = <cnp.npy_intp> nobs
     yshape[1] = <cnp.npy_intp> 1
-    cdef cnp.npy_intp mshape[2]
     mshape[0] = <cnp.npy_intp> r
     mshape[1] = <cnp.npy_intp> 1
-    cdef cnp.npy_intp r2shape[2]
     r2shape[0] = <cnp.npy_intp> r
     r2shape[1] = <cnp.npy_intp> r
 
     cdef:
-        int one = 1
         int ldz = Z_mat.strides[1] / sizeof(complex128_t)
         int ldt = T_mat.strides[1] / sizeof(complex128_t)
         int ldr = R_mat.strides[1] / sizeof(complex128_t)
         # forecast errors
         #complex128_t[:, :] v = zeros((nobs,1), dtype=complex)
-        ndarray[complex, ndim=2] v = cnp.PyArray_ZEROS(2, yshape, cnp.NPY_CDOUBLE,
-                                                       FORTRAN)
+        ndarray[complex128_t, ndim=2] v = cnp.PyArray_ZEROS(2, yshape, cnp.NPY_CDOUBLE,
+                                                            FORTRAN)
         # store variance of forecast errors
         complex128_t[::1, :] F = np.ones((nobs, 1), dtype=complex, order='F')
-        complex128_t loglikelihood = 0 + 0j
-        int i = 0
         # initial state
         complex128_t[::1, :] alpha = cnp.PyArray_ZEROS(2, mshape,
                                                        cnp.NPY_CDOUBLE, FORTRAN)
         int lda = alpha.strides[1] / sizeof(complex128_t)
         # initial variance
         complex128_t[::1, :] P = np.asfortranarray(np.dot(np.linalg.pinv(np.identity(r**2) - np.kron(T_mat, T_mat)),
-                                           np.dot(R_mat, R_mat.T).ravel('F')).reshape(r, r, order='F'))
+                                                   np.dot(R_mat, R_mat.T).ravel('F')).reshape(r, r, order='F'))
         int ldp = P.strides[1] / sizeof(complex128_t)
-        complex128_t F_mat = 0
-        complex128_t Finv = 0
         # complex128_t[:, :] v_mat = zeros((1, 1), dtype=complex)
-        complex128_t v_mat = 0
         complex128_t[::1, :] K = cnp.PyArray_ZEROS(2, mshape,
                                                    cnp.NPY_CDOUBLE, FORTRAN)
         int ldk = K.strides[1] / sizeof(complex128_t)
@@ -257,9 +266,6 @@ def kalman_filter_complex(complex128_t[:] y,
                                                       cnp.NPY_CDOUBLE, FORTRAN)
         int ldt3 = tmp3.strides[1] / sizeof(complex128_t)
 
-        complex128_t alph = 1 + 0j
-        complex128_t beta = 0
-
     while not F_mat == 1 and i < nobs:
         #v_mat = zdotu(&r, &Z_mat[0, 0], &one, &alpha[0, 0], &one)
         # Z_mat is just a selector matrix
@@ -267,41 +273,41 @@ def kalman_filter_complex(complex128_t[:] y,
         v[i, 0] = v_mat
 
         # one-step forecast error
-        #zgemm("N", "N", &one, &r, &r, &alph, &Z_mat[0, 0], &ldz, &P[0, 0], &ldp,
+        #zgemm("N", "N", &one, &r, &r, &one_z, &Z_mat[0, 0], &ldz, &P[0, 0], &ldp,
         #      &beta, &tmp1[0, 0], &ldt1)
         # F_mat = zdotu(&r, &tmp1[0, 0], &one, &Z_mat[0, 0], &one)
         # Z_mat is just a selctor matrix so the below is equivalent
         F_mat = P[0, 0]
         F[i, 0] = F_mat
-        Finv = 1. / F_mat # always scalar for univariate series
+        Finv = 1. / F_mat  # always scalar for univariate series
         # compute Kalman Gain, K
-        # K = np.dot(np.dot(np.dot(T_mat,P), Z_mat.T),Finv)
+        # K = np.dot(np.dot(np.dot(T_mat, P), Z_mat.T), Finv)
         # tmp1 = np.dot(T_mat, P)
         # tmp3 = np.dot(tmp1, Z_mat.T)
         # K = np.dot(tmp3, Finv)
 
         # tmp1 = T_mat.dot(P)
-        zgemm("N", "N", &r, &r, &r, &alph, &T_mat[0, 0], &ldt, &P[0, 0], &ldp,
+        zgemm("N", "N", &r, &r, &r, &one_z, &T_mat[0, 0], &ldt, &P[0, 0], &ldp,
               &beta, &tmp1[0, 0], &ldt1)
         # tmp3 = tmp1.dot(Z_mat.T)
-        zgemv("N", &r, &r, &Finv, &tmp1[0, 0], &ldt1, &Z_mat[0, 0], &one, &beta,
-              &K[0, 0], &one)
+        zgemv("N", &r, &r, &Finv, &tmp1[0, 0], &ldt1, &Z_mat[0, 0], &one,
+              &beta, &K[0, 0], &one)
 
         # K = tmp3.dot(Finv)
         # update state
         #alpha = np.dot(T_mat, alpha) + np.dot(K, v_mat)
         #np.dot(T_mat, alpha)
-        zgemv("N", &r, &r, &alph, &T_mat[0, 0], &ldt, &alpha[0, 0], &one, &beta,
-              &tmp2[0, 0], &one)
+        zgemv("N", &r, &r, &one_z, &T_mat[0, 0], &ldt, &alpha[0, 0], &one,
+              &beta, &tmp2[0, 0], &one)
         #np.dot(K, v_mat) + tmp2
         # alpha += tmp2
-        #daxpy(r, alph, &tmp2[0,0], 1, &alpha[0,0], 1)
+        #daxpy(r, one_z, &tmp2[0,0], 1, &alpha[0,0], 1)
         for ii in range(r):
             alpha[ii, 0] = K[ii, 0] * v_mat + tmp2[ii, 0]
         #print "alpha:", np.asarray(<complex128_t[:m, :1] *> &alpha[0,0])
 
         #L = T_mat - np.dot(K,Z_mat)
-        zgemm("N", "N", &r, &r, &one, &alph, &K[0, 0], &ldk, &Z_mat[0, 0], &ldz,
+        zgemm("N", "N", &r, &r, &one, &one_z, &K[0, 0], &ldk, &Z_mat[0, 0], &ldz,
               &beta, &L[0, 0], &ldl)
 
         # L = T_mat - L
@@ -314,12 +320,12 @@ def kalman_filter_complex(complex128_t[:] y,
         # tmp5 = np.dot(R_mat, R_mat.T)
         # tmp3 = np.dot(T_mat, P)
         # P = np.dot(tmp3, L.T) + tmp5
-        zgemm("N", "N", &r, &r, &r, &alph, &T_mat[0, 0], &ldt, &P[0, 0], &ldp,
+        zgemm("N", "N", &r, &r, &r, &one_z, &T_mat[0, 0], &ldt, &P[0, 0], &ldp,
               &beta, &tmp3[0, 0], &ldt3)
-        zgemm("N", "T", &r, &r, &one, &alph, &R_mat[0, 0], &ldr, &R_mat[0, 0],
-              &ldr, &beta, &P[0, 0], &ldp)
-        zgemm("N", "T", &r, &r, &r, &alph, &tmp3[0, 0], &ldt3, &L[0, 0], &ldl, &alph,
-              &P[0, 0], &ldp)
+        zgemm("N", "T", &r, &r, &one, &one_z, &R_mat[0, 0], &ldr, &R_mat[0, 0], &ldr,
+              &beta, &P[0, 0], &ldp)
+        zgemm("N", "T", &r, &r, &r, &one_z, &tmp3[0, 0], &ldt3, &L[0, 0], &ldl,
+              &one_z, &P[0, 0], &ldp)
 
         loglikelihood += np.log(F_mat)
         i += 1
@@ -330,11 +336,11 @@ def kalman_filter_complex(complex128_t[:] y,
         v_mat = y[i] - alpha[0, 0]
         v[i, 0] = v_mat
         #alpha = np.dot(T_mat, alpha) + np.dot(K, v_mat)
-        zgemm("N", "N", &r, &one, &r, &alph, &T_mat[0, 0], &ldt, &alpha[0, 0], &lda,
+        zgemm("N", "N", &r, &one, &r, &one_z, &T_mat[0, 0], &ldt, &alpha[0, 0], &lda,
               &beta, &tmp2[0, 0], &ldt2)
         #np.dot(K, v_mat) + tmp2
         # alpha += tmp2
-        #daxpy(r, alph, &tmp2[0, 0], 1, &alpha[0, 0], 1)
+        #daxpy(r, one_z, &tmp2[0, 0], 1, &alpha[0, 0], 1)
         for ii in range(r):
             alpha[ii, 0] = K[ii, 0] * v_mat + tmp2[ii,0]
     return v, F, loglikelihood

@@ -10,7 +10,7 @@ currently all tests are against R
 
 """
 import os
-# import json
+import json
 
 import pandas as pd
 import numpy as np
@@ -23,9 +23,10 @@ from sm2.tools.tools import add_constant
 from sm2.datasets import macrodata
 
 import sm2.stats.sandwich_covariance as sw
-import sm2.stats.diagnostic as smsdia
+from sm2.stats import diagnostic
 
 # import statsmodels.stats.outliers_influence as oi
+oi = None  # dummy until upstream version is ported
 
 cur_dir = os.path.abspath(os.path.dirname(__file__))
 
@@ -92,18 +93,19 @@ def notyet_atst():
     het_gq_greater_2 = dict(statistic=87.1328934692124, df1=48, df2=47,
                             pvalue=2.154956842194898e-33, distr='f')
 
-    gq = smsdia.het_goldfeldquandt(endog, exog, split=0.5)
+    gq = diagnostic.het_goldfeldquandt(endog, exog, split=0.5)
     compare_t_est(gq, het_gq_greater, decimal=(13, 14))
     assert gq[-1] == 'increasing'
 
     harvey_collier = dict(stat=2.28042114041313, df=199,
                           pvalue=0.02364236161988260, distr='t')
-    # hc = harvtest(fm, order.by=ggdp , data = list())
+    # hc = harvtest(fm, order.by=ggdp, data = list())
     harvey_collier_2 = dict(stat=0.7516918462158783, df=199,
                             pvalue=0.4531244858006127, distr='t')
 '''
 
 
+@pytest.mark.not_vetted
 class TestDiagnosticG(object):
 
     @classmethod
@@ -212,23 +214,23 @@ class TestDiagnosticG(object):
 
         endogg, exogg = self.endog, self.exog
         # tests
-        gq = smsdia.het_goldfeldquandt(endogg, exogg, split=0.5)
+        gq = diagnostic.het_goldfeldquandt(endogg, exogg, split=0.5)
         compare_t_est(gq, het_gq_greater, decimal=(14, 14))
         assert gq[-1] == 'increasing'
 
-        gq = smsdia.het_goldfeldquandt(endogg, exogg, split=0.5,
-                                       alternative='decreasing')
+        gq = diagnostic.het_goldfeldquandt(endogg, exogg, split=0.5,
+                                           alternative='decreasing')
         compare_t_est(gq, het_gq_less, decimal=(14, 14))
         assert gq[-1] == 'decreasing'
 
-        gq = smsdia.het_goldfeldquandt(endogg, exogg, split=0.5,
-                                       alternative='two-sided')
+        gq = diagnostic.het_goldfeldquandt(endogg, exogg, split=0.5,
+                                           alternative='two-sided')
         compare_t_est(gq, het_gq_two_sided, decimal=(14, 14))
         assert gq[-1] == 'two-sided'
 
         # TODO: forcing the same split as R 202-90-90-1=21
-        gq = smsdia.het_goldfeldquandt(endogg, exogg, split=90, drop=21,
-                                       alternative='two-sided')
+        gq = diagnostic.het_goldfeldquandt(endogg, exogg, split=90, drop=21,
+                                           alternative='two-sided')
         compare_t_est(gq, het_gq_two_sided_01, decimal=(14, 14))
         assert gq[-1] == 'two-sided'
         # TODO other options ???
@@ -238,13 +240,13 @@ class TestDiagnosticG(object):
         bptest = dict(statistic=0.709924388395087, pvalue=0.701199952134347,
                       parameters=(2,), distr='f')
 
-        bp = smsdia.het_breuschpagan(res.resid, res.model.exog)
+        bp = diagnostic.het_breuschpagan(res.resid, res.model.exog)
         compare_t_est(bp, bptest, decimal=(12, 12))
 
     def test_het_white(self):
         res = self.res
         # TODO: regressiontest, compare with Greene or Gretl or Stata
-        hw = smsdia.het_white(res.resid, res.model.exog)
+        hw = diagnostic.het_white(res.resid, res.model.exog)
         hw_values = (33.503722896538441, 2.9887960597830259e-06,
                      7.7945101228430946, 1.0354575277704231e-06)
         assert_almost_equal(hw, hw_values)
@@ -264,8 +266,8 @@ class TestDiagnosticG(object):
                            pvalue=0.732638635007718, parameters=(12,),
                            distr='chi2')
 
-        at4 = smsdia.het_arch(self.res.resid, maxlag=4)
-        at12 = smsdia.het_arch(self.res.resid, maxlag=12)
+        at4 = diagnostic.het_arch(self.res.resid, maxlag=4)
+        at12 = diagnostic.het_arch(self.res.resid, maxlag=12)
         compare_t_est(at4[:2], archtest_4, decimal=(12, 13))
         compare_t_est(at12[:2], archtest_12, decimal=(12, 13))
 
@@ -274,10 +276,10 @@ class TestDiagnosticG(object):
         # unfortunately optimal lag=1 for this data
         resid = self.res.resid
 
-        res1 = smsdia.het_arch(resid, maxlag=1, autolag=None, store=True)
+        res1 = diagnostic.het_arch(resid, maxlag=1, autolag=None, store=True)
         rs1 = res1[-1]
 
-        res2 = smsdia.het_arch(resid, maxlag=5, autolag='aic', store=True)
+        res2 = diagnostic.het_arch(resid, maxlag=5, autolag='aic', store=True)
         rs2 = res2[-1]
 
         assert_almost_equal(rs2.resols.params,
@@ -288,7 +290,7 @@ class TestDiagnosticG(object):
                             decimal=13)
 
         # test that smallest lag, maxlag=1 works
-        res3 = smsdia.het_arch(resid, maxlag=1, autolag='aic')
+        res3 = diagnostic.het_arch(resid, maxlag=1, autolag='aic')
         assert_almost_equal(res3[:4],
                             res1[:4],
                             decimal=13)
@@ -297,25 +299,25 @@ class TestDiagnosticG(object):
     def test_acorr_breusch_godfrey(self):
         res = self.res
 
-        #bgf = bgtest(fm, order = 4, type="F")
+        #bgf = bgtest(fm, order=4, type="F")
         breuschgodfrey_f = dict(statistic=1.179280833676792,
-                               pvalue=0.321197487261203,
+                                pvalue=0.321197487261203,
                                 parameters=(4, 195,), distr='f')
 
         # > bgc = bgtest(fm, order = 4, type="Chisq")
         # > mkhtest(bgc, "breuschpagan_c", "chi2")
         breuschgodfrey_c = dict(statistic=4.771042651230007,
-                               pvalue=0.3116067133066697,
-                               parameters=(4,), distr='chi2')
+                                pvalue=0.3116067133066697,
+                                parameters=(4,), distr='chi2')
 
-        bg = smsdia.acorr_breusch_godfrey(res, nlags=4)
+        bg = diagnostic.acorr_breusch_godfrey(res, nlags=4)
         bg_r = [breuschgodfrey_c['statistic'], breuschgodfrey_c['pvalue'],
                 breuschgodfrey_f['statistic'], breuschgodfrey_f['pvalue']]
         assert_almost_equal(bg, bg_r, decimal=13)
 
         # check that lag choice works
-        bg2 = smsdia.acorr_breusch_godfrey(res, nlags=None)
-        bg3 = smsdia.acorr_breusch_godfrey(res, nlags=14)
+        bg2 = diagnostic.acorr_breusch_godfrey(res, nlags=None)
+        bg3 = diagnostic.acorr_breusch_godfrey(res, nlags=14)
         assert_almost_equal(bg2, bg3, decimal=13)
 
     @pytest.mark.skip(reason="acorr_ljungbox not ported from upstream")
@@ -349,8 +351,8 @@ class TestDiagnosticG(object):
                               pvalue=0.2747471266820692,
                               parameters=(4,), distr='chi2')
 
-        lb, lbpval, bp, bppval = smsdia.acorr_ljungbox(res.resid, 4,
-                                                       boxpierce=True)
+        lb, lbpval, bp, bppval = diagnostic.acorr_ljungbox(res.resid, 4,
+                                                           boxpierce=True)
         compare_t_est([lb[-1], lbpval[-1]], ljung_box_4, decimal=(13, 13))
         compare_t_est([bp[-1], bppval[-1]], ljung_box_bp_4, decimal=(13, 13))
 
@@ -370,8 +372,8 @@ class TestDiagnosticG(object):
         ljung_box_bp_none = dict(statistic=45.12238537034000,
                                  pvalue=0.26638168491464,
                                  distr='chi2')
-        lb, lbpval, bp, bppval = smsdia.acorr_ljungbox(res.resid,
-                                                       boxpierce=True)
+        lb, lbpval, bp, bppval = diagnostic.acorr_ljungbox(res.resid,
+                                                           boxpierce=True)
         compare_t_est([lb[-1], lbpval[-1]],
                       ljung_box_none,
                       decimal=(13, 13))
@@ -396,8 +398,8 @@ class TestDiagnosticG(object):
                                   pvalue=0.87940785887006,
                                   parameters=(0,), distr='chi2')
 
-        lb, lbpval, bp, bppval = smsdia.acorr_ljungbox(res.resid[:30],
-                                                       boxpierce=True)
+        lb, lbpval, bp, bppval = diagnostic.acorr_ljungbox(res.resid[:30],
+                                                           boxpierce=True)
         compare_t_est([lb[-1], lbpval[-1]],
                       ljung_box_small,
                       decimal=(13, 13))
@@ -413,13 +415,13 @@ class TestDiagnosticG(object):
                               pvalue=0.6215491310408242,
                               parameters=(198), distr='t')
 
-        # > hc2 = harvtest(fm, order.by=ggdp , data = list())
+        # > hc2 = harvtest(fm, order.by=ggdp, data = list())
         # > mkhtest_f(hc2, 'harvey_collier_2', 't')
         harvey_collier_2 = dict(statistic=1.42104628340473,
                                 pvalue=0.1568762892441689,
                                 parameters=(198), distr='t')
 
-        hc = smsdia.linear_harvey_collier(self.res)
+        hc = diagnostic.linear_harvey_collier(self.res)
         compare_t_est(hc, harvey_collier, decimal=(12, 12))
 
     @pytest.mark.skip(reason="linear_rainbow not ported from upstream")
@@ -430,8 +432,8 @@ class TestDiagnosticG(object):
         raintest = dict(statistic=0.6809600116739604, pvalue=0.971832843583418,
                         parameters=(101, 98), distr='f')
 
-        #> rt = raintest(fm, center=0.4)
-        #> mkhtest_f(rt, 'raintest_center_04', 'f')
+        # > rt = raintest(fm, center=0.4)
+        # > mkhtest_f(rt, 'raintest_center_04', 'f')
         raintest_center_04 = dict(statistic=0.682635074191527,
                                   pvalue=0.971040230422121,
                                   parameters=(101, 98), distr='f')
@@ -451,9 +453,9 @@ class TestDiagnosticG(object):
                                   pvalue=0.002896131042494884,
                                   parameters=(101, 98), distr='f')
 
-        rb = smsdia.linear_rainbow(self.res)
+        rb = diagnostic.linear_rainbow(self.res)
         compare_t_est(rb, raintest, decimal=(13, 14))
-        rb = smsdia.linear_rainbow(self.res, frac=0.4)
+        rb = diagnostic.linear_rainbow(self.res, frac=0.4)
         compare_t_est(rb, raintest_fraction_04, decimal=(13, 14))
 
     def test_compare_lr(self):
@@ -497,10 +499,10 @@ class TestDiagnosticG(object):
                  ('M2 + fitted(M1)', 1.305687653016899, 0.4808385176653064,
                   2.715438978051544, 0.007203854534057954, '**')]
 
-        jt1 = smsdia.compare_j(res2, res)
+        jt1 = diagnostic.compare_j(res2, res)
         assert_almost_equal(jt1, jtest[0][3:5], decimal=13)
 
-        jt2 = smsdia.compare_j(res, res2)
+        jt2 = diagnostic.compare_j(res, res2)
         assert_almost_equal(jt2, jtest[1][3:5], decimal=14)
 
         # Estimate        Std. Error  z value   Pr(>|z|)
@@ -509,10 +511,10 @@ class TestDiagnosticG(object):
                    ('fitted(M2) ~ M1', -2.248817107408537, 0.392656854330139,
                     -5.727181590258883, 1.021128495098556e-08, '***')]
 
-        ct1 = smsdia.compare_cox(res, res2)
+        ct1 = diagnostic.compare_cox(res, res2)
         assert_almost_equal(ct1, coxtest[0][3:5], decimal=13)
 
-        ct2 = smsdia.compare_cox(res2, res)
+        ct2 = diagnostic.compare_cox(res2, res)
         assert_almost_equal(ct2, coxtest[1][3:5], decimal=12)
         # TODO: should be approx
 
@@ -524,7 +526,7 @@ class TestDiagnosticG(object):
 
         # Estimate          Std. Error  t value
         petest = [('M1 + log(fit(M1))-fit(M2)', -229.281878354594596,
-                    44.5087822087058598, -5.15139, 6.201281252449979e-07),
+                   44.5087822087058598, -5.15139, 6.201281252449979e-07),
                   ('M2 + fit(M1)-exp(fit(M2))', 0.000634664704814,
                    0.0000462387010349, 13.72583, 1.319536115230356e-30)]
 
@@ -537,7 +539,7 @@ class TestDiagnosticG(object):
                          parameters=(), distr='BB')  # Brownian Bridge
 
         k_vars = 3
-        cs_ols = smsdia.breaks_cusumolsresid(self.res.resid, ddof=k_vars) #
+        cs_ols = diagnostic.breaks_cusumolsresid(self.res.resid, ddof=k_vars)
         compare_t_est(cs_ols, cusum_ols, decimal=(12, 12))
 
     @pytest.mark.skip(reason="breaks_hansen not ported from upstream")
@@ -548,7 +550,7 @@ class TestDiagnosticG(object):
                                     pvalue=0.1136087530212015,
                                     parameters=(), distr='BB')
 
-        bh = smsdia.breaks_hansen(self.res)
+        bh = diagnostic.breaks_hansen(self.res)
         assert_almost_equal(bh[0], breaks_nyblom_hansen['statistic'],
                             decimal=13)
         # TODO: breaks_hansen doesn't return pvalues
@@ -582,18 +584,16 @@ class TestDiagnosticG(object):
             10.521, 10.126, 9.428, 9.734, 8.954, 9.949, 10.595, 8.016, 6.636,
             6.975])
 
-        rr = smsdia.recursive_olsresiduals(self.res, skip=3, alpha=0.95)
+        rr = diagnostic.recursive_olsresiduals(self.res, skip=3, alpha=0.95)
         np.testing.assert_equal(np.round(rr[5][1:], 3),
-                     reccumres_standardize)  # extra zero in front
-        #np.testing.assert_equal(np.round(rr[3][4:], 3),
-        #                        np.diff(reccumres_standardize))
+                                reccumres_standardize)  # extra zero in front
         assert_almost_equal(rr[3][4:], np.diff(reccumres_standardize), 3)
         assert_almost_equal(rr[4][3:].std(ddof=1), 10.7242, decimal=4)
 
         # regression number, visually checked with graph from gretl
-        ub0 = np.array([ 13.37318571, 13.50758959, 13.64199346, 13.77639734,
+        ub0 = np.array([13.37318571, 13.50758959, 13.64199346, 13.77639734,
                         13.91080121])
-        ub1 = np.array([ 39.44753774, 39.58194162, 39.7163455 , 39.85074937,
+        ub1 = np.array([39.44753774, 39.58194162, 39.7163455, 39.85074937,
                         39.98515325])
         lb, ub = rr[6]
         assert_almost_equal(ub[:5], ub0, decimal=7)
@@ -614,41 +614,42 @@ class TestDiagnosticG(object):
         assert_almost_equal(rr[0][3:10], endog[3:10] - ypred, decimal=12)
         assert_almost_equal(rr[1][2:9], params, decimal=12)
 
-    def test_normality(self):
+    def test_lilliefors(self):
         res = self.res
-
-        '''
-        # lilliefors not ported from upstream
+        # TODO: Separate this lilliefors stuff into its own test
         # TODO: this should be a separate test
-        # > library(nortest) #Lilliefors (Kolmogorov-Smirnov) normality test
+        # > library(nortest)  # Lilliefors (Kolmogorov-Smirnov) normality test
         # > lt = lillie.test(residuals(fm))
         # > mkhtest(lt, "lilliefors", "-")
         lilliefors1 = dict(statistic=0.0723390908786589,
-                          pvalue=0.01204113540102896, parameters=(), distr='-')
+                           pvalue=0.01204113540102896,
+                           parameters=(), distr='-')
 
         # > lt = lillie.test(residuals(fm)**2)
         # > mkhtest(lt, "lilliefors", "-")
         lilliefors2 = dict(statistic=0.301311621898024,
-                          pvalue=1.004305736618051e-51,
-                          parameters=(), distr='-')
+                           pvalue=1.004305736618051e-51,
+                           parameters=(), distr='-')
 
         # > lt = lillie.test(residuals(fm)[1:20])
         # > mkhtest(lt, "lilliefors", "-")
         lilliefors3 = dict(statistic=0.1333956004203103,
-                          pvalue=0.20, parameters=(), distr='-')
+                           pvalue=0.20, parameters=(), distr='-')
 
-        lf1 = smsdia.lilliefors(res.resid)
-        lf2 = smsdia.lilliefors(res.resid**2)
-        lf3 = smsdia.lilliefors(res.resid[:20])
+        lf1 = diagnostic.lilliefors(res.resid)
+        lf2 = diagnostic.lilliefors(res.resid**2)
+        lf3 = diagnostic.lilliefors(res.resid[:20])
 
         compare_t_est(lf1, lilliefors1, decimal=(14, 14))
-        compare_t_est(lf2, lilliefors2, decimal=(14, 14)) #pvalue very small
+        compare_t_est(lf2, lilliefors2, decimal=(14, 14))  # pvalue very small
         np.testing.assert_approx_equal(lf2[1],
                                        lilliefors2['pvalue'],
                                        significant=10)
         compare_t_est(lf3, lilliefors3, decimal=(14, 1))
         # R uses different approximation for pvalue in last case
-        '''
+
+    def test_normality(self):
+        res = self.res
 
         # > ad = ad.test(residuals(fm))
         # > mkhtest(ad, "ad3", "-")
@@ -665,11 +666,11 @@ class TestDiagnosticG(object):
         adr3 = dict(statistic=0.3017073732210775, pvalue=0.5443499281265933,
                     parameters=(), distr='-')
 
-        ad1 = smsdia.normal_ad(res.resid)
+        ad1 = diagnostic.normal_ad(res.resid)
         compare_t_est(ad1, adr1, decimal=(11, 13))
-        ad2 = smsdia.normal_ad(res.resid**2)
+        ad2 = diagnostic.normal_ad(res.resid**2)
         assert np.isinf(ad2[0])
-        ad3 = smsdia.normal_ad(res.resid[:20])
+        ad3 = diagnostic.normal_ad(res.resid[:20])
         compare_t_est(ad3, adr3, decimal=(11, 12))
 
     @pytest.mark.skip(reason="outliers_influence not ported from upstream")
@@ -679,6 +680,7 @@ class TestDiagnosticG(object):
         # this test is slow
         infl = oi.OLSInfluence(res)
 
+        # TODO: is this file ported?
         path = os.path.join(cur_dir, "results/influence_lsdiag_R.json")
         with open(path, 'r') as fp:
             lsdiag = json.load(fp)
@@ -693,7 +695,6 @@ class TestDiagnosticG(object):
 
         c0, c1 = infl.cooks_distance  # TODO: what's c1
 
-
         assert_almost_equal(c0, lsdiag['cooks'], decimal=14)
         assert_almost_equal(infl.hat_matrix_diag, lsdiag['hat'], decimal=14)
         assert_almost_equal(infl.resid_studentized_internal,
@@ -701,7 +702,7 @@ class TestDiagnosticG(object):
                             decimal=14)
 
         # slow:
-        #infl._get_all_obs()  #slow, nobs estimation loop, called implicitly
+        #infl._get_all_obs()  # slow, nobs estimation loop, called implicitly
         dffits, dffth = infl.dffits
         assert_almost_equal(dffits,
                             lsdiag['dfits'],
@@ -710,9 +711,10 @@ class TestDiagnosticG(object):
                             lsdiag['stud.res'],
                             decimal=14)
 
+        # TODO: are these files ported?
         fn = os.path.join(cur_dir, "results", "influence_measures_R.csv")
         infl_r = pd.read_csv(fn, index_col=0)
-        conv = lambda s: 1 if s=='TRUE' else 0
+        conv = lambda s: 1 if s == 'TRUE' else 0
         fn = os.path.join(cur_dir, "results", "influence_measures_bool_R.csv")
         # not used yet:
         #converters = dict(zip(lrange(7), [conv] * 7))
@@ -720,7 +722,7 @@ class TestDiagnosticG(object):
         infl_r2 = np.asarray(infl_r)
         assert_almost_equal(infl.dfbetas, infl_r2[:, :3], decimal=13)
         assert_almost_equal(infl.cov_ratio, infl_r2[:, 4], decimal=14)
-        #duplicates
+        # duplicates
         assert_almost_equal(dffits, infl_r2[:, 3], decimal=14)
         assert_almost_equal(c0, infl_r2[:, 5], decimal=14)
         assert_almost_equal(infl.hat_matrix_diag, infl_r2[:, 6], decimal=14)
@@ -731,15 +733,16 @@ class TestDiagnosticG(object):
         """
         R has
         >>> np.nonzero(np.asarray(infl_bool_r["dffit"]))[0]
-        array([  6, 26, 63, 76, 90, 199])
+        array([6, 26, 63, 76, 90, 199])
         >>> np.nonzero(np.asarray(infl_bool_r["cov.r"]))[0]
-        array([  4, 26, 59, 61, 63, 72, 76, 84, 91, 92, 94, 95, 108,
+        array([4, 26, 59, 61, 63, 72, 76, 84, 91, 92, 94, 95, 108,
                197, 198])
         >>> np.nonzero(np.asarray(infl_bool_r["hat"]))[0]
-        array([ 62, 76, 84, 90, 91, 92, 95, 108, 197, 199])
+        array([62, 76, 84, 90, 91, 92, 95, 108, 197, 199])
         """
 
 
+@pytest.mark.not_vetted
 class TestDiagnosticGPandas(TestDiagnosticG):
     @classmethod
     def setup_class(cls):
@@ -784,6 +787,7 @@ def grangertest():
 # outliers_influence not ported from upstream
 @pytest.mark.skip(reason="outliers_influence not ported from upstream")
 @pytest.mark.smoke
+@pytest.mark.not_vetted
 def test_outlier_influence_funcs():
     x = add_constant(np.random.randn(10, 2))
     y = x.sum(1) + np.random.randn(10)
@@ -801,6 +805,7 @@ def test_outlier_influence_funcs():
 
 
 @pytest.mark.skip(reason="outliers_influence not ported from upstream")
+@pytest.mark.not_vetted
 def test_influence_wrapped():
     d = macrodata.load_pandas().data
     # growth rates
@@ -820,18 +825,18 @@ def test_influence_wrapped():
 
     # basic
     # already tested
-    #assert_almost_equal(lsdiag['cov.scaled'],
-    #                    res.cov_params().values.ravel(), decimal=14)
-    #assert_almost_equal(lsdiag['cov.unscaled'],
-    #                    res.normalized_cov_params.values.ravel(), decimal=14)
+    # cov.scaled and cov.unscaled have already been tested
+    # TODO: check that above is correct;
+    #       comment is (roughly) copied from upstream
 
     infl = oi.OLSInfluence(res)
 
     # smoke test just to make sure it works, results separately tested
     df = infl.summary_frame()
-    assert isinstance(df, DataFrame)
+    assert isinstance(df, pd.DataFrame)
 
     # this test is slow
+    # TODO: is this file ported?
     path = os.path.join(cur_dir, "results", "influence_lsdiag_R.json")
     with open(path, 'r') as fp:
         lsdiag = json.load(fp)
@@ -852,9 +857,9 @@ def test_influence_wrapped():
 
     fn = os.path.join(cur_dir, "results", "influence_measures_R.csv")
     infl_r = pd.read_csv(fn, index_col=0)
-    conv = lambda s: 1 if s=='TRUE' else 0
+    conv = lambda s: 1 if s == 'TRUE' else 0
     fn = os.path.join(cur_dir, "results", "influence_measures_bool_R.csv")
-    #not used yet:
+    # not used yet:
     #infl_bool_r  = pd.read_csv(fn, index_col=0,
     #                           converters=dict(zip(lrange(7), [conv]*7)))
     infl_r2 = np.asarray(infl_r)
@@ -864,8 +869,9 @@ def test_influence_wrapped():
 
 
 @pytest.mark.skip(reason="outliers_influence not ported from upstream")
+@pytest.mark.not_vetted
 def test_influence_dtype():
-    # see GH#2148  bug when endog is integer
+    # GH#2148  bug when endog is integer
     y = np.ones(20)
     np.random.seed(123)
     x = np.random.randn(20, 3)
@@ -876,8 +882,8 @@ def test_influence_dtype():
     cr2 = res2.get_influence().cov_ratio
     np.testing.assert_allclose(cr1, cr2, rtol=1e-14)
     # regression test for values
-    cr3 = np.array(
-      [ 1.22239215, 1.31551021, 1.52671069, 1.05003921, 0.89099323,
+    cr3 = np.array([
+        1.22239215, 1.31551021, 1.52671069, 1.05003921, 0.89099323,
         1.57405066, 1.03230092, 0.95844196, 1.15531836, 1.21963623,
         0.87699564, 1.16707748, 1.10481391, 0.98839447, 1.08999334,
         1.35680102, 1.46227715, 1.45966708, 1.13659521, 1.22799038])
@@ -885,6 +891,7 @@ def test_influence_dtype():
 
 
 @pytest.mark.skip(reason="outliers_influence not ported from upstream")
+@pytest.mark.not_vetted
 def test_outlier_test():
     # results from R with NA -> 1. Just testing interface here because
     # outlier_test is just a wrapper
@@ -921,18 +928,18 @@ def test_outlier_test():
              10., 13., 24., 20., 7., 3., 16., 6., 11., 8., 41.,
              10.]
     ndarray_mod = OLS(endog, exog).fit()
-    rstudent =  [3.1345185839, -2.3970223990, 2.0438046359, -1.9309187757,
-                 1.8870465798, -1.7604905300, -1.7040324156, 1.6024285876,
-                 -1.4332485037, -1.1044851583, 1.0688582315, 1.0185271840,
-                 -0.9024219332, -0.9023876471, -0.8830953936, 0.8265782334,
-                 0.8089220547, 0.7682770197, 0.7319491074, -0.6665962829,
-                 0.5227352794, -0.5135016547, 0.5083881518, 0.4999224372,
-                 -0.4980818221, -0.4759717075, -0.4293565820, -0.4114056499,
-                 -0.3779540862, 0.3556874030, 0.3409200462, 0.3062248646,
-                 0.3038999429, -0.3030815773, -0.1873387893, 0.1738050251,
-                 0.1424246593, -0.1292266025, 0.1272066463, -0.0798902878,
-                 0.0788467222, 0.0722556991, 0.0505098280, 0.0233215136,
-                 0.0007112055]
+    rstudent = [3.1345185839, -2.3970223990, 2.0438046359, -1.9309187757,
+                1.8870465798, -1.7604905300, -1.7040324156, 1.6024285876,
+                -1.4332485037, -1.1044851583, 1.0688582315, 1.0185271840,
+                -0.9024219332, -0.9023876471, -0.8830953936, 0.8265782334,
+                0.8089220547, 0.7682770197, 0.7319491074, -0.6665962829,
+                0.5227352794, -0.5135016547, 0.5083881518, 0.4999224372,
+                -0.4980818221, -0.4759717075, -0.4293565820, -0.4114056499,
+                -0.3779540862, 0.3556874030, 0.3409200462, 0.3062248646,
+                0.3038999429, -0.3030815773, -0.1873387893, 0.1738050251,
+                0.1424246593, -0.1292266025, 0.1272066463, -0.0798902878,
+                0.0788467222, 0.0722556991, 0.0505098280, 0.0233215136,
+                0.0007112055]
     unadj_p = [0.003177202, 0.021170298, 0.047432955, 0.060427645, 0.066248120,
                0.085783008, 0.095943909, 0.116738318, 0.159368890, 0.275822623,
                0.291386358, 0.314400295, 0.372104049, 0.372122040, 0.382333561,

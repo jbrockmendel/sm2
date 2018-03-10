@@ -33,21 +33,9 @@ from __future__ import print_function
 import numpy as np
 from scipy import stats
 
-# from ._lilliefors import (kstest_fit, lilliefors, lillifors, kstest_normal,
-#                           kstest_exponential)  # lillifors is deprecated
+from ._lilliefors import (kstest_fit, lilliefors, lillifors, kstest_normal,
+                          kstest_exponential)  # lillifors is deprecated
 from ._adnorm import normal_ad  # noqa: F401
-
-
-import sys
-module = sys.modules['sm2.stats.diagnostic']
-for name in ['kstest_fit', 'lilliefors', 'lillifors',
-             'kstest_normal', 'kstest_exponential']:
-    def func(*args, **kwargs):
-        """placeholder for function not ported from upstream"""
-        raise NotImplementedError("Not ported from upstream")
-
-    func.__name__ = name
-    setattr(module, name, func)
 
 
 # TODO: The comment below was from upstream.  I _dislike_ this pattern
