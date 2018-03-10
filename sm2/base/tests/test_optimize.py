@@ -1,3 +1,5 @@
+import pytest
+
 from sm2.base.optimizer import (_fit_newton, _fit_nm,
                                 _fit_bfgs, _fit_cg,
                                 _fit_ncg, _fit_powell,
@@ -31,7 +33,6 @@ def dummy_hess(x):
     return [[2.]]
 
 
-'''
 @pytest.mark.smoke
 @pytest.mark.not_vetted
 def test_full_output_false():
@@ -45,11 +46,11 @@ def test_full_output_false():
         func = fit_funcs[method]
         if method == "newton":
             xopt, retvals = func(dummy_func, dummy_score, [1], (), {},
-                    hess=dummy_hess, full_output=False, disp=0)
+                                 hess=dummy_hess, full_output=False, disp=0)
 
         else:
             xopt, retvals = func(dummy_func, dummy_score, [1], (), {},
-                full_output=False, disp=0)
+                                 full_output=False, disp=0)
         assert retvals is None
         if method == "powell":
             # NOTE: I think I reported this? Might be version/optimize API
@@ -57,6 +58,7 @@ def test_full_output_false():
             assert xopt.shape == () and xopt.size == 1
         else:
             assert len(xopt) == 1
+
 
 @pytest.mark.not_vetted
 def test_full_output():
@@ -79,4 +81,3 @@ def test_full_output():
             assert xopt.shape == () and xopt.size == 1
         else:
             assert len(xopt) == 1
-'''

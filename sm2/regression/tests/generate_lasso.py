@@ -27,3 +27,4 @@ data = np.around(100 * data)
 here = os.path.dirname(__file__)
 path = os.path.join(here, "results", "lasso_data.csv")
 np.savetxt(path, data, fmt="%.0f", delimiter=",")
+# used in test_regression

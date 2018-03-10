@@ -2356,11 +2356,6 @@ def test_arima_fit_multiple_calls():
         res = mod.fit(disp=0, start_params=[np.mean(y), .1, .1, .1])
     assert mod.exog_names == ['const', 'ar.L1.y', 'ma.L1.y', 'ma.L2.y']
 
-    '''
-    # Disabling smoke test 2018-03-06
-    # ensure summary() works
-    res.summary()
-    '''
 
     # test multiple calls when there is only a constant term
     mod = ARIMA(y, (0, 0, 0))
@@ -2373,11 +2368,18 @@ def test_arima_fit_multiple_calls():
         res = mod.fit(disp=0, start_params=[np.mean(y)])
     assert mod.exog_names == ['const']
 
-    '''
-    # Disabling smoke test 2018-03-06
-    # ensure summary() works
+
+@pytest.mark.smoke
+@pytest.mark.parametrize('order', [(1, 0, 2), (0, 0, 0)])
+def test_arima_summary(order):
+    # same setup as test_arima_fit_multiple_calls
+    y = [-1214.360173, -1848.209905, -2100.918158, -3647.483678, -4711.186773]
+    model = ARIMA(y, order)
+    start_params = [np.mean(y)] + [.1] * sum(order)
+    res = model.fit(disp=False, start_params=start_params)
+
+    # ensure summary() works (here defined as "doesnt raise")
     res.summary()
-    '''
 
 
 @pytest.mark.not_vetted

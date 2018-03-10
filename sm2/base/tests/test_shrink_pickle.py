@@ -207,7 +207,7 @@ class TestRemoveDataPickleLogit(RemoveDataPickle):
 class TestRemoveDataPickleRLM(RemoveDataPickle):
     def setup(self):
         # fit for each test, because results will be changed by test
-        raise pytest.skip("RLM not implemented")
+        raise pytest.skip("RLM not ported")
         x = self.exog
         np.random.seed(987689)
         y = x.sum(1) + np.random.randn(x.shape[0])
@@ -218,7 +218,7 @@ class TestRemoveDataPickleRLM(RemoveDataPickle):
 class TestRemoveDataPickleGLM(RemoveDataPickle):
     def setup(self):
         # fit for each test, because results will be changed by test
-        raise pytest.skip("GLM not implemented")
+        raise pytest.skip("GLM not ported")
         x = self.exog
         np.random.seed(987689)
         y = x.sum(1) + np.random.randn(x.shape[0])

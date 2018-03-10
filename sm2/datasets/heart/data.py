@@ -6,14 +6,14 @@ COPYRIGHT = """???"""
 
 TITLE = """Transplant Survival Data"""
 
-SOURCE = """Miller, R. (1976). Least squares regression with censored data. 
+SOURCE = """Miller, R. (1976). Least squares regression with censored data.
 Biometrica, 63 (3). 449-464.
 """
 
 DESCRSHORT = """Survival times after receiving a heart transplant"""
 
-DESCRLONG = """This data contains the survival time after receiving a 
-heart transplant, the age of the patient and whether or not the survival 
+DESCRLONG = """This data contains the survival time after receiving a
+heart transplant, the age of the patient and whether or not the survival
 time was censored.
 """
 
@@ -46,8 +46,8 @@ def load():
     data = _get_data()
     # NOTE: None for exog_idx is the complement of endog_idx
     dset = du.process_recarray(data, endog_idx=0, exog_idx=None, dtype=float)
-    dset.censors = dset.exog[:,0]
-    dset.exog = dset.exog[:,1]
+    dset.censors = dset.exog[:, 0]
+    dset.exog = dset.exog[:, 1]
     return dset
 
 

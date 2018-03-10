@@ -17,9 +17,9 @@ def _check_margeff_args(at, method):
     """
     Checks valid options for margeff
     """
-    if at not in ['overall','mean','median','zero','all']:
+    if at not in ['overall', 'mean', 'median', 'zero', 'all']:
         raise ValueError("%s not a valid option for `at`." % at)
-    if method not in ['dydx','eyex','dyex','eydx']:
+    if method not in ['dydx', 'eyex', 'dyex', 'eydx']:
         raise ValueError("method is not understood.  Got %s" % method)
 
 
@@ -27,7 +27,7 @@ def _check_discrete_args(at, method):
     """
     Checks the arguments for margeff if the exogenous variables are discrete.
     """
-    if method in ['dyex','eyex']:
+    if method in ['dyex', 'eyex']:
         raise ValueError("%s not allowed for discrete variables" % method)
     if at in ['median', 'zero']:
         raise ValueError("%s not allowed for discrete variables" % at)
@@ -57,8 +57,8 @@ def _isdummy(X):
 
     Examples
     --------
-    >>> X = np.random.randint(0, 2, size=(15,5)).astype(float)
-    >>> X[:,1:3] = np.random.randn(15,2)
+    >>> X = np.random.randint(0, 2, size=(15, 5)).astype(float)
+    >>> X[:, 1:3] = np.random.randn(15, 2)
     >>> ind = _isdummy(X)
     >>> ind
     array([0, 3, 4])
@@ -96,14 +96,14 @@ def _iscount(X):
 
     Examples
     --------
-    >>> X = np.random.randint(0, 10, size=(15,5)).astype(float)
-    >>> X[:,1:3] = np.random.randn(15,2)
+    >>> X = np.random.randint(0, 10, size=(15, 5)).astype(float)
+    >>> X[:, 1:3] = np.random.randn(15, 2)
     >>> ind = _iscount(X)
     >>> ind
     array([0, 3, 4])
     """
     X = np.asarray(X)
-    remainder = np.logical_and(np.logical_and(np.all(X % 1. == 0, axis = 0),
+    remainder = np.logical_and(np.logical_and(np.all(X % 1. == 0, axis=0),
                                X.var(0) != 0), np.all(X >= 0, axis=0))
     dummy = _isdummy(X)
     remainder = np.where(remainder)[0].tolist()
@@ -146,7 +146,7 @@ def _get_margeff_exog(exog, at, atexog, ind):
     elif at == 'median':
         exog = np.atleast_2d(np.median(exog, axis=0))
     elif at == 'zero':
-        exog = np.zeros((1,exog.shape[1]))
+        exog = np.zeros((1, exog.shape[1]))
         exog[0, ~ind] = 1
     return exog
 
@@ -181,7 +181,7 @@ def _get_dummy_effects(effects, exog, dummy_ind, method, model, params):
         exog0 = exog.copy() # only copy once, can we avoid a copy?
         exog0[:, i] = 0
         effect0 = model.predict(params, exog0)
-        #fittedvalues0 = np.dot(exog0,params)
+        #fittedvalues0 = np.dot(exog0, params)
         exog0[:, i] = 1
         effect1 = model.predict(params, exog0)
         if 'ey' in method:
@@ -323,11 +323,11 @@ def margeff_cov_params(model, params, exog, cov_params, at, derivative,
         params = params.ravel('F')  # for Multinomial
         try:
             jacobian_mat = approx_fprime_cs(params, derivative,
-                                            args=(exog,method))
+                                            args=(exog, method))
         except TypeError:  # stats.norm.cdf doesn't take complex values
             from sm2.tools.numdiff import approx_fprime
             jacobian_mat = approx_fprime(params, derivative,
-                                         args=(exog,method))
+                                         args=(exog, method))
         if at == 'overall':
             jacobian_mat = np.mean(jacobian_mat, axis=1)
         else:
@@ -590,7 +590,7 @@ class DiscreteMargins(object):
         if J > 1:
             for eq in range(J):
                 restup = (results, margeff[:, eq], margeff_se[:, eq],
-                          tvalues[:,eq], pvalues[:, eq], conf_int[:, :, eq])
+                          tvalues[:, eq], pvalues[:, eq], conf_int[:, :, eq])
                 tble = summary_params(restup, yname=yname_list[eq],
                                       xname=exog_names, alpha=alpha,
                                       use_t=False, skip_header=True)
