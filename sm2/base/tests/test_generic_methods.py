@@ -62,7 +62,7 @@ class CheckGenericMixin(object):
         tt = res.t_test(mat[0])
         string_confint = lambda alpha: ("[%4.3F      %4.3F]" %
                                         (alpha / 2, 1 - alpha / 2))
-        
+
         summ = tt.summary()   # smoke test for GH#1323
         assert_allclose(tt.pvalue, res.pvalues[0], rtol=5e-10)
         assert string_confint(0.05) in str(summ)
@@ -70,7 +70,7 @@ class CheckGenericMixin(object):
         summ = tt.summary(alpha=0.1)
         ss = "[0.05       0.95]"   # different formatting
         assert ss in str(summ)
-        
+
         summf = tt.summary_frame(alpha=0.1)
         pvstring_use_t = 'P>|z|' if res.use_t is False else 'P>|t|'
         tstring_use_t = 'z' if res.use_t is False else 't'

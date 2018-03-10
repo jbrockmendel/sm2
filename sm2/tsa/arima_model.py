@@ -17,7 +17,8 @@ import pandas as pd
 from scipy import optimize, stats, signal
 
 
-from sm2.tools.decorators import cache_readonly, resettable_cache
+from sm2.tools.decorators import (cache_readonly, resettable_cache,
+                                  deprecated_alias)
 from sm2.tools.numdiff import approx_hess_cs, approx_fprime_cs
 
 import sm2.base.wrapper as wrap
@@ -1391,6 +1392,9 @@ class ARMAResults(tsa_model.TimeSeriesModelResults):
 
     # TODO: use this for docstring when we fix nobs issue
 
+    # TODO: Make this actually return instead of raising?
+    _ic_df_model = deprecated_alias("_ic_df_model", "df_model + 1")
+
     def __init__(self, model, params, normalized_cov_params=None, scale=1.):
         super(ARMAResults, self).__init__(model, params, normalized_cov_params,
                                           scale)
@@ -1407,7 +1411,6 @@ class ARMAResults(tsa_model.TimeSeriesModelResults):
         k_ma = model.k_ma
         self.k_ma = k_ma
         df_model = k_exog + k_trend + k_ar + k_ma
-        self._ic_df_model = df_model + 1
         self.df_model = df_model
         self.df_resid = self.nobs - df_model
         self._cache = resettable_cache()
@@ -1476,17 +1479,17 @@ class ARMAResults(tsa_model.TimeSeriesModelResults):
 
     @cache_readonly
     def aic(self):
-        return -2 * self.llf + 2 * self._ic_df_model
+        return -2 * self.llf + 2 * (self.df_model + 1)
 
     @cache_readonly
     def bic(self):
         nobs = self.nobs
-        return -2 * self.llf + np.log(nobs) * self._ic_df_model
+        return -2 * self.llf + np.log(nobs) * (self.df_model + 1)
 
     @cache_readonly
     def hqic(self):
         nobs = self.nobs
-        return -2 * self.llf + 2 * np.log(np.log(nobs)) * self._ic_df_model
+        return -2 * self.llf + 2 * np.log(np.log(nobs)) * (self.df_model + 1)
 
     @cache_readonly
     def fittedvalues(self):

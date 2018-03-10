@@ -11,7 +11,6 @@ developers [1], which was in turn based on work done in pyzmq [2] and lxml [3].
 import os
 import shutil
 import sys
-import subprocess
 from distutils.version import LooseVersion
 from setuptools import setup, Command, find_packages
 import pkg_resources
@@ -288,6 +287,7 @@ extensions = [
               define_macros=macros)]
 
 # ------------------------------------------------------------------
+
 
 def get_data_files():
     # this adds *.csv and *.dta files in datasets folders
