@@ -115,8 +115,8 @@ def comp_matrix(coefs):
 # Miscellaneous stuff
 
 
-def parse_lutkepohl_data(path): # pragma: no cover
-    raise NotImplementedError("Not ported from upstream")
+def parse_lutkepohl_data(path):  # pragma: no cover
+    raise NotImplementedError("parse_lutkepohl_data not ported from upstream")
 
 
 def get_logdet(m):

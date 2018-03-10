@@ -1688,7 +1688,7 @@ class ARMAResults(tsa_model.TimeSeriesModelResults):
         return smry
 
     def summary2(self, title=None, alpha=.05, float_format="%.4f"):
-        raise NotImplementedError("Not ported from upstream")
+        raise NotImplementedError("summary2 not ported from upstream")
 
     def plot_predict(self, start=None, end=None, exog=None, dynamic=False,
                      alpha=.05, plot_insample=True, ax=None):

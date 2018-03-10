@@ -1037,7 +1037,7 @@ def coint(y0, y1, trend='c', method='aeg', maxlag=None, autolag='aic',
 
 
 def _safe_arma_fit(y, order, model_kw, trend, fit_kw, start_params=None):
-    raise NotImplementedError('Not ported from upstream')
+    raise NotImplementedError('_safe_arma_fit not ported from upstream')
 
 
 def arma_order_select_ic(y, max_ar=4, max_ma=2, ic='bic', trend='c',

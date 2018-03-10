@@ -50,10 +50,11 @@ classifiers = ['Development Status :: 4 - Beta',
                'License :: OSI Approved :: BSD License',
                'Topic :: Scientific/Engineering']
 
-# FIXME: Don't use these
-ISRELEASED = False
+# ------------------------------------------------------------------
+# Dependencies
 
-
+# These version cutoffs are largely arbitrary, chosen to be
+# almost-up-to-date as of 2018-03-10
 extras = {'docs': ['sphinx>=1.3.5',
                    'matplotlib',
                    'numpydoc>=0.6.0']}
@@ -75,6 +76,9 @@ setuptools_kwargs = {
     ]}
 
 # ------------------------------------------------------------------
+# Cython Preparation & Specification
+
+_pxifiles = []
 
 # TODO: Can we just put this with the next (only) use of CYTHON_INSTALLED?
 min_cython_ver = '0.24'
@@ -102,9 +106,6 @@ try:
     cython = True
 except ImportError:
     cython = False
-
-
-_pxifiles = []
 
 
 class build_ext(_build_ext):
@@ -229,19 +230,6 @@ class DummyBuildSrc(Command):
         pass
 
 
-cmdclass['clean'] = CleanCommand
-cmdclass['build'] = build
-cmdclass['build_ext'] = CheckingBuildExt
-if cython:
-    suffix = '.pyx'
-    cmdclass['cython'] = CythonCommand
-else:
-    suffix = '.c'
-    cmdclass['build_src'] = DummyBuildSrc
-
-# ------------------------------------------------------------------
-# Cython Preparation & Specification
-
 def _cythonize(extensions, *args, **kwargs):
     """
     Render tempita templates before calling cythonize
@@ -262,6 +250,17 @@ def _cythonize(extensions, *args, **kwargs):
         return cythonize(extensions, *args, **kwargs)
     else:
         return extensions
+
+
+cmdclass['clean'] = CleanCommand
+cmdclass['build'] = build
+cmdclass['build_ext'] = CheckingBuildExt
+if cython:
+    suffix = '.pyx'
+    cmdclass['cython'] = CythonCommand
+else:
+    suffix = '.c'
+    cmdclass['build_src'] = DummyBuildSrc
 
 # some linux distros require it
 # NOTE: we are not currently using this but add it to Extension, if needed.

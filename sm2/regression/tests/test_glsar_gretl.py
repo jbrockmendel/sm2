@@ -43,8 +43,8 @@ def compare_ftest(contrast_res, other, decimal=(5, 4)):
 
 @pytest.mark.not_vetted
 class TestGLSARGretl(object):
-
-    def test_all(self):
+    @classmethod
+    def setup_class(cls):
         d = macrodata.load().data
         #import datasetswsm.greene as g
         #d = g.load('5-1')
@@ -69,6 +69,11 @@ class TestGLSARGretl(object):
         mod_g2 = GLSAR(endogg, exogg, rho=-0.108136)   # -0.1335859) from R
         res_g2 = mod_g2.iterative_fit(maxiter=5)
 
+        cls.res_ols = res_ols
+        cls.res_g1 = res_g1
+        cls.res_g2 = res_g2
+
+    def test_all(self):
         rho = -0.108136
 
         # coefficient   std. error   t-ratio    p-value 95% CONFIDENCE INTERVAL
@@ -107,7 +112,7 @@ class TestGLSARGretl(object):
         # Chi-square(2): test-statistic, pvalue, df
         normality = [20.2792, 3.94837e-005, 2]
 
-        res = res_g1  # with rho from Gretl
+        res = self.res_g1  # with rho from Gretl
 
         # basic
         assert_almost_equal(res.params, partable[:, 0], 4)
@@ -144,7 +149,7 @@ class TestGLSARGretl(object):
         assert_almost_equal(sm_arch[1], arch_4[1], decimal=6)
 
         # tests
-        res = res_g2  # with estimated rho
+        res = self.res_g2  # with estimated rho
 
         # estimated lag coefficient
         assert_almost_equal(res.model.rho, rho, decimal=3)
@@ -177,15 +182,6 @@ class TestGLSARGretl(object):
         #                     result_gretl_g1['dw'][1],
         #                     decimal=7)  # TODO
     
-        '''
-        # 2018-03-05 outliers_influence not ported from upstream
-        # from statsmodels.stats import outliers_influence
-        c = outliers_influence.reset_ramsey(res, degree=2)
-        compare_ftest(c, reset_2, decimal=(2, 4))
-        c = outliers_influence.reset_ramsey(res, degree=3)
-        compare_ftest(c, reset_2_3, decimal=(2, 4))
-        '''
-
         # arch
         #sm_arch = diagnostic.acorr_lm(res.wresid**2, maxlag=4, autolag=None)
         sm_arch = diagnostic.het_arch(res.wresid, maxlag=4)
@@ -283,7 +279,7 @@ class TestGLSARGretl(object):
           with p-value = 3.94837e-005:
         """
 
-        #no idea what this is
+        # no idea what this is
         """
         Augmented regression for common factor test
         OLS, using observations 1959:3-2009:3 (T = 201)
@@ -305,8 +301,7 @@ class TestGLSARGretl(object):
           Test statistic: F(2, 195) = 0.426391, with p-value = 0.653468
         """
 
-
-        #with OLS, HAC errors
+        # with OLS, HAC errors
         # Model 5: OLS, using observations 1959:2-2009:3 (T = 202)
         # Dependent variable: ds_l_realinv
         # HAC standard errors, bandwidth 4 (Bartlett kernel)
@@ -360,7 +355,6 @@ class TestGLSARGretl(object):
         het_breusch_pagan = [1.302014, 0.521520, 2, "chi2"]  # TODO: not available
         het_breusch_pagan_konker = [0.709924, 0.701200, 2, "chi2"]
 
-
         reset_2_3 = [5.219019, 0.00619, 2, 197, "f"]
         reset_2 = [7.268492, 0.00762, 1, 198, "f"]
         reset_3 = [5.248951, 0.023, 1, 198, "f"]  # not available
@@ -370,7 +364,7 @@ class TestGLSARGretl(object):
         reciprocal_condition_number = 0.013826504
         vif = [1.001, 1.001]
 
-        res = res_ols  # for easier copying
+        res = self.res_ols  # for easier copying
 
         cov_hac = sw.cov_hac_simple(res, nlags=4, use_correction=False)
         bse_hac =  sw.se_cov(cov_hac)
@@ -404,15 +398,6 @@ class TestGLSARGretl(object):
         #assert_almost_equal(res.durbin_watson, result_gretl_g1['dw'][1],
         #                     decimal=7) # TODO
         
-        '''
-        # 2018-03-05 outliers_influence not ported from upstream
-        # from statsmodels.stats import outliers_influence
-        c = outliers_influence.reset_ramsey(res, degree=2)
-        compare_ftest(c, reset_2, decimal=(6, 5))
-        c = outliers_influence.reset_ramsey(res, degree=3)
-        compare_ftest(c, reset_2_3, decimal=(6, 5))
-        '''
-
         linear_sq = diagnostic.linear_lm(res.resid, res.model.exog)
         assert_almost_equal(linear_sq[0], linear_squares[0], decimal=6)
         assert_almost_equal(linear_sq[1], linear_squares[1], decimal=7)
@@ -430,13 +415,46 @@ class TestGLSARGretl(object):
         assert_almost_equal(sm_arch[0], arch_4[0], decimal=5)
         assert_almost_equal(sm_arch[1], arch_4[1], decimal=6)
 
-        '''
+    @pytest.mark.skip(reason="outliers_influence not ported from upstream")
+    def test_gls_reset_ramsey(self):
+        res = self.res_g2  # with estimated rho
+
+        # fstatistic, p-value, df1, df2
+        reset_2_3 = [5.219019, 0.00619, 2, 197, "f"]
+        reset_2 = [7.268492, 0.00762, 1, 198, "f"]
+        reset_3 = [5.248951, 0.023, 1, 198, "f"]
+
+        # 2018-03-05 outliers_influence not ported from upstream
+        # from statsmodels.stats import outliers_influence
+        c = outliers_influence.reset_ramsey(res, degree=2)
+        compare_ftest(c, reset_2, decimal=(2, 4))
+        c = outliers_influence.reset_ramsey(res, degree=3)
+        compare_ftest(c, reset_2_3, decimal=(2, 4))
+
+    @pytest.mark.skip(reason="outliers_influence not ported from upstream")
+    def test_ols_reset_ramsey(self):
+        res = self.res_ols
+
+        reset_2_3 = [5.219019, 0.00619, 2, 197, "f"]
+        reset_2 = [7.268492, 0.00762, 1, 198, "f"]
+        # reset_3 = [5.248951, 0.023, 1, 198, "f"]  # not available
+
+        # 2018-03-05 outliers_influence not ported from upstream
+        # from statsmodels.stats import outliers_influence
+        c = outliers_influence.reset_ramsey(res, degree=2)
+        compare_ftest(c, reset_2, decimal=(6, 5))
+        c = outliers_influence.reset_ramsey(res, degree=3)
+        compare_ftest(c, reset_2_3, decimal=(6, 5))
+
+    @pytest.mark.skip(reason="outliers_influence not ported from upstream")
+    def test_ols_influence(self):
+        res = self.res_ols
         # 2018-03-05 outliers_influence not ported from upstream
         # from statsmodels.stats import outliers_influence
         vif2 = [outliers_influence.variance_inflation_factor(res.model.exog, k)
                 for k in [1, 2]]
 
-        infl = outliers_influence.OLSInfluence(res_ols)
+        infl = outliers_influence.OLSInfluence(res)
         # just added this based on Gretl
 
         # just rough test, low decimal in Gretl output,
@@ -452,7 +470,7 @@ class TestGLSARGretl(object):
         assert_almost_equal(lev_data['influence'],
                             infl.influence,
                             decimal=4)
-        '''
+
 
 
 @pytest.mark.not_vetted

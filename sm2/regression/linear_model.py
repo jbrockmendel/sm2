@@ -2447,11 +2447,11 @@ class OLSResults(RegressionResults):
     def el_test(self, b0_vals, param_nums, return_weights=0,
                 ret_params=0, method='nm',
                 stochastic_exog=1, return_params=0):
-        raise NotImplementedError("Not ported from upstream")
+        raise NotImplementedError("el_test not ported from upstream")
 
     def conf_int_el(self, param_num, sig=.05, upper_bound=None,
                     lower_bound=None, method='nm', stochastic_exog=1):
-        raise NotImplementedError("Not ported from upstream")
+        raise NotImplementedError("conf_int_el not ported from upstream")
 
 
 class RegressionResultsWrapper(wrap.ResultsWrapper):

@@ -42,7 +42,8 @@ without dependencies.
 #    similar: http://crsouza.blogspot.com/2009/11/neural-network-learning-by-levenberg_18.html#hessian
 #
 # in example: if J = d x*beta / d beta then J'J == X'X
-#    similar to http://en.wikipedia.org/wiki/Levenberg%E2%80%93Marquardt_algorithm
+#    similar to:
+#    http://en.wikipedia.org/wiki/Levenberg%E2%80%93Marquardt_algorithm
 from __future__ import print_function
 
 from six.moves import range
@@ -242,8 +243,9 @@ def approx_hess_cs(x, f, epsilon=None, args=(), kwargs=None):
 
     for i in range(n):
         for j in range(i, n):
-            hess[i, j] = (f(*((x + 1j * ee[i, :] + ee[j, :],) + args), **kwargs) -
-                          f(*((x + 1j * ee[i, :] - ee[j, :],) + args), **kwargs)).imag / 2. / hess[i, j]
+            above = f(x + 1j * ee[i, :] + ee[j, :], *args, **kwargs)
+            below = f(x + 1j * ee[i, :] - ee[j, :], *args, **kwargs)
+            hess[i, j] = (above - below).imag / 2. / hess[i, j]
             hess[j, i] = hess[i, j]
 
     return hess
@@ -296,8 +298,8 @@ approx_hess1.__doc__ = _hessian_docs % dict(
         Gradient if return_grad == True
 """,
     equation_number="7",
-    equation="""1/(d_j*d_k) * ((f(x + d[j]*e[j] + d[k]*e[k]) - f(x + d[j]*e[j])))
-""")
+    equation="1/(d_j*d_k) * "
+             "((f(x + d[j]*e[j] + d[k]*e[k]) - f(x + d[j]*e[j])))\n")
 
 
 def approx_hess2(x, f, epsilon=None, args=(), kwargs=None, return_grad=False):
@@ -339,7 +341,8 @@ approx_hess2.__doc__ = _hessian_docs % dict(
         Gradient if return_grad == True
 """,
     equation_number="8",
-    equation="""1/(2*d_j*d_k) * ((f(x + d[j]*e[j] + d[k]*e[k]) - f(x + d[j]*e[j])) -
+    equation="""1/(2*d_j*d_k) * """
+             """((f(x + d[j]*e[j] + d[k]*e[k]) - f(x + d[j]*e[j])) -
                  (f(x + d[k]*e[k]) - f(x)) +
                  (f(x - d[j]*e[j] - d[k]*e[k]) - f(x + d[j]*e[j])) -
                  (f(x - d[k]*e[k]) - f(x)))
@@ -367,7 +370,8 @@ approx_hess3.__doc__ = _hessian_docs % dict(
     scale="4", extra_params="",
     extra_returns="",
     equation_number="9",
-    equation="""1/(4*d_j*d_k) * ((f(x + d[j]*e[j] + d[k]*e[k]) - f(x + d[j]*e[j]
+    equation="""1/(4*d_j*d_k) * """
+             """((f(x + d[j]*e[j] + d[k]*e[k]) - f(x + d[j]*e[j]
                                                      - d[k]*e[k])) -
                  (f(x - d[j]*e[j] + d[k]*e[k]) - f(x - d[j]*e[j]
                                                      - d[k]*e[k]))""")

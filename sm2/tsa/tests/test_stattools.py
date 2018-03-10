@@ -561,6 +561,7 @@ def test_acovf_fft_vs_convolution():
             assert_almost_equal(F1, F2, decimal=7)
 
 
+@pytest.mark.skip(reason="safe_arma_fit not ported from upstream")
 @pytest.mark.not_vetted
 @pytest.mark.slow
 @pytest.mark.smoke
@@ -603,6 +604,7 @@ def test_arma_order_select_ic():
     assert res.aic_min_order == (1, 2)
 
 
+@pytest.mark.skip(reason="safe_arma_fit not ported from upstream")
 @pytest.mark.not_vetted
 @pytest.mark.smoke
 def test_arma_order_select_ic_failure():

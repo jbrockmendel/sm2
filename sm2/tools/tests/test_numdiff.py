@@ -188,7 +188,7 @@ class CheckDerivativeMixin(object):
             gtrue = self.gradtrue(test_params)
             fun = self.fun()
 
-            epsilon = 1e-6  # default epsilon 1e-6 is not precise enough
+            #epsilon = 1e-6  # default epsilon 1e-6 is not precise enough
             # TODO: if comment above is correct, can we... change it?
             gfd = numdiff.approx_fprime(test_params, fun, epsilon=1e-8,
                                         args=self.args, centered=True)
