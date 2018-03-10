@@ -4,7 +4,6 @@ to untie these from LikelihoodModel so that they may be re-used generally.
 """
 from __future__ import print_function
 import copy
-import textwrap
 
 import numpy as np
 from scipy import optimize

@@ -76,7 +76,7 @@ class RemoveDataPickle(object):
         res, _ = check_pickle(results._results)
 
         # remove data arrays, check predict still works
-        with warnings.catch_warnings(record=True) as w:
+        with warnings.catch_warnings(record=True):
             results.remove_data()
 
         pred2 = results.predict(xf, **pred_kwds)
@@ -159,7 +159,9 @@ class TestRemoveDataPicklePoisson(RemoveDataPickle):
         x = self.exog
         np.random.seed(987689)
         y_count = np.random.poisson(np.exp(x.sum(1) - x.mean()))
-        model = sm.Poisson(y_count, x)  #, exposure=np.ones(nobs), offset=np.zeros(nobs))  # bug with default
+        model = sm.Poisson(y_count, x)
+        #                , exposure=np.ones(nobs),
+        #                 offset=np.zeros(nobs))  # bug with default
         # use start_params to converge faster
         start_params = np.array([0.75334818, 0.99425553,
                                  1.00494724, 1.00247112])
@@ -176,7 +178,7 @@ class TestRemoveDataPickleNegativeBinomial(RemoveDataPickle):
         # fit for each test, because results will be changed by test
         np.random.seed(987689)
         data = sm.datasets.randhie.load()
-        exog = sm.add_constant(data.exog, prepend=False)
+        data.exog = sm.add_constant(data.exog, prepend=False)
         mod = sm.NegativeBinomial(data.endog, data.exog)
         self.results = mod.fit(disp=0)
 
@@ -188,8 +190,12 @@ class TestRemoveDataPickleLogit(RemoveDataPickle):
         x = self.exog
         nobs = x.shape[0]
         np.random.seed(987689)
-        y_bin = (np.random.rand(nobs) < 1.0 / (1 + np.exp(x.sum(1) - x.mean()))).astype(int)
-        model = sm.Logit(y_bin, x)  # , exposure=np.ones(nobs), offset=np.zeros(nobs)) #bug with default
+        cutoff = np.random.rand(nobs)
+        y_bin = (cutoff < 1.0 / (1 + np.exp(x.sum(1) - x.mean())))
+        y_bin = y_bin.astype(int)
+        model = sm.Logit(y_bin, x)
+        #               , exposure=np.ones(nobs),
+        #               offset=np.zeros(nobs)) #bug with default
         # use start_params to converge faster
         start_params = np.array([-0.73403806, -1.00901514,
                                  -0.97754543, -0.95648212])
@@ -277,6 +283,7 @@ class TestPickleFormula4(TestPickleFormula2):
 
 # we need log in module namespace for the following test
 from numpy import log  # noqa:F401
+
 
 @pytest.mark.not_vetted
 class TestPickleFormula5(TestPickleFormula2):

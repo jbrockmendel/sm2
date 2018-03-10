@@ -7,34 +7,8 @@ class Bunch(dict):
         self.__dict__ = self
 
         for i, att in enumerate(['params', 'bse', 'tvalues', 'pvalues']):
-            self[att] = self.params_table[:,i]
+            self[att] = self.params_table[:, i]
 
-
-est = dict(N_clust=10,
-           N=200,
-           df_m=2,
-           df_r=9,
-           F=51.59060716590177,
-           r2=.8124080178314147,
-           rmse=94.40840193979599,
-           mss=7604093.484267689,
-           rss=1755850.432294737,
-           r2_a=.8105035307027997,
-           ll=-1191.80235741801,
-           ll_0=-1359.150955647688,
-           rank=3,
-           cmdline="regress invest mvalue kstock, vce(cluster company)",
-           title="Linear regression",
-           marginsok="XB default",
-           vce="cluster",
-           depvar="invest",
-           cmd="regress",
-           properties="b V",
-           predict="regres_p",
-           model="ols",
-           estat_cmd="regress_estat",
-           vcetype="Robust",
-           clustvar="company")
 
 params_table = np.array([
     .11556215606596, .01589433647768, 7.2706499090564, .00004710548549,
@@ -46,7 +20,6 @@ params_table = np.array([
     9, 2.2621571627982, 0]).reshape(3, 9)
 
 params_table_colnames = 'b se t pvalue ll ul df crit eform'.split()
-
 params_table_rownames = 'mvalue kstock _cons'.split()
 
 cov = np.array([
@@ -55,7 +28,6 @@ cov = np.array([
     417.18890043724]).reshape(3, 3)
 
 cov_colnames = 'mvalue kstock _cons'.split()
-
 cov_rownames = 'mvalue kstock _cons'.split()
 
 
@@ -66,55 +38,32 @@ results_cluster = Bunch(
     cov=cov,
     cov_colnames=cov_colnames,
     cov_rownames=cov_rownames,
-    **est)
+    N_clust=10,
+    N=200,
+    df_m=2,
+    df_r=9,
+    F=51.59060716590177,
+    r2=.8124080178314147,
+    rmse=94.40840193979599,
+    mss=7604093.484267689,
+    rss=1755850.432294737,
+    r2_a=.8105035307027997,
+    ll=-1191.80235741801,
+    ll_0=-1359.150955647688,
+    rank=3,
+    cmdline="regress invest mvalue kstock, vce(cluster company)",
+    title="Linear regression",
+    marginsok="XB default",
+    vce="cluster",
+    depvar="invest",
+    cmd="regress",
+    properties="b V",
+    predict="regres_p",
+    model="ols",
+    estat_cmd="regress_estat",
+    vcetype="Robust",
+    clustvar="company")
 
-est = dict(N=200,
-           inexog_ct=2,
-           exexog_ct=0,
-           endog_ct=0,
-           partial_ct=0,
-           N_clust=10,
-           df_m=2,
-           sdofminus=0,
-           dofminus=0,
-           r2=.8124080178314146,
-           rmse=93.69766358599176,
-           rss=1755850.432294737,
-           mss=7604093.484267682,
-           r2_a=.8105035307027995,
-           F=51.59060716590192,
-           Fp=.0000117341240941,
-           Fdf1=2,
-           Fdf2=9,
-           yy=13620706.07273678,
-           yyc=9359943.916562419,
-           partialcons=0,
-           cons=1,
-           jdf=0,
-           j=0,
-           ll=-1191.802357418011,
-           rankV=3,
-           rankS=3,
-           rankxx=3,
-           rankzz=3,
-           r2c=.8124080178314146,
-           r2u=.8710896173136538,
-           clustvar="company",
-           hacsubtitleV="Statistics robust to heteroskedasticity and clustering on company",
-           hacsubtitleB="Estimates efficient for homoskedasticity only",
-           title="OLS estimation",
-           predict="ivreg2_p",
-           version="03.1.07",
-           cmdline="ivreg2 invest mvalue kstock, cluster(company)",
-           cmd="ivreg2",
-           model="ols",
-           depvar="invest",
-           vcetype="Robust",
-           vce="robust cluster",
-           partialsmall="small",
-           inexog="mvalue kstock",
-           insts="mvalue kstock",
-           properties="b V",)
 
 params_table = np.array([
     .11556215606596, .01500272788516, 7.7027429245215, 1.331761148e-14,
@@ -126,7 +75,6 @@ params_table = np.array([
     np.nan, 1.9599639845401, 0]).reshape(3, 9)
 
 params_table_colnames = 'b se z pvalue ll ul df crit eform'.split()
-
 params_table_rownames = 'mvalue kstock _cons'.split()
 
 cov = np.array([
@@ -135,7 +83,6 @@ cov = np.array([
     371.69644244987]).reshape(3, 3)
 
 cov_colnames = 'mvalue kstock _cons'.split()
-
 cov_rownames = 'mvalue kstock _cons'.split()
 
 
@@ -146,24 +93,55 @@ results_cluster_large = Bunch(
     cov=cov,
     cov_colnames=cov_colnames,
     cov_rownames=cov_rownames,
-    **est)
+    N=200,
+    inexog_ct=2,
+    exexog_ct=0,
+    endog_ct=0,
+    partial_ct=0,
+    N_clust=10,
+    df_m=2,
+    sdofminus=0,
+    dofminus=0,
+    r2=.8124080178314146,
+    rmse=93.69766358599176,
+    rss=1755850.432294737,
+    mss=7604093.484267682,
+    r2_a=.8105035307027995,
+    F=51.59060716590192,
+    Fp=.0000117341240941,
+    Fdf1=2,
+    Fdf2=9,
+    yy=13620706.07273678,
+    yyc=9359943.916562419,
+    partialcons=0,
+    cons=1,
+    jdf=0,
+    j=0,
+    ll=-1191.802357418011,
+    rankV=3,
+    rankS=3,
+    rankxx=3,
+    rankzz=3,
+    r2c=.8124080178314146,
+    r2u=.8710896173136538,
+    clustvar="company",
+    hacsubtitleV="Statistics robust to heteroskedasticity and "
+                 "clustering on company",
+    hacsubtitleB="Estimates efficient for homoskedasticity only",
+    title="OLS estimation",
+    predict="ivreg2_p",
+    version="03.1.07",
+    cmdline="ivreg2 invest mvalue kstock, cluster(company)",
+    cmd="ivreg2",
+    model="ols",
+    depvar="invest",
+    vcetype="Robust",
+    vce="robust cluster",
+    partialsmall="small",
+    inexog="mvalue kstock",
+    insts="mvalue kstock",
+    properties="b V")
 
-est = dict(N=200,
-           N_g=10,
-           df_m=2,
-           df_r=9,
-           F=97.97910905239282,
-           r2=.8124080178314147,
-           rmse=94.40840193979599,
-           lag=4,
-           cmd="xtscc",
-           predict="xtscc_p",
-           method="Pooled OLS",
-           depvar="invest",
-           vcetype="Drisc/Kraay",
-           title="Regression with Driscoll-Kraay standard errors",
-           groupvar="company",
-           properties="b V",)
 
 params_table = np.array([
     .11556215606596, .0134360177573, 8.6009231420662, .00001235433261,
@@ -175,7 +153,6 @@ params_table = np.array([
     9, 2.2621571627982, 0]).reshape(3, 9)
 
 params_table_colnames = 'b se t pvalue ll ul df crit eform'.split()
-
 params_table_rownames = 'mvalue kstock _cons'.split()
 
 cov = np.array([
@@ -184,7 +161,6 @@ cov = np.array([
     148.60456447156]).reshape(3, 3)
 
 cov_colnames = 'mvalue kstock _cons'.split()
-
 cov_rownames = 'mvalue kstock _cons'.split()
 
 
@@ -195,22 +171,23 @@ results_nw_groupsum4 = Bunch(
     cov=cov,
     cov_colnames=cov_colnames,
     cov_rownames=cov_rownames,
-    **est)
+    N=200,
+    N_g=10,
+    df_m=2,
+    df_r=9,
+    F=97.97910905239282,
+    r2=.8124080178314147,
+    rmse=94.40840193979599,
+    lag=4,
+    cmd="xtscc",
+    predict="xtscc_p",
+    method="Pooled OLS",
+    depvar="invest",
+    vcetype="Drisc/Kraay",
+    title="Regression with Driscoll-Kraay standard errors",
+    groupvar="company",
+    properties="b V")
 
-est = dict(df_m=2,
-           df_r=197,
-           F=73.07593045506036,
-           N=200,
-           lag=4,
-           rank=3,
-           title="Regression with Newey-West standard errors",
-           cmd="newey",
-           cmdline="newey invest mvalue kstock, lag(4) force",
-           estat_cmd="newey_estat",
-           predict="newey_p",
-           vcetype="Newey-West",
-           depvar="invest",
-           properties="b V",)
 
 params_table = np.array([
     .11556215606596, .01142785251475, 10.112324771147, 1.251631065e-19,
@@ -222,7 +199,6 @@ params_table = np.array([
     197, 1.9720790337785, 0]).reshape(3, 9)
 
 params_table_colnames = 'b se t pvalue ll ul df crit eform'.split()
-
 params_table_rownames = 'mvalue kstock _cons'.split()
 
 cov = np.array([
@@ -231,7 +207,6 @@ cov = np.array([
     261.76140136858]).reshape(3, 3)
 
 cov_colnames = 'mvalue kstock _cons'.split()
-
 cov_rownames = 'mvalue kstock _cons'.split()
 
 
@@ -242,61 +217,21 @@ results_nw_panel4 = Bunch(
     cov=cov,
     cov_colnames=cov_colnames,
     cov_rownames=cov_rownames,
-    **est)
+    df_m=2,
+    df_r=197,
+    F=73.07593045506036,
+    N=200,
+    lag=4,
+    rank=3,
+    title="Regression with Newey-West standard errors",
+    cmd="newey",
+    cmdline="newey invest mvalue kstock, lag(4) force",
+    estat_cmd="newey_estat",
+    predict="newey_p",
+    vcetype="Newey-West",
+    depvar="invest",
+    properties="b V")
 
-est = dict(N=200,
-           inexog_ct=2,
-           exexog_ct=0,
-           endog_ct=0,
-           partial_ct=0,
-           df_r=9,
-           N_clust=10,
-           N_clust1=10,
-           N_clust2=20,
-           df_m=2,
-           sdofminus=0,
-           dofminus=0,
-           r2=.8124080178314146,
-           rmse=94.40840193979601,
-           rss=1755850.432294737,
-           mss=7604093.484267682,
-           r2_a=.8105035307027995,
-           F=57.99124535923564,
-           Fp=7.21555935862e-06,
-           Fdf1=2,
-           partialcons=0,
-           cons=1,
-           jdf=0,
-           j=0,
-           ll=-1191.802357418011,
-           rankV=3,
-           rankS=3,
-           rankxx=3,
-           rankzz=3,
-           r2c=.8124080178314146,
-           r2u=.8710896173136538,
-           yyc=9359943.916562419,
-           yy=13620706.07273678,
-           Fdf2=9,
-           clustvar="company time",
-           hacsubtitleV="Statistics robust to heteroskedasticity and clustering on company and time",
-           hacsubtitleB="Estimates efficient for homoskedasticity only",
-           title="OLS estimation",
-           predict="ivreg2_p",
-           version="03.1.07",
-           cmdline="ivreg2 invest mvalue kstock, cluster(company time) small",
-           cmd="ivreg2",
-           model="ols",
-           depvar="invest",
-           vcetype="Robust",
-           clustvar2="time",
-           clustvar1="company",
-           vce="robust two-way cluster",
-           partialsmall="small",
-           small="small",
-           inexog="mvalue kstock",
-           insts="mvalue kstock",
-           properties="b V")
 
 params_table = np.array([
     .11556215606596, .01635175387097, 7.0672636695645, .00005873628221,
@@ -308,7 +243,6 @@ params_table = np.array([
     9, 2.2621571627982, 0]).reshape(3, 9)
 
 params_table_colnames = 'b se t pvalue ll ul df crit eform'.split()
-
 params_table_rownames = 'mvalue kstock _cons'.split()
 
 cov = np.array([
@@ -317,7 +251,6 @@ cov = np.array([
     380.46872042467]).reshape(3, 3)
 
 cov_colnames = 'mvalue kstock _cons'.split()
-
 cov_rownames = 'mvalue kstock _cons'.split()
 
 
@@ -328,59 +261,61 @@ results_cluster_2groups_small = Bunch(
     cov=cov,
     cov_colnames=cov_colnames,
     cov_rownames=cov_rownames,
-    **est)
+    N=200,
+    inexog_ct=2,
+    exexog_ct=0,
+    endog_ct=0,
+    partial_ct=0,
+    df_r=9,
+    N_clust=10,
+    N_clust1=10,
+    N_clust2=20,
+    df_m=2,
+    sdofminus=0,
+    dofminus=0,
+    r2=.8124080178314146,
+    rmse=94.40840193979601,
+    rss=1755850.432294737,
+    mss=7604093.484267682,
+    r2_a=.8105035307027995,
+    F=57.99124535923564,
+    Fp=7.21555935862e-06,
+    Fdf1=2,
+    partialcons=0,
+    cons=1,
+    jdf=0,
+    j=0,
+    ll=-1191.802357418011,
+    rankV=3,
+    rankS=3,
+    rankxx=3,
+    rankzz=3,
+    r2c=.8124080178314146,
+    r2u=.8710896173136538,
+    yyc=9359943.916562419,
+    yy=13620706.07273678,
+    Fdf2=9,
+    clustvar="company time",
+    hacsubtitleV="Statistics robust to heteroskedasticity and "
+                 "clustering on company and time",
+    hacsubtitleB="Estimates efficient for homoskedasticity only",
+    title="OLS estimation",
+    predict="ivreg2_p",
+    version="03.1.07",
+    cmdline="ivreg2 invest mvalue kstock, cluster(company time) small",
+    cmd="ivreg2",
+    model="ols",
+    depvar="invest",
+    vcetype="Robust",
+    clustvar2="time",
+    clustvar1="company",
+    vce="robust two-way cluster",
+    partialsmall="small",
+    small="small",
+    inexog="mvalue kstock",
+    insts="mvalue kstock",
+    properties="b V")
 
-est = dict(N=200,
-           inexog_ct=2,
-           exexog_ct=0,
-           endog_ct=0,
-           partial_ct=0,
-           N_clust=10,
-           N_clust1=10,
-           N_clust2=20,
-           df_m=2,
-           sdofminus=0,
-           dofminus=0,
-           r2=.8124080178314146,
-           rmse=93.69766358599176,
-           rss=1755850.432294737,
-           mss=7604093.484267682,
-           r2_a=.8105035307027995,
-           F=57.99124535923565,
-           Fp=7.21555935862e-06,
-           Fdf1=2,
-           Fdf2=9,
-           partialcons=0,
-           cons=1,
-           jdf=0,
-           j=0,
-           ll=-1191.802357418011,
-           rankV=3,
-           rankS=3,
-           rankxx=3,
-           rankzz=3,
-           r2c=.8124080178314146,
-           r2u=.8710896173136538,
-           yyc=9359943.916562419,
-           yy=13620706.07273678,
-           clustvar="company time",
-           hacsubtitleV="Statistics robust to heteroskedasticity and clustering on company and time",
-           hacsubtitleB="Estimates efficient for homoskedasticity only",
-           title="OLS estimation",
-           predict="ivreg2_p",
-           version="03.1.07",
-           cmdline="ivreg2 invest mvalue kstock, cluster(company time)",
-           cmd="ivreg2",
-           model="ols",
-           depvar="invest",
-           vcetype="Robust",
-           clustvar2="time",
-           clustvar1="company",
-           vce="robust two-way cluster",
-           partialsmall="small",
-           inexog="mvalue kstock",
-           insts="mvalue kstock",
-           properties="b V",)
 
 params_table = np.array([
     .11556215606596, .01543448599542, 7.487269488613, 7.032121917e-14,
@@ -392,16 +327,14 @@ params_table = np.array([
     np.nan, 1.9599639845401, 0]).reshape(3, 9)
 
 params_table_colnames = 'b se z pvalue ll ul df crit eform'.split()
-
 params_table_rownames = 'mvalue kstock _cons'.split()
 
 cov = np.array([
     .00023822335794, -.00062512499511, .17499633632219, -.00062512499511,
     .00548663757926, -.88763669036779, .17499633632219, -.88763669036779,
-    338.98042277032]).reshape(3,3)
+    338.98042277032]).reshape(3, 3)
 
 cov_colnames = 'mvalue kstock _cons'.split()
-
 cov_rownames = 'mvalue kstock _cons'.split()
 
 
@@ -412,60 +345,59 @@ results_cluster_2groups_large = Bunch(
     cov=cov,
     cov_colnames=cov_colnames,
     cov_rownames=cov_rownames,
-    **est)
+    N=200,
+    inexog_ct=2,
+    exexog_ct=0,
+    endog_ct=0,
+    partial_ct=0,
+    N_clust=10,
+    N_clust1=10,
+    N_clust2=20,
+    df_m=2,
+    sdofminus=0,
+    dofminus=0,
+    r2=.8124080178314146,
+    rmse=93.69766358599176,
+    rss=1755850.432294737,
+    mss=7604093.484267682,
+    r2_a=.8105035307027995,
+    F=57.99124535923565,
+    Fp=7.21555935862e-06,
+    Fdf1=2,
+    Fdf2=9,
+    partialcons=0,
+    cons=1,
+    jdf=0,
+    j=0,
+    ll=-1191.802357418011,
+    rankV=3,
+    rankS=3,
+    rankxx=3,
+    rankzz=3,
+    r2c=.8124080178314146,
+    r2u=.8710896173136538,
+    yyc=9359943.916562419,
+    yy=13620706.07273678,
+    clustvar="company time",
+    hacsubtitleV="Statistics robust to heteroskedasticity and "
+                 "clustering on company and time",
+    hacsubtitleB="Estimates efficient for homoskedasticity only",
+    title="OLS estimation",
+    predict="ivreg2_p",
+    version="03.1.07",
+    cmdline="ivreg2 invest mvalue kstock, cluster(company time)",
+    cmd="ivreg2",
+    model="ols",
+    depvar="invest",
+    vcetype="Robust",
+    clustvar2="time",
+    clustvar1="company",
+    vce="robust two-way cluster",
+    partialsmall="small",
+    inexog="mvalue kstock",
+    insts="mvalue kstock",
+    properties="b V")
 
-est = dict(N=200,
-           inexog_ct=2,
-           exexog_ct=0,
-           endog_ct=0,
-           partial_ct=0,
-           bw=5,
-           N_clust=20,
-           df_m=2,
-           sdofminus=0,
-           dofminus=0,
-           r2=.8124080178314146,
-           rmse=93.69766358599176,
-           rss=1755850.432294737,
-           mss=7604093.484267682,
-           r2_a=.8105035307027995,
-           F=92.14467466912147,
-           Fp=1.66368179227e-10,
-           Fdf1=2,
-           Fdf2=19,
-           yy=13620706.07273678,
-           partialcons=0,
-           cons=1,
-           jdf=0,
-           j=0,
-           ll=-1191.802357418011,
-           rankV=3,
-           rankS=3,
-           rankxx=3,
-           rankzz=3,
-           r2c=.8124080178314146,
-           r2u=.8710896173136538,
-           yyc=9359943.916562419,
-           clustvar="year",
-           hacsubtitleV2="and kernel-robust to common correlated disturbances (Driscoll-Kraay)",
-           hacsubtitleV="Statistics robust to heteroskedasticity and clustering on year",
-           hacsubtitleB="Estimates efficient for homoskedasticity only",
-           title="OLS estimation",
-           predict="ivreg2_p",
-           version="03.1.07",
-           cmdline="ivreg2 invest mvalue kstock, dkraay(5)",
-           cmd="ivreg2",
-           model="ols",
-           depvar="invest",
-           vcetype="Robust",
-           vce="cluster ac bartlett bw=5",
-           partialsmall="small",
-           ivar="company",
-           tvar="year",
-           kernel="Bartlett",
-           inexog="mvalue kstock",
-           insts="mvalue kstock",
-           properties="b V",)
 
 params_table = np.array([
     .11556215606596, .0134360177573, 8.6009231420662, 7.907743030e-18,
@@ -477,7 +409,6 @@ params_table = np.array([
     np.nan, 1.9599639845401, 0]).reshape(3, 9)
 
 params_table_colnames = 'b se z pvalue ll ul df crit eform'.split()
-
 params_table_rownames = 'mvalue kstock _cons'.split()
 
 cov = np.array([
@@ -486,7 +417,6 @@ cov = np.array([
     148.60456447156]).reshape(3, 3)
 
 cov_colnames = 'mvalue kstock _cons'.split()
-
 cov_rownames = 'mvalue kstock _cons'.split()
 
 
@@ -497,62 +427,61 @@ results_nw_groupsum4_ivreg_large = Bunch(
     cov=cov,
     cov_colnames=cov_colnames,
     cov_rownames=cov_rownames,
-    **est)
+    N=200,
+    inexog_ct=2,
+    exexog_ct=0,
+    endog_ct=0,
+    partial_ct=0,
+    bw=5,
+    N_clust=20,
+    df_m=2,
+    sdofminus=0,
+    dofminus=0,
+    r2=.8124080178314146,
+    rmse=93.69766358599176,
+    rss=1755850.432294737,
+    mss=7604093.484267682,
+    r2_a=.8105035307027995,
+    F=92.14467466912147,
+    Fp=1.66368179227e-10,
+    Fdf1=2,
+    Fdf2=19,
+    yy=13620706.07273678,
+    partialcons=0,
+    cons=1,
+    jdf=0,
+    j=0,
+    ll=-1191.802357418011,
+    rankV=3,
+    rankS=3,
+    rankxx=3,
+    rankzz=3,
+    r2c=.8124080178314146,
+    r2u=.8710896173136538,
+    yyc=9359943.916562419,
+    clustvar="year",
+    hacsubtitleV2="and kernel-robust to common "
+                  "correlated disturbances (Driscoll-Kraay)",
+    hacsubtitleV="Statistics robust to heteroskedasticity and "
+                 "clustering on year",
+    hacsubtitleB="Estimates efficient for homoskedasticity only",
+    title="OLS estimation",
+    predict="ivreg2_p",
+    version="03.1.07",
+    cmdline="ivreg2 invest mvalue kstock, dkraay(5)",
+    cmd="ivreg2",
+    model="ols",
+    depvar="invest",
+    vcetype="Robust",
+    vce="cluster ac bartlett bw=5",
+    partialsmall="small",
+    ivar="company",
+    tvar="year",
+    kernel="Bartlett",
+    inexog="mvalue kstock",
+    insts="mvalue kstock",
+    properties="b V")
 
-est = dict(N=200,
-           inexog_ct=2,
-           exexog_ct=0,
-           endog_ct=0,
-           partial_ct=0,
-           bw=5,
-           df_r=19,
-           N_clust=20,
-           df_m=2,
-           sdofminus=0,
-           dofminus=0,
-           r2=.8124080178314146,
-           rmse=94.40840193979601,
-           rss=1755850.432294737,
-           mss=7604093.484267682,
-           r2_a=.8105035307027995,
-           F=92.14467466912149,
-           Fp=1.66368179227e-10,
-           Fdf1=2,
-           Fdf2=19,
-           partialcons=0,
-           cons=1,
-           jdf=0,
-           j=0,
-           ll=-1191.802357418011,
-           rankV=3,
-           rankS=3,
-           rankxx=3,
-           rankzz=3,
-           r2c=.8124080178314146,
-           r2u=.8710896173136538,
-           yyc=9359943.916562419,
-           yy=13620706.07273678,
-           clustvar="year",
-           hacsubtitleV2="and kernel-robust to common correlated disturbances (Driscoll-Kraay)",
-           hacsubtitleV="Statistics robust to heteroskedasticity and clustering on year",
-           hacsubtitleB="Estimates efficient for homoskedasticity only",
-           title="OLS estimation",
-           predict="ivreg2_p",
-           version="03.1.07",
-           cmdline="ivreg2 invest mvalue kstock, dkraay(5) small",
-           cmd="ivreg2",
-           model="ols",
-           depvar="invest",
-           vcetype="Robust",
-           vce="cluster ac bartlett bw=5",
-           partialsmall="small",
-           small="small",
-           ivar="company",
-           tvar="year",
-           kernel="Bartlett",
-           inexog="mvalue kstock",
-           insts="mvalue kstock",
-           properties="b V",)
 
 params_table = np.array([
     .11556215606596, .0138548615926, 8.3409101775303, 8.967911239e-08,
@@ -564,7 +493,6 @@ params_table = np.array([
     19, 2.0930240544083, 0]).reshape(3, 9)
 
 params_table_colnames = 'b se t pvalue ll ul df crit eform'.split()
-
 params_table_rownames = 'mvalue kstock _cons'.split()
 
 cov = np.array([
@@ -573,7 +501,6 @@ cov = np.array([
     158.01393710842]).reshape(3, 3)
 
 cov_colnames = 'mvalue kstock _cons'.split()
-
 cov_rownames = 'mvalue kstock _cons'.split()
 
 
@@ -584,37 +511,67 @@ results_nw_groupsum4_ivreg_small = Bunch(
     cov=cov,
     cov_colnames=cov_colnames,
     cov_rownames=cov_rownames,
-    **est)
+    N=200,
+    inexog_ct=2,
+    exexog_ct=0,
+    endog_ct=0,
+    partial_ct=0,
+    bw=5,
+    df_r=19,
+    N_clust=20,
+    df_m=2,
+    sdofminus=0,
+    dofminus=0,
+    r2=.8124080178314146,
+    rmse=94.40840193979601,
+    rss=1755850.432294737,
+    mss=7604093.484267682,
+    r2_a=.8105035307027995,
+    F=92.14467466912149,
+    Fp=1.66368179227e-10,
+    Fdf1=2,
+    Fdf2=19,
+    partialcons=0,
+    cons=1,
+    jdf=0,
+    j=0,
+    ll=-1191.802357418011,
+    rankV=3,
+    rankS=3,
+    rankxx=3,
+    rankzz=3,
+    r2c=.8124080178314146,
+    r2u=.8710896173136538,
+    yyc=9359943.916562419,
+    yy=13620706.07273678,
+    clustvar="year",
+    hacsubtitleV2="and kernel-robust to common "
+                  "correlated disturbances (Driscoll-Kraay)",
+    hacsubtitleV="Statistics robust to heteroskedasticity and "
+                 "clustering on year",
+    hacsubtitleB="Estimates efficient for homoskedasticity only",
+    title="OLS estimation",
+    predict="ivreg2_p",
+    version="03.1.07",
+    cmdline="ivreg2 invest mvalue kstock, dkraay(5) small",
+    cmd="ivreg2",
+    model="ols",
+    depvar="invest",
+    vcetype="Robust",
+    vce="cluster ac bartlett bw=5",
+    partialsmall="small",
+    small="small",
+    ivar="company",
+    tvar="year",
+    kernel="Bartlett",
+    inexog="mvalue kstock",
+    insts="mvalue kstock",
+    properties="b V")
 
 
 # ----
 # WLS
 
-est = dict(N=200,
-           df_m=2,
-           df_r=197,
-           F=158.2726503915062,
-           r2=.7728224625923459,
-           rmse=35.1783035325949,
-           mss=829335.6968772264,
-           rss=243790.0687679817,
-           r2_a=.7705160916541971,
-           ll=-994.3622459900876,
-           ll_0=-1142.564592396746,
-           rank=3,
-           cmdline="regress invest mvalue kstock [aw=1/mvalue], robust",
-           title="Linear regression",
-           marginsok="XB default",
-           vce="robust",
-           depvar="invest",
-           cmd="regress",
-           properties="b V",
-           predict="regres_p",
-           model="ols",
-           estat_cmd="regress_estat",
-           wexp="= 1/mvalue",
-           wtype="aweight",
-           vcetype="Robust",)
 
 params_table = np.array([
     .11694307068216, .00768545583365, 15.2161528494, 4.371656843e-35,
@@ -626,7 +583,6 @@ params_table = np.array([
     197, 1.9720790337785, 0]).reshape(3, 9)
 
 params_table_colnames = 'b se t pvalue ll ul df crit eform'.split()
-
 params_table_rownames = 'mvalue kstock _cons'.split()
 
 cov = np.array([
@@ -635,7 +591,6 @@ cov = np.array([
     5.502967366154]).reshape(3, 3)
 
 cov_colnames = 'mvalue kstock _cons'.split()
-
 cov_rownames = 'mvalue kstock _cons'.split()
 
 
@@ -646,35 +601,32 @@ results_hc1_wls_small = Bunch(
     cov=cov,
     cov_colnames=cov_colnames,
     cov_rownames=cov_rownames,
-    **est)
+    N=200,
+    df_m=2,
+    df_r=197,
+    F=158.2726503915062,
+    r2=.7728224625923459,
+    rmse=35.1783035325949,
+    mss=829335.6968772264,
+    rss=243790.0687679817,
+    r2_a=.7705160916541971,
+    ll=-994.3622459900876,
+    ll_0=-1142.564592396746,
+    rank=3,
+    cmdline="regress invest mvalue kstock [aw=1/mvalue], robust",
+    title="Linear regression",
+    marginsok="XB default",
+    vce="robust",
+    depvar="invest",
+    cmd="regress",
+    properties="b V",
+    predict="regres_p",
+    model="ols",
+    estat_cmd="regress_estat",
+    wexp="= 1/mvalue",
+    wtype="aweight",
+    vcetype="Robust")
 
-est = dict(N_clust=10,
-           N=200,
-           df_m=2,
-           df_r=9,
-           F=22.90591346432732,
-           r2=.7728224625923459,
-           rmse=35.1783035325949,
-           mss=829335.6968772264,
-           rss=243790.0687679817,
-           r2_a=.7705160916541971,
-           ll=-994.3622459900876,
-           ll_0=-1142.564592396746,
-           rank=3,
-           cmdline="regress invest mvalue kstock[aw=1/mvalue], vce(cluster company)",
-           title="Linear regression",
-           marginsok="XB default",
-           vce="cluster",
-           depvar="invest",
-           cmd="regress",
-           properties="b V",
-           predict="regres_p",
-           model="ols",
-           estat_cmd="regress_estat",
-           wexp="= 1/mvalue",
-           wtype="aweight",
-           vcetype="Robust",
-           clustvar="company",)
 
 params_table = np.array([
     .11694307068216, .02609630113434, 4.4812124936848, .00152974827456,
@@ -686,7 +638,6 @@ params_table = np.array([
     9, 2.2621571627982, 0]).reshape(3, 9)
 
 params_table_colnames = 'b se t pvalue ll ul df crit eform'.split()
-
 params_table_rownames = 'mvalue kstock _cons'.split()
 
 cov = np.array([
@@ -695,9 +646,7 @@ cov = np.array([
     32.723812971732]).reshape(3, 3)
 
 cov_colnames = 'mvalue kstock _cons'.split()
-
 cov_rownames = 'mvalue kstock _cons'.split()
-
 
 results_cluster_wls_small = Bunch(
     params_table=params_table,
@@ -706,57 +655,34 @@ results_cluster_wls_small = Bunch(
     cov=cov,
     cov_colnames=cov_colnames,
     cov_rownames=cov_rownames,
-    **est)
+    N_clust=10,
+    N=200,
+    df_m=2,
+    df_r=9,
+    F=22.90591346432732,
+    r2=.7728224625923459,
+    rmse=35.1783035325949,
+    mss=829335.6968772264,
+    rss=243790.0687679817,
+    r2_a=.7705160916541971,
+    ll=-994.3622459900876,
+    ll_0=-1142.564592396746,
+    rank=3,
+    cmdline="regress invest mvalue kstock[aw=1/mvalue], vce(cluster company)",
+    title="Linear regression",
+    marginsok="XB default",
+    vce="cluster",
+    depvar="invest",
+    cmd="regress",
+    properties="b V",
+    predict="regres_p",
+    model="ols",
+    estat_cmd="regress_estat",
+    wexp="= 1/mvalue",
+    wtype="aweight",
+    vcetype="Robust",
+    clustvar="company")
 
-est = dict(N=200,
-           inexog_ct=2,
-           exexog_ct=0,
-           endog_ct=0,
-           partial_ct=0,
-           N_clust=10,
-           df_m=2,
-           sdofminus=0,
-           dofminus=0,
-           r2=.772822462592346,
-           rmse=34.91346937558495,
-           rss=243790.0687679817,
-           mss=829335.6968772268,
-           r2_a=.7705160916541972,
-           F=22.9059134643273,
-           Fp=.000294548654088,
-           Fdf1=2,
-           Fdf2=9,
-           yy=1401938.856802022,
-           yyc=1073125.765645209,
-           partialcons=0,
-           cons=1,
-           jdf=0,
-           j=0,
-           ll=-994.3622459900874,
-           rankV=3,
-           rankS=3,
-           rankxx=3,
-           rankzz=3,
-           r2c=.772822462592346,
-           r2u=.8261050632949187,
-           clustvar="company",
-           hacsubtitleV="Statistics robust to heteroskedasticity and clustering on company",
-           hacsubtitleB="Estimates efficient for homoskedasticity only",
-           title="OLS estimation",
-           predict="ivreg2_p",
-           version="03.1.07",
-           cmdline="ivreg2 invest mvalue kstock [aw=1/mvalue], cluster(company)",
-           cmd="ivreg2",
-           wtype="aweight",
-           wexp="=1/mvalue",
-           model="ols",
-           depvar="invest",
-           vcetype="Robust",
-           vce="robust cluster",
-           partialsmall="small",
-           inexog="mvalue kstock",
-           insts="mvalue kstock",
-           properties="b V",)
 
 params_table = np.array([
     .11694307068216, .02463240320082, 4.7475298990826, 2.059159576e-06,
@@ -768,7 +694,6 @@ params_table = np.array([
     np.nan, 1.9599639845401, 0]).reshape(3, 9)
 
 params_table_colnames = 'b se z pvalue ll ul df crit eform'.split()
-
 params_table_rownames = 'mvalue kstock _cons'.split()
 
 cov = np.array([
@@ -777,7 +702,6 @@ cov = np.array([
     29.155437386372]).reshape(3, 3)
 
 cov_colnames = 'mvalue kstock _cons'.split()
-
 cov_rownames = 'mvalue kstock _cons'.split()
 
 
@@ -788,4 +712,53 @@ results_cluster_wls_large = Bunch(
     cov=cov,
     cov_colnames=cov_colnames,
     cov_rownames=cov_rownames,
-    **est)
+    N=200,
+    inexog_ct=2,
+    exexog_ct=0,
+    endog_ct=0,
+    partial_ct=0,
+    N_clust=10,
+    df_m=2,
+    sdofminus=0,
+    dofminus=0,
+    r2=.772822462592346,
+    rmse=34.91346937558495,
+    rss=243790.0687679817,
+    mss=829335.6968772268,
+    r2_a=.7705160916541972,
+    F=22.9059134643273,
+    Fp=.000294548654088,
+    Fdf1=2,
+    Fdf2=9,
+    yy=1401938.856802022,
+    yyc=1073125.765645209,
+    partialcons=0,
+    cons=1,
+    jdf=0,
+    j=0,
+    ll=-994.3622459900874,
+    rankV=3,
+    rankS=3,
+    rankxx=3,
+    rankzz=3,
+    r2c=.772822462592346,
+    r2u=.8261050632949187,
+    clustvar="company",
+    hacsubtitleV="Statistics robust to heteroskedasticity and "
+                 "clustering on company",
+    hacsubtitleB="Estimates efficient for homoskedasticity only",
+    title="OLS estimation",
+    predict="ivreg2_p",
+    version="03.1.07",
+    cmdline="ivreg2 invest mvalue kstock [aw=1/mvalue], cluster(company)",
+    cmd="ivreg2",
+    wtype="aweight",
+    wexp="=1/mvalue",
+    model="ols",
+    depvar="invest",
+    vcetype="Robust",
+    vce="robust cluster",
+    partialsmall="small",
+    inexog="mvalue kstock",
+    insts="mvalue kstock",
+    properties="b V")

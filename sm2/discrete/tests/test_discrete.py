@@ -1853,7 +1853,7 @@ class TestLogitNewtonPrepend(CheckMargEff):
         data.exog = add_constant(data.exog, prepend=True)
         model = cls.model_cls(data.endog, data.exog, **cls.mod_kwargs)
         cls.res1 = model.fit(**cls.fit_kwargs)
-        
+
         cls.slice = np.roll(np.arange(len(cls.res1.params)), 1) #.astype(int)
         # TODO: should cls.slice be _used_ somewhere?
 
@@ -2357,7 +2357,6 @@ class TestGeneralizedPoisson_underdispersion(object):
 
 # ------------------------------------------------------------------
 # Unsorted
-
 
 
 @pytest.mark.not_vetted

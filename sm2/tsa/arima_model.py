@@ -37,7 +37,7 @@ from sm2.tsa.kalmanf import KalmanFilter
 
 
 def _create_mpl_ax(ax):
-    # kludge to avoid needing import from statsmodels.graphics.util;
+    # kludge to avoid needing import from upstream graphics.util;
     # this does not belong here long-term
     if ax is None:
         import matplotlib.pyplot as plt

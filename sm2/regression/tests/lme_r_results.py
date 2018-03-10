@@ -75,7 +75,7 @@ coef_reml_drf_2 = np.array([-1.012137, 0.9790792])
 
 vcov_reml_drf_2 = np.array([0.001190455, 1.482666e-05,
                             1.482666e-05, 0.001066002]
-                            ).reshape(2, 2, order='F')
+                           ).reshape(2, 2, order='F')
 
 cov_re_reml_drf_2 = np.array([0.1595015]).reshape(1, 1, order='F')
 
@@ -122,7 +122,7 @@ coef_ml_drf_4 = np.array([-1.005151, -0.003657404, 1.054786])
 vcov_ml_drf_4 = np.array([0.001190639, -5.327162e-05, 5.992985e-05,
                           -5.327162e-05, 0.001460303, -2.662532e-05,
                           5.992985e-05, -2.662532e-05, 0.00148609]
-                          ).reshape(3, 3, order='F')
+                         ).reshape(3, 3, order='F')
 
 cov_re_ml_drf_4 = np.array([0.1703249]).reshape(1, 1, order='F')
 
@@ -203,7 +203,7 @@ ranef_mean_ml_drf_6 = np.array([-0.0597406, 0.6037288])
 
 ranef_condvar_ml_drf_6 = np.array([0.2420741, 0.2222169,
                                    0.2222169, 0.4228908]
-                                   ).reshape(2, 2, order='F')
+                                  ).reshape(2, 2, order='F')
 
 coef_reml_drf_6 = np.array([-0.8883881])
 
@@ -220,7 +220,7 @@ ranef_mean_reml_drf_6 = np.array([-0.05969892, 0.6031793])
 
 ranef_condvar_reml_drf_6 = np.array([0.2421365, 0.2221108,
                                      0.2221108, 0.4244443]
-                                     ).reshape(2, 2, order='F')
+                                    ).reshape(2, 2, order='F')
 
 coef_ml_irf_6 = np.array([-0.8874992])
 
@@ -250,7 +250,7 @@ vcov_ml_drf_7 = np.array([0.01994]).reshape(1, 1, order='F')
 
 cov_re_ml_drf_7 = np.array([0.2051329, 0.0734377,
                             0.0734377, 3.285381]
-                            ).reshape(2, 2, order='F')
+                           ).reshape(2, 2, order='F')
 
 scale_ml_drf_7 = np.array([3.423247])
 
@@ -260,7 +260,7 @@ ranef_mean_ml_drf_7 = np.array([0.07007965, -0.2920284])
 
 ranef_condvar_ml_drf_7 = np.array([0.1823183, 0.02247519,
                                    0.02247519, 1.125011]
-                                   ).reshape(2, 2, order='F')
+                                  ).reshape(2, 2, order='F')
 
 coef_reml_drf_7 = np.array([-0.9647862])
 
@@ -277,7 +277,7 @@ ranef_mean_reml_drf_7 = np.array([0.07000628, -0.2916737])
 
 ranef_condvar_reml_drf_7 = np.array([0.1828266, 0.02229138,
                                      0.02229138, 1.128947]
-                                     ).reshape(2, 2, order='F')
+                                    ).reshape(2, 2, order='F')
 
 coef_ml_irf_7 = np.array([-0.9665524])
 
@@ -317,7 +317,7 @@ ranef_mean_ml_drf_8 = np.array([0.2852326, -0.5047804])
 
 ranef_condvar_ml_drf_8 = np.array([0.05400391, 0.002330104,
                                    0.002330104, 0.122761]
-                                   ).reshape(2, 2, order='F')
+                                  ).reshape(2, 2, order='F')
 
 coef_reml_drf_8 = np.array([-1.083938, 0.8956893])
 
@@ -335,7 +335,7 @@ ranef_mean_reml_drf_8 = np.array([0.2829798, -0.5042857])
 
 ranef_condvar_reml_drf_8 = np.array([0.05463632, 0.002393538,
                                      0.002393538, 0.1249828]
-                                     ).reshape(2, 2, order='F')
+                                    ).reshape(2, 2, order='F')
 
 coef_ml_irf_8 = np.array([-1.079481, 0.898216])
 
@@ -353,7 +353,7 @@ coef_reml_irf_8 = np.array([-1.07952, 0.8983678])
 
 vcov_reml_irf_8 = np.array([0.002549354, 0.0001833386,
                             0.0001833386, 0.002614672]
-                            ).reshape(2, 2, order='F')
+                           ).reshape(2, 2, order='F')
 
 cov_re_reml_irf_8 = np.array([0.1497193, 0,
                               0, 2.403076]).reshape(2, 2, order='F')
@@ -378,7 +378,7 @@ ranef_mean_ml_drf_9 = np.array([0.03253644, 0.224043])
 
 ranef_condvar_ml_drf_9 = np.array([0.3994872, 0.02478884,
                                    0.02478884, 1.195077]
-                                   ).reshape(2, 2, order='F')
+                                  ).reshape(2, 2, order='F')
 
 coef_reml_drf_9 = np.array([-1.272483, 0.861814])
 
@@ -396,7 +396,7 @@ ranef_mean_reml_drf_9 = np.array([0.03239688, 0.2230525])
 
 ranef_condvar_reml_drf_9 = np.array([0.401762, 0.02521271,
                                      0.02521271, 1.203536]
-                                     ).reshape(2, 2, order='F')
+                                    ).reshape(2, 2, order='F')
 
 coef_ml_irf_9 = np.array([-1.277018, 0.86395])
 
@@ -427,7 +427,7 @@ coef_ml_drf_10 = np.array([-0.9419566, -0.02359824, 1.085796])
 vcov_ml_drf_10 = np.array([0.001963536, -0.0003221793, 0.0001950186,
                            -0.0003221793, 0.002534251, 0.0004107718,
                            0.0001950186, 0.0004107718, 0.002580736]
-                           ).reshape(3, 3, order='F')
+                          ).reshape(3, 3, order='F')
 
 cov_re_ml_drf_10 = np.array([0.2040541, 0.09038325,
                              0.09038325, 2.218903]).reshape(2, 2, order='F')
@@ -440,17 +440,17 @@ ranef_mean_ml_drf_10 = np.array([0.03876325, -0.725853])
 
 ranef_condvar_ml_drf_10 = np.array([0.1988816, 0.1872403,
                                     0.1872403, 0.4052274]
-                                    ).reshape(2, 2, order='F')
+                                   ).reshape(2, 2, order='F')
 
 coef_reml_drf_10 = np.array([-0.9426367, -0.02336203, 1.085733])
 
 vcov_reml_drf_10 = np.array([0.002011348, -0.0003300612, 0.0002002948,
                              -0.0003300612, 0.002589149, 0.000418987,
                              0.0002002948, 0.000418987, 0.002637433]
-                             ).reshape(3, 3, order='F')
+                            ).reshape(3, 3, order='F')
 
 cov_re_reml_drf_10 = np.array([0.2034827, 0.09063836,
-                               0.09063836, 2.219191]).reshape(2, 2, order='F')
+                              0.09063836, 2.219191]).reshape(2, 2, order='F')
 
 scale_reml_drf_10 = np.array([0.2630213])
 
@@ -460,14 +460,14 @@ ranef_mean_reml_drf_10 = np.array([0.03838686, -0.7240812])
 
 ranef_condvar_reml_drf_10 = np.array([0.1983981, 0.1865469,
                                       0.1865469, 0.4100937]
-                                      ).reshape(2, 2, order='F')
+                                     ).reshape(2, 2, order='F')
 
 coef_ml_irf_10 = np.array([-0.9441033, -0.01755913, 1.088568])
 
 vcov_ml_irf_10 = np.array([0.001960114, -0.0003215658, 0.0001944005,
                            -0.0003215658, 0.00253441, 0.0004061179,
                            0.0001944005, 0.0004061179, 0.002589158]
-                           ).reshape(3, 3, order='F')
+                          ).reshape(3, 3, order='F')
 
 cov_re_ml_irf_10 = np.array([0.2032228, 0,
                              0, 2.192893]).reshape(2, 2, order='F')
@@ -479,8 +479,8 @@ loglike_ml_irf_10 = np.array([-380.162])
 coef_reml_irf_10 = np.array([-0.9448257, -0.01722993, 1.088557])
 
 vcov_reml_irf_10 = np.array([0.00200783, -0.0003294349, 0.0001996613,
-                            -0.0003294349, 0.00258937, 0.0004141667,
-                            0.0001996613, 0.0004141667, 0.002646242]
+                             -0.0003294349, 0.00258937, 0.0004141667,
+                             0.0001996613, 0.0004141667, 0.002646242]
                             ).reshape(3, 3, order='F')
 
 cov_re_reml_irf_10 = np.array([0.2026653, 0,
@@ -495,10 +495,10 @@ coef_ml_drf_11 = np.array([-1.36971, 0.1596278, 0.8588724])
 vcov_ml_drf_11 = np.array([0.0232326, 0.00172214, 0.002275343,
                            0.00172214, 0.02318941, 0.0004755663,
                            0.002275343, 0.0004755663, 0.02123474]
-                           ).reshape(3, 3, order='F')
+                          ).reshape(3, 3, order='F')
 
-cov_re_ml_drf_11 = np.array([0.3719096, 0.332198, 0.332198, 1.120588]
-    ).reshape(2, 2, order='F')
+cov_re_ml_drf_11 = np.array([0.3719096, 0.332198,
+                             0.332198, 1.120588]).reshape(2, 2, order='F')
 
 scale_ml_drf_11 = np.array([4.849781])
 
@@ -508,7 +508,7 @@ ranef_mean_ml_drf_11 = np.array([-0.4256917, -0.3907759])
 
 ranef_condvar_ml_drf_11 = np.array([0.2987928, 0.1992074,
                                     0.1992074, 0.7477486]
-                                    ).reshape(2, 2, order='F')
+                                   ).reshape(2, 2, order='F')
 
 coef_reml_drf_11 = np.array([-1.370236, 0.1597671, 0.8585994])
 
@@ -529,7 +529,7 @@ ranef_mean_reml_drf_11 = np.array([-0.4168539, -0.3879533])
 
 ranef_condvar_reml_drf_11 = np.array([0.2965372, 0.2010191,
                                       0.2010191, 0.7503986]
-                                      ).reshape(2, 2, order='F')
+                                     ).reshape(2, 2, order='F')
 
 coef_ml_irf_11 = np.array([-1.370117, 0.1414964, 0.8466083])
 
@@ -551,7 +551,7 @@ coef_reml_irf_11 = np.array([-1.370663, 0.1417561, 0.8464232])
 vcov_reml_irf_11 = np.array([0.02348548, 0.001734072, 0.002291519,
                              0.001734072, 0.02373715, 0.0005177618,
                              0.002291519, 0.0005177618, 0.02178966]
-                             ).reshape(3, 3, order='F')
+                            ).reshape(3, 3, order='F')
 
 cov_re_reml_irf_11 = np.array([0.3966454, 0,
                                0, 1.106551]).reshape(2, 2, order='F')

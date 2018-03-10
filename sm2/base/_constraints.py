@@ -64,13 +64,12 @@ class TransformRestriction(object):
         #evecs_maxabs = np.max(np.abs(evecs), 0)
         #evecs = evecs / evecs_maxabs
         self.evals = evals
-        self.evecs = evecs # temporarily attach as attribute
+        self.evecs = evecs  # temporarily attach as attribute
         L = self.L = evecs[:, :k_constr]
         self.transf_mat = evecs[:, k_constr:]
 
         if q is not None:
             # use solve instead of inv
-            #self.constant = q.T.dot(np.linalg.inv(L.T.dot(R.T)).dot(L.T))
             try:
                 self.constant = q.T.dot(np.linalg.solve(L.T.dot(R.T), L.T))
             except np.linalg.linalg.LinAlgError as e:
@@ -230,7 +229,7 @@ def fit_constrained(model, constraint_matrix, constraint_values,
         offset += self.offset
 
     if start_params is not None:
-        start_params =  transf.reduce(start_params)
+        start_params = transf.reduce(start_params)
 
     # need copy, because we don't want to change it, we don't need deepcopy
     init_kwds = copy.copy(self._get_init_kwds())
@@ -272,9 +271,6 @@ def fit_constrained_wrap(model, constraints, start_params=None, **fit_kwds):
     """
     self = model  # alias for use as method
 
-    #constraints = (R, q)
-    # TODO: temporary trailing underscore to not overwrite the monkey
-    #       patched version
     # TODO: decide whether to move the imports
     from patsy import DesignInfo
 

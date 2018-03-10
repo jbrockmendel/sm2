@@ -292,6 +292,7 @@ class TestOLS(CheckRegressionResults):
 class TestRTO(CheckRegressionResults):
     res2 = results_regression.LongleyRTO()
     _do_check_wresid = False
+
     @classmethod
     def setup_class(cls):
         data = datasets.longley.load()
@@ -800,6 +801,7 @@ class TestTtest2(object):
                             -1829.2025687186533,
                             DECIMAL_4)
 
+
 # -------------------------------------------------------------
 # Unsorted
 
@@ -1048,6 +1050,7 @@ class TestGLS(object):
 
 # -------------------------------------------------------------
 
+
 @pytest.mark.not_vetted
 def test_summary():
     # GH#734
@@ -1151,6 +1154,7 @@ class TestWLS_CornerCases(object):
     def test_wrong_size_weights(self):
         with pytest.raises(ValueError):
             WLS(self.endog, self.exog, weights=np.ones((10, 10)))
+
 
 @pytest.mark.not_vetted
 def test_const_indicator():

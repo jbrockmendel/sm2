@@ -2,9 +2,9 @@
 
 __docformat__ = 'restructuredtext'
 
-COPYRIGHT   = """This is public domain."""
-TITLE       = __doc__
-SOURCE      = """
+COPYRIGHT = """This is public domain."""
+TITLE = __doc__
+SOURCE = """
 The classic 1967 Longley Data
 
 http://www.itl.nist.gov/div898/strd/lls/data/Longley.shtml
@@ -16,13 +16,13 @@ http://www.itl.nist.gov/div898/strd/lls/data/Longley.shtml
         the American Statistical Association.  62.319, 819-41.
 """
 
-DESCRSHORT  = """"""
+DESCRSHORT = """"""
 
-DESCRLONG   = """The Longley dataset contains various US macroeconomic
+DESCRLONG = """The Longley dataset contains various US macroeconomic
 variables that are known to be highly collinear.  It has been used to appraise
 the accuracy of least squares routines."""
 
-NOTE        = """::
+NOTE = """::
 
     Number of Observations - 16
 
@@ -43,6 +43,7 @@ from numpy import recfromtxt, array, column_stack
 from sm2.datasets import utils as du
 from os.path import dirname, abspath
 
+
 def load():
     """
     Load the Longley data and return a Dataset class.
@@ -54,6 +55,7 @@ def load():
     """
     data = _get_data()
     return du.process_recarray(data, endog_idx=0, dtype=float)
+
 
 def load_pandas():
     """
@@ -67,9 +69,11 @@ def load_pandas():
     data = _get_data()
     return du.process_recarray_pandas(data, endog_idx=0)
 
+
 def _get_data():
     filepath = dirname(abspath(__file__))
-    with open(filepath+'/longley.csv',"rb") as f:
+    with open(filepath+'/longley.csv', "rb") as f:
         data = recfromtxt(f, delimiter=",",
-                          names=True, dtype=float, usecols=(1,2,3,4,5,6,7))
+                          names=True, dtype=float,
+                          usecols=(1, 2, 3, 4, 5, 6, 7))
     return data

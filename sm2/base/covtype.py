@@ -200,9 +200,11 @@ def get_robustcov_results(self, cov_type='HC1', use_t=None, **kwds):
                                        'using %d lags and %s small sample '
                                        'correction') % (maxlags, maybe_with)
 
-        res.cov_params_default = sw.cov_hac_simple(self, nlags=maxlags,
-                                                   weights_func=weights_func,
-                                                   use_correction=use_correction)
+        cpd = sw.cov_hac_simple(self, nlags=maxlags,
+                                weights_func=weights_func,
+                                use_correction=use_correction)
+        res.cov_params_default = cpd
+
     elif cov_type.lower() == 'cluster':
         # cluster robust standard errors, one- or two-way
         groups = kwds['groups']
@@ -220,8 +222,8 @@ def get_robustcov_results(self, cov_type='HC1', use_t=None, **kwds):
                 # need to find number of groups
                 # duplicate work
                 self.n_groups = n_groups = len(np.unique(groups))
-            res.cov_params_default = sw.cov_cluster(self, groups,
-                                                    use_correction=use_correction)
+            cpd = sw.cov_cluster(self, groups, use_correction=use_correction)
+            res.cov_params_default = cpd
 
         elif groups.ndim == 2:
             if hasattr(groups, 'values'):
@@ -236,8 +238,9 @@ def get_robustcov_results(self, cov_type='HC1', use_t=None, **kwds):
                 n_groups = min(n_groups0, n_groups1)  # use for adjust_df
 
             # Note: sw.cov_cluster_2groups has 3 returns
-            res.cov_params_default = sw.cov_cluster_2groups(self, groups,
-                                                            use_correction=use_correction)[0]
+            cpd = sw.cov_cluster_2groups(self, groups,
+                                         use_correction=use_correction)[0]
+            res.cov_params_default = cpd
         else:
             raise ValueError('only two groups are supported')
         res.cov_kwds['description'] = ('Standard Errors are robust to '
@@ -293,9 +296,11 @@ def get_robustcov_results(self, cov_type='HC1', use_t=None, **kwds):
             # need to find number of groups
             tt = (np.nonzero(time[1:] < time[:-1])[0] + 1)
             self.n_groups = n_groups = len(tt) + 1
-        res.cov_params_default = sw.cov_nw_groupsum(self, maxlags, time,
-                                                    weights_func=weights_func,
-                                                    use_correction=use_correction)
+
+        cpd = sw.cov_nw_groupsum(self, maxlags, time,
+                                 weights_func=weights_func,
+                                 use_correction=use_correction)
+        res.cov_params_default = cpd
         res.cov_kwds['description'] = ('Driscoll and Kraay Standard Errors '
                                        'are robust to cluster correlation '
                                        '(' + cov_type + ')')

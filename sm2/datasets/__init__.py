@@ -1,7 +1,6 @@
 """
 Datasets module
 """
-#__all__ = filter(lambda s:not s.startswith('_'),dir())
 from . import (anes96, cancer, committee, ccard, copper, cpunish, elnino,
                engel, grunfeld, interest_inflation, longley, macrodata,
                modechoice, nile, randhie, scotland, spector, stackloss, 

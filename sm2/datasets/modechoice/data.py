@@ -66,7 +66,8 @@ def load():
         See DATASET_PROPOSAL.txt for more information.
     """
     data = _get_data()
-    return du.process_recarray(data, endog_idx=2, exog_idx=[3,4,5,6,7,8],
+    return du.process_recarray(data, endog_idx=2,
+                               exog_idx=[3, 4, 5, 6, 7, 8],
                                dtype=float)
 
 def load_pandas():
@@ -80,7 +81,8 @@ def load_pandas():
     """
 
     data = _get_data()
-    return du.process_recarray_pandas(data, endog_idx = 2, exog_idx=[3,4,5,6,7,8],
+    return du.process_recarray_pandas(data, endog_idx = 2,
+                                      exog_idx=[3, 4, 5, 6, 7, 8],
                                       dtype=float)
 
 def _get_data():

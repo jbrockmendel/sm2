@@ -16,6 +16,7 @@ from sm2.regression._prediction import get_prediction
 GLM = None
 links = None
 params_transform_univariate = None
+wls_prediction_std = None
 
 
 # from statsmodels.sandbox.regression.predstd import wls_prediction_std
@@ -91,18 +92,18 @@ def test_predict_se():
     assert_allclose(iv_l, res3.fittedvalues - ci_half, rtol=1e-12)
 
     # testing shapes of exog
-    prstd, iv_l, iv_u = wls_prediction_std(res3, x2[-1:,:], weights=3.)
+    prstd, iv_l, iv_u = wls_prediction_std(res3, x2[-1:, :], weights=3.)
     assert_equal(prstd, prstd[-1])
-    prstd, iv_l, iv_u = wls_prediction_std(res3, x2[-1,:], weights=3.)
+    prstd, iv_l, iv_u = wls_prediction_std(res3, x2[-1, :], weights=3.)
     assert_equal(prstd, prstd[-1])
 
-    prstd, iv_l, iv_u = wls_prediction_std(res3, x2[-2:,:], weights=3.)
+    prstd, iv_l, iv_u = wls_prediction_std(res3, x2[-2:, :], weights=3.)
     assert_equal(prstd, prstd[-2:])
 
-    prstd, iv_l, iv_u = wls_prediction_std(res3, x2[-2:,:], weights=[3, 3])
+    prstd, iv_l, iv_u = wls_prediction_std(res3, x2[-2:, :], weights=[3, 3])
     assert_equal(prstd, prstd[-2:])
 
-    prstd, iv_l, iv_u = wls_prediction_std(res3, x2[:3,:])
+    prstd, iv_l, iv_u = wls_prediction_std(res3, x2[:3, :])
     assert_equal(prstd, prstd[:3])
     assert_allclose(iv_u, res3.fittedvalues[:3] + ci_half[:3],
                     rtol=1e-12)
@@ -111,9 +112,9 @@ def test_predict_se():
 
 
     # use wrong size for exog
-    # prstd, iv_l, iv_u = wls_prediction_std(res3, x2[-1,0], weights=3.)
+    # prstd, iv_l, iv_u = wls_prediction_std(res3, x2[-1, 0], weights=3.)
     with pytest.raises(ValueError):
-        wls_prediction_std(res3, x2[-1,0], weights=3.)
+        wls_prediction_std(res3, x2[-1, 0], weights=3.)
 
     # check some weight values
     sew1 = wls_prediction_std(res3, x2[-3:, :])[0]**2
@@ -131,7 +132,7 @@ class TestWLSPrediction(object):
         nsample = 50
         x = np.linspace(0, 20, nsample)
         X = np.column_stack((x, (x - 5)**2))
-        
+
         X = add_constant(X)
         beta = [5., 0.5, -0.01]
         sig = 0.5
@@ -143,11 +144,12 @@ class TestWLSPrediction(object):
         X = X[:, [0, 1]]
 
         # WLS knowing the true variance ratio of heteroscedasticity
-        mod_wls = WLS(y, X, weights=1./w)
+        mod_wls = WLS(y, X, weights=1. / w)
         cls.res_wls = mod_wls.fit()
 
     @pytest.mark.skip(reason="wls_prediction_std not ported from upstream")
     def test_ci(self):
+
         res_wls = self.res_wls
         prstd, iv_l, iv_u = wls_prediction_std(res_wls)
         pred_res = get_prediction(res_wls)
@@ -179,7 +181,7 @@ class TestWLSPrediction(object):
         y, X, wi = mod_wls.endog, mod_wls.exog, mod_wls.weights
 
         w_sqrt = np.sqrt(wi)  # notation wi is weights, `w` is var
-        mod_glm = GLM(y * w_sqrt, X * w_sqrt[:,None])
+        mod_glm = GLM(y * w_sqrt, X * w_sqrt[:, None])
 
         # compare using t distribution
         res_glm = mod_glm.fit(use_t=True)

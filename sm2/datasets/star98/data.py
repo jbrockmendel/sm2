@@ -2,17 +2,17 @@
 
 __docformat__ = 'restructuredtext'
 
-COPYRIGHT   = """Used with express permission from the original author,
+COPYRIGHT = """Used with express permission from the original author,
 who retains all rights."""
-TITLE       = "Star98 Educational Dataset"
-SOURCE      = """
+TITLE = "Star98 Educational Dataset"
+SOURCE = """
 Jeff Gill's `Generalized Linear Models: A Unified Approach`
 
 http://jgill.wustl.edu/research/books.html
 """
-DESCRSHORT  = """Math scores for 303 student with 10 explanatory factors"""
+DESCRSHORT = """Math scores for 303 student with 10 explanatory factors"""
 
-DESCRLONG   = """
+DESCRLONG = """
 This data is on the California education policy and outcomes (STAR program
 results for 1998.  The data measured standardized testing by the California
 Department of Education that required evaluation of 2nd - 11th grade students
@@ -24,7 +24,7 @@ over the national median value on the mathematics exam.
 The data used in this example is only a subset of the original source.
 """
 
-NOTE        = """::
+NOTE = """::
 
     Number of Observations - 303 (counties in California).
 
@@ -68,6 +68,7 @@ from numpy import recfromtxt, column_stack, array
 from sm2.datasets import utils as du
 from os.path import dirname, abspath
 
+
 def load():
     """
     Load the star98 data and returns a Dataset class instance.
@@ -80,20 +81,21 @@ def load():
     data = _get_data()
     return du.process_recarray(data, endog_idx=[0, 1], dtype=float)
 
+
 def load_pandas():
     data = _get_data()
     return du.process_recarray_pandas(data, endog_idx=['NABOVE', 'NBELOW'],
                                       dtype=float)
 
+
 def _get_data():
     filepath = dirname(abspath(__file__))
-##### EDIT THE FOLLOWING TO POINT TO DatasetName.csv #####
-    names = ["NABOVE","NBELOW","LOWINC","PERASIAN","PERBLACK","PERHISP",
-            "PERMINTE","AVYRSEXP","AVSALK","PERSPENK","PTRATIO","PCTAF",
-            "PCTCHRT","PCTYRRND","PERMINTE_AVYRSEXP","PERMINTE_AVSAL",
-            "AVYRSEXP_AVSAL","PERSPEN_PTRATIO","PERSPEN_PCTAF","PTRATIO_PCTAF",
-            "PERMINTE_AVYRSEXP_AVSAL","PERSPEN_PTRATIO_PCTAF"]
-    with open(filepath + '/star98.csv',"rb") as f:
+    names = ["NABOVE", "NBELOW", "LOWINC", "PERASIAN", "PERBLACK", "PERHISP",
+            "PERMINTE", "AVYRSEXP", "AVSALK", "PERSPENK", "PTRATIO", "PCTAF",
+            "PCTCHRT", "PCTYRRND", "PERMINTE_AVYRSEXP", "PERMINTE_AVSAL",
+            "AVYRSEXP_AVSAL", "PERSPEN_PTRATIO", "PERSPEN_PCTAF", "PTRATIO_PCTAF",
+            "PERMINTE_AVYRSEXP_AVSAL", "PERSPEN_PTRATIO_PCTAF"]
+    with open(filepath + '/star98.csv', "rb") as f:
         data = recfromtxt(f, delimiter=",",
                           names=names, skip_header=1, dtype=float)
 
