@@ -16,29 +16,30 @@ class ARLagResults(object):
     def __init__(self, type="const"):
         # order of results is AIC, HQ, SC, FPE
         if type == "const":
-            ic = [6.311751824815273, 6.321813007357017,  6.336872456958734,
+            ic = [6.311751824815273, 6.321813007357017, 6.336872456958734,
                   551.009492543133547, 5.647615009344886, 5.662706783157502,
-                  5.685295957560077, 283.614444209634655,  5.634199640773091,
+                  5.685295957560077, 283.614444209634655, 5.634199640773091,
                   5.654322005856580, 5.684440905060013, 279.835333966272003,
-                  5.639415797766900,  5.664568754121261,  5.702217378125553,
-                281.299267441683185,  5.646102475432464,  5.676286023057697,
-                  5.721464371862848, 283.187210932784524,  5.628416873122441,
-                  5.663631012018546,  5.716339085624555, 278.223839284844701,
-                  5.584204185137150,  5.624448915304128,  5.684686713710994,
-                266.191975554941564,  5.541163244029505,  5.586438565467356,
+                  5.639415797766900, 5.664568754121261, 5.702217378125553,
+                  281.299267441683185, 5.646102475432464, 5.676286023057697,
+                  5.721464371862848, 283.187210932784524, 5.628416873122441,
+                  5.663631012018546, 5.716339085624555, 278.223839284844701,
+                  5.584204185137150, 5.624448915304128, 5.684686713710994,
+                  266.191975554941564, 5.541163244029505, 5.586438565467356,
                   5.654206088675081, 254.979353737235556, 5.483155367013447,
-                  5.533461279722170,  5.608758527730753, 240.611088468544949,
-                  5.489939895595428,  5.545276399575022,  5.628103372384465,
-                242.251199397394288,  5.496713895370946,  5.557080990621412,
-                  5.647437688231713, 243.900349905069504,  5.503539311586831,
-                  5.568936998108170,  5.666823420519329, 245.573823561989144,
-                  5.510365149977393,  5.580793427769605,  5.686209574981622,
-                247.259396991133599,  5.513740912139918,  5.589199781203001,
-                  5.702145653215877, 248.099655693709479,  5.515627471325321,
-                  5.596116931659277,  5.716592528473011, 248.572915484827206,
-                  5.515935627515806,  5.601455679120634,  5.729461000735226,
-                248.654927915301300]
-            self.ic = np.asarray(ic).reshape(4,-1, order='F')
+                  5.533461279722170, 5.608758527730753, 240.611088468544949,
+                  5.489939895595428, 5.545276399575022, 5.628103372384465,
+                  242.251199397394288, 5.496713895370946, 5.557080990621412,
+                  5.647437688231713, 243.900349905069504, 5.503539311586831,
+                  5.568936998108170, 5.666823420519329, 245.573823561989144,
+                  5.510365149977393, 5.580793427769605, 5.686209574981622,
+                  247.259396991133599, 5.513740912139918, 5.589199781203001,
+                  5.702145653215877, 248.099655693709479, 5.515627471325321,
+                  5.596116931659277, 5.716592528473011, 248.572915484827206,
+                  5.515935627515806, 5.601455679120634, 5.729461000735226,
+                  248.654927915301300]
+            self.ic = np.asarray(ic).reshape(4, -1, order='F')
+
 
 class ARResultsOLS(object):
     """
@@ -95,11 +96,11 @@ class ARResultsOLS(object):
             # n=-1, start=9
             self.FVOLSnneg1start9 = fv
             # n=-1, start=100
-            self.FVOLSnneg1start100 = fv[100-9:]
+            self.FVOLSnneg1start100 = fv[100 - 9:]
             # n = 200, start = 0
             self.FVOLSn200start0 = fv[:192]
             # n = 200, start = 200
-            self.FVOLSn200start200 = np.hstack((fv[200-9:], pv[:101-9]))
+            self.FVOLSn200start200 = np.hstack((fv[200 - 9:], pv[:101 - 9]))
             # n = 200, start = -109 use above
             self.FVOLSn200startneg109 = self.FVOLSn200start200
             # n = 100, start = 325, post-sample forecasting
@@ -132,14 +133,14 @@ class ARResultsOLS(object):
             #self.bic =  8.433861292817106
             #self.hqic =  8.367215591385756
             #self.aic =  8.322747818577421
-            self.fpe =  241.0221316614273
+            self.fpe = 241.0221316614273
             filename = os.path.join(cur_dir, "AROLSNoConstantPredict.csv")
             predictresults = np.loadtxt(filename)
-            fv = predictresults[:300,0]
-            pv = predictresults[300:,1]
-            pv_lb = predictresults[300:,2]
-            pv_ub = predictresults[300:,3]
-            pv_se = predictresults[300:,4]
+            fv = predictresults[:300, 0]
+            pv = predictresults[300:, 1]
+            pv_lb = predictresults[300:, 2]
+            pv_ub = predictresults[300:, 3]
+            pv_se = predictresults[300:, 4]
 
             # cases - in sample predict
             # n = -1, start = 0 (fitted values)
@@ -147,23 +148,23 @@ class ARResultsOLS(object):
             # n=-1, start=9
             self.FVOLSnneg1start9 = fv
             # n=-1, start=100
-            self.FVOLSnneg1start100 = fv[100-9:]
+            self.FVOLSnneg1start100 = fv[100 - 9:]
             # n = 200, start = 0
             self.FVOLSn200start0 = fv[:192]
             # n = 200, start = 200
-            self.FVOLSn200start200 = np.hstack((fv[200-9:],pv[:101-9]))
+            self.FVOLSn200start200 = np.hstack((fv[200 - 9:], pv[:101 - 9]))
             # n = 200, start = -109 use above
             self.FVOLSn200startneg109 = self.FVOLSn200start200
             # n = 100, start = 325, post-sample forecasting
-            self.FVOLSn100start325 = np.hstack((fv[-1],pv))
+            self.FVOLSn100start325 = np.hstack((fv[-1], pv))
             # n = 301, start = 9
-            self.FVOLSn301start9 = np.hstack((fv,pv[:2]))
+            self.FVOLSn301start9 = np.hstack((fv, pv[:2]))
             # n = 301, start = 0
             self.FVOLSdefault = fv
             # n = 4, start = 312
-            self.FVOLSn4start312 = np.hstack((fv[-1],pv[:8]))
+            self.FVOLSn4start312 = np.hstack((fv[-1], pv[:8]))
             # n = 15, start = 312
-            self.FVOLSn15start312 = np.hstack((fv[-1],pv[:19]))
+            self.FVOLSn15start312 = np.hstack((fv[-1], pv[:19]))
 
 
 class ARResultsMLE(object):
@@ -174,7 +175,7 @@ class ARResultsMLE(object):
     """
     def __init__(self, constant=True):
         self.avobs = 300
-        
+
         if constant:
             # NOTE: Stata's estimated parameters differ from gretl
 
@@ -208,7 +209,7 @@ class ARResultsMLE(object):
             # end = 7, start = 2
             self.FVMLEstart2end7 = pv[2:8]
 
-            self.fcdyn = dynamicpv[:,0]
-            self.fcdyn2 = dynamicpv[:,1]
-            self.fcdyn3 = dynamicpv[:,2]
-            self.fcdyn4 = dynamicpv[:,3]
+            self.fcdyn = dynamicpv[:, 0]
+            self.fcdyn2 = dynamicpv[:, 1]
+            self.fcdyn3 = dynamicpv[:, 2]
+            self.fcdyn4 = dynamicpv[:, 3]
