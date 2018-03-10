@@ -117,7 +117,7 @@ class AR(tsa_model.TimeSeriesModel):
         # Initial State mean and variance
         alpha = np.zeros((p, 1))
         Q_0 = np.dot(np.linalg.inv(np.identity(p**2) - np.kron(T_mat, T_mat)),
-                  np.dot(R_mat, R_mat.T).ravel('F'))
+                     np.dot(R_mat, R_mat.T).ravel('F'))
 
         Q_0 = Q_0.reshape(p, p, order='F')  # TODO: order might need to be p+k
         P = Q_0
@@ -220,7 +220,7 @@ class AR(tsa_model.TimeSeriesModel):
             if start < k_ar:
                 self._presample_fit(params, start, k_ar, min(k_ar - 1, end),
                                     endog[:k_ar] - mu, predictedvalues)
-                predictedvalues[:k_ar-start] += mu
+                predictedvalues[:k_ar - start] += mu
 
         if end < k_ar:
             return predictedvalues
@@ -370,7 +370,8 @@ class AR(tsa_model.TimeSeriesModel):
         """
         Not Implemented Yet
         """
-        return
+        # TODO: This just passes upstream; fix it there
+        raise NotImplementedError
 
     def hessian(self, params):
         """
@@ -425,13 +426,13 @@ class AR(tsa_model.TimeSeriesModel):
         results = {}
 
         if ic != 't-stat':
-            for lag in range(k, maxlag+1):
+            for lag in range(k, maxlag + 1):
                 # have to reinstantiate the model to keep comparable models
                 endog_tmp = endog[maxlag-lag:]
                 fit = AR(endog_tmp).fit(maxlag=lag, method=method,
                                         full_output=0, trend=trend,
                                         maxiter=100, disp=0)
-                results[lag] = eval('fit.'+ic)
+                results[lag] = eval('fit.' + ic)
             bestic, bestlag = min((res, k) for k, res in results.items())
 
         else:  # choose by last t-stat.
@@ -530,7 +531,7 @@ class AR(tsa_model.TimeSeriesModel):
         endog = self.endog
 
         if maxlag is None:
-            maxlag = int(round(12*(nobs/100.)**(1/4.)))
+            maxlag = int(round(12 * (nobs / 100.)**(1 / 4.)))
         k_ar = maxlag  # stays this if ic is None
 
         # select lag length
@@ -675,7 +676,6 @@ class ARResults(tsa_model.TimeSeriesModelResults):
     tvalues : array
         The t-values associated with `params`.
     """
-
     _cache = {}  # for scale setter
 
     def __init__(self, model, params, normalized_cov_params=None, scale=1.):
@@ -732,7 +732,7 @@ class ARResults(tsa_model.TimeSeriesModelResults):
         # Lutkepohl
         #return np.log(self.sigma2) + 1./self.model.nobs * self.k_ar
         # Include constant as estimated free parameter and double the loss
-        return np.log(self.sigma2) + 2 * (1 + self.df_model)/self.nobs
+        return np.log(self.sigma2) + 2 * (1 + self.df_model) / self.nobs
         # Stata defintion
         #nobs = self.nobs
         #return -2 * self.llf/nobs + 2 * (self.k_ar+self.k_trend)/nobs
@@ -743,7 +743,7 @@ class ARResults(tsa_model.TimeSeriesModelResults):
         # Lutkepohl
         # return np.log(self.sigma2)+ 2 * np.log(np.log(nobs))/nobs * self.k_ar
         # R uses all estimated parameters rather than just lags
-        return (np.log(self.sigma2) + 2 * np.log(np.log(nobs))/nobs *
+        return (np.log(self.sigma2) + 2 * np.log(np.log(nobs)) / nobs *
                 (1 + self.df_model))
         # Stata
         #nobs = self.nobs
@@ -755,7 +755,7 @@ class ARResults(tsa_model.TimeSeriesModelResults):
         nobs = self.nobs
         df_model = self.df_model
         # Lutkepohl
-        return ((nobs+df_model)/(nobs-df_model))*self.sigma2
+        return ((nobs + df_model) / (nobs - df_model)) * self.sigma2
 
     @cache_readonly
     def bic(self):
@@ -763,7 +763,7 @@ class ARResults(tsa_model.TimeSeriesModelResults):
         # Lutkepohl
         #return np.log(self.sigma2) + np.log(nobs)/nobs * self.k_ar
         # Include constant as est. free parameter
-        return np.log(self.sigma2) + (1 + self.df_model) * np.log(nobs)/nobs
+        return np.log(self.sigma2) + (1 + self.df_model) * np.log(nobs) / nobs
         # Stata
         # return -2 * self.llf/nobs + np.log(nobs)/nobs * (self.k_ar + \
         #       self.k_trend)
@@ -799,7 +799,7 @@ class ARResults(tsa_model.TimeSeriesModelResults):
         # start, end, out_of_sample, prediction_index = (
         #     self.model._get_prediction_index(start, end, index))
 
-        ##TODO: return forecast errors and confidence intervals
+        # TODO: return forecast errors and confidence intervals
         #from sm2.tsa.arima_process import arma2ma
         #ma_rep = arma2ma(np.r_[1,-params[::-1]], [1], out_of_sample)
         #fcasterr = np.sqrt(self.sigma2 * np.cumsum(ma_rep**2))
@@ -822,9 +822,9 @@ class ARResults(tsa_model.TimeSeriesModelResults):
 
 class ARResultsWrapper(wrap.ResultsWrapper):
     _attrs = {}
-    _wrap_attrs = wrap.union_dicts(tsa_model.TimeSeriesResultsWrapper._wrap_attrs,
-                                   _attrs)
+    _wrap_attrs = wrap.union_dicts(
+        tsa_model.TimeSeriesResultsWrapper._wrap_attrs, _attrs)
     _methods = {}
-    _wrap_methods = wrap.union_dicts(tsa_model.TimeSeriesResultsWrapper._wrap_methods,
-                                     _methods)
-wrap.populate_wrapper(ARResultsWrapper, ARResults)
+    _wrap_methods = wrap.union_dicts(
+        tsa_model.TimeSeriesResultsWrapper._wrap_methods, _methods)
+wrap.populate_wrapper(ARResultsWrapper, ARResults)  # noqa:E305

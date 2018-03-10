@@ -85,19 +85,10 @@ try:
 except ImportError:
     _CYTHON_INSTALLED = False
 
-
-# TODO: What is this?  Is it needed?
-no_frills = (len(sys.argv) >= 2 and ('--help' in sys.argv[1:] or
-                                     sys.argv[1] in ('--help-commands',
-                                                     'egg_info', '--version',
-                                                     'clean')))
-
-
 # These imports need to be here; setuptools needs to be imported first.
 from distutils.extension import Extension  # noqa:E402
 from distutils.command.build import build  # noqa:E402
 from distutils.command.build_ext import build_ext as _build_ext  # noqa:E402
-
 
 try:
     if not _CYTHON_INSTALLED:
@@ -195,11 +186,6 @@ class CleanCommand(Command):
                 pass
 
 
-# we need to inherit from the versioneer
-# class as it encodes the version info
-sdist_class = cmdclass['sdist']
-
-
 class CheckingBuildExt(build_ext):
     """Subclass build_ext to get clearer report if Cython is necessary."""
     # effectively identical to pandas version
@@ -243,17 +229,15 @@ class DummyBuildSrc(Command):
         pass
 
 
-cmdclass = {'clean': CleanCommand,
-            'build': build,
-            'build_ext': CheckingBuildExt}
-
+cmdclass['clean'] = CleanCommand
+cmdclass['build'] = build
+cmdclass['build_ext'] = CheckingBuildExt
 if cython:
     suffix = '.pyx'
     cmdclass['cython'] = CythonCommand
 else:
     suffix = '.c'
     cmdclass['build_src'] = DummyBuildSrc
-
 
 # ------------------------------------------------------------------
 # Cython Preparation & Specification
@@ -279,6 +263,10 @@ def _cythonize(extensions, *args, **kwargs):
     else:
         return extensions
 
+# some linux distros require it
+# NOTE: we are not currently using this but add it to Extension, if needed.
+# libraries = ['m'] if 'win32' not in sys.platform else []
+
 # Set linetrace environment variable to enable coverage measurement
 # for cython files
 linetrace = os.environ.get('linetrace', False)
@@ -301,37 +289,6 @@ extensions = [
               define_macros=macros)]
 
 # ------------------------------------------------------------------
-
-'''
-# some linux distros require it
-# NOTE: we are not currently using this but add it to Extension, if needed.
-# libraries = ['m'] if 'win32' not in sys.platform else []
-
-from numpy.distutils.misc_util import get_info
-
-npymath_info = get_info("npymath")
-ext_data = {
-    "kalman_loglike": {
-        "name": "sm2/tsa/kalmanf/kalman_loglike.c",
-        "depends" : ["sm2/src/capsule.h"],
-        "include_dirs": ["sm2/src"],
-        "sources" : []}}
-
-'''
-'''
-for name, data in ext_data.items():
-    data['sources'] = data.get('sources', []) + [data['name']]
-
-    destdir = ".".join(os.path.dirname(data["name"]).split("/"))
-    data.pop('name')
-
-    filename = data.pop('filename', name)
-
-    obj = Extension('%s.%s' % (destdir, filename), **data)
-
-    extensions.append(obj)
-'''
-
 
 def get_data_files():
     # this adds *.csv and *.dta files in datasets folders
@@ -357,7 +314,7 @@ def get_data_files():
 
     # Manually fill in the rest.  Upstream this was done _outside_ this call
     data_files["sm2.datasets.tests"].append("*.zip")
-    data_files["sm2.iolib.tests.results"].append("*.dta")
+    # data_files["sm2.iolib.tests.results"].append("*.dta")
     data_files["sm2.stats.tests.results"].append("*.json")
     data_files["sm2.tsa.vector_ar.tests.results"].append("*.npz")
     # data files that don't follow the tests/results pattern. should fix.
@@ -371,14 +328,11 @@ def get_data_files():
     return data_files
 
 
-#TODO: deal with this. Not sure if it ever worked for bdists
+# TODO: deal with this. Not sure if it ever worked for bdists
 #('docs/build/htmlhelp/statsmodelsdoc.chm',
 # 'sm2/statsmodelsdoc.chm')
 
 cwd = os.path.abspath(os.path.dirname(__file__))
-#if not os.path.exists(os.path.join(cwd, 'PKG-INFO')) and not no_frills:
-#    # Generate Cython sources, unless building from source release
-#    generate_cython()
 
 setup(name=DISTNAME,
       version=versioneer.get_version(),
@@ -395,7 +349,7 @@ setup(name=DISTNAME,
       platforms='any',
       cmdclass=cmdclass,
       packages=find_packages(),
-      # package_data=get_data_files(),
+      package_data=get_data_files(),
       include_package_data=False,  # True will install all files in repo
       extras_require=extras,
       **setuptools_kwargs)

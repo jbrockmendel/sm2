@@ -46,4 +46,3 @@ def zinegativebinomial_gen(*args, **kwargss):
 
 def zinegbin(*args, **kwargss):
     raise NotImplementedError('Not ported from upstream')
-

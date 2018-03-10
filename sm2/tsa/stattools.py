@@ -869,7 +869,7 @@ def grangercausalitytests(x, maxlag, addconst=True, verbose=True):
             dtaown = add_constant(dta[:, 1:(mxlg + 1)], prepend=False)
             dtajoint = add_constant(dta[:, 1:], prepend=False)
         else:
-            raise NotImplementedError('Not Implemented')
+            raise NotImplementedError
             # dtaown = dta[:, 1:mxlg]
             # dtajoint = dta[:, 1:]
 

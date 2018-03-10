@@ -130,8 +130,8 @@ class TestPoissonConstrained1a(CheckPoissonConstrainedMixin):
         start_params = np.zeros(k_vars)
         start_params[0] = np.log(mod.endog.mean())
         # if we need it, this is desired params
-        p = np.array([-3.93478643,  1.37276214,  2.33077032,  2.71338891,
-                      2.71338891, 0.57966535,  0.97254074])
+        p = np.array([-3.93478643, 1.37276214, 2.33077032, 2.71338891,
+                      2.71338891, 0.57966535, 0.97254074])
 
         constr = 'C(agecat)[T.4] = C(agecat)[T.5]'
         lc = patsy.DesignInfo(mod.exog_names).linear_constraint(constr)
@@ -245,8 +245,8 @@ class TestPoissonConstrained2a(CheckPoissonConstrainedMixin):
         start_params = np.zeros(k_vars)
         start_params[0] = np.log(mod.endog.mean())
         # if we need it, this is desired params
-        p = np.array([-9.43762015,  1.52762442,  2.74155711,  3.58730007,
-                      4.08730007,  1.15987869,  0.12111539])
+        p = np.array([-9.43762015, 1.52762442, 2.74155711, 3.58730007,
+                      4.08730007, 1.15987869, 0.12111539])
 
         constr = 'C(agecat)[T.5] - C(agecat)[T.4] = 0.5'
         lc = patsy.DesignInfo(mod.exog_names).linear_constraint(constr)

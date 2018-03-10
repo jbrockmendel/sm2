@@ -2,6 +2,7 @@
 """
 Test VAR Model
 """
+import os
 import sys
 
 from six import BytesIO
@@ -13,9 +14,11 @@ import pandas as pd
 import pytest
 
 import sm2.api as sm
+import sm2.tools.data as data_util
 import sm2.tsa.vector_ar.util as util
 from sm2.tsa.vector_ar.var_model import VAR
 
+cur_dir = os.path.dirname(os.path.abspath(__file__))
 
 DECIMAL_12 = 12
 DECIMAL_6 = 6
@@ -50,6 +53,39 @@ def close_plots():
         plt.close('all')
     except ImportError:
         pass
+
+
+def get_macrodata():
+    dataset = sm.datasets.macrodata.load_pandas()
+    data = dataset.data[['realgdp', 'realcons', 'realinv']]
+    data = data.to_records(index=False)
+    nd = data.view((float, 3), type=np.ndarray)
+    nd = np.diff(np.log(nd), axis=0)
+    return nd.ravel().view(data.dtype, type=np.ndarray)
+
+
+
+def get_lutkepohl_data(name='e2'):
+    vdir = os.path.split(cur_dir)[0]
+    data_dir = os.path.join(vdir, 'data')
+    path = os.path.join(data_dir, '%s.dat' % name)
+    raise NotImplementedError("parse_lutkepohl_data not ported")
+    return util.parse_lutkepohl_data(path)
+
+
+# TODO: Is this long-defunct?
+def generate_var():
+    from rpy2.robjects import r
+    import pandas.rpy.common as prp
+    r.source('tests/var.R')
+    return prp.convert_robj(r['result'], use_pandas=False)
+
+
+# TODO: Is this long-defunct?
+def write_generate_var():
+    result = generate_var()
+    np.savez('tests/results/vars_results.npz', **result)
+
 
 # ------------------------------------------------------------------------
 # Externally Produced Results
@@ -132,7 +168,7 @@ class RResults(object):
 
 # ------------------------------------------------------------------------
 
-
+# WTF Is this not actually _used_?
 @pytest.mark.not_vetted
 class CheckVAR(object):
     # just so pylint won't complain
@@ -192,30 +228,6 @@ class CheckVAR(object):
 
     def test_bse(self):
         assert_almost_equal(self.res1.bse, self.res2.bse, DECIMAL_4)
-
-
-def get_macrodata():
-    dataset = sm.datasets.macrodata.load_pandas()
-    data = dataset.data[['realgdp', 'realcons', 'realinv']]
-    data = data.to_records(index=False)
-    nd = data.view((float, 3), type=np.ndarray)
-    nd = np.diff(np.log(nd), axis=0)
-    return nd.ravel().view(data.dtype, type=np.ndarray)
-
-
-# TODO: Is this long-defunct?
-def generate_var():
-    from rpy2.robjects import r
-    import pandas.rpy.common as prp
-    r.source('tests/var.R')
-    return prp.convert_robj(r['result'], use_pandas=False)
-
-
-# TODO: Is this long-defunct?
-def write_generate_var():
-    result = generate_var()
-    np.savez('tests/results/vars_results.npz', **result)
-
 
 
 @pytest.mark.not_vetted
@@ -308,10 +320,9 @@ class CheckFEVD(object):
 
 @pytest.mark.not_vetted
 class TestVARResults(CheckIRF, CheckFEVD):
+    p = 2
     @classmethod
     def setup_class(cls):
-        cls.p = 2
-
         cls.data = get_macrodata()
         cls.model = VAR(cls.data)
         cls.names = cls.model.endog_names
@@ -543,35 +554,27 @@ class TestVARResults(CheckIRF, CheckFEVD):
         assert type(res_unpickled) is type(self.res)
 
 
-'''
-# parse_lutkepohl_data not ported from upstream
-def get_lutkepohl_data(name='e2'):
-    import os
-    basepath = os.path.split(sm.__file__)[0]
-    lut_data = basepath + '/tsa/vector_ar/data/'
-    path = lut_data + '%s.dat' % name
-
-    return util.parse_lutkepohl_data(path)
-
-
+@pytest.mark.skip(reason="parse_lutkepohl_data not ported")
 @pytest.mark.not_vetted
+@pytest.mark.smoke
 def test_lutkepohl_parse():
     files = ['e%d' % i for i in range(1, 7)]
     for f in files:
         get_lutkepohl_data(f)
 
 
+@pytest.mark.skip(reason="parse_lutkepohl_data not ported")
 @pytest.mark.not_vetted
 class TestVARResultsLutkepohl(object):
     """
     Verify calculations using results from Lütkepohl's book
     """
+    p = 2
+
     @classmethod
     def setup_class(cls):
-        cls.p = 2
         sdata, dates = get_lutkepohl_data('e1')
 
-        import sm2.tools.data as data_util
         data = data_util.struct_to_ndarray(sdata)
         adj_data = np.diff(np.log(data), axis=0)
         # est = VAR(adj_data, p=2, dates=dates[1:], names=names)
@@ -606,7 +609,6 @@ class TestVARResultsLutkepohl(object):
         stderr = self.irf.lr_effect_stderr(orth=False)
         orth_stderr = self.irf.lr_effect_stderr(orth=True)
         assert_almost_equal(np.round(stderr, 3), self.lut.lr_stderr)
-'''
 
 
 @pytest.mark.not_vetted
