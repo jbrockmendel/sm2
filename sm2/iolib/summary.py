@@ -35,7 +35,7 @@ def summary(self, yname=None, xname=None, title=0, alpha=.05,
             optional, Default is `Y`
     xname : list of strings
             optional, Default is `X.#` for # in p the number of regressors
-    Confidance interval : (0,1) not implimented
+    Confidance interval : (0, 1) not implimented
     title : string
             optional, Default is 'Generalized linear model'
     returns : string
@@ -81,21 +81,19 @@ def summary(self, yname=None, xname=None, title=0, alpha=.05,
     conf_int calculated from normal dist.
     """
     # TODO: Make sure all self.model.__class__.__name__ are listed
-    model_types = {'OLS' : 'Ordinary least squares',
-                   'GLS' : 'Generalized least squares',
-                   'GLSAR' : 'Generalized least squares with AR(p)',
-                   'WLS' : 'Weighted least squares',
-                   'RLM' : 'Robust linear model',
-                   'GLM' : 'Generalized linear model'
-                   }
-    model_methods = {'OLS' : 'Least Squares',
-                   'GLS' : 'Least Squares',
-                   'GLSAR' : 'Least Squares',
-                   'WLS' : 'Least Squares',
-                   'RLM' : '?',
-                   'GLM' : '?'
-                   }
-    if title==0:
+    model_types = {'OLS': 'Ordinary least squares',
+                   'GLS': 'Generalized least squares',
+                   'GLSAR': 'Generalized least squares with AR(p)',
+                   'WLS': 'Weighted least squares',
+                   'RLM': 'Robust linear model',
+                   'GLM': 'Generalized linear model'}
+    model_methods = {'OLS': 'Least Squares',
+                     'GLS': 'Least Squares',
+                     'GLSAR': 'Least Squares',
+                     'WLS': 'Least Squares',
+                      'RLM': '?',
+                     'GLM': '?'}
+    if title == 0:
         title = model_types[self.model.__class__.__name__]
     if yname is None:
         try:
@@ -126,7 +124,7 @@ def summary(self, yname=None, xname=None, title=0, alpha=.05,
                   ('Dependent Variable:', yname), #What happens with multiple names?
                   ('df model', [df_model])
                   ]
-    gen_stubs_left, gen_data_left = zip_longest(*gen_left) #transpose row col
+    gen_stubs_left, gen_data_left = zip_longest(*gen_left)  # transpose row col
 
     gen_title = title
     gen_header = None
@@ -157,10 +155,10 @@ def summary(self, yname=None, xname=None, title=0, alpha=.05,
                       [df_resid]
                       )
     gen_table_right = SimpleTable(gen_data_right,
-                                 gen_header,
-                                 gen_stubs_right,
-                                 title=gen_title,
-                                 txt_fmt=gen_fmt)
+                                  gen_header,
+                                  gen_stubs_right,
+                                  title=gen_title,
+                                  txt_fmt=gen_fmt)
     gen_table_left.extend_right(gen_table_right)
     general_table = gen_table_left
 
@@ -183,12 +181,12 @@ def summary(self, yname=None, xname=None, title=0, alpha=.05,
     #summary table. look up by modeltype
     alp = str((1 - alpha) * 100) + '%'
     param_header = {
-         'OLS'   : ['coef', 'std err', 't', 'P>|t|', alp + ' Conf. Interval'],
-         'GLS'   : ['coef', 'std err', 't', 'P>|t|', alp + ' Conf. Interval'],
-         'GLSAR' : ['coef', 'std err', 't', 'P>|t|', alp + ' Conf. Interval'],
-         'WLS'   : ['coef', 'std err', 't', 'P>|t|', alp + ' Conf. Interval'],
-         'GLM'   : ['coef', 'std err', 't', 'P>|t|', alp + ' Conf. Interval'], #glm uses t-distribution
-         'RLM'   : ['coef', 'std err', 'z', 'P>|z|', alp + ' Conf. Interval']  #checke z
+         'OLS': ['coef', 'std err', 't', 'P>|t|', alp + ' Conf. Interval'],
+         'GLS': ['coef', 'std err', 't', 'P>|t|', alp + ' Conf. Interval'],
+         'GLSAR': ['coef', 'std err', 't', 'P>|t|', alp + ' Conf. Interval'],
+         'WLS': ['coef', 'std err', 't', 'P>|t|', alp + ' Conf. Interval'],
+         'GLM': ['coef', 'std err', 't', 'P>|t|', alp + ' Conf. Interval'], #glm uses t-distribution
+         'RLM': ['coef', 'std err', 'z', 'P>|z|', alp + ' Conf. Interval']  #checke z
                    }
     params_stubs = xname
     params = self.params
@@ -270,8 +268,8 @@ def _getnames(self, yname=None, xname=None):
     return yname, xname
 
 
-
-def summary_top(results, title=None, gleft=None, gright=None, yname=None, xname=None):
+def summary_top(results, title=None, gleft=None, gright=None,
+                yname=None, xname=None):
     """generate top table(s)
 
 
@@ -336,7 +334,7 @@ def summary_top(results, title=None, gleft=None, gright=None, yname=None, xname=
     gen_title = title
     gen_header = None
 
-    #needed_values = [k for k,v in gleft + gright if v is None] #not used anymore
+    #needed_values = [k for k, v in gleft + gright if v is None] #not used anymore
     #replace missing (None) values with default values
     gen_left_ = []
     for item, value in gen_left:
@@ -354,7 +352,7 @@ def summary_top(results, title=None, gleft=None, gright=None, yname=None, xname=
         gen_right = gen_right_
 
     #check
-    missing_values = [k for k,v in gen_left + gen_right if v is None]
+    missing_values = [k for k, v in gen_left + gen_right if v is None]
     assert missing_values == [], missing_values
 
     #pad both tables to equal number of rows
@@ -368,8 +366,8 @@ def summary_top(results, title=None, gleft=None, gright=None, yname=None, xname=
 
         #padding in SimpleTable doesn't work like I want
         #force extra spacing and exact string length in right table
-        gen_right = [('%-21s' % ('  '+k), v) for k,v in gen_right]
-        gen_stubs_right, gen_data_right = zip_longest(*gen_right) #transpose row col
+        gen_right = [('%-21s' % ('  ' + k), v) for k, v in gen_right]
+        gen_stubs_right, gen_data_right = zip_longest(*gen_right)  # transpose row col
         gen_table_right = SimpleTable(gen_data_right,
                                       gen_header,
                                       gen_stubs_right,
@@ -465,8 +463,8 @@ def summary_params(results, yname=None, xname=None, alpha=.05, use_t=True,
                        [forg(std_err[i]) for i in exog_idx],
                        [forg(tvalues[i]) for i in exog_idx],
                        ["%#6.3f" % (pvalues[i]) for i in exog_idx],
-                       [forg(conf_int[i,0]) for i in exog_idx],
-                       [forg(conf_int[i,1]) for i in exog_idx]
+                       [forg(conf_int[i, 0]) for i in exog_idx],
+                       [forg(conf_int[i, 1]) for i in exog_idx]
                       ))
     parameter_table = SimpleTable(params_data,
                                   param_header,
@@ -665,8 +663,8 @@ def summary_params_2dflat(result, endog_names=None, exog_names=None, alpha=0.05,
 
     tables = []
     for eq in range(n_equ):
-        restup = (res, res.params[:,eq], res.bse[:,eq], res.tvalues[:,eq],
-                  res.pvalues[:,eq], res.conf_int(alpha)[eq])
+        restup = (res, res.params[:, eq], res.bse[:, eq], res.tvalues[:, eq],
+                  res.pvalues[:, eq], res.conf_int(alpha)[eq])
 
         #not used anymore in current version
         #if skip_headers2:
@@ -734,7 +732,7 @@ def table_extend(tables, keep_headers=True):
 def summary_return(tables, return_fmt='text'):
     # join table parts then print
     if return_fmt == 'text':
-        strdrop = lambda x: str(x).rsplit('\n',1)[0]
+        strdrop = lambda x: str(x).rsplit('\n', 1)[0]
         # convert to string drop last line
         return '\n'.join(list(map(strdrop, tables[:-1])) + [str(tables[-1])])
     elif return_fmt == 'tables':

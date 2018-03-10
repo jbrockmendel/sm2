@@ -83,34 +83,34 @@ stub R2 C2  40.95038  40.65765
 
     def test_SimpleTable_4(self):
         # Basic test, test_SimpleTable_4 test uses custom txt_fmt
-        txt_fmt1 = dict(data_fmts = ['%3.2f', '%d'],
-                        empty_cell = ' ',
-                        colwidths = 1,
+        txt_fmt1 = dict(data_fmts=['%3.2f', '%d'],
+                        empty_cell=' ',
+                        colwidths=1,
                         colsep=' * ',
-                        row_pre = '* ',
-                        row_post = ' *',
+                        row_pre='* ',
+                        row_post=' *',
                         table_dec_above='*',
                         table_dec_below='*',
                         header_dec_below='*',
-                        header_fmt = '%s',
-                        stub_fmt = '%s',
+                        header_fmt='%s',
+                        stub_fmt='%s',
                         title_align='r',
-                        header_align = 'r',
-                        data_aligns = "r",
-                        stubs_align = "l",
-                        fmt = 'txt'
-                        )
+                        header_align='r',
+                        data_aligns="r",
+                        stubs_align="l",
+                        fmt='txt')
         ltx_fmt1 = default_latex_fmt.copy()
         html_fmt1 = default_html_fmt.copy()
         cell0data = 0.0000
         cell1data = 1
         row0data = [cell0data, cell1data]
         row1data = [2, 3.333]
-        table1data = [ row0data, row1data ]
+        table1data = [row0data, row1data]
         test1stubs = ('stub1', 'stub2')
         test1header = ('header1', 'header2')
-        tbl = SimpleTable(table1data, test1header, test1stubs,txt_fmt=txt_fmt1,
-                          ltx_fmt=ltx_fmt1, html_fmt=html_fmt1)
+        tbl = SimpleTable(table1data, test1header, test1stubs,
+                          txt_fmt=txt_fmt1, ltx_fmt=ltx_fmt1,
+                          html_fmt=html_fmt1)
         def test_txt_fmt1(self):
             # Limited test of custom txt_fmt
             desired = """
@@ -174,7 +174,7 @@ stub R2 C2  40.95038  40.65765
         cell1c_data = 1053
         row0c_data = [cell0c_data, cell1c_data]
         row1c_data = [23, 6250.4]
-        table1c_data = [ row0c_data, row1c_data ]
+        table1c_data = [row0c_data, row1c_data]
         test1c_stubs = ('>stub1%', 'stub_2')
         test1c_header = ('#header1$', 'header&|')
         tbl_c = SimpleTable(table1c_data, test1c_header, test1c_stubs, ltx_fmt=ltx_fmt1)
@@ -196,11 +196,11 @@ stub R2 C2  40.95038  40.65765
         # WTF Is this supposed to be a nested test or what?
 
     def test_regression_with_tuples(self):
-        i = pd.Series( [1, 2, 3, 4] * 10 , name="i")
-        y = pd.Series( [1, 2, 3, 4, 5] * 8, name="y")
-        x = pd.Series( [1, 2, 3, 4, 5, 6, 7, 8] * 5, name="x")
+        i = pd.Series([1, 2, 3, 4] * 10 , name="i")
+        y = pd.Series([1, 2, 3, 4, 5] * 8, name="y")
+        x = pd.Series([1, 2, 3, 4, 5, 6, 7, 8] * 5, name="x")
 
-        df = pd.DataFrame( index=i.index )
+        df = pd.DataFrame(index=i.index)
         df = df.join(i)
         endo = df.join(y)
         exo = df.join(x)
@@ -210,7 +210,7 @@ stub R2 C2  40.95038  40.65765
         endo_Df = endo_groups.agg([np.sum, np.max])
         reg = OLS(exo_Df[[("x", "sum")]], endo_Df).fit()
         interesting_lines = []
-        
+
         with warnings.catch_warnings():
             # Catch ominormal warning, not interesting here
             warnings.simplefilter("ignore")
