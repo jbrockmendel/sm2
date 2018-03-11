@@ -64,7 +64,6 @@ def get_macrodata():
     return nd.ravel().view(data.dtype, type=np.ndarray)
 
 
-
 def get_lutkepohl_data(name='e2'):
     vdir = os.path.split(cur_dir)[0]
     data_dir = os.path.join(vdir, 'data')
@@ -321,6 +320,7 @@ class CheckFEVD(object):
 @pytest.mark.not_vetted
 class TestVARResults(CheckIRF, CheckFEVD):
     p = 2
+
     @classmethod
     def setup_class(cls):
         cls.data = get_macrodata()
@@ -536,7 +536,7 @@ class TestVARResults(CheckIRF, CheckFEVD):
         res2 = VAR(data2).fit(maxlags=self.p)
 
         # use reorder function
-        res3 = self.res.reorder(['realinv','realgdp', 'realcons'])
+        res3 = self.res.reorder(['realinv', 'realgdp', 'realcons'])
 
         # check if the main results match
         assert_almost_equal(res2.params, res3.params)
@@ -617,12 +617,12 @@ def test_var_trend():
     data = get_macrodata().view((float, 3), type=np.ndarray)
 
     model = VAR(data)
-    results = model.fit(4)  #, trend = 'c')
+    results = model.fit(4)  #, trend='c')
     irf = results.irf(10)  # TODO: Is this just smoke?
 
     data_nc = data - data.mean(0)
     model_nc = VAR(data_nc)
-    results_nc = model_nc.fit(4, trend = 'nc')
+    results_nc = model_nc.fit(4, trend='nc')
     with pytest.raises(ValueError):
         model.fit(4, trend='t')
 
@@ -635,13 +635,12 @@ def test_irf_trend():
     data = get_macrodata().view((float, 3), type=np.ndarray)
 
     model = VAR(data)
-    results = model.fit(4)  #, trend = 'c')
+    results = model.fit(4)  #, trend='c')
     irf = results.irf(10)
-
 
     data_nc = data - data.mean(0)
     model_nc = VAR(data_nc)
-    results_nc = model_nc.fit(4, trend = 'nc')
+    results_nc = model_nc.fit(4, trend='nc')
     irf_nc = results_nc.irf(10)
 
     assert_allclose(irf_nc.stderr()[1:4],
@@ -650,9 +649,9 @@ def test_irf_trend():
 
     trend = 1e-3 * np.arange(len(data)) / (len(data) - 1)
     # for pandas version, currently not used, if data is a pd.DataFrame
-    #data_t = pd.DataFrame(data.values + trend[:,None],
+    #data_t = pd.DataFrame(data.values + trend[:, None],
     #                       index=data.index, columns=data.columns)
-    data_t = data + trend[:,None]
+    data_t = data + trend[:, None]
 
     model_t = VAR(data_t)
     results_t = model_t.fit(4, trend='ct')
