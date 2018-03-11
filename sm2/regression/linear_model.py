@@ -43,7 +43,7 @@ from sm2.tools.sm_exceptions import InvalidTestWarning
 from sm2.tools.tools import chain_dot, pinv_extended
 from sm2.tools.decorators import (resettable_cache,
                                   cache_readonly,
-                                  cache_writable)
+                                  cache_writable, copy_doc)
 import sm2.base.model as base
 import sm2.base.wrapper as wrap
 from sm2.base import covtype
@@ -535,7 +535,6 @@ class GLS(RegressionModel):
             # with error covariance matrix
         return llf
 
-    # TODO: identical docstring across all three methods; share it
     def hessian_factor(self, params, scale=None, observed=True):
         """Weights for calculating Hessian
 
@@ -713,27 +712,8 @@ class WLS(RegressionModel):
         llf += 0.5 * np.sum(np.log(self.weights))
         return llf
 
+    @copy_doc(GLS.hessian_factor.__doc__)
     def hessian_factor(self, params, scale=None, observed=True):
-        """Weights for calculating Hessian
-
-        Parameters
-        ----------
-        params : ndarray
-            parameter at which Hessian is evaluated
-        scale : None or float
-            If scale is None, then the default scale will be calculated.
-            Default scale is defined by `self.scaletype` and set in fit.
-            If scale is not None, then it is used as a fixed scale.
-        observed : bool
-            If True, then the observed Hessian is returned. If false then the
-            expected information matrix is returned.
-
-        Returns
-        -------
-        hessian_factor : ndarray, 1d
-            A 1d weight vector used in the calculation of the Hessian.
-            The hessian is obtained by `(exog.T * hessian_factor).dot(exog)`
-        """
         return self.weights
 
     def fit_regularized(self, method="elastic_net", alpha=0.,
@@ -925,27 +905,8 @@ class OLS(WLS):
         else:
             return -self._wexog_xprod / scale
 
+    @copy_doc(GLS.hessian_factor.__doc__)
     def hessian_factor(self, params, scale=None, observed=True):
-        """Weights for calculating Hessian
-
-        Parameters
-        ----------
-        params : ndarray
-            parameter at which Hessian is evaluated
-        scale : None or float
-            If scale is None, then the default scale will be calculated.
-            Default scale is defined by `self.scaletype` and set in fit.
-            If scale is not None, then it is used as a fixed scale.
-        observed : bool
-            If True, then the observed Hessian is returned. If false then the
-            expected information matrix is returned.
-
-        Returns
-        -------
-        hessian_factor : ndarray, 1d
-            A 1d weight vector used in the calculation of the Hessian.
-            The hessian is obtained by `(exog.T * hessian_factor).dot(exog)`
-        """
         return np.ones(self.exog.shape[0])
 
     def fit_regularized(self, method="elastic_net", alpha=0.,

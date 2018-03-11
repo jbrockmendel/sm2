@@ -28,7 +28,7 @@ from pandas.util._decorators import deprecate_kwarg
 from scipy.special import gammaln, digamma, polygamma
 from scipy import stats, special
 
-from sm2.tools.decorators import resettable_cache, cache_readonly
+from sm2.tools.decorators import resettable_cache, cache_readonly, copy_doc
 from sm2.tools.sm_exceptions import PerfectSeparationError
 from sm2.tools.numdiff import approx_fprime_cs
 from sm2.tools import tools, data as data_tools
@@ -427,6 +427,7 @@ class DiscreteModel(base.LikelihoodModel):
 class FitBase(DiscreteModel):
     """Mixin to wrap DiscreteModel.fit and fit_regularized"""
 
+    @copy_doc(DiscreteModel.fit.__doc__)
     def fit(self, start_params=None, method='newton', maxiter=35,
             full_output=1, disp=1, callback=None, **kwargs):
 
@@ -439,8 +440,8 @@ class FitBase(DiscreteModel):
         res_cls, wrap_cls = self._res_classes["fit"]
         discretefit = res_cls(self, bnryfit)
         return wrap_cls(discretefit)
-    fit.__doc__ = DiscreteModel.fit.__doc__
 
+    @copy_doc(DiscreteModel.fit_regularized.__doc__)
     def fit_regularized(self, start_params=None, method='l1',
                         maxiter='defined_by_method', full_output=1, disp=1,
                         callback=None, alpha=0, trim_mode='auto',
@@ -468,7 +469,6 @@ class FitBase(DiscreteModel):
         res_cls, wrap_cls = self._res_classes["fit_regularized"]
         discretefit = res_cls(self, bnryfit)
         return wrap_cls(discretefit)
-    fit_regularized.__doc__ = DiscreteModel.fit_regularized.__doc__
 
 
 class BinaryModel(FitBase):
@@ -1020,6 +1020,7 @@ class Poisson(CountModel):
         # np.sum(stats.poisson.logpmf(endog, np.exp(XB)))
         return -np.exp(linpred) +  endog * linpred - gammaln(endog + 1)
 
+    @copy_doc(_get_start_params_null_docs)
     def _get_start_params_null(self):
         offset = getattr(self, "offset", 0)
         exposure = getattr(self, "exposure", 0)
@@ -1027,8 +1028,7 @@ class Poisson(CountModel):
         params = [np.log(const)]
         return params
 
-    _get_start_params_null.__doc__ = _get_start_params_null_docs
-
+    @copy_doc(DiscreteModel.fit.__doc__)
     def fit(self, start_params=None, method='newton', maxiter=35,
             full_output=1, disp=1, callback=None, **kwargs):
 
@@ -1052,7 +1052,6 @@ class Poisson(CountModel):
         res_cls, wrap_cls = self._res_classes["fit"]
         discretefit = res_cls(self, cntfit, **kwds)
         return wrap_cls(discretefit)
-    fit.__doc__ = DiscreteModel.fit.__doc__
 
     def fit_constrained(self, constraints, start_params=None, **fit_kwds):
         """fit the model subject to linear equality constraints
@@ -1325,6 +1324,7 @@ class GeneralizedPoisson(CountModel):
         return (np.log(mu) + (endog - 1) * np.log(a2) - endog *
                 np.log(a1) - gammaln(endog + 1) - a2 / a1)
 
+    @copy_doc(_get_start_params_null_docs)
     def _get_start_params_null(self):
         offset = getattr(self, "offset", 0)
         exposure = getattr(self, "exposure", 0)
@@ -1337,8 +1337,6 @@ class GeneralizedPoisson(CountModel):
         params.append(a)
 
         return np.array(params)
-
-    _get_start_params_null.__doc__ = _get_start_params_null_docs
 
     def _estimate_dispersion(self, mu, resid, df_resid=None):
         q = self.parameterization
@@ -1411,6 +1409,7 @@ class GeneralizedPoisson(CountModel):
 
     fit.__doc__ = DiscreteModel.fit.__doc__ + fit.__doc__
 
+    @copy_doc(DiscreteModel.fit_regularized.__doc__)
     def fit_regularized(self, start_params=None, method='l1',
                         maxiter='defined_by_method', full_output=1, disp=1,
                         callback=None, alpha=0, trim_mode='auto',
@@ -1457,8 +1456,6 @@ class GeneralizedPoisson(CountModel):
         res_cls, wrap_cls = self._res_classes["fit_regularized"]
         discretefit = res_cls(self, cntfit)
         return wrap_cls(discretefit)
-
-    fit_regularized.__doc__ = DiscreteModel.fit_regularized.__doc__
 
     def score_obs(self, params):
         if self._transparams:
@@ -2637,6 +2634,7 @@ class NegativeBinomial(CountModel):
         sc = approx_fprime_cs(params, self.loglikeobs)
         return sc
 
+    @copy_doc(_get_start_params_null_docs)
     def _get_start_params_null(self):
         offset = getattr(self, "offset", 0)
         exposure = getattr(self, "exposure", 0)
@@ -2647,8 +2645,6 @@ class NegativeBinomial(CountModel):
         a = self._estimate_dispersion(mu, resid, df_resid=resid.shape[0] - 1)
         params.append(a)
         return np.array(params)
-
-    _get_start_params_null.__doc__ = _get_start_params_null_docs
 
     def _estimate_dispersion(self, mu, resid, df_resid=None):
         if df_resid is None:
@@ -3024,6 +3020,7 @@ class NegativeBinomialP(CountModel):
 
         return hess_arr
 
+    @copy_doc(_get_start_params_null_docs)
     def _get_start_params_null(self):
         offset = getattr(self, "offset", 0)
         exposure = getattr(self, "exposure", 0)
@@ -3037,8 +3034,6 @@ class NegativeBinomialP(CountModel):
         params.append(a)
 
         return np.array(params)
-
-    _get_start_params_null.__doc__ = _get_start_params_null_docs
 
     def _estimate_dispersion(self, mu, resid, df_resid=None):
         q = self.parameterization - 1
@@ -3054,11 +3049,11 @@ class NegativeBinomialP(CountModel):
         Parameters
         ----------
         use_transparams : bool
-            This parameter enable internal transformation to impose non-negativity.
-            True to enable. Default is False.
-            use_transparams=True imposes the no underdispersion (alpha > 0) constaint.
-            In case use_transparams=True and method="newton" or "ncg" transformation
-            is ignored.
+            This parameter enable internal transformation to impose
+            non-negativity.  True to enable. Default is False.
+            use_transparams=True imposes the no underdispersion (alpha > 0)
+            constaint.  In case use_transparams=True and method="newton"
+            or "ncg" transformation is ignored.
         """
         if use_transparams and method not in ['newton', 'ncg']:
             self._transparams = True
@@ -3109,6 +3104,7 @@ class NegativeBinomialP(CountModel):
 
     fit.__doc__ += DiscreteModel.fit.__doc__
 
+    @copy_doc(DiscreteModel.fit_regularized.__doc__)
     def fit_regularized(self, start_params=None, method='l1',
                         maxiter='defined_by_method', full_output=1,
                         disp=1, callback=None, alpha=0, trim_mode='auto',
@@ -3150,8 +3146,6 @@ class NegativeBinomialP(CountModel):
         res_cls, wrap_cls = self._res_classes["fit_regularized"]
         discretefit = res_cls(self, cntfit)
         return wrap_cls(discretefit)
-
-    fit_regularized.__doc__ = DiscreteModel.fit_regularized.__doc__
 
     def predict(self, params, exog=None, exposure=None, offset=None,
                 which='mean'):
@@ -3679,6 +3673,7 @@ class BinaryResults(DiscreteResults):
         bins = np.array([0, 0.5, 1])
         return np.histogram2d(actual, pred, bins=bins)[0]
 
+    @copy_doc(DiscreteResults.summary.__doc__)
     def summary(self, yname=None, xname=None, title=None, alpha=.05,
                 yname_list=None):
         smry = super(BinaryResults, self).summary(yname, xname, title, alpha,
@@ -3707,7 +3702,6 @@ class BinaryResults(DiscreteResults):
         if etext:
             smry.add_extra_txt(etext)
         return smry
-    summary.__doc__ = DiscreteResults.summary.__doc__
 
     @cache_readonly
     def resid_dev(self):

@@ -5,7 +5,7 @@ import warnings
 from sm2.tools.sm_exceptions import CacheWriteWarning
 
 __all__ = ['resettable_cache', 'cache_readonly', 'cache_writable',
-           'deprecated_alias']
+           'deprecated_alias', 'copy_doc']
 
 
 def deprecated_alias(old_name, new_name, remove_version=None):
@@ -45,6 +45,27 @@ def deprecated_alias(old_name, new_name, remove_version=None):
 
     res = property(fget=fget, fset=fset)
     return res
+
+
+def copy_doc(docstring):
+    """
+    Add a docstring to a function, so that
+
+        def foo(x):
+            [...]
+        foo.__doc__ = bar
+
+    can be replaced with:
+
+        @copy_doc(bar)
+        def foo(x):
+            [...]
+
+    """
+    def decoration(func):
+        func.__doc__ = docstring
+        return func
+    return decoration
 
 
 class ResettableCache(dict):
