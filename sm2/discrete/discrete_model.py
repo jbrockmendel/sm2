@@ -1421,7 +1421,11 @@ class GeneralizedPoisson(CountModel):
             alpha = alpha * np.ones(k_params)
             alpha[-1] = 0
 
-        alpha_p = alpha[:-1] if (self.k_extra and np.size(alpha) > 1) else alpha
+        if self.k_extra and np.size(alpha) > 1:
+            alpha_p = alpha[:-1]
+        else:
+            alpha_p = alpha
+
         self._transparams = False
         if start_params is None:
             offset = getattr(self, "offset", 0) + getattr(self, "exposure", 0)
@@ -1513,8 +1517,8 @@ class GeneralizedPoisson(CountModel):
         a1 = 1 + alpha * mu_p
         a2 = mu + alpha * mu_p * y
 
-        dp = np.sum((np.log(mu) * ((a2 - mu) * ((y - 1) / a2 - 2 / a1) + (a1 - 1) *
-              a2 / a1 ** 2)))
+        dp = np.sum((np.log(mu) * ((a2 - mu) * ((y - 1) / a2 - 2 / a1) +
+                                   (a1 - 1) * a2 / a1 ** 2)))
         return dp
 
     def hessian(self, params):
@@ -1964,7 +1968,8 @@ class Probit(BinaryModel):
         Xb = np.dot(self.exog, params)
         q = 2 * self.endog - 1
         # clip to get rid of invalid divide complaint
-        L = q * self.pdf(q * Xb) / np.clip(self.cdf(q * Xb), FLOAT_EPS, 1 - FLOAT_EPS)
+        L = q * self.pdf(q * Xb) / np.clip(self.cdf(q * Xb),
+                                           FLOAT_EPS, 1 - FLOAT_EPS)
         return np.dot(L, self.exog)
 
     def score_obs(self, params):
@@ -1994,7 +1999,8 @@ class Probit(BinaryModel):
         Xb = np.dot(self.exog, params)
         q = 2 * self.endog - 1
         # clip to get rid of invalid divide complaint
-        L = q * self.pdf(q * Xb) / np.clip(self.cdf(q * Xb), FLOAT_EPS, 1 - FLOAT_EPS)
+        L = q * self.pdf(q * Xb) / np.clip(self.cdf(q * Xb),
+                                           FLOAT_EPS, 1 - FLOAT_EPS)
         return L[:, None] * self.exog
 
     def hessian(self, params):
@@ -2480,8 +2486,9 @@ class NegativeBinomial(CountModel):
             # nb2
             dparams = exog * a1 * (y - mu) / (mu + a1)
             da1 = -alpha**-2
-            dalpha = (special.digamma(a1 + y) - special.digamma(a1) + np.log(a1)
-                        - np.log(a1 + mu) - (a1 + y) / (a1 + mu) + 1).sum() * da1
+            dalpha = (special.digamma(a1 + y) - special.digamma(a1) +
+                      np.log(a1) - np.log(a1 + mu) -
+                      (a1 + y) / (a1 + mu) + 1).sum() * da1
 
         # multiply above by constant outside sum to reduce rounding error
         if self._transparams:
@@ -2735,7 +2742,10 @@ class NegativeBinomial(CountModel):
             alpha[-1] = 0
 
         # alpha for regularized poisson to get starting values
-        alpha_p = alpha[:-1] if (self.k_extra and np.size(alpha) > 1) else alpha
+        if self.k_extra and np.size(alpha) > 1:
+            alpha_p = alpha[:-1]
+        else:
+            alpha_p = alpha
 
         self._transparams = False
         if start_params is None:
@@ -3113,7 +3123,10 @@ class NegativeBinomialP(CountModel):
             alpha = alpha * np.ones(k_params)
             alpha[-1] = 0
 
-        alpha_p = alpha[:-1] if (self.k_extra and np.size(alpha) > 1) else alpha
+        if self.k_extra and np.size(alpha) > 1:
+            alpha_p = alpha[:-1]
+        else:
+            alpha_p = alpha
 
         self._transparams = False  # TODO: Not the right place to set this
         if start_params is None:
@@ -3124,7 +3137,8 @@ class NegativeBinomialP(CountModel):
             start_params = mod_poi.fit_regularized(
                 start_params=start_params, method=method, maxiter=maxiter,
                 full_output=full_output, disp=0, callback=callback,
-                alpha=alpha_p, trim_mode=trim_mode, auto_trim_tol=auto_trim_tol,
+                alpha=alpha_p, trim_mode=trim_mode,
+                auto_trim_tol=auto_trim_tol,
                 size_trim_tol=size_trim_tol, qc_tol=qc_tol, **kwargs).params
             start_params = np.append(start_params, 0.1)
 
@@ -3159,7 +3173,8 @@ class NegativeBinomialP(CountModel):
             If True, returns the linear predictor dot(exog, params).  Else,
             returns the value of the cdf at the linear predictor.
         offset : array_like, optional
-            Offset is added to the linear prediction with coefficient equal to 1.
+            Offset is added to the linear prediction with coefficient
+            equal to 1.
         exposure : array_like, optional
             Log(exposure) is added to the linear prediction with coefficient
         equal to 1.
@@ -3334,10 +3349,12 @@ class DiscreteResults(base.LikelihoodModelResults):
             res_null = mod_null.fit(start_params=sp_null, method='nm',
                                     warn_convergence=False,
                                     maxiter=10000, disp=0)
-            res_null = mod_null.fit(start_params=res_null.params, method='bfgs',
+            res_null = mod_null.fit(start_params=res_null.params,
+                                    method='bfgs',
                                     warn_convergence=False,
                                     maxiter=10000, disp=0)
-            # TODO: Why is maxiter=10000 here reasonable while elsewhere its 35?
+            # TODO: Why is maxiter=10000 here reasonable while
+            # elsewhere its 35?
 
         if getattr(self, '_attach_nullmodel', False) is not False:
             self.res_null = res_null
