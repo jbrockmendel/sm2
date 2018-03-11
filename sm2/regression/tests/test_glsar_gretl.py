@@ -21,6 +21,8 @@ from sm2.datasets import macrodata
 import sm2.stats.sandwich_covariance as sw
 from sm2.stats import diagnostic
 
+outliers_influence = None  # dummy to prevent flake8 warnings
+
 cur_dir = os.path.abspath(os.path.dirname(__file__))
 fpath = os.path.join(cur_dir, 'results',
                      'leverage_influence_ols_nostars.txt')
@@ -29,7 +31,7 @@ lev_data = np.genfromtxt(fpath, skip_header=3, skip_footer=1,
 # either numpy 1.6 or python 3.2 changed behavior
 if np.isnan(lev_data[-1]['f1']):
     lev_data = np.genfromtxt(fpath, skip_header=3, skip_footer=2,
-                            converters={0: lambda s: s})
+                             converters={0: lambda s: s})
 lev_data.dtype.names = ['date', 'residual', 'leverage', 'influence', 'DFFITS']
 
 
@@ -46,17 +48,10 @@ class TestGLSARGretl(object):
     @classmethod
     def setup_class(cls):
         d = macrodata.load().data
-        #import datasetswsm.greene as g
-        #d = g.load('5-1')
 
         # growth rates
         gs_l_realinv = 400 * np.diff(np.log(d['realinv']))
         gs_l_realgdp = 400 * np.diff(np.log(d['realgdp']))
-
-        # simple diff, not growthrate, I want heteroscedasticity later
-        # for testing
-        endogd = np.diff(d['realinv'])
-        exogd = add_constant(np.c_[np.diff(d['realgdp']), d['realint'][:-1]])
 
         endogg = gs_l_realinv
         exogg = add_constant(np.c_[gs_l_realgdp, d['realint'][:-1]])
@@ -79,7 +74,7 @@ class TestGLSARGretl(object):
         # coefficient   std. error   t-ratio    p-value 95% CONFIDENCE INTERVAL
         partable = np.array([
             [-9.50990, 0.990456, -9.602, 3.65e-018, -11.4631, -7.55670],
-            [ 4.37040, 0.208146, 21.00, 2.93e-052, 3.95993, 4.78086],
+            [4.37040, 0.208146, 21.00, 2.93e-052, 3.95993, 4.78086],
             [-0.579253, 0.268009, -2.161, 0.0319, -1.10777, -0.0507346]])
 
         # Statistics based on the rho-differenced data:
@@ -143,7 +138,6 @@ class TestGLSARGretl(object):
         #                    decimal=7)  # TODO
 
         # arch
-        #sm_arch = diagnostic.acorr_lm(res.wresid**2, maxlag=4, autolag=None)
         sm_arch = diagnostic.het_arch(res.wresid, maxlag=4)
         assert_almost_equal(sm_arch[0], arch_4[0], decimal=4)
         assert_almost_equal(sm_arch[1], arch_4[1], decimal=6)
@@ -181,9 +175,8 @@ class TestGLSARGretl(object):
         #assert_almost_equal(res.durbin_watson,
         #                     result_gretl_g1['dw'][1],
         #                     decimal=7)  # TODO
-    
+
         # arch
-        #sm_arch = diagnostic.acorr_lm(res.wresid**2, maxlag=4, autolag=None)
         sm_arch = diagnostic.het_arch(res.wresid, maxlag=4)
         assert_almost_equal(sm_arch[0], arch_4[0], decimal=1)
         assert_almost_equal(sm_arch[1], arch_4[1], decimal=2)
@@ -367,7 +360,7 @@ class TestGLSARGretl(object):
         res = self.res_ols  # for easier copying
 
         cov_hac = sw.cov_hac_simple(res, nlags=4, use_correction=False)
-        bse_hac =  sw.se_cov(cov_hac)
+        bse_hac = sw.se_cov(cov_hac)
 
         assert_almost_equal(res.params, partable[:, 0], 5)
         assert_almost_equal(bse_hac, partable[:, 1], 5)
@@ -397,7 +390,7 @@ class TestGLSARGretl(object):
         #                     significant=1) # FAIL
         #assert_almost_equal(res.durbin_watson, result_gretl_g1['dw'][1],
         #                     decimal=7) # TODO
-        
+
         linear_sq = diagnostic.linear_lm(res.resid, res.model.exog)
         assert_almost_equal(linear_sq[0], linear_squares[0], decimal=6)
         assert_almost_equal(linear_sq[1], linear_squares[1], decimal=7)
@@ -410,7 +403,6 @@ class TestGLSARGretl(object):
         assert_almost_equal(hw[:2], het_white[:2], 6)
 
         # arch
-        #sm_arch = diagnostic.acorr_lm(res.resid**2, maxlag=4, autolag=None)
         sm_arch = diagnostic.het_arch(res.resid, maxlag=4)
         assert_almost_equal(sm_arch[0], arch_4[0], decimal=5)
         assert_almost_equal(sm_arch[1], arch_4[1], decimal=6)

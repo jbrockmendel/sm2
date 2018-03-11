@@ -36,7 +36,7 @@ NOTE = """::
                 iprod - unanticipated industrial production
 """
 
-from numpy import recfromtxt, column_stack, array
+from numpy import recfromtxt
 from sm2.datasets import utils as du
 from os.path import dirname, abspath
 

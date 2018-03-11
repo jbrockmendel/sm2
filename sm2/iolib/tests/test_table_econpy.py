@@ -47,7 +47,7 @@ test1stubs = ('stub1', 'stub2')
 test1header = ('header1', 'header2')
 #test1header = ('header1\nheader1a', 'header2\nheader2a')
 tbl = SimpleTable(table1data, test1header, test1stubs,
-    txt_fmt=txt_fmt1, ltx_fmt=ltx_fmt1, html_fmt=html_fmt1)
+                  txt_fmt=txt_fmt1, ltx_fmt=ltx_fmt1, html_fmt=html_fmt1)
 
 
 def custom_labeller(cell):
@@ -57,8 +57,9 @@ def custom_labeller(cell):
 
 class TestCell(object):
     def test_celldata(self):
-        celldata = cell0data, cell1data, row1data[0], row1data[1]
-        cells = [Cell(datum, datatype=i%2) for i, datum in enumerate(celldata)]
+        celldata = [cell0data, cell1data, row1data[0], row1data[1]]
+        cells = [Cell(datum, datatype=i % 2)
+                 for i, datum in enumerate(celldata)]
         for cell, datum in zip(cells, celldata):
             assert_equal(cell.data, datum)
 
@@ -76,6 +77,7 @@ class TestSimpleTable(object):
 """
         actual = '\n%s\n' % tbl.as_text()
         assert_equal(actual, desired)
+
     def test_ltx_fmt1(self):
         # Limited test of custom ltx_fmt
         desired = r"""
@@ -116,7 +118,8 @@ class TestSimpleTable(object):
 
     def test_customlabel(self):
         # Limited test of custom custom labeling
-        tbl = SimpleTable(table1data, test1header, test1stubs, txt_fmt=txt_fmt1)
+        tbl = SimpleTable(table1data, test1header, test1stubs,
+                          txt_fmt=txt_fmt1)
         tbl[1][1].data = np.nan
         tbl.label_cells(custom_labeller)
         desired = """

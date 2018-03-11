@@ -7,6 +7,8 @@ License: BSD-3
 """
 import numpy as np
 
+import sm2.stats.sandwich_covariance as sw
+
 
 def normalize_cov_type(cov_type):
     # normalize names
@@ -147,8 +149,6 @@ def get_robustcov_results(self, cov_type='HC1', use_t=None, **kwds):
     TODO: Currently there is no check for extra or misspelled keywords,
     except in the case of cov_type `HCx`
     """
-    import sm2.stats.sandwich_covariance as sw
-
     cov_type = normalize_cov_type(cov_type)
 
     if 'kernel' in kwds:

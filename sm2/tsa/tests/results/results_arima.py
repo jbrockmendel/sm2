@@ -194,7 +194,7 @@ class ARIMA211(object):
             self.sigma2 = self.sigma**2
             self.aic = self.icstats[4]
             self.bic = self.icstats[5]
-            self.fittedvalues = self.xb[1:] # no idea why this initial value
+            self.fittedvalues = self.xb[1:]  # no idea why this initial value
             self.linear = self.y[1:]
             self.k_diff = 1
 
@@ -230,7 +230,7 @@ class ARIMA211(object):
             self.sigma2 = self.sigma**2
             self.aic = self.icstats[4]
             self.bic = self.icstats[5]
-            self.fittedvalues = self.xb[1:] # no idea why this initial value
+            self.fittedvalues = self.xb[1:]  # no idea why this initial value
             self.linear = self.y[1:]
             self.k_diff = 1
 
@@ -297,13 +297,14 @@ class ARIMA112(object):
             self.sigma2 = self.sigma**2
             self.aic = self.icstats[4]
             self.bic = self.icstats[5]
-            self.fittedvalues = self.xb[1:] # no idea why this initial value
+            self.fittedvalues = self.xb[1:]  # no idea why this initial value
             self.linear = self.y[1:]
-            #their bse are OPG
+            # their bse are OPG
             #self.bse = np.diag(self.cov_params) ** .5
-        else: #NOTE: this looks like a "hard" problem
-            #unable to replicate stata's results even with their starting
-            #values
+        else:
+            # NOTE: this looks like a "hard" problem
+            # unable to replicate stata's results even with their starting
+            # values
             # unable to replicate x12 results in stata using their starting
             # values. x-12 has better likelihood and we can replicate so
             # use their results
@@ -316,10 +317,10 @@ class ARIMA112(object):
             self.tvalues = [11.715452, -7.400215, 10.221983, 2.225692]
             self.pvalues = [0, 3.791634e-12, 0, 2.716275e-02]
             self.cov_params = np.array([
-                    [0.0059715623, 0.001327824, -0.001592129, -0.0008061933],
-                    [0.0013278238, 0.008754705, -0.008024634, -0.0045933413],
-                    [-0.0015921293, -0.008024634, 0.011032492, 0.0072509641],
-                    [-0.0008061933, -0.004593341, 0.007250964, 0.0059721516]])
+                [0.0059715623, 0.001327824, -0.001592129, -0.0008061933],
+                [0.0013278238, 0.008754705, -0.008024634, -0.0045933413],
+                [-0.0015921293, -0.008024634, 0.011032492, 0.0072509641],
+                [-0.0008061933, -0.004593341, 0.007250964, 0.0059721516]])
 
             # from x12arima via gretl
             # gretl did not converge for this model...

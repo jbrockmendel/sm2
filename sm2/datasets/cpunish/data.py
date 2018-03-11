@@ -42,7 +42,7 @@ NOTE = """::
     State names are included in the data file, though not returned by load.
 """
 
-from numpy import recfromtxt, column_stack, array
+from numpy import recfromtxt
 from sm2.datasets import utils as du
 from os.path import dirname, abspath
 

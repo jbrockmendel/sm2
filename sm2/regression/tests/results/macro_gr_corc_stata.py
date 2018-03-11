@@ -508,6 +508,7 @@ fittedvalues_se_rownames = ('r1 r2 r3 r4 r5 r6 r7 r8 r9 r10 r11 r12 r13 r14 '
                             'r190 r191 r192 r193 r194 r195 r196 r197 r198 '
                             'r199 r200 r201 r202').split()
 
+
 class Bunch(dict):
     def __init__(self, **kw):
         dict.__init__(self, kw)

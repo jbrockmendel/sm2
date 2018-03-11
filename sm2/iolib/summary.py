@@ -91,7 +91,7 @@ def summary(self, yname=None, xname=None, title=0, alpha=.05,
                      'GLS': 'Least Squares',
                      'GLSAR': 'Least Squares',
                      'WLS': 'Least Squares',
-                      'RLM': '?',
+                     'RLM': '?',
                      'GLM': '?'}
     if title == 0:
         title = model_types[self.model.__class__.__name__]
@@ -114,16 +114,15 @@ def summary(self, yname=None, xname=None, title=0, alpha=.05,
     df_model = self.df_model
     df_resid = self.df_resid
 
-    #General part of the summary table, Applicable to all? models
-    #------------------------------------------------------------
-    #TODO: define this generically, overwrite in model classes
-    #replace definition of stubs data by single list
-    #e.g.
-    gen_left =   [('Model type:', [modeltype]),
-                  ('Date:', [date]),
-                  ('Dependent Variable:', yname), #What happens with multiple names?
-                  ('df model', [df_model])
-                  ]
+    # General part of the summary table, Applicable to all? models
+    # ------------------------------------------------------------
+    # TODO: define this generically, overwrite in model classes
+    # replace definition of stubs data by single list
+    # e.g.
+    gen_left = [('Model type:', [modeltype]),
+                ('Date:', [date]),
+                ('Dependent Variable:', yname),  # What happens with multiple names?
+                ('df model', [df_model])]
     gen_stubs_left, gen_data_left = zip_longest(*gen_left)  # transpose row col
 
     gen_title = title
@@ -142,8 +141,7 @@ def summary(self, yname=None, xname=None, title=0, alpha=.05,
                                  gen_header,
                                  gen_stubs_left,
                                  title = gen_title,
-                                 txt_fmt = gen_fmt
-                                 )
+                                 txt_fmt = gen_fmt)
 
     gen_stubs_right = ('Method:',
                        'Time:',
@@ -152,8 +150,7 @@ def summary(self, yname=None, xname=None, title=0, alpha=.05,
     gen_data_right = ([modeltype], #was dist family need to look at more
                       time_of_day,
                       [nobs],
-                      [df_resid]
-                      )
+                      [df_resid])
     gen_table_right = SimpleTable(gen_data_right,
                                   gen_header,
                                   gen_stubs_right,
@@ -164,7 +161,8 @@ def summary(self, yname=None, xname=None, title=0, alpha=.05,
 
     # Parameters part of the summary table
     # ------------------------------------
-    # Note: this is not necessary since we standardized names, only t versus normal
+    # Note: this is not necessary since we standardized names,
+    # only t versus normal
     tstats = {'OLS': self.t(),
               'GLS': self.t(),
               'GLSAR': self.t(),
@@ -201,8 +199,7 @@ def summary(self, yname=None, xname=None, title=0, alpha=.05,
                        ["%#6.4f" % (std_err[i]) for i in exog_len],
                        ["%#6.4f" % (tstat[i]) for i in exog_len],
                        ["%#6.4f" % (prob_stat[i]) for i in exog_len],
-                       ["(%#5g, %#5g)" % tuple(conf_int[i]) for i in \
-                                                             exog_len]
+                       ["(%#5g, %#5g)" % tuple(conf_int[i]) for i in exog_len]
                       ))
     parameter_table = SimpleTable(params_data,
                                   param_header[modeltype],
@@ -242,25 +239,24 @@ def summary(self, yname=None, xname=None, title=0, alpha=.05,
     printers  = {'OLS': ols_printer,
                  'GLM': glm_printer}
 
-    if returns=='print':
+    if returns == 'print':
         try:
             return printers[modeltype]()
         except KeyError:
             return printers['OLS']()
 
+
 def _getnames(self, yname=None, xname=None):
     """extract names from model or construct names
     """
     if yname is None:
-        if hasattr(self.model, 'endog_names') and (
-               not self.model.endog_names is None):
+        if getattr(self.model, 'endog_names', None) is not None:
             yname = self.model.endog_names
         else:
             yname = 'y'
 
     if xname is None:
-        if hasattr(self.model, 'exog_names') and (
-               not self.model.exog_names is None):
+        if getattr(self.model, 'exog_names', None) is not None:
             xname = self.model.exog_names
         else:
             xname = ['var_%d' % i for i in range(len(self.params))]
@@ -272,10 +268,8 @@ def summary_top(results, title=None, gleft=None, gright=None,
                 yname=None, xname=None):
     """generate top table(s)
 
-
     TODO: this still uses predefined model_methods
     ? allow gleft, gright to be 1 element tuples instead of filling with None?
-
     """
     # change of names ?
     gen_left, gen_right = gleft, gright
@@ -314,7 +308,7 @@ def summary_top(results, title=None, gleft=None, gright=None,
         title = results.model.__class__.__name__ + 'Regression Results'
 
     if gen_left is None:
-        #default: General part of the summary table, Applicable to all? models
+        # default: General part of the summary table, Applicable to all? models
         gen_left = [('Dep. Variable:', None),
                     ('Model type:', None),
                     ('Date:', None),
@@ -330,7 +324,6 @@ def summary_top(results, title=None, gleft=None, gright=None,
 
         gen_right = []
 
-
     gen_title = title
     gen_header = None
 
@@ -339,7 +332,7 @@ def summary_top(results, title=None, gleft=None, gright=None,
     gen_left_ = []
     for item, value in gen_left:
         if value is None:
-            value = default_items[item]()  #let KeyErrors raise exception
+            value = default_items[item]()  # let KeyErrors raise exception
         gen_left_.append((item, value))
     gen_left = gen_left_
 
@@ -347,25 +340,24 @@ def summary_top(results, title=None, gleft=None, gright=None,
         gen_right_ = []
         for item, value in gen_right:
             if value is None:
-                value = default_items[item]()  #let KeyErrors raise exception
+                value = default_items[item]()  # let KeyErrors raise exception
             gen_right_.append((item, value))
         gen_right = gen_right_
 
-    #check
     missing_values = [k for k, v in gen_left + gen_right if v is None]
     assert missing_values == [], missing_values
 
     #pad both tables to equal number of rows
     if gen_right:
         if len(gen_right) < len(gen_left):
-            #fill up with blank lines to same length
+            # fill up with blank lines to same length
             gen_right += [(' ', ' ')] * (len(gen_left) - len(gen_right))
         elif len(gen_right) > len(gen_left):
-            #fill up with blank lines to same length, just to keep it symmetric
+            # fill up with blank lines to same length, just to keep it symmetric
             gen_left += [(' ', ' ')] * (len(gen_right) - len(gen_left))
 
-        #padding in SimpleTable doesn't work like I want
-        #force extra spacing and exact string length in right table
+        # padding in SimpleTable doesn't work like I want
+        # force extra spacing and exact string length in right table
         gen_right = [('%-21s' % ('  ' + k), v) for k, v in gen_right]
         gen_stubs_right, gen_data_right = zip_longest(*gen_right)  # transpose row col
         gen_table_right = SimpleTable(gen_data_right,
@@ -375,24 +367,23 @@ def summary_top(results, title=None, gleft=None, gright=None,
                                       txt_fmt = fmt_2cols #gen_fmt
                                       )
     else:
-        gen_table_right = []  #because .extend_right seems works with []
+        gen_table_right = []  # because .extend_right seems works with []
 
 
     #moved below so that we can pad if needed to match length of gen_right
     #transpose rows and columns, `unzip`
-    gen_stubs_left, gen_data_left = zip_longest(*gen_left) #transpose row col
+    gen_stubs_left, gen_data_left = zip_longest(*gen_left)  # transpose row col
 
     gen_table_left = SimpleTable(gen_data_left,
                                  gen_header,
                                  gen_stubs_left,
-                                 title = gen_title,
-                                 txt_fmt = fmt_2cols
-                                 )
+                                 title=gen_title,
+                                 txt_fmt=fmt_2cols)
 
     gen_table_left.extend_right(gen_table_right)
     general_table = gen_table_left
 
-    return general_table #, gen_table_left, gen_table_right
+    return general_table  #, gen_table_left, gen_table_right
 
 
 
@@ -425,7 +416,8 @@ def summary_params(results, yname=None, xname=None, alpha=.05, use_t=True,
 
     # Parameters part of the summary table
     # ------------------------------------
-    # Note: this is not necessary since we standardized names, only t versus normal
+    # Note: this is not necessary since we standardized names,
+    # only t versus normal
 
     if isinstance(results, tuple):
         # for multivariate endog
@@ -435,23 +427,21 @@ def summary_params(results, yname=None, xname=None, alpha=.05, use_t=True,
     else:
         params = results.params
         std_err = results.bse
-        tvalues = results.tvalues  #is this sometimes called zvalues
+        tvalues = results.tvalues  # is this sometimes called zvalues
         pvalues = results.pvalues
         conf_int = results.conf_int(alpha)
-
 
     # Dictionary to store the header names for the parameter part of the
     # summary table. look up by modeltype
     if use_t:
         param_header = ['coef', 'std err', 't', 'P>|t|',
-                        '[' + str(alpha / 2), str(1-alpha / 2) + ']']
+                        '[' + str(alpha / 2), str(1 - alpha / 2) + ']']
     else:
         param_header = ['coef', 'std err', 'z', 'P>|z|',
                         '[' + str(alpha / 2), str(1 - alpha / 2) + ']']
 
     if skip_header:
         param_header = None
-
 
     _, xname = _getnames(results, yname=yname, xname=xname)
 
@@ -464,13 +454,12 @@ def summary_params(results, yname=None, xname=None, alpha=.05, use_t=True,
                        [forg(tvalues[i]) for i in exog_idx],
                        ["%#6.3f" % (pvalues[i]) for i in exog_idx],
                        [forg(conf_int[i, 0]) for i in exog_idx],
-                       [forg(conf_int[i, 1]) for i in exog_idx]
-                      ))
+                       [forg(conf_int[i, 1]) for i in exog_idx]))
     parameter_table = SimpleTable(params_data,
                                   param_header,
                                   params_stubs,
-                                  title = title,
-                                  txt_fmt = fmt_params #gen_fmt #fmt_2, #gen_fmt,
+                                  title=title,
+                                  txt_fmt=fmt_params #gen_fmt #fmt_2, #gen_fmt,
                                   )
 
     return parameter_table
@@ -505,24 +494,25 @@ def summary_params_frame(results, yname=None, xname=None, alpha=.05,
 
     # Parameters part of the summary table
     # ------------------------------------
-    # Note: this is not necessary since we standardized names, only t versus normal
+    # Note: this is not necessary since we standardized names,
+    # only t versus normal
 
     if isinstance(results, tuple):
         # for multivariate endog
         # TODO: check whether I don't want to refactor this
-        #we need to give parameter alpha to conf_int
+        # we need to give parameter alpha to conf_int
         results, params, std_err, tvalues, pvalues, conf_int = results
     else:
         params = results.params
         std_err = results.bse
-        tvalues = results.tvalues  #is this sometimes called zvalues
+        tvalues = results.tvalues  # is this sometimes called zvalues
         pvalues = results.pvalues
         conf_int = results.conf_int(alpha)
 
 
     # Dictionary to store the header names for the parameter part of the
     # summary table. look up by modeltype
-    alp = str((1-alpha)*100)+'%'
+    alp = str((1 - alpha) * 100) + '%'
     if use_t:
         param_header = ['coef', 'std err', 't', 'P>|t|',
                         'Conf. Int. Low', 'Conf. Int. Upp.']
@@ -533,7 +523,9 @@ def summary_params_frame(results, yname=None, xname=None, alpha=.05,
     _, xname = _getnames(results, yname=yname, xname=xname)
 
     table = np.column_stack((params, std_err, tvalues, pvalues, conf_int))
-    return pd.DataFrame(table, columns=param_header, index=xname)
+    return pd.DataFrame(table,
+                        columns=param_header,
+                        index=xname)
 
 
 def summary_params_2d(result, extras=None, endog_names=None, exog_names=None,
@@ -566,22 +558,21 @@ def summary_params_2d(result, extras=None, endog_names=None, exog_names=None,
     """
     if endog_names is None:
         # TODO: note the [1:] is specific to current MNLogit
-        endog_names = ['endog_%d' % i for i in
-                            np.unique(result.model.endog)[1:]]
+        endog_names = ['endog_%d' % i
+                       for i in np.unique(result.model.endog)[1:]]
     if exog_names is None:
         exog_names = ['var%d' % i for i in range(len(result.params))]
 
     # TODO: check formatting options with different values
     #res_params = [['%10.4f'%item for item in row] for row in result.params]
     res_params = [[forg(item, prec=4) for item in row] for row in result.params]
-    if extras: #not None or non-empty
+    if extras:
         #maybe this should be a simple triple loop instead of list comprehension?
         #below_list = [[['%10s' % ('('+('%10.3f'%v).strip()+')')
         extras_list = [[['%10s' % ('(' + forg(v, prec=3).strip() + ')')
-                                for v in col]
-                                for col in getattr(result, what)]
-                                for what in extras
-                                ]
+                         for v in col]
+                        for col in getattr(result, what)]
+                       for what in extras]
         data = list(zip(res_params, *extras_list))
         data = [i for j in data for i in j]  #flatten
         stubs = list(zip(endog_names, *[[''] * len(endog_names)] * len(extras)))
@@ -594,12 +585,12 @@ def summary_params_2d(result, extras=None, endog_names=None, exog_names=None,
         #               data_fmts=['%10.4f'])
 
     txt_fmt = copy.deepcopy(fmt_params)
-    txt_fmt.update(dict(data_fmts = ["%s"]*result.params.shape[1]))
+    txt_fmt.update(dict(data_fmts=["%s"] * result.params.shape[1]))
     return SimpleTable(data, headers=exog_names,
                              stubs=stubs,
                              title=title,
                              #data_fmts = ["%s"]),
-                             txt_fmt = txt_fmt)
+                             txt_fmt=txt_fmt)
 
 
 def summary_params_2dflat(result, endog_names=None, exog_names=None, alpha=0.05,

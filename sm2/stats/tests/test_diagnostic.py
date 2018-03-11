@@ -25,7 +25,8 @@ from sm2.datasets import macrodata
 import sm2.stats.sandwich_covariance as sw
 from sm2.stats import diagnostic
 
-import sm2.stats.outliers_influence as oi
+# import sm2.stats.outliers_influence as oi
+oi = None  # dummy to prevent flake8 warnings
 
 cur_dir = os.path.abspath(os.path.dirname(__file__))
 
