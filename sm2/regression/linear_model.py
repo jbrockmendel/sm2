@@ -43,7 +43,7 @@ from sm2.tools.sm_exceptions import InvalidTestWarning
 from sm2.tools.tools import chain_dot, pinv_extended
 from sm2.tools.decorators import (resettable_cache,
                                   cache_readonly,
-                                  cache_writable)
+                                  cache_writable, copy_doc)
 import sm2.base.model as base
 import sm2.base.wrapper as wrap
 from sm2.base import covtype
@@ -564,6 +564,7 @@ class GLS(RegressionModel):
         else:
             return np.diag(self.cholsigmainv)
 
+    @copy_doc(_fit_regularized_doc)
     def fit_regularized(self, method="elastic_net", alpha=0.,
                         L1_wt=1., start_params=None, profile_scale=False,
                         refit=False, **kwargs):
@@ -585,8 +586,6 @@ class GLS(RegressionModel):
             RegularizedResults, RegularizedResultsWrapper)
         rrslt = RegularizedResults(self, rslt.params)
         return RegularizedResultsWrapper(rrslt)
-
-    fit_regularized.__doc__ = _fit_regularized_doc
 
 
 class WLS(RegressionModel):
@@ -712,30 +711,11 @@ class WLS(RegressionModel):
         llf += 0.5 * np.sum(np.log(self.weights))
         return llf
 
+    @copy_doc(GLS.hessian_factor.__doc__)
     def hessian_factor(self, params, scale=None, observed=True):
-        """Weights for calculating Hessian
-
-        Parameters
-        ----------
-        params : ndarray
-            parameter at which Hessian is evaluated
-        scale : None or float
-            If scale is None, then the default scale will be calculated.
-            Default scale is defined by `self.scaletype` and set in fit.
-            If scale is not None, then it is used as a fixed scale.
-        observed : bool
-            If True, then the observed Hessian is returned. If false then the
-            expected information matrix is returned.
-
-        Returns
-        -------
-        hessian_factor : ndarray, 1d
-            A 1d weight vector used in the calculation of the Hessian.
-            The hessian is obtained by `(exog.T * hessian_factor).dot(exog)`
-        """
-
         return self.weights
 
+    @copy_doc(_fit_regularized_doc)
     def fit_regularized(self, method="elastic_net", alpha=0.,
                         L1_wt=1., start_params=None, profile_scale=False,
                         refit=False, **kwargs):
@@ -756,8 +736,6 @@ class WLS(RegressionModel):
                                           RegularizedResultsWrapper)
         rrslt = RegularizedResults(self, rslt.params)
         return RegularizedResultsWrapper(rrslt)
-
-    fit_regularized.__doc__ = _fit_regularized_doc
 
 
 class OLS(WLS):
@@ -828,15 +806,16 @@ class OLS(WLS):
         -------
         The likelihood function evaluated at params.
         """
-        nobs2 = self.nobs / 2.0
         nobs = float(self.nobs)
+        nobs2 = nobs / 2.0
         resid = self.endog - np.dot(self.exog, params)
         if hasattr(self, 'offset'):
             resid -= self.offset
         ssr = np.sum(resid**2)
         if scale is None:
             # profile log likelihood
-            llf = -nobs2 * np.log(2 * np.pi) - nobs2 * np.log(ssr / nobs) - nobs2
+            llf = (-nobs2 * np.log(2 * np.pi) - nobs2 * np.log(ssr / nobs) -
+                   nobs2)
         else:
             # log-likelihood
             llf = -nobs2 * np.log(2 * np.pi * scale) - ssr / (2 * scale)
@@ -870,7 +849,6 @@ class OLS(WLS):
         -------
         The score vector.
         """
-
         if not hasattr(self, "_wexog_xprod"):
             self._setup_score_hess()
 
@@ -925,29 +903,11 @@ class OLS(WLS):
         else:
             return -self._wexog_xprod / scale
 
+    @copy_doc(GLS.hessian_factor.__doc__)
     def hessian_factor(self, params, scale=None, observed=True):
-        """Weights for calculating Hessian
-
-        Parameters
-        ----------
-        params : ndarray
-            parameter at which Hessian is evaluated
-        scale : None or float
-            If scale is None, then the default scale will be calculated.
-            Default scale is defined by `self.scaletype` and set in fit.
-            If scale is not None, then it is used as a fixed scale.
-        observed : bool
-            If True, then the observed Hessian is returned. If false then the
-            expected information matrix is returned.
-
-        Returns
-        -------
-        hessian_factor : ndarray, 1d
-            A 1d weight vector used in the calculation of the Hessian.
-            The hessian is obtained by `(exog.T * hessian_factor).dot(exog)`
-        """
         return np.ones(self.exog.shape[0])
 
+    @copy_doc(_fit_regularized_doc)
     def fit_regularized(self, method="elastic_net", alpha=0.,
                         L1_wt=1., start_params=None, profile_scale=False,
                         refit=False, **kwargs):
@@ -990,8 +950,6 @@ class OLS(WLS):
                               check_step=False,
                               **defaults)
 
-    fit_regularized.__doc__ = _fit_regularized_doc
-
     def _fit_ridge(self, alpha):
         """
         Fit a linear model using ridge regression.
@@ -1009,7 +967,6 @@ class OLS(WLS):
         Equivalent to fit_regularized with L1_wt = 0 (but implemented
         more efficiently).
         """
-
         u, s, vt = np.linalg.svd(self.exog, 0)
         v = vt.T
         q = np.dot(u.T, self.endog) * s
@@ -1241,7 +1198,6 @@ def yule_walker(X, order=1, method="unbiased", df=None, inv=False,
     array([ 1.28310031, -0.45240924, -0.20770299,  0.04794365])
     >>> sigma
     16.808022730464351
-
     """
     # TODO: define R better, look back at notes and technical notes on YW.
     # First link here is useful
@@ -1638,7 +1594,6 @@ class RegressionResults(base.LikelihoodModelResults):
         """
         See sm2.RegressionResults
         """
-
         self.het_scale = self.wresid**2
         cov_HC0 = self._HCCM(self.het_scale)
         return cov_HC0
@@ -1648,7 +1603,6 @@ class RegressionResults(base.LikelihoodModelResults):
         """
         See sm2.RegressionResults
         """
-
         self.het_scale = self.nobs / (self.df_resid) * (self.wresid**2)
         cov_HC1 = self._HCCM(self.het_scale)
         return cov_HC1
@@ -1671,8 +1625,9 @@ class RegressionResults(base.LikelihoodModelResults):
         """
         See sm2.RegressionResults
         """
-        h = np.diag(chain_dot(
-            self.model.wexog, self.normalized_cov_params, self.model.wexog.T))
+        h = np.diag(chain_dot(self.model.wexog,
+                              self.normalized_cov_params,
+                              self.model.wexog.T))
         self.het_scale = (self.wresid / (1 - h))**2
         cov_HC3 = self._HCCM(self.het_scale)
         return cov_HC3
@@ -1765,7 +1720,9 @@ class RegressionResults(base.LikelihoodModelResults):
         return np.allclose(score_l2, 0)
 
     def compare_lm_test(self, restricted, demean=True, use_lr=False):
-        """Use Lagrange Multiplier test to test whether restricted model is correct
+        """
+        Use Lagrange Multiplier test to test whether restricted
+        model is correct
 
         Parameters
         ----------
@@ -1837,7 +1794,7 @@ class RegressionResults(base.LikelihoodModelResults):
             # TODO: Might need demean option in S_crosssection by group?
             Sinv = np.linalg.inv(sw.S_crosssection(scores, groups))
         else:
-            raise ValueError('Only nonrobust, HC, HAC and cluster are ' +
+            raise ValueError('Only nonrobust, HC, HAC and cluster are '
                              'currently connected')
 
         lm_value = n * chain_dot(s, Sinv, s.T)
@@ -1882,7 +1839,7 @@ class RegressionResults(base.LikelihoodModelResults):
                        'nonrobust')
 
         if has_robust1 or has_robust2:
-            warnings.warn('F test for comparison is likely invalid with ' +
+            warnings.warn('F test for comparison is likely invalid with '
                           'robust covariance, proceeding anyway',
                           InvalidTestWarning)
 
@@ -1986,7 +1943,7 @@ class RegressionResults(base.LikelihoodModelResults):
             getattr(restricted, 'cov_type', 'nonrobust') != 'nonrobust')
 
         if has_robust1 or has_robust2:
-            warnings.warn('Likelihood Ratio test is likely invalid with ' +
+            warnings.warn('Likelihood Ratio test is likely invalid with '
                           'robust covariance, proceeding anyway',
                           InvalidTestWarning)
 
@@ -2277,13 +2234,12 @@ class RegressionResults(base.LikelihoodModelResults):
 
         return res
 
+    @copy_doc(pred.get_prediction.__doc__)
     def get_prediction(self, exog=None, transform=True, weights=None,
                        row_labels=None, **kwds):
         return pred.get_prediction(self, exog=exog, transform=transform,
                                    weights=weights, row_labels=row_labels,
                                    **kwds)
-
-    get_prediction.__doc__ = pred.get_prediction.__doc__
 
     def summary(self, yname=None, xname=None, title=None, alpha=.05):
         """Summarize the Regression Results
@@ -2320,6 +2276,7 @@ class RegressionResults(base.LikelihoodModelResults):
         eigvals = self.eigenvals
         condno = self.condition_number
 
+        # TODO: WTF why is this getting attached to self?
         self.diagn = dict(jb=jb, jbpv=jbpv, skew=skew, kurtosis=kurtosis,
                           omni=omni, omnipv=omnipv, condno=condno,
                           mineigval=eigvals[-1])
@@ -2351,22 +2308,18 @@ class RegressionResults(base.LikelihoodModelResults):
                      ('Prob (F-statistic):', ["%#6.3g" % self.f_pvalue]),
                      ('Log-Likelihood:', None),  # ["%#6.4g" % self.llf]),
                      ('AIC:', ["%#8.4g" % self.aic]),
-                     ('BIC:', ["%#8.4g" % self.bic])
-                     ]
+                     ('BIC:', ["%#8.4g" % self.bic])]
 
         diagn_left = [('Omnibus:', ["%#6.3f" % omni]),
                       ('Prob(Omnibus):', ["%#6.3f" % omnipv]),
                       ('Skew:', ["%#6.3f" % skew]),
-                      ('Kurtosis:', ["%#6.3f" % kurtosis])
-                      ]
+                      ('Kurtosis:', ["%#6.3f" % kurtosis])]
 
         diagn_right = [('Durbin-Watson:',
-                        ["%#8.3f" % durbin_watson(self.wresid)]
-                        ),
+                        ["%#8.3f" % durbin_watson(self.wresid)]),
                        ('Jarque-Bera (JB):', ["%#8.3f" % jb]),
                        ('Prob(JB):', ["%#8.3g" % jbpv]),
-                       ('Cond. No.', ["%#8.3g" % condno])
-                       ]
+                       ('Cond. No.', ["%#8.3g" % condno])]
 
         if title is None:
             title = self.model.__class__.__name__ + ' ' + "Regression Results"
@@ -2410,21 +2363,7 @@ class RegressionResults(base.LikelihoodModelResults):
                      for i, text in enumerate(etext)]
             etext.insert(0, "Warnings:")
             smry.add_extra_txt(etext)
-
         return smry
-
-        #  top = summary_top(self, gleft=topleft, gright=diagn_left, #[],
-        #                    yname=yname, xname=xname,
-        #                    title=self.model.__class__.__name__ + ' ' +
-        #                    "Regression Results")
-        #  par = summary_params(self, yname=yname, xname=xname, alpha=.05,
-        #                       use_t=False)
-        #
-        #  diagn = summary_top(self, gleft=diagn_left, gright=diagn_right,
-        #                      yname=yname, xname=xname,
-        #                      title="Linear Model")
-        #
-        #  return summary_return([top, par, diagn], return_fmt=return_fmt)
 
     def summary2(self, yname=None, xname=None, title=None, alpha=.05,
                  float_format="%.4f"):
@@ -2472,6 +2411,5 @@ class RegressionResultsWrapper(wrap.ResultsWrapper):
     _methods = {}
     _wrap_methods = wrap.union_dicts(
         base.LikelihoodResultsWrapper._wrap_methods, _methods)
-
 wrap.populate_wrapper(RegressionResultsWrapper,  # noqa:E305
                       RegressionResults)

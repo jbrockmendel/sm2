@@ -59,11 +59,12 @@ def test_compare_arma():
     #for now without random.seed
 
     np.random.seed(9876565)
-    x = fa.ArmaFft([1, -0.5], [1., 0.4], 40).generate_sample(nsample=200, burnin=1000)
+    famod = fa.ArmaFft([1, -0.5], [1., 0.4], 40)
+    x = famod.generate_sample(nsample=200, burnin=1000)
 
     # this used kalman filter through descriptive
     #d = ARMA(x)
-    #d.fit((1,1), trend='nc')
+    #d.fit((1, 1), trend='nc')
     #dres = d.res
 
     modkf = ARMA(x, (1, 1))
@@ -78,13 +79,15 @@ def test_compare_arma():
 
     #decimal 1 corresponds to threshold of 5% difference
     #still different sign  corrcted
-    #assert_almost_equal(np.abs(resls[0] / d.params), np.ones(d.params.shape), decimal=1)
+    #assert_almost_equal(np.abs(resls[0] / d.params),
+    #                    np.ones(d.params.shape), decimal=1)
     assert_almost_equal(resls[0] / dres.params,
                         np.ones(dres.params.shape),
                         decimal=1)
     #rescm also contains variance estimate as last element of params
 
-    #assert_almost_equal(np.abs(rescm.params[:-1] / d.params), np.ones(d.params.shape), decimal=1)
+    #assert_almost_equal(np.abs(rescm.params[:-1] / d.params),
+    #                    np.ones(d.params.shape), decimal=1)
     assert_almost_equal(rescm.params[:-1] / dres.params,
                         np.ones(dres.params.shape), decimal=1)
     #return resls[0], d.params, rescm.params
@@ -167,7 +170,7 @@ class CheckArmaResultsMixin(object):
                             self.res2.pvalues,
                             self.decimal_pvalues)
 
-    decimal_t = DECIMAL_2 # only 2 decimal places in gretl output
+    decimal_t = DECIMAL_2  # only 2 decimal places in gretl output
     def test_tvalues(self):
         assert_almost_equal(self.res1.tvalues,
                             self.res2.tvalues,
@@ -234,8 +237,9 @@ class Test_Y_ARMA11_NoConst(CheckArmaResultsMixin, CheckForecastMixin):
     def setup_class(cls):
         endog = y_arma[:, 0]
         cls.res1 = ARMA(endog, order=(1, 1)).fit(trend='nc', disp=-1)
-        (cls.res1.forecast_res, cls.res1.forecast_err,
-                confint) = cls.res1.forecast(10)
+        fc_res, fc_err, ci = cls.res1.forecast(10)
+        cls.res1.forecast_res = fc_res
+        cls.res1.forecast_err = fc_err
         cls.res2 = results_arma.Y_arma11()
 
     def test_pickle(self):
@@ -404,7 +408,7 @@ class Test_Y_ARMA41_NoConst_CSS(CheckArmaResultsMixin):
 
     @classmethod
     def setup_class(cls):
-        endog = y_arma[:,2]
+        endog = y_arma[:, 2]
         cls.res1 = ARMA(endog, order=(4, 1)).fit(method="css",
                                                  trend='nc', disp=-1)
         cls.res2 = results_arma.Y_arma41("css")
@@ -420,7 +424,7 @@ class Test_Y_ARMA22_NoConst_CSS(CheckArmaResultsMixin):
 
     @classmethod
     def setup_class(cls):
-        endog = y_arma[:,3]
+        endog = y_arma[:, 3]
         cls.res1 = ARMA(endog, order=(2, 2)).fit(method="css",
                                                  trend='nc', disp=-1)
         cls.res2 = results_arma.Y_arma22("css")
@@ -492,7 +496,7 @@ class Test_Y_ARMA41_Const_CSS(CheckArmaResultsMixin):
 
     @classmethod
     def setup_class(cls):
-        endog = y_arma[:,8]
+        endog = y_arma[:, 8]
         cls.res1 = ARMA(endog, order=(4, 1)).fit(trend="c",
                                                  method="css", disp=-1)
         cls.res2 = results_arma.Y_arma41c("css")
@@ -505,7 +509,7 @@ class Test_Y_ARMA22_Const_CSS(CheckArmaResultsMixin):
 
     @classmethod
     def setup_class(cls):
-        endog = y_arma[:,9]
+        endog = y_arma[:, 9]
         cls.res1 = ARMA(endog, order=(2, 2)).fit(trend="c",
                                                  method="css", disp=-1)
         cls.res2 = results_arma.Y_arma22c("css")
@@ -519,7 +523,7 @@ class Test_Y_ARMA50_Const_CSS(CheckArmaResultsMixin):
 
     @classmethod
     def setup_class(cls):
-        endog = y_arma[:,10]
+        endog = y_arma[:, 10]
         cls.res1 = ARMA(endog, order=(5, 0)).fit(trend="c",
                                                  method="css", disp=-1)
         cls.res2 = results_arma.Y_arma50c("css")
@@ -529,7 +533,7 @@ class Test_Y_ARMA50_Const_CSS(CheckArmaResultsMixin):
 class Test_Y_ARMA02_Const_CSS(CheckArmaResultsMixin):
     @classmethod
     def setup_class(cls):
-        endog = y_arma[:,11]
+        endog = y_arma[:, 11]
         cls.res1 = ARMA(endog, order=(0, 2)).fit(trend="c",
                                                  method="css", disp=-1)
         cls.res2 = results_arma.Y_arma02c("css")
@@ -617,8 +621,8 @@ class Test_ARIMA101(CheckArmaResultsMixin):
     # just make sure this works
     @classmethod
     def setup_class(cls):
-        endog = y_arma[:,6]
-        cls.res1 = ARIMA(endog, (1,0,1)).fit(trend="c", disp=-1)
+        endog = y_arma[:, 6]
+        cls.res1 = ARIMA(endog, (1, 0, 1)).fit(trend="c", disp=-1)
         (cls.res1.forecast_res, cls.res1.forecast_err,
                 confint) = cls.res1.forecast(10)
 
@@ -640,7 +644,7 @@ class Test_ARIMA111(CheckArimaResultsMixin, CheckForecastMixin,
     @classmethod
     def setup_class(cls):
         cpi = datasets.macrodata.load().data['cpi']
-        cls.res1 = ARIMA(cpi, (1,1,1)).fit(disp=-1)
+        cls.res1 = ARIMA(cpi, (1, 1, 1)).fit(disp=-1)
         cls.res2 = results_arima.ARIMA111()
         # make sure endog names changes to D.cpi
         (cls.res1.forecast_res,
@@ -742,7 +746,7 @@ class Test_ARIMA112CSS(CheckArimaResultsMixin):
 #    def setup_class(cls):
 #        cpi = datasets.macrodata.load().data['cpi']
 #        dates = pd.date_range('1959', periods=203, freq='Q')
-#        cls.res1 = ARIMA(cpi, dates=dates, freq='Q').fit(order=(1,1,1), disp=-1)
+#        cls.res1 = ARIMA(cpi, dates=dates, freq='Q').fit(order=(1, 1, 1), disp=-1)
 #        cls.res2 = results_arima.ARIMA111()
 #        # make sure endog names changes to D.cpi
 #        cls.decimal_llf = 3
@@ -872,7 +876,7 @@ def test_arima_predict_mle():
     # ie., the index after the pre-sample, these are also differenced once
     # so the indices are moved back once from the cpi in levels
     # start < p, end <p 1959q2 - 1959q4
-    start, end = 1,3
+    start, end = 1, 3
     fv = res1.predict(start, end, typ='levels')
     assert_almost_equal(fv, fc[start:end+1], DECIMAL_4)
     # start < p, end 0 1959q3 - 1960q1
@@ -939,9 +943,9 @@ def test_arima_predict_mle():
 
     # start < p, end <p 1959q2 - 1959q4
     #NOTE: should raise
-    #start, end = 1,3
+    #start, end = 1, 3
     #fv = res1.predict(start, end, dynamic=True, typ='levels')
-    #assert_almost_equal(fv, arima_forecasts[:,15])
+    #assert_almost_equal(fv, arima_forecasts[:, 15])
     # start < p, end 0 1959q3 - 1960q1
 
     #NOTE: below should raise an error
@@ -1174,7 +1178,7 @@ def test_arima_predict_indices():
 
     # check higher k_diff
     # model.k_diff = 2
-    model = ARIMA(cpi, (4,2,1), dates=cpi_dates, freq='Q')
+    model = ARIMA(cpi, (4, 2, 1), dates=cpi_dates, freq='Q')
     model.method = 'mle'
 
     # raises - pre-sample + dynamic
@@ -1261,7 +1265,7 @@ def test_arima_predict_css():
     # NOTE: Doing no-constant for now to kick the conditional exogenous
     # GH#274 down the road
     # go ahead and git the model to set up necessary variables
-    res1 = ARIMA(cpi, (4,1,1)).fit(disp=-1, method="css",
+    res1 = ARIMA(cpi, (4, 1, 1)).fit(disp=-1, method="css",
                             trend="nc")
     # but use gretl parameters to predict to avoid precision problems
     params = np.array([ 1.231272508473910,
@@ -1280,7 +1284,7 @@ def test_arima_predict_css():
     fcdyn4 = arima_forecasts[:, 4]
 
     #NOTE: should raise
-    #start, end = 1,3
+    #start, end = 1, 3
     #fv = res1.model.predict(params, start, end)
     ## start < p, end 0 1959q3 - 1960q1
     #start, end = 2, 4
@@ -1339,7 +1343,7 @@ def test_arima_predict_css():
 
     #NOTE: should raise
     # start < p, end <p 1959q2 - 1959q4
-    #start, end = 1,3
+    #start, end = 1, 3
     #fv = res1.predict(start, end, dynamic=True)
     # start < p, end 0 1959q3 - 1960q1
     #start, end = 2, 4
@@ -1401,7 +1405,7 @@ def test_arima_predict_css_diffs():
     #NOTE: Doing no-constant for now to kick the conditional exogenous
     #issue 274 down the road
     # go ahead and git the model to set up necessary variables
-    res1 = ARIMA(cpi, (4,1,1)).fit(disp=-1, method="css",
+    res1 = ARIMA(cpi, (4, 1, 1)).fit(disp=-1, method="css",
                             trend="c")
     # but use gretl parameters to predict to avoid precision problems
     params = np.array([0.78349893861244,
@@ -1423,7 +1427,7 @@ def test_arima_predict_css_diffs():
     fcdyn4 = arima_forecasts[:, 4]
 
     #NOTE: should raise
-    #start, end = 1,3
+    #start, end = 1, 3
     #fv = res1.model.predict(params, start, end)
     ## start < p, end 0 1959q3 - 1960q1
     #start, end = 2, 4
@@ -1482,7 +1486,7 @@ def test_arima_predict_css_diffs():
 
     #NOTE: should raise
     # start < p, end <p 1959q2 - 1959q4
-    #start, end = 1,3
+    #start, end = 1, 3
     #fv = res1.predict(start, end, dynamic=True)
     # start < p, end 0 1959q3 - 1960q1
     #start, end = 2, 4
@@ -1556,14 +1560,14 @@ def test_arima_predict_mle_diffs():
     path = os.path.join(current_path, 'results',
                         'results_arima_forecasts_all_mle_diff.csv')
     arima_forecasts = pd.read_csv(path).values
-    fc = arima_forecasts[:,0]
-    fcdyn = arima_forecasts[:,1]
-    fcdyn2 = arima_forecasts[:,2]
-    fcdyn3 = arima_forecasts[:,3]
-    fcdyn4 = arima_forecasts[:,4]
+    fc = arima_forecasts[:, 0]
+    fcdyn = arima_forecasts[:, 1]
+    fcdyn2 = arima_forecasts[:, 2]
+    fcdyn3 = arima_forecasts[:, 3]
+    fcdyn4 = arima_forecasts[:, 4]
 
     #NOTE: should raise
-    start, end = 1,3
+    start, end = 1, 3
     fv = res1.model.predict(params, start, end)
     ## start < p, end 0 1959q3 - 1960q1
     start, end = 2, 4
@@ -1622,7 +1626,7 @@ def test_arima_predict_mle_diffs():
 
     #NOTE: should raise
     # start < p, end <p 1959q2 - 1959q4
-    #start, end = 1,3
+    #start, end = 1, 3
     #fv = res1.predict(start, end, dynamic=True)
     # start < p, end 0 1959q3 - 1960q1
     #start, end = 2, 4
@@ -1719,7 +1723,7 @@ def test_arima_predict_bug():
     # predict_start_date wasn't getting set on start = None
     dta = datasets.sunspots.load_pandas().data.SUNACTIVITY
     dta.index = pd.DatetimeIndex(start='1700', end='2009', freq='A')[:309]
-    arma_mod20 = ARMA(dta, (2,0)).fit(disp=-1)
+    arma_mod20 = ARMA(dta, (2, 0)).fit(disp=-1)
     arma_mod20.predict(None, None)
 
     # test prediction with time stamp, see GH#2587
@@ -1737,7 +1741,7 @@ def test_arima_predict_bug():
 def test_arima_predict_q2():
     # bug with q > 1 for arima predict
     inv = datasets.macrodata.load().data['realinv']
-    arima_mod = ARIMA(np.log(inv), (1,1,2)).fit(start_params=[0,0,0,0], disp=-1)
+    arima_mod = ARIMA(np.log(inv), (1, 1, 2)).fit(start_params=[0, 0, 0, 0], disp=-1)
     fc, stderr, conf_int = arima_mod.forecast(5)
     # values copy-pasted from gretl
     assert_almost_equal(fc,
@@ -1752,7 +1756,7 @@ def test_arima_predict_pandas_nofreq():
              "2010-01-08", "2010-01-11", "2010-01-12", "2010-01-11",
              "2010-01-12", "2010-01-13", "2010-01-17"]
     close = [626.75, 623.99, 608.26, 594.1, 602.02, 601.11, 590.48, 587.09,
-             589.85, 580.0,587.62]
+             589.85, 580.0, 587.62]
     data = pd.DataFrame(close, index=pd.DatetimeIndex(dates), columns=["close"])
 
     # TODO: fix this names bug for non-string names names
@@ -1837,7 +1841,7 @@ def test_arima_predict_exog():
     #arima_forecasts = pd.read_csv(current_path + "/results/"
     #                        "results_arima_exog_forecasts_css.csv")
     #predict_expected = arima_forecasts["predict"].dropna()
-    #arma_res = ARMA(y.values, order=(2,1), exog=X[:100]).fit(trend="c",
+    #arma_res = ARMA(y.values, order=(2, 1), exog=X[:100]).fit(trend="c",
     #                                                         method="css",
     #                                                         disp=-1)
 
@@ -1969,19 +1973,19 @@ def test_arima_1123():
     # results from gretl
     assert_almost_equal(fc[0], 2.200393, 6)
     assert_almost_equal(fc[1], 1.030743, 6)
-    assert_almost_equal(fc[2][0,0], 0.180175, 6)
-    assert_almost_equal(fc[2][0,1], 4.220611, 6)
+    assert_almost_equal(fc[2][0, 0], 0.180175, 6)
+    assert_almost_equal(fc[2][0, 1], 4.220611, 6)
 
-    mod = ARMA(y[:-1], order=(1,1), exog=X[:-1])
+    mod = ARMA(y[:-1], order=(1, 1), exog=X[:-1])
     res = mod.fit(trend='nc', disp=False)
     fc = res.forecast(exog=X[-1:])
     assert_almost_equal(fc[0], 2.765688, 6)
     assert_almost_equal(fc[1], 0.835048, 6)
-    assert_almost_equal(fc[2][0,0], 1.129023, 6)
-    assert_almost_equal(fc[2][0,1], 4.402353, 6)
+    assert_almost_equal(fc[2][0, 0], 1.129023, 6)
+    assert_almost_equal(fc[2][0, 1], 4.402353, 6)
 
     # make sure this works to. code looked fishy.
-    mod = ARMA(y[:-1], order=(1,0), exog=X[:-1])
+    mod = ARMA(y[:-1], order=(1, 0), exog=X[:-1])
     res = mod.fit(trend='c', disp=False)
     fc = res.forecast(exog=X[-1:])
     assert_almost_equal(fc[0], 2.481219, 6)
@@ -2068,18 +2072,18 @@ class TestARMA00(object):
         y_lead = y[1:]
         y_lag = y[:-1]
         T = y_lag.shape[0]
-        X = np.hstack((np.ones((T,1)), y_lag[:, None]))
+        X = np.hstack((np.ones((T, 1)), y_lag[:, None]))
         ols_res = OLS(y_lead, X).fit()
-        arma_res = ARMA(y_lead,order=(0, 0), exog=y_lag).fit(trend='c', disp=-1)
+        arma_res = ARMA(y_lead, order=(0, 0), exog=y_lag).fit(trend='c', disp=-1)
         assert_almost_equal(ols_res.params, arma_res.params)
 
     def test_arma_exog_no_constant(self):
         y = self.y
         y_lead = y[1:]
         y_lag = y[:-1]
-        X = y_lag[:,None]
+        X = y_lag[:, None]
         ols_res = OLS(y_lead, X).fit()
-        arma_res = ARMA(y_lead,order=(0, 0), exog=y_lag).fit(trend='nc', disp=-1)
+        arma_res = ARMA(y_lead, order=(0, 0), exog=y_lag).fit(trend='nc', disp=-1)
         assert_almost_equal(ols_res.params, arma_res.params)
         pass
 
@@ -2172,7 +2176,7 @@ def test_arima111_predict_exog_2127():
              7., 6.7, 6.6, 6.7, 6.7, 6.3, 6.3]
 
     # rescaling results in convergence failure
-    #model = ARIMA(np.array(ef)*100, (1,1,1), exog=ue)
+    #model = ARIMA(np.array(ef)*100, (1, 1, 1), exog=ue)
     model = ARIMA(ef, (1, 1, 1), exog=ue)
     res = model.fit(transparams=False, pgtol=1e-8, iprint=0, disp=0)
     assert res.mle_retvals['warnflag'] == 0
@@ -2317,7 +2321,7 @@ def test_ARIMA_exog_predict():
          7.53795983357, 7.53626130154, 7.54539963934])
 
 
-    mod_002 = ARIMA(np.asarray(data_sample['loginv']), (0,0,2),
+    mod_002 = ARIMA(np.asarray(data_sample['loginv']), (0, 0, 2),
                    exog=np.asarray(data_sample[['loggdp', 'logcons']]))
 
     # doesn't converge with default starting values
@@ -2394,9 +2398,9 @@ def test_long_ar_start_params():
 
     model = ARMA(y, order=(2, 2))
 
-    res = model.fit(method='css',start_ar_lags=10, disp=0)
-    res = model.fit(method='css-mle',start_ar_lags=10, disp=0)
-    res = model.fit(method='mle',start_ar_lags=10, disp=0)
+    res = model.fit(method='css', start_ar_lags=10, disp=0)
+    res = model.fit(method='css-mle', start_ar_lags=10, disp=0)
+    res = model.fit(method='mle', start_ar_lags=10, disp=0)
     with pytest.raises(ValueError):
         model.fit(start_ar_lags=nobs+5, disp=0)
 
@@ -2457,7 +2461,7 @@ def test_arima_predict_noma():
     ar = [1, .75]
     ma = [1]
     data = arma_generate_sample(ar, ma, 100)
-    arma = ARMA(data, order=(0,1))
+    arma = ARMA(data, order=(0, 1))
     arma_res = arma.fit(disp=-1)
     arma_res.forecast(1)
 
@@ -2497,7 +2501,7 @@ def test_arima_pickle():
 
 def test_arima_not_implemented():
     # from_formula is not implemented
-    # TOOD: GH reference?
+    # TODO: GH reference?
     formula = ' WUE ~ 1 + SFO3 '
     data = [-1214.360173, -1848.209905, -2100.918158]
     with pytest.raises(NotImplementedError):

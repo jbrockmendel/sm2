@@ -6,7 +6,7 @@ from numpy.testing import assert_equal
 
 from sm2.tools.decorators import (cache_writable,
                                   resettable_cache, cache_readonly,
-                                  deprecated_alias)
+                                  deprecated_alias, copy_doc)
 
 class TestDeprecatedAlias(object):
 
@@ -40,6 +40,35 @@ class TestDeprecatedAlias(object):
         assert len(record) == 1, record
         assert 'is a deprecated alias' in str(record[0])
         assert inst.x == 5
+
+
+class TestCopyDoc:
+    def test_copy_doc(self):
+
+        @copy_doc("foo")
+        def func(*args, **kwargs):
+            return (args, kwargs)
+
+        assert func.__doc__ == "foo"
+
+    def test_copy_doc_overwrite(self):
+
+        @copy_doc("foo")
+        def func(*args, **kwargs):
+            """bar"""
+            return (args, kwargs)
+
+        assert func.__doc__ == "foo"
+
+    def test_copy_doc_orig_altered(self):
+
+        def func(*args, **kwargs):
+            """bar"""
+            return (args, kwargs)
+
+        func2 = copy_doc("foo")(func)
+        assert func2.__doc__ == "foo"
+        assert func.__doc__ == "foo"
 
 
 def test_resettable_cache():

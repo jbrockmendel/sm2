@@ -353,8 +353,9 @@ def _reordered(self, order):
             params_new_inc[0, i] = params[0, i]
             endog_lagged_new[:, 0] = endog_lagged[:, 0]
         for j in range(k_ar):
-            params_new_inc[i + j * num_end + k, :] = self.params[c + j * num_end + k, :]
-            endog_lagged_new[:, i + j * num_end + k] = endog_lagged[:, c + j * num_end + k]
+            jnk = j * num_end + k
+            params_new_inc[i + jnk, :] = self.params[c + jnk, :]
+            endog_lagged_new[:, i + jnk] = endog_lagged[:, c + jnk]
 
         sigma_u_new_inc[i, :] = sigma_u[c, :]
         names_new.append(names[c])
@@ -475,7 +476,8 @@ class LagOrderResults:
 
     def summary(self):  # basically copied from (now deleted) print_ic_table()
         cols = sorted(self.ics)  # ["aic", "bic", "hqic", "fpe"]
-        str_data = np.array([["%#10.4g" % v for v in self.ics[c]] for c in cols],
+        str_data = np.array([["%#10.4g" % v for v in self.ics[c]]
+                             for c in cols],
                             dtype=object).T
         # mark minimum with an asterisk
         for i, col in enumerate(cols):
@@ -1012,6 +1014,7 @@ class VARProcess(object):
         gamma = np.concatenate(gamma, 1)
         return {"Gamma": gamma, "Pi": pi}
 
+
 # -------------------------------------------------------------------
 # VARResults class
 
@@ -1141,7 +1144,8 @@ class VARResults(VARProcess):
 
     @cache_readonly
     def fittedvalues(self):
-        """The predicted insample values of the response variables of the model.
+        """The predicted insample values of the response variables of
+        the model.
         """
         return np.dot(self.ys_lagged, self.params)
 
@@ -1221,10 +1225,11 @@ class VARResults(VARProcess):
 
         .. math::
 
-            \sqrt(T) (\bar{y} - \mu) \rightarrow {\cal N}(0, \Sigma_{\bar{y}})\\
+            \sqrt(T) (\bar{y} - \mu) \rightarrow {\cal N}(0,\Sigma_{\bar{y}})\\
 
-            \Sigma_{\bar{y}} = B \Sigma_u B^\prime, \text{where } B = (I_K - A_1
-            - \cdots - A_p)^{-1}
+            \Sigma_{\bar{y}} = B \Sigma_u B^\prime,
+
+            \text{where } B = (I_K - A_1 - \cdots - A_p)^{-1}
 
         Notes
         -----
@@ -1482,7 +1487,8 @@ class VARResults(VARProcess):
 
         # memoize powers of B for speedup
         # TODO: see if can memoize better
-        # TODO: much lower-hanging fruit in caching `np.trace` and `chain_dot` below.
+        # TODO: much lower-hanging fruit in caching `np.trace` and
+        # `chain_dot` below.
         B = self._bmat_forc_cov()
         _B = {}
 
@@ -1550,8 +1556,8 @@ class VARResults(VARProcess):
         irf : IRAnalysis
         """
         if var_order is not None:
-            raise NotImplementedError('alternate variable order not implemented'
-                                      ' (yet)')
+            raise NotImplementedError('alternate variable order not '
+                                      'implemented (yet)')
 
         return irf.IRAnalysis(self, P=var_decomp, periods=periods)
 
@@ -1799,7 +1805,8 @@ class VARResults(VARProcess):
         Cs = np.dot(C, vech_sigma_u)
         d = np.linalg.pinv(duplication_matrix(k))
         Cd = np.dot(C, d)
-        middle = scipy.linalg.inv(chain_dot(Cd, np.kron(sigma_u, sigma_u), Cd.T)) / 2
+        chained = chain_dot(Cd, np.kron(sigma_u, sigma_u), Cd.T)
+        middle = scipy.linalg.inv(chained) / 2
 
         wald_statistic = t * chain_dot(Cs.T, middle, Cs)
         df = num_restr
@@ -1855,7 +1862,8 @@ class VARResults(VARProcess):
         return WhitenessTestResults(statistic, crit_value, pvalue, df, signif,
                                     nlags, adjusted)
 
-    # TODO: This is not a formal test.  Deprecate in favor of `test_whiteness_new`
+    # TODO: This is not a formal test.  Deprecate in favor
+    #       of `test_whiteness_new`
     def test_whiteness(self, nlags=10, plot=True, linewidth=8):
         """
         Test white noise assumption. Sample (Y) autocorrelations are compared
@@ -1990,7 +1998,7 @@ class VARResultsWrapper(wrap.ResultsWrapper):
     _wrap_methods = wrap.union_dicts(
         tsa_model.TimeSeriesResultsWrapper._wrap_methods, _methods)
     _wrap_methods.pop('cov_params')  # not yet a method in VARResults
-wrap.populate_wrapper(VARResultsWrapper, VARResults)
+wrap.populate_wrapper(VARResultsWrapper, VARResults)  # noqa:E305
 
 
 class FEVD(object):
