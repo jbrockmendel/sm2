@@ -25,8 +25,7 @@ from sm2.datasets import macrodata
 import sm2.stats.sandwich_covariance as sw
 from sm2.stats import diagnostic
 
-# import statsmodels.stats.outliers_influence as oi
-oi = None  # dummy until upstream version is ported
+import sm2.stats.outliers_influence as oi
 
 cur_dir = os.path.abspath(os.path.dirname(__file__))
 
@@ -719,7 +718,6 @@ def grangertest():
                        df=(198, 193))
 
 
-# outliers_influence not ported from upstream
 @pytest.mark.skip(reason="outliers_influence not ported from upstream")
 @pytest.mark.smoke
 @pytest.mark.not_vetted

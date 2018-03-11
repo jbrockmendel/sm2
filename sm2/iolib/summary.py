@@ -23,7 +23,7 @@ def forg(x, prec=3):
         else:
             return '%10.4f' % x
     else:
-        raise NotImplementedError
+        raise NotImplementedError  # TODO: Should this be ValueError?
 
 
 def summary(self, yname=None, xname=None, title=0, alpha=.05,

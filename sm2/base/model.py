@@ -196,7 +196,7 @@ class Model(object):
         """
         Fit a model to data.
         """
-        raise NotImplementedError
+        raise NotImplementedError  # pragma: no cover
 
     def predict(self, params, exog=None, *args, **kwargs):
         """
@@ -204,7 +204,7 @@ class Model(object):
 
         This is a placeholder intended to be overwritten by individual models.
         """
-        raise NotImplementedError
+        raise NotImplementedError  # pragma: no cover
 
 
 class LikelihoodModel(Model):
@@ -231,7 +231,7 @@ class LikelihoodModel(Model):
         """
         Log-likelihood of model.
         """
-        raise NotImplementedError
+        raise NotImplementedError  # pragma: no cover
 
     def score(self, params):
         """
@@ -239,7 +239,7 @@ class LikelihoodModel(Model):
 
         The gradient of logL with respect to each parameter.
         """
-        raise NotImplementedError
+        raise NotImplementedError  # pragma: no cover
 
     def information(self, params):
         """
@@ -247,13 +247,13 @@ class LikelihoodModel(Model):
 
         Returns -Hessian of loglike evaluated at params.
         """
-        raise NotImplementedError
+        raise NotImplementedError  # pragma: no cover
 
     def hessian(self, params):
         """
         The Hessian matrix of the model
         """
-        raise NotImplementedError
+        raise NotImplementedError  # pragma: no cover
 
     def _get_start_params(self, start_params=None):
         """
@@ -394,7 +394,7 @@ class LikelihoodModel(Model):
         return mlefit
 
 
-# TODO: _none_ of this is hit in tests
+# TODO: _none_ of this is hit in tests (though some docstrings are copied)
 # TODO: the below is unfinished
 class GenericLikelihoodModel(LikelihoodModel):
     """
@@ -423,23 +423,9 @@ class GenericLikelihoodModel(LikelihoodModel):
     Hessian is not positive definite the covariance matrix of the parameter
     estimates based on the outer product of the Jacobian might still be valid.
 
-    Examples
+    See Also
     --------
-    see also subclasses in directory miscmodels
-
-    import sm2.api as sm
-    data = sm.datasets.spector.load()
-    data.exog = sm.add_constant(data.exog)
-    # in this dir
-    from model import GenericLikelihoodModel
-    probit_mod = sm.Probit(data.endog, data.exog)
-    probit_res = probit_mod.fit()
-    loglike = probit_mod.loglike
-    score = probit_mod.score
-    mod = GenericLikelihoodModel(data.endog, data.exog, loglike, score)
-    res = mod.fit(method="nm", maxiter = 500)
-    import numpy as np
-    np.allclose(res.params, probit_res.params)
+    subclasses in directory miscmodels
     """
     def __init__(self, endog, exog=None, loglike=None, score=None,
                  hessian=None, missing='none', extra_params_names=None,
@@ -590,7 +576,7 @@ class GenericLikelihoodModel(LikelihoodModel):
             A 1d weight vector used in the calculation of the Hessian.
             The hessian is obtained by `(exog.T * hessian_factor).dot(exog)`
         """
-        raise NotImplementedError
+        raise NotImplementedError  # pragma: no cover
 
     def fit(self, start_params=None, method='nm', maxiter=500, full_output=1,
             disp=1, callback=None, retall=0, **kwargs):
@@ -713,7 +699,7 @@ class Results(object):
 
     def summary(self):
         # TODO: Make this raise upstream instead of just "pass"
-        raise NotImplementedError
+        raise NotImplementedError  # pragma: no cover
 
 
 # TODO: public method?
@@ -890,39 +876,24 @@ class LikelihoodModelResults(wrap.SaveLoadMixin, Results):
             use_t = kwargs['use_t']
             if use_t is not None:
                 self.use_t = use_t
+
         if 'cov_type' in kwargs:
             cov_type = kwargs.get('cov_type', 'nonrobust')
             cov_kwds = kwargs.get('cov_kwds', {})
-
-            if cov_type == 'nonrobust':
-                self.cov_type = 'nonrobust'
-                self.cov_kwds = {'description': 'Standard Errors assume that '
-                                 'the covariance matrix of the errors is '
-                                 'correctly specified.'}
-            else:
-                from sm2.base.covtype import get_robustcov_results
-                if cov_kwds is None:
-                    cov_kwds = {}
-                use_t = self.use_t
-                # TODO: we shouldn't need use_t in get_robustcov_results
-                get_robustcov_results(self, cov_type=cov_type, use_self=True,
-                                      use_t=use_t, **cov_kwds)
+            cov_kwds = cov_kwds or {}
+            self._get_robustcov_results(cov_type=cov_type,
+                                        use_self=True, use_t=self.use_t,
+                                        **cov_kwds)
 
     def normalized_cov_params(self):
         raise NotImplementedError
 
+    # FIXME: use_self kwarg ignored?
     def _get_robustcov_results(self, cov_type='nonrobust', use_self=True,
                                use_t=None, **cov_kwds):
         from sm2.base.covtype import get_robustcov_results
-
-        if cov_type == 'nonrobust':
-            self.cov_type = 'nonrobust'
-            self.cov_kwds = {'description': 'Standard Errors assume that the '
-                             'covariance matrix of the errors is correctly '
-                             'specified.'}
-        else:
-            # TODO: we shouldn't need use_t in get_robustcov_results
-            get_robustcov_results(self, cov_type=cov_type, use_self=True,
+        # TODO: we shouldn't need use_t in get_robustcov_results
+        get_robustcov_results(self, cov_type=cov_type, use_self=True,
                                   use_t=use_t, **cov_kwds)
 
     @cache_readonly

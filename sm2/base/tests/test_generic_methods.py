@@ -260,7 +260,6 @@ class TestGenericLogit(CheckGenericMixin):
                                  method='bfgs', disp=0)
 
 
-# GLM, RLM not ported from upstream
 @pytest.mark.skip(reason="RLM not ported from upstream")
 @pytest.mark.not_vetted
 class TestGenericRLM(CheckGenericMixin):
