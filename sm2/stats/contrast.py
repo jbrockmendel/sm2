@@ -55,7 +55,7 @@ class ContrastResults(object):
             if self.distribution is 'chi2':
                 self.pvalue = self.dist.sf(self.statistic, df_denom)
             else:
-                "normal"
+                # "normal"
                 self.pvalue = np.full_like(value, np.nan)
                 not_nan = ~np.isnan(value)
                 self.pvalue[not_nan] = self.dist.sf(np.abs(value[not_nan])) * 2
@@ -64,6 +64,8 @@ class ContrastResults(object):
         # should we return python scalar?
         self.pvalue = np.squeeze(self.pvalue)
 
+    # TODO: De-duplicate docstring identical
+    # to _prediction.PredictionResults.conf_int
     def conf_int(self, alpha=0.05):
         """
         Returns the confidence interval of the value, `effect` of

@@ -25,24 +25,26 @@ genpoisson_p = genpoisson_p_gen(name='genpoisson_p',
 
 
 def zipoisson_gen(*args, **kwargss):
-    raise NotImplementedError('Not ported from upstream')
+    raise NotImplementedError('zipoisson_gen not ported from upstream')
 
 
 def zipoisson(*args, **kwargss):
-    raise NotImplementedError('Not ported from upstream')
+    raise NotImplementedError('zipoisson not ported from upstream')
 
 
 def zigeneralizedpoisson_gen(*args, **kwargss):
-    raise NotImplementedError('Not ported from upstream')
+    raise NotImplementedError('zigeneralizedpoisson_gen '
+                              'not ported from upstream')
 
 
 def zigenpoisson(*args, **kwargss):
-    raise NotImplementedError('Not ported from upstream')
+    raise NotImplementedError('zigenpoisson not ported from upstream')
 
 
 def zinegativebinomial_gen(*args, **kwargss):
-    raise NotImplementedError('Not ported from upstream')
+    raise NotImplementedError('zinegativebinomial_gen '
+                              'not ported from upstream')
 
 
 def zinegbin(*args, **kwargss):
-    raise NotImplementedError('Not ported from upstream')
+    raise NotImplementedError('zinegbin not ported from upstream')

@@ -172,13 +172,13 @@ class DiscreteModel(base.LikelihoodModel):
         self.df_model = float(rank - 1)
         self.df_resid = float(self.exog.shape[0] - rank)
 
-    def cdf(self, X):
+    def cdf(self, X):  # pragma: no cover
         """
         The cumulative distribution function of the model.
         """
         raise NotImplementedError
 
-    def pdf(self, X):
+    def pdf(self, X):  # pragma: no cover
         """
         The probability density (mass) function of the model.
         """
@@ -396,14 +396,14 @@ class DiscreteModel(base.LikelihoodModel):
 
         return cov_params
 
-    def predict(self, params, exog=None, linear=False):
+    def predict(self, params, exog=None, linear=False):  # pragma: no cover
         """
         Predict response variable of a model given exogenous variables.
         """
         raise NotImplementedError
 
     def _derivative_exog(self, params, exog=None, dummy_idx=None,
-                         count_idx=None):
+                         count_idx=None):  # pragma: no cover
         """
         This should implement the derivative of the non-linear function
         """
@@ -1396,9 +1396,7 @@ class GeneralizedPoisson(CountModel):
         gpfit = res_cls(self, mlefit._results)
         result = wrap_cls(gpfit)
 
-        if cov_kwds is None:
-            cov_kwds = {}
-
+        cov_kwds = cov_kwds or {}
         result._get_robustcov_results(cov_type=cov_type,
                                       use_self=True, use_t=use_t, **cov_kwds)
         return result
@@ -2712,8 +2710,7 @@ class NegativeBinomial(CountModel):
         else:
             result = mlefit
 
-        if cov_kwds is None:
-            cov_kwds = {}  # TODO: make this unnecessary ?
+        cov_kwds = cov_kwds or {}
         result._get_robustcov_results(cov_type=cov_type,
                                       use_self=True, use_t=use_t, **cov_kwds)
         return result
@@ -3092,8 +3089,7 @@ class NegativeBinomialP(CountModel):
         nbinfit = res_class(self, mlefit._results)
         result = wrap_cls(nbinfit)
 
-        if cov_kwds is None:
-            cov_kwds = {}
+        cov_kwds = cov_kwds or {}
         result._get_robustcov_results(cov_type=cov_type,
                                       use_self=True, use_t=use_t, **cov_kwds)
         return result
@@ -3234,17 +3230,12 @@ class DiscreteResults(base.LikelihoodModelResults):
             # robust covariance
             if use_t is not None:
                 self.use_t = use_t
-            if cov_type == 'nonrobust':
-                self.cov_type = 'nonrobust'
-                self.cov_kwds = {'description': 'Standard Errors assume that the '
-                                 'covariance matrix of the errors is correctly '
-                                 'specified.'}
-            else:
-                if cov_kwds is None:
-                    cov_kwds = {}
-                from sm2.base.covtype import get_robustcov_results
-                get_robustcov_results(self, cov_type=cov_type, use_self=True,
-                                      **cov_kwds)
+
+            cov_kwds = cov_kwds or {}
+            from sm2.base.covtype import get_robustcov_results
+            get_robustcov_results(self, cov_type=cov_type, use_self=True,
+                                  **cov_kwds)
+            # TODO: Can we just call self._get_robustcov_results ?
 
     def __getstate__(self):
         # remove unpicklable methods
@@ -3438,32 +3429,9 @@ class DiscreteResults(base.LikelihoodModelResults):
         from sm2.discrete.discrete_margins import DiscreteMargins
         return DiscreteMargins(self, (at, method, atexog, dummy, count))
 
+    @copy_doc(base.GenericLikelihoodModelResults.summary.__doc__)
     def summary(self, yname=None, xname=None, title=None, alpha=.05,
                 yname_list=None):
-        """Summarize the Regression Results
-
-        Parameters
-        -----------
-        yname : string, optional
-            Default is `y`
-        xname : list of strings, optional
-            Default is `var_##` for ## in p the number of regressors
-        title : string, optional
-            Title for the top table. If not None, then this replaces the
-            default title
-        alpha : float
-            significance level for the confidence intervals
-
-        Returns
-        -------
-        smry : Summary instance
-            this holds the summary tables and text, which can be printed or
-            converted to various output formats.
-
-        See Also
-        --------
-        sm2.iolib.summary.Summary : class to hold summary results
-        """
         top_left = [('Dep. Variable:', None),
                     ('Model:', [self.model.__class__.__name__]),
                     ('Method:', ['MLE']),
@@ -3915,7 +3883,7 @@ class MultinomialResults(DiscreteResults):
                                                         cols=cols)
         return confint.transpose(2, 0, 1)
 
-    def margeff(self):
+    def margeff(self):  # pragma: no cover
         raise NotImplementedError("Use get_margeff instead")
 
     @cache_readonly
