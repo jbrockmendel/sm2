@@ -455,7 +455,7 @@ def test_prediction_increment_unsupported():
         mod._get_prediction_index(start_key, end_key))
 
     assert_equal(start, 0)
-    assert_equal(end, nobs-1)
+    assert_equal(end, nobs - 1)
     assert_equal(out_of_sample, 0)
     assert_equal(prediction_index.equals(mod.data.row_labels), True)
 
@@ -656,7 +656,7 @@ def test_prediction_increment_pandas_dates_nanosecond():
         mod._get_prediction_index(start_key, end_key))
 
     assert_equal(start, 0)
-    assert_equal(end, nobs-1)
+    assert_equal(end, nobs - 1)
     assert_equal(out_of_sample, 0)
     assert_equal(type(prediction_index) == type(endog.index), True)
     assert_equal(prediction_index.equals(mod._index), True)

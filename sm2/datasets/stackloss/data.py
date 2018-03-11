@@ -30,7 +30,7 @@ NOTE = """::
         ACIDCONC  - Acid concentration of circulating acid minus 50 times 10.
 """
 
-from numpy import recfromtxt, column_stack, array
+from numpy import recfromtxt
 from sm2.datasets import utils as du
 from os.path import dirname, abspath
 

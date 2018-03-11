@@ -25,7 +25,7 @@ stub1 1.30312 2.73999
 stub2 1.95038 2.65765
 ---------------------
 """
-        test1data = [[1.30312, 2.73999],[1.95038, 2.65765]]
+        test1data = [[1.30312, 2.73999], [1.95038, 2.65765]]
         test1stubs = ('stub1', 'stub2')
         test1header = ('header1', 'header2')
         actual = SimpleTable(test1data, test1header, test1stubs,
@@ -111,6 +111,7 @@ stub R2 C2  40.95038  40.65765
         tbl = SimpleTable(table1data, test1header, test1stubs,
                           txt_fmt=txt_fmt1, ltx_fmt=ltx_fmt1,
                           html_fmt=html_fmt1)
+
         def test_txt_fmt1(self):
             # Limited test of custom txt_fmt
             desired = """
@@ -146,6 +147,7 @@ stub R2 C2  40.95038  40.65765
 """ % desired[1:-1]
             actual_centered = '\n%s\n' % tbl.as_latex_tabular()
             assert actual_centered == desired_centered
+
         def test_html_fmt1(self):
             # Limited test of custom html_fmt
             desired = """
@@ -177,7 +179,9 @@ stub R2 C2  40.95038  40.65765
         table1c_data = [row0c_data, row1c_data]
         test1c_stubs = ('>stub1%', 'stub_2')
         test1c_header = ('#header1$', 'header&|')
-        tbl_c = SimpleTable(table1c_data, test1c_header, test1c_stubs, ltx_fmt=ltx_fmt1)
+        tbl_c = SimpleTable(table1c_data, test1c_header, test1c_stubs,
+                            ltx_fmt=ltx_fmt1)
+
         def test_ltx_special_chars(self):
             # Test for special characters (latex) in headers and stubs
             desired = r"""
@@ -196,7 +200,7 @@ stub R2 C2  40.95038  40.65765
         # WTF Is this supposed to be a nested test or what?
 
     def test_regression_with_tuples(self):
-        i = pd.Series([1, 2, 3, 4] * 10 , name="i")
+        i = pd.Series([1, 2, 3, 4] * 10, name="i")
         y = pd.Series([1, 2, 3, 4, 5] * 8, name="y")
         x = pd.Series([1, 2, 3, 4, 5, 6, 7, 8] * 5, name="x")
 

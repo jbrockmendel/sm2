@@ -71,7 +71,6 @@ def test_predict_se():
                     res2.fittedvalues[:3] - ci_half[:3],
                     rtol=1e-12)
 
-
     # check WLS
     res3 = WLS(y2, x2, 1. / w).fit()
 

@@ -53,7 +53,7 @@ NOTE = """::
         realint   - Real interest rate (tbilrate - infl)
 """
 
-from numpy import recfromtxt, column_stack, array
+from numpy import recfromtxt
 from pandas import DataFrame
 
 from sm2.datasets.utils import Dataset
