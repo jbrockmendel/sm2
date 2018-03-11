@@ -56,9 +56,6 @@ FLOAT_EPS = np.finfo(float).eps
 # TODO: add options for the parameter covariance/variance
 # ie., OIM, EIM, and BHHH see Green 21.4
 
-_discrete_models_docs = """
-"""
-
 _discrete_results_docs = """
     %(one_line_description)s
 
@@ -110,17 +107,6 @@ _l1_results_attr = """    nnz_params : Integer
     trimmed : Boolean array
         trimmed[i] == True if the ith parameter was trimmed from the model."""
 
-_get_start_params_null_docs = """
-Compute one-step moment estimator for null (constant-only) model
-
-This is a preliminary estimator used as start_params.
-
-Returns
--------
-params : ndarray
-    parameter estimate based one one-step moment matching
-
-"""
 
 # helper for MNLogit (will be generally useful later)
 
@@ -1020,8 +1006,18 @@ class Poisson(CountModel):
         # np.sum(stats.poisson.logpmf(endog, np.exp(XB)))
         return -np.exp(linpred) +  endog * linpred - gammaln(endog + 1)
 
-    @copy_doc(_get_start_params_null_docs)
     def _get_start_params_null(self):
+        """
+        Compute one-step moment estimator for null (constant-only) model
+
+        This is a preliminary estimator used as start_params.
+
+        Returns
+        -------
+        params : ndarray
+            parameter estimate based one one-step moment matching
+
+        """
         offset = getattr(self, "offset", 0)
         exposure = getattr(self, "exposure", 0)
         const = (self.endog / np.exp(offset + exposure)).mean()
@@ -1324,7 +1320,7 @@ class GeneralizedPoisson(CountModel):
         return (np.log(mu) + (endog - 1) * np.log(a2) - endog *
                 np.log(a1) - gammaln(endog + 1) - a2 / a1)
 
-    @copy_doc(_get_start_params_null_docs)
+    @copy_doc(Poisson._get_start_params_null.__doc__)
     def _get_start_params_null(self):
         offset = getattr(self, "offset", 0)
         exposure = getattr(self, "exposure", 0)
@@ -2634,7 +2630,7 @@ class NegativeBinomial(CountModel):
         sc = approx_fprime_cs(params, self.loglikeobs)
         return sc
 
-    @copy_doc(_get_start_params_null_docs)
+    @copy_doc(Poisson._get_start_params_null.__doc__)
     def _get_start_params_null(self):
         offset = getattr(self, "offset", 0)
         exposure = getattr(self, "exposure", 0)
@@ -3020,7 +3016,7 @@ class NegativeBinomialP(CountModel):
 
         return hess_arr
 
-    @copy_doc(_get_start_params_null_docs)
+    @copy_doc(Poisson._get_start_params_null.__doc__)
     def _get_start_params_null(self):
         offset = getattr(self, "offset", 0)
         exposure = getattr(self, "exposure", 0)

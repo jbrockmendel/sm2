@@ -564,6 +564,7 @@ class GLS(RegressionModel):
         else:
             return np.diag(self.cholsigmainv)
 
+    @copy_doc(_fit_regularized_doc)
     def fit_regularized(self, method="elastic_net", alpha=0.,
                         L1_wt=1., start_params=None, profile_scale=False,
                         refit=False, **kwargs):
@@ -585,8 +586,6 @@ class GLS(RegressionModel):
             RegularizedResults, RegularizedResultsWrapper)
         rrslt = RegularizedResults(self, rslt.params)
         return RegularizedResultsWrapper(rrslt)
-
-    fit_regularized.__doc__ = _fit_regularized_doc
 
 
 class WLS(RegressionModel):
@@ -716,6 +715,7 @@ class WLS(RegressionModel):
     def hessian_factor(self, params, scale=None, observed=True):
         return self.weights
 
+    @copy_doc(_fit_regularized_doc)
     def fit_regularized(self, method="elastic_net", alpha=0.,
                         L1_wt=1., start_params=None, profile_scale=False,
                         refit=False, **kwargs):
@@ -736,8 +736,6 @@ class WLS(RegressionModel):
                                           RegularizedResultsWrapper)
         rrslt = RegularizedResults(self, rslt.params)
         return RegularizedResultsWrapper(rrslt)
-
-    fit_regularized.__doc__ = _fit_regularized_doc
 
 
 class OLS(WLS):
@@ -808,15 +806,16 @@ class OLS(WLS):
         -------
         The likelihood function evaluated at params.
         """
-        nobs2 = self.nobs / 2.0
         nobs = float(self.nobs)
+        nobs2 = nobs / 2.0
         resid = self.endog - np.dot(self.exog, params)
         if hasattr(self, 'offset'):
             resid -= self.offset
         ssr = np.sum(resid**2)
         if scale is None:
             # profile log likelihood
-            llf = -nobs2 * np.log(2 * np.pi) - nobs2 * np.log(ssr / nobs) - nobs2
+            llf = (-nobs2 * np.log(2 * np.pi) - nobs2 * np.log(ssr / nobs) -
+                   nobs2)
         else:
             # log-likelihood
             llf = -nobs2 * np.log(2 * np.pi * scale) - ssr / (2 * scale)
@@ -850,7 +849,6 @@ class OLS(WLS):
         -------
         The score vector.
         """
-
         if not hasattr(self, "_wexog_xprod"):
             self._setup_score_hess()
 
@@ -909,6 +907,7 @@ class OLS(WLS):
     def hessian_factor(self, params, scale=None, observed=True):
         return np.ones(self.exog.shape[0])
 
+    @copy_doc(_fit_regularized_doc)
     def fit_regularized(self, method="elastic_net", alpha=0.,
                         L1_wt=1., start_params=None, profile_scale=False,
                         refit=False, **kwargs):
@@ -950,8 +949,6 @@ class OLS(WLS):
                               refit=refit,
                               check_step=False,
                               **defaults)
-
-    fit_regularized.__doc__ = _fit_regularized_doc
 
     def _fit_ridge(self, alpha):
         """
@@ -2237,13 +2234,12 @@ class RegressionResults(base.LikelihoodModelResults):
 
         return res
 
+    @copy_doc(pred.get_prediction.__doc__)
     def get_prediction(self, exog=None, transform=True, weights=None,
                        row_labels=None, **kwds):
         return pred.get_prediction(self, exog=exog, transform=transform,
                                    weights=weights, row_labels=row_labels,
                                    **kwds)
-
-    get_prediction.__doc__ = pred.get_prediction.__doc__
 
     def summary(self, yname=None, xname=None, title=None, alpha=.05):
         """Summarize the Regression Results
