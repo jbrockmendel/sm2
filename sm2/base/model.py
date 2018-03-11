@@ -140,7 +140,7 @@ class Model(object):
         a numpy structured or rec array, a dictionary, or a pandas DataFrame.
         """
         # TODO: provide a docs template for args/kwargs from child models
-        # TODO: subset could use syntax. issue #469.
+        # TODO: subset could use syntax. GH#469.
         if subset is not None:
             data = data.loc[subset]
         eval_env = kwargs.pop('eval_env', None)
@@ -394,6 +394,7 @@ class LikelihoodModel(Model):
         return mlefit
 
 
+# TODO: _none_ of this is hit in tests
 # TODO: the below is unfinished
 class GenericLikelihoodModel(LikelihoodModel):
     """
@@ -913,8 +914,6 @@ class LikelihoodModelResults(wrap.SaveLoadMixin, Results):
     def _get_robustcov_results(self, cov_type='nonrobust', use_self=True,
                                use_t=None, **cov_kwds):
         from sm2.base.covtype import get_robustcov_results
-        if cov_kwds is None:
-            cov_kwds = {}
 
         if cov_type == 'nonrobust':
             self.cov_type = 'nonrobust'
@@ -1609,11 +1608,11 @@ class LikelihoodResultsWrapper(wrap.ResultsWrapper):
     _wrap_attrs = _attrs
     _wrap_methods = {'cov_params': 'cov',
                      'conf_int': 'columns'}
-
 wrap.populate_wrapper(LikelihoodResultsWrapper,  # noqa:E305
                       LikelihoodModelResults)
 
 
+# TODO: _none_ of this is covered in tests
 class ResultMixin(object):
 
     @cache_readonly
@@ -1743,6 +1742,7 @@ class ResultMixin(object):
         pass
 
 
+# TODO: _none_ of this is covered in any tests
 class GenericLikelihoodModelResults(LikelihoodModelResults, ResultMixin):
     """
     A results class for the discrete dependent variable models.

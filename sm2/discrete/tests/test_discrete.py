@@ -95,6 +95,7 @@ class CheckModelResults(object):
         # llr_pvalue is very slow, especially for NegativeBinomial
         "llr": {"atol": 1e-4},
         "bic": {"atol": 1e-3},
+        "aic": {"atol": 1e-3},
     }
 
     @pytest.mark.parametrize('name', list(tols.keys()))
@@ -131,10 +132,10 @@ class CheckModelResults(object):
         assert self.res1.df_model == self.res2.df_model
         assert self.res1.df_resid == self.res2.df_resid
 
-    def test_aic(self):
-        assert_allclose(self.res1.aic,
-                        self.res2.aic,
-                        atol=1e-3)
+    #def test_aic(self):
+    #    assert_allclose(self.res1.aic,
+    #                    self.res2.aic,
+    #                    atol=1e-3)
 
     #def test_bic(self):
     #    assert_allclose(self.res1.bic,
@@ -626,6 +627,7 @@ class TestNegativeBinomialPNB1BFGS(CheckModelResults):
         "llf": {"atol": 1e-3, "rtol": 1e-3},
         "llr": {"atol": 1e-3, "rtol": 1e-3},
         "bic": {"atol": 5e-1, "rtol": 5e-1},
+        "aic": {"atol": 0.5, "rtol": 0.5},
         })
 
     def test_bse(self):
@@ -633,10 +635,10 @@ class TestNegativeBinomialPNB1BFGS(CheckModelResults):
                         self.res2.bse,
                         atol=5e-3, rtol=5e-3)
 
-    def test_aic(self):
-        assert_allclose(self.res1.aic,
-                        self.res2.aic,
-                        atol=0.5, rtol=0.5)
+    #def test_aic(self):
+    #    assert_allclose(self.res1.aic,
+    #                    self.res2.aic,
+    #                    atol=0.5, rtol=0.5)
 
     #def test_bic(self):
     #    assert_allclose(self.res1.bic,
@@ -881,12 +883,15 @@ class CheckBinaryResults(CheckModelResults):
         self.res1.resid_response
 
 
-@pytest.mark.not_vetted
 @pytest.mark.match_stata11
-class TestProbitNewton(CheckBinaryResults):
+class CheckProbitSpector(CheckBinaryResults):
     res2 = Spector.probit
     model_cls = Probit
     mod_kwargs = {}
+
+
+@pytest.mark.not_vetted
+class TestProbitNewton(CheckProbitSpector):
     fit_kwargs = {'method': 'newton', 'disp': False}
 
     #def test_predict(self):
@@ -896,38 +901,22 @@ class TestProbitNewton(CheckBinaryResults):
 
 
 @pytest.mark.not_vetted
-@pytest.mark.match_stata11
-class TestProbitBFGS(CheckBinaryResults):
-    res2 = Spector.probit
-    model_cls = Probit
-    mod_kwargs = {}
+class TestProbitBFGS(CheckProbitSpector):
     fit_kwargs = {'method': 'bfgs', 'disp': False}
 
 
 @pytest.mark.not_vetted
-@pytest.mark.match_stata11
-class TestProbitNM(CheckBinaryResults):
-    res2 = Spector.probit
-    model_cls = Probit
-    mod_kwargs = {}
+class TestProbitNM(CheckProbitSpector):
     fit_kwargs = {'method': 'nm', 'disp': False, 'maxiter': 500}
 
 
 @pytest.mark.not_vetted
-@pytest.mark.match_stata11
-class TestProbitPowell(CheckBinaryResults):
-    res2 = Spector.probit
-    model_cls = Probit
-    mod_kwargs = {}
+class TestProbitPowell(CheckProbitSpector):
     fit_kwargs = {'method': 'powell', 'disp': False, 'ftol': 1e-8}
 
 
 @pytest.mark.not_vetted
-@pytest.mark.match_stata11
-class TestProbitNCG(CheckBinaryResults):
-    res2 = Spector.probit
-    model_cls = Probit
-    mod_kwargs = {}
+class TestProbitNCG(CheckProbitSpector):
     fit_kwargs = {'method': 'ncg', 'disp': False,
                   'avextol': 1e-8, 'warn_convergence': False}
     # converges close enough but warnflag is 2 for precision loss
@@ -938,22 +927,14 @@ class TestProbitNCG(CheckBinaryResults):
                     reason='Skipped TestProbitBasinhopping '
                            'since basinhopping solver is '
                            'not available')
-@pytest.mark.match_stata11
-class TestProbitBasinhopping(CheckBinaryResults):
-    res2 = Spector.probit
-    model_cls = Probit
-    mod_kwargs = {}
+class TestProbitBasinhopping(CheckProbitSpector):
     fit_kwargs = {'method': 'basinhopping', 'disp': False,
                   'niter': 5,
                   'minimizer': {'method': 'L-BFGS-B', 'tol': 1e-8}}
 
 
 @pytest.mark.not_vetted
-@pytest.mark.match_stata11
-class TestProbitMinimizeDefault(CheckBinaryResults):
-    res2 = Spector.probit
-    model_cls = Probit
-    mod_kwargs = {}  # default min_method is "BFGS"
+class TestProbitMinimizeDefault(CheckProbitSpector):
     fit_kwargs = {'method': 'minimize', 'disp': False,
                   'niter': 5, 'tol': 1e-8}
 
@@ -962,21 +943,14 @@ class TestProbitMinimizeDefault(CheckBinaryResults):
 @pytest.mark.skipif(not has_dogleg,
                     reason="Skipped TestProbitMinimizeDogleg since "
                            "dogleg method is not available")
-@pytest.mark.match_stata11
-class TestProbitMinimizeDogleg(CheckBinaryResults):
-    res2 = Spector.probit
-    model_cls = Probit
-    mod_kwargs = {}
+class TestProbitMinimizeDogleg(CheckProbitSpector):
     fit_kwargs = {'method': 'minimize', 'disp': False,
                   'niter': 5, 'tol': 1e-8, 'min_method': 'dogleg'}
 
 
 @pytest.mark.not_vetted
 @pytest.mark.match_stata11
-class TestProbitMinimizeAdditionalOptions(CheckBinaryResults):
-    res2 = Spector.probit
-    model_cls = Probit
-    mod_kwargs = {}
+class TestProbitMinimizeAdditionalOptions(CheckProbitSpector):
     fit_kwargs = {'method': 'minimize', 'disp': False,
                   'maxiter': 500,
                   'min_method': 'Nelder-Mead',
@@ -986,10 +960,7 @@ class TestProbitMinimizeAdditionalOptions(CheckBinaryResults):
 @pytest.mark.skip(reason="tools.transform_model not ported from upstream")
 @pytest.mark.not_vetted
 @pytest.mark.match_stata11
-class TestProbitCG(CheckBinaryResults):
-    res2 = Spector.probit
-    model_cls = Probit
-
+class TestProbitCG(CheckProbitSpector):
     @classmethod
     def setup_class(cls):
         data = sm2.datasets.spector.load()
@@ -1000,7 +971,7 @@ class TestProbitCG(CheckBinaryResults):
         transf = StandardizeTransform(data.exog)
         exog_st = transf(data.exog)
 
-        model_st = cls.model_cls(data.endog, exog_st)
+        model_st = cls.model_cls(data.endog, exog_st, **cls.mod_kwargs)
         res1_st = model_st.fit(method="cg", disp=0,
                                maxiter=1000, gtol=1e-08)
         start_params = transf.transform_params(res1_st.params)
@@ -1008,7 +979,7 @@ class TestProbitCG(CheckBinaryResults):
                         cls.res2.params,
                         rtol=1e-5, atol=1e-6)
 
-        model = cls.model_cls(data.endog, data.exog)
+        model = cls.model_cls(data.endog, data.exog, **cls.mod_kwargs)
         cls.res1 = model.fit(start_params=start_params,
                              method="cg", maxiter=1000,
                              gtol=1e-05, disp=0)
@@ -1099,7 +1070,11 @@ class TestProbitL1(CheckLikelihoodModelL1):
 class TestMNLogitL1(CheckLikelihoodModelL1):
     res2 = DiscreteL1.mnlogit
     model_cls = MNLogit
+    alpha = 10. * np.ones((6, 6)) # / exog.shape[0]
+    # i.e. 10 * np.ones((model.J - 1, model.K))
+    alpha[-1, :] = 0
     fit_reg_kwargs = {"method": "l1",
+                      "alpha": alpha,
                       "trim_mode": "auto",
                       "auto_trim_tol": 0.02,
                       "acc": 1e-10,
@@ -1108,14 +1083,9 @@ class TestMNLogitL1(CheckLikelihoodModelL1):
     @classmethod
     def setup_class(cls):
         data = sm2.datasets.anes96.load()
-        exog = data.exog
-        exog = add_constant(exog, prepend=False)
-        mlogit_mod = cls.model_cls(data.endog, exog)
-
-        alpha = 10. * np.ones((mlogit_mod.J - 1, mlogit_mod.K)) # / exog.shape[0]
-        alpha[-1, :] = 0
-        cls.res1 = mlogit_mod.fit_regularized(alpha=alpha,
-                                              **cls.fit_reg_kwargs)
+        exog = add_constant(data.exog, prepend=False)
+        model = cls.model_cls(data.endog, exog)
+        cls.res1 = model.fit_regularized(**cls.fit_reg_kwargs)
 
 
 @pytest.mark.not_vetted
@@ -1275,6 +1245,7 @@ class TestNegativeBinomialGeoL1Compatability(CheckL1Compatability):
     kvars = 10  # Number of variables
     m = 7       # Number of unregularized parameters
     model_cls = NegativeBinomial
+
     @classmethod
     def setup_class(cls):
         rand_data = sm2.datasets.randhie.load()
@@ -1426,36 +1397,45 @@ class CompareL1(object):
         assert_allclose(self.res1.params,
                         self.res2.params,
                         atol=1e-4)
+        
         assert_allclose(self.res1.cov_params(),
                         self.res2.cov_params(),
                         atol=1e-4)
+        
         assert_allclose(self.res1.conf_int(),
                         self.res2.conf_int(),
                         atol=1e-4)
+        
         assert_allclose(self.res1.pvalues,
                         self.res2.pvalues,
                         atol=1e-4)
+        
         assert_allclose(self.res1.pred_table(),
                         self.res2.pred_table(),
                         atol=1e-4)
+        
         assert_allclose(self.res1.bse,
                         self.res2.bse,
                         atol=1e-4)
+        
         assert_allclose(self.res1.llf,
                         self.res2.llf,
                         atol=1e-4)
+        
         assert_allclose(self.res1.aic,
                         self.res2.aic,
                         atol=1e-4)
+        
         assert_allclose(self.res1.bic,
                         self.res2.bic,
                         atol=1e-4)
+        
         assert_allclose(self.res1.pvalues,
                         self.res2.pvalues,
                         atol=1e-4)
 
         if self.res1.mle_retvals['converged'] == 'True':
-            # KLUDGE for older sm returning the wrong thing
+            # FIXME: KLUDGE for older sm returning the wrong thing
             self.res1.mle_retvals['converged'] = True
         assert self.res1.mle_retvals['converged'] is True
 
@@ -1498,7 +1478,7 @@ class TestL1AlphaZeroLogit(CompareL11D):
 
         # see GH#2857
         if res.mle_retvals['converged'] == 'Iteration limit exceeded':
-            # KLUDGE for older sm
+            # FIXME: KLUDGE for older sm
             res.mle_retvals['converged'] = False
         assert res.mle_retvals['converged'] is False
 
@@ -2086,42 +2066,58 @@ class TestGeneralizedPoisson_p2(object):
         mod = cls.model_cls(data.endog, data.exog, p=2)
         cls.res1 = mod.fit(method='newton')
 
-    def test_bse(self):
-        assert_allclose(self.res1.bse,
-                        self.res2.bse,
-                        atol=1e-5)
+    tols = {
+        "bse": {"atol": 1e-5},
+        "params": {"atol": 1e-5},
+        "lnalpha": {"atol": 0, "rtol": 1e-7},
+        "lnalpha_std_err": {"atol": 1e-5},
+        "aic": {"rtol": 1e-7},
+        "bic": {"rtol": 1e-7},
+        "llf": {"rtol": 1e-7},
+    }
 
-    def test_params(self):
-        assert_allclose(self.res1.params,
-                        self.res2.params,
-                        atol=1e-5)
+    @pytest.mark.parametrize('name', list(tols.keys()))
+    def test_attr(self, name):
+        result = getattr(self.res1, name)
+        expected = getattr(self.res2, name)
+        assert_allclose(result, expected, **self.tols[name])
 
-    def test_alpha(self):
-        assert_allclose(self.res1.lnalpha, self.res2.lnalpha)
-        assert_allclose(self.res1.lnalpha_std_err,
-                        self.res2.lnalpha_std_err,
-                        atol=1e-5)
+    #def test_bse(self):
+    #    assert_allclose(self.res1.bse,
+    #                    self.res2.bse,
+    #                    atol=1e-5)
+
+    #def test_params(self):
+    #    assert_allclose(self.res1.params,
+    #                    self.res2.params,
+    #                    atol=1e-5)
+
+    #def test_alpha(self):
+    #    assert_allclose(self.res1.lnalpha, self.res2.lnalpha)
+    #    assert_allclose(self.res1.lnalpha_std_err,
+    #                    self.res2.lnalpha_std_err,
+    #                    atol=1e-5)
 
     def test_conf_int(self):
         assert_allclose(self.res1.conf_int(),
                         self.res2.conf_int,
                         atol=1e-3)
 
-    def test_aic(self):
-        assert_allclose(self.res1.aic, self.res2.aic,
-                        rtol=1e-7)
+    #def test_aic(self):
+    #    assert_allclose(self.res1.aic, self.res2.aic,
+    #                    rtol=1e-7)
 
-    def test_bic(self):
-        assert_allclose(self.res1.bic, self.res2.bic,
-                        rtol=1e-7)
+    #def test_bic(self):
+    #    assert_allclose(self.res1.bic, self.res2.bic,
+    #                    rtol=1e-7)
 
     def test_df(self):
         assert self.res1.df_model == self.res2.df_model
 
-    def test_llf(self):
-        assert_allclose(self.res1.llf,
-                        self.res2.llf,
-                        rtol=1e-7)
+    #def test_llf(self):
+    #    assert_allclose(self.res1.llf,
+    #                    self.res2.llf,
+    #                    rtol=1e-7)
 
     def test_wald(self):
         result = self.res1.wald_test(np.eye(len(self.res1.params))[:-2])
@@ -2155,43 +2151,59 @@ class TestGeneralizedPoisson_transparams(object):
         gpmod = cls.model_cls(data.endog, data.exog, **cls.mod_kwargs)
         cls.res1 = gpmod.fit(**cls.fit_kwargs)
 
-    def test_bse(self):
-        assert_allclose(self.res1.bse,
-                        self.res2.bse,
-                        atol=1e-5)
+    tols = {
+        "bse": {"atol": 1e-5},
+        "params": {"atol": 1e-5},
+        "lnalpha": {"rtol": 1e-7},
+        "lnalpha_std_err": {"atol": 1e-5},
+        "aic": {"rtol": 1e-7},
+        "bic": {"rtol": 1e-7},
+        "llf": {"rtol": 1e-7},
+    }
 
-    def test_params(self):
-        assert_allclose(self.res1.params,
-                        self.res2.params,
-                        atol=1e-5)
+    @pytest.mark.parametrize('name', list(tols.keys()))
+    def test_attr(self, name):
+        result = getattr(self.res1, name)
+        expected = getattr(self.res2, name)
+        assert_allclose(result, expected, **self.tols[name])
 
-    def test_alpha(self):
-        assert_allclose(self.res1.lnalpha,
-                        self.res2.lnalpha,
-                        rtol=1e-7)
-        assert_allclose(self.res1.lnalpha_std_err,
-                        self.res2.lnalpha_std_err,
-                        atol=1e-5)
+    #def test_bse(self):
+    #    assert_allclose(self.res1.bse,
+    #                    self.res2.bse,
+    #                    atol=1e-5)
+
+    #def test_params(self):
+    #    assert_allclose(self.res1.params,
+    #                    self.res2.params,
+    #                    atol=1e-5)
+
+    #def test_alpha(self):
+    #    assert_allclose(self.res1.lnalpha,
+    #                    self.res2.lnalpha,
+    #                    rtol=1e-7)
+    #    assert_allclose(self.res1.lnalpha_std_err,
+    #                    self.res2.lnalpha_std_err,
+    #                    atol=1e-5)
 
     def test_conf_int(self):
         assert_allclose(self.res1.conf_int(),
                         self.res2.conf_int,
                         atol=1e-3)
 
-    def test_aic(self):
-        assert_allclose(self.res1.aic, self.res2.aic,
-                        rtol=1e-7)
+    #def test_aic(self):
+    #    assert_allclose(self.res1.aic, self.res2.aic,
+    #                    rtol=1e-7)
 
-    def test_bic(self):
-        assert_allclose(self.res1.bic, self.res2.bic,
-                        rtol=1e-7)
+    #def test_bic(self):
+    #    assert_allclose(self.res1.bic, self.res2.bic,
+    #                    rtol=1e-7)
 
     def test_df(self):
         assert self.res1.df_model == self.res2.df_model
 
-    def test_llf(self):
-        assert_allclose(self.res1.llf, self.res2.llf,
-                        rtol=1e-7)
+    #def test_llf(self):
+    #    assert_allclose(self.res1.llf, self.res2.llf,
+    #                    rtol=1e-7)
 
 
 @pytest.mark.not_vetted

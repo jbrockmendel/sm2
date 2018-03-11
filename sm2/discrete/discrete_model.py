@@ -543,8 +543,8 @@ class BinaryModel(FitBase):
         # group 1 probit, logit, logistic, cloglog, heckprob, xtprobit
         if exog is None:
             exog = self.exog
-        margeff = np.dot(self.pdf(np.dot(exog, params))[:, None],
-                         params[None, :])
+        Xb = np.dot(exog, params)
+        margeff = np.dot(self.pdf(Xb)[:, None], params[None, :])
         if 'ex' in transform:
             margeff *= exog
         if 'ey' in transform:
@@ -609,6 +609,7 @@ class MultinomialModel(BinaryModel):
         self.J = self.wendog.shape[1]
         self.K = self.exog.shape[1]
         self.df_model *= (self.J - 1)  # for each J - 1 equation.
+        # TODO: Don't alter df_model in-place
         self.df_resid = self.exog.shape[0] - self.df_model - (self.J - 1)
 
     def predict(self, params, exog=None, linear=False):
@@ -685,8 +686,8 @@ class MultinomialModel(BinaryModel):
 
         # other equation index
         other_idx = ~np.kron(np.eye(J - 1), np.ones(K)).astype(bool)
-        F1[:, other_idx] = (-eXB.T[:, :, None] * X * repeat_eXB / \
-                           (sum_eXB**2)).transpose((1, 0, 2))[:, other_idx]
+        F1[:, other_idx] = ((-eXB.T[:, :, None] * X * repeat_eXB /
+                            (sum_eXB**2)).transpose((1, 0, 2))[:, other_idx])
         dFdX = np.concatenate((F0[:, None, :], F1), axis=1)
 
         if 'ey' in transform:
@@ -725,8 +726,9 @@ class MultinomialModel(BinaryModel):
         zeroparams = np.c_[np.zeros(K), params]  # add base in
 
         cdf = self.cdf(np.dot(exog, params))
-        margeff = np.array([cdf[:, [j]] * (zeroparams[:, j] - np.array([cdf[:, [i]] * zeroparams[:, i]
-                            for i in range(int(J))]).sum(0))
+        margeff = np.array([cdf[:, [j]] * (zeroparams[:, j] -
+                                           np.array([cdf[:, [i]] * zeroparams[:, i]
+                                                    for i in range(int(J))]).sum(0))
                             for j in range(J)])
         margeff = np.transpose(margeff, (1, 2, 0))
         # swap the axes to make sure margeff are in order nobs, K, J
@@ -1352,11 +1354,11 @@ class GeneralizedPoisson(CountModel):
         Parameters
         ----------
         use_transparams : bool
-            This parameter enable internal transformation to impose non-negativity.
-            True to enable. Default is False.
-            use_transparams=True imposes the no underdispersion (alpha > 0) constaint.
-            In case use_transparams=True and method="newton" or "ncg" transformation
-            is ignored.
+            This parameter enable internal transformation to impose
+            non-negativity.  True to enable. Default is False.
+            use_transparams=True imposes the no underdispersion (alpha > 0)
+            constaint. In case use_transparams=True and method="newton"
+            or "ncg" transformation is ignored.
         """
         if use_transparams and method not in ['newton', 'ncg']:
             self._transparams = True
@@ -1493,7 +1495,8 @@ class GeneralizedPoisson(CountModel):
 
     def _score_p(self, params):
         """
-        Generalized Poisson model derivative of the log-likelihood by p-parameter
+        Generalized Poisson model derivative of the log-likelihood
+        by p-parameter
 
         Parameters
         ----------
