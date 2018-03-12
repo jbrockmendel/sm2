@@ -597,13 +597,13 @@ class TestVARResultsLutkepohl(object):
         irf_stderr = self.irf.stderr(orth=False)
         for i in range(1, 1 + len(self.lut.irf_stderr)):
             assert_almost_equal(np.round(irf_stderr[i], 3),
-                                self.lut.irf_stderr[i-1])
+                                self.lut.irf_stderr[i - 1])
 
     def test_cum_irf_stderr(self):
         stderr = self.irf.cum_effect_stderr(orth=False)
         for i in range(1, 1 + len(self.lut.cum_irf_stderr)):
             assert_almost_equal(np.round(stderr[i], 3),
-                                self.lut.cum_irf_stderr[i-1])
+                                self.lut.cum_irf_stderr[i - 1])
 
     def test_lr_effect_stderr(self):
         stderr = self.irf.lr_effect_stderr(orth=False)

@@ -485,47 +485,9 @@ def load_results_jmulti(dataset):
 
         # ---------------------------------------------------------------------
         # parse output related to testing the whiteness of the residuals:
-        whiteness_file = "vecm_" + dataset.__str__() + "_" + source + "_" + \
-                         dt_string + "_diag" + ".txt"
-        whiteness_file = os.path.join(cur_dir, whiteness_file)
-        whiteness_file = open(whiteness_file, encoding='latin_1')
-        results["whiteness"] = dict()
-        section_start_marker = "PORTMANTEAU TEST"
-        order_start = "tested order:"
-        statistic_start = "test statistic:"
-        p_start = " p-value:"
-        adj_statistic_start = "adjusted test statistic:"
-        unadjusted_finished = False
 
-        in_section = False
-        for line in whiteness_file:
-            if not in_section and section_start_marker not in line:
-                continue
-            if not in_section and section_start_marker in line:
-                in_section = True
-                continue
-            if line.startswith(order_start):
-                results["whiteness"]["tested order"] = int(
-                        line[len(order_start):])
-                continue
-            if line.startswith(statistic_start):
-                results["whiteness"]["test statistic"] = float(
-                        line[len(statistic_start):])
-                continue
-            if line.startswith(adj_statistic_start):
-                results["whiteness"]["test statistic adj."] = float(
-                        line[len(adj_statistic_start):])
-                continue
-            if line.startswith(p_start):  # same for unadjusted and adjusted
-                if not unadjusted_finished:
-                    results["whiteness"]["p-value"] = \
-                        float(line[len(p_start):])
-                    unadjusted_finished = True
-                else:
-                    results["whiteness"]["p-value adjusted"] = \
-                        float(line[len(p_start):])
-                    break
-        whiteness_file.close()
+        wresults = parse_whiteness_file(dataset, source, dt_string)
+        results["whiteness"] = wresults
 
         # ---------------------------------------------------------------------
         if debug_mode:
@@ -534,3 +496,47 @@ def load_results_jmulti(dataset):
         results_dict_per_det_terms[dt_s] = results
 
     return results_dict_per_det_terms
+
+
+# TODO: near-identical to version in parse_jmulti_var_output?
+def parse_whiteness_file(dataset, source, dt_string):
+    # parse output related to testing the whiteness of the residuals:
+    wfname = ("vecm_" + dataset.__str__() + "_" + source + "_" +
+              dt_string + "_diag" + ".txt")
+
+    wpath = os.path.join(cur_dir, wfname)
+
+    section_start_marker = "PORTMANTEAU TEST"
+    order_start = "tested order:"
+    statistic_start = "test statistic:"
+    p_start = " p-value:"
+    adj_statistic_start = "adjusted test statistic:"
+    unadjusted_finished = False
+    in_section = False
+
+    wresults = {}
+    with open(wpath, encoding='latin_1') as fd:
+        for line in fd:
+            if not in_section and section_start_marker not in line:
+                continue
+            if not in_section and section_start_marker in line:
+                in_section = True
+                continue
+            if line.startswith(order_start):
+                wresults["tested order"] = int(line.split(':')[-1])
+                continue
+            if line.startswith(statistic_start):
+                wresults["test statistic"] = float(line.split(':')[-1])
+                continue
+            if line.startswith(adj_statistic_start):
+                wresults["test statistic adj."] = float(line.split(':')[-1])
+                continue
+            if line.startswith(p_start):  # same for unadjusted and adjusted
+                if not unadjusted_finished:
+                    wresults["p-value"] = float(line.split(':')[-1])
+                    unadjusted_finished = True
+                else:
+                    wresults["p-value adjusted"] = float(line.split(':')[-1])
+                    break
+
+    return wresults

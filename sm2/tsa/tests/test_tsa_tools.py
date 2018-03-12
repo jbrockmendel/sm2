@@ -399,7 +399,6 @@ class TestLagmat(object):
 
 @pytest.mark.not_vetted
 def test_freq_to_period():
-    
     freqs = ['A', 'AS-MAR', 'Q', 'QS', 'QS-APR', 'W', 'W-MON', 'B', 'D', 'H']
     expected = [1, 1, 4, 4, 4, 52, 52, 5, 7, 24]
     for i, j in zip(freqs, expected):
@@ -611,15 +610,15 @@ class TestAddTrend(object):
         assert_equal(tsatools.add_trend(self.arr_2d,
                                         prepend=True),
                      base[:, [0, 3, 4]])
-        
+
         assert_equal(tsatools.add_trend(self.arr_2d, trend='t',
                                         prepend=True),
                      base[:, [1, 3, 4]])
-        
+
         assert_equal(tsatools.add_trend(self.arr_2d, trend='ct',
                                         prepend=True),
                      base[:, [0, 1, 3, 4]])
-        
+
         assert_equal(tsatools.add_trend(self.arr_2d,
                                         trend='ctt', prepend=True),
                      base)

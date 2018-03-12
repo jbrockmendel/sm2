@@ -1,66 +1,14 @@
 import numpy as np
 
-est = dict(k_eq_model=0,
-           phi=1,
-           vf=1,
-           df=28,
-           df_m=3,
-           power=0,
-           canonical=1,
-           rank=4,
-           aic=1.055602138883215,
-           rc=0,
-           p=.0388431588742135,
-           chi2=8.376256383189103,
-           ll=-12.88963422213144,
-           k_autoCns=0,
-           converged=1,
-           k_dv=1,
-           k_eq=1,
-           k=4,
-           ic=3,
-           N=32,
-           nbml=0,
-           bic=-71.26133683412948,
-           dispers_ps=.9734684585933382,
-           deviance_ps=27.25711684061347,
-           dispers_p=.9734684585933382,
-           deviance_p=27.25711684061347,
-           dispers_s=.920688158723674,
-           deviance_s=25.77926844426287,
-           dispers=.920688158723674,
-           deviance=25.77926844426287,
-           cmdline="glm grade  gpa tuce psi, family(binomial)",
-           cmd="glm",
-           predict="glim_p",
-           marginsnotok="stdp Anscombe Cooksd Deviance Hat Likelihood "
-                        "Pearson Response Score Working "
-                        "ADJusted STAndardized STUdentized MODified",
-           marginsok="default",
-           hac_lag="30",
-           vcetype="OIM",
-           vce="oim",
-           linkt="Logit",
-           linkf="ln(u/(1-u))",
-           varfunct="Bernoulli",
-           varfuncf="u*(1-u)",
-           opt1="ML",
-           oim="oim",
-           a="1",
-           m="1",
-           varfunc="glim_v2",
-           link="glim_l02",
-           chi2type="Wald",
-           opt="moptimize",
-           title="Generalized linear models",
-           user="glim_lf",
-           crittype="log likelihood",
-           ml_method="e2",
-           singularHmethod="m-marquardt",
-           technique="nr",
-           which="max",
-           depvar="grade",
-           properties="b V")
+
+class Bunch(dict):
+    def __init__(self, **kw):
+        dict.__init__(self, kw)
+        self.__dict__ = self
+
+        for i, att in enumerate(['params', 'bse', 'tvalues', 'pvalues']):
+            self[att] = self.params_table[:, i]
+
 
 params_table = np.array([
     2.8261124216999, 1.2629410221647, 2.2377231969675, .02523911156938,
@@ -74,7 +22,6 @@ params_table = np.array([
     -3.3561286905433, np.nan, 1.9599639845401, 0]).reshape(4, 9)
 
 params_table_colnames = 'b se z pvalue ll ul df crit eform'.split()
-
 params_table_rownames = 'gpa tuce psi _cons'.split()
 
 cov = np.array([
@@ -85,7 +32,6 @@ cov = np.array([
     24.317955316083]).reshape(4, 4)
 
 cov_colnames = 'gpa tuce psi _cons'.split()
-
 cov_rownames = 'gpa tuce psi _cons'.split()
 
 infocrit = np.array([
@@ -93,18 +39,7 @@ infocrit = np.array([
     33.779268444263, 39.642212055462])
 
 infocrit_colnames = 'N ll0 ll df AIC BIC'.split()
-
 infocrit_rownames = '.'.split()
-
-
-class Bunch(dict):
-    def __init__(self, **kw):
-        dict.__init__(self, kw)
-        self.__dict__ = self
-
-        for i, att in enumerate(['params', 'bse', 'tvalues', 'pvalues']):
-            self[att] = self.params_table[:, i]
-
 
 results_noconstraint = Bunch(
     params_table=params_table,
@@ -116,69 +51,68 @@ results_noconstraint = Bunch(
     infocrit=infocrit,
     infocrit_colnames=infocrit_colnames,
     infocrit_rownames=infocrit_rownames,
-    **est)
+    k_eq_model=0,
+    phi=1,
+    vf=1,
+    df=28,
+    df_m=3,
+    power=0,
+    canonical=1,
+    rank=4,
+    aic=1.055602138883215,
+    rc=0,
+    p=.0388431588742135,
+    chi2=8.376256383189103,
+    ll=-12.88963422213144,
+    k_autoCns=0,
+    converged=1,
+    k_dv=1,
+    k_eq=1,
+    k=4,
+    ic=3,
+    N=32,
+    nbml=0,
+    bic=-71.26133683412948,
+    dispers_ps=.9734684585933382,
+    deviance_ps=27.25711684061347,
+    dispers_p=.9734684585933382,
+    deviance_p=27.25711684061347,
+    dispers_s=.920688158723674,
+    deviance_s=25.77926844426287,
+    dispers=.920688158723674,
+    deviance=25.77926844426287,
+    cmdline="glm grade  gpa tuce psi, family(binomial)",
+    cmd="glm",
+    predict="glim_p",
+    marginsnotok="stdp Anscombe Cooksd Deviance Hat Likelihood "
+                 "Pearson Response Score Working "
+                 "ADJusted STAndardized STUdentized MODified",
+    marginsok="default",
+    hac_lag="30",
+    vcetype="OIM",
+    vce="oim",
+    linkt="Logit",
+    linkf="ln(u/(1-u))",
+    varfunct="Bernoulli",
+    varfuncf="u*(1-u)",
+    opt1="ML",
+    oim="oim",
+    a="1",
+    m="1",
+    varfunc="glim_v2",
+    link="glim_l02",
+    chi2type="Wald",
+    opt="moptimize",
+    title="Generalized linear models",
+    user="glim_lf",
+    crittype="log likelihood",
+    ml_method="e2",
+    singularHmethod="m-marquardt",
+    technique="nr",
+    which="max",
+    depvar="grade",
+    properties="b V")
 
-est = dict(k_eq_model=0,
-           phi=1,
-           vf=1,
-           df=28,
-           df_m=3,
-           power=0,
-           canonical=1,
-           rank=4,
-           aic=1.055602138883215,
-           rc=0,
-           p=.0248623136764981,
-           chi2=9.360530997638559,
-           ll=-12.88963422213144,
-           k_autoCns=0,
-           converged=1,
-           k_dv=1,
-           k_eq=1,
-           k=4,
-           ic=3,
-           N=32,
-           nbml=0,
-           bic=-71.26133683412948,
-           dispers_ps=.9734684585933382,
-           deviance_ps=27.25711684061347,
-           dispers_p=.9734684585933382,
-           deviance_p=27.25711684061347,
-           dispers_s=.920688158723674,
-           deviance_s=25.77926844426287,
-           dispers=.920688158723674,
-           deviance=25.77926844426287,
-           cmdline="glm grade  gpa tuce psi, family(binomial) vce(robust)",
-           cmd="glm",
-           predict="glim_p",
-           marginsnotok="stdp Anscombe Cooksd Deviance Hat Likelihood "
-                        "Pearson Response Score Working "
-                        "ADJusted STAndardized STUdentized MODified",
-           marginsok="default",
-           hac_lag="30",
-           vcetype="Robust",
-           vce="robust",
-           linkt="Logit",
-           linkf="ln(u/(1-u))",
-           varfunct="Bernoulli",
-           varfuncf="u*(1-u)",
-           opt1="ML",
-           oim="oim",
-           a="1",
-           m="1",
-           varfunc="glim_v2",
-           link="glim_l02",
-           chi2type="Wald",
-           opt="moptimize",
-           title="Generalized linear models",
-           user="glim_lf",
-           crittype="log pseudolikelihood",
-           ml_method="e2",
-           singularHmethod="m-marquardt",
-           technique="nr",
-           which="max",
-           depvar="grade",
-           properties="b V",)
 
 params_table = np.array([
     2.8261124216999, 1.287827879216, 2.1944799202672, .02820092594159,
@@ -192,7 +126,6 @@ params_table = np.array([
     -2.6712634030626, np.nan, 1.9599639845401, 0]).reshape(4, 9)
 
 params_table_colnames = 'b se z pvalue ll ul df crit eform'.split()
-
 params_table_rownames = 'gpa tuce psi _cons'.split()
 
 cov = np.array([
@@ -203,7 +136,6 @@ cov = np.array([
     27.886335102141]).reshape(4, 4)
 
 cov_colnames = 'gpa tuce psi _cons'.split()
-
 cov_rownames = 'gpa tuce psi _cons'.split()
 
 infocrit = np.array([
@@ -211,9 +143,7 @@ infocrit = np.array([
     33.779268444263, 39.642212055462])
 
 infocrit_colnames = 'N ll0 ll df AIC BIC'.split()
-
 infocrit_rownames = '.'.split()
-
 
 results_noconstraint_robust = Bunch(
     params_table=params_table,
@@ -225,69 +155,68 @@ results_noconstraint_robust = Bunch(
     infocrit=infocrit,
     infocrit_colnames=infocrit_colnames,
     infocrit_rownames=infocrit_rownames,
-    **est)
+    k_eq_model=0,
+    phi=1,
+    vf=1,
+    df=28,
+    df_m=3,
+    power=0,
+    canonical=1,
+    rank=4,
+    aic=1.055602138883215,
+    rc=0,
+    p=.0248623136764981,
+    chi2=9.360530997638559,
+    ll=-12.88963422213144,
+    k_autoCns=0,
+    converged=1,
+    k_dv=1,
+    k_eq=1,
+    k=4,
+    ic=3,
+    N=32,
+    nbml=0,
+    bic=-71.26133683412948,
+    dispers_ps=.9734684585933382,
+    deviance_ps=27.25711684061347,
+    dispers_p=.9734684585933382,
+    deviance_p=27.25711684061347,
+    dispers_s=.920688158723674,
+    deviance_s=25.77926844426287,
+    dispers=.920688158723674,
+    deviance=25.77926844426287,
+    cmdline="glm grade  gpa tuce psi, family(binomial) vce(robust)",
+    cmd="glm",
+    predict="glim_p",
+    marginsnotok="stdp Anscombe Cooksd Deviance Hat Likelihood "
+                 "Pearson Response Score Working "
+                 "ADJusted STAndardized STUdentized MODified",
+    marginsok="default",
+    hac_lag="30",
+    vcetype="Robust",
+    vce="robust",
+    linkt="Logit",
+    linkf="ln(u/(1-u))",
+    varfunct="Bernoulli",
+    varfuncf="u*(1-u)",
+    opt1="ML",
+    oim="oim",
+    a="1",
+    m="1",
+    varfunc="glim_v2",
+    link="glim_l02",
+    chi2type="Wald",
+    opt="moptimize",
+    title="Generalized linear models",
+    user="glim_lf",
+    crittype="log pseudolikelihood",
+    ml_method="e2",
+    singularHmethod="m-marquardt",
+    technique="nr",
+    which="max",
+    depvar="grade",
+    properties="b V")
 
-est = dict(k_eq_model=0,
-           phi=1,
-           vf=1,
-           df=29,
-           df_m=2,
-           power=0,
-           canonical=1,
-           rank=3,
-           aic=.993115540206396,
-           rc=0,
-           p=.0600760311411508,
-           chi2=5.624288666552698,
-           ll=-12.88984864330234,
-           k_autoCns=0,
-           converged=1,
-           k_dv=1,
-           k_eq=1,
-           k=4,
-           ic=3,
-           N=32,
-           nbml=0,
-           bic=-74.7266438945874,
-           dispers_ps=.9340711710496038,
-           deviance_ps=27.08806396043851,
-           dispers_p=.9340711710496038,
-           deviance_p=27.08806396043851,
-           dispers_s=.8889550788484368,
-           deviance_s=25.77969728660467,
-           dispers=.8889550788484368,
-           deviance=25.77969728660467,
-           cmdline="glm grade  gpa tuce psi, family(binomial) constraints(1)",
-           cmd="glm",
-           predict="glim_p",
-           marginsnotok="stdp Anscombe Cooksd Deviance Hat Likelihood "
-                        "Pearson Response Score Working "
-                        "ADJusted STAndardized STUdentized MODified",
-           marginsok="default",
-           hac_lag="30",
-           vcetype="OIM",
-           vce="oim",
-           linkt="Logit",
-           linkf="ln(u/(1-u))",
-           varfunct="Bernoulli",
-           varfuncf="u*(1-u)",
-           opt1="ML",
-           oim="oim",
-           a="1",
-           m="1",
-           varfunc="glim_v2",
-           link="glim_l02",
-           chi2type="Wald",
-           opt="moptimize",
-           title="Generalized linear models",
-           user="glim_lf",
-           crittype="log likelihood",
-           ml_method="e2",
-           singularHmethod="m-marquardt",
-           technique="nr",
-           which="max",
-           depvar="grade",
-           properties="b V")
 
 params_table = np.array([
     2.8, np.nan, np.nan, np.nan,
@@ -301,7 +230,6 @@ params_table = np.array([
     -6.3994319916434, np.nan, 1.9599639845401, 0]).reshape(4, 9)
 
 params_table_colnames = 'b se z pvalue ll ul df crit eform'.split()
-
 params_table_rownames = 'gpa tuce psi _cons'.split()
 
 cov = np.array([
@@ -311,7 +239,6 @@ cov = np.array([
     0, -.45036648979107, -1.126241119498, 11.158456476868]).reshape(4, 4)
 
 cov_colnames = 'gpa tuce psi _cons'.split()
-
 cov_rownames = 'gpa tuce psi _cons'.split()
 
 infocrit = np.array([
@@ -319,9 +246,7 @@ infocrit = np.array([
     31.779697286605, 36.176904995004])
 
 infocrit_colnames = 'N ll0 ll df AIC BIC'.split()
-
 infocrit_rownames = '.'.split()
-
 
 results_constraint1 = Bunch(
     params_table=params_table,
@@ -333,69 +258,68 @@ results_constraint1 = Bunch(
     infocrit=infocrit,
     infocrit_colnames=infocrit_colnames,
     infocrit_rownames=infocrit_rownames,
-    **est)
+    k_eq_model=0,
+    phi=1,
+    vf=1,
+    df=29,
+    df_m=2,
+    power=0,
+    canonical=1,
+    rank=3,
+    aic=.993115540206396,
+    rc=0,
+    p=.0600760311411508,
+    chi2=5.624288666552698,
+    ll=-12.88984864330234,
+    k_autoCns=0,
+    converged=1,
+    k_dv=1,
+    k_eq=1,
+    k=4,
+    ic=3,
+    N=32,
+    nbml=0,
+    bic=-74.7266438945874,
+    dispers_ps=.9340711710496038,
+    deviance_ps=27.08806396043851,
+    dispers_p=.9340711710496038,
+    deviance_p=27.08806396043851,
+    dispers_s=.8889550788484368,
+    deviance_s=25.77969728660467,
+    dispers=.8889550788484368,
+    deviance=25.77969728660467,
+    cmdline="glm grade  gpa tuce psi, family(binomial) constraints(1)",
+    cmd="glm",
+    predict="glim_p",
+    marginsnotok="stdp Anscombe Cooksd Deviance Hat Likelihood "
+                 "Pearson Response Score Working "
+                 "ADJusted STAndardized STUdentized MODified",
+    marginsok="default",
+    hac_lag="30",
+    vcetype="OIM",
+    vce="oim",
+    linkt="Logit",
+    linkf="ln(u/(1-u))",
+    varfunct="Bernoulli",
+    varfuncf="u*(1-u)",
+    opt1="ML",
+    oim="oim",
+    a="1",
+    m="1",
+    varfunc="glim_v2",
+    link="glim_l02",
+    chi2type="Wald",
+    opt="moptimize",
+    title="Generalized linear models",
+    user="glim_lf",
+    crittype="log likelihood",
+    ml_method="e2",
+    singularHmethod="m-marquardt",
+    technique="nr",
+    which="max",
+    depvar="grade",
+    properties="b V")
 
-est = dict(k_eq_model=0,
-           phi=1,
-           vf=1,
-           df=29,
-           df_m=2,
-           power=0,
-           canonical=1,
-           rank=3,
-           aic=.9965088127779717,
-           rc=0,
-           p=.0151376593316312,
-           chi2=8.381139289068923,
-           ll=-12.94414100444755,
-           k_autoCns=0,
-           converged=1,
-           k_dv=1,
-           k_eq=1,
-           k=4,
-           ic=3,
-           N=32,
-           nbml=0,
-           bic=-74.61805917229698,
-           dispers_ps=.9101961406899989,
-           deviance_ps=26.39568808000997,
-           dispers_p=.9101961406899989,
-           deviance_p=26.39568808000997,
-           dispers_s=.892699379617072,
-           deviance_s=25.88828200889509,
-           dispers=.892699379617072,
-           deviance=25.88828200889509,
-           cmdline="glm grade  gpa tuce psi, family(binomial) constraints(2)",
-           cmd="glm",
-           predict="glim_p",
-           marginsnotok="stdp Anscombe Cooksd Deviance Hat Likelihood "
-                        "Pearson Response Score Working "
-                        "ADJusted STAndardized STUdentized MODified",
-           marginsok="default",
-           hac_lag="30",
-           vcetype="OIM",
-           vce="oim",
-           linkt="Logit",
-           linkf="ln(u/(1-u))",
-           varfunct="Bernoulli",
-           varfuncf="u*(1-u)",
-           opt1="ML",
-           oim="oim",
-           a="1",
-           m="1",
-           varfunc="glim_v2",
-           link="glim_l02",
-           chi2type="Wald",
-           opt="moptimize",
-           title="Generalized linear models",
-           user="glim_lf",
-           crittype="log likelihood",
-           ml_method="e2",
-           singularHmethod="m-marquardt",
-           technique="nr",
-           which="max",
-           depvar="grade",
-           properties="b V")
 
 params_table = np.array([
     2.5537914524884, .92662050289421, 2.7560273537138, .00585081038138,
@@ -409,7 +333,6 @@ params_table = np.array([
     -3.4349087027211, np.nan, 1.9599639845401, 0]).reshape(4, 9)
 
 params_table_colnames = 'b se z pvalue ll ul df crit eform'.split()
-
 params_table_rownames = 'gpa tuce psi _cons'.split()
 
 cov = np.array([
@@ -420,7 +343,6 @@ cov = np.array([
     21.523826226433]).reshape(4, 4)
 
 cov_colnames = 'gpa tuce psi _cons'.split()
-
 cov_rownames = 'gpa tuce psi _cons'.split()
 
 infocrit = np.array([
@@ -428,7 +350,6 @@ infocrit = np.array([
     31.888282008895, 36.285489717294])
 
 infocrit_colnames = 'N ll0 ll df AIC BIC'.split()
-
 infocrit_rownames = '.'.split()
 
 predict_mu = np.array([
@@ -442,10 +363,9 @@ predict_mu = np.array([
     .83387563062407, .93837010344092, .55200183830167, .13940358008872])
 
 predict_mu_colnames = 'predict_mu'.split()
-
 predict_mu_rownames = ('r1 r2 r3 r4 r5 r6 r7 r8 r9 r10 r11 r12 '
-                       'r13 r14 r15 r16 r17 r18 r19 r20 r21 r22 '
-                       'r23 r24 r25 r26 r27 r28 r29 r30 r31 r32'.split())
+         'r13 r14 r15 r16 r17 r18 r19 r20 r21 r22 '
+         'r23 r24 r25 r26 r27 r28 r29 r30 r31 r32'.split())
 
 predict_linpred_std = np.array([
     1.2186852972383, .98250143329647, .71300625338041, 1.7281112031272,
@@ -458,11 +378,10 @@ predict_linpred_std = np.array([
     .96511132361274, 1.2127047415358, .61923877005984, .80300912367498])
 
 predict_linpred_std_colnames = 'predict_linpred_std'.split()
-
 predict_linpred_std_rownames = ('r1 r2 r3 r4 r5 r6 r7 r8 r9 r10 '
-                                'r11 r12 r13 r14 r15 r16 r17 r18 '
-                                'r19 r20 r21 r22 r23 r24 r25 r26 '
-                                'r27 r28 r29 r30 r31 r32'.split())
+                  'r11 r12 r13 r14 r15 r16 r17 r18 '
+                  'r19 r20 r21 r22 r23 r24 r25 r26 '
+                  'r27 r28 r29 r30 r31 r32'.split())
 
 predict_hat = np.array([
     .03931157544567, .05340381182541, .07287215399916, .06540404284993,
@@ -475,11 +394,9 @@ predict_hat = np.array([
     .12902962938834, .08505028097419, .09482722348113, .07735963673184])
 
 predict_hat_colnames = 'predict_hat'.split()
-
 predict_hat_rownames = ('r1 r2 r3 r4 r5 r6 r7 r8 r9 r10 r11 r12 r13 r14 r15 '
-                        'r16 r17 r18 r19 r20 r21 r22 r23 r24 r25 r26 r27 '
-                        'r28 r29 r30 r31 r32'.split())
-
+          'r16 r17 r18 r19 r20 r21 r22 r23 r24 r25 r26 r27 '
+          'r28 r29 r30 r31 r32'.split())
 
 results_constraint2 = Bunch(
     params_table=params_table,
@@ -500,70 +417,68 @@ results_constraint2 = Bunch(
     predict_hat=predict_hat,
     predict_hat_colnames=predict_hat_colnames,
     predict_hat_rownames=predict_hat_rownames,
-    **est)
+    k_eq_model=0,
+    phi=1,
+    vf=1,
+    df=29,
+    df_m=2,
+    power=0,
+    canonical=1,
+    rank=3,
+    aic=.9965088127779717,
+    rc=0,
+    p=.0151376593316312,
+    chi2=8.381139289068923,
+    ll=-12.94414100444755,
+    k_autoCns=0,
+    converged=1,
+    k_dv=1,
+    k_eq=1,
+    k=4,
+    ic=3,
+    N=32,
+    nbml=0,
+    bic=-74.61805917229698,
+    dispers_ps=.9101961406899989,
+    deviance_ps=26.39568808000997,
+    dispers_p=.9101961406899989,
+    deviance_p=26.39568808000997,
+    dispers_s=.892699379617072,
+    deviance_s=25.88828200889509,
+    dispers=.892699379617072,
+    deviance=25.88828200889509,
+    cmdline="glm grade  gpa tuce psi, family(binomial) constraints(2)",
+    cmd="glm",
+    predict="glim_p",
+    marginsnotok="stdp Anscombe Cooksd Deviance Hat Likelihood "
+                 "Pearson Response Score Working "
+                 "ADJusted STAndardized STUdentized MODified",
+    marginsok="default",
+    hac_lag="30",
+    vcetype="OIM",
+    vce="oim",
+    linkt="Logit",
+    linkf="ln(u/(1-u))",
+    varfunct="Bernoulli",
+    varfuncf="u*(1-u)",
+    opt1="ML",
+    oim="oim",
+    a="1",
+    m="1",
+    varfunc="glim_v2",
+    link="glim_l02",
+    chi2type="Wald",
+    opt="moptimize",
+    title="Generalized linear models",
+    user="glim_lf",
+    crittype="log likelihood",
+    ml_method="e2",
+    singularHmethod="m-marquardt",
+    technique="nr",
+    which="max",
+    depvar="grade",
+    properties="b V")
 
-est = dict(k_eq_model=0,
-           phi=1,
-           vf=1,
-           df=29,
-           df_m=2,
-           power=0,
-           canonical=1,
-           rank=3,
-           aic=.9965088127779717,
-           rc=0,
-           p=.0085760854232441,
-           chi2=9.517555427941099,
-           ll=-12.94414100444755,
-           k_autoCns=0,
-           converged=1,
-           k_dv=1,
-           k_eq=1,
-           k=4,
-           ic=3,
-           N=32,
-           nbml=0,
-           bic=-74.61805917229698,
-           dispers_ps=.9101961406899989,
-           deviance_ps=26.39568808000997,
-           dispers_p=.9101961406899989,
-           deviance_p=26.39568808000997,
-           dispers_s=.892699379617072,
-           deviance_s=25.88828200889509,
-           dispers=.892699379617072,
-           deviance=25.88828200889509,
-           cmdline="glm grade  gpa tuce psi, family(binomial) "
-                   "constraints(2) vce(robust)",
-           cmd="glm",
-           predict="glim_p",
-           marginsnotok="stdp Anscombe Cooksd Deviance Hat Likelihood "
-                        "Pearson Response Score Working "
-                        "ADJusted STAndardized STUdentized MODified",
-           marginsok="default",
-           hac_lag="30",
-           vcetype="Robust",
-           vce="robust",
-           linkt="Logit",
-           linkf="ln(u/(1-u))",
-           varfunct="Bernoulli",
-           varfuncf="u*(1-u)",
-           opt1="ML",
-           oim="oim",
-           a="1",
-           m="1",
-           varfunc="glim_v2",
-           link="glim_l02",
-           chi2type="Wald",
-           opt="moptimize",
-           title="Generalized linear models",
-           user="glim_lf",
-           crittype="log pseudolikelihood",
-           ml_method="e2",
-           singularHmethod="m-marquardt",
-           technique="nr",
-           which="max",
-           depvar="grade",
-           properties="b V")
 
 params_table = np.array([
     2.5537914524884, .83609404798719, 3.0544308485827, .00225487991353,
@@ -577,7 +492,6 @@ params_table = np.array([
     -3.6876725244938, np.nan, 1.9599639845401, 0]).reshape(4, 9)
 
 params_table_colnames = 'b se z pvalue ll ul df crit eform'.split()
-
 params_table_rownames = 'gpa tuce psi _cons'.split()
 
 cov = np.array([
@@ -588,7 +502,6 @@ cov = np.array([
     20.343836987269]).reshape(4, 4)
 
 cov_colnames = 'gpa tuce psi _cons'.split()
-
 cov_rownames = 'gpa tuce psi _cons'.split()
 
 infocrit = np.array([
@@ -596,9 +509,7 @@ infocrit = np.array([
     31.888282008895, 36.285489717294])
 
 infocrit_colnames = 'N ll0 ll df AIC BIC'.split()
-
 infocrit_rownames = '.'.split()
-
 
 results_constraint2_robust = Bunch(
     params_table=params_table,
@@ -610,42 +521,69 @@ results_constraint2_robust = Bunch(
     infocrit=infocrit,
     infocrit_colnames=infocrit_colnames,
     infocrit_rownames=infocrit_rownames,
-    **est)
+    k_eq_model=0,
+    phi=1,
+    vf=1,
+    df=29,
+    df_m=2,
+    power=0,
+    canonical=1,
+    rank=3,
+    aic=.9965088127779717,
+    rc=0,
+    p=.0085760854232441,
+    chi2=9.517555427941099,
+    ll=-12.94414100444755,
+    k_autoCns=0,
+    converged=1,
+    k_dv=1,
+    k_eq=1,
+    k=4,
+    ic=3,
+    N=32,
+    nbml=0,
+    bic=-74.61805917229698,
+    dispers_ps=.9101961406899989,
+    deviance_ps=26.39568808000997,
+    dispers_p=.9101961406899989,
+    deviance_p=26.39568808000997,
+    dispers_s=.892699379617072,
+    deviance_s=25.88828200889509,
+    dispers=.892699379617072,
+    deviance=25.88828200889509,
+    cmdline="glm grade  gpa tuce psi, family(binomial) "
+            "constraints(2) vce(robust)",
+    cmd="glm",
+    predict="glim_p",
+    marginsnotok="stdp Anscombe Cooksd Deviance Hat Likelihood "
+                 "Pearson Response Score Working "
+                 "ADJusted STAndardized STUdentized MODified",
+    marginsok="default",
+    hac_lag="30",
+    vcetype="Robust",
+    vce="robust",
+    linkt="Logit",
+    linkf="ln(u/(1-u))",
+    varfunct="Bernoulli",
+    varfuncf="u*(1-u)",
+    opt1="ML",
+    oim="oim",
+    a="1",
+    m="1",
+    varfunc="glim_v2",
+    link="glim_l02",
+    chi2type="Wald",
+    opt="moptimize",
+    title="Generalized linear models",
+    user="glim_lf",
+    crittype="log pseudolikelihood",
+    ml_method="e2",
+    singularHmethod="m-marquardt",
+    technique="nr",
+    which="max",
+    depvar="grade",
+    properties="b V")
 
-est = dict(N_cds=0,
-           N_cdf=0,
-           p=.0151376589433054,
-           chi2=8.381139340374848,
-           df_m=2,
-           k_eq_model=1,
-           ll=-12.94414100444751,
-           k_autoCns=0,
-           rc=0,
-           converged=1,
-           k_dv=1,
-           k_eq=1,
-           k=4,
-           ic=5,
-           N=32,
-           rank=3,
-           cmdline="logit grade  gpa tuce psi, constraints(2)",
-           cmd="logit",
-           estat_cmd="logit_estat",
-           predict="logit_p",
-           marginsnotok="stdp DBeta DEviance DX2 DDeviance Hat Number "
-                        "Residuals RStandard SCore",
-           title="Logistic regression",
-           chi2type="Wald",
-           opt="moptimize",
-           vce="oim",
-           user="mopt__logit_d2()",
-           crittype="log likelihood",
-           ml_method="d2",
-           singularHmethod="m-marquardt",
-           technique="nr",
-           which="max",
-           depvar="grade",
-           properties="b V")
 
 params_table = np.array([
     2.5537916456996, .92662056628814, 2.7560273736742, .00585081002433,
@@ -659,7 +597,6 @@ params_table = np.array([
     -3.4349091074867, np.nan, 1.9599639845401, 0]).reshape(4, 9)
 
 params_table_colnames = 'b se z pvalue ll ul df crit eform'.split()
-
 params_table_rownames = 'gpa tuce psi _cons'.split()
 
 cov = np.array([
@@ -670,16 +607,13 @@ cov = np.array([
     21.523829776841]).reshape(4, 4)
 
 cov_colnames = 'gpa tuce psi _cons'.split()
-
 cov_rownames = 'gpa tuce psi _cons'.split()
 
 infocrit = np.array([32, np.nan, -12.944141004448, 3,
-                     31.888282008895, 36.285489717294])
+              31.888282008895, 36.285489717294])
 
 infocrit_colnames = 'N ll0 ll df AIC BIC'.split()
-
 infocrit_rownames = '.'.split()
-
 
 results_logit_constraint2 = Bunch(
     params_table=params_table,
@@ -691,4 +625,37 @@ results_logit_constraint2 = Bunch(
     infocrit=infocrit,
     infocrit_colnames=infocrit_colnames,
     infocrit_rownames=infocrit_rownames,
-    **est)
+    N_cds=0,
+    N_cdf=0,
+    p=.0151376589433054,
+    chi2=8.381139340374848,
+    df_m=2,
+    k_eq_model=1,
+    ll=-12.94414100444751,
+    k_autoCns=0,
+    rc=0,
+    converged=1,
+    k_dv=1,
+    k_eq=1,
+    k=4,
+    ic=5,
+    N=32,
+    rank=3,
+    cmdline="logit grade  gpa tuce psi, constraints(2)",
+    cmd="logit",
+    estat_cmd="logit_estat",
+    predict="logit_p",
+    marginsnotok="stdp DBeta DEviance DX2 DDeviance Hat Number "
+                 "Residuals RStandard SCore",
+    title="Logistic regression",
+    chi2type="Wald",
+    opt="moptimize",
+    vce="oim",
+    user="mopt__logit_d2()",
+    crittype="log likelihood",
+    ml_method="d2",
+    singularHmethod="m-marquardt",
+    technique="nr",
+    which="max",
+    depvar="grade",
+    properties="b V")

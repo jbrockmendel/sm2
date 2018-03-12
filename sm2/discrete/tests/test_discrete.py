@@ -14,8 +14,7 @@ import warnings
 from six.moves import range
 
 import numpy as np
-from numpy.testing import (assert_equal, assert_array_equal, assert_allclose,
-                           assert_array_less)
+from numpy.testing import assert_equal, assert_array_equal, assert_allclose
 import pandas as pd
 import pandas.util.testing as tm
 
@@ -131,16 +130,6 @@ class CheckModelResults(object):
         # not overriden --> parametrize?
         assert self.res1.df_model == self.res2.df_model
         assert self.res1.df_resid == self.res2.df_resid
-
-    #def test_aic(self):
-    #    assert_allclose(self.res1.aic,
-    #                    self.res2.aic,
-    #                    atol=1e-3)
-
-    #def test_bic(self):
-    #    assert_allclose(self.res1.bic,
-    #                    self.res2.bic,
-    #                    atol=1e-3)
 
     def test_predict(self):
         yhat = self.res1.model.predict(self.res1.params)
@@ -377,7 +366,7 @@ class TestNegativeBinomialNB1BFGS(CheckModelResults):
                         atol=1e-1)
 
     def test_lnalpha(self):
-        self.res1.bse # attaches alpha_std_err
+        self.res1.bse  # attaches alpha_std_err
         assert_allclose(self.res1.lnalpha,
                         self.res2.lnalpha,
                         atol=1e-3)
@@ -634,16 +623,6 @@ class TestNegativeBinomialPNB1BFGS(CheckModelResults):
         assert_allclose(self.res1.bse,
                         self.res2.bse,
                         atol=5e-3, rtol=5e-3)
-
-    #def test_aic(self):
-    #    assert_allclose(self.res1.aic,
-    #                    self.res2.aic,
-    #                    atol=0.5, rtol=0.5)
-
-    #def test_bic(self):
-    #    assert_allclose(self.res1.bic,
-    #                    self.res2.bic,
-    #                    atol=0.5, rtol=0.5)
 
     def test_zstat(self):
         assert_allclose(self.res1.tvalues,
@@ -1009,36 +988,10 @@ class CheckLikelihoodModelL1(object):
         expected = getattr(self.res2, name)
         assert_allclose(result, expected, **self.tols[name])
 
-    #def test_params(self):
-    #    assert_allclose(self.res1.params,
-    #                    self.res2.params,
-    #                    atol=1e-4)
-
     def test_conf_int(self):
         assert_allclose(self.res1.conf_int(),
                         self.res2.conf_int,
                         atol=1e-4)
-
-    #def test_bse(self):
-    #    assert_allclose(self.res1.bse,
-    #                    self.res2.bse,
-    #                    atol=1e-4)
-
-    # TODO: This will just be an integer
-    #def test_nnz_params(self):
-    #    assert_allclose(self.res1.nnz_params,
-    #                    self.res2.nnz_params,
-    #                    atol=1e-4)
-
-    #def test_aic(self):
-    #    assert_allclose(self.res1.aic,
-    #                    self.res2.aic,
-    #                    atol=1e-3)
-
-    #def test_bic(self):
-    #    assert_allclose(self.res1.bic,
-    #                    self.res2.bic,
-    #                    atol=1e-3)
 
 
 @pytest.mark.not_vetted
@@ -1757,13 +1710,15 @@ class CheckMargEff(object):
 class TestLogitNewton(CheckBinaryResults, CheckMargEff):
     res2 = Spector.logit
     model_cls = Logit
+    mod_kwargs = {}
     fit_kwargs = {"method": "newton", "disp": False}
 
     @classmethod
     def setup_class(cls):
         data = sm2.datasets.spector.load()
         data.exog = add_constant(data.exog, prepend=False)
-        cls.res1 = cls.model_cls(data.endog, data.exog).fit(**cls.fit_kwargs)
+        model = cls.model_cls(data.endog, data.exog, **cls.mod_kwargs)
+        cls.res1 = model.fit(**cls.fit_kwargs)
 
     def test_resid_pearson(self):
         assert_allclose(self.res1.resid_pearson,
@@ -2082,42 +2037,13 @@ class TestGeneralizedPoisson_p2(object):
         expected = getattr(self.res2, name)
         assert_allclose(result, expected, **self.tols[name])
 
-    #def test_bse(self):
-    #    assert_allclose(self.res1.bse,
-    #                    self.res2.bse,
-    #                    atol=1e-5)
-
-    #def test_params(self):
-    #    assert_allclose(self.res1.params,
-    #                    self.res2.params,
-    #                    atol=1e-5)
-
-    #def test_alpha(self):
-    #    assert_allclose(self.res1.lnalpha, self.res2.lnalpha)
-    #    assert_allclose(self.res1.lnalpha_std_err,
-    #                    self.res2.lnalpha_std_err,
-    #                    atol=1e-5)
-
     def test_conf_int(self):
         assert_allclose(self.res1.conf_int(),
                         self.res2.conf_int,
                         atol=1e-3)
 
-    #def test_aic(self):
-    #    assert_allclose(self.res1.aic, self.res2.aic,
-    #                    rtol=1e-7)
-
-    #def test_bic(self):
-    #    assert_allclose(self.res1.bic, self.res2.bic,
-    #                    rtol=1e-7)
-
     def test_df(self):
         assert self.res1.df_model == self.res2.df_model
-
-    #def test_llf(self):
-    #    assert_allclose(self.res1.llf,
-    #                    self.res2.llf,
-    #                    rtol=1e-7)
 
     def test_wald(self):
         result = self.res1.wald_test(np.eye(len(self.res1.params))[:-2])
@@ -2167,43 +2093,14 @@ class TestGeneralizedPoisson_transparams(object):
         expected = getattr(self.res2, name)
         assert_allclose(result, expected, **self.tols[name])
 
-    #def test_bse(self):
-    #    assert_allclose(self.res1.bse,
-    #                    self.res2.bse,
-    #                    atol=1e-5)
-
-    #def test_params(self):
-    #    assert_allclose(self.res1.params,
-    #                    self.res2.params,
-    #                    atol=1e-5)
-
-    #def test_alpha(self):
-    #    assert_allclose(self.res1.lnalpha,
-    #                    self.res2.lnalpha,
-    #                    rtol=1e-7)
-    #    assert_allclose(self.res1.lnalpha_std_err,
-    #                    self.res2.lnalpha_std_err,
-    #                    atol=1e-5)
-
     def test_conf_int(self):
         assert_allclose(self.res1.conf_int(),
                         self.res2.conf_int,
                         atol=1e-3)
 
-    #def test_aic(self):
-    #    assert_allclose(self.res1.aic, self.res2.aic,
-    #                    rtol=1e-7)
-
-    #def test_bic(self):
-    #    assert_allclose(self.res1.bic, self.res2.bic,
-    #                    rtol=1e-7)
-
     def test_df(self):
         assert self.res1.df_model == self.res2.df_model
 
-    #def test_llf(self):
-    #    assert_allclose(self.res1.llf, self.res2.llf,
-    #                    rtol=1e-7)
 
 
 @pytest.mark.not_vetted
@@ -2280,10 +2177,14 @@ class TestGeneralizedPoisson_p1(object):
                         atol=1e-5)
 
         # check shrinkage, regression numbers
-        assert_allclose((self.res1.params[:-2]**2).mean(), 0.016580955543320779)
-        assert_allclose((res_reg1.params[:-2]**2).mean(), 0.016580734975068664)
-        assert_allclose((res_reg2.params[:-2]**2).mean(), 0.010672558641545994)
-        assert_allclose((res_reg3.params[:-2]**2).mean(), 0.00035544919793048415)
+        assert_allclose((self.res1.params[:-2]**2).mean(),
+                        0.016580955543320779)
+        assert_allclose((res_reg1.params[:-2]**2).mean(),
+                        0.016580734975068664)
+        assert_allclose((res_reg2.params[:-2]**2).mean(),
+                        0.010672558641545994)
+        assert_allclose((res_reg3.params[:-2]**2).mean(),
+                        0.00035544919793048415)
 
     def test_init_kwds(self):
         kwds = self.res1.model._get_init_kwds()

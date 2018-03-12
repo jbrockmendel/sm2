@@ -4,11 +4,11 @@ from io import open
 
 import numpy as np
 
-from sm2.tsa.vector_ar.tests.JMulTi_results.parse_jmulti_vecm_output \
-    import sublists, stringify_var_names, dt_s_tup_to_string
+from .parse_jmulti_vecm_output import sublists, stringify_var_names
 
 debug_mode = False
 
+cur_dir = os.path.dirname(os.path.realpath(__file__))
 
 def print_debug_output(results, dt):
         print("\n\n\nDETERMINISTIC TERMS: " + dt)
@@ -24,6 +24,7 @@ def print_debug_output(results, dt):
         print(results["p"]["Lagged endogenous term"])
 
 
+# TODO: duplicated in parse_jmulti_vecm_output?
 def dt_s_tup_to_string(dt_s_tup):
     """
 
@@ -83,8 +84,7 @@ def load_results_jmulti(dataset, dt_s_list):
     for dt_s in dt_s_list:
         dt_string = dt_s_tup_to_string(dt_s)
         params_file = dataset.__str__() + "_" + source + "_" + dt_string + ".txt"
-        params_file = os.path.join(os.path.dirname(os.path.realpath(__file__)),
-                                   params_file)
+        params_file = os.path.join(cur_dir, params_file)
         # sections in jmulti output:
         section_headers = ["Lagged endogenous term",  # parameter matrices
                            "Deterministic term"]      # c, s, ct
@@ -178,8 +178,7 @@ def load_results_jmulti(dataset, dt_s_list):
         # parse information regarding \Sigma_u
         sigmau_file = dataset.__str__() + "_" + source + "_" + dt_string \
             + "_Sigmau" + ".txt"
-        sigmau_file = os.path.join(os.path.dirname(os.path.realpath(__file__)),
-                                   sigmau_file)
+        sigmau_file = os.path.join(cur_dir, sigmau_file)
         rows_to_parse = 0
         # all numbers of Sigma_u in notation with e (e.g. 2.283862e-05)
         regex_est = re.compile("\s+\S+e\S+")
@@ -209,8 +208,7 @@ def load_results_jmulti(dataset, dt_s_list):
         # parse forecast related output:
         fc_file = dataset.__str__() + "_" + source + "_" + dt_string \
             + "_fc5" + ".txt"
-        fc_file = os.path.join(os.path.dirname(os.path.realpath(__file__)),
-                               fc_file)
+        fc_file = os.path.join(cur_dir, fc_file)
         fc, lower, upper, plu_min = [], [], [], []
         fc_file = open(fc_file, encoding='latin_1')
         for line in fc_file:
@@ -251,8 +249,7 @@ def load_results_jmulti(dataset, dt_s_list):
             causality_file = dataset.__str__() + "_" + source + "_" \
                 + dt_string + "_granger_causality_" \
                 + stringify_var_names(causing, "_") + ".txt"
-            causality_file = os.path.join(os.path.dirname(
-                    os.path.realpath(__file__)), causality_file)
+            causality_file = os.path.join(cur_dir, causality_file)
             causality_file = open(causality_file)
             causality_results = []
             for line in causality_file:
@@ -277,8 +274,7 @@ def load_results_jmulti(dataset, dt_s_list):
         # parse output related to impulse-response analysis:
         ir_file = dataset.__str__() + "_" + source + "_" + dt_string \
             + "_ir" + ".txt"
-        ir_file = os.path.join(os.path.dirname(os.path.realpath(__file__)),
-                               ir_file)
+        ir_file = os.path.join(cur_dir, ir_file)
         ir_file = open(ir_file, encoding='latin_1')
         causing = None
         caused = None
@@ -314,8 +310,7 @@ def load_results_jmulti(dataset, dt_s_list):
         # parse output related to lag order selection:
         lagorder_file = dataset.__str__() + "_" + source + "_" + dt_string \
             + "_lagorder" + ".txt"
-        lagorder_file = os.path.join(os.path.dirname(
-            os.path.realpath(__file__)), lagorder_file)
+        lagorder_file = os.path.join(cur_dir, lagorder_file)
         lagorder_file = open(lagorder_file, encoding='latin_1')
         results["lagorder"] = dict()
         aic_start = "Akaike Info Criterion:"
@@ -337,8 +332,7 @@ def load_results_jmulti(dataset, dt_s_list):
         # parse output related to non-normality-test:
         test_norm_file = dataset.__str__() + "_" + source + "_" + dt_string \
             + "_diag" + ".txt"
-        test_norm_file = os.path.join(os.path.dirname(
-            os.path.realpath(__file__)), test_norm_file)
+        test_norm_file = os.path.join(cur_dir, test_norm_file)
         test_norm_file = open(test_norm_file, encoding='latin_1')
         results["test_norm"] = dict()
         section_start_marker = "TESTS FOR NONNORMALITY"
@@ -368,48 +362,8 @@ def load_results_jmulti(dataset, dt_s_list):
 
         # ---------------------------------------------------------------------
         # parse output related to testing the whiteness of the residuals:
-        whiteness_file = dataset.__str__() + "_" + source + "_" + dt_string \
-            + "_diag" + ".txt"
-        whiteness_file = os.path.join(os.path.dirname(
-            os.path.realpath(__file__)), whiteness_file)
-        whiteness_file = open(whiteness_file, encoding='latin_1')
-        results["whiteness"] = dict()
-        section_start_marker = "PORTMANTEAU TEST"
-        order_start = "tested order:"
-        statistic_start = "test statistic:"
-        p_start = " p-value:"
-        adj_statistic_start = "adjusted test statistic:"
-        unadjusted_finished = False
-
-        in_section = False
-        for line in whiteness_file:
-            if not in_section and section_start_marker not in line:
-                continue
-            if not in_section and section_start_marker in line:
-                in_section = True
-                continue
-            if line.startswith(order_start):
-                results["whiteness"]["tested order"] = int(
-                        line[len(order_start):])
-                continue
-            if line.startswith(statistic_start):
-                results["whiteness"]["test statistic"] = float(
-                        line[len(statistic_start):])
-                continue
-            if line.startswith(adj_statistic_start):
-                results["whiteness"]["test statistic adj."] = float(
-                        line[len(adj_statistic_start):])
-                continue
-            if line.startswith(p_start):  # same for unadjusted and adjusted
-                if not unadjusted_finished:
-                    results["whiteness"]["p-value"] = \
-                        float(line[len(p_start):])
-                    unadjusted_finished = True
-                else:
-                    results["whiteness"]["p-value adjusted"] = \
-                        float(line[len(p_start):])
-                    break
-        whiteness_file.close()
+        wresults = parse_whiteness_file(dataset, source, dt_string)
+        results["whiteness"] = wresults
 
         # ---------------------------------------------------------------------
         if debug_mode:
@@ -418,3 +372,48 @@ def load_results_jmulti(dataset, dt_s_list):
         results_dict_per_det_terms[dt_s] = results
 
     return results_dict_per_det_terms
+
+
+def parse_whiteness_file(dataset, source, dt_string):
+    # parse output related to testing the whiteness of the residuals:
+    wfname = (dataset.__str__() + "_" + source + "_" +
+              dt_string + "_diag" + ".txt")
+    wpath = os.path.join(cur_dir, wfname)
+    whiteness_file = os.path.join(cur_dir, wfname)
+
+    wresults = {}
+
+    section_start_marker = "PORTMANTEAU TEST"
+    order_start = "tested order:"
+    statistic_start = "test statistic:"
+    p_start = " p-value:"
+    adj_statistic_start = "adjusted test statistic:"
+    unadjusted_finished = False
+    in_section = False
+
+    with open(wpath, encoding='latin_1') as fd:
+        for line in fd:
+            if not in_section and section_start_marker not in line:
+                continue
+            elif not in_section and section_start_marker in line:
+                in_section = True
+                continue
+            elif line.startswith(order_start):
+                wresults["tested order"] = int(line.split(':')[-1])
+                continue
+            elif line.startswith(statistic_start):
+                wresults["test statistic"] = float(line.split(':')[-1])
+                continue
+            elif line.startswith(adj_statistic_start):
+                wresults["test statistic adj."] = float(line.split(':')[-1])
+                continue
+            elif line.startswith(p_start):
+                # same for unadjusted and adjusted
+                if not unadjusted_finished:
+                    wresults["p-value"] = float(line.split(':')[-1])
+                    unadjusted_finished = True
+                else:
+                    wresults["p-value adjusted"] = float(line.split(':')[-1])
+                    break
+
+    return wresults
