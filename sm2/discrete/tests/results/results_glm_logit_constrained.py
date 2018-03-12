@@ -364,8 +364,8 @@ predict_mu = np.array([
 
 predict_mu_colnames = 'predict_mu'.split()
 predict_mu_rownames = ('r1 r2 r3 r4 r5 r6 r7 r8 r9 r10 r11 r12 '
-         'r13 r14 r15 r16 r17 r18 r19 r20 r21 r22 '
-         'r23 r24 r25 r26 r27 r28 r29 r30 r31 r32'.split())
+                       'r13 r14 r15 r16 r17 r18 r19 r20 r21 r22 '
+                       'r23 r24 r25 r26 r27 r28 r29 r30 r31 r32'.split())
 
 predict_linpred_std = np.array([
     1.2186852972383, .98250143329647, .71300625338041, 1.7281112031272,
@@ -379,9 +379,9 @@ predict_linpred_std = np.array([
 
 predict_linpred_std_colnames = 'predict_linpred_std'.split()
 predict_linpred_std_rownames = ('r1 r2 r3 r4 r5 r6 r7 r8 r9 r10 '
-                  'r11 r12 r13 r14 r15 r16 r17 r18 '
-                  'r19 r20 r21 r22 r23 r24 r25 r26 '
-                  'r27 r28 r29 r30 r31 r32'.split())
+                                'r11 r12 r13 r14 r15 r16 r17 r18 '
+                                'r19 r20 r21 r22 r23 r24 r25 r26 '
+                                'r27 r28 r29 r30 r31 r32'.split())
 
 predict_hat = np.array([
     .03931157544567, .05340381182541, .07287215399916, .06540404284993,
@@ -395,8 +395,8 @@ predict_hat = np.array([
 
 predict_hat_colnames = 'predict_hat'.split()
 predict_hat_rownames = ('r1 r2 r3 r4 r5 r6 r7 r8 r9 r10 r11 r12 r13 r14 r15 '
-          'r16 r17 r18 r19 r20 r21 r22 r23 r24 r25 r26 r27 '
-          'r28 r29 r30 r31 r32'.split())
+                        'r16 r17 r18 r19 r20 r21 r22 r23 r24 r25 r26 r27 '
+                        'r28 r29 r30 r31 r32'.split())
 
 results_constraint2 = Bunch(
     params_table=params_table,
@@ -610,7 +610,7 @@ cov_colnames = 'gpa tuce psi _cons'.split()
 cov_rownames = 'gpa tuce psi _cons'.split()
 
 infocrit = np.array([32, np.nan, -12.944141004448, 3,
-              31.888282008895, 36.285489717294])
+                     31.888282008895, 36.285489717294])
 
 infocrit_colnames = 'N ll0 ll df AIC BIC'.split()
 infocrit_rownames = '.'.split()

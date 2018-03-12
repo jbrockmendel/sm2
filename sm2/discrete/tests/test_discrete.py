@@ -22,8 +22,7 @@ from scipy import stats
 import pytest
 
 import sm2.datasets
-from sm2.tools.sm_exceptions import (PerfectSeparationError, MissingDataError,
-                                     ConvergenceWarning)
+from sm2.tools.sm_exceptions import PerfectSeparationError, MissingDataError
 from sm2.tools.tools import add_constant
 from sm2.discrete.discrete_model import (Logit, Probit, MNLogit,
                                          Poisson, NegativeBinomial,
@@ -33,18 +32,18 @@ from sm2.discrete.discrete_model import (Logit, Probit, MNLogit,
 from sm2.discrete.discrete_margins import _iscount, _isdummy
 
 try:
-    import cvxopt
+    import cvxopt  # noqa:F401
     has_cvxopt = True
 except ImportError:
     has_cvxopt = False
 
 try:
-    from scipy.optimize import basinhopping
+    from scipy.optimize import basinhopping  # noqa:F401
     has_basinhopping = True
 except ImportError:
     has_basinhopping = False
 
-try:
+try:  # noqa:F401
     from scipy.optimize._trustregion_dogleg import _minimize_dogleg
     has_dogleg = True
 except ImportError:
@@ -408,7 +407,7 @@ class TestNegativeBinomialGeometricBFGS(CheckModelResults):
         "params": {"atol": 1e-3},
         "llf": {"atol": 1e-1},
         "llr": {"atol": 1e-2},
-        })
+    })
 
     def test_conf_int(self):
         assert_allclose(self.res1.conf_int(),
@@ -458,7 +457,7 @@ class TestNegativeBinomialPNB2Newton(CheckModelResults):
     tols = CheckModelResults.tols.copy()
     tols.update({
         "params": {"atol": 1e-7}
-        })
+    })
 
     # NOTE: The bse is much closer precitions to stata
     def test_bse(self):
@@ -512,7 +511,7 @@ class TestNegativeBinomialPNB1Newton(CheckModelResults):
     tols = CheckModelResults.tols.copy()
     tols.update({
         "params": {"atol": 1e-7}
-        })
+    })
 
     def test_zstat(self):
         assert_allclose(self.res1.tvalues,
@@ -558,7 +557,7 @@ class TestNegativeBinomialPNB2BFGS(CheckModelResults):
     tols = CheckModelResults.tols.copy()
     tols.update({
         "params": {"atol": 1e-3, "rtol": 1e-3},
-        })
+    })
 
     # NOTE: The bse is much closer precitions to stata
     def test_bse(self):
@@ -617,7 +616,7 @@ class TestNegativeBinomialPNB1BFGS(CheckModelResults):
         "llr": {"atol": 1e-3, "rtol": 1e-3},
         "bic": {"atol": 5e-1, "rtol": 5e-1},
         "aic": {"atol": 0.5, "rtol": 0.5},
-        })
+    })
 
     def test_bse(self):
         assert_allclose(self.res1.bse,
@@ -980,7 +979,7 @@ class CheckLikelihoodModelL1(object):
         "bse": {"atol": 1e-4},
         "params": {"atol": 1e-4},
         "nnz_params": {"atol": 1e-4},  # TODO: This will just be an integer
-        }
+    }
 
     @pytest.mark.parametrize('name', list(tols.keys()))
     def test_attr(self, name):
@@ -999,7 +998,7 @@ class TestProbitL1(CheckLikelihoodModelL1):
     res2 = DiscreteL1.probit
     model_cls = Probit
     fit_reg_kwargs = {"method": "l1",
-                      "alpha": np.array([0.1, 0.2, 0.3, 10]),  # / data.exog.shape[0]}
+                      "alpha": np.array([0.1, 0.2, 0.3, 10]),
                       "disp": False,
                       "trim_mode": "auto",
                       "auto_trim_tol": 0.02,
@@ -1023,7 +1022,7 @@ class TestProbitL1(CheckLikelihoodModelL1):
 class TestMNLogitL1(CheckLikelihoodModelL1):
     res2 = DiscreteL1.mnlogit
     model_cls = MNLogit
-    alpha = 10. * np.ones((6, 6)) # / exog.shape[0]
+    alpha = 10. * np.ones((6, 6))
     # i.e. 10 * np.ones((model.J - 1, model.K))
     alpha[-1, :] = 0
     fit_reg_kwargs = {"method": "l1",
@@ -1047,7 +1046,7 @@ class TestLogitL1(CheckLikelihoodModelL1):
     model_cls = Logit
     fit_reg_kwargs = {
         "method": "l1",
-        "alpha": 3 * np.array([0., 1., 1., 1.]),  # / data.exog.shape[0]
+        "alpha": 3 * np.array([0., 1., 1., 1.]),
         "disp": False,
         "trim_mode": "size",
         "size_trim_tol": 1e-5,
@@ -1207,7 +1206,7 @@ class TestNegativeBinomialGeoL1Compatability(CheckL1Compatability):
         # Drop some columns and do an unregularized fit
         exog_no_PSI = rand_exog[:, :cls.m]
         mod_unreg = cls.model_cls(rand_data.endog, exog_no_PSI,
-                                     loglike_method='geometric')
+                                  loglike_method='geometric')
         cls.res_unreg = mod_unreg.fit(method="newton", disp=False)
 
         # Do a regularized fit with alpha, effectively dropping the last columns
@@ -1350,39 +1349,39 @@ class CompareL1(object):
         assert_allclose(self.res1.params,
                         self.res2.params,
                         atol=1e-4)
-        
+
         assert_allclose(self.res1.cov_params(),
                         self.res2.cov_params(),
                         atol=1e-4)
-        
+
         assert_allclose(self.res1.conf_int(),
                         self.res2.conf_int(),
                         atol=1e-4)
-        
+
         assert_allclose(self.res1.pvalues,
                         self.res2.pvalues,
                         atol=1e-4)
-        
+
         assert_allclose(self.res1.pred_table(),
                         self.res2.pred_table(),
                         atol=1e-4)
-        
+
         assert_allclose(self.res1.bse,
                         self.res2.bse,
                         atol=1e-4)
-        
+
         assert_allclose(self.res1.llf,
                         self.res2.llf,
                         atol=1e-4)
-        
+
         assert_allclose(self.res1.aic,
                         self.res2.aic,
                         atol=1e-4)
-        
+
         assert_allclose(self.res1.bic,
                         self.res2.bic,
                         atol=1e-4)
-        
+
         assert_allclose(self.res1.pvalues,
                         self.res2.pvalues,
                         atol=1e-4)
@@ -1463,9 +1462,9 @@ class TestL1AlphaZeroMNLogit(CompareL1):
 
         mod1 = cls.model_cls(data.endog, data.exog)
         cls.res1 = mod1.fit_regularized(method="l1", alpha=0,
-                                       disp=0, acc=1e-15, maxiter=1000,
-                                       trim_mode='auto',
-                                       auto_trim_tol=0.01)
+                                        disp=0, acc=1e-15, maxiter=1000,
+                                        trim_mode='auto',
+                                        auto_trim_tol=0.01)
 
         mod2 = cls.model_cls(data.endog, data.exog)
         cls.res2 = mod2.fit(disp=0, tol=1e-15,
@@ -1899,7 +1898,7 @@ class TestNegativeBinomialNB2Null(CheckNull):
         endog, exog = cls._get_data()
         cls.model = cls.model_cls(endog, exog, loglike_method='nb2')
         cls.model_null = cls.model_cls(endog, exog[:, 0],
-                                          loglike_method='nb2')
+                                       loglike_method='nb2')
         cls.res_null = cls.model_null.fit(start_params=[8, 0.5],
                                           method='bfgs', gtol=1e-06,
                                           maxiter=300)
@@ -2102,7 +2101,6 @@ class TestGeneralizedPoisson_transparams(object):
         assert self.res1.df_model == self.res2.df_model
 
 
-
 @pytest.mark.not_vetted
 class TestGeneralizedPoisson_p1(object):
     # Test Generalized Poisson model
@@ -2300,7 +2298,7 @@ class TestSweepAlphaL1(object):
 
 
 @pytest.mark.not_vetted
-class  TestNegativeBinomialPPredictProb(object):
+class TestNegativeBinomialPPredictProb(object):
     def test_predict_prob_p1(self):
         expected_params = [1, -0.5]
         np.random.seed(1234)
@@ -2365,7 +2363,7 @@ def test_optim_kwds_prelim():
 
     # we use "nm", "bfgs" does not work for Poisson/exp with older scipy
     optim_kwds_prelim = dict(method='nm', maxiter=5000)
-    model = Poisson(y, exog, offset=offset) #
+    model = Poisson(y, exog, offset=offset)
     res_poi = model.fit(disp=0, **optim_kwds_prelim)
 
     model = NegativeBinomial(y, exog, offset=offset)
@@ -2621,7 +2619,7 @@ def test_predict_with_exposure():
     # The above should have passed without the current patch.  The next
     # test would fail under the old code
 
-    pred2 = mod1.predict(params, exposure=[np.exp(2)]*4, linear=True)
+    pred2 = mod1.predict(params, exposure=[np.exp(2)] * 4, linear=True)
     expected2 = expected + 1
     assert_allclose(pred2, expected2)
 
