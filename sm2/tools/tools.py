@@ -4,7 +4,6 @@ Utility functions models code
 
 import numpy as np
 import numpy.lib.recfunctions as nprf
-import pandas as pd
 
 from six import integer_types
 from six.moves import range, reduce

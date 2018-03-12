@@ -196,6 +196,7 @@ class TestPoissonCluFit(CheckCountRobustMixin):
         # backwards compatibility with inherited test methods
         cls.corr_fact = 1
 
+    # TODO: split this by method
     def test_basic_inference(self):
         res1 = self.res1
         res2 = self.res2
@@ -223,7 +224,7 @@ class TestPoissonHC1Fit(CheckCountRobustMixin):
         nobs, k_vars = mod.exog.shape
         corr_fact = (nobs) / float(nobs - 1.)
         # for bse we need sqrt of correction factor
-        cls.corr_fact = np.sqrt(1./corr_fact)
+        cls.corr_fact = np.sqrt(1. / corr_fact)
 
 
 @pytest.mark.not_vetted
@@ -426,7 +427,6 @@ class TestNegbinCluExposure(CheckCountRobustMixin):
         #k_params = k_vars + 1
         #cov_p = cov_clu_nb / ((nobs - 1.) / float(nobs - k_params))
         #wt = res_nb.wald_test(np.eye(len(res_nb.params))[1:3], cov_p=cov_p)
-
 
 
 @pytest.mark.not_vetted

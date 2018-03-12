@@ -23,10 +23,7 @@ _default_table_fmt = dict(
 
 class VARSummary(object):
     default_fmt = dict(data_fmts=["%#15.6F", "%#15.6F", "%#15.3F", "%#14.3F"],
-                       #data_fmts=["%#12.6g", "%#12.6g", "%#10.4g", "%#5.4g"],
-                       #data_fmts=["%#10.4g", "%#10.4g", "%#10.4g", "%#6.4g"],
                        empty_cell='',
-                       #colwidths=10,
                        colsep='  ',
                        row_pre='',
                        row_post='',
@@ -47,6 +44,7 @@ class VARSummary(object):
                      colsep=' ',
                      table_dec_below='',
                      header_dec_below=None)
+
     part2_fmt = dict(default_fmt,
                      data_fmts=["%#12.6g", "%#12.6g", "%#10.4g", "%#5.4g"],
                      colwidths=None,

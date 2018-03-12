@@ -174,7 +174,9 @@ def get_index(lst, name):
         result = name
     return result
 
-#method used repeatedly in Sims-Zha error bands
+
+# method used repeatedly in Sims-Zha error bands
+# TODO: Does the above comment refer to get_index or eigval_decomp?
 
 def eigval_decomp(sym_array):
     """
@@ -184,7 +186,7 @@ def eigval_decomp(sym_array):
     eigva: list of eigenvalues
     k: largest eigenvector
     """
-    #check if symmetric, do not include shock period
+    # check if symmetric, do not include shock period
     eigva, W = decomp.eig(sym_array, left=True, right=False)
     k = np.argmax(eigva)
     return W, eigva, k

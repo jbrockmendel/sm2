@@ -26,7 +26,8 @@ class TestLilliefors(object):
         # require(KScorrect)
         # LcKS(x_n+abs(min(x_n))+0.001, 'pexp')
 
-        d_ks_exp, p_exp = lilliefors(x_n+np.abs(x_n.min()) + 0.001, dist='exp')
+        d_ks_exp, p_exp = lilliefors(x_n + np.abs(x_n.min()) + 0.001,
+                                     dist='exp')
         # assert normal
         assert_almost_equal(d_ks_norm, 0.025957, decimal=3)
         assert_almost_equal(p_norm, 0.2000, decimal=3)
@@ -53,7 +54,7 @@ class TestLilliefors(object):
         assert_almost_equal(p_exp, 0.200, decimal=3)
 
     def test_pval_bounds(self):
-        x = np.arange(1,10)
+        x = np.arange(1, 10)
         d_ks_n, p_n = lilliefors(x, dist='norm')
         d_ks_e, p_e = lilliefors(x, dist='exp')
 

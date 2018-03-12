@@ -1357,7 +1357,7 @@ class VARResults(VARProcess):
         covs : ndarray (steps x k x k)
         """
         mse = self.mse(steps)
-        omegas = self._omega_forc_cov(steps)
+        # omegas = self._omega_forc_cov(steps)
         # TODO: use omega or don't define it.
         return mse  # + omegas / self.nobs
 
@@ -1524,8 +1524,8 @@ class VARResults(VARProcess):
         upper[:, :self.k_trend] = np.eye(self.k_trend)
 
         lower_dim = self.neqs * (self.k_ar - 1)
-        I = np.eye(lower_dim)
-        lower = np.column_stack((np.zeros((lower_dim, self.k_trend)), I,
+        imat = np.eye(lower_dim)
+        lower = np.column_stack((np.zeros((lower_dim, self.k_trend)), imat,
                                  np.zeros((lower_dim, self.neqs))))
 
         return np.vstack((upper, self.params.T, lower))
@@ -1784,7 +1784,8 @@ class VARResults(VARProcess):
         caused = [self.names[c] for c in caused_ind]
 
         # Note: JMulTi seems to be using k_ar+1 instead of k_ar
-        k, t, p = self.neqs, self.nobs, self.k_ar
+        nobs = self.nobs
+        neqs = self.neqs
 
         num_restr = len(causing) * len(caused)  # called N in Lutkepohl
 
@@ -1802,13 +1803,14 @@ class VARResults(VARProcess):
         C = np.zeros((num_restr, len(vech_sigma_u)), dtype=float)
         for row in range(num_restr):
             C[row, inds[row]] = 1
+
         Cs = np.dot(C, vech_sigma_u)
-        d = np.linalg.pinv(duplication_matrix(k))
+        d = np.linalg.pinv(duplication_matrix(neqs))
         Cd = np.dot(C, d)
         chained = chain_dot(Cd, np.kron(sigma_u, sigma_u), Cd.T)
         middle = scipy.linalg.inv(chained) / 2
 
-        wald_statistic = t * chain_dot(Cs.T, middle, Cs)
+        wald_statistic = nobs * chain_dot(Cs.T, middle, Cs)
         df = num_restr
         dist = stats.chi2(df)
 

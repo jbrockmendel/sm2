@@ -76,7 +76,7 @@ class TestSimpleTable(object):
 *****************************
 """
         actual = '\n%s\n' % tbl.as_text()
-        assert_equal(actual, desired)
+        assert actual == desired
 
     def test_ltx_fmt1(self):
         # Limited test of custom ltx_fmt
@@ -93,7 +93,7 @@ class TestSimpleTable(object):
 \end{center}
 """
         actual = '\n%s\n' % tbl.as_latex_tabular()
-        assert_equal(actual, desired)
+        assert actual == desired
 
     def test_html_fmt1(self):
         # Limited test of custom html_fmt
@@ -110,11 +110,10 @@ class TestSimpleTable(object):
 </tr>
 </table>
 """
-        #the previous has significant trailing whitespace that got removed
-        #desired = """\n<table class="simpletable">\n<tr>\n    <td></td>    <th>header1</th> <th>header2</th>\n</tr>\n<tr>\n  <th>stub1</th>   <td>0.0</td>      <td>1</td>   \n</tr>\n<tr>\n  <th>stub2</th>    <td>2</td>     <td>3.333</td> \n</tr>\n</table>\n"""
+        # the previous has significant trailing whitespace that got removed
         actual = '\n%s\n' % tbl.as_html()
         actual = '\n'.join((line.rstrip() for line in actual.split('\n')))
-        assert_equal(actual, desired)
+        assert actual == desired
 
     def test_customlabel(self):
         # Limited test of custom custom labeling
@@ -131,4 +130,4 @@ class TestSimpleTable(object):
 *****************************
 """
         actual = '\n%s\n' % tbl.as_text(missing='--')
-        assert_equal(actual, desired)
+        assert actual == desired

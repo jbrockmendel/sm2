@@ -180,8 +180,6 @@ class TestOLS(CheckRegressionResults):
         data = datasets.longley.load()
         data.exog = add_constant(data.exog, prepend=False)
         cls.res1 = OLS(data.endog, data.exog).fit()
-
-        #cls.res2 = results_regression.Longley()
         #cls.res2.wresid = cls.res1.wresid  # workaround hack
 
         res_qr = OLS(data.endog, data.exog).fit(method="qr")
@@ -298,8 +296,6 @@ class TestRTO(CheckRegressionResults):
         data = datasets.longley.load()
         res1 = OLS(data.endog, data.exog).fit()
         cls.res1 = res1
-
-        #cls.res2 = results_regression.LongleyRTO()
         #cls.res2.wresid = res1.wresid  # workaround hack
 
         res_qr = OLS(data.endog, data.exog).fit(method="qr")
@@ -344,6 +340,7 @@ class TestWLSExogWeights(CheckRegressionResults):
     # reg avgexp age income incomesq ownrent [aw=1/incomesq]
     res2 = results_regression.CCardWLS()
     _do_check_wresid = False
+
     @classmethod
     def setup_class(cls):
         dta = datasets.ccard.load()
@@ -356,7 +353,6 @@ class TestWLSExogWeights(CheckRegressionResults):
         scaled_weights = ((weights * nobs) / weights.sum())
 
         cls.res1 = WLS(dta.endog, dta.exog, weights=scaled_weights).fit()
-        #cls.res2 = results_regression.CCardWLS()
         #cls.res2.wresid = scaled_weights ** .5 * cls.res2.resid
 
         # correction because we use different definition for loglike/llf

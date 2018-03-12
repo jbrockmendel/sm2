@@ -13,8 +13,8 @@ Basic use::
    myheaders = [ "Column 1", "Column 2" ]
    mystubs = [ "Row 1", "Row 2" ]
    tbl = SimpleTable(mydata, myheaders, mystubs, title="Title")
-   print( tbl )
-   print( tbl.as_csv() )
+   print(tbl)
+   print(tbl.as_csv())
 
 A SimpleTable is inherently (but not rigidly) rectangular.
 You should create it from a *rectangular* (2d!) iterable of data.
@@ -142,14 +142,14 @@ class SimpleTable(list):
         myheaders = [ "Column 1", "Column 2" ]
         mystubs = [ "Row 1", "Row 2" ]
         tbl = text.SimpleTable(mydata, myheaders, mystubs, title="Title")
-        print( tbl )
-        print( tbl.as_html() )
+        print(tbl)
+        print(tbl.as_html())
         # set column specific data formatting
         tbl = text.SimpleTable(mydata, myheaders, mystubs,
             data_fmts=["%3.2f","%d"])
-        print( tbl.as_csv() )
+        print(tbl.as_csv())
         with open('c:/temp/temp.tex','w') as fh:
-            fh.write( tbl.as_latex_tabular() )
+            fh.write(tbl.as_latex_tabular())
     """
     def __init__(self, data, headers=None, stubs=None, title='',
                  datatypes=None, csv_fmt=None, txt_fmt=None, ltx_fmt=None,
@@ -295,7 +295,7 @@ class SimpleTable(list):
                 cell.datatype = next(dtypes)
                 cell.row = newrow  # a cell knows its row
             rows.append(newrow)
-         
+
         return rows
 
     def pad(self, s, width, align):
@@ -411,7 +411,7 @@ class SimpleTable(list):
 
         formatted_rows = []
         if center:
-            formatted_rows.append( r'\begin{center}' )
+            formatted_rows.append(r'\begin{center}')
 
         table_dec_above = fmt['table_dec_above'] or ''
         table_dec_below = fmt['table_dec_below'] or ''
@@ -446,13 +446,12 @@ class SimpleTable(list):
             title = r'%%\caption{%s}' % self.title
             formatted_rows.append(title)
         if center:
-            formatted_rows.append( r'\end{center}' )
+            formatted_rows.append(r'\end{center}')
 
         return '\n'.join(formatted_rows)
 
-
     def extend_right(self, table):
-        """Return None.
+        """
         Extend each row of `self` with corresponding row of `table`.
         Does **not** import formatting from ``table``.
         This generally makes sense only if the two tables have
@@ -466,7 +465,7 @@ class SimpleTable(list):
             row1.extend(row2)
 
     def label_cells(self, func):
-        """Return None.  Labels cells based on `func`.
+        """Labels cells based on `func`.
         If ``func(cell) is None`` then its datatype is
         not changed; otherwise it is set to ``func(cell)``.
         """
@@ -883,7 +882,7 @@ default_latex_fmt = dict(
                   "&": "\&",
                   ">": "$>$",
                   "_": "\_",
-                  "|": "$|$"} )
+                  "|": "$|$"})
 
 default_fmts = dict(html=default_html_fmt,
                     txt=default_txt_fmt,

@@ -15,7 +15,6 @@ import patsy
 import pytest
 
 from sm2.discrete.discrete_model import Poisson
-from sm2.discrete.discrete_model import Logit
 from sm2.base._constraints import fit_constrained
 
 from sm2.tools.tools import add_constant
@@ -58,30 +57,41 @@ class CheckPoissonConstrainedMixin(object):
         # see below Stata has nan, we have zero
         bse1 = np.sqrt(np.diag(res1[1]))
         mask = (bse1 == 0) & np.isnan(res2.bse[self.idx])
-        assert_allclose(bse1[~mask], res2.bse[self.idx][~mask], rtol=1e-6)
+        assert_allclose(bse1[~mask],
+                        res2.bse[self.idx][~mask],
+                        rtol=1e-6)
 
     def test_basic_method(self):
         if not hasattr(self, 'res1m'):
             raise pytest.skip("not available yet")
         res1 = (self.res1m if not hasattr(self.res1m, '_results')
-                           else self.res1m._results)
+                else self.res1m._results)
         res2 = self.res2
-        assert_allclose(res1.params, res2.params[self.idx], rtol=1e-6)
+        assert_allclose(res1.params,
+                        res2.params[self.idx],
+                        rtol=1e-6)
 
         # when a parameter is fixed, the Stata has bse=nan, we have bse=0
         mask = (res1.bse == 0) & np.isnan(res2.bse[self.idx])
-        assert_allclose(res1.bse[~mask], res2.bse[self.idx][~mask], rtol=1e-6)
+        assert_allclose(res1.bse[~mask],
+                        res2.bse[self.idx][~mask],
+                        rtol=1e-6)
 
         tvalues = res2.params_table[self.idx, 2]
-        # when a parameter is fixed, the Stata has tvalue=nan, we have tvalue=inf
+        # when a parameter is fixed, the Stata has tvalue=nan,
+        # we have tvalue=inf
         mask = np.isinf(res1.tvalues) & np.isnan(tvalues)
-        assert_allclose(res1.tvalues[~mask], tvalues[~mask], rtol=1e-6)
+        assert_allclose(res1.tvalues[~mask],
+                        tvalues[~mask],
+                        rtol=1e-6)
         pvalues = res2.params_table[self.idx, 3]
         # note most pvalues are very small
         # examples so far agree at 8 or more decimal, but rtol is stricter
         # see above
         mask = (res1.pvalues == 0) & np.isnan(pvalues)
-        assert_allclose(res1.pvalues[~mask], pvalues[~mask], rtol=5e-5)
+        assert_allclose(res1.pvalues[~mask],
+                        pvalues[~mask],
+                        rtol=5e-5)
 
         ci_low = res2.params_table[self.idx, 4]
         ci_upp = res2.params_table[self.idx, 5]
@@ -89,7 +99,9 @@ class CheckPoissonConstrainedMixin(object):
         # note most pvalues are very small
         # examples so far agree at 8 or more decimal, but rtol is stricter
         # see above: nan versus value
-        assert_allclose(res1.conf_int()[~np.isnan(ci)], ci[~np.isnan(ci)], rtol=5e-5)
+        assert_allclose(res1.conf_int()[~np.isnan(ci)],
+                        ci[~np.isnan(ci)],
+                        rtol=5e-5)
 
         # other
         assert_allclose(res1.llf, res2.ll, rtol=1e-6)
@@ -136,9 +148,9 @@ class TestPoissonConstrained1a(CheckPoissonConstrainedMixin):
         constr = 'C(agecat)[T.4] = C(agecat)[T.5]'
         lc = patsy.DesignInfo(mod.exog_names).linear_constraint(constr)
         cls.res1 = fit_constrained(mod, lc.coefs, lc.constants,
-                                        start_params=start_params,
-                                        fit_kwds={'method': 'bfgs',
-                                                  'disp': 0})
+                                   start_params=start_params,
+                                   fit_kwds={'method': 'bfgs',
+                                             'disp': 0})
         # TODO: Newton fails
 
         # test method of Poisson, not monkey patched
@@ -272,8 +284,8 @@ class TestPoissonConstrained2b(CheckPoissonConstrainedMixin):
         # example without offset
         formula = 'deaths ~ smokes + C(agecat)'
         mod = cls.model_cls.from_formula(formula, data=data,
-                                   exposure=data['pyears'].values)
-                                   #offset=np.log(data['pyears'].values))
+                                         exposure=data['pyears'].values)
+                                         #offset=np.log(data['pyears'].values))
         #res1a = mod1a.fit()
         constr = 'C(agecat)[T.5] - C(agecat)[T.4] = 0.5'
         lc = patsy.DesignInfo(mod.exog_names).linear_constraint(constr)
@@ -300,13 +312,13 @@ class TestPoissonConstrained2c(CheckPoissonConstrainedMixin):
         # example without offset
         formula = 'deaths ~ smokes + C(agecat)'
         mod = cls.model_cls.from_formula(formula, data=data,
-                                   offset=np.log(data['pyears'].values))
+                                         offset=np.log(data['pyears'].values))
 
         constr = 'C(agecat)[T.5] - C(agecat)[T.4] = 0.5'
         lc = patsy.DesignInfo(mod.exog_names).linear_constraint(constr)
         cls.res1 = fit_constrained(mod, lc.coefs, lc.constants,
-                                       fit_kwds={'method':'newton',
-                                                 'disp': 0})
+                                   fit_kwds={'method': 'newton',
+                                             'disp': 0})
         cls.constraints = lc
         # TODO: bfgs fails
 
@@ -328,7 +340,7 @@ class TestGLMPoissonConstrained1a(CheckPoissonConstrainedMixin):
         # example without offset
         formula = 'deaths ~ logpyears + smokes + C(agecat)'
         mod = cls.model_cls.from_formula(formula, data=data,
-                                    family=families.Poisson())
+                                         family=families.Poisson())
 
         constr = 'C(agecat)[T.4] = C(agecat)[T.5]'
         lc = patsy.DesignInfo(mod.exog_names).linear_constraint(constr)
@@ -349,9 +361,9 @@ class TestGLMPoissonConstrained1b(CheckPoissonConstrainedMixin):
     def setup_class(cls):
         # example with offset
         formula = 'deaths ~ smokes + C(agecat)'
-        mod = model_cls.from_formula(formula, data=data,
-                               family=families.Poisson(),
-                               offset=np.log(data['pyears'].values))
+        mod = cls.model_cls.from_formula(formula, data=data,
+                                         family=families.Poisson(),
+                                         offset=np.log(data['pyears'].values))
 
         constr = 'C(agecat)[T.4] = C(agecat)[T.5]'
         lc = patsy.DesignInfo(mod.exog_names).linear_constraint(constr)
@@ -428,7 +440,7 @@ class TestGLMLogitConstrained1(CheckGLMConstrainedMixin):
         #res1ul = Logit(data.endog, data.exog).fit(method="newton", disp=0)
 
         mod1 = cls.model_cls(spector_data.endog, spector_data.exog,
-                   family=families.Binomial())
+                             family=families.Binomial())
 
         constr = 'x1 = 2.8'
         cls.res1m = mod1.fit_constrained(constr)
@@ -448,7 +460,7 @@ class TestGLMLogitConstrained2(CheckGLMConstrainedMixin):
         cls.res2 = reslogit.results_constraint2
         #res1ul = Logit(data.endog, data.exog).fit(method="newton", disp=0)
         mod1 = cls.model_cls(spector_data.endog, spector_data.exog,
-                   family=families.Binomial())
+                             family=families.Binomial())
 
         constr = 'x1 - x3 = 0'
         cls.res1m = mod1.fit_constrained(constr, atol=1e-10)
@@ -501,7 +513,7 @@ class TestGLMLogitConstrained2HC(CheckGLMConstrainedMixin):
         #res1ul = Logit(data.endog, data.exog).fit(method="newton", disp=0)
 
         mod1 = cls.model_cls(spector_data.endog, spector_data.exog,
-                   family=families.Binomial())
+                             family=families.Binomial())
 
         # not used to match Stata for HC
         # nobs, k_params = mod1.exog.shape
@@ -518,36 +530,3 @@ class TestGLMLogitConstrained2HC(CheckGLMConstrainedMixin):
                                                          'cov_type': cov_type,
                                                          'cov_kwds': cov_kwds})
         cls.constraints_rq = (R, q)
-
-
-
-# WTF?
-def junk():
-    # Singular Matrix in mod1a.fit()
-
-    formula1 = 'deaths ~ smokes + C(agecat)'
-
-    formula2 = 'deaths ~ C(agecat) + C(smokes) : C(agecat)'  # same as Stata default
-
-    mod = Poisson.from_formula(formula2, data=data, exposure=data['pyears'].values)
-
-    res0 = mod.fit()
-
-    constraints = 'C(smokes)[T.1]:C(agecat)[3] = C(smokes)[T.1]:C(agecat)[4]'
-
-    import patsy
-    lc = patsy.DesignInfo(mod.exog_names).linear_constraint(constraints)
-    R, q = lc.coefs, lc.constants
-
-    resc = mod.fit_constrained(R,q, fit_kwds={'method':'bfgs'})
-
-    # example without offset
-    formula1a = 'deaths ~ logpyears + smokes + C(agecat)'
-    mod1a = Poisson.from_formula(formula1a, data=data)
-    print(mod1a.exog.shape)
-
-    res1a = mod1a.fit()
-    lc_1a = patsy.DesignInfo(mod1a.exog_names).linear_constraint('C(agecat)[T.4] = C(agecat)[T.5]')
-    resc1a = mod1a.fit_constrained(lc_1a.coefs, lc_1a.constants, fit_kwds={'method':'newton'})
-    print(resc1a[0])
-    print(resc1a[1])

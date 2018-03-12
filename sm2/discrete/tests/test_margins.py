@@ -62,7 +62,7 @@ class TestPoissonMargin(CheckMarginMixin):
         # here we don't need to check convergence from default start_params
         'start_params': [14.1709, 0.7085, -3.4548, -0.539, 3.2368, -7.9299,
                          -5.0529]
-        }
+    }
 
 
 @pytest.mark.not_vetted
@@ -91,7 +91,7 @@ class TestNegBinMargin(CheckMarginMixin):
         'start_params': [13.1996, 0.8582, -2.8005, -1.5031, 2.3849, -8.5552,
                          -2.88, 1.14]
     }
-    rtol_fac = 5e1 # negbin has lower agreement with Stata in this case
+    rtol_fac = 5e1  # negbin has lower agreement with Stata in this case
 
 
 @pytest.mark.not_vetted
