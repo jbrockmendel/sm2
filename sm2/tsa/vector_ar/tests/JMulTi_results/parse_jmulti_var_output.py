@@ -330,8 +330,8 @@ def load_results_jmulti(dataset, dt_s_list):
 
         # ---------------------------------------------------------------------
         # parse output related to non-normality-test:
-        test_norm_file = dataset.__str__() + "_" + source + "_" + dt_string \
-            + "_diag" + ".txt"
+        test_norm_file = (dataset.__str__() + "_" + source + "_" + dt_string +
+                          "_diag" + ".txt")
         test_norm_file = os.path.join(cur_dir, test_norm_file)
         test_norm_file = open(test_norm_file, encoding='latin_1')
         results["test_norm"] = dict()

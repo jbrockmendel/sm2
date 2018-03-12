@@ -109,7 +109,6 @@ def test_predict_se():
     assert_allclose(iv_l, res3.fittedvalues[:3] - ci_half[:3],
                     rtol=1e-12)
 
-
     # use wrong size for exog
     # prstd, iv_l, iv_u = wls_prediction_std(res3, x2[-1, 0], weights=3.)
     with pytest.raises(ValueError):
@@ -174,7 +173,7 @@ class TestWLSPrediction(object):
 
     @pytest.mark.skip(reason="GLM not ported from upstream")
     def test_glm(self):
-        # prelimnimary, getting started with basic test for GLM.get_prediction
+        # preliminary, getting started with basic test for GLM.get_prediction
         res_wls = self.res_wls
         mod_wls = res_wls.model
         y, X, wi = mod_wls.endog, mod_wls.exog, mod_wls.weights
@@ -195,7 +194,7 @@ class TestWLSPrediction(object):
 
         # compare using normal distribution
 
-        res_glm = mod_glm.fit() # default use_t=False
+        res_glm = mod_glm.fit()  # default use_t=False
         pred_glm = res_glm.get_prediction()
         sf_glm = pred_glm.summary_frame()
 

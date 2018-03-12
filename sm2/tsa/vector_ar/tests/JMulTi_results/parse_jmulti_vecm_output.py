@@ -132,7 +132,8 @@ def load_results_jmulti(dataset):
 
     for dt_s in dataset.dt_s_list:
         dt_string = dt_s_tup_to_string(dt_s)
-        params_file = "vecm_" + dataset.__str__() + "_" + source + "_" + dt_string + ".txt"
+        params_file = ("vecm_" + dataset.__str__() + "_" + source + "_" +
+                       dt_string + ".txt")
         params_file = os.path.join(cur_dir, params_file)
         # sections in jmulti output:
         section_header = ["Lagged endogenous term",  # Gamma
@@ -163,9 +164,9 @@ def load_results_jmulti(dataset):
             del(sections[1])
             if "ci" not in dt_string and "li" not in dt_string:
                 # JMulTi: no deterministic section in VAR repr.
-                del(section_header[-1])
-                del(sections[-1])
-        results = dict()
+                del section_header[-1]
+                del sections[-1]
+        results = {}
         results["est"] = dict.fromkeys(sections)
         results["se"] = dict.fromkeys(sections)
         results["t"] = dict.fromkeys(sections)
@@ -187,8 +188,8 @@ def load_results_jmulti(dataset):
         for line in params_file:
             if section == -1 and section_header[section + 1] not in line:
                 continue
-            if section < len(section_header) - 1 \
-                    and section_header[section + 1] in line:  # new section
+            if (section < len(section_header) - 1
+                    and section_header[section + 1] in line):  # new section
                 section += 1
                 continue
             if not started_reading_section:
@@ -273,8 +274,8 @@ def load_results_jmulti(dataset):
 
         # ---------------------------------------------------------------------
         # parse information regarding \Sigma_u
-        sigmau_file = "vecm_" + dataset.__str__() + "_" + source + "_" + \
-                      dt_string + "_Sigmau" + ".txt"
+        sigmau_file = ("vecm_" + dataset.__str__() + "_" + source + "_" +
+                       dt_string + "_Sigmau" + ".txt")
         sigmau_file = os.path.join(cur_dir, sigmau_file)
         rows_to_parse = 0
         # all numbers of Sigma_u in notation with e (e.g. 2.283862e-05)
@@ -302,8 +303,8 @@ def load_results_jmulti(dataset):
 
         # ---------------------------------------------------------------------
         # parse forecast related output:
-        fc_file = "vecm_" + dataset.__str__() + "_" + source + "_" + \
-                  dt_string + "_fc5" + ".txt"
+        fc_file = ("vecm_" + dataset.__str__() + "_" + source + "_" +
+                   dt_string + "_fc5" + ".txt")
         fc_file = os.path.join(cur_dir, fc_file)
         fc, lower, upper, plu_min = [], [], [], []
         fc_file = open(fc_file, encoding='latin_1')
@@ -323,26 +324,22 @@ def load_results_jmulti(dataset):
         lower = np.hstack(np.vsplit(np.array(lower)[:, None], variables))
         upper = np.hstack(np.vsplit(np.array(upper)[:, None], variables))
         # plu_min = np.hstack(np.vsplit(np.array(plu_min)[:, None], variables))
-        results["fc"] = dict.fromkeys(["fc", "lower", "upper"])
-        results["fc"]["fc"] = fc
-        results["fc"]["lower"] = lower
-        results["fc"]["upper"] = upper
+        results["fc"] = {"fc": fc, "upper": upper, "lower": lower}
 
         # ---------------------------------------------------------------------
         # parse output related to Granger-causality:
-        results["granger_caus"] = dict.fromkeys(["p", "test_stat"])
-        results["granger_caus"]["p"] = dict()
-        results["granger_caus"]["test_stat"] = dict()
+        gresults = {"p": {}, "test_stat": {}}
+        results["granger_caus"] = gresults
         vn = dataset.variable_names
         # all possible combinations of potentially causing variables
         # (at least 1 variable and not all variables together):
         var_combs = sublists(vn, 1, len(vn)-1)
         for causing in var_combs:
             caused = tuple(el for el in vn if el not in causing)
-            granger_file = "vecm_" + dataset.__str__() + "_" + source + "_" \
-                + dt_string + "_granger_causality_" \
-                + stringify_var_names(causing) + "_" \
-                + stringify_var_names(caused) + ".txt"
+            granger_file = ("vecm_" + dataset.__str__() + "_" + source + "_" +
+                            dt_string + "_granger_causality_" +
+                            stringify_var_names(causing) + "_" +
+                            stringify_var_names(caused) + ".txt")
             granger_file = os.path.join(cur_dir, granger_file)
             granger_file = open(granger_file)
             granger_results = []
@@ -355,16 +352,12 @@ def load_results_jmulti(dataset):
                 number = float(number.group(0))
                 granger_results.append(number)
             granger_file.close()
-            results["granger_caus"]["test_stat"][(causing, caused)] = \
-                granger_results[0]
-            results["granger_caus"]["p"][(causing, caused)] =\
-                granger_results[1]
+            gresults["test_stat"][(causing, caused)] =  granger_results[0]
+            gresults["p"][(causing, caused)] = granger_results[1]
 
         # ---------------------------------------------------------------------
         # parse output related to instant causality:
-        results["inst_caus"] = dict.fromkeys(["p", "test_stat"])
-        results["inst_caus"]["p"] = dict()
-        results["inst_caus"]["test_stat"] = dict()
+        results["inst_caus"] = {"p": {}, "test_stat": {}}
         vn = dataset.variable_names
         # all possible combinations of potentially causing variables
         # (at least 1 variable and not all variables together):
@@ -378,10 +371,10 @@ def load_results_jmulti(dataset):
             # based on VAR(p+1) *but* tests for instantaneous causality are
             # based on VAR(p)! Thus we have this separate file with JMulTi
             # results for a VECM with the lag order reduced by one.
-            inst_file = "vecm_" + dataset.__str__() + "_" + source + "_" \
-                + dt_string + "_inst_causality_" \
-                + stringify_var_names(causing) + "_" \
-                + stringify_var_names(caused) + ".txt"
+            inst_file = ("vecm_" + dataset.__str__() + "_" + source + "_" +
+                         dt_string + "_inst_causality_" +
+                         stringify_var_names(causing) + "_" +
+                         stringify_var_names(caused) + ".txt")
             inst_file = os.path.join(cur_dir, inst_file)
             inst_file = open(inst_file)
             inst_results = []
@@ -394,16 +387,13 @@ def load_results_jmulti(dataset):
                 number = float(number.group(0))
                 inst_results.append(number)
             inst_file.close()
-            results["inst_caus"]["test_stat"][(causing, caused)] = \
-                inst_results[2]
-            results["inst_caus"]["p"][(causing, caused)] = \
-                inst_results[3]
-
+            results["inst_caus"]["test_stat"][(causing, caused)] = inst_results[2]
+            results["inst_caus"]["p"][(causing, caused)] = inst_results[3]
 
         # ---------------------------------------------------------------------
         # parse output related to impulse-response analysis:
-        ir_file = "vecm_" + dataset.__str__() + "_" + source + "_" + \
-                  dt_string + "_ir" + ".txt"
+        ir_file = ("vecm_" + dataset.__str__() + "_" + source + "_" +
+                   dt_string + "_ir" + ".txt")
         ir_file = os.path.join(cur_dir, ir_file)
         ir_file = open(ir_file, encoding='latin_1')
         causing = None
@@ -438,8 +428,8 @@ def load_results_jmulti(dataset):
 
         # ---------------------------------------------------------------------
         # parse output related to lag order selection:
-        lagorder_file = "vecm_" + dataset.__str__() + "_" + source + "_" + \
-                        dt_string + "_lagorder" + ".txt"
+        lagorder_file = ("vecm_" + dataset.__str__() + "_" + source + "_" +
+                         dt_string + "_lagorder" + ".txt")
         lagorder_file = os.path.join(cur_dir, lagorder_file)
         lagorder_file = open(lagorder_file, encoding='latin_1')
         results["lagorder"] = dict()
@@ -460,8 +450,8 @@ def load_results_jmulti(dataset):
 
         # ---------------------------------------------------------------------
         # parse output related to non-normality-test:
-        test_norm_file = "vecm_" + dataset.__str__() + "_" + source + "_" + \
-                         dt_string + "_diag" + ".txt"
+        test_norm_file = ("vecm_" + dataset.__str__() + "_" + source + "_" +
+                          dt_string + "_diag" + ".txt")
         test_norm_file = os.path.join(cur_dir, test_norm_file)
         test_norm_file = open(test_norm_file, encoding='latin_1')
         results["test_norm"] = dict()

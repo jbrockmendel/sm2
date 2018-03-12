@@ -894,7 +894,7 @@ class LikelihoodModelResults(wrap.SaveLoadMixin, Results):
         from sm2.base.covtype import get_robustcov_results
         # TODO: we shouldn't need use_t in get_robustcov_results
         get_robustcov_results(self, cov_type=cov_type, use_self=True,
-                                  use_t=use_t, **cov_kwds)
+                              use_t=use_t, **cov_kwds)
 
     @cache_readonly
     def llf(self):
