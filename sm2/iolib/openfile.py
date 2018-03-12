@@ -24,6 +24,7 @@ class EmptyContextManager(object):
     def __getattr__(self, name):
         return getattr(self._obj, name)
 
+
 if PY3:
     def _open(fname, mode, encoding):
         if fname.endswith('.gz'):

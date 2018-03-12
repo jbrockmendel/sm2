@@ -8,6 +8,7 @@ from sm2.tools.decorators import (cache_writable,
                                   resettable_cache, cache_readonly,
                                   deprecated_alias, copy_doc)
 
+
 class TestDeprecatedAlias(object):
 
     @classmethod

@@ -351,7 +351,6 @@ def kstest_fit(x, dist='norm', pvalmethod='approx'):
     return d_ks, pval
 
 
-
 # This is a bare-bones copy of TableDist taken from upstream stats.tabledist
 class TableDist(object):
     """Distribution, critical values and p-values from tables

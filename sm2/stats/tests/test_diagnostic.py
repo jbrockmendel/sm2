@@ -707,18 +707,6 @@ class TestDiagnosticGPandas(TestDiagnosticG):
         cls.exog = cls.res.model.exog
 
 
-# WTF?
-def grangertest():
-    # > gt = grangertest(ginv, ggdp, order=4)
-    # > gt
-    # Granger causality test
-    #
-    # Model 1: ggdp ~ Lags(ggdp, 1:4) + Lags(ginv, 1:4)
-    # Model 2: ggdp ~ Lags(ggdp, 1:4)
-    grangertest = dict(fvalue=1.589672703015157, pvalue=0.178717196987075,
-                       df=(198, 193))
-
-
 @pytest.mark.skip(reason="outliers_influence not ported from upstream")
 @pytest.mark.smoke
 @pytest.mark.not_vetted

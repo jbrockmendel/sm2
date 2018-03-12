@@ -33,8 +33,9 @@ from __future__ import print_function
 import numpy as np
 from scipy import stats
 
-from ._lilliefors import (kstest_fit, lilliefors, lillifors, kstest_normal,
-                          kstest_exponential)  # lillifors is deprecated
+from ._lilliefors import (kstest_fit, lilliefors, lillifors,  # noqa: F401
+                          kstest_normal, kstest_exponential)
+# lillifors is deprecated, misspelling
 from ._adnorm import normal_ad  # noqa: F401
 
 

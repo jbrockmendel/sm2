@@ -2455,7 +2455,6 @@ def test_arma_pickle():
 # ----------------------------------------------------------------
 # Smoke Tests Aimed at a specific issue/method
 
-
 @pytest.mark.smoke
 @pytest.mark.skipif('not have_matplotlib')
 def test_plot_predict():
