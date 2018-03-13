@@ -10,18 +10,19 @@ debug_mode = False
 
 cur_dir = os.path.dirname(os.path.realpath(__file__))
 
+
 def print_debug_output(results, dt):
-        print("\n\n\nDETERMINISTIC TERMS: " + dt)
-        coefs = results["est"]["Lagged endogenous term"]
-        print("coefs:")
-        print(str(type(coefs)) + str(coefs.shape))
-        print(coefs)
-        print("se: ")
-        print(results["se"]["Lagged endogenous term"])
-        print("t: ")
-        print(results["t"]["Lagged endogenous term"])
-        print("p: ")
-        print(results["p"]["Lagged endogenous term"])
+    print("\n\n\nDETERMINISTIC TERMS: " + dt)
+    coefs = results["est"]["Lagged endogenous term"]
+    print("coefs:")
+    print(str(type(coefs)) + str(coefs.shape))
+    print(coefs)
+    print("se: ")
+    print(results["se"]["Lagged endogenous term"])
+    print("t: ")
+    print(results["t"]["Lagged endogenous term"])
+    print("p: ")
+    print(results["p"]["Lagged endogenous term"])
 
 
 # TODO: duplicated in parse_jmulti_vecm_output?
@@ -83,7 +84,8 @@ def load_results_jmulti(dataset, dt_s_list):
 
     for dt_s in dt_s_list:
         dt_string = dt_s_tup_to_string(dt_s)
-        params_file = dataset.__str__() + "_" + source + "_" + dt_string + ".txt"
+        params_file = (dataset.__str__() + "_" + source + "_" +
+                       dt_string + ".txt")
         params_file = os.path.join(cur_dir, params_file)
         # sections in jmulti output:
         section_headers = ["Lagged endogenous term",  # parameter matrices
@@ -113,8 +115,9 @@ def load_results_jmulti(dataset, dt_s_list):
         for line in params_file:
             if section == -1 and section_headers[section + 1] not in line:
                 continue
-            if section < len(section_headers)-1 \
-                    and section_headers[section + 1] in line:  # new section
+            if (section < len(section_headers) - 1 and
+                    section_headers[section + 1] in line):
+                # new section
                 section += 1
                 continue
             if not started_reading_section:
@@ -126,17 +129,14 @@ def load_results_jmulti(dataset, dt_s_list):
                     if result == []:  # no values collected in section "Legend"
                         started_reading_section = False
                         continue
-                    results["est"][section_headers[section]] = np.column_stack(
-                            result)
+                    skey = section_headers[section]
+                    results["est"][skey] = np.column_stack(result)
                     result = []
-                    results["se"][section_headers[section]] = np.column_stack(
-                            result_se)
+                    results["se"][skey] = np.column_stack(result_se)
                     result_se = []
-                    results["t"][section_headers[section]] = np.column_stack(
-                            result_t)
+                    results["t"][skey] = np.column_stack(result_t)
                     result_t = []
-                    results["p"][section_headers[section]] = np.column_stack(
-                            result_p)
+                    results["p"][skey] = np.column_stack(result_p)
                     result_p = []
                     started_reading_section = False
                     continue
@@ -206,8 +206,8 @@ def load_results_jmulti(dataset, dt_s_list):
 
         # ---------------------------------------------------------------------
         # parse forecast related output:
-        fc_file = dataset.__str__() + "_" + source + "_" + dt_string \
-            + "_fc5" + ".txt"
+        fc_file = (dataset.__str__() + "_" + source + "_" +
+                   dt_string + "_fc5" + ".txt")
         fc_file = os.path.join(cur_dir, fc_file)
         fc, lower, upper, plu_min = [], [], [], []
         fc_file = open(fc_file, encoding='latin_1')
@@ -233,22 +233,18 @@ def load_results_jmulti(dataset, dt_s_list):
 
         # ---------------------------------------------------------------------
         # parse output related to Granger-caus. and instantaneous causality:
-        results["granger_caus"] = dict.fromkeys(["p", "test_stat"])
-        results["granger_caus"]["p"] = dict()
-        results["granger_caus"]["test_stat"] = dict()
-        results["inst_caus"] = dict.fromkeys(["p", "test_stat"])
-        results["inst_caus"]["p"] = dict()
-        results["inst_caus"]["test_stat"] = dict()
+        results["granger_caus"] = {"p": {}, "test_stat": {}}
+        results["inst_caus"] = {"p": {}, "test_stat": {}}
         vn = dataset.variable_names
         # all possible combinations of potentially causing variables
         # (at least 1 variable and not all variables together):
-        var_combs = sublists(vn, 1, len(vn)-1)
+        var_combs = sublists(vn, 1, len(vn) - 1)
         print("\n\n\n" + dt_string)
         for causing in var_combs:
             caused = tuple(name for name in vn if name not in causing)
-            causality_file = dataset.__str__() + "_" + source + "_" \
-                + dt_string + "_granger_causality_" \
-                + stringify_var_names(causing, "_") + ".txt"
+            causality_file = (dataset.__str__() + "_" + source + "_" +
+                              dt_string + "_granger_causality_" +
+                              stringify_var_names(causing, "_") + ".txt")
             causality_file = os.path.join(cur_dir, causality_file)
             causality_file = open(causality_file)
             causality_results = []
@@ -261,14 +257,11 @@ def load_results_jmulti(dataset, dt_s_list):
                 number = float(number.group(0))
                 causality_results.append(number)
             causality_file.close()
-            results["granger_caus"]["test_stat"][(causing, caused)] = \
-                causality_results[0]
-            results["granger_caus"]["p"][(causing, caused)] =\
-                causality_results[1]
-            results["inst_caus"]["test_stat"][(causing, caused)] = \
-                causality_results[2]
-            results["inst_caus"]["p"][(causing, caused)] = \
-                causality_results[3]
+            key = (causing, caused)
+            results["granger_caus"]["test_stat"][key] = causality_results[0]
+            results["granger_caus"]["p"][key] = causality_results[1]
+            results["inst_caus"]["test_stat"][key] = causality_results[2]
+            results["inst_caus"]["p"][key] = causality_results[3]
 
         # ---------------------------------------------------------------------
         # parse output related to impulse-response analysis:
@@ -379,7 +372,6 @@ def parse_whiteness_file(dataset, source, dt_string):
     wfname = (dataset.__str__() + "_" + source + "_" +
               dt_string + "_diag" + ".txt")
     wpath = os.path.join(cur_dir, wfname)
-    whiteness_file = os.path.join(cur_dir, wfname)
 
     wresults = {}
 

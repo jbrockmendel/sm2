@@ -1345,6 +1345,7 @@ class CompareL1(object):
     For checking results for l1 regularization.
     Assumes self.res1 and self.res2 are two legitimate models to be compared.
     """
+    # TODO : split these up
     def test_basic_results(self):
         assert_allclose(self.res1.params,
                         self.res2.params,
@@ -1401,6 +1402,7 @@ class CompareL11D(CompareL1):
         assert_allclose(self.res1.t_test(restrictmat).pvalue,
                         self.res2.t_test(restrictmat).pvalue,
                         atol=1e-4)
+
         assert_allclose(self.res1.f_test(restrictmat).pvalue,
                         self.res2.f_test(restrictmat).pvalue,
                         atol=1e-4)
@@ -1410,23 +1412,23 @@ class CompareL11D(CompareL1):
 class TestL1AlphaZeroLogit(CompareL11D):
     # Compares l1 model with alpha = 0 to the unregularized model.
     model_cls = Logit
+    fit_reg_kwargs = {"method": "l1",
+                      "alpha": 0,
+                      "disp": False,
+                      "acc": 1e-15,
+                      "trim_mode": "auto",
+                      "auto_trim_tol": 0.01}
 
     @classmethod
     def setup_class(cls):
         data = sm2.datasets.spector.load()
         data.exog = add_constant(data.exog, prepend=True)
         mod = cls.model_cls(data.endog, data.exog)
-        cls.res1 = mod.fit_regularized(method="l1", alpha=0, disp=0,
-                                       acc=1e-15, maxiter=1000,
-                                       trim_mode='auto',
-                                       auto_trim_tol=0.01)
+        cls.res1 = mod.fit_regularized(maxiter=1000, **cls.fit_reg_kwargs)
         cls.res2 = cls.model_cls(data.endog, data.exog).fit(disp=0, tol=1e-15)
 
     def test_converged(self):
-        res = self.res1.model.fit_regularized(method="l1", alpha=0,
-                                              disp=0, acc=1e-15, maxiter=1,
-                                              trim_mode='auto',
-                                              auto_trim_tol=0.01)
+        res = self.res1.model.fit_regularized(maxiter=1, **cls.fit_reg_kwargs)
 
         # see GH#2857
         if res.mle_retvals['converged'] == 'Iteration limit exceeded':

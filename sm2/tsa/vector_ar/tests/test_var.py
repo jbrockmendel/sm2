@@ -167,67 +167,6 @@ class RResults(object):
 
 # ------------------------------------------------------------------------
 
-# WTF Is this not actually _used_?
-@pytest.mark.not_vetted
-class CheckVAR(object):
-    # just so pylint won't complain
-    res1 = None
-    res2 = None
-
-    def test_params(self):
-        assert_almost_equal(self.res1.params,
-                            self.res2.params,
-                            DECIMAL_3)
-
-    def test_neqs(self):
-        assert self.res1.neqs == self.res2.neqs
-
-    def test_nobs(self):
-        assert self.res1.avobs == self.res2.nobs
-
-    def test_df_eq(self):
-        assert self.res1.df_eq == self.res2.df_eq
-
-    def test_rmse(self):
-        results = self.res1.results
-        for i in range(len(results)):
-            assert_almost_equal(results[i].mse_resid**.5,
-                                eval('self.res2.rmse_' + str(i + 1)),
-                                DECIMAL_6)
-
-    def test_rsquared(self):
-        results = self.res1.results
-        for i in range(len(results)):
-            assert_almost_equal(results[i].rsquared,
-                                eval('self.res2.rsquared_' + str(i + 1)),
-                                DECIMAL_3)
-
-    def test_llf(self):
-        results = self.res1.results
-        assert_almost_equal(self.res1.llf, self.res2.llf, DECIMAL_2)
-        for i in range(len(results)):
-            assert_almost_equal(results[i].llf,
-                                eval('self.res2.llf_' + str(i + 1)),
-                                DECIMAL_2)
-
-    def test_aic(self):
-        assert_almost_equal(self.res1.aic, self.res2.aic)
-
-    def test_bic(self):
-        assert_almost_equal(self.res1.bic, self.res2.bic)
-
-    def test_hqic(self):
-        assert_almost_equal(self.res1.hqic, self.res2.hqic)
-
-    def test_fpe(self):
-        assert_almost_equal(self.res1.fpe, self.res2.fpe)
-
-    def test_detsig(self):
-        assert_almost_equal(self.res1.detomega, self.res2.detsig)
-
-    def test_bse(self):
-        assert_almost_equal(self.res1.bse, self.res2.bse, DECIMAL_4)
-
 
 @pytest.mark.not_vetted
 class CheckIRF(object):
@@ -337,7 +276,7 @@ class TestVARResults(CheckIRF, CheckFEVD):
         # make sure this works with no names
         ndarr = self.data.view((float, 3), type=np.ndarray)
         model = VAR(ndarr)
-        res = model.fit(self.p)
+        model.fit(self.p)
 
     def test_names(self):
         assert self.model.endog_names == list(self.ref.names)
@@ -463,8 +402,8 @@ class TestVARResults(CheckIRF, CheckFEVD):
 
     @pytest.mark.smoke
     def test_select_order(self):
-        result = self.model.fit(10, ic='aic', verbose=True)
-        result = self.model.fit(10, ic='fpe', verbose=True)
+        self.model.fit(10, ic='aic', verbose=True)
+        self.model.fit(10, ic='fpe', verbose=True)
 
         # bug
         model = VAR(self.model.endog)
@@ -484,7 +423,7 @@ class TestVARResults(CheckIRF, CheckFEVD):
 
     @pytest.mark.smoke
     def test_acorr(self):
-        acorrs = self.res.acorr(10)
+        self.res.acorr(10)
 
     @pytest.mark.smoke
     def test_forecast(self):
@@ -544,12 +483,13 @@ class TestVARResults(CheckIRF, CheckFEVD):
 
     def test_pickle(self):
         fh = BytesIO()
-        #test wrapped results load save pickle
+        # test wrapped results load save pickle
         del self.res.model.data.orig_endog
         self.res.save(fh)
         fh.seek(0, 0)
         res_unpickled = self.res.__class__.load(fh)
         assert type(res_unpickled) is type(self.res)
+        # TODO: Check something other than type equality?  not very meaningful
 
 
 @pytest.mark.skip(reason="parse_lutkepohl_data not ported")
@@ -605,24 +545,26 @@ class TestVARResultsLutkepohl(object):
 
     def test_lr_effect_stderr(self):
         stderr = self.irf.lr_effect_stderr(orth=False)
-        orth_stderr = self.irf.lr_effect_stderr(orth=True)
         assert_almost_equal(np.round(stderr, 3), self.lut.lr_stderr)
+
+    @pytest.mark.smoke
+    def test_orth_lr_effect_stderr(self):
+        self.irf.lr_effect_stderr(orth=True)
 
 
 @pytest.mark.not_vetted
+@pytest.mark.smoke
 def test_var_trend():
     # GH#2271
     data = get_macrodata().view((float, 3), type=np.ndarray)
 
     model = VAR(data)
-    results = model.fit(4)  #, trend='c')
-    irf = results.irf(10)  # TODO: Is this just smoke?
+    results = model.fit(4, trend='c')
+    results.irf(10)
 
     data_nc = data - data.mean(0)
     model_nc = VAR(data_nc)
-    results_nc = model_nc.fit(4, trend='nc')
-    with pytest.raises(ValueError):
-        model.fit(4, trend='t')
+    model_nc.fit(4, trend='nc')
 
 
 @pytest.mark.not_vetted
@@ -633,7 +575,7 @@ def test_irf_trend():
     data = get_macrodata().view((float, 3), type=np.ndarray)
 
     model = VAR(data)
-    results = model.fit(4)  #, trend='c')
+    results = model.fit(4, trend='c')
     irf = results.irf(10)
 
     data_nc = data - data.mean(0)
@@ -669,12 +611,20 @@ def test_get_trendorder():
         assert util.get_trendorder(t) == trendorder
 
 
+def test_var_invalid_trend_rasies():
+    # GH#2271
+    data = get_macrodata().view((float, 3), type=np.ndarray)
+
+    model = VAR(data)
+    with pytest.raises(ValueError):
+        model.fit(4, trend='t')
+
+
 # ----------------------------------------------------------------
 # Issue-Specific Regression Tests
 
 def test_var_constant():
     # GH#2043 if one of the variables in a VAR is constant --> singularity
-    now = pd.Timestamp.now()
     index = pd.date_range('now', periods=5, freq='D')
     # TODO: remove the index since it is irrelevant to this test?
     data = np.array([[2., 2.],

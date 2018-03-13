@@ -11,32 +11,32 @@ cur_dir = os.path.dirname(os.path.realpath(__file__))
 
 
 def print_debug_output(results, dt):
-        print("\n\n\nDETERMINISTIC TERMS: " + dt)
-        alpha = results["est"]["alpha"]
-        print("alpha:")
-        print(str(type(alpha)) + str(alpha.shape))
-        print(alpha)
+    print("\n\n\nDETERMINISTIC TERMS: " + dt)
+    alpha = results["est"]["alpha"]
+    print("alpha:")
+    print(str(type(alpha)) + str(alpha.shape))
+    print(alpha)
+    print("se: ")
+    print(results["se"]["alpha"])
+    print("t: ")
+    print(results["t"]["alpha"])
+    print("p: ")
+    print(results["p"]["alpha"])
+    beta = results["est"]["beta"]
+    print("beta:")
+    print(str(type(beta)) + str(beta.shape))
+    print(beta)
+    gamma = results["est"]["Gamma"]
+    print("Gamma:")
+    print(str(type(gamma)) + str(gamma.shape))
+    print(gamma)
+    if "co" in dt or "s" in dt or "lo" in dt:
+        c = results["est"]["C"]
+        print("C:")
+        print(str(type(c)) + str(c.shape))
+        print(c)
         print("se: ")
-        print(results["se"]["alpha"])
-        print("t: ")
-        print(results["t"]["alpha"])
-        print("p: ")
-        print(results["p"]["alpha"])
-        beta = results["est"]["beta"]
-        print("beta:")
-        print(str(type(beta)) + str(beta.shape))
-        print(beta)
-        gamma = results["est"]["Gamma"]
-        print("Gamma:")
-        print(str(type(gamma)) + str(gamma.shape))
-        print(gamma)
-        if "co" in dt or "s" in dt or "lo" in dt:
-            c = results["est"]["C"]
-            print("C:")
-            print(str(type(c)) + str(c.shape))
-            print(c)
-            print("se: ")
-            print(results["se"]["C"])
+        print(results["se"]["C"])
 
 
 def dt_s_tup_to_string(dt_s_tup):
@@ -78,8 +78,8 @@ def sublists(lst, min_elmts=0, max_elmts=None):
     # for the following see also the definition of powerset() in
     # https://docs.python.org/dev/library/itertools.html#itertools-recipes
     result = itertools.chain.from_iterable(
-                itertools.combinations(lst, sublist_len)
-                for sublist_len in range(min_elmts, max_elmts + 1))
+        itertools.combinations(lst, sublist_len)
+        for sublist_len in range(min_elmts, max_elmts + 1))
     if type(result) != list:
         result = list(result)
     return result
@@ -188,8 +188,8 @@ def load_results_jmulti(dataset):
         for line in params_file:
             if section == -1 and section_header[section + 1] not in line:
                 continue
-            if (section < len(section_header) - 1
-                    and section_header[section + 1] in line):  # new section
+            if (section < len(section_header) - 1 and
+                    section_header[section + 1] in line):  # new section
                 section += 1
                 continue
             if not started_reading_section:
@@ -201,17 +201,14 @@ def load_results_jmulti(dataset):
                     if result == []:  # no values collected in section "Legend"
                         started_reading_section = False
                         continue
-                    results["est"][sections[section]] = np.column_stack(
-                                                                    result)
+                    skey = sections[section]
+                    results["est"][skey] = np.column_stack(result)
                     result = []
-                    results["se"][sections[section]] = np.column_stack(
-                                                                    result_se)
+                    results["se"][skey] = np.column_stack(result_se)
                     result_se = []
-                    results["t"][sections[section]] = np.column_stack(
-                                                                    result_t)
+                    results["t"][skey] = np.column_stack(result_t)
                     result_t = []
-                    results["p"][sections[section]] = np.column_stack(
-                                                                    result_p)
+                    results["p"][skey] = np.column_stack(result_p)
                     result_p = []
                     started_reading_section = False
                     continue
@@ -333,7 +330,7 @@ def load_results_jmulti(dataset):
         vn = dataset.variable_names
         # all possible combinations of potentially causing variables
         # (at least 1 variable and not all variables together):
-        var_combs = sublists(vn, 1, len(vn)-1)
+        var_combs = sublists(vn, 1, len(vn) - 1)
         for causing in var_combs:
             caused = tuple(el for el in vn if el not in causing)
             granger_file = ("vecm_" + dataset.__str__() + "_" + source + "_" +
@@ -352,16 +349,17 @@ def load_results_jmulti(dataset):
                 number = float(number.group(0))
                 granger_results.append(number)
             granger_file.close()
-            gresults["test_stat"][(causing, caused)] =  granger_results[0]
+            gresults["test_stat"][(causing, caused)] = granger_results[0]
             gresults["p"][(causing, caused)] = granger_results[1]
 
         # ---------------------------------------------------------------------
         # parse output related to instant causality:
-        results["inst_caus"] = {"p": {}, "test_stat": {}}
+        iresults = {"p": {}, "test_stat": {}}
+        results["inst_caus"] = iresults
         vn = dataset.variable_names
         # all possible combinations of potentially causing variables
         # (at least 1 variable and not all variables together):
-        var_combs = sublists(vn, 1, len(vn)-1)
+        var_combs = sublists(vn, 1, len(vn) - 1)
         for causing in var_combs:
             caused = tuple(el for el in vn if el not in causing)
             # Though Granger- and instantaneous causality results are in the
@@ -387,8 +385,8 @@ def load_results_jmulti(dataset):
                 number = float(number.group(0))
                 inst_results.append(number)
             inst_file.close()
-            results["inst_caus"]["test_stat"][(causing, caused)] = inst_results[2]
-            results["inst_caus"]["p"][(causing, caused)] = inst_results[3]
+            iresults["test_stat"][(causing, caused)] = inst_results[2]
+            iresults["p"][(causing, caused)] = inst_results[3]
 
         # ---------------------------------------------------------------------
         # parse output related to impulse-response analysis:
