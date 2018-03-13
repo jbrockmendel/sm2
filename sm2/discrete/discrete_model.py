@@ -361,13 +361,14 @@ class DiscreteModel(base.LikelihoodModel):
         else:
             pass  # TODO: make a function factory to have multiple call-backs
 
-        mlefit = super(DiscreteModel, self).fit(start_params=start_params,
-                                                method=method, maxiter=maxiter,
-                                                full_output=full_output,
-                                                disp=disp, callback=callback,
-                                                extra_fit_funcs=extra_fit_funcs,
-                                                cov_params_func=cov_params_func,
-                                                **kwargs)
+        mlefit = super(DiscreteModel, self).fit(
+            start_params=start_params,
+            method=method, maxiter=maxiter,
+            full_output=full_output,
+            disp=disp, callback=callback,
+            extra_fit_funcs=extra_fit_funcs,
+            cov_params_func=cov_params_func,
+            **kwargs)
 
         return mlefit  # up to subclasses to wrap results
 
@@ -1087,7 +1088,7 @@ class Poisson(CountModel):
         params, cov, res_constr = fit_constrained(self, R, q,
                                                   start_params=start_params,
                                                   fit_kwds=fit_kwds)
-        #create dummy results Instance, TODO: wire up properly
+        # create dummy results Instance, TODO: wire up properly
         res = self.fit(maxiter=0, method='nm', disp=0,
                        warn_convergence=False)  # we get a wrapper back
 
@@ -2464,6 +2465,7 @@ class NegativeBinomial(CountModel):
         mu = self.predict(params)[:, None]
 
         a1 = 1 / alpha * mu**Q
+        prob = a1 / (a1 + mu)
         dgpart = special.digamma(y + a1) - special.digamma(a1)
 
         if Q:
@@ -2471,13 +2473,13 @@ class NegativeBinomial(CountModel):
             assert Q == 1, Q
             # in this case:
             #    a1 = mu / alpha
-            prob = 1 / (alpha + 1)  # Note: this equals a1 / (a1 + mu)
+            #    prob = 1 / (alpha + 1)
             dparams = exog * a1 * (np.log(prob) + dgpart)
             dalpha = ((prob * (y - mu) - a1 * (np.log(prob) + dgpart)) / alpha).sum()
 
         else:
             # nb2
-            prob = a1 / (a1 + mu)
+            #prob = a1 / (a1 + mu)
             dparams = exog * a1 * (y - mu) / (mu + a1)
             da1 = -alpha**-2
             dalpha = (dgpart + np.log(prob) - (y - mu) / (a1 + mu)).sum() * da1
@@ -2993,10 +2995,10 @@ class NegativeBinomialP(CountModel):
                           a4 * (np.log(a1 / a2) + dgpart + 1)) / mu)
 
         for i in range(dim):
-            hess_arr[i, :-1] = np.sum(self.exog[:, :].T * self.exog[:, i] * coeff,
+            hess_arr[i, :-1] = np.sum(exog[:, :].T * exog[:, i] * coeff,
                                       axis=1)
 
-        hess_arr[-1, :-1] = (self.exog[:, :].T * mu * a1 *
+        hess_arr[-1, :-1] = (exog[:, :].T * mu * a1 *
                 ((1 + a4) * (1 - a3 / a2) / a2 -
                  p * (np.log(a1 / a2) + dgpart + 2) / mu +
                  p * (a3 / mu + a4) / a2 +
@@ -3816,7 +3818,7 @@ class MultinomialResults(DiscreteResults):
 
     def __init__(self, model, mlefit):
         # Make sure params have the appropriate shape;
-        # TODO: Sould we avoid altering this in-place?
+        # TODO: Should we avoid altering this in-place?
         mlefit.params = mlefit.params.reshape(model.K, -1, order='F')
         # TODO: Is the "order='F'" really necessary?
         super(MultinomialResults, self).__init__(model, mlefit)
