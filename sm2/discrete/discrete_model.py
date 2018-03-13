@@ -2472,20 +2472,15 @@ class NegativeBinomial(CountModel):
             # in this case:
             #    a1 = mu / alpha
             prob = 1 / (alpha + 1)  # Note: this equals a1 / (a1 + mu)
-            dparams = exog * mu / alpha * (np.log(prob) + dgpart)
-            dalpha = ((alpha * (y - mu * np.log(prob) -
-                                mu * (dgpart + 1)) -
-                       mu * (np.log(prob) + dgpart)) /
-                       (alpha**2 * (alpha + 1))).sum()
+            dparams = exog * a1 * (np.log(prob) + dgpart)
+            dalpha = ((prob * (y - mu) - a1 * (np.log(prob) + dgpart)) / alpha).sum()
 
         else:
             # nb2
             prob = a1 / (a1 + mu)
             dparams = exog * a1 * (y - mu) / (mu + a1)
             da1 = -alpha**-2
-            dalpha = (dgpart +
-                      np.log(prob) -
-                      (a1 + y) / (a1 + mu) + 1).sum() * da1
+            dalpha = (dgpart + np.log(prob) - (y - mu) / (a1 + mu)).sum() * da1
 
         # multiply above by constant outside sum to reduce rounding error
         if self._transparams:
@@ -2553,10 +2548,8 @@ class NegativeBinomial(CountModel):
         tri_idx = np.triu_indices(dim, k=1)
         hess_arr[tri_idx] = hess_arr.T[tri_idx]
 
-        # for dl/dparams dalpha
-        da1 = -alpha**-2
         dldpda = np.sum(-a1 * dparams + exog * a1 *
-                        (-pgpart * mu / alpha**2 - prob), axis=0)
+                        (-pgpart * a1 / alpha - prob), axis=0)
 
         hess_arr[-1, :-1] = dldpda
         hess_arr[:-1, -1] = dldpda
@@ -2568,7 +2561,8 @@ class NegativeBinomial(CountModel):
         alpha2 = alpha**2
         mu2 = mu**2
         dada = ((alpha3 * mu * (2 * log_alpha + 2 * dgpart + 3) -
-                2 * alpha3 * y + alpha2 * mu2 * pgpart +
+                2 * alpha3 * y +
+                alpha2 * mu2 * pgpart +
                 4 * alpha2 * mu * (log_alpha + dgpart) +
                 alpha2 * (2 * mu - y) +
                 2 * alpha * mu2 * pgpart +
@@ -2612,6 +2606,8 @@ class NegativeBinomial(CountModel):
 
         # for dl/dparams dalpha
         da1 = -alpha**-2
+        # assert da1 == -a1**2, (da1, -a1**2)
+        # this assertion fails only due to floating point error
         dldpda = np.sum(mu * exog * (y - mu) * da1 / (mu + a1)**2, axis=0)
         hess_arr[-1, :-1] = dldpda
         hess_arr[:-1, -1] = dldpda
@@ -2619,8 +2615,9 @@ class NegativeBinomial(CountModel):
         # for dl/dalpha dalpha
         # NOTE: polygamma(1, x) is the trigamma function
         da2 = 2 * alpha**-3
-        dalpha = da1 * (dgpart +
-                        np.log(prob) - (a1 + y) / (a1 + mu) + 1)
+        # assert da2 == 2*a1**3, (da2, 2*a1**3)
+        # this assertion fails only due to floating point error
+        dalpha = da1 * (dgpart + np.log(prob) - (y - mu) / (a1 + mu))
         dada = (da2 * dalpha / da1 + da1**2 * (pgpart + 1 / a1 - 1 / (a1 + mu) +
                 (y - mu) / (mu + a1)**2)).sum()
         hess_arr[-1, -1] = dada
