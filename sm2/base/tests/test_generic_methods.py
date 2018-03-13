@@ -51,9 +51,6 @@ class CheckGenericMixin(object):
         # test params table frame returned by t_test
         table_res = np.column_stack((res.params, res.bse, res.tvalues,
                                      res.pvalues, res.conf_int()))
-        table1 = np.column_stack((tt.effect, tt.sd, tt.tvalue, tt.pvalue,
-                                  tt.conf_int()))
-        # TODO: Should something be _done_ with table1?
         table2 = tt.summary_frame().values
         assert_allclose(table2, table_res, rtol=1e-12)
 
