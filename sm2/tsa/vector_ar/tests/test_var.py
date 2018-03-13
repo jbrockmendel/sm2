@@ -236,11 +236,10 @@ class CheckIRF(object):
     irf = None
     k = None
 
-    #-------------------------------------------------------------------
-    # IRF tests
-
     def test_irf_coefs(self):
         self._check_irfs(self.irf.irfs, self.ref.irf)
+
+    def test_orth_irf_coefs(self):
         self._check_irfs(self.irf.orth_irfs, self.ref.orth_irf)
 
     def _check_irfs(self, py_irfs, r_irfs):
@@ -292,9 +291,6 @@ class CheckIRF(object):
 @pytest.mark.not_vetted
 class CheckFEVD(object):
     fevd = None
-
-    # --------------------------------------------------------------------
-    # FEVD tests
 
     @pytest.mark.smoke
     @pytest.mark.skipif(not have_matplotlib, reason="matplotlib not available")
@@ -410,13 +406,13 @@ class TestVARResults(CheckIRF, CheckFEVD):
     def test_fpe(self):
         assert_almost_equal(self.res.fpe, self.ref.fpe)
 
-    #@pytest.mark.smoke  # only half of this tests
+    @pytest.mark.smoke
     def test_lagorder_select(self):
         ics = ['aic', 'fpe', 'hqic', 'bic']
-
         for ic in ics:
             self.model.fit(maxlags=10, ic=ic, verbose=True)
 
+    def test_fit_invalid_ic(self):
         with pytest.raises(Exception):
             self.model.fit(ic='foo')
 
@@ -424,7 +420,9 @@ class TestVARResults(CheckIRF, CheckFEVD):
         assert self.res.nobs == self.ref.nobs
 
     def test_stderr(self):
-        assert_almost_equal(self.res.stderr, self.ref.stderr, DECIMAL_4)
+        assert_almost_equal(self.res.stderr,
+                            self.ref.stderr,
+                            DECIMAL_4)
 
     def test_loglike(self):
         assert_almost_equal(self.res.llf, self.ref.loglike)
