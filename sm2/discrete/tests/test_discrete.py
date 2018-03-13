@@ -1428,7 +1428,7 @@ class TestL1AlphaZeroLogit(CompareL11D):
         cls.res2 = cls.model_cls(data.endog, data.exog).fit(disp=0, tol=1e-15)
 
     def test_converged(self):
-        res = self.res1.model.fit_regularized(maxiter=1, **cls.fit_reg_kwargs)
+        res = self.res1.model.fit_regularized(maxiter=1, **self.fit_reg_kwargs)
 
         # see GH#2857
         if res.mle_retvals['converged'] == 'Iteration limit exceeded':

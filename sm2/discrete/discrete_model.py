@@ -153,6 +153,7 @@ class DiscreteModel(base.LikelihoodModel):
     sm2.model.LikelihoodModel.
     """
     def __init__(self, endog, exog, **kwargs):
+        self.nobs = exog.shape[0]  # TODO: Do this at a higher level
         super(DiscreteModel, self).__init__(endog, exog, **kwargs)
         self.raise_on_perfect_prediction = True
 
@@ -170,7 +171,7 @@ class DiscreteModel(base.LikelihoodModel):
         # assumes constant
         rank = np.linalg.matrix_rank(self.exog)
         self.df_model = float(rank - 1)
-        self.df_resid = float(self.exog.shape[0] - rank)
+        self.df_resid = float(self.nobs - rank)
 
     def cdf(self, X):  # pragma: no cover
         """
@@ -597,9 +598,10 @@ class MultinomialModel(BinaryModel):
         self.endog = self.endog.argmax(1)  # turn it into an array of col idx
         self.J = self.wendog.shape[1]
         self.K = self.exog.shape[1]
-        self.df_model *= (self.J - 1)  # for each J - 1 equation.
-        # TODO: Don't alter df_model in-place
-        self.df_resid = self.exog.shape[0] - self.df_model - (self.J - 1)
+
+        rank = np.linalg.matrix_rank(self.exog)
+        self.df_model = (rank - 1) * (self.J - 1)  # for each J - 1 equation.
+        self.df_resid = self.nobs - self.df_model - (self.J - 1)
 
     def predict(self, params, exog=None, linear=False):
         """
@@ -2232,7 +2234,7 @@ class MNLogit(MultinomialModel):
         Xb = np.dot(self.exog, params)
         firstterm = self.wendog[:, 1:] - self.cdf(Xb)[:, 1:]
         # NOTE: might need to switch terms if params is reshaped
-        return (firstterm[:, :, None] * self.exog[:, None, :]).reshape(self.exog.shape[0], -1)
+        return (firstterm[:, :, None] * self.exog[:, None, :]).reshape(self.nobs, -1)
 
     def hessian(self, params):
         """
@@ -3229,7 +3231,7 @@ class DiscreteResults(base.LikelihoodModelResults):
         self.df_model = model.df_model
         self.df_resid = model.df_resid
         self._cache = resettable_cache()
-        self.nobs = model.exog.shape[0]
+        self.nobs = model.exog.shape[0]  # i.e. model.nobs
         self.__dict__.update(mlefit.__dict__)
 
         if not hasattr(self, 'cov_type'):
