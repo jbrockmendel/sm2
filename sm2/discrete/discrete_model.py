@@ -496,6 +496,8 @@ class BinaryModel(FitBase):
         else:
             return np.dot(exog, params)
 
+    # TODO: De-duplicate docstring with the other two in this module.  This
+    # and one other look like they might be truncated in the second paragraph
     def _derivative_predict(self, params, exog=None, transform='dydx'):
         """
         For computing marginal effects standard errors.
@@ -805,17 +807,8 @@ class CountModel(FitBase):
         else:
             return linpred
 
+    @copy_doc(BinaryModel._derivative_predict.__doc__)
     def _derivative_predict(self, params, exog=None, transform='dydx'):
-        """
-        For computing marginal effects standard errors.
-
-        This is used only in the case of discrete and count regressors to
-        get the variance-covariance of the marginal effects. It returns
-        [d F / d params] where F is the predict.
-
-        Transform can be 'dydx' or 'eydx'. Checking is done in margeff
-        computations for appropriate transform.
-        """
         if exog is None:
             exog = self.exog
         # NOTE: this handles offset and exposure
