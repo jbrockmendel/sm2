@@ -25,7 +25,7 @@ import numpy as np
 import pandas as pd
 from pandas.util._decorators import deprecate_kwarg
 
-from scipy.special import gammaln, digamma, polygamma
+from scipy.special import gammaln, polygamma
 from scipy import stats, special
 
 from sm2.tools.decorators import resettable_cache, cache_readonly, copy_doc
@@ -2463,27 +2463,24 @@ class NegativeBinomial(CountModel):
         y = self.endog[:, None]
         mu = self.predict(params)[:, None]
         a1 = 1 / alpha * mu**Q
+        dgpart = special.digamma(y + a1) - special.digamma(a1)
+
         if Q:
             # nb1
             assert Q == 1, Q
             # in this case:
             #    a1 = mu / alpha
-            dparams = exog * mu / alpha * (np.log(1 / (alpha + 1)) +
-                                           special.digamma(y + a1) -
-                                           special.digamma(a1))
+            dparams = exog * mu / alpha * (np.log(1 / (alpha + 1)) + dgpart)
             dalpha = ((alpha * (y - mu * np.log(1 / (alpha + 1)) -
-                                mu * (special.digamma(y + a1) -
-                                special.digamma(a1) + 1)) -
-                       mu * (np.log(1 / (alpha + 1)) +
-                             special.digamma(y + a1) -
-                             special.digamma(a1)))/
+                                mu * (dgpart + 1)) -
+                       mu * (np.log(1 / (alpha + 1)) + dgpart)) /
                        (alpha**2 * (alpha + 1))).sum()
 
         else:
             # nb2
             dparams = exog * a1 * (y - mu) / (mu + a1)
             da1 = -alpha**-2
-            dalpha = (special.digamma(a1 + y) - special.digamma(a1) +
+            dalpha = (dgpart +
                       np.log(a1) - np.log(a1 + mu) -
                       (a1 + y) / (a1 + mu) + 1).sum() * da1
 
@@ -2530,15 +2527,14 @@ class NegativeBinomial(CountModel):
         mu = self.predict(params)[:, None]
 
         a1 = mu / alpha
+        dgpart = special.digamma(y + a1) - special.digamma(a1)
 
         # for dl/dparams dparams
         dim = exog.shape[1]
         hess_arr = np.empty((dim + 1, dim + 1))
         # const_arr = a1*mu*(a1+y)/(mu+a1)**2
         # not all of dparams
-        dparams = exog / alpha * (np.log(1 / (alpha + 1)) +
-                                  special.digamma(y + a1) -
-                                  special.digamma(a1))
+        dparams = exog / alpha * (np.log(1 / (alpha + 1)) + dgpart)
 
         dmudb = exog * mu
         xmu_alpha = exog * a1
@@ -2563,19 +2559,17 @@ class NegativeBinomial(CountModel):
         hess_arr[:-1, -1] = dldpda
 
         # for dl/dalpha dalpha
-        digamma_part = (special.digamma(y + a1) -
-                        special.digamma(a1))
 
         log_alpha = np.log(1 / (alpha + 1))
         alpha3 = alpha**3
         alpha2 = alpha**2
         mu2 = mu**2
-        dada = ((alpha3 * mu * (2 * log_alpha + 2 * digamma_part + 3) -
+        dada = ((alpha3 * mu * (2 * log_alpha + 2 * dgpart + 3) -
                 2 * alpha3 * y + alpha2 * mu2 * trigamma +
-                4 * alpha2 * mu * (log_alpha + digamma_part) +
+                4 * alpha2 * mu * (log_alpha + dgpart) +
                 alpha2 * (2 * mu - y) +
                 2 * alpha * mu2 * trigamma +
-                2 * alpha * mu * (log_alpha + digamma_part) +
+                2 * alpha * mu * (log_alpha + dgpart) +
                 mu2 * trigamma) / (alpha**4 * (alpha2 + 2 * alpha + 1)))
         hess_arr[-1, -1] = dada.sum()
 
@@ -2589,12 +2583,14 @@ class NegativeBinomial(CountModel):
             alpha = np.exp(params[-1])
         else:
             alpha = params[-1]
-        a1 = 1 / alpha
         params = params[:-1]
 
         exog = self.exog
         y = self.endog[:, None]
         mu = self.predict(params)[:, None]
+
+        a1 = 1 / alpha
+        dgpart = special.digamma(a1 + y) - special.digamma(a1)
 
         # for dl/dparams dparams
         dim = exog.shape[1]
@@ -2618,7 +2614,7 @@ class NegativeBinomial(CountModel):
         # for dl/dalpha dalpha
         # NOTE: polygamma(1, x) is the trigamma function
         da2 = 2 * alpha**-3
-        dalpha = da1 * (special.digamma(a1 + y) - special.digamma(a1) +
+        dalpha = da1 * (dgpart +
                         np.log(a1) - np.log(a1 + mu) - (a1 + y) / (a1 + mu) + 1)
         dada = (da2 * dalpha / da1 + da1**2 * (special.polygamma(1, a1 + y) -
                 special.polygamma(1, a1) + 1 / a1 - 1 / (a1 + mu) +
@@ -2914,12 +2910,13 @@ class NegativeBinomialP(CountModel):
         a3 = y + a1
         a4 = p * a1 / mu
 
-        dparams = ((a4 * (digamma(a3) - digamma(a1)) -
+        dgpart = special.digamma(a3) - special.digamma(a1)
+
+        dparams = ((a4 * dgpart -
                    (1 + a4) * a3 / a2) +
                    y / mu + a4 * (1 + np.log(a1) - np.log(a2)))
         dparams = (self.exog.T * mu * dparams).T
-        dalpha = (-a1 / alpha * (digamma(a3) -
-                                 digamma(a1) +
+        dalpha = (-a1 / alpha * (dgpart +
                                  np.log(a1 / a2) +
                                  1 - a3 / a2))
 
@@ -2985,17 +2982,16 @@ class NegativeBinomialP(CountModel):
         dim = exog.shape[1]
         hess_arr = np.zeros((dim + 1, dim + 1))
 
+        dgpart = special.digamma(a3) - special.digamma(a1)
+
         coeff = mu**2 * (((1 + a4)**2 * a3 / a2**2 -
                           a3 * (a5 - a4 / mu) / a2 - y / mu**2 -
                           2 * a4 * (1 + a4) / a2 +
-                          a5 * (np.log(a1) - np.log(a2) - digamma(a1) +
-                                digamma(a3) + 2) -
-                          a4 * (np.log(a1) - np.log(a2) - digamma(a1) +
-                                digamma(a3) + 1) / mu -
+                          a5 * (np.log(a1) - np.log(a2) + dgpart + 2) -
+                          a4 * (np.log(a1) - np.log(a2) + dgpart + 1) / mu -
                           a4**2 * (polygamma(1, a1) - polygamma(1, a3))) +
                          (-(1 + a4) * a3 / a2 + y / mu +
-                          a4 * (np.log(a1) - np.log(a2) - digamma(a1) +
-                                digamma(a3) + 1)) / mu)
+                          a4 * (np.log(a1) - np.log(a2) + dgpart + 1)) / mu)
 
         for i in range(dim):
             hess_arr[i, :-1] = np.sum(self.exog[:, :].T * self.exog[:, i] * coeff,
@@ -3003,12 +2999,11 @@ class NegativeBinomialP(CountModel):
 
         hess_arr[-1, :-1] = (self.exog[:, :].T * mu * a1 *
                 ((1 + a4) * (1 - a3 / a2) / a2 -
-                 p * (np.log(a1 / a2) - digamma(a1) + digamma(a3) + 2) / mu +
+                 p * (np.log(a1 / a2) + dgpart + 2) / mu +
                  p * (a3 / mu + a4) / a2 +
                  a4 * (polygamma(1, a1) - polygamma(1, a3))) / alpha).sum(axis=1)
 
-        da2 = (a1 * (2 * np.log(a1) - 2 * np.log(a2) -
-                     2 * digamma(a1) + 2 *digamma(a3) + 3 -
+        da2 = (a1 * (2 * np.log(a1) - 2 * np.log(a2) + 2 * dgpart + 3 -
                      2 * a3 / a2 - a1 * polygamma(1, a1) +
                      a1 * polygamma(1, a3) - 2 * a1 / a2 +
                      a1 * a3 / a2**2) / alpha**2)
