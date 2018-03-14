@@ -131,7 +131,6 @@ def fit_elasticnet(model, method="coord_descent", maxiter=100,
     along coordinate axes.
     """
     k_exog = model.exog.shape[1]
-    n_exog = model.exog.shape[0]
 
     loglike_kwds = {} if loglike_kwds is None else loglike_kwds
     score_kwds = {} if score_kwds is None else score_kwds
@@ -146,7 +145,6 @@ def fit_elasticnet(model, method="coord_descent", maxiter=100,
     else:
         params = start_params.copy()
 
-    converged = False
     btol = 1e-4
     params_zero = np.zeros(len(params), dtype=bool)
 
@@ -195,7 +193,6 @@ def fit_elasticnet(model, method="coord_descent", maxiter=100,
         # Check for convergence
         pchange = np.max(np.abs(params - params_save))
         if pchange < cnvrg_tol:
-            converged = True
             break
 
     # Set approximate zero coefficients to be exactly zero
@@ -207,6 +204,16 @@ def fit_elasticnet(model, method="coord_descent", maxiter=100,
 
     # Fit the reduced model to get standard errors and other
     # post-estimation results.
+    refit = _build_result(model, params, method, itr)
+    return refit
+
+
+# TODO: docstring
+def _build_result(model, params, method, itr):
+    # Fit the reduced model to get standard errors and other
+    # post-estimation results.
+    k_exog = model.exog.shape[1]
+
     ii = np.flatnonzero(params)
     cov = np.zeros((k_exog, k_exog))
     init_args = dict([(k, getattr(model, k, None)) for k in model._init_keys])
@@ -341,6 +348,5 @@ class RegularizedResultsWrapper(wrap.ResultsWrapper):
               'resid': 'rows',
               'fittedvalues': 'rows'}
     _wrap_attrs = _attrs
-
 wrap.populate_wrapper(RegularizedResultsWrapper,  # noqa:E305
                       RegularizedResults)

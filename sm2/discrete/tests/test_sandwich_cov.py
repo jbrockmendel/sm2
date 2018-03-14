@@ -44,8 +44,21 @@ exposure = np.asarray(ships_data['service'])
 
 # TODO get the test methods from regression/tests
 
+
 @pytest.mark.not_vetted
 class CheckCountRobustMixin(object):
+    @classmethod
+    def get_robust_clu(cls):
+        res1 = cls.res1
+        cov_clu = sw.cov_cluster(res1, group)
+        cls.bse_rob = sw.se_cov(cov_clu)
+
+        nobs, k_vars = res1.model.exog.shape
+        k_params = len(res1.params)
+        corr_fact = (nobs - 1.) / float(nobs - k_params)
+        # for bse we need sqrt of correction factor
+        cls.corr_fact = np.sqrt(corr_fact)
+
     def test_basic(self):
         res1 = self.res1
         res2 = self.res2
@@ -67,18 +80,6 @@ class CheckCountRobustMixin(object):
         assert_allclose(self.bse_rob / self.corr_fact,
                         res2_bse,
                         6e-5)
-
-    @classmethod
-    def get_robust_clu(cls):
-        res1 = cls.res1
-        cov_clu = sw.cov_cluster(res1, group)
-        cls.bse_rob = sw.se_cov(cov_clu)
-
-        nobs, k_vars = res1.model.exog.shape
-        k_params = len(res1.params)
-        corr_fact = (nobs - 1.) / float(nobs - k_params)
-        # for bse we need sqrt of correction factor
-        cls.corr_fact = np.sqrt(corr_fact)
 
     def test_oth(self):
         res1 = self.res1
@@ -115,16 +116,6 @@ class TestPoissonCluGeneric(CheckCountRobustMixin):
     def setup_class(cls):
         mod = cls.model_cls(endog, exog)
         cls.res1 = mod.fit(disp=False)
-
-        debug = False
-        if debug:
-            # for debugging
-            cls.bse_nonrobust = cls.res1.bse.copy()
-            cls.res1 = mod.fit(disp=False)
-            cls.get_robust_clu()
-            cls.res3 = cls.res1
-            cls.bse_rob3 = cls.bse_rob.copy()
-            cls.res1 = mod.fit(disp=False)
 
         get_robustcov_results(cls.res1._results, cls.cov_type,
                               groups=group,
@@ -352,7 +343,7 @@ class TestGLMPoissonCluFit(CheckCountRobustMixin):
     model_cls = GLM
     cov_kwds = dict(groups=group,
                     use_correction=True,
-                    df_correction=True),  # TODO has no effect
+                    df_correction=True)  # TODO has no effect
 
     @classmethod
     def setup_class(cls):
@@ -363,7 +354,7 @@ class TestGLMPoissonCluFit(CheckCountRobustMixin):
                            )
 
         # The model results, t_test, ... should also work without
-        # normalized_cov_params, see #2209
+        # normalized_cov_params, see GH#2209
         # Note: we cannot set on the wrapper res1, we need res1._results
         cls.res1._results.normalized_cov_params = None
 
@@ -399,11 +390,12 @@ class TestGLMPoissonHC1Fit(CheckCountRobustMixin):
 class TestNegbinClu(CheckCountRobustMixin):
     res2 = results_st.results_negbin_clu
     model_cls = smd.NegativeBinomial
+    fit_kwargs = {'disp': False, 'gtol': 1e-7}
 
     @classmethod
     def setup_class(cls):
-        mod = cls.model_cls(endog, exog)
-        cls.res1 = mod.fit(disp=False, gtol=1e-7)
+        model = cls.model_cls(endog, exog)
+        cls.res1 = model.fit(**cls.fit_kwargs)
         cls.get_robust_clu()
 
 
