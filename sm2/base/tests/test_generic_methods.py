@@ -150,9 +150,11 @@ class CheckGenericMixin(object):
             assert_allclose(fitted, res.predict(np.squeeze(p_exog).tolist()),
                             rtol=1e-12)
             # only one prediction:
-            assert_allclose(fitted[:1], res.predict(p_exog[0].tolist()),
+            assert_allclose(fitted[:1],
+                            res.predict(p_exog[0].tolist()),
                             rtol=1e-12)
-            assert_allclose(fitted[:1], res.predict(p_exog[0]),
+            assert_allclose(fitted[:1],
+                            res.predict(p_exog[0]),
                             rtol=1e-12)
 
             exog_index = range(len(p_exog))
@@ -250,7 +252,9 @@ class TestGenericLogit(CheckGenericMixin):
         x = self.exog
         nobs = x.shape[0]
         np.random.seed(987689)
-        y_bin = (np.random.rand(nobs) < 1.0 / (1 + np.exp(x.sum(1) - x.mean()))).astype(int)
+        cutoff = np.random.rand(nobs)
+        y_bin = (cutoff < 1.0 / (1 + np.exp(x.sum(1) - x.mean())))
+        y_bin = y_bin.astype(int)
         model = sm.Logit(y_bin, x)
         # , exposure=np.ones(nobs), offset=np.zeros(nobs)) # bug with default
         # use start_params to converge faster
@@ -448,11 +452,15 @@ class CheckAnovaMixin(object):
 
 @pytest.mark.not_vetted
 class TestWaldAnovaOLS(CheckAnovaMixin):
+    model_cls = sm.OLS
+    mod_kwargs = {}
+    fit_kwargs = {"use_t": False}
+
     @classmethod
     def initialize(cls):
         formula = "np.log(Days+1) ~ C(Duration, Sum)*C(Weight, Sum)"
-        mod = sm.OLS.from_formula(formula, cls.data)
-        cls.res = mod.fit(use_t=False)
+        mod = cls.model_cls.from_formula(formula, cls.data, **cls.mod_kwargs)
+        cls.res = mod.fit(**cls.fit_kwargs)
 
     def test_noformula(self):
         endog = self.res.model.endog
@@ -471,10 +479,13 @@ class TestWaldAnovaOLS(CheckAnovaMixin):
 
 @pytest.mark.not_vetted
 class TestWaldAnovaOLSF(CheckAnovaMixin):
+    model_cls = sm.OLS
+    mod_kwargs = {}
+
     @classmethod
     def initialize(cls):
         formula = "np.log(Days+1) ~ C(Duration, Sum)*C(Weight, Sum)"
-        mod = sm.OLS.from_formula(formula, cls.data)
+        mod = cls.model_cls.from_formula(formula, cls.data, **cls.mod_kwargs)
         cls.res = mod.fit()  # default use_t=True
 
     def test_predict_missing(self):
@@ -491,41 +502,53 @@ class TestWaldAnovaOLSF(CheckAnovaMixin):
 @pytest.mark.skip(reason="GLM not ported from upstream")
 @pytest.mark.not_vetted
 class TestWaldAnovaGLM(CheckAnovaMixin):
+    mod_kwargs = {}
+    fit_kwargs = {"use_t": False}
+
     @classmethod
     def initialize(cls):
         formula = "np.log(Days+1) ~ C(Duration, Sum)*C(Weight, Sum)"
-        mod = sm.GLM.from_formula(formula, cls.data)
-        cls.res = mod.fit(use_t=False)
+        mod = sm.GLM.from_formula(formula, cls.data, **cls.mod_kwargs)
+        cls.res = mod.fit(**cls.fit_kwargs)
 
 
 @pytest.mark.not_vetted
 class TestWaldAnovaPoisson(CheckAnovaMixin):
+    model_cls = sm.Poisson
+    mod_kwargs = {}
+
     @classmethod
     def initialize(cls):
         formula = "Days ~ C(Duration, Sum)*C(Weight, Sum)"
-        mod = sm.Poisson.from_formula(formula, cls.data)
+        mod = cls.model_cls.from_formula(formula, cls.data, **cls.mod_kwargs)
         cls.res = mod.fit(cov_type='HC0')
 
 
 @pytest.mark.not_vetted
 class TestWaldAnovaNegBin(CheckAnovaMixin):
+    model_cls = sm.NegativeBinomial
+    mod_kwargs = {"loglike_method": "nb2"}
+
     @classmethod
     def initialize(cls):
         formula = "Days ~ C(Duration, Sum)*C(Weight, Sum)"
-        mod = sm.NegativeBinomial.from_formula(formula, cls.data,
-                                               loglike_method='nb2')
+        mod = cls.model_cls.from_formula(formula, cls.data, **cls.mod_kwargs)
         cls.res = mod.fit()
 
 
 @pytest.mark.not_vetted
 class TestWaldAnovaNegBin1(CheckAnovaMixin):
+    model_cls = sm.NegativeBinomial
+    mod_kwargs = {"loglike_method": "nb1"}
+
     @classmethod
     def initialize(cls):
         formula = "Days ~ C(Duration, Sum)*C(Weight, Sum)"
-        mod = sm.NegativeBinomial.from_formula(formula, cls.data,
-                                               loglike_method='nb1')
+        mod = cls.model_cls.from_formula(formula, cls.data, **cls.mod_kwargs)
         cls.res = mod.fit(cov_type='HC0')
 
+
+# ----------------------------------------------------------------------
 
 def compare_waldres(res, wa, constrasts):
     for i, c in enumerate(constrasts):
@@ -560,8 +583,10 @@ def compare_waldres(res, wa, constrasts):
 @pytest.mark.not_vetted
 @pytest.mark.xfail
 class TestWaldAnovaOLSNoFormula(object):
+    model_cls = sm.OLS
+
     @classmethod
     def initialize(cls):  # FIXME: This should subclass something right?
         formula = "np.log(Days+1) ~ C(Duration, Sum)*C(Weight, Sum)"
-        mod = sm.OLS.from_formula(formula, cls.data)
+        mod = cls.model_cls.from_formula(formula, cls.data)
         cls.res = mod.fit()  # default use_t=True

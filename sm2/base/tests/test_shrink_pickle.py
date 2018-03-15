@@ -21,7 +21,7 @@ import pandas.util.testing as tm
 import sm2.api as sm
 
 
-# TODO: Is this implement (better) elsewhere?
+# TODO: Is this implemented (better) elsewhere?
 def assert_equal(left, right):
     if isinstance(left, pd.Series) and isinstance(right, pd.Series):
         tm.assert_series_equal(left, right)
@@ -288,8 +288,8 @@ from numpy import log  # noqa:F401
 @pytest.mark.not_vetted
 class TestPickleFormula5(TestPickleFormula2):
     def setup(self):
-        # if we import here, then unpickling fails -> exception in test
-        # from numpy import log
+        # `log` must be present in the module-level namespace for this
+        # test to work
         self.results = sm.OLS.from_formula("Y ~ log(abs(A) + 1) + B * C",
                                            data=self.data).fit()
 

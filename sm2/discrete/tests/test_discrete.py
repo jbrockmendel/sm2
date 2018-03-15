@@ -2407,7 +2407,7 @@ def test_optim_kwds_prelim():
 
 # TODO: GH reference?
 @pytest.mark.not_vetted
-@pytest.mark.xfail(reason="behavior appears dependent on ordering")
+@pytest.mark.xfail(reason="behavior appears dependent on test ordering")
 def test_perfect_prediction():
     y = iris[:, -1]
     X = iris[:, :-1]

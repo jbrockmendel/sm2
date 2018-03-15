@@ -68,6 +68,7 @@ class TestGLSARGretl(object):
         cls.res_g1 = res_g1
         cls.res_g2 = res_g2
 
+    # TODO: split up giant test
     def test_all(self):
         rho = -0.108136
 
@@ -459,7 +460,6 @@ class TestGLSARGretl(object):
         assert_almost_equal(lev_data['influence'],
                             infl.influence,
                             decimal=4)
-
 
 
 @pytest.mark.not_vetted

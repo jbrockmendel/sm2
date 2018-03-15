@@ -6,6 +6,7 @@ Author: Josef Perktold
 License: BSD-3
 """
 from __future__ import division
+import warnings
 
 import numpy as np
 from numpy.testing import assert_allclose
@@ -61,6 +62,7 @@ class CheckPoissonConstrainedMixin(object):
                         res2.bse[self.idx][~mask],
                         rtol=1e-6)
 
+    # TODO: Split this into reasonably-scoped tests
     def test_basic_method(self):
         if not hasattr(self, 'res1m'):
             raise pytest.skip("not available yet")
@@ -122,7 +124,6 @@ class CheckPoissonConstrainedMixin(object):
             assert_allclose(res1.llnull, res2.ll_0, rtol=1e-6)
         else:
             if DEBUG:
-                import warnings
                 warnings.warn('test: ll_0 not available, llnull=%6.4F' %
                               res1.llnull)
 
@@ -519,7 +520,7 @@ class TestGLMLogitConstrained2HC(CheckGLMConstrainedMixin):
         # nobs, k_params = mod1.exog.shape
         # k_params -= 1   # one constraint
         cov_type = 'HC0'
-        cov_kwds = {'scaling_factor': 32 / 31}
+        cov_kwds = {'scaling_factor': 32 / 31.}
         # looks like nobs / (nobs - 1) and not (nobs - 1.) / (nobs - k_params)}
         constr = 'x1 - x3 = 0'
         cls.res1m = mod1.fit_constrained(constr, cov_type=cov_type,
