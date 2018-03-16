@@ -12,6 +12,7 @@ from numpy.testing import assert_almost_equal, assert_allclose, assert_equal
 from sm2.regression.linear_model import GLSAR
 from sm2.tools.tools import add_constant
 from sm2.datasets import macrodata
+from sm2.tsa.arima_model import ARMA
 
 from .results.macro_gr_corc_stata import results
 
@@ -72,8 +73,6 @@ class TestGLSARCorc(CheckStataResultsPMixin):
                             4)
 
     def test_glsar_arima(self):
-        from sm2.tsa.arima_model import ARMA
-
         endog = self.res.model.endog
         exog = self.res.model.exog
         mod1 = GLSAR(endog, exog, 3)

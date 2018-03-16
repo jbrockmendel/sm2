@@ -11,8 +11,7 @@ import os
 
 import pytest
 import numpy as np
-from numpy.testing import (assert_almost_equal,
-                           assert_approx_equal)
+from numpy.testing import assert_almost_equal, assert_approx_equal
 
 from sm2.regression.linear_model import OLS, GLSAR
 from sm2.tools.tools import add_constant
@@ -68,6 +67,7 @@ class TestGLSARGretl(object):
         cls.res_g1 = res_g1
         cls.res_g2 = res_g2
 
+    # TODO: split up giant test
     def test_all(self):
         rho = -0.108136
 
@@ -459,7 +459,6 @@ class TestGLSARGretl(object):
         assert_almost_equal(lev_data['influence'],
                             infl.influence,
                             decimal=4)
-
 
 
 @pytest.mark.not_vetted

@@ -127,6 +127,7 @@ def case(request):
     return res, expected, trend, seasonal, dataset, endog, exog
 
 
+@pytest.mark.not_vetted
 def test_lag_order_selection(case):
     res, expected, trend = case[:3]
     endog_tot, exog = case[-2:]
@@ -140,6 +141,7 @@ def test_lag_order_selection(case):
                         rtol, atol, False)
 
 
+@pytest.mark.not_vetted
 def test_causality(case):
     # test Granger- and instantaneous causality
     res, expected = case[:2]
@@ -233,6 +235,7 @@ def test_causality(case):
                             1e-07, 0, False)
 
 
+@pytest.mark.not_vetted
 def test_ols_coefs(case):
     res, expected = case[:2]
 
@@ -258,6 +261,7 @@ def test_ols_coefs(case):
                     rtol, atol, False)
 
 
+@pytest.mark.not_vetted
 def test_ols_sigma(case):
     res, expected = case[:2]
 
@@ -267,6 +271,7 @@ def test_ols_sigma(case):
                     rtol, atol, False)
 
 
+@pytest.mark.not_vetted
 def test_ols_det_terms(case):
     res, expected, trend, seasonal = case[:4]
 
@@ -307,6 +312,7 @@ def test_ols_det_terms(case):
                     rtol, atol, False)
 
 
+@pytest.mark.not_vetted
 def test_log_like(case):
     res, expected = case[:2]
 
@@ -316,6 +322,7 @@ def test_log_like(case):
                     rtol, atol, False)
 
 
+@pytest.mark.not_vetted
 def test_fc(case):
     res, expected, trend, seasonal = case[:4]
 
@@ -351,6 +358,7 @@ def test_fc(case):
     assert_allclose(obt_u, des_u, rtol, atol, False)
 
 
+@pytest.mark.not_vetted
 def test_impulse_response(case):
     res, expected = case[:2]
 
@@ -363,6 +371,7 @@ def test_impulse_response(case):
                     rtol, atol, False)
 
 
+@pytest.mark.not_vetted
 def test_normality(case):
     res, expected = case[:2]
 
@@ -381,6 +390,7 @@ def test_normality(case):
     str(obtained)  # __str__()
 
 
+@pytest.mark.not_vetted
 def test_whiteness(case):
     res, expected = case[:2]
 
@@ -407,6 +417,7 @@ def test_whiteness(case):
                     rtol, atol, False)
 
 
+@pytest.mark.not_vetted
 def test_exceptions(case):
     res = case[0]
     # instant causality:
