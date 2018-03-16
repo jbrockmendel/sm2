@@ -132,14 +132,14 @@ def do_trim_params(params, k_params, alpha, score, passed, trim_mode,
         trimmed[i] == True if the ith parameter was trimmed.
     """
     # Trim the small params
-    trimmed = [False] * k_params
+    trimmed = np.array([False] * k_params)
 
     if trim_mode == 'off':
-        trimmed = np.array([False] * k_params)
+        pass
     elif trim_mode == 'auto' and not passed:
+        # TODO: Dont print; warn
         print("Could not trim params automatically due to failed QC "
               "check.  Trimming using trim_mode == 'size' will still work.")
-        trimmed = np.array([False] * k_params)
     elif trim_mode == 'auto' and passed:
         fprime = score(params)
         for i in range(k_params):
@@ -148,13 +148,13 @@ def do_trim_params(params, k_params, alpha, score, passed, trim_mode,
                     params[i] = 0.0
                     trimmed[i] = True
     elif trim_mode == 'size':
-        for i in range(k_params):
-            if alpha[i] != 0:
-                if abs(params[i]) < size_trim_tol:
-                    params[i] = 0.0
-                    trimmed[i] = True
+        # TODO: Is it the case that k_params == len(params)??
+        mask = (alpha != 0) & (np.abs(params) < size_trim_tol)
+        trimmed[mask] = True
+        params[mask] = 0.0
     else:
-        raise Exception(
-            "trim_mode == %s, which is not recognized" % (trim_mode))
+        # TODO: fix upstream this just raises "Exception"
+        raise ValueError("trim_mode == %s, which is not recognized"
+                         % (trim_mode))
 
     return params, np.asarray(trimmed)
