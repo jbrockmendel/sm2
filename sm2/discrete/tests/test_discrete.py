@@ -63,7 +63,7 @@ sm3533_path = os.path.join(cur_dir, "results", "sm3533.csv")
 sm3533 = pd.read_csv(sm3533_path)
 
 # upstream this file is in gennmod.tests.results
-iris_path = os.path.join(cur_dir, 'results', 'iris.csv')
+iris_path = os.path.join(cur_dir, "results", "iris.csv")
 iris = pd.read_csv(iris_path).values
 
 
@@ -210,8 +210,8 @@ class TestPoissonNewton(CheckModelResults):
 class TestNegativeBinomialNB2Newton(CheckModelResults):
     res2 = RandHIE.negativebinomial_nb2_bfgs
     model_cls = NegativeBinomial
-    mod_kwargs = {'loglike_method': 'nb2'}
-    fit_kwargs = {'method': 'newton', 'disp': False}
+    mod_kwargs = {"loglike_method": "nb2"}
+    fit_kwargs = {"method": "newton", "disp": False}
 
     def test_jac(self):
         pass
@@ -262,8 +262,8 @@ class TestNegativeBinomialNB2Newton(CheckModelResults):
 class TestNegativeBinomialNB1Newton(CheckModelResults):
     res2 = RandHIE.negativebinomial_nb1_bfgs
     model_cls = NegativeBinomial
-    mod_kwargs = {'loglike_method': 'nb1'}
-    fit_kwargs = {'method': 'newton', 'maxiter': 100, 'disp': False}
+    mod_kwargs = {"loglike_method": "nb1"}
+    fit_kwargs = {"method": "newton", "maxiter": 100, "disp": False}
 
     def test_zstat(self):
         assert_allclose(self.res1.tvalues,
@@ -301,8 +301,8 @@ class TestNegativeBinomialNB1Newton(CheckModelResults):
 class TestNegativeBinomialNB2BFGS(CheckModelResults):
     res2 = RandHIE.negativebinomial_nb2_bfgs
     model_cls = NegativeBinomial
-    mod_kwargs = {'loglike_method': 'nb2'}
-    fit_kwargs = {'method': 'bfgs', 'maxiter': 1000, 'disp': False}
+    mod_kwargs = {"loglike_method": "nb2"}
+    fit_kwargs = {"method": "bfgs", "maxiter": 1000, "disp": False}
 
     def test_jac(self):
         pass
@@ -356,8 +356,8 @@ class TestNegativeBinomialNB2BFGS(CheckModelResults):
 class TestNegativeBinomialNB1BFGS(CheckModelResults):
     res2 = RandHIE.negativebinomial_nb1_bfgs
     model_cls = NegativeBinomial
-    mod_kwargs = {'loglike_method': 'nb1'}
-    fit_kwargs = {'method': 'bfgs', 'maxiter': 100, 'disp': False}
+    mod_kwargs = {"loglike_method": "nb1"}
+    fit_kwargs = {"method": "bfgs", "maxiter": 100, "disp": False}
 
     def test_zstat(self):
         assert_allclose(self.res1.tvalues,
@@ -399,8 +399,8 @@ class TestNegativeBinomialGeometricBFGS(CheckModelResults):
     # and we want to make sure that predict() np.dot(exog, params) works
     res2 = RandHIE.negativebinomial_geometric_bfgs
     model_cls = NegativeBinomial
-    mod_kwargs = {'loglike_method': 'geometric'}
-    fit_kwargs = {'method': 'bfgs', 'disp': False}
+    mod_kwargs = {"loglike_method": "geometric"}
+    fit_kwargs = {"method": "bfgs", "disp": False}
 
     tols = CheckModelResults.tols.copy()
     tols.update({
@@ -451,8 +451,8 @@ class TestNegativeBinomialGeometricBFGS(CheckModelResults):
 class TestNegativeBinomialPNB2Newton(CheckModelResults):
     res2 = RandHIE.negativebinomial_nb2_bfgs
     model_cls = NegativeBinomialP
-    mod_kwargs = {'p': 2}
-    fit_kwargs = {'method': 'newton', 'disp': False}
+    mod_kwargs = {"p": 2}
+    fit_kwargs = {"method": "newton", "disp": False}
 
     tols = CheckModelResults.tols.copy()
     tols.update({
@@ -504,9 +504,9 @@ class TestNegativeBinomialPNB2Newton(CheckModelResults):
 class TestNegativeBinomialPNB1Newton(CheckModelResults):
     res2 = RandHIE.negativebinomial_nb1_bfgs
     model_cls = NegativeBinomialP
-    mod_kwargs = {'p': 1}
-    fit_kwargs = {'method': 'newton', 'maxiter': 100,
-                  'disp': False, 'use_transparams': True}
+    mod_kwargs = {"p": 1}
+    fit_kwargs = {"method": "newton", "maxiter": 100,
+                  "disp": False, "use_transparams": True}
 
     tols = CheckModelResults.tols.copy()
     tols.update({
@@ -550,9 +550,9 @@ class TestNegativeBinomialPNB1Newton(CheckModelResults):
 class TestNegativeBinomialPNB2BFGS(CheckModelResults):
     res2 = RandHIE.negativebinomial_nb2_bfgs
     model_cls = NegativeBinomialP
-    mod_kwargs = {'p': 2}
-    fit_kwargs = {'method': 'bfgs', 'maxiter': 1000,
-                  'disp': False, 'use_transparams': True}
+    mod_kwargs = {"p": 2}
+    fit_kwargs = {"method": "bfgs", "maxiter": 1000,
+                  "disp": False, "use_transparams": True}
 
     tols = CheckModelResults.tols.copy()
     tols.update({
@@ -605,9 +605,9 @@ class TestNegativeBinomialPNB2BFGS(CheckModelResults):
 class TestNegativeBinomialPNB1BFGS(CheckModelResults):
     res2 = RandHIE.negativebinomial_nb1_bfgs
     model_cls = NegativeBinomialP
-    mod_kwargs = {'p': 1}
-    fit_kwargs = {'method': 'bfgs', 'maxiter': 100,
-                  'disp': False}
+    mod_kwargs = {"p": 1}
+    fit_kwargs = {"method": "bfgs", "maxiter": 100,
+                  "disp": False}
 
     tols = CheckModelResults.tols.copy()
     tols.update({
@@ -870,7 +870,7 @@ class CheckProbitSpector(CheckBinaryResults):
 
 @pytest.mark.not_vetted
 class TestProbitNewton(CheckProbitSpector):
-    fit_kwargs = {'method': 'newton', 'disp': False}
+    fit_kwargs = {"method": "newton", "disp": False}
 
     #def test_predict(self):
     #    assert_allclose(self.res1.model.predict(self.res1.params),
@@ -880,23 +880,23 @@ class TestProbitNewton(CheckProbitSpector):
 
 @pytest.mark.not_vetted
 class TestProbitBFGS(CheckProbitSpector):
-    fit_kwargs = {'method': 'bfgs', 'disp': False}
+    fit_kwargs = {"method": "bfgs", "disp": False}
 
 
 @pytest.mark.not_vetted
 class TestProbitNM(CheckProbitSpector):
-    fit_kwargs = {'method': 'nm', 'disp': False, 'maxiter': 500}
+    fit_kwargs = {"method": "nm", "disp": False, "maxiter": 500}
 
 
 @pytest.mark.not_vetted
 class TestProbitPowell(CheckProbitSpector):
-    fit_kwargs = {'method': 'powell', 'disp': False, 'ftol': 1e-8}
+    fit_kwargs = {"method": "powell", "disp": False, "ftol": 1e-8}
 
 
 @pytest.mark.not_vetted
 class TestProbitNCG(CheckProbitSpector):
-    fit_kwargs = {'method': 'ncg', 'disp': False,
-                  'avextol': 1e-8, 'warn_convergence': False}
+    fit_kwargs = {"method": "ncg", "disp": False,
+                  "avextol": 1e-8, "warn_convergence": False}
     # converges close enough but warnflag is 2 for precision loss
 
 
@@ -906,15 +906,15 @@ class TestProbitNCG(CheckProbitSpector):
                            'since basinhopping solver is '
                            'not available')
 class TestProbitBasinhopping(CheckProbitSpector):
-    fit_kwargs = {'method': 'basinhopping', 'disp': False,
-                  'niter': 5,
-                  'minimizer': {'method': 'L-BFGS-B', 'tol': 1e-8}}
+    fit_kwargs = {"method": "basinhopping", "disp": False,
+                  "niter": 5,
+                  "minimizer": {"method": "L-BFGS-B", "tol": 1e-8}}
 
 
 @pytest.mark.not_vetted
 class TestProbitMinimizeDefault(CheckProbitSpector):
-    fit_kwargs = {'method': 'minimize', 'disp': False,
-                  'niter': 5, 'tol': 1e-8}
+    fit_kwargs = {"method": "minimize", "disp": False,
+                  "niter": 5, "tol": 1e-8}
 
 
 @pytest.mark.not_vetted
@@ -922,17 +922,17 @@ class TestProbitMinimizeDefault(CheckProbitSpector):
                     reason="Skipped TestProbitMinimizeDogleg since "
                            "dogleg method is not available")
 class TestProbitMinimizeDogleg(CheckProbitSpector):
-    fit_kwargs = {'method': 'minimize', 'disp': False,
-                  'niter': 5, 'tol': 1e-8, 'min_method': 'dogleg'}
+    fit_kwargs = {"method": "minimize", "disp": False,
+                  "niter": 5, "tol": 1e-8, "min_method": "dogleg"}
 
 
 @pytest.mark.not_vetted
 @pytest.mark.match_stata11
 class TestProbitMinimizeAdditionalOptions(CheckProbitSpector):
-    fit_kwargs = {'method': 'minimize', 'disp': False,
-                  'maxiter': 500,
-                  'min_method': 'Nelder-Mead',
-                  'xtol': 1e-4, 'ftol': 1e-4}
+    fit_kwargs = {"method": "minimize", "disp": False,
+                  "maxiter": 500,
+                  "min_method": "Nelder-Mead",
+                  "xtol": 1e-4, "ftol": 1e-4}
 
 
 @pytest.mark.skip(reason="tools.transform_model not ported from upstream")
@@ -2415,7 +2415,7 @@ def test_optim_kwds_prelim():
 
 # TODO: GH reference?
 @pytest.mark.not_vetted
-@pytest.mark.xfail(reason="behavior appears dependent on ordering")
+@pytest.mark.xfail(reason="behavior appears dependent on test ordering")
 def test_perfect_prediction():
     y = iris[:, -1]
     X = iris[:, :-1]

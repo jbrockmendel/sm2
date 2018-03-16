@@ -5,6 +5,7 @@ Test functions for models.regression
 import warnings
 import os
 import re
+import textwrap
 
 import pytest
 import pandas as pd
@@ -27,12 +28,8 @@ lasso_path = os.path.join(cur_dir, "results", "lasso_data.csv")
 lasso_data = np.loadtxt(lasso_path, delimiter=",")
 # lasso_data used by TestRegularizedFit
 
-DECIMAL_4 = 4
-DECIMAL_3 = 3
-DECIMAL_2 = 2
-DECIMAL_1 = 1
 DECIMAL_7 = 7
-DECIMAL_0 = 0
+DECIMAL_4 = 4
 
 
 @pytest.mark.not_vetted
@@ -330,9 +327,6 @@ class TestGLS_alt_sigma(CheckRegressionResults):
         with pytest.raises(ValueError):
             GLS(self.endog, self.exog, sigma=np.ones((n - 1, n - 1)))
 
-    # def check_confidenceintervals(self, conf1, conf2):
-    #    assert_almost_equal(conf1, conf2, DECIMAL_4)
-
 
 @pytest.mark.not_vetted
 class TestWLSExogWeights(CheckRegressionResults):
@@ -386,11 +380,6 @@ class TestWLS_OLS(CheckRegressionResults):
         cls.res1 = OLS(data.endog, data.exog).fit()
         cls.res2 = WLS(data.endog, data.exog).fit()
 
-    def check_confidenceintervals(self, conf1, conf2):
-        assert_almost_equal(conf1,
-                            conf2(),
-                            DECIMAL_4)
-
 
 @pytest.mark.not_vetted
 class TestGLS_OLS(CheckRegressionResults):
@@ -401,11 +390,6 @@ class TestGLS_OLS(CheckRegressionResults):
         cls.res1 = GLS(data.endog, data.exog).fit()
         cls.res2 = OLS(data.endog, data.exog).fit()
 
-    def check_confidenceintervals(self, conf1, conf2):
-        assert_almost_equal(conf1,
-                            conf2(),
-                            DECIMAL_4)
-
 
 # class TestWLS_GLS(CheckRegressionResults):
 #    @classmethod
@@ -414,9 +398,6 @@ class TestGLS_OLS(CheckRegressionResults):
 #        cls.res1 = WLS(data.endog, data.exog,
 #                        weights=1 / data.exog[:, 2]).fit()
 #        cls.res2 = GLS(data.endog, data.exog, sigma=data.exog[:, 2]).fit()
-#
-#    def check_confidenceintervals(self, conf1, conf2):
-#        assert_almost_equal(conf1, conf2(), DECIMAL_4)
 
 
 # TODO: test AR
@@ -431,7 +412,7 @@ class TestGLS_OLS(CheckRegressionResults):
 #         pass
 
 #     def test_order(self):
-# In R this can be defined or chosen by minimizing the AIC if aic=True
+#        # In R this can be defined or chosen by minimizing the AIC if aic=True
 #        pass
 
 # -------------------------------------------------------------
@@ -456,13 +437,10 @@ class TestDataDimensions(CheckRegressionResults):
         cls.mod2.df_model += 1
         cls.res2 = cls.mod2.fit()
 
-    # TODO: de-duplicate identical methods
-    def check_confidenceintervals(self, conf1, conf2):
-        assert_almost_equal(conf1, conf2(), DECIMAL_4)
-
 
 @pytest.mark.not_vetted
 class TestGLS_large_data(TestDataDimensions):
+
     @classmethod
     def setup_class(cls):
         super(TestGLS_large_data, cls).setup_class()
@@ -580,7 +558,6 @@ class TestOLS_GLS_WLS_equivalence(object):
 
 @pytest.mark.not_vetted
 class TestGLS_WLS_equivalence(TestOLS_GLS_WLS_equivalence):
-    # reuse test methods
 
     @classmethod
     def setup_class(cls):
@@ -592,6 +569,7 @@ class TestGLS_WLS_equivalence(TestOLS_GLS_WLS_equivalence):
         np.random.seed(5)
         w = np.random.uniform(0.5, 1, n)
         w_inv = 1. / w
+
         cls.results = []
         cls.results.append(WLS(y, X, w).fit())
         cls.results.append(WLS(y, X, 0.01 * w).fit())
@@ -732,7 +710,8 @@ class TestTtest(object):
         cls.NewTTest = cls.res1.t_test(hyp)
 
     def test_new_tvalue(self):
-        assert_equal(self.NewTTest.tvalue, self.Ttest.tvalue)
+        assert_equal(self.NewTTest.tvalue,
+                     self.Ttest.tvalue)
 
     def test_tvalue(self):
         assert_almost_equal(self.Ttest.tvalue,
@@ -751,10 +730,12 @@ class TestTtest(object):
                             DECIMAL_4)
 
     def test_df_denom(self):
-        assert_equal(self.Ttest.df_denom, self.res1.model.df_resid)
+        assert_equal(self.Ttest.df_denom,
+                     self.res1.model.df_resid)
 
     def test_effect(self):
-        assert_almost_equal(self.Ttest.effect, self.res1.params)
+        assert_almost_equal(self.Ttest.effect,
+                            self.res1.params)
 
 
 @pytest.mark.not_vetted
@@ -816,6 +797,7 @@ class TestRegularizedFit(object):
             result = model.fit_regularized(alpha=1000)
             assert_equal(result.params, 0.)
 
+    # TODO: Does this need to be part of the class?  doesnt use self
     @pytest.mark.not_vetted
     @pytest.mark.parametrize('attr', [x for x in dir(glmnet_r_results)
                                       if x.startswith("rslt_")])
@@ -1005,18 +987,22 @@ class TestGLS(object):
     def test_loglike(self):
         assert_almost_equal(self.res1.llf,
                             self.res2.llf,
-                            DECIMAL_0)
+                            0)  # TODO: Why so imprecise?
 
     def test_params(self):
         assert_almost_equal(self.res1.params,
                             self.res2.params,
-                            DECIMAL_1)
+                            1)  # TODO: Why so imprecise?
 
     def test_resid(self):
-        assert_almost_equal(self.res1.resid, self.res2.resid, DECIMAL_4)
+        assert_almost_equal(self.res1.resid,
+                            self.res2.resid,
+                            DECIMAL_4)
 
     def test_scale(self):
-        assert_almost_equal(self.res1.scale, self.res2.scale, DECIMAL_4)
+        assert_almost_equal(self.res1.scale,
+                            self.res2.scale,
+                            DECIMAL_4)
 
     def test_tvalues(self):
         assert_almost_equal(self.res1.tvalues,
@@ -1024,7 +1010,9 @@ class TestGLS(object):
                             DECIMAL_4)
 
     def test_standarderrors(self):
-        assert_almost_equal(self.res1.bse, self.res2.bse, DECIMAL_4)
+        assert_almost_equal(self.res1.bse,
+                            self.res2.bse,
+                            DECIMAL_4)
 
     def test_fittedvalues(self):
         assert_almost_equal(self.res1.fittedvalues,
@@ -1044,80 +1032,23 @@ class TestGLS(object):
         assert mod.exog.shape[0] == 13
         assert mod.sigma.shape == (13, 13)
 
+
 # -------------------------------------------------------------
 
-
+# TODO: belongs elsewhere?
 @pytest.mark.not_vetted
-def test_summary():
-    # GH#734
-    dta = datasets.longley.load_pandas()
-    X = dta.exog
-    X["constant"] = 1
-    y = dta.endog
-    with warnings.catch_warnings(record=True):
-        res = OLS(y, X).fit()
-        table = res.summary().as_latex()
-    # replace the date and time
-    table = re.sub("(?<=\n\\\\textbf\{Date:\}             &).+?&",
-                   " Sun, 07 Apr 2013 &", table)
-    table = re.sub("(?<=\n\\\\textbf\{Time:\}             &).+?&",
-                   "     13:46:07     &", table)
+def test_yule_walker():
+    # TODO: Document where R_params came from
+    R_params = [1.2831003105694765, -0.45240924374091945,
+                -0.20770298557575195, 0.047943648089542337]
 
-    expected = """\\begin{center}
-\\begin{tabular}{lclc}
-\\toprule
-\\textbf{Dep. Variable:}    &      TOTEMP      & \\textbf{  R-squared:         } &     0.995   \\\\
-\\textbf{Model:}            &       OLS        & \\textbf{  Adj. R-squared:    } &     0.992   \\\\
-\\textbf{Method:}           &  Least Squares   & \\textbf{  F-statistic:       } &     330.3   \\\\
-\\textbf{Date:}             & Sun, 07 Apr 2013 & \\textbf{  Prob (F-statistic):} &  4.98e-10   \\\\
-\\textbf{Time:}             &     13:46:07     & \\textbf{  Log-Likelihood:    } &   -109.62   \\\\
-\\textbf{No. Observations:} &          16      & \\textbf{  AIC:               } &     233.2   \\\\
-\\textbf{Df Residuals:}     &           9      & \\textbf{  BIC:               } &     238.6   \\\\
-\\textbf{Df Model:}         &           6      & \\textbf{                     } &             \\\\
-\\bottomrule
-\\end{tabular}
-\\begin{tabular}{lcccccc}
-                  & \\textbf{coef} & \\textbf{std err} & \\textbf{t} & \\textbf{P$>$$|$t$|$} & \\textbf{[0.025} & \\textbf{0.975]}  \\\\
-\\midrule
-\\textbf{GNPDEFL}  &      15.0619  &       84.915     &     0.177  &         0.863        &     -177.029    &      207.153     \\\\
-\\textbf{GNP}      &      -0.0358  &        0.033     &    -1.070  &         0.313        &       -0.112    &        0.040     \\\\
-\\textbf{UNEMP}    &      -2.0202  &        0.488     &    -4.136  &         0.003        &       -3.125    &       -0.915     \\\\
-\\textbf{ARMED}    &      -1.0332  &        0.214     &    -4.822  &         0.001        &       -1.518    &       -0.549     \\\\
-\\textbf{POP}      &      -0.0511  &        0.226     &    -0.226  &         0.826        &       -0.563    &        0.460     \\\\
-\\textbf{YEAR}     &    1829.1515  &      455.478     &     4.016  &         0.003        &      798.788    &     2859.515     \\\\
-\\textbf{constant} &   -3.482e+06  &      8.9e+05     &    -3.911  &         0.004        &     -5.5e+06    &    -1.47e+06     \\\\
-\\bottomrule
-\\end{tabular}
-\\begin{tabular}{lclc}
-\\textbf{Omnibus:}       &  0.749 & \\textbf{  Durbin-Watson:     } &    2.559  \\\\
-\\textbf{Prob(Omnibus):} &  0.688 & \\textbf{  Jarque-Bera (JB):  } &    0.684  \\\\
-\\textbf{Skew:}          &  0.420 & \\textbf{  Prob(JB):          } &    0.710  \\\\
-\\textbf{Kurtosis:}      &  2.434 & \\textbf{  Cond. No.          } & 4.86e+09  \\\\
-\\bottomrule
-\\end{tabular}
-%\\caption{OLS Regression Results}
-\\end{center}
+    data = datasets.sunspots.load()
+    rho, sigma = yule_walker(data.endog, order=4, method="mle")
+    # TODO: assert something about sigma?
 
-Warnings: \\newline
- [1] Standard Errors assume that the covariance matrix of the errors is correctly specified. \\newline
- [2] The condition number is large, 4.86e+09. This might indicate that there are \\newline
- strong multicollinearity or other numerical problems."""
-    assert_equal(table, expected)
-
-
-# TODO: WTF why is this a class?
-@pytest.mark.not_vetted
-class TestYuleWalker(object):
-    @classmethod
-    def setup_class(cls):
-        data = datasets.sunspots.load()
-        cls.rho, cls.sigma = yule_walker(data.endog, order=4,
-                                         method="mle")
-        cls.R_params = [1.2831003105694765, -0.45240924374091945,
-                        -0.20770298557575195, 0.047943648089542337]
-
-    def test_params(self):
-        assert_almost_equal(self.rho, self.R_params, DECIMAL_4)
+    assert_almost_equal(rho,
+                        R_params,
+                        4)
 
 
 # TODO: WTF why is this a class?
@@ -1164,14 +1095,6 @@ def test_const_indicator():
 
 
 @pytest.mark.not_vetted
-def test_bad_size():
-    np.random.seed(54321)
-    data = np.random.uniform(0, 20, 31)
-    with pytest.raises(ValueError):
-        OLS(data, data[1:])
-
-
-@pytest.mark.not_vetted
 def test_wls_example():
     # example from the docstring, there was a note about a bug, should
     # be fixed now
@@ -1209,43 +1132,6 @@ def test_wls_missing():
     assert mod.endog.shape[0] == 70
     assert mod.exog.shape[0] == 70
     assert mod.weights.shape[0] == 70
-
-
-@pytest.mark.not_vetted
-def test_formula_missing_cat():
-    # GH#805
-    dta = datasets.grunfeld.load_pandas().data
-    dta.loc[dta.index[0], 'firm'] = np.nan
-    formula = 'value ~ invest + capital + firm + year'
-
-    mod = OLS.from_formula(formula=formula, data=dta.dropna())
-    res = mod.fit()
-
-    mod2 = OLS.from_formula(formula=formula, data=dta)
-    res2 = mod2.fit()
-
-    assert_almost_equal(res.params.values,
-                        res2.params.values)
-
-    with pytest.raises(PatsyError):
-        OLS.from_formula(formula, data=dta, missing='raise')
-
-
-@pytest.mark.not_vetted
-@pytest.mark.smoke
-def test_missing_formula_predict():
-    # GH#2171
-    nsample = 30
-
-    data = pd.DataFrame({'x': np.linspace(0, 10, nsample)})
-    null = pd.DataFrame({'x': np.array([np.nan])})
-    data = pd.concat([data, null])
-    beta = np.array([1, 0.1])
-    e = np.random.normal(size=nsample + 1)
-    data['y'] = beta[0] + beta[1] * data['x'] + e
-    model = OLS.from_formula('y ~ x', data=data)
-    fit = model.fit()
-    fit.predict(exog=data[:-1])
 
 
 @pytest.mark.not_vetted
@@ -1333,6 +1219,55 @@ def test_regularized_options():
     assert_allclose(result1.params, result2.params)
 
 
+@pytest.mark.not_vetted
+def test_formula_missing_cat():
+    # GH#805
+    dta = datasets.grunfeld.load_pandas().data
+    dta.loc[dta.index[0], 'firm'] = np.nan
+    formula = 'value ~ invest + capital + firm + year'
+
+    mod = OLS.from_formula(formula=formula, data=dta.dropna())
+    res = mod.fit()
+
+    mod2 = OLS.from_formula(formula=formula, data=dta)
+    res2 = mod2.fit()
+
+    assert_almost_equal(res.params.values,
+                        res2.params.values)
+
+    with pytest.raises(PatsyError):
+        OLS.from_formula(formula, data=dta, missing='raise')
+
+
+@pytest.mark.not_vetted
+@pytest.mark.smoke
+def test_missing_formula_predict():
+    # GH#2171
+    nsample = 30
+
+    data = pd.DataFrame({'x': np.linspace(0, 10, nsample)})
+    null = pd.DataFrame({'x': np.array([np.nan])})
+    data = pd.concat([data, null])
+    beta = np.array([1, 0.1])
+    e = np.random.normal(size=nsample + 1)
+    data['y'] = beta[0] + beta[1] * data['x'] + e
+    model = OLS.from_formula('y ~ x', data=data)
+    fit = model.fit()
+    fit.predict(exog=data[:-1])
+
+
+# -------------------------------------------------------------
+# Vetted Tests, May Need GH References
+
+
+def test_ols_bad_size_raises():
+    # TODO: GH reference?
+    np.random.seed(54321)
+    data = np.random.uniform(0, 20, 31)
+    with pytest.raises(ValueError):
+        OLS(data, data[1:])
+
+
 # -------------------------------------------------------------
 # Issue Regression Tests
 
@@ -1386,3 +1321,63 @@ def test_conf_int_single_regressor():
     conf_int = res.conf_int()
     assert conf_int.shape == (1, 2)
     assert isinstance(conf_int, pd.DataFrame)
+
+
+def test_summary_as_latex():
+    # GH#734
+    dta = datasets.longley.load_pandas()
+    X = dta.exog
+    X["constant"] = 1
+    y = dta.endog
+    with warnings.catch_warnings(record=True):
+        res = OLS(y, X).fit()
+        table = res.summary().as_latex()
+
+    # replace the date and time
+    table = re.sub("(?<=\n\\\\textbf\{Date:\}             &).+?&",
+                   " Sun, 07 Apr 2013 &", table)
+    table = re.sub("(?<=\n\\\\textbf\{Time:\}             &).+?&",
+                   "     13:46:07     &", table)
+
+    expected = textwrap.dedent("""
+    \\begin{center}
+    \\begin{tabular}{lclc}
+    \\toprule
+    \\textbf{Dep. Variable:}    &      TOTEMP      & \\textbf{  R-squared:         } &     0.995   \\\\
+    \\textbf{Model:}            &       OLS        & \\textbf{  Adj. R-squared:    } &     0.992   \\\\
+    \\textbf{Method:}           &  Least Squares   & \\textbf{  F-statistic:       } &     330.3   \\\\
+    \\textbf{Date:}             & Sun, 07 Apr 2013 & \\textbf{  Prob (F-statistic):} &  4.98e-10   \\\\
+    \\textbf{Time:}             &     13:46:07     & \\textbf{  Log-Likelihood:    } &   -109.62   \\\\
+    \\textbf{No. Observations:} &          16      & \\textbf{  AIC:               } &     233.2   \\\\
+    \\textbf{Df Residuals:}     &           9      & \\textbf{  BIC:               } &     238.6   \\\\
+    \\textbf{Df Model:}         &           6      & \\textbf{                     } &             \\\\
+    \\bottomrule
+    \\end{tabular}
+    \\begin{tabular}{lcccccc}
+                      & \\textbf{coef} & \\textbf{std err} & \\textbf{t} & \\textbf{P$>$$|$t$|$} & \\textbf{[0.025} & \\textbf{0.975]}  \\\\
+    \\midrule
+    \\textbf{GNPDEFL}  &      15.0619  &       84.915     &     0.177  &         0.863        &     -177.029    &      207.153     \\\\
+    \\textbf{GNP}      &      -0.0358  &        0.033     &    -1.070  &         0.313        &       -0.112    &        0.040     \\\\
+    \\textbf{UNEMP}    &      -2.0202  &        0.488     &    -4.136  &         0.003        &       -3.125    &       -0.915     \\\\
+    \\textbf{ARMED}    &      -1.0332  &        0.214     &    -4.822  &         0.001        &       -1.518    &       -0.549     \\\\
+    \\textbf{POP}      &      -0.0511  &        0.226     &    -0.226  &         0.826        &       -0.563    &        0.460     \\\\
+    \\textbf{YEAR}     &    1829.1515  &      455.478     &     4.016  &         0.003        &      798.788    &     2859.515     \\\\
+    \\textbf{constant} &   -3.482e+06  &      8.9e+05     &    -3.911  &         0.004        &     -5.5e+06    &    -1.47e+06     \\\\
+    \\bottomrule
+    \\end{tabular}
+    \\begin{tabular}{lclc}
+    \\textbf{Omnibus:}       &  0.749 & \\textbf{  Durbin-Watson:     } &    2.559  \\\\
+    \\textbf{Prob(Omnibus):} &  0.688 & \\textbf{  Jarque-Bera (JB):  } &    0.684  \\\\
+    \\textbf{Skew:}          &  0.420 & \\textbf{  Prob(JB):          } &    0.710  \\\\
+    \\textbf{Kurtosis:}      &  2.434 & \\textbf{  Cond. No.          } & 4.86e+09  \\\\
+    \\bottomrule
+    \\end{tabular}
+    %\\caption{OLS Regression Results}
+    \\end{center}
+
+    Warnings: \\newline
+     [1] Standard Errors assume that the covariance matrix of the errors is correctly specified. \\newline
+     [2] The condition number is large, 4.86e+09. This might indicate that there are \\newline
+     strong multicollinearity or other numerical problems.""").strip()
+
+    assert_equal(table, expected)

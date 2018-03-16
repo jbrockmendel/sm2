@@ -81,11 +81,16 @@ class CheckCountRobustMixin(object):
                         res2_bse,
                         6e-5)
 
+    # TODO: Split this up into reasonably-scoped tests
     def test_oth(self):
         res1 = self.res1
         res2 = self.res2
-        assert_allclose(res1._results.llf, res2.ll, 1e-4)
-        assert_allclose(res1._results.llnull, res2.ll_0, 1e-4)
+        assert_allclose(res1._results.llf,
+                        res2.ll,
+                        1e-4)
+        assert_allclose(res1._results.llnull,
+                        res2.ll_0,
+                        1e-4)
 
     def test_ttest(self):
         smt.check_ttest_tvalues(self.res1)
@@ -98,11 +103,51 @@ class CheckCountRobustMixin(object):
 class TestPoissonClu(CheckCountRobustMixin):
     res2 = results_st.results_poisson_clu
     model_cls = smd.Poisson
+    fit_kwargs = {"disp": False}
 
     @classmethod
     def setup_class(cls):
         mod = cls.model_cls(endog, exog)
-        cls.res1 = mod.fit(disp=False)
+        cls.res1 = mod.fit(**cls.fit_kwargs)
+        cls.get_robust_clu()
+
+
+@pytest.mark.not_vetted
+class TestPoissonCluExposure(CheckCountRobustMixin):
+    res2 = results_st.results_poisson_exposure_clu  # nonrobust
+    model_cls = smd.Poisson
+    fit_kwargs = {"disp": False}
+
+    @classmethod
+    def setup_class(cls):
+        mod = cls.model_cls(endog, exog, exposure=exposure)
+        cls.res1 = mod.fit(**cls.fit_kwargs)
+        cls.get_robust_clu()
+
+
+@pytest.mark.not_vetted
+class TestNegbinClu(CheckCountRobustMixin):
+    res2 = results_st.results_negbin_clu
+    model_cls = smd.NegativeBinomial
+    fit_kwargs = {"disp": False, "gtol": 1e-7}
+
+    @classmethod
+    def setup_class(cls):
+        mod = cls.model_cls(endog, exog)
+        cls.res1 = mod.fit(**cls.fit_kwargs)
+        cls.get_robust_clu()
+
+
+@pytest.mark.skip(reason="GLM not ported from upstream")
+@pytest.mark.not_vetted
+class TestGLMPoissonClu(CheckCountRobustMixin):
+    res2 = results_st.results_poisson_clu
+    model_cls = GLM
+
+    @classmethod
+    def setup_class(cls):
+        mod = cls.model_cls(endog, exog, family=families.Poisson())
+        cls.res1 = mod.fit()
         cls.get_robust_clu()
 
 
@@ -237,18 +282,6 @@ class TestPoissonHC1FitExposure(CheckCountRobustMixin):
 
 
 @pytest.mark.not_vetted
-class TestPoissonCluExposure(CheckCountRobustMixin):
-    res2 = results_st.results_poisson_exposure_clu  # nonrobust
-    model_cls = smd.Poisson
-
-    @classmethod
-    def setup_class(cls):
-        mod = cls.model_cls(endog, exog, exposure=exposure)
-        cls.res1 = mod.fit(disp=False)
-        cls.get_robust_clu()
-
-
-@pytest.mark.not_vetted
 class TestPoissonCluExposureGeneric(CheckCountRobustMixin):
     res2 = results_st.results_poisson_exposure_clu  # nonrobust
     model_cls = smd.Poisson
@@ -272,19 +305,6 @@ class TestPoissonCluExposureGeneric(CheckCountRobustMixin):
         corr_fact = (nobs - 1.) / float(nobs - k_params)
         # for bse we need sqrt of correction factor
         cls.corr_fact = np.sqrt(corr_fact)
-
-
-@pytest.mark.skip(reason="GLM not ported from upstream")
-@pytest.mark.not_vetted
-class TestGLMPoissonClu(CheckCountRobustMixin):
-    res2 = results_st.results_poisson_clu
-    model_cls = GLM
-
-    @classmethod
-    def setup_class(cls):
-        mod = cls.model_cls(endog, exog, family=families.Poisson())
-        cls.res1 = mod.fit()
-        cls.get_robust_clu()
 
 
 @pytest.mark.skip(reason="GLM not ported from upstream")
@@ -384,19 +404,6 @@ class TestGLMPoissonHC1Fit(CheckCountRobustMixin):
         corr_fact = (nobs) / float(nobs - 1.)
         # for bse we need sqrt of correction factor
         cls.corr_fact = np.sqrt(1. / corr_fact)
-
-
-@pytest.mark.not_vetted
-class TestNegbinClu(CheckCountRobustMixin):
-    res2 = results_st.results_negbin_clu
-    model_cls = smd.NegativeBinomial
-    fit_kwargs = {'disp': False, 'gtol': 1e-7}
-
-    @classmethod
-    def setup_class(cls):
-        model = cls.model_cls(endog, exog)
-        cls.res1 = model.fit(**cls.fit_kwargs)
-        cls.get_robust_clu()
 
 
 @pytest.mark.not_vetted
@@ -638,14 +645,20 @@ class TestGLMGaussHACUniform(CheckDiscreteGLM):
 
         # for debugging
         cls.res3 = mod2.fit(cov_type=cls.cov_type, cov_kwds={'maxlags': 2})
+        # TODO: Should something be done with res3?
 
     def test_cov_options(self):
         # check keyword `weights_func
         kwdsa = {'weights_func': sw.weights_uniform, 'maxlags': 2}
         res1a = self.res1.model.fit(cov_type=self.cov_type, cov_kwds=kwdsa)
         res2a = self.res2.model.fit(cov_type=self.cov_type, cov_kwds=kwdsa)
-        assert_allclose(res1a.bse, self.res1.bse, rtol=1e-12)
-        assert_allclose(res2a.bse, self.res2.bse, rtol=1e-12)
+
+        assert_allclose(res1a.bse,
+                        self.res1.bse,
+                        rtol=1e-12)
+        assert_allclose(res2a.bse,
+                        self.res2.bse,
+                        rtol=1e-12)
 
         # regression test for bse values
         bse = np.array([2.82203924, 4.60199596, 11.01275064])
@@ -656,11 +669,15 @@ class TestGLMGaussHACUniform(CheckDiscreteGLM):
         kwdsb = {'kernel': sw.weights_bartlett, 'maxlags': 2}
         res1a = self.res1.model.fit(cov_type='HAC', cov_kwds=kwdsb)
         res2a = self.res2.model.fit(cov_type='HAC', cov_kwds=kwdsb)
-        assert_allclose(res1a.bse, res2a.bse, rtol=1e-12)
+        assert_allclose(res1a.bse,
+                        res2a.bse,
+                        rtol=1e-12)
 
         # regression test for bse values
         bse = np.array([2.502264, 3.697807, 9.193303])
-        assert_allclose(res1a.bse, bse, rtol=1e-6)
+        assert_allclose(res1a.bse,
+                        bse,
+                        rtol=1e-6)
 
 
 @pytest.mark.skip(reason="GLM not ported from upstream")

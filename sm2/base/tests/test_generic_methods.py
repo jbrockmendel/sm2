@@ -14,8 +14,7 @@ import pytest
 from six import StringIO
 
 import numpy as np
-from numpy.testing import (assert_allclose, assert_equal,
-                           assert_array_equal)
+from numpy.testing import assert_allclose, assert_array_equal
 import pandas as pd
 import pandas.util.testing as tm
 
@@ -33,7 +32,7 @@ class CheckGenericMixin(object):
         x = sm.add_constant(x)
         cls.exog = x
         cls.xf = 0.25 * np.ones((2, 4))
-        cls.predict_kwds = {}
+        cls.predict_kwds = {}  # TODO: Should these be used at some point?
 
     def test_ttest_tvalues(self):
         # test that t_test has same results a params, bse, tvalues, ...
@@ -148,9 +147,11 @@ class CheckGenericMixin(object):
             assert_allclose(fitted, res.predict(np.squeeze(p_exog).tolist()),
                             rtol=1e-12)
             # only one prediction:
-            assert_allclose(fitted[:1], res.predict(p_exog[0].tolist()),
+            assert_allclose(fitted[:1],
+                            res.predict(p_exog[0].tolist()),
                             rtol=1e-12)
-            assert_allclose(fitted[:1], res.predict(p_exog[0]),
+            assert_allclose(fitted[:1],
+                            res.predict(p_exog[0]),
                             rtol=1e-12)
 
             exog_index = range(len(p_exog))
@@ -178,43 +179,52 @@ class CheckGenericMixin(object):
 
 @pytest.mark.not_vetted
 class TestGenericOLS(CheckGenericMixin):
+    model_cls = sm.OLS
+
     def setup(self):
         # fit for each test, because results will be changed by test
         x = self.exog
         np.random.seed(987689)
         y = x.sum(1) + np.random.randn(x.shape[0])
-        self.results = sm.OLS(y, self.exog).fit()
+        self.results = self.model_cls(y, self.exog).fit()
 
 
 @pytest.mark.not_vetted
 class TestGenericOLSOneExog(CheckGenericMixin):
     # check with single regressor (no constant)
+    model_cls = sm.OLS
+
     def setup(self):
         # fit for each test, because results will be changed by test
         x = self.exog[:, 1]
         np.random.seed(987689)
         y = x + np.random.randn(x.shape[0])
-        self.results = sm.OLS(y, x).fit()
+        self.results = self.model_cls(y, x).fit()
 
 
 @pytest.mark.not_vetted
 class TestGenericWLS(CheckGenericMixin):
+    model_cls = sm.WLS
+
     def setup(self):
         # fit for each test, because results will be changed by test
         x = self.exog
         np.random.seed(987689)
         y = x.sum(1) + np.random.randn(x.shape[0])
-        self.results = sm.WLS(y, self.exog, weights=np.ones(len(y))).fit()
+        model = self.model_cls(y, self.exog, weights=np.ones(len(y)))
+        self.results = model.fit()
 
 
 @pytest.mark.not_vetted
 class TestGenericPoisson(CheckGenericMixin):
+    model_cls = sm.Poisson
+
     def setup(self):
         # fit for each test, because results will be changed by test
         x = self.exog
         np.random.seed(987689)
         y_count = np.random.poisson(np.exp(x.sum(1) - x.mean()))
-        model = sm.Poisson(y_count, x)
+        model = self.model_cls(y_count, x)
         # , exposure=np.ones(nobs), offset=np.zeros(nobs)) # bug with default
         # use start_params to converge faster
         start_params = np.array([0.75334818, 0.99425553,
@@ -228,6 +238,8 @@ class TestGenericPoisson(CheckGenericMixin):
 
 @pytest.mark.not_vetted
 class TestGenericNegativeBinomial(CheckGenericMixin):
+    model_cls = sm.NegativeBinomial
+
     def setup(self):
         # fit for each test, because results will be changed by test
         np.random.seed(987689)
@@ -235,7 +247,7 @@ class TestGenericNegativeBinomial(CheckGenericMixin):
         exog = sm.add_constant(data.exog, prepend=False)
         # FIXME: we're editing exog but then not _using_ it.
         # Editing data.exog instead causes tests to fail.
-        mod = sm.NegativeBinomial(data.endog, data.exog)
+        mod = self.model_cls(data.endog, data.exog)
         start_params = np.array([-0.0565406, -0.21213599, 0.08783076,
                                  -0.02991835, 0.22901974, 0.0621026,
                                  0.06799283, 0.08406688, 0.18530969,
@@ -245,6 +257,8 @@ class TestGenericNegativeBinomial(CheckGenericMixin):
 
 @pytest.mark.not_vetted
 class TestGenericLogit(CheckGenericMixin):
+    model_cls = sm.Logit
+
     def setup(self):
         # fit for each test, because results will be changed by test
         x = self.exog
@@ -252,7 +266,7 @@ class TestGenericLogit(CheckGenericMixin):
         np.random.seed(987689)
         y_bin = np.random.rand(nobs) < 1.0 / (1 + np.exp(x.sum(1) - x.mean()))
         y_bin = y_bin.astype(int)
-        model = sm.Logit(y_bin, x)
+        model = self.model_cls(y_bin, x)
         # , exposure=np.ones(nobs), offset=np.zeros(nobs)) # bug with default
         # use start_params to converge faster
         start_params = np.array([-0.73403806, -1.00901514,
@@ -450,11 +464,15 @@ class CheckAnovaMixin(object):
 
 @pytest.mark.not_vetted
 class TestWaldAnovaOLS(CheckAnovaMixin):
+    model_cls = sm.OLS
+    mod_kwargs = {}
+    fit_kwargs = {"use_t": False}
+
     @classmethod
     def initialize(cls):
         formula = "np.log(Days+1) ~ C(Duration, Sum)*C(Weight, Sum)"
-        mod = sm.OLS.from_formula(formula, cls.data)
-        cls.res = mod.fit(use_t=False)
+        mod = cls.model_cls.from_formula(formula, cls.data, **cls.mod_kwargs)
+        cls.res = mod.fit(**cls.fit_kwargs)
 
     def test_noformula(self):
         endog = self.res.model.endog
@@ -473,11 +491,15 @@ class TestWaldAnovaOLS(CheckAnovaMixin):
 
 @pytest.mark.not_vetted
 class TestWaldAnovaOLSF(CheckAnovaMixin):
+    model_cls = sm.OLS
+    mod_kwargs = {}
+    fit_kwargs = {}  # default use_t = True
+
     @classmethod
     def initialize(cls):
         formula = "np.log(Days+1) ~ C(Duration, Sum)*C(Weight, Sum)"
-        mod = sm.OLS.from_formula(formula, cls.data)
-        cls.res = mod.fit()  # default use_t=True
+        mod = cls.model_cls.from_formula(formula, cls.data, **cls.mod_kwargs)
+        cls.res = mod.fit(**cls.fit_kwargs)
 
     def test_predict_missing(self):
         ex = self.data[:5].copy()
@@ -487,47 +509,62 @@ class TestWaldAnovaOLSF(CheckAnovaMixin):
 
         tm.assert_index_equal(predicted1.index, ex.index)
         tm.assert_series_equal(predicted1[1:], predicted2)
-        assert_equal(predicted1.values[0], np.nan)
+        assert np.isnan(predicted1.values[0])
 
 
 @pytest.mark.skip(reason="GLM not ported from upstream")
 @pytest.mark.not_vetted
 class TestWaldAnovaGLM(CheckAnovaMixin):
+    mod_kwargs = {}
+    fit_kwargs = {"use_t": False}
+
     @classmethod
     def initialize(cls):
         formula = "np.log(Days+1) ~ C(Duration, Sum)*C(Weight, Sum)"
-        mod = sm.GLM.from_formula(formula, cls.data)
-        cls.res = mod.fit(use_t=False)
+        mod = sm.GLM.from_formula(formula, cls.data, **cls.mod_kwargs)
+        cls.res = mod.fit(**cls.fit_kwargs)
 
 
 @pytest.mark.not_vetted
 class TestWaldAnovaPoisson(CheckAnovaMixin):
+    model_cls = sm.Poisson
+    mod_kwargs = {}
+    fit_kwargs = {"cov_type": "HC0"}
+
     @classmethod
     def initialize(cls):
         formula = "Days ~ C(Duration, Sum)*C(Weight, Sum)"
-        mod = sm.Poisson.from_formula(formula, cls.data)
-        cls.res = mod.fit(cov_type='HC0')
+        mod = cls.model_cls.from_formula(formula, cls.data, **cls.mod_kwargs)
+        cls.res = mod.fit(**cls.fit_kwargs)
 
 
 @pytest.mark.not_vetted
 class TestWaldAnovaNegBin(CheckAnovaMixin):
+    model_cls = sm.NegativeBinomial
+    mod_kwargs = {"loglike_method": "nb2"}
+    fit_kwargs = {}
+
     @classmethod
     def initialize(cls):
         formula = "Days ~ C(Duration, Sum)*C(Weight, Sum)"
-        mod = sm.NegativeBinomial.from_formula(formula, cls.data,
-                                               loglike_method='nb2')
-        cls.res = mod.fit()
+        mod = cls.model_cls.from_formula(formula, cls.data, **cls.mod_kwargs)
+        cls.res = mod.fit(**cls.fit_kwargs)
 
 
 @pytest.mark.not_vetted
 class TestWaldAnovaNegBin1(CheckAnovaMixin):
+    model_cls = sm.NegativeBinomial
+    mod_kwargs = {"loglike_method": "nb1"}
+    fit_kwargs = {"cov_type": "HC0"}
+
     @classmethod
     def initialize(cls):
         formula = "Days ~ C(Duration, Sum)*C(Weight, Sum)"
-        mod = sm.NegativeBinomial.from_formula(formula, cls.data,
-                                               loglike_method='nb1')
-        cls.res = mod.fit(cov_type='HC0')
+        mod = cls.model_cls.from_formula(formula, cls.data, **cls.mod_kwargs)
+        cls.res = mod.fit(**cls.fit_kwargs)
 
+
+# ----------------------------------------------------------------------
 
 def compare_waldres(res, wa, constrasts):
     for i, c in enumerate(constrasts):
@@ -562,8 +599,10 @@ def compare_waldres(res, wa, constrasts):
 @pytest.mark.not_vetted
 @pytest.mark.xfail
 class TestWaldAnovaOLSNoFormula(object):
+    model_cls = sm.OLS
+
     @classmethod
     def initialize(cls):  # FIXME: This should subclass something right?
         formula = "np.log(Days+1) ~ C(Duration, Sum)*C(Weight, Sum)"
-        mod = sm.OLS.from_formula(formula, cls.data)
+        mod = cls.model_cls.from_formula(formula, cls.data)
         cls.res = mod.fit()  # default use_t=True
