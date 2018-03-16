@@ -3563,6 +3563,10 @@ class L1CountResults(DiscreteResults):
         "extra_attr": _l1_results_attr}
 
     def __init__(self, model, cntfit):
+        # TODO: Make this happen higher up the chain.  Not doing it here breaks
+        # thing sin count_model
+        self.params = cntfit.params
+
         super(L1CountResults, self).__init__(model, cntfit)
         # self.trimmed is a boolean array with T/F telling whether or not that
         # entry in params has been set zero'd out.
