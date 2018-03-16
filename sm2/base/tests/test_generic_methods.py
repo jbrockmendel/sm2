@@ -188,7 +188,7 @@ class TestGenericOLS(CheckGenericMixin):
         x = self.exog
         np.random.seed(987689)
         y = x.sum(1) + np.random.randn(x.shape[0])
-        self.results = cls.model_cls(y, self.exog).fit()
+        self.results = self.model_cls(y, self.exog).fit()
 
 
 @pytest.mark.not_vetted
@@ -201,7 +201,7 @@ class TestGenericOLSOneExog(CheckGenericMixin):
         x = self.exog[:, 1]
         np.random.seed(987689)
         y = x + np.random.randn(x.shape[0])
-        self.results = cls.model_cls(y, x).fit()
+        self.results = self.model_cls(y, x).fit()
 
 
 @pytest.mark.not_vetted
@@ -213,7 +213,7 @@ class TestGenericWLS(CheckGenericMixin):
         x = self.exog
         np.random.seed(987689)
         y = x.sum(1) + np.random.randn(x.shape[0])
-        model = cls.model_cls(y, self.exog, weights=np.ones(len(y)))
+        model = self.model_cls(y, self.exog, weights=np.ones(len(y)))
         self.results = model.fit()
 
 
@@ -226,7 +226,7 @@ class TestGenericPoisson(CheckGenericMixin):
         x = self.exog
         np.random.seed(987689)
         y_count = np.random.poisson(np.exp(x.sum(1) - x.mean()))
-        model = cls.model_cls(y_count, x)
+        model = self.model_cls(y_count, x)
         # , exposure=np.ones(nobs), offset=np.zeros(nobs)) # bug with default
         # use start_params to converge faster
         start_params = np.array([0.75334818, 0.99425553,
@@ -247,7 +247,7 @@ class TestGenericNegativeBinomial(CheckGenericMixin):
         np.random.seed(987689)
         data = sm.datasets.randhie.load()
         exog = sm.add_constant(data.exog, prepend=False)
-        mod = cls.model_cls(data.endog, data.exog)
+        mod = self.model_cls(data.endog, data.exog)
         start_params = np.array([-0.0565406, -0.21213599, 0.08783076,
                                  -0.02991835, 0.22901974, 0.0621026,
                                  0.06799283, 0.08406688, 0.18530969,
@@ -267,7 +267,7 @@ class TestGenericLogit(CheckGenericMixin):
         cutoff = np.random.rand(nobs)
         y_bin = (cutoff < 1.0 / (1 + np.exp(x.sum(1) - x.mean())))
         y_bin = y_bin.astype(int)
-        model = cls.model_cls(y_bin, x)
+        model = self.model_cls(y_bin, x)
         # , exposure=np.ones(nobs), offset=np.zeros(nobs)) # bug with default
         # use start_params to converge faster
         start_params = np.array([-0.73403806, -1.00901514,
