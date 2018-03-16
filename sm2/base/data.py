@@ -264,18 +264,16 @@ class ModelData(object):
             if combined_2d:
                 nan_mask = _nan_rows(*(nan_mask[:, None],) + combined_2d)
 
-        if not np.any(nan_mask):  # no missing don't do anything
+        if not np.any(nan_mask):
+            # no missing; don't do anything
             combined = dict(zip(combined_names, combined))
-            if combined_2d:
-                combined.update(dict(zip(combined_2d_names, combined_2d)))
-            if none_array_names:
-                combined.update(dict(zip(none_array_names,
-                                         [None] * len(none_array_names))))
+            combined.update(dict(zip(combined_2d_names, combined_2d)))
+            combined.update({name: None for name in none_array_names})
 
             if missing_idx is not None:
-                combined.update({'endog': endog})
+                combined['endog'] = endog
                 if exog is not None:
-                    combined.update({'exog': exog})
+                    combined['exog'] = exog
 
             return combined, []
 
@@ -284,9 +282,10 @@ class ModelData(object):
 
         elif missing == 'drop':
             nan_mask = ~nan_mask
-            drop_nans = lambda x: cls._drop_nans(x, nan_mask)
-            drop_nans_2d = lambda x: cls._drop_nans_2d(x, nan_mask)
-            combined = dict(zip(combined_names, list(map(drop_nans, combined))))
+            # TODO: Don't negate nan_mask with the same name; its confusing
+            combined = dict(zip(combined_names,
+                                [cls._drop_nans(x, nan_mask)
+                                 for x in combined]))
 
             if missing_idx is not None:
                 if updated_row_mask is not None:
@@ -296,16 +295,14 @@ class ModelData(object):
                     if exog is not None:
                         exog = cls._drop_nans(exog, updated_row_mask)
 
-                combined.update({'endog': endog})
+                combined['endog'] = endog
                 if exog is not None:
-                    combined.update({'exog': exog})
+                    combined['exog'] = exog
 
-            if combined_2d:
-                combined.update(dict(zip(combined_2d_names,
-                                         list(map(drop_nans_2d, combined_2d)))))
-            if none_array_names:
-                combined.update(dict(zip(none_array_names,
-                                         [None] * len(none_array_names))))
+            combined.update(dict(zip(combined_2d_names,
+                                     [cls._drop_nans_2d(x, nan_mask)
+                                      for x in combined_2d])))
+            combined.update({name: None for name in none_array_names})
 
             return combined, np.where(~nan_mask)[0].tolist()
         else:

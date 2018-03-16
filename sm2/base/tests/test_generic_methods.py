@@ -50,8 +50,6 @@ class CheckGenericMixin(object):
         # test params table frame returned by t_test
         table_res = np.column_stack((res.params, res.bse, res.tvalues,
                                      res.pvalues, res.conf_int()))
-        table1 = np.column_stack((tt.effect, tt.sd, tt.tvalue, tt.pvalue,
-                                  tt.conf_int()))
         table2 = tt.summary_frame().values
         assert_allclose(table2, table_res, rtol=1e-12)
 
@@ -59,12 +57,12 @@ class CheckGenericMixin(object):
         assert hasattr(res, 'use_t')
 
         tt = res.t_test(mat[0])
-        string_confint = lambda alpha: ("[%4.3F      %4.3F]" %
-                                        (alpha / 2, 1 - alpha / 2))
 
         summ = tt.summary()   # smoke test for GH#1323
         assert_allclose(tt.pvalue, res.pvalues[0], rtol=5e-10)
-        assert string_confint(0.05) in str(summ)
+
+        string_confint = "[%4.3F      %4.3F]" % (.05 / 2, 1 - .05 / 2)
+        assert string_confint in str(summ)
         # issue GH#3116 alpha not used in column headers
         summ = tt.summary(alpha=0.1)
         ss = "[0.05       0.95]"   # different formatting
@@ -100,7 +98,7 @@ class CheckGenericMixin(object):
     def test_summary2(self):
         res = self.results
         use_t = res.use_t
-         # label for pvalues in summary
+        # label for pvalues in summary
         string_use_t = 'P>|z|' if use_t is False else 'P>|t|'
 
         # try except for models that don't have summary2
@@ -247,6 +245,8 @@ class TestGenericNegativeBinomial(CheckGenericMixin):
         np.random.seed(987689)
         data = sm.datasets.randhie.load()
         exog = sm.add_constant(data.exog, prepend=False)
+        # FIXME: we're editing exog but then not _using_ it.
+        # Editing data.exog instead causes tests to fail.
         mod = self.model_cls(data.endog, data.exog)
         start_params = np.array([-0.0565406, -0.21213599, 0.08783076,
                                  -0.02991835, 0.22901974, 0.0621026,
@@ -264,8 +264,7 @@ class TestGenericLogit(CheckGenericMixin):
         x = self.exog
         nobs = x.shape[0]
         np.random.seed(987689)
-        cutoff = np.random.rand(nobs)
-        y_bin = (cutoff < 1.0 / (1 + np.exp(x.sum(1) - x.mean())))
+        y_bin = np.random.rand(nobs) < 1.0 / (1 + np.exp(x.sum(1) - x.mean()))
         y_bin = y_bin.astype(int)
         model = self.model_cls(y_bin, x)
         # , exposure=np.ones(nobs), offset=np.zeros(nobs)) # bug with default
@@ -346,7 +345,8 @@ class TestGenericGEEPoissonBC(CheckGenericMixin):
         groups = np.random.randint(0, 4, size=x.shape[0])
         # use start_params to speed up test, difficult convergence not tested
         start_params = np.array([0., 1., 1., 1.])
-        # params_est = np.array([-0.0063238 , 0.99463752, 1.02790201, 0.98080081])
+        # params_est = np.array([-0.0063238 , 0.99463752,
+        #                        1.02790201, 0.98080081])
 
         vi = sm.cov_struct.Independence()
         family = sm.families.Poisson()

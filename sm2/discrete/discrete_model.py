@@ -25,7 +25,7 @@ import numpy as np
 import pandas as pd
 from pandas.util._decorators import deprecate_kwarg
 
-from scipy.special import gammaln, digamma, polygamma
+from scipy.special import gammaln
 from scipy import stats, special
 
 from sm2.tools.decorators import resettable_cache, cache_readonly, copy_doc
@@ -153,6 +153,7 @@ class DiscreteModel(base.LikelihoodModel):
     sm2.model.LikelihoodModel.
     """
     def __init__(self, endog, exog, **kwargs):
+        self.nobs = exog.shape[0]  # TODO: Do this at a higher level
         super(DiscreteModel, self).__init__(endog, exog, **kwargs)
         self.raise_on_perfect_prediction = True
 
@@ -170,7 +171,7 @@ class DiscreteModel(base.LikelihoodModel):
         # assumes constant
         rank = np.linalg.matrix_rank(self.exog)
         self.df_model = float(rank - 1)
-        self.df_resid = float(self.exog.shape[0] - rank)
+        self.df_resid = float(self.nobs - rank)
 
     def cdf(self, X):  # pragma: no cover
         """
@@ -361,13 +362,14 @@ class DiscreteModel(base.LikelihoodModel):
         else:
             pass  # TODO: make a function factory to have multiple call-backs
 
-        mlefit = super(DiscreteModel, self).fit(start_params=start_params,
-                                                method=method, maxiter=maxiter,
-                                                full_output=full_output,
-                                                disp=disp, callback=callback,
-                                                extra_fit_funcs=extra_fit_funcs,
-                                                cov_params_func=cov_params_func,
-                                                **kwargs)
+        mlefit = super(DiscreteModel, self).fit(
+            start_params=start_params,
+            method=method, maxiter=maxiter,
+            full_output=full_output,
+            disp=disp, callback=callback,
+            extra_fit_funcs=extra_fit_funcs,
+            cov_params_func=cov_params_func,
+            **kwargs)
 
         return mlefit  # up to subclasses to wrap results
 
@@ -496,6 +498,8 @@ class BinaryModel(FitBase):
         else:
             return np.dot(exog, params)
 
+    # TODO: De-duplicate docstring with the other two in this module.  This
+    # and one other look like they might be truncated in the second paragraph
     def _derivative_predict(self, params, exog=None, transform='dydx'):
         """
         For computing marginal effects standard errors.
@@ -594,9 +598,10 @@ class MultinomialModel(BinaryModel):
         self.endog = self.endog.argmax(1)  # turn it into an array of col idx
         self.J = self.wendog.shape[1]
         self.K = self.exog.shape[1]
-        self.df_model *= (self.J - 1)  # for each J - 1 equation.
-        # TODO: Don't alter df_model in-place
-        self.df_resid = self.exog.shape[0] - self.df_model - (self.J - 1)
+
+        rank = np.linalg.matrix_rank(self.exog)
+        self.df_model = (rank - 1) * (self.J - 1)  # for each J - 1 equation.
+        self.df_resid = self.nobs - self.df_model - (self.J - 1)
 
     def predict(self, params, exog=None, linear=False):
         """
@@ -805,17 +810,8 @@ class CountModel(FitBase):
         else:
             return linpred
 
+    @copy_doc(BinaryModel._derivative_predict.__doc__)
     def _derivative_predict(self, params, exog=None, transform='dydx'):
-        """
-        For computing marginal effects standard errors.
-
-        This is used only in the case of discrete and count regressors to
-        get the variance-covariance of the marginal effects. It returns
-        [d F / d params] where F is the predict.
-
-        Transform can be 'dydx' or 'eydx'. Checking is done in margeff
-        computations for appropriate transform.
-        """
         if exog is None:
             exog = self.exog
         # NOTE: this handles offset and exposure
@@ -1094,7 +1090,7 @@ class Poisson(CountModel):
         params, cov, res_constr = fit_constrained(self, R, q,
                                                   start_params=start_params,
                                                   fit_kwds=fit_kwds)
-        #create dummy results Instance, TODO: wire up properly
+        # create dummy results Instance, TODO: wire up properly
         res = self.fit(maxiter=0, method='nm', disp=0,
                        warn_convergence=False)  # we get a wrapper back
 
@@ -2238,7 +2234,7 @@ class MNLogit(MultinomialModel):
         Xb = np.dot(self.exog, params)
         firstterm = self.wendog[:, 1:] - self.cdf(Xb)[:, 1:]
         # NOTE: might need to switch terms if params is reshaped
-        return (firstterm[:, :, None] * self.exog[:, None, :]).reshape(self.exog.shape[0], -1)
+        return (firstterm[:, :, None] * self.exog[:, None, :]).reshape(self.nobs, -1)
 
     def hessian(self, params):
         """
@@ -2469,27 +2465,26 @@ class NegativeBinomial(CountModel):
         exog = self.exog
         y = self.endog[:, None]
         mu = self.predict(params)[:, None]
+
         a1 = 1 / alpha * mu**Q
+        prob = a1 / (a1 + mu)
+        dgpart = special.digamma(y + a1) - special.digamma(a1)
+
         if Q:
             # nb1
-            dparams = exog * mu / alpha * (np.log(1 / (alpha + 1)) +
-                                           special.digamma(y + mu / alpha) -
-                                           special.digamma(mu / alpha))
-            dalpha = ((alpha * (y - mu * np.log(1 / (alpha + 1)) -
-                                mu * (special.digamma(y + mu / alpha) -
-                                special.digamma(mu / alpha) + 1)) -
-                       mu * (np.log(1 / (alpha + 1)) +
-                             special.digamma(y + mu / alpha) -
-                             special.digamma(mu / alpha)))/
-                       (alpha**2 * (alpha + 1))).sum()
+            assert Q == 1, Q
+            # in this case:
+            #    a1 = mu / alpha
+            #    prob = 1 / (alpha + 1)
+            dparams = exog * a1 * (np.log(prob) + dgpart)
+            dalpha = ((prob * (y - mu) - a1 * (np.log(prob) + dgpart)) / alpha).sum()
 
         else:
             # nb2
+            #prob = a1 / (a1 + mu)
             dparams = exog * a1 * (y - mu) / (mu + a1)
             da1 = -alpha**-2
-            dalpha = (special.digamma(a1 + y) - special.digamma(a1) +
-                      np.log(a1) - np.log(a1 + mu) -
-                      (a1 + y) / (a1 + mu) + 1).sum() * da1
+            dalpha = (dgpart + np.log(prob) - (y - mu) / (a1 + mu)).sum() * da1
 
         # multiply above by constant outside sum to reduce rounding error
         if self._transparams:
@@ -2534,53 +2529,49 @@ class NegativeBinomial(CountModel):
         mu = self.predict(params)[:, None]
 
         a1 = mu / alpha
+        prob = 1 / (alpha + 1)  # Note: this equals a1 / (a1 + mu)
+        dgpart = special.digamma(y + a1) - special.digamma(a1)
+        pgpart = special.polygamma(1, a1 + y) - special.polygamma(1, a1)
 
         # for dl/dparams dparams
         dim = exog.shape[1]
         hess_arr = np.empty((dim + 1, dim + 1))
         # const_arr = a1*mu*(a1+y)/(mu+a1)**2
         # not all of dparams
-        dparams = exog / alpha * (np.log(1 / (alpha + 1)) +
-                                  special.digamma(y + mu / alpha) -
-                                  special.digamma(mu / alpha))
+        dparams = exog / alpha * (np.log(prob) + dgpart)
 
         dmudb = exog * mu
-        xmu_alpha = exog * mu / alpha
-        trigamma = (special.polygamma(1, mu / alpha + y) -
-                    special.polygamma(1, mu / alpha))
+        xmu_alpha = exog * a1
         for i in range(dim):
             for j in range(dim):
                 if j > i:
                     continue
                 hess_arr[i, j] = np.sum(dparams[:, i, None] * dmudb[:, j, None] +
-                                        xmu_alpha[:, i, None] * xmu_alpha[:, j, None] * trigamma,
+                                        xmu_alpha[:, i, None] * xmu_alpha[:, j, None] * pgpart,
                                         axis=0)
         tri_idx = np.triu_indices(dim, k=1)
         hess_arr[tri_idx] = hess_arr.T[tri_idx]
 
-        # for dl/dparams dalpha
-        da1 = -alpha**-2
-        dldpda = np.sum(-mu / alpha * dparams + exog * mu / alpha *
-                        (-trigamma * mu / alpha**2 - 1 / (alpha + 1)), axis=0)
+        dldpda = np.sum(-a1 * dparams + exog * a1 *
+                        (-pgpart * a1 / alpha - prob), axis=0)
 
         hess_arr[-1, :-1] = dldpda
         hess_arr[:-1, -1] = dldpda
 
         # for dl/dalpha dalpha
-        digamma_part = (special.digamma(y + mu/alpha) -
-                        special.digamma(mu/alpha))
 
-        log_alpha = np.log(1 / (alpha + 1))
+        log_alpha = np.log(prob)
         alpha3 = alpha**3
         alpha2 = alpha**2
         mu2 = mu**2
-        dada = ((alpha3 * mu * (2 * log_alpha + 2 * digamma_part + 3) -
-                2 * alpha3 * y + alpha2 * mu2 * trigamma +
-                4 * alpha2 * mu * (log_alpha + digamma_part) +
+        dada = ((alpha3 * mu * (2 * log_alpha + 2 * dgpart + 3) -
+                2 * alpha3 * y +
+                alpha2 * mu2 * pgpart +
+                4 * alpha2 * mu * (log_alpha + dgpart) +
                 alpha2 * (2 * mu - y) +
-                2 * alpha * mu2 * trigamma +
-                2 * alpha * mu * (log_alpha + digamma_part) +
-                mu2 * trigamma) / (alpha**4 * (alpha2 + 2 * alpha + 1)))
+                2 * alpha * mu2 * pgpart +
+                2 * alpha * mu * (log_alpha + dgpart) +
+                mu2 * pgpart) / (alpha**4 * (alpha2 + 2 * alpha + 1)))
         hess_arr[-1, -1] = dada.sum()
 
         return hess_arr
@@ -2593,12 +2584,16 @@ class NegativeBinomial(CountModel):
             alpha = np.exp(params[-1])
         else:
             alpha = params[-1]
-        a1 = 1 / alpha
         params = params[:-1]
 
         exog = self.exog
         y = self.endog[:, None]
         mu = self.predict(params)[:, None]
+
+        a1 = 1 / alpha
+        prob = a1 / (a1 + mu)
+        dgpart = special.digamma(a1 + y) - special.digamma(a1)
+        pgpart = special.polygamma(1, a1 + y) - special.polygamma(1, a1)
 
         # for dl/dparams dparams
         dim = exog.shape[1]
@@ -2615,6 +2610,8 @@ class NegativeBinomial(CountModel):
 
         # for dl/dparams dalpha
         da1 = -alpha**-2
+        # assert da1 == -a1**2, (da1, -a1**2)
+        # this assertion fails only due to floating point error
         dldpda = np.sum(mu * exog * (y - mu) * da1 / (mu + a1)**2, axis=0)
         hess_arr[-1, :-1] = dldpda
         hess_arr[:-1, -1] = dldpda
@@ -2622,10 +2619,10 @@ class NegativeBinomial(CountModel):
         # for dl/dalpha dalpha
         # NOTE: polygamma(1, x) is the trigamma function
         da2 = 2 * alpha**-3
-        dalpha = da1 * (special.digamma(a1 + y) - special.digamma(a1) +
-                        np.log(a1) - np.log(a1 + mu) - (a1 + y) / (a1 + mu) + 1)
-        dada = (da2 * dalpha / da1 + da1**2 * (special.polygamma(1, a1 + y) -
-                special.polygamma(1, a1) + 1 / a1 - 1 / (a1 + mu) +
+        # assert da2 == 2*a1**3, (da2, 2*a1**3)
+        # this assertion fails only due to floating point error
+        dalpha = da1 * (dgpart + np.log(prob) - (y - mu) / (a1 + mu))
+        dada = (da2 * dalpha / da1 + da1**2 * (pgpart + 1 / a1 - 1 / (a1 + mu) +
                 (y - mu) / (mu + a1)**2)).sum()
         hess_arr[-1, -1] = dada
 
@@ -2918,14 +2915,12 @@ class NegativeBinomialP(CountModel):
         a3 = y + a1
         a4 = p * a1 / mu
 
-        dparams = ((a4 * (digamma(a3) - digamma(a1)) -
-                   (1 + a4) * a3 / a2) +
-                   y / mu + a4 * (1 + np.log(a1) - np.log(a2)))
+        dgpart = special.digamma(a3) - special.digamma(a1)
+
+        dparams = ((a4 * dgpart - (1 + a4) * a3 / a2) +
+                   y / mu + a4 * (1 + np.log(a1 / a2)))
         dparams = (self.exog.T * mu * dparams).T
-        dalpha = (-a1 / alpha * (digamma(a3) -
-                                 digamma(a1) +
-                                 np.log(a1 / a2) +
-                                 1 - a3 / a2))
+        dalpha = -a1 / alpha * (dgpart + np.log(a1 / a2) + 1 - a3 / a2)
 
         return np.concatenate((dparams, np.atleast_2d(dalpha).T),
                               axis=1)
@@ -2989,32 +2984,30 @@ class NegativeBinomialP(CountModel):
         dim = exog.shape[1]
         hess_arr = np.zeros((dim + 1, dim + 1))
 
+        dgpart = special.digamma(a3) - special.digamma(a1)
+        pgpart = special.polygamma(1, a1) - special.polygamma(1, a3)
+
         coeff = mu**2 * (((1 + a4)**2 * a3 / a2**2 -
                           a3 * (a5 - a4 / mu) / a2 - y / mu**2 -
                           2 * a4 * (1 + a4) / a2 +
-                          a5 * (np.log(a1) - np.log(a2) - digamma(a1) +
-                                digamma(a3) + 2) -
-                          a4 * (np.log(a1) - np.log(a2) - digamma(a1) +
-                                digamma(a3) + 1) / mu -
-                          a4**2 * (polygamma(1, a1) - polygamma(1, a3))) +
+                          a5 * (np.log(a1 / a2) + dgpart + 2) -
+                          a4 * (np.log(a1 / a2) + dgpart + 1) / mu -
+                          a4**2 * pgpart) +
                          (-(1 + a4) * a3 / a2 + y / mu +
-                          a4 * (np.log(a1) - np.log(a2) - digamma(a1) +
-                                digamma(a3) + 1)) / mu)
+                          a4 * (np.log(a1 / a2) + dgpart + 1)) / mu)
 
         for i in range(dim):
-            hess_arr[i, :-1] = np.sum(self.exog[:, :].T * self.exog[:, i] * coeff,
+            hess_arr[i, :-1] = np.sum(exog[:, :].T * exog[:, i] * coeff,
                                       axis=1)
 
-        hess_arr[-1, :-1] = (self.exog[:, :].T * mu * a1 *
+        hess_arr[-1, :-1] = (exog[:, :].T * mu * a1 *
                 ((1 + a4) * (1 - a3 / a2) / a2 -
-                 p * (np.log(a1 / a2) - digamma(a1) + digamma(a3) + 2) / mu +
+                 p * (np.log(a1 / a2) + dgpart + 2) / mu +
                  p * (a3 / mu + a4) / a2 +
-                 a4 * (polygamma(1, a1) - polygamma(1, a3))) / alpha).sum(axis=1)
+                 a4 * pgpart) / alpha).sum(axis=1)
 
-        da2 = (a1 * (2 * np.log(a1) - 2 * np.log(a2) -
-                     2 * digamma(a1) + 2 *digamma(a3) + 3 -
-                     2 * a3 / a2 - a1 * polygamma(1, a1) +
-                     a1 * polygamma(1, a3) - 2 * a1 / a2 +
+        da2 = (a1 * (2 * np.log(a1 / a2) + 2 * dgpart + 3 -
+                     2 * a3 / a2 - a1 * pgpart - 2 * a1 / a2 +
                      a1 * a3 / a2**2) / alpha**2)
 
         hess_arr[-1, -1] = da2.sum()
@@ -3238,7 +3231,7 @@ class DiscreteResults(base.LikelihoodModelResults):
         self.df_model = model.df_model
         self.df_resid = model.df_resid
         self._cache = resettable_cache()
-        self.nobs = model.exog.shape[0]
+        self.nobs = model.exog.shape[0]  # i.e. model.nobs
         self.__dict__.update(mlefit.__dict__)
 
         if not hasattr(self, 'cov_type'):
@@ -3827,7 +3820,7 @@ class MultinomialResults(DiscreteResults):
 
     def __init__(self, model, mlefit):
         # Make sure params have the appropriate shape;
-        # TODO: Sould we avoid altering this in-place?
+        # TODO: Should we avoid altering this in-place?
         mlefit.params = mlefit.params.reshape(model.K, -1, order='F')
         # TODO: Is the "order='F'" really necessary?
         super(MultinomialResults, self).__init__(model, mlefit)

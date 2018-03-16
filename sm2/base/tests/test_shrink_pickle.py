@@ -68,9 +68,6 @@ class RemoveDataPickle(object):
         # res = results.summary2()  # SMOKE test also summary2
         '''
 
-        # uncomment the following to check whether tests run (7 failures now)
-        #np.testing.assert_equal(res, 1)
-
         # check pickle unpickle works on full results
         # TODO: drop of load save is tested
         res, _ = check_pickle(results._results)
@@ -106,6 +103,7 @@ class RemoveDataPickle(object):
         fh.seek(0, 0)
         res_unpickled = self.results._results.__class__.load(fh)
         assert type(res_unpickled) == type(self.results._results)
+        # TODO: Check equality instead?  This check isnt exactly meaningful
 
         # test wrapped results load save
         fh.seek(0, 0)
@@ -114,6 +112,7 @@ class RemoveDataPickle(object):
         res_unpickled = self.results.__class__.load(fh)
         fh.close()
         assert type(res_unpickled) == type(self.results)
+        # TODO: Check equality instead?  This check isnt exactly meaningful
 
         before = sorted(iterkeys(self.results.__dict__))
         after = sorted(iterkeys(res_unpickled.__dict__))

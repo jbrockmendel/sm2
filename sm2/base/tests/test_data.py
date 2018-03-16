@@ -738,14 +738,14 @@ class CheckHasConstant(object):
 
             # extra check after fit
             fit_kwds = self.fit_kwds
-            try:
-                res = mod.fit(**fit_kwds)
-            except:
-                # some models raise on singular
-                pass
-            else:
-                np.testing.assert_equal(res.model.k_constant, result[0])
-                np.testing.assert_equal(res.model.data.k_constant, result[0])
+
+            # upstream had this in a try/except block with a comment
+            # "some models raise on singular".  This doesnt affect us for
+            # the time being (likely because of skipped GLM/RLM tests).
+            # When it does, re-enable but catch something more specific.
+            res = mod.fit(**fit_kwds)
+            np.testing.assert_equal(res.model.k_constant, result[0])
+            np.testing.assert_equal(res.model.data.k_constant, result[0])
 
     @classmethod
     def setup_class(cls):

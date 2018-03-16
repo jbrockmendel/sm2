@@ -71,11 +71,17 @@ def fit_l1_cvxopt_cp(f, score, start_params, args, kwargs, disp=False,
     assert alpha.min() >= 0
 
     # Wrap up functions for cvxopt
-    f_0 = lambda x: _objective_func(f, x, k_params, alpha, *args)
-    Df = lambda x: _fprime(score, x, k_params, alpha)
+    def f_0(x):
+        return _objective_func(f, x, k_params, alpha, *args)
+
+    def Df(x):
+        return _fprime(score, x, k_params, alpha)
+
+    def H(x, z):
+        return _hessian_wrapper(hess, x, z, k_params)
+
     G = _get_G(k_params)  # Inequality constraint matrix, Gx \leq h
     h = matrix(0.0, (2 * k_params, 1))  # RHS in inequality constraint
-    H = lambda x, z: _hessian_wrapper(hess, x, z, k_params)
 
     # Define the optimization function
     def F(x=None, z=None):
@@ -89,14 +95,9 @@ def fit_l1_cvxopt_cp(f, score, start_params, args, kwargs, disp=False,
     # Convert optimization settings to cvxopt form
     solvers.options['show_progress'] = disp
     solvers.options['maxiters'] = maxiter
-    if 'abstol' in kwargs:
-        solvers.options['abstol'] = kwargs['abstol']
-    if 'reltol' in kwargs:
-        solvers.options['reltol'] = kwargs['reltol']
-    if 'feastol' in kwargs:
-        solvers.options['feastol'] = kwargs['feastol']
-    if 'refinement' in kwargs:
-        solvers.options['refinement'] = kwargs['refinement']
+    for key in ['abstol', 'reltol', 'feastol', 'refinement']:
+        if key in kwargs:
+            solvers.options[key] = kwargs[key]
 
     # Call the optimizer
     results = solvers.cp(F, G, h)

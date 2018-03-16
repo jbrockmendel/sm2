@@ -44,6 +44,7 @@ exposure = np.asarray(ships_data['service'])
 
 # TODO get the test methods from regression/tests
 
+
 @pytest.mark.not_vetted
 class CheckCountRobustMixin(object):
     @classmethod
@@ -362,7 +363,7 @@ class TestGLMPoissonCluFit(CheckCountRobustMixin):
     model_cls = GLM
     cov_kwds = dict(groups=group,
                     use_correction=True,
-                    df_correction=True),  # TODO has no effect
+                    df_correction=True)  # TODO has no effect
 
     @classmethod
     def setup_class(cls):

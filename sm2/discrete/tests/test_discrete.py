@@ -1177,6 +1177,7 @@ class TestNegativeBinomialL1Compatability(CheckL1Compatability):
         rand_exog = add_constant(rand_exog_st, prepend=True)
         # Drop some columns and do an unregularized fit
         exog_no_PSI = rand_exog[:, :cls.m]
+
         mod_unreg = cls.model_cls(rand_data.endog, exog_no_PSI)
         cls.res_unreg = mod_unreg.fit(method="newton", disp=False)
 
@@ -1197,6 +1198,7 @@ class TestNegativeBinomialGeoL1Compatability(CheckL1Compatability):
     kvars = 10  # Number of variables
     m = 7       # Number of unregularized parameters
     model_cls = NegativeBinomial
+    mod_kwargs = {"loglike_method": "geometric"}
 
     @classmethod
     def setup_class(cls):
@@ -1206,14 +1208,13 @@ class TestNegativeBinomialGeoL1Compatability(CheckL1Compatability):
         # Drop some columns and do an unregularized fit
         exog_no_PSI = rand_exog[:, :cls.m]
         mod_unreg = cls.model_cls(rand_data.endog, exog_no_PSI,
-                                  loglike_method='geometric')
+                                  **cls.mod_kwargs)
         cls.res_unreg = mod_unreg.fit(method="newton", disp=False)
 
         # Do a regularized fit with alpha, effectively dropping the last columns
         alpha = 10 * len(rand_data.endog) * np.ones(cls.kvars)
         alpha[:cls.m] = 0
-        mod_reg = cls.model_cls(rand_data.endog, rand_exog,
-                                loglike_method='geometric')
+        mod_reg = cls.model_cls(rand_data.endog, rand_exog, **cls.mod_kwargs)
         cls.res_reg = mod_reg.fit_regularized(method='l1', alpha=alpha,
                                               disp=False, acc=1e-10,
                                               maxiter=2000,
@@ -1249,6 +1250,7 @@ class TestMNLogitL1Compatability(CheckL1Compatability):
     kvars = 4  # Number of variables
     m = 3      # Number of unregularized parameters
     model_cls = MNLogit
+
     @classmethod
     def setup_class(cls):
         data = sm2.datasets.spector.load()
@@ -1345,6 +1347,7 @@ class CompareL1(object):
     For checking results for l1 regularization.
     Assumes self.res1 and self.res2 are two legitimate models to be compared.
     """
+    # TODO : split these up
     def test_basic_results(self):
         assert_allclose(self.res1.params,
                         self.res2.params,
@@ -1401,6 +1404,7 @@ class CompareL11D(CompareL1):
         assert_allclose(self.res1.t_test(restrictmat).pvalue,
                         self.res2.t_test(restrictmat).pvalue,
                         atol=1e-4)
+
         assert_allclose(self.res1.f_test(restrictmat).pvalue,
                         self.res2.f_test(restrictmat).pvalue,
                         atol=1e-4)
@@ -1410,23 +1414,23 @@ class CompareL11D(CompareL1):
 class TestL1AlphaZeroLogit(CompareL11D):
     # Compares l1 model with alpha = 0 to the unregularized model.
     model_cls = Logit
+    fit_reg_kwargs = {"method": "l1",
+                      "alpha": 0,
+                      "disp": False,
+                      "acc": 1e-15,
+                      "trim_mode": "auto",
+                      "auto_trim_tol": 0.01}
 
     @classmethod
     def setup_class(cls):
         data = sm2.datasets.spector.load()
         data.exog = add_constant(data.exog, prepend=True)
         mod = cls.model_cls(data.endog, data.exog)
-        cls.res1 = mod.fit_regularized(method="l1", alpha=0, disp=0,
-                                       acc=1e-15, maxiter=1000,
-                                       trim_mode='auto',
-                                       auto_trim_tol=0.01)
+        cls.res1 = mod.fit_regularized(maxiter=1000, **cls.fit_reg_kwargs)
         cls.res2 = cls.model_cls(data.endog, data.exog).fit(disp=0, tol=1e-15)
 
     def test_converged(self):
-        res = self.res1.model.fit_regularized(method="l1", alpha=0,
-                                              disp=0, acc=1e-15, maxiter=1,
-                                              trim_mode='auto',
-                                              auto_trim_tol=0.01)
+        res = self.res1.model.fit_regularized(maxiter=1, **self.fit_reg_kwargs)
 
         # see GH#2857
         if res.mle_retvals['converged'] == 'Iteration limit exceeded':
@@ -1876,13 +1880,14 @@ class TestPoissonNull(CheckNull):
 class TestNegativeBinomialNB1Null(CheckNull):
     # for convergence with bfgs, I needed to round down alpha start_params
     start_params = np.array([7.730452, 2.01633068e-02, 1763.0])
+    model_cls = NegativeBinomial
+    mod_kwargs = {"loglike_method": "nb1"}
 
     @classmethod
     def setup_class(cls):
         endog, exog = cls._get_data()
-        cls.model = NegativeBinomial(endog, exog, loglike_method='nb1')
-        cls.model_null = NegativeBinomial(endog, exog[:, 0],
-                                          loglike_method='nb1')
+        cls.model = cls.model_cls(endog, exog, **cls.mod_kwargs)
+        cls.model_null = cls.model_cls(endog, exog[:, 0], **cls.mod_kwargs)
         cls.res_null = cls.model_null.fit(start_params=[8, 1000],
                                           method='bfgs', gtol=1e-08,
                                           maxiter=300)
@@ -1892,13 +1897,13 @@ class TestNegativeBinomialNB1Null(CheckNull):
 class TestNegativeBinomialNB2Null(CheckNull):
     start_params = np.array([8.07216448, 0.01087238, 0.44024134])
     model_cls = NegativeBinomial
+    mod_kwargs = {"loglike_method": "nb2"}
 
     @classmethod
     def setup_class(cls):
         endog, exog = cls._get_data()
-        cls.model = cls.model_cls(endog, exog, loglike_method='nb2')
-        cls.model_null = cls.model_cls(endog, exog[:, 0],
-                                       loglike_method='nb2')
+        cls.model = cls.model_cls(endog, exog, **cls.mod_kwargs)
+        cls.model_null = cls.model_cls(endog, exog[:, 0], **cls.mod_kwargs)
         cls.res_null = cls.model_null.fit(start_params=[8, 0.5],
                                           method='bfgs', gtol=1e-06,
                                           maxiter=300)
@@ -1908,12 +1913,13 @@ class TestNegativeBinomialNB2Null(CheckNull):
 class TestNegativeBinomialNBP2Null(CheckNull):
     start_params = np.array([8.07216448, 0.01087238, 0.44024134])
     model_cls = NegativeBinomialP
+    mod_kwargs = {"p": 2}
 
     @classmethod
     def setup_class(cls):
         endog, exog = cls._get_data()
-        cls.model = cls.model_cls(endog, exog, p=2)
-        cls.model_null = cls.model_cls(endog, exog[:, 0], p=2)
+        cls.model = cls.model_cls(endog, exog, **cls.mod_kwargs)
+        cls.model_null = cls.model_cls(endog, exog[:, 0], **cls.mod_kwargs)
         cls.res_null = cls.model_null.fit(start_params=[8, 1],
                                           method='bfgs', gtol=1e-06,
                                           maxiter=300)
@@ -1930,12 +1936,13 @@ class TestNegativeBinomialNBP2Null(CheckNull):
 class TestNegativeBinomialNBP1Null(CheckNull):
     start_params = np.array([7.730452, 2.01633068e-02, 1763.0])
     model_cls = NegativeBinomialP
+    mod_kwargs = {"p": 1}
 
     @classmethod
     def setup_class(cls):
         endog, exog = cls._get_data()
-        cls.model = cls.model_cls(endog, exog, p=1.)
-        cls.model_null = cls.model_cls(endog, exog[:, 0], p=1)
+        cls.model = cls.model_cls(endog, exog, **cls.mod_kwargs)
+        cls.model_null = cls.model_cls(endog, exog[:, 0], **cls.mod_kwargs)
         cls.res_null = cls.model_null.fit(start_params=[8, 1],
                                           method='bfgs', gtol=1e-06,
                                           maxiter=300)
@@ -1952,12 +1959,13 @@ class TestNegativeBinomialNBP1Null(CheckNull):
 class TestGeneralizedPoissonNull(CheckNull):
     start_params = np.array([6.91127148, 0.04501334, 0.88393736])
     model_cls = GeneralizedPoisson
+    mod_kwargs = {"p": 1.5}
 
     @classmethod
     def setup_class(cls):
         endog, exog = cls._get_data()
-        cls.model = cls.model_cls(endog, exog, p=1.5)
-        cls.model_null = cls.model_cls(endog, exog[:, 0], p=1.5)
+        cls.model = cls.model_cls(endog, exog, **cls.mod_kwargs)
+        cls.model_null = cls.model_cls(endog, exog[:, 0], **cls.mod_kwargs)
         cls.res_null = cls.model_null.fit(start_params=[8.4, 1],
                                           method='bfgs', gtol=1e-08,
                                           maxiter=300)
