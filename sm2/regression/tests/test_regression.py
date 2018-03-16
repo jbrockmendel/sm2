@@ -5,6 +5,7 @@ Test functions for models.regression
 import warnings
 import os
 import re
+import textwrap
 
 import pytest
 import pandas as pd
@@ -27,12 +28,8 @@ lasso_path = os.path.join(cur_dir, "results", "lasso_data.csv")
 lasso_data = np.loadtxt(lasso_path, delimiter=",")
 # lasso_data used by TestRegularizedFit
 
-DECIMAL_4 = 4
-DECIMAL_3 = 3
-DECIMAL_2 = 2
-DECIMAL_1 = 1
 DECIMAL_7 = 7
-DECIMAL_0 = 0
+DECIMAL_4 = 4
 
 
 @pytest.mark.not_vetted
@@ -401,6 +398,7 @@ class TestGLS_OLS(CheckRegressionResults):
         cls.res1 = GLS(data.endog, data.exog).fit()
         cls.res2 = OLS(data.endog, data.exog).fit()
 
+    # TODO: WTF do these not get called?
     def check_confidenceintervals(self, conf1, conf2):
         assert_almost_equal(conf1,
                             conf2(),
@@ -431,7 +429,7 @@ class TestGLS_OLS(CheckRegressionResults):
 #         pass
 
 #     def test_order(self):
-# In R this can be defined or chosen by minimizing the AIC if aic=True
+#        # In R this can be defined or chosen by minimizing the AIC if aic=True
 #        pass
 
 # -------------------------------------------------------------
@@ -463,6 +461,7 @@ class TestDataDimensions(CheckRegressionResults):
 
 @pytest.mark.not_vetted
 class TestGLS_large_data(TestDataDimensions):
+
     @classmethod
     def setup_class(cls):
         super(TestGLS_large_data, cls).setup_class()
@@ -580,7 +579,6 @@ class TestOLS_GLS_WLS_equivalence(object):
 
 @pytest.mark.not_vetted
 class TestGLS_WLS_equivalence(TestOLS_GLS_WLS_equivalence):
-    # reuse test methods
 
     @classmethod
     def setup_class(cls):
@@ -592,6 +590,7 @@ class TestGLS_WLS_equivalence(TestOLS_GLS_WLS_equivalence):
         np.random.seed(5)
         w = np.random.uniform(0.5, 1, n)
         w_inv = 1. / w
+
         cls.results = []
         cls.results.append(WLS(y, X, w).fit())
         cls.results.append(WLS(y, X, 0.01 * w).fit())
@@ -732,7 +731,8 @@ class TestTtest(object):
         cls.NewTTest = cls.res1.t_test(hyp)
 
     def test_new_tvalue(self):
-        assert_equal(self.NewTTest.tvalue, self.Ttest.tvalue)
+        assert_equal(self.NewTTest.tvalue,
+                     self.Ttest.tvalue)
 
     def test_tvalue(self):
         assert_almost_equal(self.Ttest.tvalue,
@@ -751,10 +751,12 @@ class TestTtest(object):
                             DECIMAL_4)
 
     def test_df_denom(self):
-        assert_equal(self.Ttest.df_denom, self.res1.model.df_resid)
+        assert_equal(self.Ttest.df_denom,
+                     self.res1.model.df_resid)
 
     def test_effect(self):
-        assert_almost_equal(self.Ttest.effect, self.res1.params)
+        assert_almost_equal(self.Ttest.effect,
+                            self.res1.params)
 
 
 @pytest.mark.not_vetted
@@ -816,6 +818,7 @@ class TestRegularizedFit(object):
             result = model.fit_regularized(alpha=1000)
             assert_equal(result.params, 0.)
 
+    # TODO: Does this need to be part of the class?  doesnt use self
     @pytest.mark.not_vetted
     @pytest.mark.parametrize('attr', [x for x in dir(glmnet_r_results)
                                       if x.startswith("rslt_")])
@@ -1005,12 +1008,12 @@ class TestGLS(object):
     def test_loglike(self):
         assert_almost_equal(self.res1.llf,
                             self.res2.llf,
-                            DECIMAL_0)
+                            0)  # TODO: Why so imprecise?
 
     def test_params(self):
         assert_almost_equal(self.res1.params,
                             self.res2.params,
-                            DECIMAL_1)
+                            1)  # TODO: Why so imprecise?
 
     def test_resid(self):
         assert_almost_equal(self.res1.resid,
@@ -1053,22 +1056,20 @@ class TestGLS(object):
 
 # -------------------------------------------------------------
 
-
-# TODO: WTF why is this a class?
+# TODO: belongs elsewhere?
 @pytest.mark.not_vetted
-class TestYuleWalker(object):
-    @classmethod
-    def setup_class(cls):
-        data = datasets.sunspots.load()
-        cls.rho, cls.sigma = yule_walker(data.endog, order=4,
-                                         method="mle")
-        cls.R_params = [1.2831003105694765, -0.45240924374091945,
-                        -0.20770298557575195, 0.047943648089542337]
+def test_yule_walker():
+    # TODO: Document where R_params came from
+    R_params = [1.2831003105694765, -0.45240924374091945,
+                -0.20770298557575195, 0.047943648089542337]
 
-    def test_params(self):
-        assert_almost_equal(self.rho,
-                            self.R_params,
-                            4)
+    data = datasets.sunspots.load()
+    rho, sigma = yule_walker(data.endog, order=4, method="mle")
+    # TODO: assert something about sigma?
+
+    assert_almost_equal(rho,
+                        R_params,
+                        4)
 
 
 # TODO: WTF why is this a class?
@@ -1280,7 +1281,7 @@ def test_missing_formula_predict():
 # Vetted Tests, May Need GH References
 
 
-def test_bad_size_raises():
+def test_ols_bad_size_raises():
     # TODO: GH reference?
     np.random.seed(54321)
     data = np.random.uniform(0, 20, 31)
@@ -1359,44 +1360,45 @@ def test_summary_as_latex():
     table = re.sub("(?<=\n\\\\textbf\{Time:\}             &).+?&",
                    "     13:46:07     &", table)
 
-    expected = """\\begin{center}
-\\begin{tabular}{lclc}
-\\toprule
-\\textbf{Dep. Variable:}    &      TOTEMP      & \\textbf{  R-squared:         } &     0.995   \\\\
-\\textbf{Model:}            &       OLS        & \\textbf{  Adj. R-squared:    } &     0.992   \\\\
-\\textbf{Method:}           &  Least Squares   & \\textbf{  F-statistic:       } &     330.3   \\\\
-\\textbf{Date:}             & Sun, 07 Apr 2013 & \\textbf{  Prob (F-statistic):} &  4.98e-10   \\\\
-\\textbf{Time:}             &     13:46:07     & \\textbf{  Log-Likelihood:    } &   -109.62   \\\\
-\\textbf{No. Observations:} &          16      & \\textbf{  AIC:               } &     233.2   \\\\
-\\textbf{Df Residuals:}     &           9      & \\textbf{  BIC:               } &     238.6   \\\\
-\\textbf{Df Model:}         &           6      & \\textbf{                     } &             \\\\
-\\bottomrule
-\\end{tabular}
-\\begin{tabular}{lcccccc}
-                  & \\textbf{coef} & \\textbf{std err} & \\textbf{t} & \\textbf{P$>$$|$t$|$} & \\textbf{[0.025} & \\textbf{0.975]}  \\\\
-\\midrule
-\\textbf{GNPDEFL}  &      15.0619  &       84.915     &     0.177  &         0.863        &     -177.029    &      207.153     \\\\
-\\textbf{GNP}      &      -0.0358  &        0.033     &    -1.070  &         0.313        &       -0.112    &        0.040     \\\\
-\\textbf{UNEMP}    &      -2.0202  &        0.488     &    -4.136  &         0.003        &       -3.125    &       -0.915     \\\\
-\\textbf{ARMED}    &      -1.0332  &        0.214     &    -4.822  &         0.001        &       -1.518    &       -0.549     \\\\
-\\textbf{POP}      &      -0.0511  &        0.226     &    -0.226  &         0.826        &       -0.563    &        0.460     \\\\
-\\textbf{YEAR}     &    1829.1515  &      455.478     &     4.016  &         0.003        &      798.788    &     2859.515     \\\\
-\\textbf{constant} &   -3.482e+06  &      8.9e+05     &    -3.911  &         0.004        &     -5.5e+06    &    -1.47e+06     \\\\
-\\bottomrule
-\\end{tabular}
-\\begin{tabular}{lclc}
-\\textbf{Omnibus:}       &  0.749 & \\textbf{  Durbin-Watson:     } &    2.559  \\\\
-\\textbf{Prob(Omnibus):} &  0.688 & \\textbf{  Jarque-Bera (JB):  } &    0.684  \\\\
-\\textbf{Skew:}          &  0.420 & \\textbf{  Prob(JB):          } &    0.710  \\\\
-\\textbf{Kurtosis:}      &  2.434 & \\textbf{  Cond. No.          } & 4.86e+09  \\\\
-\\bottomrule
-\\end{tabular}
-%\\caption{OLS Regression Results}
-\\end{center}
+    expected = textwrap.dedent("""
+    \\begin{center}
+    \\begin{tabular}{lclc}
+    \\toprule
+    \\textbf{Dep. Variable:}    &      TOTEMP      & \\textbf{  R-squared:         } &     0.995   \\\\
+    \\textbf{Model:}            &       OLS        & \\textbf{  Adj. R-squared:    } &     0.992   \\\\
+    \\textbf{Method:}           &  Least Squares   & \\textbf{  F-statistic:       } &     330.3   \\\\
+    \\textbf{Date:}             & Sun, 07 Apr 2013 & \\textbf{  Prob (F-statistic):} &  4.98e-10   \\\\
+    \\textbf{Time:}             &     13:46:07     & \\textbf{  Log-Likelihood:    } &   -109.62   \\\\
+    \\textbf{No. Observations:} &          16      & \\textbf{  AIC:               } &     233.2   \\\\
+    \\textbf{Df Residuals:}     &           9      & \\textbf{  BIC:               } &     238.6   \\\\
+    \\textbf{Df Model:}         &           6      & \\textbf{                     } &             \\\\
+    \\bottomrule
+    \\end{tabular}
+    \\begin{tabular}{lcccccc}
+                      & \\textbf{coef} & \\textbf{std err} & \\textbf{t} & \\textbf{P$>$$|$t$|$} & \\textbf{[0.025} & \\textbf{0.975]}  \\\\
+    \\midrule
+    \\textbf{GNPDEFL}  &      15.0619  &       84.915     &     0.177  &         0.863        &     -177.029    &      207.153     \\\\
+    \\textbf{GNP}      &      -0.0358  &        0.033     &    -1.070  &         0.313        &       -0.112    &        0.040     \\\\
+    \\textbf{UNEMP}    &      -2.0202  &        0.488     &    -4.136  &         0.003        &       -3.125    &       -0.915     \\\\
+    \\textbf{ARMED}    &      -1.0332  &        0.214     &    -4.822  &         0.001        &       -1.518    &       -0.549     \\\\
+    \\textbf{POP}      &      -0.0511  &        0.226     &    -0.226  &         0.826        &       -0.563    &        0.460     \\\\
+    \\textbf{YEAR}     &    1829.1515  &      455.478     &     4.016  &         0.003        &      798.788    &     2859.515     \\\\
+    \\textbf{constant} &   -3.482e+06  &      8.9e+05     &    -3.911  &         0.004        &     -5.5e+06    &    -1.47e+06     \\\\
+    \\bottomrule
+    \\end{tabular}
+    \\begin{tabular}{lclc}
+    \\textbf{Omnibus:}       &  0.749 & \\textbf{  Durbin-Watson:     } &    2.559  \\\\
+    \\textbf{Prob(Omnibus):} &  0.688 & \\textbf{  Jarque-Bera (JB):  } &    0.684  \\\\
+    \\textbf{Skew:}          &  0.420 & \\textbf{  Prob(JB):          } &    0.710  \\\\
+    \\textbf{Kurtosis:}      &  2.434 & \\textbf{  Cond. No.          } & 4.86e+09  \\\\
+    \\bottomrule
+    \\end{tabular}
+    %\\caption{OLS Regression Results}
+    \\end{center}
 
-Warnings: \\newline
- [1] Standard Errors assume that the covariance matrix of the errors is correctly specified. \\newline
- [2] The condition number is large, 4.86e+09. This might indicate that there are \\newline
- strong multicollinearity or other numerical problems."""
+    Warnings: \\newline
+     [1] Standard Errors assume that the covariance matrix of the errors is correctly specified. \\newline
+     [2] The condition number is large, 4.86e+09. This might indicate that there are \\newline
+     strong multicollinearity or other numerical problems.""").strip()
 
     assert_equal(table, expected)

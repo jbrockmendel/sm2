@@ -21,6 +21,7 @@ from sm2.tools.sm_exceptions import MissingDataError
 #        np.testing.assert_equal(data.wrap_output(self.dates_input, 'dates'),
 #                                self.dates_result)
 
+
 @pytest.mark.not_vetted
 class TestArrays(object):
     @classmethod
