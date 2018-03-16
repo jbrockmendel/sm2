@@ -1,8 +1,5 @@
 from numpy.testing import assert_allclose
-
 from scipy import stats
-
-import pytest
 
 from sm2.distributions import discrete
 
@@ -37,7 +34,6 @@ class TestGenpoisson_p(object):
         assert_allclose(poisson_pmf, genpoisson_pmf, rtol=1e-15)
 
 
-@pytest.mark.skip(reason="zipoisson not ported from upstream")
 class TestZIPoisson(object):
     def test_pmf_zero(self):
         poisson_pmf = stats.poisson.pmf(3, 2)
@@ -60,7 +56,6 @@ class TestZIPoisson(object):
         assert_allclose(poisson_logpmf, zipoisson_logpmf, rtol=5e-2, atol=5e-2)
 
 
-@pytest.mark.skip(reason="zigenpoisson not ported from upstream")
 class TestZIGneralizedPoisson(object):
     def test_pmf_zero(self):
         gp_pmf = discrete.genpoisson_p.pmf(3, 2, 1, 1)
@@ -83,7 +78,6 @@ class TestZIGneralizedPoisson(object):
         assert_allclose(gp_logpmf, zigp_logpmf, rtol=5e-2, atol=5e-2)
 
 
-@pytest.mark.skip(reason="zinegbin not ported from upstream")
 class TestZiNBP(object):
     """
     Test Truncated Poisson distribution

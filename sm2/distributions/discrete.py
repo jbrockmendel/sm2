@@ -1,6 +1,8 @@
 import numpy as np
-from scipy.stats import rv_discrete
+from scipy.stats import rv_discrete, nbinom
 from scipy.special import gammaln
+
+from sm2.compat.scipy import _lazywhere  # TODO: de-privatize
 
 
 class genpoisson_p_gen(rv_discrete):
@@ -24,27 +26,66 @@ genpoisson_p = genpoisson_p_gen(name='genpoisson_p',
                                 longname='Generalized Poisson')
 
 
-def zipoisson_gen(*args, **kwargss):
-    raise NotImplementedError('zipoisson_gen not ported from upstream')
+class zipoisson_gen(rv_discrete):
+    """Zero Inflated Poisson distribution"""
+    def _argcheck(self, mu, w):
+        return (mu > 0) & (w >= 0) & (w<=1)
+
+    def _logpmf(self, x, mu, w):
+        return _lazywhere(x != 0, (x, mu, w),
+                          (lambda x, mu, w: np.log(1. - w) + x * np.log(mu) -
+                          gammaln(x + 1.) - mu),
+                          np.log(w + (1. - w) * np.exp(-mu)))
+
+    def _pmf(self, x, mu, w):
+        return np.exp(self._logpmf(x, mu, w))
 
 
-def zipoisson(*args, **kwargss):
-    raise NotImplementedError('zipoisson not ported from upstream')
+zipoisson = zipoisson_gen(name='zipoisson',
+                          longname='Zero Inflated Poisson')
 
 
-def zigeneralizedpoisson_gen(*args, **kwargss):
-    raise NotImplementedError('zigeneralizedpoisson_gen '
-                              'not ported from upstream')
+class zigeneralizedpoisson_gen(rv_discrete):
+    """Zero Inflated Generalized Poisson distribution"""
+    def _argcheck(self, mu, alpha, p, w):
+        return (mu > 0) & (w >= 0) & (w<=1)
+
+    def _logpmf(self, x, mu, alpha, p, w):
+        return _lazywhere(x != 0, (x, mu, alpha, p, w),
+                          (lambda x, mu, alpha, p, w: np.log(1. - w) + 
+                          genpoisson_p.logpmf(x, mu, alpha, p)),
+                          np.log(w + (1. - w) *
+                          genpoisson_p.pmf(x, mu, alpha, p)))
+
+    def _pmf(self, x, mu, alpha, p, w):
+        return np.exp(self._logpmf(x, mu, alpha, p, w))
 
 
-def zigenpoisson(*args, **kwargss):
-    raise NotImplementedError('zigenpoisson not ported from upstream')
+zigenpoisson = zigeneralizedpoisson_gen(name='zigenpoisson',
+    longname='Zero Inflated Generalized Poisson')
 
 
-def zinegativebinomial_gen(*args, **kwargss):
-    raise NotImplementedError('zinegativebinomial_gen '
-                              'not ported from upstream')
+class zinegativebinomial_gen(rv_discrete):
+    """Zero Inflated Generalized Negative Binomial distribution"""
+    def _argcheck(self, mu, alpha, p, w):
+        return (mu > 0) & (w >= 0) & (w<=1)
+
+    def _logpmf(self, x, mu, alpha, p, w):
+        s, p = self.convert_params(mu, alpha, p)
+        return _lazywhere(x != 0, (x, s, p, w),
+                          (lambda x, s, p, w: np.log(1. - w) + 
+                          nbinom.logpmf(x, s, p)),
+                          np.log(w + (1. - w) *
+                          nbinom.pmf(x, s, p)))
+
+    def _pmf(self, x, mu, alpha, p, w):
+        return np.exp(self._logpmf(x, mu, alpha, p, w))
+
+    def convert_params(self, mu, alpha, p):
+        size = 1. / alpha * mu**(2-p)
+        prob = size / (size + mu)
+        return (size, prob)
 
 
-def zinegbin(*args, **kwargss):
-    raise NotImplementedError('zinegbin not ported from upstream')
+zinegbin = zinegativebinomial_gen(name='zinegbin',
+    longname='Zero Inflated Generalized Negative Binomial')
