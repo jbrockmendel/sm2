@@ -81,6 +81,7 @@ class CheckGeneric(object):
         self.res1.summary()
 
 
+@pytest.mark.not_vetted
 class TestZeroInflatedModel_logit(CheckGeneric):
     @classmethod
     def setup_class(cls):
@@ -98,6 +99,7 @@ class TestZeroInflatedModel_logit(CheckGeneric):
         cls.res2 = res2
 
 
+@pytest.mark.not_vetted
 class TestZeroInflatedModel_probit(CheckGeneric):
     @classmethod
     def setup_class(cls):
@@ -115,6 +117,7 @@ class TestZeroInflatedModel_probit(CheckGeneric):
         cls.res2 = res2
 
 
+@pytest.mark.not_vetted
 class TestZeroInflatedModel_offset(CheckGeneric):
     @classmethod
     def setup_class(cls):
@@ -175,6 +178,7 @@ class TestZeroInflatedModel_offset(CheckGeneric):
         assert_allclose(fitted3_2, fitted1[:10:2], atol=1e-6, rtol=1e-6)
 
 
+@pytest.mark.not_vetted
 class TestZeroInflatedModelPandas(CheckGeneric):
     @classmethod
     def setup_class(cls):
@@ -214,6 +218,7 @@ class TestZeroInflatedModelPandas(CheckGeneric):
         assert_array_equal(model.exog_names, param_names)
 
 
+@pytest.mark.not_vetted
 class TestZeroInflatedPoisson_predict(object):
     @classmethod
     def setup_class(cls):
@@ -246,6 +251,8 @@ class TestZeroInflatedPoisson_predict(object):
             res.predict(), 0.05).T
         assert_allclose(pr, pr2, rtol=0.05, atol=0.05)
 
+
+@pytest.mark.not_vetted
 class TestZeroInflatedGeneralizedPoisson(CheckGeneric):
     @classmethod
     def setup_class(cls):
@@ -317,6 +324,8 @@ class TestZeroInflatedGeneralizedPoisson(CheckGeneric):
         # skip, res_bh reports converged is false but params agree
         #assert res_bh.mle_retvals['converged'] is True
 
+
+@pytest.mark.not_vetted
 class TestZeroInflatedGeneralizedPoisson_predict(object):
     @classmethod
     def setup_class(cls):
@@ -350,6 +359,8 @@ class TestZeroInflatedGeneralizedPoisson_predict(object):
                                             res.predict(), 0.5, 2, 0.5).T
         assert_allclose(pr, pr2, rtol=0.08, atol=0.05)
 
+
+@pytest.mark.not_vetted
 class TestZeroInflatedNegativeBinomialP(CheckGeneric):
     @classmethod
     def setup_class(cls):
@@ -437,6 +448,7 @@ class TestZeroInflatedNegativeBinomialP(CheckGeneric):
         #assert res_bh.mle_retvals['converged'] is True
 
 
+@pytest.mark.not_vetted
 class TestZeroInflatedNegativeBinomialP_predict(object):
     @classmethod
     def setup_class(cls):
@@ -558,6 +570,7 @@ class TestZeroInflatedNegativeBinomialP_predict(object):
                         rtol=1e-10)
 
 
+@pytest.mark.not_vetted
 class TestZeroInflatedNegativeBinomialP_predict2(object):
         @classmethod
         def setup_class(cls):
