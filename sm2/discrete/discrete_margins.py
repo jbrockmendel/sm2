@@ -171,6 +171,7 @@ def _get_count_effects(effects, exog, count_ind, method, model, params):
         effects[:, i] = ((effect1 - effect0) / 2)
     return effects
 
+
 def _get_dummy_effects(effects, exog, dummy_ind, method, model, params):
     """
     If there's a dummy variable, the predicted difference is taken at
@@ -227,7 +228,7 @@ def _margeff_cov_params_dummy(model, cov_margins, params, exog, dummy_ind,
         if dfdb.ndim >= 2:  # for overall
             dfdb = dfdb.mean(0)
         if J > 1:
-            K = dfdb.shape[1] // (J-1)
+            K = dfdb.shape[1] // (J - 1)
             cov_margins[i::K, :] = dfdb
         else:
             # dfdb could be too short if there are extra params, k_extra > 0
@@ -268,6 +269,7 @@ def _margeff_cov_params_count(model, cov_margins, params, exog, count_ind,
             cov_margins[i, :len(dfdb)] = dfdb
             # dfdb --> how each F changes with change in B
     return cov_margins
+
 
 def margeff_cov_params(model, params, exog, cov_params, at, derivative,
                        dummy_ind, count_ind, method, J):
@@ -348,6 +350,7 @@ def margeff_cov_params(model, params, exog, cov_params, at, derivative,
     # NOTE: this won't go through for at == 'all'
     return np.dot(np.dot(jacobian_mat, cov_params), jacobian_mat.T)
 
+
 def margeff_cov_with_se(model, params, exog, cov_params, at, derivative,
                         dummy_ind, count_ind, method, J):
     """
@@ -371,6 +374,7 @@ def _check_at_is_all(method):
         raise NotImplementedError("Only margeff are available when `at` is "
                                   "all. Please input specific points if you "
                                   "would like to do inference.")
+
 
 _transform_names = dict(dydx='dy/dx',
                         eyex='d(lny)/d(lnx)',
@@ -436,7 +440,7 @@ class DiscreteMargins(object):
         names = [_transform_names[self.margeff_options['method']],
                  'Std. Err.', 'z', 'Pr(>|z|)',
                  'Conf. Int. Low', 'Cont. Int. Hi.']
-        ind = self.results.model.exog.var(0) != 0 # True if not a constant
+        ind = self.results.model.exog.var(0) != 0  # True if not a constant
         exog_names = self.results.model.exog_names
         k_extra = getattr(model, 'k_extra', 0)
         if k_extra > 0:
@@ -461,7 +465,7 @@ class DiscreteMargins(object):
             table = np.column_stack((self.margeff, self.margeff_se,
                                      self.tvalues, self.pvalues,
                                      self.conf_int(alpha)))
-            index=var_names
+            index = var_names
 
         return pd.DataFrame(table, columns=names, index=index)
 
@@ -673,14 +677,14 @@ class DiscreteMargins(object):
         effects = model._derivative_exog(params, exog, method,
                                          dummy_idx, count_idx)
 
-        J = getattr(model, 'J', 1)
+        J = getattr(model, 'J', 1)  # TODO: Is this ever not 1?
         effects_idx = np.tile(effects_idx, J)  # adjust for multi-equation.
 
         effects = _effects_at(effects, at)
 
         if at == 'all':
             if J > 1:
-                K = model.K - np.any(~effects_idx) # subtract constant
+                K = model.K - np.any(~effects_idx)  # subtract constant
                 self.margeff = effects[:, effects_idx].reshape(-1, K, J,
                                                                order='F')
             else:

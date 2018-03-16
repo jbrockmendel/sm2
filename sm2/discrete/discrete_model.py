@@ -1507,7 +1507,6 @@ class GeneralizedPoisson(CountModel):
             alpha = params[-1]
         params = params[:-1]
         p = self.parameterization
-        exog = self.exog
         y = self.endog[:, None]
         mu = self.predict(params)[:, None]
         mu_p = np.power(mu, p)
@@ -1792,7 +1791,6 @@ class Logit(BinaryModel):
 
         """
         Xb = np.dot(self.exog, params)
-        X = self.exog
         L = self.cdf(Xb)
         return (self.endog - L)[:, None] * self.exog
 
@@ -1935,7 +1933,6 @@ class Probit(BinaryModel):
         normal distribution is symmetric.
         """
         q = 2 * self.endog - 1
-        X = self.exog
         Xb = np.dot(self.exog, params)
         prob = self.cdf(q * Xb)
         return np.log(np.clip(prob, FLOAT_EPS, 1))
@@ -3021,7 +3018,6 @@ class NegativeBinomialP(CountModel):
     def _get_start_params_null(self):
         offset = getattr(self, "offset", 0)
         exposure = getattr(self, "exposure", 0)
-        q = self.parameterization - 1
 
         const = (self.endog / np.exp(offset + exposure)).mean()
         params = [np.log(const)]
@@ -3137,11 +3133,15 @@ class NegativeBinomialP(CountModel):
             start_params = np.append(start_params, 0.1)
 
         cntfit = DiscreteModel.fit_regularized(self,
-            start_params=start_params, method=method, maxiter=maxiter,
-            full_output=full_output, disp=disp, callback=callback,
-            alpha=alpha, trim_mode=trim_mode,
-            auto_trim_tol=auto_trim_tol, size_trim_tol=size_trim_tol,
-            qc_tol=qc_tol, **kwargs)
+                                               start_params=start_params,
+                                               method=method, maxiter=maxiter,
+                                               full_output=full_output,
+                                               disp=disp, callback=callback,
+                                               alpha=alpha,
+                                               trim_mode=trim_mode,
+                                               auto_trim_tol=auto_trim_tol,
+                                               size_trim_tol=size_trim_tol,
+                                               qc_tol=qc_tol, **kwargs)
 
         res_cls, wrap_cls = self._res_classes["fit_regularized"]
         discretefit = res_cls(self, cntfit)

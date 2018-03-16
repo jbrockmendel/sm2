@@ -1,11 +1,8 @@
 from __future__ import division
-import os
 
 import pytest
 import numpy as np
-from numpy.testing import (assert_almost_equal,
-                           assert_equal, assert_array_equal, assert_allclose,
-                           assert_array_less)
+from numpy.testing import assert_equal, assert_array_equal, assert_allclose
 
 import sm2.api as sm
 from .results.results_discrete import RandHIE
@@ -170,7 +167,6 @@ class TestZeroInflatedModel_offset(CheckGeneric):
                                  exposure=np.exp(offset))
         assert_allclose(fitted3_0, fitted1_0, atol=1e-6, rtol=1e-6)
 
-
         ex = model1.exog[:10:2]
         ex_infl = model1.exog_infl[:10:2]
         offset = offset[:10:2]
@@ -227,7 +223,8 @@ class TestZeroInflatedModelPandas(CheckGeneric):
         param_names = ['inflate_const', 'inflate_lncoins', 'const', 'idp',
                        'lpi', 'fmde']
         model = sm.ZeroInflatedPoisson(self.data.endog, exog,
-            exog_infl=exog_infl, inflation='logit')
+                                       exog_infl=exog_infl,
+                                       inflation='logit')
         assert_array_equal(model.exog_names, param_names)
 
 
@@ -239,7 +236,7 @@ class TestZeroInflatedPoisson_predict(object):
         np.random.seed(123)
         nobs = 200
         exog = np.ones((nobs, 2))
-        exog[:nobs//2, 1] = 2
+        exog[:nobs // 2, 1] = 2
         mu_true = exog.dot(expected_params)
         cls.endog = sm.distributions.zipoisson.rvs(mu_true, 0.05,
                                                    size=mu_true.shape)
@@ -258,7 +255,6 @@ class TestZeroInflatedPoisson_predict(object):
 
     def test_predict_prob(self):
         res = self.res
-        endog = res.model.endog
 
         pr = res.predict(which='prob')
         pr2 = sm.distributions.zipoisson.pmf(np.arange(7)[:, None],
@@ -370,7 +366,6 @@ class TestZeroInflatedGeneralizedPoisson_predict(object):
 
     def test_predict_prob(self):
         res = self.res
-        endog = res.model.endog
 
         pr = res.predict(which='prob')
         pr2 = sm.distributions.zinegbin.pmf(np.arange(12)[:, None],
@@ -387,7 +382,7 @@ class TestZeroInflatedNegativeBinomialP(CheckGeneric):
         exog = sm.add_constant(data.exog[:, 1], prepend=False)
         exog_infl = sm.add_constant(data.exog[:, 0], prepend=False)
         # cheating for now, parameters are not well identified in this dataset
-        # see https://github.com/statsmodels/statsmodels/pull/3928#issuecomment-331724022
+        # github.com/statsmodels/statsmodels/pull/3928#issuecomment-331724022
         sp = np.array([1.88, -10.28, -0.20, 1.14, 1.34])
 
         model = sm.ZeroInflatedNegativeBinomialP(data.endog, exog,
@@ -417,7 +412,8 @@ class TestZeroInflatedNegativeBinomialP(CheckGeneric):
 
         alpha = np.ones(len(self.res1.params))
         alpha[-2:] = 0
-        res_reg = model.fit_regularized(alpha=alpha*0.01, disp=0, maxiter=500)
+        res_reg = model.fit_regularized(alpha=alpha * 0.01,
+                                        disp=0, maxiter=500)
 
         assert_allclose(res_reg.params[2:],
                         self.res1.params[2:],
@@ -557,7 +553,7 @@ class TestZeroInflatedNegativeBinomialP_predict(object):
         probs_main = res.predict(which='prob-main')
         probs_main[[0, -1]]
         assert_allclose(probs_main_unique,
-                        probs_main[[0, -1]], 
+                        probs_main[[0, -1]],
                         rtol=1e-10)
         assert_allclose(probs_main_unique,
                         1 - prob_infl,

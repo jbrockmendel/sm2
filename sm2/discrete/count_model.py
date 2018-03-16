@@ -321,8 +321,9 @@ class GenericZeroInflated(CountModel):
                     np.exp(llf[zero_idx]) - (w[zero_idx] - w[zero_idx]**2) *
                     (1 - np.exp(llf_main[zero_idx]))**2) /
                     pmf[zero_idx]**2)).sum() -
-                    (self.exog_infl[nonzero_idx, i] * self.exog_infl[nonzero_idx, j] *
-                    w[nonzero_idx] * (1 - w[nonzero_idx])).sum())
+                    (self.exog_infl[nonzero_idx, i] *
+                     self.exog_infl[nonzero_idx, j] *
+                     w[nonzero_idx] * (1 - w[nonzero_idx])).sum())
 
         # d2l/dpdw
         for i in range(self.k_inflate):
@@ -527,8 +528,8 @@ class ZeroInflatedPoisson(GenericZeroInflated):
                     exog[zero_idx, i] * exog[zero_idx, j] *
                     mu[zero_idx] * (w[zero_idx] - 1) * (1 / coeff -
                     w[zero_idx] * mu[zero_idx] * np.exp(mu[zero_idx]) /
-                    coeff**2)).sum() - (mu[nonzero_idx] * exog[nonzero_idx, i] *
-                    exog[nonzero_idx, j]).sum())
+                    coeff**2)).sum() - (mu[nonzero_idx] *
+                    exog[nonzero_idx, i] * exog[nonzero_idx, j]).sum())
 
         return hess_arr
 
@@ -685,6 +686,7 @@ class ZeroInflatedNegativeBinomialP(GenericZeroInflated):
             exog_infl=exog_infl,
             exposure=exposure,
             missing=missing, **kwargs)
+
         self.model_main = NegativeBinomialP(self.endog, self.exog,
                                             offset=offset,
                                             exposure=exposure, p=p)
@@ -752,14 +754,14 @@ class L1ZeroInflatedPoissonResults(L1CountResults, ZeroInflatedPoissonResults):
 
 class ZeroInflatedPoissonResultsWrapper(lm.RegressionResultsWrapper):
     pass
-wrap.populate_wrapper(ZeroInflatedPoissonResultsWrapper,
-                      ZeroInflatedPoissonResults)  # noqa:E305
+wrap.populate_wrapper(ZeroInflatedPoissonResultsWrapper,  # noqa:E305
+                      ZeroInflatedPoissonResults)
 
 
 class L1ZeroInflatedPoissonResultsWrapper(lm.RegressionResultsWrapper):
     pass
-wrap.populate_wrapper(L1ZeroInflatedPoissonResultsWrapper,
-                      L1ZeroInflatedPoissonResults)  # noqa:E305
+wrap.populate_wrapper(L1ZeroInflatedPoissonResultsWrapper,  # noqa:E305
+                      L1ZeroInflatedPoissonResults)
 
 
 class ZeroInflatedGeneralizedPoissonResults(CountResults):
@@ -834,8 +836,7 @@ class L1ZeroInflatedNegativeBinomialResults(L1CountResults,
     pass
 
 
-class ZeroInflatedNegativeBinomialResultsWrapper(
-        lm.RegressionResultsWrapper):
+class ZeroInflatedNegativeBinomialResultsWrapper(lm.RegressionResultsWrapper):
     pass
 wrap.populate_wrapper(  # noqa:E305
     ZeroInflatedNegativeBinomialResultsWrapper,

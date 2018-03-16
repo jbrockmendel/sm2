@@ -385,8 +385,8 @@ class TestGLMPoissonConstrained1b(CheckPoissonConstrainedMixin):
 
         formula = 'deaths ~ smokes + C(agecat)'
         mod = Poisson.from_formula(formula, data=data,
+                                   #offset=np.log(data['pyears'].values),
                                    exposure=data['pyears'].values)
-                                   #offset=np.log(data['pyears'].values))
 
         constr = 'C(agecat)[T.4] = C(agecat)[T.5]'
         res2 = mod.fit_constrained(constr, start_params=self.res1m.params,

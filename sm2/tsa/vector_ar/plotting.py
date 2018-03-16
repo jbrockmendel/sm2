@@ -96,7 +96,6 @@ def plot_with_error(y, error, x=None, axes=None, value_fmt='k',
     ----------
     y :
     error : array or None
-
     """
     import matplotlib.pyplot as plt
 
@@ -106,18 +105,16 @@ def plot_with_error(y, error, x=None, axes=None, value_fmt='k',
     if x is None:
         x = list(range(len(y)))
 
-    plot_action = lambda y, fmt: axes.plot(x, y, fmt)
-    plot_action(y, value_fmt)
+    axes.plot(x, y, fmt)
 
-    #changed this
     if error is not None:
         if stderr_type == 'asym':
             q = util.norm_signif_level(alpha)
-            plot_action(y - q * error, error_fmt)
-            plot_action(y + q * error, error_fmt)
+            axes.plot(x, y - q * error, error_fmt)
+            axes.plot(x, y + q * error, error_fmt)
         if stderr_type in ('mc', 'sz1', 'sz2', 'sz3'):
-            plot_action(error[0], error_fmt)
-            plot_action(error[1], error_fmt)
+            axes.plot(x, error[0], error_fmt)
+            axes.plot(x, error[1], error_fmt)
 
 
 def plot_full_acorr(acorr, fontsize=8, linewidth=8, xlabel=None,

@@ -16,6 +16,7 @@ class ARLagResults(object):
     def __init__(self, type="const"):
         # order of results is AIC, HQ, SC, FPE
         if type == "const":
+            # TODO: Dont use name `type`
             ic = [6.311751824815273, 6.321813007357017, 6.336872456958734,
                   551.009492543133547, 5.647615009344886, 5.662706783157502,
                   5.685295957560077, 283.614444209634655, 5.634199640773091,
