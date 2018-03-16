@@ -327,9 +327,6 @@ class TestGLS_alt_sigma(CheckRegressionResults):
         with pytest.raises(ValueError):
             GLS(self.endog, self.exog, sigma=np.ones((n - 1, n - 1)))
 
-    # def check_confidenceintervals(self, conf1, conf2):
-    #    assert_almost_equal(conf1, conf2, DECIMAL_4)
-
 
 @pytest.mark.not_vetted
 class TestWLSExogWeights(CheckRegressionResults):
@@ -383,11 +380,6 @@ class TestWLS_OLS(CheckRegressionResults):
         cls.res1 = OLS(data.endog, data.exog).fit()
         cls.res2 = WLS(data.endog, data.exog).fit()
 
-    def check_confidenceintervals(self, conf1, conf2):
-        assert_almost_equal(conf1,
-                            conf2(),
-                            DECIMAL_4)
-
 
 @pytest.mark.not_vetted
 class TestGLS_OLS(CheckRegressionResults):
@@ -398,12 +390,6 @@ class TestGLS_OLS(CheckRegressionResults):
         cls.res1 = GLS(data.endog, data.exog).fit()
         cls.res2 = OLS(data.endog, data.exog).fit()
 
-    # TODO: WTF do these not get called?
-    def check_confidenceintervals(self, conf1, conf2):
-        assert_almost_equal(conf1,
-                            conf2(),
-                            DECIMAL_4)
-
 
 # class TestWLS_GLS(CheckRegressionResults):
 #    @classmethod
@@ -412,9 +398,6 @@ class TestGLS_OLS(CheckRegressionResults):
 #        cls.res1 = WLS(data.endog, data.exog,
 #                        weights=1 / data.exog[:, 2]).fit()
 #        cls.res2 = GLS(data.endog, data.exog, sigma=data.exog[:, 2]).fit()
-#
-#    def check_confidenceintervals(self, conf1, conf2):
-#        assert_almost_equal(conf1, conf2(), DECIMAL_4)
 
 
 # TODO: test AR
@@ -453,10 +436,6 @@ class TestDataDimensions(CheckRegressionResults):
         cls.mod2 = OLS(cls.endog_n_one, cls.exog_n_one)
         cls.mod2.df_model += 1
         cls.res2 = cls.mod2.fit()
-
-    # TODO: de-duplicate identical methods
-    def check_confidenceintervals(self, conf1, conf2):
-        assert_almost_equal(conf1, conf2(), DECIMAL_4)
 
 
 @pytest.mark.not_vetted
