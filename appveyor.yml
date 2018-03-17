@@ -1,0 +1,15 @@
+build: false
+environment:
+  matrix:
+    - PYTHON_VERSION: 27
+    - PYTHON_VERSION: 35
+    - PYTHON_VERSION: 36
+platform:
+  - x64
+  - x86
+
+install:
+  - python -m pip install -U tox
+
+test_script:
+  - tox
