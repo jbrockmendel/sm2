@@ -309,7 +309,7 @@ class Test_Y_ARMA50_NoConst(CheckArmaResultsMixin, CheckForecastMixin):
         endog = y_arma[:, 4]
         cls.res1 = ARMA(endog, order=(5, 0)).fit(trend='nc', disp=-1)
         (cls.res1.forecast_res, cls.res1.forecast_err,
-                confint) = cls.res1.forecast(10)
+         confint) = cls.res1.forecast(10)
         cls.res2 = results_arma.Y_arma50()
 
 
@@ -329,7 +329,7 @@ class Test_Y_ARMA11_Const(CheckArmaResultsMixin, CheckForecastMixin):
         endog = y_arma[:, 6]
         cls.res1 = ARMA(endog, order=(1, 1)).fit(trend="c", disp=-1)
         (cls.res1.forecast_res, cls.res1.forecast_err,
-                confint) = cls.res1.forecast(10)
+         confint) = cls.res1.forecast(10)
         cls.res2 = results_arma.Y_arma11c()
 
 

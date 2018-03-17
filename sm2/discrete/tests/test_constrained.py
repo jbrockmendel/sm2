@@ -139,7 +139,6 @@ class TestPoissonConstrained1a(CheckPoissonConstrainedMixin):
         # example without offset
         formula = 'deaths ~ logpyears + smokes + C(agecat)'
         mod = cls.model_cls.from_formula(formula, data=data)
-        #res1a = mod1a.fit()
         # get start_params, example fails to converge on one py TravisCI
         k_vars = len(mod.exog_names)
         start_params = np.zeros(k_vars)
@@ -190,7 +189,6 @@ class TestPoissonConstrained1b(CheckPoissonConstrainedMixin):
         mod = cls.model_cls.from_formula(formula, data=data,
                                          exposure=data['pyears'].values)
                                          #offset=np.log(data['pyears'].values))
-        #res1a = mod1a.fit()
         constr = 'C(agecat)[T.4] = C(agecat)[T.5]'
         lc = patsy.DesignInfo(mod.exog_names).linear_constraint(constr)
         cls.res1 = fit_constrained(mod, lc.coefs, lc.constants,
@@ -216,7 +214,6 @@ class TestPoissonConstrained1c(CheckPoissonConstrainedMixin):
         formula = 'deaths ~ smokes + C(agecat)'
         mod = cls.model_cls.from_formula(formula, data=data,
                                          offset=np.log(data['pyears'].values))
-        #res1a = mod1a.fit()
         constr = 'C(agecat)[T.4] = C(agecat)[T.5]'
         lc = patsy.DesignInfo(mod.exog_names).linear_constraint(constr)
         cls.res1 = fit_constrained(mod, lc.coefs, lc.constants,
@@ -231,7 +228,7 @@ class TestPoissonConstrained1c(CheckPoissonConstrainedMixin):
 
 class TestPoissonNoConstrained(CheckPoissonConstrainedMixin):
     res2 = results.results_exposure_noconstraint
-    idx = [6, 2, 3, 4, 5, 0] # 1 is dropped baseline for categorical
+    idx = [6, 2, 3, 4, 5, 0]  # 1 is dropped baseline for categorical
     model_cls = Poisson
 
     @classmethod
@@ -263,8 +260,8 @@ class TestPoissonConstrained2a(CheckPoissonConstrainedMixin):
         start_params = np.zeros(k_vars)
         start_params[0] = np.log(mod.endog.mean())
         # if we need it, this is desired params
-        p = np.array([-9.43762015, 1.52762442, 2.74155711, 3.58730007,
-                      4.08730007, 1.15987869, 0.12111539])
+        # p = np.array([-9.43762015, 1.52762442, 2.74155711, 3.58730007,
+        #               4.08730007, 1.15987869, 0.12111539])
 
         constr = 'C(agecat)[T.5] - C(agecat)[T.4] = 0.5'
         lc = patsy.DesignInfo(mod.exog_names).linear_constraint(constr)
@@ -290,9 +287,8 @@ class TestPoissonConstrained2b(CheckPoissonConstrainedMixin):
         # example without offset
         formula = 'deaths ~ smokes + C(agecat)'
         mod = cls.model_cls.from_formula(formula, data=data,
+                                         #offset=np.log(data['pyears'].values),
                                          exposure=data['pyears'].values)
-                                         #offset=np.log(data['pyears'].values))
-        #res1a = mod1a.fit()
         constr = 'C(agecat)[T.5] - C(agecat)[T.4] = 0.5'
         lc = patsy.DesignInfo(mod.exog_names).linear_constraint(constr)
         cls.res1 = fit_constrained(mod, lc.coefs, lc.constants,

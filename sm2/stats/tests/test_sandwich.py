@@ -82,7 +82,7 @@ def test_hac_simple():
 
     cov1 = sw.cov_hac_simple(res_olsg, nlags=4, use_correction=True)
     sw.se_cov(cov1)  # smoke?
-    
+
     cov2 = sw.cov_hac_simple(res_olsg, nlags=4, use_correction=False)
     sw.se_cov(cov2)  # smoke?
 

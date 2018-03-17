@@ -1375,7 +1375,7 @@ class GeneralizedPoisson(CountModel):
 
         if callback is None:
             # work around perfect separation callback GH#3895
-            callback = lambda *x: x
+            callback = lambda *x: x  # noqa: E731
 
         # TODO: skip CountModel and go straight to DiscreteModel?
         mlefit = CountModel.fit(self, start_params=start_params,
@@ -2695,7 +2695,7 @@ class NegativeBinomial(CountModel):
 
         if callback is None:
             # work around perfect separation callback GH#3895
-            callback = lambda *x: x
+            callback = lambda *x: x  # noqa: E731
 
         # TODO: can we skip CountModel and go straight to DiscreteModel?
         mlefit = CountModel.fit(self, start_params=start_params,
@@ -3004,10 +3004,10 @@ class NegativeBinomialP(CountModel):
                                       axis=1)
 
         hess_arr[-1, :-1] = (exog[:, :].T * mu * a1 *
-                ((1 + a4) * (1 - a3 / a2) / a2 -
-                 p * (np.log(a1 / a2) + dgpart + 2) / mu +
-                 p * (a3 / mu + a4) / a2 +
-                 a4 * pgpart) / alpha).sum(axis=1)
+                             ((1 + a4) * (1 - a3 / a2) / a2 -
+                              p * (np.log(a1 / a2) + dgpart + 2) / mu +
+                              p * (a3 / mu + a4) / a2 +
+                              a4 * pgpart) / alpha).sum(axis=1)
 
         da2 = (a1 * (2 * np.log(a1 / a2) + 2 * dgpart + 3 -
                      2 * a3 / a2 - a1 * pgpart - 2 * a1 / a2 +
@@ -3570,7 +3570,7 @@ class L1CountResults(DiscreteResults):
         # self.trimmed is a boolean array with T/F telling whether or not that
         # entry in params has been set zero'd out.
         self.trimmed = cntfit.mle_retvals['trimmed']
-        self.nnz_params = (self.trimmed == False).sum()
+        self.nnz_params = (self.trimmed == False).sum()  # noqa:E712
 
         # Set degrees of freedom.  In doing so,
         # adjust for extra parameter in NegativeBinomial nb1 and nb2
@@ -3818,7 +3818,7 @@ class L1BinaryResults(BinaryResults):
         # self.trimmed is a boolean array with T/F telling whether or not that
         # entry in params has been set zero'd out.
         self.trimmed = bnryfit.mle_retvals['trimmed']
-        self.nnz_params = (self.trimmed == False).sum()
+        self.nnz_params = (self.trimmed == False).sum()  # noqa:E712
         self.df_model = self.nnz_params - 1
         self.df_resid = float(self.model.endog.shape[0] - self.nnz_params)
 
@@ -3943,7 +3943,7 @@ class L1MultinomialResults(MultinomialResults):
         # self.trimmed is a boolean array with T/F telling whether or not that
         # entry in params has been set zero'd out.
         self.trimmed = mlefit.mle_retvals['trimmed']
-        self.nnz_params = (self.trimmed == False).sum()
+        self.nnz_params = (self.trimmed == False).sum()  # noqa:E712
 
         # Note: J-1 constants
         self.df_model = self.nnz_params - (self.J - 1)

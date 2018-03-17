@@ -62,7 +62,8 @@ class zigeneralizedpoisson_gen(rv_discrete):
 
 
 zigenpoisson = zigeneralizedpoisson_gen(name='zigenpoisson',
-    longname='Zero Inflated Generalized Poisson')
+                                        longname='Zero Inflated '
+                                                 'Generalized Poisson')
 
 
 class zinegativebinomial_gen(rv_discrete):
@@ -88,4 +89,5 @@ class zinegativebinomial_gen(rv_discrete):
 
 
 zinegbin = zinegativebinomial_gen(name='zinegbin',
-    longname='Zero Inflated Generalized Negative Binomial')
+                                  longname='Zero Inflated '
+                                           'Generalized Negative Binomial')

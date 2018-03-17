@@ -562,9 +562,9 @@ def summary_params_2d(result, extras=None, endog_names=None, exog_names=None,
                         for col in getattr(result, what)]
                        for what in extras]
         data = list(zip(res_params, *extras_list))
-        data = [i for j in data for i in j]  #flatten
+        data = [i for j in data for i in j]
         stubs = list(zip(endog_names, *[[''] * len(endog_names)] * len(extras)))
-        stubs = [i for j in stubs for i in j] #flatten
+        stubs = [i for j in stubs for i in j]
     else:
         data = res_params
         stubs = endog_names
@@ -579,7 +579,6 @@ def summary_params_2d(result, extras=None, endog_names=None, exog_names=None,
 
 def summary_params_2dflat(result, endog_names=None, exog_names=None, alpha=0.05,
                           use_t=True, keep_headers=True, endog_cols=False):
-                          #skip_headers2=True):
     """summary table for parameters that are 2d, e.g. multi-equation models
 
     Parameters

@@ -70,12 +70,13 @@ def test_ywcoef():
                               -yule_walker(x1000, 20, method='mle')[0], 8)
 
 
+@pytest.mark.smoke
 @pytest.mark.not_vetted
 def test_yule_walker_inter():
     # see GH#1869
     x = np.array([1, -1, 2, 2, 0, -2, 1, 0, -3, 0, 0])
     # it works
-    result = yule_walker(x, 3)
+    yule_walker(x, 3)
 
 
 @pytest.mark.not_vetted
@@ -125,8 +126,6 @@ class TestLagmat(object):
         cls.macro_df = cls.macro_df[['year', 'quarter', 'realgdp', 'cpi']]
         cls.macro_data = cls.macro_df.to_records(index=False)
         cls.random_data = np.random.randn(100)
-        year = cls.macro_data['year']
-        quarter = cls.macro_data['quarter']
 
         index = [str(int(yr)) + '-Q' + str(int(qu))
                  for yr, qu in zip(cls.macro_df.year, cls.macro_df.quarter)]
