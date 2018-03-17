@@ -7,7 +7,7 @@ import copy
 gen_fmt = dict(
     data_fmts=["%s", "%s", "%s", "%s", "%s"],
     empty_cell='',
-    colwidths=7, #17,
+    colwidths=7,
     colsep='   ',
     row_pre='  ',
     row_post='  ',

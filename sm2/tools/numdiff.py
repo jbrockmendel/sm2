@@ -39,7 +39,8 @@ without dependencies.
 # http://en.wikipedia.org/wiki/Levenberg%E2%80%93Marquardt_algorithm
 #    objective: sum((y-f(beta,x)**2),   Jacobian = d f/d beta
 #    and not d objective/d beta as in MLE Greene
-#    similar: http://crsouza.blogspot.com/2009/11/neural-network-learning-by-levenberg_18.html#hessian
+#    similar to:
+#    crsouza.blogspot.com/2009/11/neural-network-learning-by-levenberg_18.html
 #
 # in example: if J = d x*beta / d beta then J'J == X'X
 #    similar to:

@@ -6,8 +6,7 @@ import numpy as np
 import pandas as pd
 
 from sm2.iolib.table import SimpleTable
-from sm2.iolib.tableformatting import (gen_fmt, fmt_2,
-                                       fmt_params, fmt_2cols)
+from sm2.iolib.tableformatting import gen_fmt, fmt_2, fmt_params, fmt_2cols
 
 
 def forg(x, prec=3):
@@ -38,18 +37,17 @@ def summary(self, yname=None, xname=None, title=0, alpha=.05,
     Confidance interval : (0, 1) not implimented
     title : string
             optional, Default is 'Generalized linear model'
-    returns : string
-              'text', 'table', 'csv', 'latex', 'html'
+    returns : {'text', 'table', 'csv', 'latex', 'html'}
 
     Returns
     -------
     Default :
     returns='print'
-            Prints the summarirized results
+            Prints the summarized results
 
     Option :
     returns='text'
-            Prints the summarirized results
+            Prints the summarized results
 
     Option :
     returns='table'
@@ -134,7 +132,7 @@ def summary(self, yname=None, xname=None, title=0, alpha=.05,
     #              )
     #gen_data_left = [[modeltype],
     #                 [date],
-    #                 yname, #What happens with multiple names?
+    #                 yname, # What happens with multiple names?
     #                 [df_model]
     #                 ]
     gen_table_left = SimpleTable(gen_data_left,
@@ -147,7 +145,7 @@ def summary(self, yname=None, xname=None, title=0, alpha=.05,
                        'Time:',
                        'Number of Obs:',
                        'df resid')
-    gen_data_right = ([modeltype], #was dist family need to look at more
+    gen_data_right = ([modeltype],  # was dist family need to look at more  TODO: What does this comment mean?
                       time_of_day,
                       [nobs],
                       [df_resid])
@@ -175,16 +173,18 @@ def summary(self, yname=None, xname=None, title=0, alpha=.05,
                   'WLS': self.pvalues,
                   'RLM': self.pvalues,
                   'GLM': self.pvalues}
-    #Dictionary to store the header names for the parameter part of the
-    #summary table. look up by modeltype
+    # Dictionary to store the header names for the parameter part of the
+    # summary table. look up by modeltype
     alp = str((1 - alpha) * 100) + '%'
     param_header = {
         'OLS': ['coef', 'std err', 't', 'P>|t|', alp + ' Conf. Interval'],
         'GLS': ['coef', 'std err', 't', 'P>|t|', alp + ' Conf. Interval'],
         'GLSAR': ['coef', 'std err', 't', 'P>|t|', alp + ' Conf. Interval'],
         'WLS': ['coef', 'std err', 't', 'P>|t|', alp + ' Conf. Interval'],
-        'GLM': ['coef', 'std err', 't', 'P>|t|', alp + ' Conf. Interval'], #glm uses t-distribution
-        'RLM': ['coef', 'std err', 'z', 'P>|z|', alp + ' Conf. Interval']  #checke z
+        'GLM': ['coef', 'std err', 't', 'P>|t|', alp + ' Conf. Interval'],
+        # glm uses t-distribution
+        'RLM': ['coef', 'std err', 'z', 'P>|z|', alp + ' Conf. Interval']
+        # checke z
     }
     params_stubs = xname
     params = self.params
@@ -205,8 +205,7 @@ def summary(self, yname=None, xname=None, title=0, alpha=.05,
                                   param_header[modeltype],
                                   params_stubs,
                                   title=None,
-                                  txt_fmt=fmt_2, #gen_fmt,
-                                  )
+                                  txt_fmt=fmt_2)
 
     # special table
     # -------------
@@ -215,7 +214,7 @@ def summary(self, yname=None, xname=None, title=0, alpha=.05,
 
     # output options
     # --------------
-    #TODO: JP the rest needs to be fixed, similar to summary in linear_model
+    # TODO: JP the rest needs to be fixed, similar to summary in linear_model
 
     def ols_printer():
         """
@@ -286,20 +285,15 @@ def summary_top(results, title=None, gleft=None, gright=None,
         ('Dependent Variable:', lambda: [yname]),
         ('Dep. Variable:', lambda: [yname]),
         ('Model:', lambda: [results.model.__class__.__name__]),
-        #('Model type:', lambda: [results.model.__class__.__name__]),
         ('Date:', lambda: [date]),
         ('Time:', lambda: time_of_day),
         ('Number of Obs:', lambda: [results.nobs]),
-        #('No. of Observations:', lambda: ["%#6d" % results.nobs]),
         ('No. Observations:', lambda: ["%#6d" % results.nobs]),
-        #('Df model:', lambda: [results.df_model]),
         ('Df Model:', lambda: ["%#6d" % results.df_model]),
         # TODO: check when we have non-integer df
         ('Df Residuals:', lambda: ["%#6d" % results.df_resid]),
-        #('Df resid:', lambda: [results.df_resid]),
-        #('df resid:', lambda: [results.df_resid]), #check capitalization
-        ('Log-Likelihood:', lambda: ["%#8.5g" % results.llf]) #doesn't exist for RLM - exception
-        #('Method:', lambda: [???]), #no default for this
+        ('Log-Likelihood:', lambda: ["%#8.5g" % results.llf])  # doesn't exist for RLM - exception
+        #('Method:', lambda: [???]),  # no default for this
     ])
 
     if title is None:
@@ -315,9 +309,9 @@ def summary_top(results, title=None, gleft=None, gright=None,
                     ('Df resid:', None)]
 
         try:
-            llf = results.llf
+            results.llf
             gen_left.append(('Log-Likelihood', None))
-        except: #AttributeError, NotImplementedError
+        except:  # AttributeError, NotImplementedError
             pass
 
         gen_right = []
@@ -325,7 +319,6 @@ def summary_top(results, title=None, gleft=None, gright=None,
     gen_title = title
     gen_header = None
 
-    #needed_values = [k for k, v in gleft + gright if v is None] #not used anymore
     # replace missing (None) values with default values
     gen_left_ = []
     for item, value in gen_left:
@@ -358,13 +351,14 @@ def summary_top(results, title=None, gleft=None, gright=None,
         # padding in SimpleTable doesn't work like I want
         # force extra spacing and exact string length in right table
         gen_right = [('%-21s' % ('  ' + k), v) for k, v in gen_right]
-        gen_stubs_right, gen_data_right = zip_longest(*gen_right)  # transpose row col
+        # transpose row col
+        gen_stubs_right, gen_data_right = zip_longest(*gen_right)
+
         gen_table_right = SimpleTable(gen_data_right,
                                       gen_header,
                                       gen_stubs_right,
                                       title=gen_title,
-                                      txt_fmt=fmt_2cols #gen_fmt
-                                      )
+                                      txt_fmt=fmt_2cols)
     else:
         gen_table_right = []  # because .extend_right seems works with []
 
@@ -381,7 +375,7 @@ def summary_top(results, title=None, gleft=None, gright=None,
     gen_table_left.extend_right(gen_table_right)
     general_table = gen_table_left
 
-    return general_table  #, gen_table_left, gen_table_right
+    return general_table
 
 
 def summary_params(results, yname=None, xname=None, alpha=.05, use_t=True,
@@ -456,8 +450,7 @@ def summary_params(results, yname=None, xname=None, alpha=.05, use_t=True,
                                   param_header,
                                   params_stubs,
                                   title=title,
-                                  txt_fmt=fmt_params #gen_fmt #fmt_2, #gen_fmt,
-                                  )
+                                  txt_fmt=fmt_params)
 
     return parameter_table
 
@@ -508,7 +501,7 @@ def summary_params_frame(results, yname=None, xname=None, alpha=.05,
 
     # Dictionary to store the header names for the parameter part of the
     # summary table. look up by modeltype
-    alp = str((1 - alpha) * 100) + '%'
+    alp = str((1 - alpha) * 100) + '%'  # TODO: Should this be used?
     if use_t:
         param_header = ['coef', 'std err', 't', 'P>|t|',
                         'Conf. Int. Low', 'Conf. Int. Upp.']
@@ -560,12 +553,10 @@ def summary_params_2d(result, extras=None, endog_names=None, exog_names=None,
         exog_names = ['var%d' % i for i in range(len(result.params))]
 
     # TODO: check formatting options with different values
-    #res_params = [['%10.4f'%item for item in row] for row in result.params]
     res_params = [[forg(item, prec=4) for item in row] for row in result.params]
     if extras:
         # maybe this should be a simple triple loop instead of
         # list comprehension?
-        #below_list = [[['%10s' % ('('+('%10.3f'%v).strip()+')')
         extras_list = [[['%10s' % ('(' + forg(v, prec=3).strip() + ')')
                          for v in col]
                         for col in getattr(result, what)]
@@ -574,19 +565,15 @@ def summary_params_2d(result, extras=None, endog_names=None, exog_names=None,
         data = [i for j in data for i in j]  #flatten
         stubs = list(zip(endog_names, *[[''] * len(endog_names)] * len(extras)))
         stubs = [i for j in stubs for i in j] #flatten
-        #return SimpleTable(data, headers=exog_names, stubs=stubs)
     else:
         data = res_params
         stubs = endog_names
-        #return SimpleTable(data, headers=exog_names, stubs=stubs,
-        #               data_fmts=['%10.4f'])
 
     txt_fmt = copy.deepcopy(fmt_params)
     txt_fmt.update(dict(data_fmts=["%s"] * result.params.shape[1]))
     return SimpleTable(data, headers=exog_names,
                        stubs=stubs,
                        title=title,
-                       #data_fmts = ["%s"]),
                        txt_fmt=txt_fmt)
 
 
@@ -635,9 +622,6 @@ def summary_params_2dflat(result, endog_names=None, exog_names=None, alpha=0.05,
             raise ValueError('endog_names has wrong length')
         n_equ = 1
 
-    #VAR doesn't have conf_int
-    #params = res.params.T # this is a convention for multi-eq models
-
     if not isinstance(endog_names, list):
         # this might be specific to multinomial logit type, move?
         if endog_names is None:
@@ -654,11 +638,6 @@ def summary_params_2dflat(result, endog_names=None, exog_names=None, alpha=0.05,
         restup = (res, res.params[:, eq], res.bse[:, eq], res.tvalues[:, eq],
                   res.pvalues[:, eq], res.conf_int(alpha)[eq])
 
-        #not used anymore in current version
-        #if skip_headers2:
-        #    skiph = (row != 0)
-        #else:
-        #    skiph = False
         skiph = False
         tble = summary_params(restup, yname=endog_names[eq],
                               xname=exog_names, alpha=alpha, use_t=use_t,
@@ -666,7 +645,7 @@ def summary_params_2dflat(result, endog_names=None, exog_names=None, alpha=0.05,
 
         tables.append(tble)
 
-    #add titles, they will be moved to header lines in table_extend
+    # add titles, they will be moved to header lines in table_extend
     for i in range(len(endog_names)):
         tables[i].title = endog_names[i]
 
@@ -693,7 +672,7 @@ def table_extend(tables, keep_headers=True):
     table_all : SimpleTable
         merged tables as a single SimpleTable instance
     """
-    for ii, t in enumerate(tables[:]): #[1:]:
+    for ii, t in enumerate(tables[:]):
         t = copy.deepcopy(t)
         # move title to first cell of header
         # TODO: check if we have multiline headers
@@ -720,9 +699,9 @@ def table_extend(tables, keep_headers=True):
 def summary_return(tables, return_fmt='text'):
     # join table parts then print
     if return_fmt == 'text':
-        strdrop = lambda x: str(x).rsplit('\n', 1)[0]
         # convert to string drop last line
-        return '\n'.join(list(map(strdrop, tables[:-1])) + [str(tables[-1])])
+        return '\n'.join([str(x).rsplit('\n', 1)[0] for x in tables[:-1]] +
+                         [str(tables[-1])])
     elif return_fmt == 'tables':
         return tables
     elif return_fmt == 'csv':
@@ -763,7 +742,6 @@ class Summary(object):
         return self.as_text()
 
     def __repr__(self):
-        #return '<' + str(type(self)) + '>\n"""\n' + self.__str__() + '\n"""'
         return str(type(self)) + '\n"""\n' + self.__str__() + '\n"""'
 
     def _repr_html_(self):
@@ -790,10 +768,6 @@ class Summary(object):
             optional name for the endogenous variable, default is "y"
         xname : list of strings or None
             optional names for the exogenous variables, default is "var_xx"
-
-        Returns
-        -------
-        None : tables are attached
         """
         table = summary_top(res, title=title, gleft=gleft, gright=gright,
                             yname=yname, xname=xname)
@@ -817,17 +791,11 @@ class Summary(object):
         use_t : bool
             indicator whether the p-values are based on the Student-t
             distribution (if True) or on the normal distribution (if False)
-
-        Returns
-        -------
-        None : table is attached
         """
         if res.params.ndim == 1:
             table = summary_params(res, yname=yname, xname=xname, alpha=alpha,
                                    use_t=use_t)
         elif res.params.ndim == 2:
-            #_, table = summary_params_2dflat(res, yname=yname, xname=xname,
-            #                                 alpha=alpha, use_t=use_t)
             _, table = summary_params_2dflat(res, endog_names=yname,
                                              exog_names=xname,
                                              alpha=alpha, use_t=use_t)
@@ -874,7 +842,7 @@ class Summary(object):
         """
         latex = summary_return(self.tables, return_fmt='latex')
         if self.extra_txt is not None:
-            latex = latex + '\n\n' + self.extra_txt.replace('\n', ' \\newline\n ')
+            latex += '\n\n' + self.extra_txt.replace('\n', ' \\newline\n ')
         return latex
 
     def as_csv(self):

@@ -335,7 +335,7 @@ class TestGLSARGretl(object):
         acorr_ljungbox4 = [5.23587, 0.264, 4, "chi2"]
 
         # break
-        cusum_Harvey_Collier  = [0.494432, 0.621549, 198, "t"]  # stats.t.sf(0.494432, 198)*2
+        cusum_Harvey_Collier = [0.494432, 0.621549, 198, "t"]  # stats.t.sf(0.494432, 198)*2
         # see cusum results in files
         break_qlr = [3.01985, 0.1, 3, 196, "maxF"]  # TODO check this, max at 2001:4
         break_chow = [13.1897, 0.00424384, 3, "chi2"]  # break at 1984:1
@@ -478,5 +478,5 @@ def test_GLSARlag():
     assert (np.abs(res1.params / res4.params - 1) < 0.03).all()
     assert res4.ssr < res1.ssr
     assert (np.abs(res4.bse / res1.bse) - 1 < 0.015).all()
-    assert  np.abs((res4.fittedvalues / res1.fittedvalues - 1).mean()) < 0.015
+    assert np.abs((res4.fittedvalues / res1.fittedvalues - 1).mean()) < 0.015
     assert len(mod4.rho) == 4
