@@ -22,6 +22,8 @@ from six.moves import range
 import numpy as np
 from scipy import signal, optimize, linalg
 
+from sm2.tools.decorators import copy_doc
+
 __all__ = ['arma_acf', 'arma_acovf', 'arma_generate_sample',
            'arma_impulse_response', 'arma2ar', 'arma2ma', 'deconvolve',
            'lpol2index', 'index2lpol']
@@ -103,7 +105,6 @@ def arma_acovf(ar, ma, nobs=10):
     --------
     arma_acf
     acovf
-
 
     Notes
     -----
@@ -382,6 +383,7 @@ def arma2ar(ar, ma, lags=100, **kwargs):
     return arma_impulse_response(ma, ar, leads=lags)
 
 
+# TODO: not hit in tests (here or upstream)
 # moved from sandbox.tsa.try_fi
 def ar2arma(ar_des, p, q, n=20, mse='ar', start=None):
     """
@@ -421,8 +423,8 @@ def ar2arma(ar_des, p, q, n=20, mse='ar', start=None):
     """
 
     # TODO: convert MA lag polynomial, ma_app, to be invertible, by mirroring
-    # TODO: roots outside the unit interval to ones that are inside. How to do
-    # TODO: this?
+    #       roots outside the unit interval to ones that are inside. How to do
+    #       this?
 
     # p,q = pq
     def msear_err(arma, ar_des):
@@ -538,74 +540,16 @@ def lpol_fiar(d, n=20):
     return ar
 
 
-# moved from sandbox.tsa.try_fi
 def lpol_sdiff(s):
-    """return coefficients for seasonal difference (1-L^s)
-
-    just a trivial convenience function
-
-    Parameters
-    ----------
-    s : int
-        number of periods in season
-
-    Returns
-    -------
-    sdiff : list, length s+1
-
-    """
-    return [1] + [0] * (s - 1) + [-1]
+    raise NotImplementedError("lpol_sdiff not ported from upstream, as it is "
+                              "neither used nor tested there.")
 
 
 def deconvolve(num, den, n=None):
-    """Deconvolves divisor out of signal, division of polynomials for n terms
-
-    calculates den^{-1} * num
-
-    Parameters
-    ----------
-    num : array_like
-        signal or lag polynomial
-    denom : array_like
-        coefficients of lag polynomial (linear filter)
-    n : None or int
-        number of terms of quotient
-
-    Returns
-    -------
-    quot : array
-        quotient or filtered series
-    rem : array
-        remainder
-
-    Notes
-    -----
-    If num is a time series, then this applies the linear filter den^{-1}.
-    If both num and den are both lag polynomials, then this calculates the
-    quotient polynomial for n terms and also returns the remainder.
-
-    This is copied from scipy.signal.signaltools and added n as optional
-    parameter.
-
-    """
-    num = np.atleast_1d(num)
-    den = np.atleast_1d(den)
-    N = len(num)
-    D = len(den)
-    if D > N and n is None:
-        quot = []
-        rem = num
-    else:
-        if n is None:
-            n = N - D + 1
-        input = np.zeros(n, float)
-        input[0] = 1
-        quot = signal.lfilter(num, den, input)
-        num_approx = signal.convolve(den, quot, mode='full')
-        if len(num) < len(num_approx):  # 1d only ?
-            num = np.concatenate((num, np.zeros(len(num_approx) - len(num))))
-        rem = num - num_approx
-    return quot, rem
+    raise NotImplementedError("deconvolve not ported from upstream, as it is "
+                              "neither used nor tested there.  Its docstring "
+                              "says it is mostly-copied from "
+                              "scipy.signal.signaltools.")
 
 
 class ArmaProcess(object):
@@ -755,47 +699,42 @@ class ArmaProcess(object):
         return 'ArmaProcess\nAR: {0}\nMA: {1}'.format(self.ar.tolist(),
                                                       self.ma.tolist())
 
+    @copy_doc(arma_acovf.__doc__)
     def acovf(self, nobs=None):
         nobs = nobs or self.nobs
         return arma_acovf(self.ar, self.ma, nobs=nobs)
 
-    acovf.__doc__ = arma_acovf.__doc__
-
+    @copy_doc(arma_acf.__doc__)
     def acf(self, lags=None):
         lags = lags or self.nobs
         return arma_acf(self.ar, self.ma, lags=lags)
 
-    acf.__doc__ = arma_acf.__doc__
-
+    @copy_doc(arma_pacf.__doc__)
     def pacf(self, lags=None):
         lags = lags or self.nobs
         return arma_pacf(self.ar, self.ma, lags=lags)
 
-    pacf.__doc__ = arma_pacf.__doc__
-
+    @copy_doc(arma_periodogram.__doc__)
     def periodogram(self, nobs=None):
         nobs = nobs or self.nobs
         return arma_periodogram(self.ar, self.ma, worN=nobs)
 
-    periodogram.__doc__ = arma_periodogram.__doc__
-
+    @copy_doc(arma_impulse_response.__doc__)
     def impulse_response(self, leads=None):
         leads = leads or self.nobs
         return arma_impulse_response(self.ar, self.ma, leads=leads)
 
-    impulse_response.__doc__ = arma_impulse_response.__doc__
-
+    # TODO: Fix upstream the docstring gets patched incorrectly
+    @copy_doc(arma2ma.__doc__)
     def arma2ma(self, lags=None):
         lags = lags or self.lags
         return arma2ma(self.ar, self.ma, lags=lags)
 
-    arma2ma.__doc__ = arma2ma.__doc__
-
+    # TODO: Fix upstream the docstring gets patched incorrectly
+    @copy_doc(arma2ar.__doc__)
     def arma2ar(self, lags=None):
         lags = lags or self.lags
         return arma2ar(self.ar, self.ma, lags=lags)
-
-    arma2ar.__doc__ = arma2ar.__doc__
 
     @property
     def arroots(self):

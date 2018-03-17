@@ -58,11 +58,12 @@ def _ar_predict_out_of_sample(y, params, p, k_trend, steps, start=0):
 
 
 class AR(tsa_model.TimeSeriesModel):
-    __doc__ = tsa_model._tsa_doc % {"model": "Autoregressive AR(p) model",
-                                    "params": """endog : array-like
+    __doc__ = tsa_model._tsa_doc % {
+        "model": "Autoregressive AR(p) model",
+        "params": """endog : array-like
         1-d endogenous response variable. The independent variable.""",
-                                    "extra_params": base._missing_param_doc,
-                                    "extra_sections": ""}
+        "extra_params": base._missing_param_doc,
+        "extra_sections": ""}
 
     def __init__(self, endog, dates=None, freq=None, missing='none'):
         super(AR, self).__init__(endog, None, dates, freq, missing=missing)

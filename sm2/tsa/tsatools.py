@@ -185,7 +185,7 @@ def add_lag(x, col=None, lags=1, drop=False, insert=True):
     """
     if x.dtype.names:
         names = x.dtype.names
-        if not col and np.squeeze(x).ndim > 1:
+        if not col and np.squeeze(x).ndim > 1:  # pragma: no cover
             raise IndexError("col is None and the input array is not 1d")
         elif len(names) == 1:
             col = names[0]
@@ -534,9 +534,8 @@ def vech(mat):
 # tril/triu/diag, suitable for ndarray.take
 
 
-def _tril_indices(n):
-    rows, cols = np.tril_indices(n)
-    return rows * n + cols
+def _tril_indices(n):  # pragma: no cover
+    raise NotImplementedError("_tril_indices not ported from upstream")
 
 
 def _triu_indices(n):
@@ -544,9 +543,8 @@ def _triu_indices(n):
     return rows * n + cols
 
 
-def _diag_indices(n):
-    rows, cols = np.diag_indices(n)
-    return rows * n + cols
+def _diag_indices(n):  # pragma: no cover
+    raise NotImplementedError("_diag_indices not ported from upstream")
 
 
 def unvec(v):
@@ -801,6 +799,6 @@ def freq_to_period(freq):
         return 5
     elif freq == 'H':
         return 24
-    else:  # pragma : no cover
+    else:  # pragma: no cover
         raise ValueError("freq {} not understood. Please report if you "
                          "think this is in error.".format(freq))

@@ -178,7 +178,7 @@ class GenericZeroInflated(CountModel):
 
         if callback is None:
             # work around perfect separation callback GH#3895
-            callback = lambda *x: x
+            callback = lambda *x: x  # noqa:E731
 
         mlefit = super(GenericZeroInflated, self).fit(
             start_params=start_params,
@@ -215,8 +215,11 @@ class GenericZeroInflated(CountModel):
             alpha = alpha * np.ones(k_params)
 
         extra = self.k_extra - self.k_inflate
-        alpha_p = alpha[:-(self.k_extra - extra)] if (self.k_extra
-            and np.size(alpha) > 1) else alpha
+        if self.k_extra and np.size(alpha) > 1:
+            alpha_p = alpha[:-(self.k_extra - extra)]
+        else:
+            alpha_p = alpha
+
         if start_params is None:
             offset = getattr(self, "offset", 0) + getattr(self, "exposure", 0)
             if np.size(offset) == 1 and offset == 0:
@@ -267,8 +270,6 @@ class GenericZeroInflated(CountModel):
         zero_idx = np.nonzero(y == 0)[0]
         nonzero_idx = np.nonzero(y)[0]
 
-        mu = self.model_main.predict(params_main)
-
         dldp = np.zeros((self.exog.shape[0], self.k_exog), dtype=np.float64)
         dldw = np.zeros_like(self.exog_infl, dtype=np.float64)
 
@@ -280,7 +281,7 @@ class GenericZeroInflated(CountModel):
             dldw[zero_idx, :] = (self.exog_infl[zero_idx].T * w[zero_idx] *
                                  (1 - w[zero_idx]) *
                                  (1 - np.exp(llf_main[zero_idx])) /
-                                  np.exp(llf[zero_idx])).T
+                                 np.exp(llf[zero_idx])).T
             dldw[nonzero_idx, :] = -(self.exog_infl[nonzero_idx].T *
                                      w[nonzero_idx]).T
         elif self.inflation == 'probit':
@@ -316,11 +317,12 @@ class GenericZeroInflated(CountModel):
             for j in range(i, -1, -1):
                 hess_arr[i, j] = ((
                     self.exog_infl[zero_idx, i] * self.exog_infl[zero_idx, j] *
-                    (w[zero_idx] * (1 - w[zero_idx]) * ((1 -
-                    np.exp(llf_main[zero_idx])) * (1 - 2 * w[zero_idx]) *
-                    np.exp(llf[zero_idx]) - (w[zero_idx] - w[zero_idx]**2) *
-                    (1 - np.exp(llf_main[zero_idx]))**2) /
-                    pmf[zero_idx]**2)).sum() -
+                    (w[zero_idx] * (1 - w[zero_idx]) * (
+                        (1 - np.exp(llf_main[zero_idx])) *
+                        (1 - 2 * w[zero_idx]) * np.exp(llf[zero_idx]) -
+                        (w[zero_idx] - w[zero_idx]**2) *
+                        (1 - np.exp(llf_main[zero_idx]))**2) /
+                     pmf[zero_idx]**2)).sum() -
                     (self.exog_infl[nonzero_idx, i] *
                      self.exog_infl[nonzero_idx, j] *
                      w[nonzero_idx] * (1 - w[nonzero_idx])).sum())
@@ -328,7 +330,8 @@ class GenericZeroInflated(CountModel):
         # d2l/dpdw
         for i in range(self.k_inflate):
             for j in range(self.k_exog):
-                hess_arr[i, j + self.k_inflate] = -(score_main[zero_idx, j] *
+                hess_arr[i, j + self.k_inflate] = -(
+                    score_main[zero_idx, j] *
                     w[zero_idx] * (1 - w[zero_idx]) *
                     self.exog_infl[zero_idx, i] / pmf[zero_idx]).sum()
 
@@ -512,7 +515,6 @@ class ZeroInflatedPoisson(GenericZeroInflated):
         y = self.endog
         w = self.model_infl.predict(params_infl)
         w = np.clip(w, np.finfo(float).eps, 1 - np.finfo(float).eps)
-        score = self.score(params)
         zero_idx = np.nonzero(y == 0)[0]
         nonzero_idx = np.nonzero(y)[0]
 
@@ -528,9 +530,10 @@ class ZeroInflatedPoisson(GenericZeroInflated):
                     exog[zero_idx, i] * exog[zero_idx, j] *
                     mu[zero_idx] * (w[zero_idx] - 1) * (
                         1 / coeff -
-                        w[zero_idx] * mu[zero_idx] * np.exp(mu[zero_idx]) /
-                        coeff**2)).sum() - (mu[nonzero_idx] *
-                    exog[nonzero_idx, i] * exog[nonzero_idx, j]).sum())
+                        w[zero_idx] * mu[zero_idx] *
+                        np.exp(mu[zero_idx]) / coeff**2)).sum() -
+                    (mu[nonzero_idx] *
+                     exog[nonzero_idx, i] * exog[nonzero_idx, j]).sum())
 
         return hess_arr
 
@@ -597,12 +600,14 @@ class ZeroInflatedGeneralizedPoisson(GenericZeroInflated):
 
     def __init__(self, endog, exog, exog_infl=None, offset=None, exposure=None,
                  inflation='logit', p=2, missing='none', **kwargs):
-        super(ZeroInflatedGeneralizedPoisson, self).__init__(endog, exog,
-            offset=offset,
-            inflation=inflation,
-            exog_infl=exog_infl,
-            exposure=exposure,
-            missing=missing, **kwargs)
+        cls = ZeroInflatedGeneralizedPoisson
+        super(cls, self).__init__(endog, exog,
+                                  offset=offset,
+                                  inflation=inflation,
+                                  exog_infl=exog_infl,
+                                  exposure=exposure,
+                                  missing=missing,
+                                  **kwargs)
         self.model_main = GeneralizedPoisson(self.endog, self.exog,
                                              offset=offset,
                                              exposure=exposure, p=p)

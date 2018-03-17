@@ -18,7 +18,7 @@ from scipy import optimize, stats, signal
 
 
 from sm2.tools.decorators import (cache_readonly, resettable_cache,
-                                  deprecated_alias)
+                                  deprecated_alias, copy_doc)
 from sm2.tools.numdiff import approx_hess_cs, approx_fprime_cs
 
 import sm2.base.wrapper as wrap
@@ -726,6 +726,7 @@ class ARMA(tsa_model.TimeSeriesModel):
             errors = e[0][k_ar:]
         return errors.squeeze()
 
+    @copy_doc(_arma_predict)
     def predict(self, params, start=None, end=None, exog=None, dynamic=False):
         method = getattr(self, 'method', 'mle')  # don't assume fit
 
@@ -777,7 +778,6 @@ class ARMA(tsa_model.TimeSeriesModel):
                                                          exog, method=method)
             predictedvalues = np.r_[predictedvalues, forecastvalues]
         return predictedvalues
-    predict.__doc__ = _arma_predict
 
     def loglike(self, params, set_sigma2=True):
         """
@@ -1178,6 +1178,7 @@ class ARIMA(ARMA):
 
         return ARIMAResultsWrapper(arima_fit)
 
+    @copy_doc(_arima_predict)
     def predict(self, params, start=None, end=None, exog=None, typ='linear',
                 dynamic=False):
         if typ not in ['linear', 'levels']:  # pragma: no cover
@@ -1279,8 +1280,6 @@ class ARIMA(ARMA):
                                                          exog, dynamic)
                     return endog[start - 1] + np.cumsum(predict)
             return fv
-
-    predict.__doc__ = _arima_predict
 
 
 class ARMAResults(tsa_model.TimeSeriesModelResults):
@@ -1517,9 +1516,9 @@ class ARMAResults(tsa_model.TimeSeriesModelResults):
         df_resid = self.df_resid
         return stats.t.sf(np.abs(self.tvalues), df_resid) * 2
 
+    @copy_doc(_arma_results_predict)
     def predict(self, start=None, end=None, exog=None, dynamic=False):
         return self.model.predict(self.params, start, end, exog, dynamic)
-    predict.__doc__ = _arma_results_predict
 
     def _forecast_error(self, steps):
         sigma2 = self.sigma2
@@ -1690,6 +1689,7 @@ class ARMAResults(tsa_model.TimeSeriesModelResults):
     def summary2(self, title=None, alpha=.05, float_format="%.4f"):
         raise NotImplementedError("summary2 not ported from upstream")
 
+    @copy_doc(_plot_predict)
     def plot_predict(self, start=None, end=None, exog=None, dynamic=False,
                      alpha=.05, plot_insample=True, ax=None):
         fig, ax = _create_mpl_ax(ax)
@@ -1724,9 +1724,7 @@ class ARMAResults(tsa_model.TimeSeriesModelResults):
                     label=self.model.endog_names)
 
         ax.legend(loc='best')
-
         return fig
-    plot_predict.__doc__ = _plot_predict
 
 
 class ARMAResultsWrapper(wrap.ResultsWrapper):
@@ -1740,10 +1738,10 @@ wrap.populate_wrapper(ARMAResultsWrapper, ARMAResults)  # noqa:E305
 
 
 class ARIMAResults(ARMAResults):
+    @copy_doc(_arima_results_predict)
     def predict(self, start=None, end=None, exog=None, typ='linear',
                 dynamic=False):
         return self.model.predict(self.params, start, end, exog, typ, dynamic)
-    predict.__doc__ = _arima_results_predict
 
     def _forecast_error(self, steps):
         sigma2 = self.sigma2
@@ -1812,6 +1810,7 @@ class ARIMAResults(ARMAResults):
         conf_int = self._forecast_conf_int(forecast, fcerr, alpha)
         return forecast, fcerr, conf_int
 
+    @copy_doc(_arima_plot_predict)
     def plot_predict(self, start=None, end=None, exog=None, dynamic=False,
                      alpha=.05, plot_insample=True, ax=None):
         fig, ax = _create_mpl_ax(ax)
@@ -1850,8 +1849,6 @@ class ARIMAResults(ARMAResults):
 
         ax.legend(loc='best')
         return fig
-
-    plot_predict.__doc__ = _arima_plot_predict
 
 
 class ARIMAResultsWrapper(ARMAResultsWrapper):
