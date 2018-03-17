@@ -15,7 +15,7 @@ DESCRSHORT = """State crime data 2009"""
 
 DESCRLONG = DESCRSHORT
 
-#suggested notes
+# suggested notes
 NOTE = """::
 
     Number of observations: 51
@@ -54,9 +54,11 @@ NOTE = """::
         % of population in Urbanized Areas as of 2010 Census. Urbanized
         Areas are area of 50,000 or more people."""
 
+import os
+
 import numpy as np
+
 from sm2.datasets import utils as du
-from os.path import dirname, abspath
 
 
 def load():
@@ -82,7 +84,7 @@ def load_pandas():
 
 
 def _get_data():
-    filepath = dirname(abspath(__file__))
+    filepath = os.path.dirname(os.path.abspath(__file__))
     with open(filepath + '/statecrime.csv', 'rb') as f:
         data = np.recfromtxt(f, delimiter=",", names=True, dtype=None)
     return data

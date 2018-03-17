@@ -22,7 +22,7 @@ DESCRSHORT = """Engel food expenditure data."""
 DESCRLONG = """Data on income and food expenditure for 235 working class
 households in 1857 Belgium."""
 
-#suggested notes
+# suggested notes
 NOTE = """::
 
     Number of observations: 235
@@ -31,10 +31,11 @@ NOTE = """::
         income - annual household income (Belgian francs)
         foodexp - annual household food expenditure (Belgian francs)
 """
+import os
 
 import numpy as np
+
 from sm2.datasets import utils as du
-from os.path import dirname, abspath
 
 
 def load():
@@ -59,8 +60,9 @@ def load_pandas():
 
 
 def _get_data():
-    filepath = dirname(abspath(__file__))
-    with open(filepath + '/engel.csv', 'rb') as f:
-        data = np.recfromtxt(f,
-                             delimiter=",", names = True, dtype=float)
+    cur_dir = os.path.dirname(os.path.abspath(__file__))
+    path = os.path.join(cur_dir, 'engel.csv')
+    with open(path, 'rb') as fd:
+        data = np.recfromtxt(fd,
+                             delimiter=",", names=True, dtype=float)
     return data

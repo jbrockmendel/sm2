@@ -1,6 +1,5 @@
 import os
 import shutil
-import sys
 
 from six import PY3, BytesIO, StringIO, integer_types
 from six.moves import range, cPickle
@@ -67,7 +66,8 @@ class Dataset(dict):
         # attribute you must create this in the dataset's load function.
         try:  # some datasets have string variables
             self.raw_data = self.data.view((float, len(self.names)))
-        except:
+        except (TypeError, ValueError, AttributeError):
+            # AttributeError is for DataFrame.view
             pass
 
     def __repr__(self):
@@ -200,12 +200,12 @@ def _urlopen_cached(url, cache):
     """
     from_cache = False
     if cache is not None:
-        cache_path = os.path.join(cache,
-                                  url.split("://")[-1].replace('/', ',') + ".zip")
+        fname = url.split("://")[-1].replace('/', ',') + ".zip"
+        cache_path = os.path.join(cache, fname)
         try:
             data = _open_cache(cache_path)
             from_cache = True
-        except:
+        except OSError:  # TODO: Are there other errors to catch here?
             pass
 
     # not using the cache or didn't find it in cache
@@ -336,6 +336,6 @@ def check_internet(url=None):
     url = "https://github.com" if url is None else url
     try:
         urlopen(url)
-    except URLError as err:
+    except URLError:
         return False
     return True

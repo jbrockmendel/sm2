@@ -15,7 +15,7 @@ DESCRSHORT = """Breast Cancer and county population"""
 
 DESCRLONG = """The number of breast cancer observances in various counties"""
 
-#suggested notes
+# suggested notes
 NOTE = """::
 
     Number of observations: 301
@@ -26,10 +26,11 @@ NOTE = """::
         population - The population of the county
 
 """
+import os
 
 import numpy as np
+
 from sm2.datasets import utils as du
-from os.path import dirname, abspath
 
 
 def load():
@@ -54,7 +55,8 @@ def load_pandas():
 
 
 def _get_data():
-    filepath = dirname(abspath(__file__))
-    with open(filepath + '/cancer.csv', 'rb') as f:
-        data = np.recfromtxt(f, delimiter=",", names=True, dtype=float)
+    cur_dir = os.path.dirname(os.path.abspath(__file__))
+    path = os.path.join(cur_dir, 'cancer.csv')
+    with open(path, 'rb') as fd:
+        data = np.recfromtxt(fd, delimiter=",", names=True, dtype=float)
     return data

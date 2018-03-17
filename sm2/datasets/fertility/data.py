@@ -38,7 +38,7 @@ rates."""
 
 DESCRLONG = DESCRSHORT
 
-#suggested notes
+# suggested notes
 NOTE = """
 ::
 
@@ -85,6 +85,6 @@ def load_pandas():
 
 
 def _get_data():
-    filepath = os.path.dirname(os.path.abspath(__file__))
-    data = pd.read_csv(os.path.join(filepath, 'fertility.csv'))
+    cur_dir = os.path.dirname(os.path.abspath(__file__))
+    data = pd.read_csv(os.path.join(cur_dir, 'fertility.csv'))
     return data

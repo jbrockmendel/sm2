@@ -23,10 +23,11 @@ DESCRLONG = """The data, collected as part of a 1987 intercity mode choice
 study, are a sub-sample of 210 non-business trips between Sydney, Canberra and
 Melbourne in which the traveler chooses a mode from four alternatives (plane,
 car, bus and train). The sample, 840 observations, is choice based with
-over-sampling of the less popular modes (plane, train and bus) and under-sampling
-of the more popular mode, car. The level of service data was derived from highway
-and transport networks in Sydney, Melbourne, non-metropolitan N.S.W. and Victoria,
-including the Australian Capital Territory."""
+over-sampling of the less popular modes (plane, train and bus) and
+under-sampling of the more popular mode, car. The level of service data was
+derived from highway and transport networks in Sydney, Melbourne,
+non-metropolitan N.S.W. and Victoria, including the
+Australian Capital Territory."""
 
 NOTE = """::
 
@@ -52,9 +53,11 @@ NOTE = """::
         hinc = household income ($1000s).
         psize = traveling group size in mode chosen (number)."""
 
+import os
 import numpy as np
+
 from sm2.datasets import utils as du
-from os.path import dirname, abspath
+
 
 def load():
     """
@@ -70,6 +73,7 @@ def load():
                                exog_idx=[3, 4, 5, 6, 7, 8],
                                dtype=float)
 
+
 def load_pandas():
     """
     Load the data modechoice data and return a Dataset class instance.
@@ -81,12 +85,14 @@ def load_pandas():
     """
 
     data = _get_data()
-    return du.process_recarray_pandas(data, endog_idx = 2,
+    return du.process_recarray_pandas(data, endog_idx=2,
                                       exog_idx=[3, 4, 5, 6, 7, 8],
                                       dtype=float)
 
+
 def _get_data():
-    filepath = dirname(abspath(__file__))
-    with open(filepath + '/modechoice.csv', 'rb') as f:
-        data = np.recfromtxt(f, delimiter=";", names=True, dtype=float)
+    cur_dir = os.path.dirname(os.path.abspath(__file__))
+    path = os.path.join(cur_dir, 'modechoice.csv')
+    with open(path, 'rb') as fd:
+        data = np.recfromtxt(fd, delimiter=";", names=True, dtype=float)
     return data

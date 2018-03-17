@@ -26,12 +26,12 @@ NOTE = """::
 
     The data file contains a 'YEAR' variable that is not returned by load.
 """
+import os
 
-from numpy import recfromtxt, array
-from pandas import Series, DataFrame
+import numpy as np
+import pandas as pd
 
 from sm2.datasets.utils import Dataset
-from os.path import dirname, abspath
 
 
 def load():
@@ -51,24 +51,24 @@ def load():
     """
     data = _get_data()
     endog_name = 'SUNACTIVITY'
-    endog = array(data[endog_name], dtype=float)
+    endog = np.array(data[endog_name], dtype=float)
     dataset = Dataset(data=data, names=[endog_name], endog=endog,
                       endog_name=endog_name)
     return dataset
 
 
 def load_pandas():
-    data = DataFrame(_get_data())
+    data = pd.DataFrame(_get_data())
     # TODO: time series
-    endog = Series(data['SUNACTIVITY'], index=data['YEAR'].astype(int))
+    endog = pd.Series(data['SUNACTIVITY'], index=data['YEAR'].astype(int))
     dataset = Dataset(data=data, names=list(data.columns),
                       endog=endog, endog_name='volume')
     return dataset
 
 
 def _get_data():
-    filepath = dirname(abspath(__file__))
-    with open(filepath + '/sunspots.csv', 'rb') as f:
-        data = recfromtxt(f, delimiter=",",
-                          names=True, dtype=float)
-        return data
+    cur_dir = os.path.dirname(os.path.abspath(__file__))
+    path = os.path.join(cur_dir, 'sunspots.csv')
+    with open(path, 'rb') as fd:
+        data = np.recfromtxt(fd, delimiter=",", names=True, dtype=float)
+    return data

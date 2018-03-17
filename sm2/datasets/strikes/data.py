@@ -23,7 +23,7 @@ unanticipated industrial production. The data is a subset of the data originally
 used by Kennan. The data here is data for the months of June only to avoid
 seasonal issues."""
 
-#suggested notes
+# suggested notes
 NOTE = """::
 
     Number of observations - 62
@@ -35,10 +35,10 @@ NOTE = """::
                 duration - duration of the strike in days
                 iprod - unanticipated industrial production
 """
+import os
+import numpy as np
 
-from numpy import recfromtxt
 from sm2.datasets import utils as du
-from os.path import dirname, abspath
 
 
 def load():
@@ -68,7 +68,8 @@ def load_pandas():
 
 
 def _get_data():
-    filepath = dirname(abspath(__file__))
-    with open(filepath + '/strikes.csv', 'rb') as f:
-        data = recfromtxt(f, delimiter=",", names=True, dtype=float)
+    cur_dir = os.path.dirname(os.path.abspath(__file__))
+    path = os.path.join(cur_dir, 'strikes.csv')
+    with open(path, 'rb') as fd:
+        data = np.recfromtxt(fd, delimiter=",", names=True, dtype=float)
     return data

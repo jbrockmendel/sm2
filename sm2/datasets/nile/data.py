@@ -16,7 +16,7 @@ the Nile as measured at Ashwan for 100 years from 1871-1970."""
 
 DESCRLONG = DESCRSHORT + " There is an apparent changepoint near 1898."
 
-#suggested notes
+# suggested notes
 NOTE = """::
 
     Number of observations: 100
@@ -26,12 +26,12 @@ NOTE = """::
         year - the year of the observations
         volumne - the discharge at Aswan in 10^8, m^3
 """
+import os
 
-from numpy import recfromtxt, array
-from pandas import Series, DataFrame
+import numpy as np
+import pandas as pd
 
 from sm2.datasets.utils import Dataset
-from os.path import dirname, abspath
 
 
 def load():
@@ -44,26 +44,26 @@ def load():
         See DATASET_PROPOSAL.txt for more information.
     """
     data = _get_data()
-    names = list(data.dtype.names)
     endog_name = 'volume'
-    endog = array(data[endog_name], dtype=float)
+    endog = np.array(data[endog_name], dtype=float)
     dataset = Dataset(data=data, names=[endog_name], endog=endog,
                       endog_name=endog_name)
     return dataset
 
 
 def load_pandas():
-    data = DataFrame(_get_data())
+    data = pd.DataFrame(_get_data())
     # TODO: time series
-    endog = Series(data['volume'], index=data['year'].astype(int))
+    endog = pd.Series(data['volume'], index=data['year'].astype(int))
     dataset = Dataset(data=data, names=list(data.columns),
                       endog=endog, endog_name='volume')
     return dataset
 
 
 def _get_data():
-    filepath = dirname(abspath(__file__))
-    with open(filepath + '/nile.csv', 'rb') as f:
-        data = recfromtxt(f, delimiter=",",
-                          names=True, dtype=float)
+    cur_dir = os.path.dirname(os.path.abspath(__file__))
+    path = os.path.join(cur_dir, 'nile.csv')
+    with open(path, 'rb') as fd:
+        data = np.recfromtxt(fd, delimiter=",",
+                             names=True, dtype=float)
     return data
