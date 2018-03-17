@@ -2,7 +2,7 @@ __all__ = ['OLS', 'WLS',
            'Logit', 'Poisson', 'NegativeBinomial', 'MNLogit',
            'ZeroInflatedPoisson', 'ZeroInflatedGeneralizedPoisson',
            'ZeroInflatedNegativeBinomialP',
-           'add_constant', 'datasets']
+           'add_constant', 'datasets', 'distributions']
 
 from .regression.linear_model import OLS, WLS
 from .discrete.discrete_model import Logit, Poisson, NegativeBinomial, MNLogit

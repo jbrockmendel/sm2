@@ -23,7 +23,7 @@ from sm2.datasets import macrodata
 
 cur_dir = os.path.abspath(os.path.dirname(__file__))
 # Petersen's test_data from:
-# http://www.kellogg.northwestern.edu/faculty/petersen/htm/papers/se/test_data.txt  # noqa:E501
+# www.kellogg.northwestern.edu/faculty/petersen/htm/papers/se/test_data.txt
 fpath = os.path.join(cur_dir, "test_data.txt")
 pet_data = pd.read_csv(fpath, delimiter='\s+', header=None).values
 
@@ -40,7 +40,7 @@ def test_cov_cluster_2groups():
     cov01, covg, covt = sw.cov_cluster_2groups(res, group, group2=time)
 
     # Reference number from Petersen
-    # http://www.kellogg.northwestern.edu/faculty/petersen/htm/papers/se/test_data.htm  # noqa:E501
+    # www.kellogg.northwestern.edu/faculty/petersen/htm/papers/se/test_data.htm
     bse_petw = [0.0284, 0.0284]
     bse_pet0 = [0.0670, 0.0506]
     bse_pet1 = [0.0234, 0.0334]   # year
@@ -81,9 +81,11 @@ def test_hac_simple():
         [-0.0597207976835705, 0.000389440793564336, 0.086211852740503622]]
 
     cov1 = sw.cov_hac_simple(res_olsg, nlags=4, use_correction=True)
-    se1 = sw.se_cov(cov1)
+    sw.se_cov(cov1)  # smoke?
+
     cov2 = sw.cov_hac_simple(res_olsg, nlags=4, use_correction=False)
-    se2 = sw.se_cov(cov2)
+    sw.se_cov(cov2)  # smoke?
+
     assert_almost_equal(cov1, cov1_r, decimal=14)
     assert_almost_equal(cov2, cov2_r, decimal=14)
 

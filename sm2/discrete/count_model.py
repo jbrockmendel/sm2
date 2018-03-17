@@ -178,17 +178,19 @@ class GenericZeroInflated(CountModel):
 
         if callback is None:
             # work around perfect separation callback GH#3895
-            callback = lambda *x: x
+            callback = lambda *x: x  # noqa:E731
 
-        mlefit = super(GenericZeroInflated, self).fit(start_params=start_params,
-                                                      maxiter=maxiter,
-                                                      disp=disp, method=method,
-                                                      full_output=full_output,
-                                                      callback=callback,
-                                                      **kwargs)
+        mlefit = super(GenericZeroInflated, self).fit(
+            start_params=start_params,
+            maxiter=maxiter,
+            disp=disp, method=method,
+            full_output=full_output,
+            callback=callback,
+            **kwargs)
 
-        zipfit = self.result_class(self, mlefit._results)
-        result = self.result_class_wrapper(zipfit)
+        res_cls, wrap_cls = self._res_classes["fit"]
+        zipfit = res_cls(self, mlefit._results)
+        result = wrap_cls(zipfit)
 
         if cov_kwds is None:
             cov_kwds = {}
@@ -213,8 +215,11 @@ class GenericZeroInflated(CountModel):
             alpha = alpha * np.ones(k_params)
 
         extra = self.k_extra - self.k_inflate
-        alpha_p = alpha[:-(self.k_extra - extra)] if (self.k_extra
-            and np.size(alpha) > 1) else alpha
+        if self.k_extra and np.size(alpha) > 1:
+            alpha_p = alpha[:-(self.k_extra - extra)]
+        else:
+            alpha_p = alpha
+
         if start_params is None:
             offset = getattr(self, "offset", 0) + getattr(self, "exposure", 0)
             if np.size(offset) == 1 and offset == 0:
@@ -222,18 +227,20 @@ class GenericZeroInflated(CountModel):
             start_params = self.model_main.fit_regularized(
                 start_params=start_params, method=method, maxiter=maxiter,
                 full_output=full_output, disp=0, callback=callback,
-                alpha=alpha_p, trim_mode=trim_mode, auto_trim_tol=auto_trim_tol,
+                alpha=alpha_p, trim_mode=trim_mode,
+                auto_trim_tol=auto_trim_tol,
                 size_trim_tol=size_trim_tol, qc_tol=qc_tol, **kwargs).params
             start_params = np.append(np.ones(self.k_inflate), start_params)
 
         cntfit = super(CountModel, self).fit_regularized(
-                start_params=start_params, method=method, maxiter=maxiter,
-                full_output=full_output, disp=disp, callback=callback,
-                alpha=alpha, trim_mode=trim_mode, auto_trim_tol=auto_trim_tol,
-                size_trim_tol=size_trim_tol, qc_tol=qc_tol, **kwargs)
+            start_params=start_params, method=method, maxiter=maxiter,
+            full_output=full_output, disp=disp, callback=callback,
+            alpha=alpha, trim_mode=trim_mode, auto_trim_tol=auto_trim_tol,
+            size_trim_tol=size_trim_tol, qc_tol=qc_tol, **kwargs)
 
-        discretefit = self.result_class_reg(self, cntfit)
-        return self.result_class_reg_wrapper(discretefit)
+        res_cls, wrap_cls = self._res_classes["fit_regularized"]
+        discretefit = res_cls(self, cntfit)
+        return wrap_cls(discretefit)
 
     def score_obs(self, params):
         """
@@ -263,8 +270,6 @@ class GenericZeroInflated(CountModel):
         zero_idx = np.nonzero(y == 0)[0]
         nonzero_idx = np.nonzero(y)[0]
 
-        mu = self.model_main.predict(params_main)
-
         dldp = np.zeros((self.exog.shape[0], self.k_exog), dtype=np.float64)
         dldw = np.zeros_like(self.exog_infl, dtype=np.float64)
 
@@ -276,7 +281,7 @@ class GenericZeroInflated(CountModel):
             dldw[zero_idx, :] = (self.exog_infl[zero_idx].T * w[zero_idx] *
                                  (1 - w[zero_idx]) *
                                  (1 - np.exp(llf_main[zero_idx])) /
-                                  np.exp(llf[zero_idx])).T
+                                 np.exp(llf[zero_idx])).T
             dldw[nonzero_idx, :] = -(self.exog_infl[nonzero_idx].T *
                                      w[nonzero_idx]).T
         elif self.inflation == 'probit':
@@ -312,18 +317,21 @@ class GenericZeroInflated(CountModel):
             for j in range(i, -1, -1):
                 hess_arr[i, j] = ((
                     self.exog_infl[zero_idx, i] * self.exog_infl[zero_idx, j] *
-                    (w[zero_idx] * (1 - w[zero_idx]) * ((1 -
-                    np.exp(llf_main[zero_idx])) * (1 - 2 * w[zero_idx]) *
-                    np.exp(llf[zero_idx]) - (w[zero_idx] - w[zero_idx]**2) *
-                    (1 - np.exp(llf_main[zero_idx]))**2) /
-                    pmf[zero_idx]**2)).sum() -
-                    (self.exog_infl[nonzero_idx, i] * self.exog_infl[nonzero_idx, j] *
-                    w[nonzero_idx] * (1 - w[nonzero_idx])).sum())
+                    (w[zero_idx] * (1 - w[zero_idx]) * (
+                        (1 - np.exp(llf_main[zero_idx])) *
+                        (1 - 2 * w[zero_idx]) * np.exp(llf[zero_idx]) -
+                        (w[zero_idx] - w[zero_idx]**2) *
+                        (1 - np.exp(llf_main[zero_idx]))**2) /
+                     pmf[zero_idx]**2)).sum() -
+                    (self.exog_infl[nonzero_idx, i] *
+                     self.exog_infl[nonzero_idx, j] *
+                     w[nonzero_idx] * (1 - w[nonzero_idx])).sum())
 
         # d2l/dpdw
         for i in range(self.k_inflate):
             for j in range(self.k_exog):
-                hess_arr[i, j + self.k_inflate] = -(score_main[zero_idx, j] *
+                hess_arr[i, j + self.k_inflate] = -(
+                    score_main[zero_idx, j] *
                     w[zero_idx] * (1 - w[zero_idx]) *
                     self.exog_infl[zero_idx, i] / pmf[zero_idx]).sum()
 
@@ -480,6 +488,14 @@ class ZeroInflatedPoisson(GenericZeroInflated):
     """ % {'params': base._model_params_doc,
            'extra_params': _doc_zi_params + base._missing_param_doc}
 
+    @property
+    def _res_classes(self):
+        return {
+            "fit": (ZeroInflatedPoissonResults,
+                    ZeroInflatedPoissonResultsWrapper),
+            "fit_regularized": (L1ZeroInflatedPoissonResults,
+                                L1ZeroInflatedPoissonResultsWrapper)}
+
     def __init__(self, endog, exog, exog_infl=None, offset=None, exposure=None,
                  inflation='logit', missing='none', **kwargs):
         super(ZeroInflatedPoisson, self).__init__(endog, exog, offset=offset,
@@ -490,19 +506,15 @@ class ZeroInflatedPoisson(GenericZeroInflated):
         self.model_main = Poisson(self.endog, self.exog, offset=offset,
                                   exposure=exposure)
         self.distribution = zipoisson
-        self.result_class = ZeroInflatedPoissonResults
-        self.result_class_wrapper = ZeroInflatedPoissonResultsWrapper
-        self.result_class_reg = L1ZeroInflatedPoissonResults
-        self.result_class_reg_wrapper = L1ZeroInflatedPoissonResultsWrapper
 
     def _hessian_main(self, params):
         params_infl = params[:self.k_inflate]
         params_main = params[self.k_inflate:]
 
+        exog = self.exog
         y = self.endog
         w = self.model_infl.predict(params_infl)
         w = np.clip(w, np.finfo(float).eps, 1 - np.finfo(float).eps)
-        score = self.score(params)
         zero_idx = np.nonzero(y == 0)[0]
         nonzero_idx = np.nonzero(y)[0]
 
@@ -511,16 +523,17 @@ class ZeroInflatedPoisson(GenericZeroInflated):
         hess_arr = np.zeros((self.k_exog, self.k_exog))
 
         coeff = (1 + w[zero_idx] * (np.exp(mu[zero_idx]) - 1))
-
-        #d2l/dp2
+        # d2l/dp2
         for i in range(self.k_exog):
             for j in range(i, -1, -1):
                 hess_arr[i, j] = ((
-                    self.exog[zero_idx, i] * self.exog[zero_idx, j] *
-                    mu[zero_idx] * (w[zero_idx] - 1) * (1 / coeff -
-                    w[zero_idx] * mu[zero_idx] * np.exp(mu[zero_idx]) /
-                    coeff**2)).sum() - (mu[nonzero_idx] * self.exog[nonzero_idx, i] *
-                    self.exog[nonzero_idx, j]).sum())
+                    exog[zero_idx, i] * exog[zero_idx, j] *
+                    mu[zero_idx] * (w[zero_idx] - 1) * (
+                        1 / coeff -
+                        w[zero_idx] * mu[zero_idx] *
+                        np.exp(mu[zero_idx]) / coeff**2)).sum() -
+                    (mu[nonzero_idx] *
+                     exog[nonzero_idx, i] * exog[nonzero_idx, j]).sum())
 
         return hess_arr
 
@@ -576,14 +589,25 @@ class ZeroInflatedGeneralizedPoisson(GenericZeroInflated):
         ZIGP-1 and p=2 for ZIGP-2. Default is p=2
     """ + base._missing_param_doc}
 
+    @property
+    def _res_classes(self):
+        return {
+            "fit": (ZeroInflatedGeneralizedPoissonResults,
+                    ZeroInflatedGeneralizedPoissonResultsWrapper),
+            "fit_regularized": (
+                L1ZeroInflatedGeneralizedPoissonResults,
+                L1ZeroInflatedGeneralizedPoissonResultsWrapper)}
+
     def __init__(self, endog, exog, exog_infl=None, offset=None, exposure=None,
                  inflation='logit', p=2, missing='none', **kwargs):
-        super(ZeroInflatedGeneralizedPoisson, self).__init__(endog, exog,
-            offset=offset,
-            inflation=inflation,
-            exog_infl=exog_infl,
-            exposure=exposure,
-            missing=missing, **kwargs)
+        cls = ZeroInflatedGeneralizedPoisson
+        super(cls, self).__init__(endog, exog,
+                                  offset=offset,
+                                  inflation=inflation,
+                                  exog_infl=exog_infl,
+                                  exposure=exposure,
+                                  missing=missing,
+                                  **kwargs)
         self.model_main = GeneralizedPoisson(self.endog, self.exog,
                                              offset=offset,
                                              exposure=exposure, p=p)
@@ -591,10 +615,6 @@ class ZeroInflatedGeneralizedPoisson(GenericZeroInflated):
         self.k_exog += 1
         self.k_extra += 1
         self.exog_names.append("alpha")
-        self.result_class = ZeroInflatedGeneralizedPoissonResults
-        self.result_class_wrapper = ZeroInflatedGeneralizedPoissonResultsWrapper
-        self.result_class_reg = L1ZeroInflatedGeneralizedPoissonResults
-        self.result_class_reg_wrapper = L1ZeroInflatedGeneralizedPoissonResultsWrapper
 
     def _get_init_kwds(self):
         kwds = super(ZeroInflatedGeneralizedPoisson, self)._get_init_kwds()
@@ -624,8 +644,9 @@ class ZeroInflatedGeneralizedPoisson(GenericZeroInflated):
 
     def _get_start_params(self, start_params=None):
         if start_params is None:
-            start_params = ZeroInflatedPoisson(self.endog, self.exog,
-                                               exog_infl=self.exog_infl).fit(disp=0).params
+            zmod = ZeroInflatedPoisson(self.endog, self.exog,
+                                       exog_infl=self.exog_infl)
+            start_params = zmod.fit(disp=0).params
             start_params = np.append(start_params, 0.1)
         return start_params
 
@@ -655,14 +676,24 @@ class ZeroInflatedNegativeBinomialP(GenericZeroInflated):
         ZINB-1 and p=2 for ZINM-2. Default is p=2
     """ + base._missing_param_doc}
 
+    @property
+    def _res_classes(self):
+        return {
+            "fit": (ZeroInflatedNegativeBinomialResults,
+                    ZeroInflatedNegativeBinomialResultsWrapper),
+            "fit_regularized": (L1ZeroInflatedNegativeBinomialResults,
+                                L1ZeroInflatedNegativeBinomialResultsWrapper)}
+
     def __init__(self, endog, exog, exog_infl=None, offset=None, exposure=None,
                  inflation='logit', p=2, missing='none', **kwargs):
-        super(ZeroInflatedNegativeBinomialP, self).__init__(endog, exog,
-            offset=offset,
-            inflation=inflation,
-            exog_infl=exog_infl,
-            exposure=exposure,
-            missing=missing, **kwargs)
+        cls = ZeroInflatedNegativeBinomialP
+        super(cls, self).__init__(endog, exog,
+                                  offset=offset,
+                                  inflation=inflation,
+                                  exog_infl=exog_infl,
+                                  exposure=exposure,
+                                  missing=missing, **kwargs)
+
         self.model_main = NegativeBinomialP(self.endog, self.exog,
                                             offset=offset,
                                             exposure=exposure, p=p)
@@ -670,10 +701,6 @@ class ZeroInflatedNegativeBinomialP(GenericZeroInflated):
         self.k_exog += 1
         self.k_extra += 1
         self.exog_names.append("alpha")
-        self.result_class = ZeroInflatedNegativeBinomialResults
-        self.result_class_wrapper = ZeroInflatedNegativeBinomialResultsWrapper
-        self.result_class_reg = L1ZeroInflatedNegativeBinomialResults
-        self.result_class_reg_wrapper = L1ZeroInflatedNegativeBinomialResultsWrapper
 
     def _get_init_kwds(self):
         kwds = super(ZeroInflatedNegativeBinomialP, self)._get_init_kwds()
@@ -685,7 +712,7 @@ class ZeroInflatedNegativeBinomialP(GenericZeroInflated):
         params_main = params[self.k_inflate:]
 
         p = self.model_main.parameterization
-        counts = np.arange(0, np.max(self.endog)+1)
+        counts = np.arange(0, np.max(self.endog) + 1)
 
         if len(exog_infl.shape) < 2:
             transform = True
@@ -734,14 +761,14 @@ class L1ZeroInflatedPoissonResults(L1CountResults, ZeroInflatedPoissonResults):
 
 class ZeroInflatedPoissonResultsWrapper(lm.RegressionResultsWrapper):
     pass
-wrap.populate_wrapper(ZeroInflatedPoissonResultsWrapper,
-                      ZeroInflatedPoissonResults)  # noqa:E305
+wrap.populate_wrapper(ZeroInflatedPoissonResultsWrapper,  # noqa:E305
+                      ZeroInflatedPoissonResults)
 
 
 class L1ZeroInflatedPoissonResultsWrapper(lm.RegressionResultsWrapper):
     pass
-wrap.populate_wrapper(L1ZeroInflatedPoissonResultsWrapper,
-                      L1ZeroInflatedPoissonResults)  # noqa:E305
+wrap.populate_wrapper(L1ZeroInflatedPoissonResultsWrapper,  # noqa:E305
+                      L1ZeroInflatedPoissonResults)
 
 
 class ZeroInflatedGeneralizedPoissonResults(CountResults):
@@ -768,7 +795,7 @@ class ZeroInflatedGeneralizedPoissonResults(CountResults):
 
 
 class L1ZeroInflatedGeneralizedPoissonResults(L1CountResults,
-        ZeroInflatedGeneralizedPoissonResults):
+        ZeroInflatedGeneralizedPoissonResults):  # noqa:E128
     pass
 
 
@@ -812,12 +839,11 @@ class ZeroInflatedNegativeBinomialResults(CountResults):
 
 
 class L1ZeroInflatedNegativeBinomialResults(L1CountResults,
-        ZeroInflatedNegativeBinomialResults):
+        ZeroInflatedNegativeBinomialResults):  # noqa:E128
     pass
 
 
-class ZeroInflatedNegativeBinomialResultsWrapper(
-        lm.RegressionResultsWrapper):
+class ZeroInflatedNegativeBinomialResultsWrapper(lm.RegressionResultsWrapper):
     pass
 wrap.populate_wrapper(  # noqa:E305
     ZeroInflatedNegativeBinomialResultsWrapper,

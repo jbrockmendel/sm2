@@ -1,5 +1,6 @@
 from __future__ import print_function
 import warnings
+from collections import defaultdict
 
 from six.moves import range
 import numpy as np
@@ -1106,7 +1107,7 @@ class LikelihoodModelResults(wrap.SaveLoadMixin, Results):
         tvalues : individual t statistics
         f_test : for F tests
         patsy.DesignInfo.linear_constraint
-        """
+        """  # noqa:E501
         from patsy import DesignInfo
         names = self.model.data.param_names
         LC = DesignInfo(names).linear_constraint(r_matrix)
@@ -1411,10 +1412,7 @@ class LikelihoodModelResults(wrap.SaveLoadMixin, Results):
         C(Weight):C(Duration)   0.216694     0.897315972824              2
         Duration               11.187849     0.010752286833              3
         Weight                 30.263368  4.32586407145e-06              4
-        """
-        # lazy import
-        from collections import defaultdict
-
+        """  # noqa:E501
         result = self
         if extra_constraints is None:
             extra_constraints = []

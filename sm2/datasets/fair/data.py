@@ -20,7 +20,7 @@ of an individual's time among work, time spent with a spouse, and time
 spent with a paramour. The data is used as an example of regression
 with censored data."""
 
-#suggested notes
+# suggested notes
 NOTE = """::
 
     Number of observations: 6366
@@ -49,10 +49,11 @@ NOTE = """::
 
     See the original paper for more details.
 """
+import os
 
 import numpy as np
+
 from sm2.datasets import utils as du
-from os.path import dirname, abspath
 
 
 def load():
@@ -77,7 +78,8 @@ def load_pandas():
 
 
 def _get_data():
-    filepath = dirname(abspath(__file__))
-    with open(filepath + '/fair.csv', 'rb') as f:
-        data = np.recfromtxt(f, delimiter=",", names=True, dtype=float)
+    cur_dir = os.path.dirname(os.path.abspath(__file__))
+    path = os.path.join(cur_dir, 'fair.csv')
+    with open(path, 'rb') as fd:
+        data = np.recfromtxt(fd, delimiter=",", names=True, dtype=float)
     return data

@@ -1,7 +1,7 @@
 """
 Datasets module
 """
-__all__ = ['anes96','cancer', 'ccard', 'china_smoking', 'co2', 'committee',
+__all__ = ['anes96', 'cancer', 'ccard', 'china_smoking', 'co2', 'committee',
            'copper', 'cpunish', 'elnino', 'engel', 'fair', 'fertility',
            'grunfeld', 'heart', 'interest_inflation', 'longley',
            'macrodata', 'modechoice', 'nile', 'randhie', 'scotland', 'spector',

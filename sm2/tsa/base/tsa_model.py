@@ -1,5 +1,3 @@
-
-import datetime
 import warnings
 
 from six import integer_types
@@ -38,8 +36,8 @@ _missing_param_doc = base._missing_param_doc
 
 
 class TimeSeriesModel(base.LikelihoodModel):
-
-    __doc__ = _tsa_doc % {"model": _model_doc, "params": _generic_params,
+    __doc__ = _tsa_doc % {"model": _model_doc,
+                          "params": _generic_params,
                           "extra_params": _missing_param_doc,
                           "extra_sections": ""}
 
@@ -136,7 +134,7 @@ class TimeSeriesModel(base.LikelihoodModel):
                     _index = pd.to_datetime(index)
                     # Older versions of Pandas can sometimes fail here and
                     # return a numpy array - check to make sure it's an index
-                    if not isinstance(_index, pd.Index):
+                    if not isinstance(_index, pd.Index):  # pragma: no cover
                         raise ValueError('Could not coerce to date index')
                     index = _index
                 except:
@@ -171,7 +169,7 @@ class TimeSeriesModel(base.LikelihoodModel):
                 if freq is None and index.freq is None:
                     # But again, only want to raise the exception if `dates`
                     # was provided.
-                    if dates is not None:
+                    if dates is not None:  # pragma: no cover
                         raise ValueError('No frequency information was'
                                          ' provided with date index and no'
                                          ' frequency could be inferred.')
@@ -179,8 +177,8 @@ class TimeSeriesModel(base.LikelihoodModel):
                 # the `freq` argument is available (or was inferred), construct
                 # a new index with an associated frequency
                 elif freq is not None and index.freq is None:
-                    resampled_index = type(index)(
-                        start=index[0], end=index[-1], freq=freq)
+                    resampled_index = type(index)(start=index[0],
+                                                  end=index[-1], freq=freq)
                     if not inferred_freq and not resampled_index.equals(index):
                         raise ValueError('The given frequency argument could'
                                          ' not be matched to the given index.')
@@ -375,7 +373,7 @@ class TimeSeriesModel(base.LikelihoodModel):
                 if not isinstance(key, (integer_types, np.integer)):
                     loc = self.data.row_labels.get_loc(key)
                 else:
-                    raise
+                    raise  # pragma: no cover
                 loc = loc[0]  # Require scalar
                 index = self.data.row_labels[:loc + 1]
                 index_was_expanded = False
@@ -456,7 +454,7 @@ class TimeSeriesModel(base.LikelihoodModel):
         prediction_index = end_index[start:]
 
         # Validate prediction options
-        if end < start:
+        if end < start:  # pragma: no cover
             raise ValueError('Prediction must have `end` after `start`.')
 
         # Handle custom prediction index
@@ -533,9 +531,9 @@ class TimeSeriesModelResults(base.LikelihoodModelResults):
 class TimeSeriesResultsWrapper(wrap.ResultsWrapper):
     _attrs = {}
     _wrap_attrs = wrap.union_dicts(base.LikelihoodResultsWrapper._wrap_attrs,
-                                    _attrs)
+                                   _attrs)
     _methods = {'predict': 'dates'}
-    _wrap_methods = wrap.union_dicts(base.LikelihoodResultsWrapper._wrap_methods,
-                                     _methods)
-wrap.populate_wrapper(TimeSeriesResultsWrapper,
+    _wrap_methods = wrap.union_dicts(
+        base.LikelihoodResultsWrapper._wrap_methods, _methods)
+wrap.populate_wrapper(TimeSeriesResultsWrapper,  # noqa:E305
                       TimeSeriesModelResults)

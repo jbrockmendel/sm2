@@ -108,7 +108,7 @@ class TestNegBinMarginDummy(CheckMarginMixin):
                          -2.88, 1.14]
     }
     dummy = True
-    rtol_fac = 5e1 # negbin has lower agreement with Stata in this case
+    rtol_fac = 5e1  # negbin has lower agreement with Stata in this case
 
 
 @pytest.mark.not_vetted

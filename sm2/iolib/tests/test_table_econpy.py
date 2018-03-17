@@ -1,9 +1,10 @@
 """
 Unit tests table.py.
 
-:see: http://docs.python.org/lib/minimal-example.html for an intro to unittest
-:see: http://agiletesting.blogspot.com/2005/01/python-unit-testing-part-1-unittest.html
-:see: http://aspn.activestate.com/ASPN/Cookbook/Python/Recipe/305292
+:see:
+docs.python.org/lib/minimal-example.html for an intro to unittest
+agiletesting.blogspot.com/2005/01/python-unit-testing-part-1-unittest.html
+aspn.activestate.com/ASPN/Cookbook/Python/Recipe/305292
 """
 from __future__ import absolute_import
 
@@ -45,7 +46,6 @@ row1data = [2, 3.333]
 table1data = [row0data, row1data]
 test1stubs = ('stub1', 'stub2')
 test1header = ('header1', 'header2')
-#test1header = ('header1\nheader1a', 'header2\nheader2a')
 tbl = SimpleTable(table1data, test1header, test1stubs,
                   txt_fmt=txt_fmt1, ltx_fmt=ltx_fmt1, html_fmt=html_fmt1)
 

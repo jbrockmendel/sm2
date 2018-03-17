@@ -167,6 +167,27 @@ z_ctt_largep = np.array([[3.4671, 4.3476, 1.9231, 0.5381, 0.6216],
                          [4.8479, 2.6447, 0.5647, 0.0827, 0.0518]])
 z_ctt_largep *= z_large_scaling
 
+tau_mins = {"c": tau_min_c,
+            "nc": tau_min_nc,
+            "ct": tau_min_ct,
+            "ctt": tau_min_ctt}
+tau_maxs = {"c": tau_max_c,
+            "nc": tau_max_nc,
+            "ct": tau_max_ct,
+            "ctt": tau_max_ctt}
+tau_stars = {"c": tau_star_c,
+             "nc": tau_star_nc,
+             "ct": tau_star_ct,
+             "ctt": tau_star_ctt}
+tau_larges = {"c": tau_c_largep,
+              "nc": tau_nc_largep,
+              "ct": tau_ct_largep,
+              "ctt": tau_ctt_largep}
+tau_smalls = {"c": tau_c_smallp,
+              "nc": tau_nc_smallp,
+              "ct": tau_ct_smallp,
+              "ctt": tau_ctt_smallp}
+
 
 # TODO: finish this and then integrate them into adf function
 def mackinnonp(teststat, regression="c", N=1, lags=None):
@@ -202,19 +223,19 @@ def mackinnonp(teststat, regression="c", N=1, lags=None):
     H_0: AR coefficient = 1
     H_a: AR coefficient < 1
     """
-    maxstat = eval("tau_max_" + regression)
-    minstat = eval("tau_min_" + regression)
-    starstat = eval("tau_star_" + regression)
+    maxstat = tau_maxs[regression]
+    minstat = tau_mins[regression]
+    starstat = tau_stars[regression]
     if teststat > maxstat[N - 1]:
         return 1.0
     elif teststat < minstat[N - 1]:
         return 0.0
     if teststat <= starstat[N - 1]:
-        tau_coef = eval("tau_" + regression + "_smallp[" + str(N - 1) + "]")
+        tau_coef = tau_smalls[regression][N - 1]
         #teststat = np.log(np.abs(teststat))
     # above is only for z stats
     else:
-        tau_coef = eval("tau_" + regression + "_largep[" + str(N - 1) + "]")
+        tau_coef = tau_larges[regression][N - 1]
     return stats.norm.cdf(np.polyval(tau_coef[::-1], teststat))
 
 
@@ -342,6 +363,11 @@ tau_ctt_2010 = [[[-4.37113, -11.5882, -35.819, -334.047],  # N = 1
                  [-6.22941, -36.9673, -10.868, 418.414]]]
 tau_ctt_2010 = np.asarray(tau_ctt_2010)
 
+tau_regs = {"c": tau_c_2010,
+            "ct": tau_ct_2010,
+            "nc": tau_nc_2010,
+            "ctt": tau_ctt_2010}
+
 
 def mackinnoncrit(N=1, regression="c", nobs=np.inf):
     """
@@ -382,7 +408,7 @@ def mackinnoncrit(N=1, regression="c", nobs=np.inf):
     if reg not in ['c', 'ct', 'nc', 'ctt']:
         raise ValueError("regression keyword %s not understood" % reg)
     if nobs is np.inf:
-        return eval("tau_" + reg + "_2010[" + str(N - 1) + ", :, 0]")
+        return tau_regs[reg][N - 1, :, 0]
     else:
-        return np.polyval(eval("tau_" + reg + "_2010[" + str(N - 1) + ", :, ::-1].T"),
+        return np.polyval(tau_regs[reg][N - 1, :, ::-1].T,
                           1. / nobs)

@@ -41,7 +41,7 @@ Methods: An Applied Physics Corporation (APC) nondispersive infrared
          2000 is compared with flask data from the same site in the
          graphics section."""
 
-#suggested notes
+# suggested notes
 NOTE = """::
 
     Number of observations: 2225
@@ -53,12 +53,13 @@ NOTE = """::
 
     The data returned by load_pandas contains the dates as the index.
 """
+import os
 
 import numpy as np
-from sm2.datasets import utils as du
-from os.path import dirname, abspath
-
 import pandas as pd
+
+from sm2.datasets import utils as du
+
 
 def load():
     """
@@ -81,16 +82,18 @@ def load_pandas():
                              periods=len(data.data), format='%Y%m%d',
                              freq='W-SAT')
     dataset = pd.DataFrame(data.data['co2'], index=index, columns=['co2'])
-    #NOTE: this is how I got the missing values in co2.csv
-    #new_index = pd.DatetimeIndex(start='1958-3-29', end=index[-1],
-    #                             freq='W-SAT')
-    #data.data = dataset.reindex(new_index)
+    # NOTE: this is how I got the missing values in co2.csv:
+    #   new_index = pd.DatetimeIndex(start='1958-3-29', end=index[-1],
+    #                                freq='W-SAT')
+    #   data.data = dataset.reindex(new_index)
     data.data = dataset
     return data
 
 
 def _get_data():
-    filepath = dirname(abspath(__file__))
-    with open(filepath + '/co2.csv', 'rb') as f:
-        data = np.recfromtxt(f, delimiter=",", names=True, dtype=['a8', float])
+    cur_dir = os.path.dirname(os.path.abspath(__file__))
+    path = os.path.join(cur_dir, 'co2.csv')
+    with open(path, 'rb') as fd:
+        data = np.recfromtxt(fd, delimiter=",",
+                             names=True, dtype=['a8', float])
     return data

@@ -1378,6 +1378,6 @@ def test_summary_as_latex():
     Warnings: \\newline
      [1] Standard Errors assume that the covariance matrix of the errors is correctly specified. \\newline
      [2] The condition number is large, 4.86e+09. This might indicate that there are \\newline
-     strong multicollinearity or other numerical problems.""").strip()
+     strong multicollinearity or other numerical problems.""").strip()  # noqa:E501
 
     assert_equal(table, expected)

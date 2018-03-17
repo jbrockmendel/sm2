@@ -215,7 +215,7 @@ def adfuller(x, maxlag=None, regression="c", autolag='AIC',
     if regression is None or isinstance(regression, integer_types):
         regression = trenddict[regression]
     regression = regression.lower()
-    if regression not in ['c', 'nc', 'ct', 'ctt']:
+    if regression not in ['c', 'nc', 'ct', 'ctt']:  # pragma: no cover
         raise ValueError("regression option %s not understood" % regression)
     x = np.asarray(x)
     nobs = x.shape[0]
@@ -621,8 +621,9 @@ def pacf(x, nlags=40, method='ywunbiased', alpha=None):
         acv = acovf(x, unbiased=False)
         ld_ = levinson_durbin(acv, nlags=nlags, isacov=True)
         ret = ld_[2]
-    else:
+    else:  # pragma: no cover
         raise ValueError('method not available')
+
     if alpha is not None:
         varacf = 1. / len(x)  # for all lags >=1
         interval = stats.norm.ppf(1. - alpha / 2.) * np.sqrt(varacf)
@@ -695,7 +696,7 @@ def ccf(x, y, unbiased=True):
     return cvf / (np.std(x) * np.std(y))
 
 
-def periodogram(X):
+def periodogram(X):  # TODO: not tested
     """
     Returns the periodogram for the natural frequency of X
 
@@ -846,6 +847,9 @@ def grangercausalitytests(x, maxlag, addconst=True, verbose=True):
     http://en.wikipedia.org/wiki/Granger_causality
     Greene: Econometric Analysis
     """
+    if verbose:
+        raise NotImplementedError("Option `verbose` from upstream is "
+                                  "not supported")
     x = np.asarray(x)
 
     if x.shape[0] <= 3 * maxlag + int(addconst):
@@ -857,9 +861,6 @@ def grangercausalitytests(x, maxlag, addconst=True, verbose=True):
 
     for mlg in range(1, maxlag + 1):
         result = {}
-        if verbose:
-            print('\nGranger Causality')
-            print('number of lags (no zero)', mlg)
         mxlg = mlg
 
         # create lagmat of both time series
@@ -885,28 +886,17 @@ def grangercausalitytests(x, maxlag, addconst=True, verbose=True):
         # Granger Causality test using ssr (F statistic)
         fgc1 = ((res2down.ssr - res2djoint.ssr) /
                 res2djoint.ssr / mxlg * res2djoint.df_resid)
-        if verbose:
-            print('ssr based F test:         F=%-8.4f, p=%-8.4f, df_denom=%d,'
-                  ' df_num=%d' % (fgc1,
-                                  stats.f.sf(fgc1, mxlg,
-                                             res2djoint.df_resid),
-                                  res2djoint.df_resid, mxlg))
+
         result['ssr_ftest'] = (fgc1,
                                stats.f.sf(fgc1, mxlg, res2djoint.df_resid),
                                res2djoint.df_resid, mxlg)
 
         # Granger Causality test using ssr (ch2 statistic)
         fgc2 = res2down.nobs * (res2down.ssr - res2djoint.ssr) / res2djoint.ssr
-        if verbose:
-            print('ssr based chi2 test:   chi2=%-8.4f, p=%-8.4f, '
-                  'df=%d' % (fgc2, stats.chi2.sf(fgc2, mxlg), mxlg))
         result['ssr_chi2test'] = (fgc2, stats.chi2.sf(fgc2, mxlg), mxlg)
 
         # likelihood ratio test pvalue:
         lr = -2 * (res2down.llf - res2djoint.llf)
-        if verbose:
-            print('likelihood ratio test: chi2=%-8.4f, p=%-8.4f, df=%d' %
-                  (lr, stats.chi2.sf(lr, mxlg), mxlg))
         result['lrtest'] = (lr, stats.chi2.sf(lr, mxlg), mxlg)
 
         # F test that all lag coefficients of exog are zero
@@ -914,10 +904,6 @@ def grangercausalitytests(x, maxlag, addconst=True, verbose=True):
                                    np.eye(mxlg, mxlg),
                                    np.zeros((mxlg, 1))))
         ftres = res2djoint.f_test(rconstr)
-        if verbose:
-            print('parameter F test:         F=%-8.4f, p=%-8.4f, df_denom=%d,'
-                  ' df_num=%d' % (ftres.fvalue, ftres.pvalue, ftres.df_denom,
-                                  ftres.df_num))
         result['params_ftest'] = (np.squeeze(ftres.fvalue)[()],
                                   np.squeeze(ftres.pvalue)[()],
                                   ftres.df_denom, ftres.df_num)

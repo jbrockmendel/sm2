@@ -164,7 +164,6 @@ def test_armafft():
     # test other methods
     ArmaFft = None  # dummy to avoid flake8 warnings
     # from statsmodels.sandbox.tsa.fftarma import ArmaFft
-    nfreq = 20
     for ar in arlist:
         for ma in malist:
             arma = ArmaFft(ar, ma, 20)

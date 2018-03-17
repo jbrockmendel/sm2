@@ -1,10 +1,11 @@
 """(West) German interest and inflation rate 1972-1998"""
 
-from numpy import recfromtxt, column_stack, array
-from pandas import DataFrame
+import os
+
+import numpy as np
+import pandas as pd
 
 from sm2.datasets.utils import Dataset
-from os.path import dirname, abspath, pardir, join
 
 __docformat__ = 'restructuredtext'
 
@@ -61,16 +62,17 @@ def load():
 
 def load_pandas():
     dataset = load()
-    dataset.data = DataFrame(dataset.data)
+    dataset.data = pd.DataFrame(dataset.data)
     return dataset
 
 
 def _get_data():
-    filepath = dirname(abspath(__file__))
-    with open(join(filepath, 'E6.csv'), 'rb') as f:
-        data = recfromtxt(f, delimiter=",",
-                          names=True, dtype=float)
-        return data
+    cur_dir = os.path.dirname(os.path.abspath(__file__))
+    path = os.path.join(cur_dir, 'E6.csv')
+    with open(path, 'rb') as fd:
+        data = np.recfromtxt(fd, delimiter=",",
+                             names=True, dtype=float)
+    return data
 
 
 def __str__():

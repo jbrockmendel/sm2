@@ -328,13 +328,6 @@ def test_coint():
     y += const
     y = np.round(y, 4)
 
-    for trend in []:#['c', 'ct', 'ctt', 'nc']:
-        print('\n', trend)
-        print(coint(y[:, 0], y[:, 1], trend=trend, maxlag=4, autolag=None))
-        print(coint(y[:, 0], y[:, 1:3], trend=trend, maxlag=4, autolag=None))
-        print(coint(y[:, 0], y[:, 2:], trend=trend, maxlag=4, autolag=None))
-        print(coint(y[:, 0], y[:, 1:], trend=trend, maxlag=4, autolag=None))
-
     # results from Stata egranger
     res_egranger = {}
     # trend = 'ct'

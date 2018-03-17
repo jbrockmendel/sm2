@@ -28,10 +28,10 @@ NOTE = """::
         age - age at the time of surgery
         censored - indicates if an observation is censored.  1 is uncensored
 """
-
+import os
 import numpy as np
+
 from sm2.datasets import utils as du
-from os.path import dirname, abspath
 
 
 def load():
@@ -59,7 +59,8 @@ def load_pandas():
 
 
 def _get_data():
-    filepath = dirname(abspath(__file__))
-    with open(filepath + '/heart.csv', 'rb') as f:
-        data = np.recfromtxt(f, delimiter=",", names = True, dtype=float)
+    cur_dir = os.path.dirname(os.path.abspath(__file__))
+    path = os.path.join(cur_dir, 'heart.csv')
+    with open(path, 'rb') as fd:
+        data = np.recfromtxt(fd, delimiter=",", names=True, dtype=float)
     return data

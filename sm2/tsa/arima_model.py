@@ -18,7 +18,7 @@ from scipy import optimize, stats, signal
 
 
 from sm2.tools.decorators import (cache_readonly, resettable_cache,
-                                  deprecated_alias)
+                                  deprecated_alias, copy_doc)
 from sm2.tools.numdiff import approx_hess_cs, approx_fprime_cs
 
 import sm2.base.wrapper as wrap
@@ -220,13 +220,12 @@ _plot_extras = """alpha : float, optional
 _plot_predict = ("""
         Plot forecasts
                       """ + '\n'.join(_predict.split('\n')[2:])) % {
-                      "params": "",
-                      "extra_params": _plot_extras,
-                      "returns": """fig : matplotlib.Figure
+    "params": "",
+    "extra_params": _plot_extras,
+    "returns": """fig : matplotlib.Figure
             The plotted Figure instance""",
-                      "extra_section": ('\n' + _arima_plot_predict_example +
-                                        '\n' + _results_notes)
-                      }
+    "extra_section": ('\n' + _arima_plot_predict_example +
+                      '\n' + _results_notes)}
 
 _arima_plot_predict = ("""
         Plot forecasts
@@ -238,11 +237,9 @@ _arima_plot_predict = ("""
     "extra_section": ('\n' + _arima_plot_predict_example +
                       '\n' +
                       '\n'.join(_results_notes.split('\n')[:3]) +
-                              ("""
+                      ("""
         This is hard-coded to only allow plotting of the forecasts in levels.
-""") +
-                              '\n'.join(_results_notes.split('\n')[3:]))
-                      }
+""") + '\n'.join(_results_notes.split('\n')[3:]))}
 
 
 def cumsum_n(x, n):
@@ -305,7 +302,7 @@ def _get_predict_out_of_sample(endog, p, q, k_trend, k_exog, start, errors,
             mu = np.array([mu] * steps)
     elif k_exog > 0:
         X = np.dot(exog, exparams)
-        #NOTE: you shouldn't have to give in-sample exog!
+        # NOTE: you shouldn't have to give in-sample exog!
         X = lagmat(X, p, original='in', trim='both')
         mu = (np.r_[1, -arparams[::-1]] * X).sum(1)[:, None]
     else:
@@ -314,7 +311,7 @@ def _get_predict_out_of_sample(endog, p, q, k_trend, k_exog, start, errors,
     endog = np.zeros(p + steps - 1)
 
     if p and start:
-        endog[:p] = y[start-p:start]
+        endog[:p] = y[start - p:start]
     elif p:
         endog[:p] = y[-p:]
 
@@ -410,10 +407,10 @@ def _make_arma_names(data, k_trend, order, exog_names):
     if k_ma == 0 and k_ar == 0:
         if len(exog_names) != 0:
             return exog_names
-    elif (exog_names[-k_ma:] == ma_lag_names) and \
-                exog_names[-(k_ar + k_ma):-k_ma] == ar_lag_names and \
-                (not exog_names or not trend_name or
-                 trend_name[0] == exog_names[0]):
+    elif ((exog_names[-k_ma:] == ma_lag_names) and
+            exog_names[-(k_ar + k_ma):-k_ma] == ar_lag_names and
+            (not exog_names or not trend_name or
+             trend_name[0] == exog_names[0])):
             return exog_names
 
     exog_names = trend_name + exog_names + ar_lag_names + ma_lag_names
@@ -442,11 +439,11 @@ def _check_estimable(nobs, n_params):
 
 
 class ARMA(tsa_model.TimeSeriesModel):
-    __doc__ = tsa_model._tsa_doc % {"model": _arma_model,
-                                    "params": _arma_params,
-                                    "extra_params": "",
-                                    "extra_sections": _armax_notes %
-                                                       {"Model": "ARMA"}}
+    __doc__ = tsa_model._tsa_doc % {
+        "model": _arma_model,
+        "params": _arma_params,
+        "extra_params": "",
+        "extra_sections": _armax_notes % {"Model": "ARMA"}}
 
     def __init__(self, endog, order, exog=None, dates=None, freq=None,
                  missing='none'):
@@ -455,7 +452,7 @@ class ARMA(tsa_model.TimeSeriesModel):
         _check_estimable(len(self.endog), sum(order))
         self.k_ar = k_ar = order[0]
         self.k_ma = k_ma = order[1]
-        self.k_lags = max(k_ar, k_ma+1)
+        self.k_lags = max(k_ar, k_ma + 1)
         if exog is not None:
             if exog.ndim == 1:
                 exog = exog[:, None]
@@ -576,8 +573,7 @@ class ARMA(tsa_model.TimeSeriesModel):
             start_params = self._fit_start_params_hr(order, start_ar_lags)
         else:
             # use CSS to get start params
-            func = lambda params: -self.loglike_css(params)
-            #start_params = [.1]*(k_ar+k_ma+k_exog) # different one for k?
+            func = lambda params: -self.loglike_css(params)  # noqa:E731
             start_params = self._fit_start_params_hr(order, start_ar_lags)
             if self.transparams:
                 start_params = self._invtransparams(start_params)
@@ -730,9 +726,9 @@ class ARMA(tsa_model.TimeSeriesModel):
             errors = e[0][k_ar:]
         return errors.squeeze()
 
+    @copy_doc(_arma_predict)
     def predict(self, params, start=None, end=None, exog=None, dynamic=False):
         method = getattr(self, 'method', 'mle')  # don't assume fit
-        #params = np.asarray(params)
 
         # will return an index of a date
         start, end, out_of_sample, _ = (
@@ -760,8 +756,9 @@ class ARMA(tsa_model.TimeSeriesModel):
         if dynamic:
             if self.k_exog > 0:
                 # need the last k_ar exog for the lag-polynomial
-                exog = np.vstack((self.exog[start - k_ar:, self.k_trend:], exog))
-            #TODO: now that predict does dynamic in-sample it should
+                exog = np.vstack((self.exog[start - k_ar:, self.k_trend:],
+                                  exog))
+            # TODO: now that predict does dynamic in-sample it should
             # also return error estimates and confidence intervals
             # but how? len(endog) is not tot_obs
             out_of_sample += end - start + 1
@@ -781,7 +778,6 @@ class ARMA(tsa_model.TimeSeriesModel):
                                                          exog, method=method)
             predictedvalues = np.r_[predictedvalues, forecastvalues]
         return predictedvalues
-    predict.__doc__ = _arma_predict
 
     def loglike(self, params, set_sigma2=True):
         """
@@ -832,7 +828,8 @@ class ARMA(tsa_model.TimeSeriesModel):
         sigma2 = ssr / nobs
         if set_sigma2:
             self.sigma2 = sigma2
-        llf = -nobs / 2. * (np.log(2 * np.pi) + np.log(sigma2)) - ssr / (2 * sigma2)
+        llf = (-nobs / 2. * (np.log(2 * np.pi) + np.log(sigma2)) -
+               ssr / (2 * sigma2))
         return llf
 
     def fit(self, start_params=None, trend='c', method="css-mle",
@@ -997,11 +994,11 @@ class ARMA(tsa_model.TimeSeriesModel):
 # so model methods are not the same on unfit models as fit ones
 # starting to think that order of model should be put in instantiation...
 class ARIMA(ARMA):
-    __doc__ = tsa_model._tsa_doc % {"model": _arima_model,
-                                    "params": _arima_params,
-                                    "extra_params": "",
-                                    "extra_sections": _armax_notes %
-                                                     {"Model": "ARIMA"}}
+    __doc__ = tsa_model._tsa_doc % {
+        "model": _arima_model,
+        "params": _arima_params,
+        "extra_params": "",
+        "extra_sections": _armax_notes % {"Model": "ARIMA"}}
 
     def __new__(cls, endog, order, exog=None, dates=None, freq=None,
                 missing='none'):
@@ -1034,14 +1031,14 @@ class ARIMA(ARMA):
         self._first_unintegrate = unintegrate_levels(self.endog[:d], d)
         self.endog = np.diff(self.endog, n=d)
         # NOTE: will check in ARMA but check again since differenced now
-        _check_estimable(len(self.endog), p+q)
+        _check_estimable(len(self.endog), p + q)
         if exog is not None:
             self.exog = self.exog[d:]
         if d == 1:
             self.data.ynames = 'D.' + self.endog_names
         else:
             self.data.ynames = 'D{0:d}.'.format(d) + self.endog_names
-        # what about exog, should we difference it automatically before
+        # TODO: what about exog, should we difference it automatically before
         # super call?
 
         # Reset index
@@ -1181,6 +1178,7 @@ class ARIMA(ARMA):
 
         return ARIMAResultsWrapper(arima_fit)
 
+    @copy_doc(_arima_predict)
     def predict(self, params, start=None, end=None, exog=None, typ='linear',
                 dynamic=False):
         if typ not in ['linear', 'levels']:  # pragma: no cover
@@ -1252,7 +1250,7 @@ class ARIMA(ARMA):
                         if d == 2:
                             fv += np.diff(endog[start - 1:end + 1])
             else:
-                #IFF we need to use pre-sample values assume pre-sample
+                # IFF we need to use pre-sample values assume pre-sample
                 # residuals are zero, do this by a hack
                 if start == self.k_ar + self.k_diff or start is None:
                     # do the first k_diff+1 separately
@@ -1282,8 +1280,6 @@ class ARIMA(ARMA):
                                                          exog, dynamic)
                     return endog[start - 1] + np.cumsum(predict)
             return fv
-
-    predict.__doc__ = _arima_predict
 
 
 class ARMAResults(tsa_model.TimeSeriesModelResults):
@@ -1505,7 +1501,7 @@ class ARMAResults(tsa_model.TimeSeriesModelResults):
         fv = endog - self.resid
         # add deterministic part back in
         #k = self.k_exog + self.k_trend
-        #TODO: this needs to be commented out for MLE with constant
+        # TODO: this needs to be commented out for MLE with constant
         #if k != 0:
         #    fv += np.dot(exog, self.params[:k])
         return fv
@@ -1520,9 +1516,9 @@ class ARMAResults(tsa_model.TimeSeriesModelResults):
         df_resid = self.df_resid
         return stats.t.sf(np.abs(self.tvalues), df_resid) * 2
 
+    @copy_doc(_arma_results_predict)
     def predict(self, start=None, end=None, exog=None, dynamic=False):
         return self.model.predict(self.params, start, end, exog, dynamic)
-    predict.__doc__ = _arma_results_predict
 
     def _forecast_error(self, steps):
         sigma2 = self.sigma2
@@ -1693,6 +1689,7 @@ class ARMAResults(tsa_model.TimeSeriesModelResults):
     def summary2(self, title=None, alpha=.05, float_format="%.4f"):
         raise NotImplementedError("summary2 not ported from upstream")
 
+    @copy_doc(_plot_predict)
     def plot_predict(self, start=None, end=None, exog=None, dynamic=False,
                      alpha=.05, plot_insample=True, ax=None):
         fig, ax = _create_mpl_ax(ax)
@@ -1727,9 +1724,7 @@ class ARMAResults(tsa_model.TimeSeriesModelResults):
                     label=self.model.endog_names)
 
         ax.legend(loc='best')
-
         return fig
-    plot_predict.__doc__ = _plot_predict
 
 
 class ARMAResultsWrapper(wrap.ResultsWrapper):
@@ -1743,10 +1738,10 @@ wrap.populate_wrapper(ARMAResultsWrapper, ARMAResults)  # noqa:E305
 
 
 class ARIMAResults(ARMAResults):
+    @copy_doc(_arima_results_predict)
     def predict(self, start=None, end=None, exog=None, typ='linear',
                 dynamic=False):
         return self.model.predict(self.params, start, end, exog, typ, dynamic)
-    predict.__doc__ = _arima_results_predict
 
     def _forecast_error(self, steps):
         sigma2 = self.sigma2
@@ -1815,6 +1810,7 @@ class ARIMAResults(ARMAResults):
         conf_int = self._forecast_conf_int(forecast, fcerr, alpha)
         return forecast, fcerr, conf_int
 
+    @copy_doc(_arima_plot_predict)
     def plot_predict(self, start=None, end=None, exog=None, dynamic=False,
                      alpha=.05, plot_insample=True, ax=None):
         fig, ax = _create_mpl_ax(ax)
@@ -1854,9 +1850,7 @@ class ARIMAResults(ARMAResults):
         ax.legend(loc='best')
         return fig
 
-    plot_predict.__doc__ = _arima_plot_predict
-
 
 class ARIMAResultsWrapper(ARMAResultsWrapper):
     pass
-wrap.populate_wrapper(ARIMAResultsWrapper, ARIMAResults)
+wrap.populate_wrapper(ARIMAResultsWrapper, ARIMAResults)  # noqa:E305

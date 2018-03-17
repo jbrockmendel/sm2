@@ -21,6 +21,7 @@ _default_table_fmt = dict(
     stubs_align='l',
     fmt='txt')
 
+
 class VARSummary(object):
     default_fmt = dict(data_fmts=["%#15.6F", "%#15.6F", "%#15.3F", "%#14.3F"],
                        empty_cell='',

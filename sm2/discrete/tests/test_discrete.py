@@ -44,7 +44,7 @@ except ImportError:
     has_basinhopping = False
 
 try:  # noqa:F401
-    from scipy.optimize._trustregion_dogleg import _minimize_dogleg
+    from scipy.optimize._trustregion_dogleg import _minimize_dogleg  # noqa:F401,E501
     has_dogleg = True
 except ImportError:
     has_dogleg = False
@@ -347,9 +347,6 @@ class TestNegativeBinomialNB2BFGS(CheckModelResults):
                         self.res2.fittedvalues[:10],
                         atol=1e-3)
 
-    def test_jac(self):
-        pass
-
 
 @pytest.mark.not_vetted
 @pytest.mark.match_stata11
@@ -436,9 +433,6 @@ class TestNegativeBinomialGeometricBFGS(CheckModelResults):
         assert_allclose(self.res1.tvalues,
                         self.res2.z,
                         atol=1e-1)
-
-    def test_jac(self):
-        pass
 
     def test_bse(self):
         assert_allclose(self.res1.bse,
@@ -946,6 +940,7 @@ class TestProbitCG(CheckProbitSpector):
 
         # fmin_cg fails to converge on some machines - reparameterize
         # from statsmodels.tools.transform_model import StandardizeTransform
+        StandardizeTransform = None  # dummy to suppress flake8 warnings
         transf = StandardizeTransform(data.exog)
         exog_st = transf(data.exog)
 
@@ -1792,7 +1787,7 @@ class TestLogitNewtonPrepend(CheckMargEff):
         model = cls.model_cls(data.endog, data.exog, **cls.mod_kwargs)
         cls.res1 = model.fit(**cls.fit_kwargs)
 
-        cls.slice = np.roll(np.arange(len(cls.res1.params)), 1) #.astype(int)
+        cls.slice = np.roll(np.arange(len(cls.res1.params)), 1)
         # TODO: should cls.slice be _used_ somewhere?
 
     def test_resid_pearson(self):
@@ -2467,7 +2462,7 @@ def test_mnlogit_factor():
 
     # smoke tests
     params = res.params
-    summary = res.summary()
+    res.summary()
     predicted = res.predict(exog.iloc[:5, :])
 
     # with patsy
@@ -2475,7 +2470,8 @@ def test_mnlogit_factor():
                                dta.data)
     res2 = mod.fit(disp=0)
     params_f = res2.params
-    summary = res2.summary()
+    res2.summary()
+
     assert_allclose(params_f, params, rtol=1e-10)
     predicted_f = res2.predict(dta.exog.iloc[:5, :])
     assert_allclose(predicted_f, predicted, rtol=1e-10)

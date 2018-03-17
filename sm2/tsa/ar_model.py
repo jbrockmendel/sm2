@@ -58,11 +58,12 @@ def _ar_predict_out_of_sample(y, params, p, k_trend, steps, start=0):
 
 
 class AR(tsa_model.TimeSeriesModel):
-    __doc__ = tsa_model._tsa_doc % {"model": "Autoregressive AR(p) model",
-                                    "params": """endog : array-like
+    __doc__ = tsa_model._tsa_doc % {
+        "model": "Autoregressive AR(p) model",
+        "params": """endog : array-like
         1-d endogenous response variable. The independent variable.""",
-                                    "extra_params": base._missing_param_doc,
-                                    "extra_sections": ""}
+        "extra_params": base._missing_param_doc,
+        "extra_sections": ""}
 
     def __init__(self, endog, dates=None, freq=None, missing='none'):
         super(AR, self).__init__(endog, None, dates, freq, missing=missing)
@@ -313,7 +314,7 @@ class AR(tsa_model.TimeSeriesModel):
         return loglike
 
     def loglike(self, params):
-        """
+        r"""
         The loglikelihood of an AR(p) process
 
         Parameters
@@ -331,19 +332,25 @@ class AR(tsa_model.TimeSeriesModel):
         Contains constant term.  If the model is fit by OLS then this returns
         the conditonal maximum likelihood.
 
-        .. math:: \\frac{\\left(n-p\\right)}{2}\\left(\\log\\left(2\\pi\\right)+\\log\\left(\\sigma^{2}\\right)\\right)-\\frac{1}{\\sigma^{2}}\\sum_{i}\\epsilon_{i}^{2}
+        .. math:: \frac{n-p}{2}\left(\log\left(2\pi\right)
+            +\log\left(\sigma^{2}\right)\right)
+            -\frac{1}{\sigma^{2}}\sum_{i}\epsilon_{i}^{2}
 
         If it is fit by MLE then the (exact) unconditional maximum likelihood
         is returned.
 
-        .. math:: -\\frac{n}{2}log\\left(2\\pi\\right)-\\frac{n}{2}\\log\\left(\\sigma^{2}\\right)+\\frac{1}{2}\\left|V_{p}^{-1}\\right|-\\frac{1}{2\\sigma^{2}}\\left(y_{p}-\\mu_{p}\\right)^{\\prime}V_{p}^{-1}\\left(y_{p}-\\mu_{p}\\right)-\\frac{1}{2\\sigma^{2}}\\sum_{t=p+1}^{n}\\epsilon_{i}^{2}
+        .. math:: -\frac{n}{2}log\left(2\pi\right)
+            -\frac{n}{2}\log\left(\sigma^{2}\right)
+            +\frac{1}{2}\left|V_{p}^{-1}\right|
+            -\frac{1}{2\sigma^{2}}(y_{p}-\mu_{p})^{\prime}V_{p}^{-1}(y_{p}-\mu_{p})
+            -\frac{1}{2\sigma^{2}}\sum_{t=p+1}^{n}\epsilon_{i}^{2}
 
         where
 
-        :math:`\\mu_{p}` is a (`p` x 1) vector with each element equal to the
-        mean of the AR process and :math:`\\sigma^{2}V_{p}` is the (`p` x `p`)
+        :math:`\mu_{p}` is a (`p` x 1) vector with each element equal to the
+        mean of the AR process and :math:`\sigma^{2}V_{p}` is the (`p` x `p`)
         variance-covariance matrix of the first `p` observations.
-        """
+        """  # noqa:E501
         # TODO: Math is on Hamilton ~pp 124-5
         if self.method == "cmle":
             return self._loglike_css(params)
@@ -428,7 +435,7 @@ class AR(tsa_model.TimeSeriesModel):
         if ic != 't-stat':
             for lag in range(k, maxlag + 1):
                 # have to reinstantiate the model to keep comparable models
-                endog_tmp = endog[maxlag-lag:]
+                endog_tmp = endog[maxlag - lag:]
                 fit = AR(endog_tmp).fit(maxlag=lag, method=method,
                                         full_output=0, trend=trend,
                                         maxiter=100, disp=0)
@@ -589,8 +596,8 @@ class AR(tsa_model.TimeSeriesModel):
         #elif method == "yw":
         #    params, omega = yule_walker(endog, order=maxlag,
         #            method="mle", demean=False)
-           # how to handle inference after Yule-Walker?
-        #    self.params = params #TODO: don't attach here
+        #    # how to handle inference after Yule-Walker?
+        #    self.params = params  # TODO: don't attach here
         #    self.omega = omega
 
         pinv_exog = np.linalg.pinv(X)

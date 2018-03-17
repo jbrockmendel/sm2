@@ -64,9 +64,11 @@ NOTE = """::
         PERSPEN_PTRATIO_PCTAF
 """
 
-from numpy import recfromtxt, column_stack, array
+import os
+
+import numpy as np
+
 from sm2.datasets import utils as du
-from os.path import dirname, abspath
 
 
 def load():
@@ -89,21 +91,23 @@ def load_pandas():
 
 
 def _get_data():
-    filepath = dirname(abspath(__file__))
+    cur_dir = os.path.dirname(os.path.abspath(__file__))
     names = ["NABOVE", "NBELOW", "LOWINC", "PERASIAN", "PERBLACK", "PERHISP",
-            "PERMINTE", "AVYRSEXP", "AVSALK", "PERSPENK", "PTRATIO", "PCTAF",
-            "PCTCHRT", "PCTYRRND", "PERMINTE_AVYRSEXP", "PERMINTE_AVSAL",
-            "AVYRSEXP_AVSAL", "PERSPEN_PTRATIO", "PERSPEN_PCTAF", "PTRATIO_PCTAF",
-            "PERMINTE_AVYRSEXP_AVSAL", "PERSPEN_PTRATIO_PCTAF"]
-    with open(filepath + '/star98.csv', "rb") as f:
-        data = recfromtxt(f, delimiter=",",
-                          names=names, skip_header=1, dtype=float)
+             "PERMINTE", "AVYRSEXP", "AVSALK", "PERSPENK", "PTRATIO", "PCTAF",
+             "PCTCHRT", "PCTYRRND", "PERMINTE_AVYRSEXP", "PERMINTE_AVSAL",
+             "AVYRSEXP_AVSAL", "PERSPEN_PTRATIO", "PERSPEN_PCTAF",
+             "PTRATIO_PCTAF", "PERMINTE_AVYRSEXP_AVSAL",
+             "PERSPEN_PTRATIO_PCTAF"]
+    path = os.path.join(cur_dir, 'star98.csv')
+    with open(path, "rb") as fd:
+        data = np.recfromtxt(fd, delimiter=",",
+                             names=names, skip_header=1, dtype=float)
 
         # careful now
         nabove = data['NABOVE'].copy()
         nbelow = data['NBELOW'].copy()
 
-        data['NABOVE'] = nbelow # successes
-        data['NBELOW'] = nabove - nbelow # now failures
+        data['NABOVE'] = nbelow  # successes
+        data['NBELOW'] = nabove - nbelow  # now failures
 
     return data

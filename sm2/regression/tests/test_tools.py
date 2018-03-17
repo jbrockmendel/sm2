@@ -13,11 +13,11 @@ class TestMinimalWLS(object):
     def setup_class(cls):
         rs = np.random.RandomState(1234)
         # TODO: Is this necessary or is this a "forall" test?
-        
+
         cls.exog1 = rs.randn(200, 5)
         cls.endog1 = cls.exog1.sum(1) + rs.randn(200)
         cls.weights1 = 1.0 + np.sin(np.arange(200.0) / 100.0 * np.pi)
-        
+
         cls.exog2 = rs.randn(50, 1)
         cls.endog2 = 0.3 * cls.exog2.ravel() + rs.randn(50)
         cls.weights2 = 1.0 + np.log(np.arange(1.0, 51.0))

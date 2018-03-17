@@ -16,6 +16,7 @@ class ARLagResults(object):
     def __init__(self, type="const"):
         # order of results is AIC, HQ, SC, FPE
         if type == "const":
+            # TODO: Dont use name `type`
             ic = [6.311751824815273, 6.321813007357017, 6.336872456958734,
                   551.009492543133547, 5.647615009344886, 5.662706783157502,
                   5.685295957560077, 283.614444209634655, 5.634199640773091,
@@ -85,9 +86,6 @@ class ARResultsOLS(object):
             predictresults = np.loadtxt(filename)
             fv = predictresults[:300, 0]
             pv = predictresults[300:, 1]
-            pv_lb = predictresults[300:, 2]
-            pv_ub = predictresults[300:, 3]
-            pv_se = predictresults[300:, 4]
             del predictresults
 
             # cases - in sample predict
@@ -138,9 +136,6 @@ class ARResultsOLS(object):
             predictresults = np.loadtxt(filename)
             fv = predictresults[:300, 0]
             pv = predictresults[300:, 1]
-            pv_lb = predictresults[300:, 2]
-            pv_ub = predictresults[300:, 3]
-            pv_se = predictresults[300:, 4]
 
             # cases - in sample predict
             # n = -1, start = 0 (fitted values)
@@ -183,7 +178,6 @@ class ARResultsMLE(object):
             filename2 = os.path.join(cur_dir,
                                      "results_ar_forecast_mle_dynamic.csv")
             predictresults = np.loadtxt(filename, delimiter=",")
-            year = predictresults[:, 0]
             pv = predictresults[:, 1]
             dynamicpv = np.genfromtxt(filename2, delimiter=",", skip_header=1)
 
