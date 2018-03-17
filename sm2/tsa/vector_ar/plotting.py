@@ -105,7 +105,7 @@ def plot_with_error(y, error, x=None, axes=None, value_fmt='k',
     if x is None:
         x = list(range(len(y)))
 
-    axes.plot(x, y, fmt)
+    axes.plot(x, y, value_fmt)
 
     if error is not None:
         if stderr_type == 'asym':
