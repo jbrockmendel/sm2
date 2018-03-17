@@ -649,9 +649,9 @@ class TestDiagnosticG(object):
         # TODO: are these files ported?
         fn = os.path.join(cur_dir, "results", "influence_measures_R.csv")
         infl_r = pd.read_csv(fn, index_col=0)
-        conv = lambda s: 1 if s == 'TRUE' else 0
-        fn = os.path.join(cur_dir, "results", "influence_measures_bool_R.csv")
         # not used yet:
+        #fn = os.path.join(cur_dir, "results", "influence_measures_bool_R.csv")
+        #conv = lambda s: 1 if s == 'TRUE' else 0
         #converters = dict(zip(lrange(7), [conv] * 7))
         #infl_bool_r  = pd.read_csv(fn, index_col=0, converters=converters)
         infl_r2 = np.asarray(infl_r)
@@ -758,7 +758,6 @@ def test_influence_wrapped():
     assert isinstance(df, pd.DataFrame)
 
     # this test is slow
-    # TODO: is this file ported?
     path = os.path.join(cur_dir, "results", "influence_lsdiag_R.json")
     with open(path, 'r') as fp:
         lsdiag = json.load(fp)
@@ -779,9 +778,9 @@ def test_influence_wrapped():
 
     fn = os.path.join(cur_dir, "results", "influence_measures_R.csv")
     infl_r = pd.read_csv(fn, index_col=0)
-    conv = lambda s: 1 if s == 'TRUE' else 0
-    fn = os.path.join(cur_dir, "results", "influence_measures_bool_R.csv")
     # not used yet:
+    #fn = os.path.join(cur_dir, "results", "influence_measures_bool_R.csv")
+    #conv = lambda s: 1 if s == 'TRUE' else 0
     #infl_bool_r  = pd.read_csv(fn, index_col=0,
     #                           converters=dict(zip(lrange(7), [conv]*7)))
     infl_r2 = np.asarray(infl_r)

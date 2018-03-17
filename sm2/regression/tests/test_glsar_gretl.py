@@ -246,8 +246,8 @@ class TestGLSARGretl(object):
            ds_l_realgdp    1.002
               realint_1    1.002
 
-        VIF(j) = 1/(1 - R(j)^2), where R(j) is the multiple correlation coefficient
-        between variable j and the other independent variables
+        VIF(j) = 1/(1 - R(j)^2), where R(j) is the multiple correlation
+        coefficient between variable j and the other independent variables
 
         Properties of matrix X'X:
 

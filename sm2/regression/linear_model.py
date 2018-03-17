@@ -354,7 +354,8 @@ class RegressionModel(base.LikelihoodModel):
         dist_class : class
             A random number generator class.  Must take 'loc' and 'scale'
             as arguments and return a random number generator implementing
-            an ``rvs`` method for simulating random values. Defaults to Gaussian.
+            an ``rvs`` method for simulating random values. Defaults to
+            Gaussian.
 
         Returns
         -------
@@ -518,8 +519,7 @@ class GLS(RegressionModel):
         .. math:: -\\frac{n}{2}\\log\\left(\\left(Y-\\hat{Y}\\right)^{\\prime}\\left(Y-\\hat{Y}\\right)\\right)-\\frac{n}{2}\\left(1+\\log\\left(\\frac{2\\pi}{n}\\right)\\right)-\\frac{1}{2}\\log\\left(\\left|\\Sigma\\right|\\right)
 
         Y and Y-hat are whitened.
-
-        """
+        """  # noqa:E501
         # TODO: combine this with OLS/WLS loglike and add _det_sigma argument
         nobs2 = self.nobs / 2.0
         SSR = np.sum((self.wendog - np.dot(self.wexog, params))**2, axis=0)
@@ -613,7 +613,7 @@ class WLS(RegressionModel):
     If the weights are a function of the data, then the post estimation
     statistics such as fvalue and mse_model might not be correct, as the
     package does not yet support no-constant regression.
-    """ % {'params': base._model_params_doc,
+    """ % {'params': base._model_params_doc,  # noqa:E501
            'extra_params': base._missing_param_doc + base._extra_param_doc}
 
     def __init__(self, endog, exog, weights=1., missing='none', hasconst=None,
@@ -683,7 +683,7 @@ class WLS(RegressionModel):
         .. math:: -\\frac{n}{2}\\log\\left(Y-\\hat{Y}\\right)-\\frac{n}{2}\\left(1+\\log\\left(\\frac{2\\pi}{n}\\right)\\right)-\\frac{1}{2}log\\left(\\left|W\\right|\\right)
 
         where :math:`W` is a diagonal matrix
-        """
+        """  # noqa:E501
         nobs2 = self.nobs / 2.0
         SSR = np.sum((self.wendog - np.dot(self.wexog, params))**2, axis=0)
         llf = -np.log(SSR) * nobs2      # concentrated likelihood
@@ -758,7 +758,7 @@ class OLS(WLS):
     Notes
     -----
     No constant is added by the model unless you are using formulas.
-    """ % {'params': base._model_params_doc,
+    """ % {'params': base._model_params_doc,  # noqa:E501
            'extra_params': base._missing_param_doc + base._extra_param_doc}
 
     # TODO: change example to use datasets.  This was the point of datasets!
@@ -1016,7 +1016,7 @@ class GLSAR(GLS):
     GLSAR is considered to be experimental.
     The linear autoregressive process of order p--AR(p)--is defined as:
     TODO
-    """ % {'params': base._model_params_doc,
+    """ % {'params': base._model_params_doc,  # noqa:E501
            'extra_params': base._missing_param_doc + base._extra_param_doc}
 
     def __init__(self, endog, exog=None, rho=1, missing='none', **kwargs):
@@ -1194,9 +1194,9 @@ def yule_walker(X, order=1, method="unbiased", df=None, inv=False,
 
     if method == "unbiased":
         # this is df_resid ie., n - p
-        denom = lambda k: n - k
+        denom = lambda k: n - k  # noqa:E731
     else:
-        denom = lambda k: n
+        denom = lambda k: n  # noqa:E731
     if X.ndim > 1 and X.shape[1] != 1:
         raise ValueError("expecting a vector to estimate AR parameters")
 

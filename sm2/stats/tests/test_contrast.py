@@ -40,3 +40,4 @@ class TestContrast(object):
         X2 = np.column_stack((self.X, self.X[:, 5]))
         c = Contrast(self.X[:, 5], X2)
         # TODO: I don't think this should be estimable?  isestimable correct?
+        # TODO: do something with c?

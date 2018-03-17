@@ -337,10 +337,13 @@ def _reordered(self, order):
     names = self.names
     k_ar = self.k_ar
     endog_new = np.zeros([np.size(endog, 0), np.size(endog, 1)])
-    endog_lagged_new = np.zeros([np.size(endog_lagged, 0), np.size(endog_lagged, 1)])
-    params_new_inc, params_new = [np.zeros([np.size(params, 0), np.size(params, 1)])
+    endog_lagged_new = np.zeros([np.size(endog_lagged, 0),
+                                 np.size(endog_lagged, 1)])
+    params_new_inc, params_new = [np.zeros([np.size(params, 0),
+                                            np.size(params, 1)])
                                   for i in range(2)]
-    sigma_u_new_inc, sigma_u_new = [np.zeros([np.size(sigma_u, 0), np.size(sigma_u, 1)])
+    sigma_u_new_inc, sigma_u_new = [np.zeros([np.size(sigma_u, 0),
+                                              np.size(sigma_u, 1)])
                                     for i in range(2)]
     num_end = len(self.params[0])
     names_new = []

@@ -119,7 +119,8 @@ def summary(self, yname=None, xname=None, title=0, alpha=.05,
     # e.g.
     gen_left = [('Model type:', [modeltype]),
                 ('Date:', [date]),
-                ('Dependent Variable:', yname),  # What happens with multiple names?
+                ('Dependent Variable:', yname),
+                # TODO: What happens with multiple names?
                 ('df model', [df_model])]
     gen_stubs_left, gen_data_left = zip_longest(*gen_left)  # transpose row col
 
@@ -553,7 +554,8 @@ def summary_params_2d(result, extras=None, endog_names=None, exog_names=None,
         exog_names = ['var%d' % i for i in range(len(result.params))]
 
     # TODO: check formatting options with different values
-    res_params = [[forg(item, prec=4) for item in row] for row in result.params]
+    res_params = [[forg(item, prec=4) for item in row]
+                  for row in result.params]
     if extras:
         # maybe this should be a simple triple loop instead of
         # list comprehension?
@@ -563,7 +565,7 @@ def summary_params_2d(result, extras=None, endog_names=None, exog_names=None,
                        for what in extras]
         data = list(zip(res_params, *extras_list))
         data = [i for j in data for i in j]
-        stubs = list(zip(endog_names, *[[''] * len(endog_names)] * len(extras)))
+        stubs = zip(endog_names, *[[''] * len(endog_names)] * len(extras))
         stubs = [i for j in stubs for i in j]
     else:
         data = res_params
