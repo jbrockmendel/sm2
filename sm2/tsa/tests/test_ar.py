@@ -23,6 +23,7 @@ DECIMAL_5 = 5
 DECIMAL_4 = 4
 
 
+@pytest.mark.not_vetted
 class CheckARMixin(object):
     def test_params(self):
         assert_almost_equal(self.res1.params,
@@ -60,6 +61,7 @@ class CheckARMixin(object):
         # TODO: Better to test equality?  Is equality even defined?
 
 
+@pytest.mark.not_vetted
 class TestAROLSConstant(CheckARMixin):
     """
     Test AR fit by OLS with a constant.
@@ -107,6 +109,7 @@ class TestAROLSConstant(CheckARMixin):
                             DECIMAL_4)
 
 
+@pytest.mark.not_vetted
 class TestAROLSNoConstant(CheckARMixin):
     """f
     Test AR fit by OLS without a constant.
@@ -154,9 +157,7 @@ class TestAROLSNoConstant(CheckARMixin):
                             DECIMAL_4)
 
 
-#class TestARMLEConstant(CheckAR):
-
-
+@pytest.mark.not_vetted
 class TestARMLEConstant(object):
     @classmethod
     def setup_class(cls):
@@ -270,6 +271,7 @@ class TestARMLEConstant(object):
         assert_allclose(fv, res2.fcdyn[9:309], rtol=rtol)
 
 
+@pytest.mark.not_vetted
 class TestAutolagAR(object):
     @classmethod
     def setup_class(cls):
@@ -307,6 +309,7 @@ class TestAutolagAR(object):
         assert_almost_equal(self.res1, self.res2, DECIMAL_6)
 
 
+@pytest.mark.not_vetted
 def test_ar_dates():
     # just make sure they work
     data = datasets.sunspots.load()
@@ -320,6 +323,7 @@ def test_ar_dates():
     tm.assert_index_equal(pred.index, predict_dates)
 
 
+@pytest.mark.not_vetted
 def test_ar_named_series():
     dates = pd.PeriodIndex(start="2011-1", periods=72, freq='M')
     y = pd.Series(np.random.randn(72), name="foobar", index=dates)
@@ -328,18 +332,20 @@ def test_ar_named_series():
                                                  "L2.foobar"]))
 
 
+@pytest.mark.not_vetted
 @pytest.mark.smoke
 def test_ar_start_params():
     # GH#236
-    # smoke test
     data = datasets.sunspots.load()
-    res = AR(data.endog).fit(maxlag=9, start_params=0.1*np.ones(10),
-                             method="mle", disp=-1, maxiter=100)
+    model = AR(data.endog)
+    model.fit(maxlag=9, start_params=0.1 * np.ones(10),
+              method="mle", disp=-1, maxiter=100)
 
 
+@pytest.mark.not_vetted
 @pytest.mark.smoke
 def test_ar_series():
-    # smoke test for GH#773
+    # GH#773
     dta = datasets.macrodata.load_pandas().data["cpi"].diff().dropna()
     dates = pd.PeriodIndex(start='1959Q1', periods=len(dta), freq='Q')
     dta.index = dates
@@ -358,6 +364,7 @@ def test_ar_select_order():
     assert res == 2
 
 
+@pytest.mark.not_vetted
 def test_ar_select_order_tstat():
     # GH#2658
     rs = np.random.RandomState(123)
@@ -371,8 +378,10 @@ def test_ar_select_order_tstat():
     assert res == 0
 
 
+# class TestARMLEConstant(CheckAR):
+
 # TODO: likelihood for ARX model?
-#class TestAutolagARX(object):
+# class TestAutolagARX(object):
 #    def setup(self):
 #        data = datasets.macrodata.load()
 #        endog = data.data.realgdp

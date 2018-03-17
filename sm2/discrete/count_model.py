@@ -526,9 +526,10 @@ class ZeroInflatedPoisson(GenericZeroInflated):
             for j in range(i, -1, -1):
                 hess_arr[i, j] = ((
                     exog[zero_idx, i] * exog[zero_idx, j] *
-                    mu[zero_idx] * (w[zero_idx] - 1) * (1 / coeff -
-                    w[zero_idx] * mu[zero_idx] * np.exp(mu[zero_idx]) /
-                    coeff**2)).sum() - (mu[nonzero_idx] *
+                    mu[zero_idx] * (w[zero_idx] - 1) * (
+                        1 / coeff -
+                        w[zero_idx] * mu[zero_idx] * np.exp(mu[zero_idx]) /
+                        coeff**2)).sum() - (mu[nonzero_idx] *
                     exog[nonzero_idx, i] * exog[nonzero_idx, j]).sum())
 
         return hess_arr
@@ -680,12 +681,13 @@ class ZeroInflatedNegativeBinomialP(GenericZeroInflated):
 
     def __init__(self, endog, exog, exog_infl=None, offset=None, exposure=None,
                  inflation='logit', p=2, missing='none', **kwargs):
-        super(ZeroInflatedNegativeBinomialP, self).__init__(endog, exog,
-            offset=offset,
-            inflation=inflation,
-            exog_infl=exog_infl,
-            exposure=exposure,
-            missing=missing, **kwargs)
+        cls = ZeroInflatedNegativeBinomialP
+        super(cls, self).__init__(endog, exog,
+                                  offset=offset,
+                                  inflation=inflation,
+                                  exog_infl=exog_infl,
+                                  exposure=exposure,
+                                  missing=missing, **kwargs)
 
         self.model_main = NegativeBinomialP(self.endog, self.exog,
                                             offset=offset,
@@ -788,7 +790,7 @@ class ZeroInflatedGeneralizedPoissonResults(CountResults):
 
 
 class L1ZeroInflatedGeneralizedPoissonResults(L1CountResults,
-        ZeroInflatedGeneralizedPoissonResults):
+        ZeroInflatedGeneralizedPoissonResults):  # noqa:E128
     pass
 
 
@@ -832,7 +834,7 @@ class ZeroInflatedNegativeBinomialResults(CountResults):
 
 
 class L1ZeroInflatedNegativeBinomialResults(L1CountResults,
-        ZeroInflatedNegativeBinomialResults):
+        ZeroInflatedNegativeBinomialResults):  # noqa:E128
     pass
 
 

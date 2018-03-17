@@ -384,8 +384,8 @@ class DiscreteModel(base.LikelihoodModel):
         """
         H = likelihood_model.hessian(xopt)
         trimmed = retvals['trimmed']
-        nz_idx = np.nonzero(trimmed == False)[0]
-        nnz_params = (trimmed == False).sum()
+        nz_idx = np.nonzero(trimmed == False)[0]  # noqa:E712
+        nnz_params = (trimmed == False).sum()  # noqa:E712
         if nnz_params > 0:
             H_restricted = H[nz_idx[:, None], nz_idx]
             # Covariance estimate for the nonzero params
@@ -673,7 +673,7 @@ class MultinomialModel(BinaryModel):
         # dF_j / dParams_j (ie., own equation)
         # NOTE: this computes too much, any easy way to cut down?
         F1 = eXB.T[:, :, None] * X * (sum_eXB - repeat_eXB) / (sum_eXB**2)
-        F1 = F1.transpose((1, 0, 2)) # put the nobs index first
+        F1 = F1.transpose((1, 0, 2))  # put the nobs index first
 
         # other equation index
         other_idx = ~np.kron(np.eye(J - 1), np.ones(K)).astype(bool)
@@ -1442,11 +1442,16 @@ class GeneralizedPoisson(CountModel):
             start_params = np.append(start_params, 0.1)
 
         cntfit = DiscreteModel.fit_regularized(self,
-            start_params=start_params, method=method,
-            maxiter=maxiter, full_output=full_output,
-            disp=disp, callback=callback, alpha=alpha,
-            trim_mode=trim_mode, auto_trim_tol=auto_trim_tol,
-            size_trim_tol=size_trim_tol, qc_tol=qc_tol, **kwargs)
+                                               start_params=start_params,
+                                               method=method,
+                                               maxiter=maxiter,
+                                               full_output=full_output,
+                                               disp=disp, callback=callback,
+                                               alpha=alpha,
+                                               trim_mode=trim_mode,
+                                               auto_trim_tol=auto_trim_tol,
+                                               size_trim_tol=size_trim_tol,
+                                               qc_tol=qc_tol, **kwargs)
 
         res_cls, wrap_cls = self._res_classes["fit_regularized"]
         discretefit = res_cls(self, cntfit)
@@ -1556,14 +1561,15 @@ class GeneralizedPoisson(CountModel):
 
         for i in range(dim):
             for j in range(i + 1):
-                hess_arr[i, j] = np.sum(mu * exog[:, i, None] * exog[:, j, None] *
+                hess_arr[i, j] = np.sum(
+                    mu * exog[:, i, None] * exog[:, j, None] *
                     (mu * (a3 * a4 / a1**2 - 2 * a3**2 * a2 / a1**3 + 2 * a3 *
-                    (a4 + 1) / a1**2 - a4 * p / (mu * a1) + a3 * p * a2 /
-                    (mu * a1**2) + a4 / (mu * a1) - a3 * a2 / (mu * a1**2) +
-                    (y - 1) * a4 * (p - 1) / (a2 * mu) - (y - 1) *
-                    (1 + a4)**2 / a2**2 - a4 * (p - 1) / (a1 * mu) - 1 /
-                    mu**2) + (-a4 / a1 + a3 * a2 / a1**2 + (y - 1) *
-                    (1 + a4) / a2 - (1 + a4) / a1 + 1 / mu)), axis=0)
+                     (a4 + 1) / a1**2 - a4 * p / (mu * a1) + a3 * p * a2 /
+                     (mu * a1**2) + a4 / (mu * a1) - a3 * a2 / (mu * a1**2) +
+                     (y - 1) * a4 * (p - 1) / (a2 * mu) - (y - 1) *
+                     (1 + a4)**2 / a2**2 - a4 * (p - 1) / (a1 * mu) - 1 /
+                     mu**2) + (-a4 / a1 + a3 * a2 / a1**2 + (y - 1) *
+                     (1 + a4) / a2 - (1 + a4) / a1 + 1 / mu)), axis=0)
         tri_idx = np.triu_indices(dim, k=1)
         hess_arr[tri_idx] = hess_arr.T[tri_idx]
 
@@ -1614,7 +1620,7 @@ class GeneralizedPoisson(CountModel):
         elif which == 'linear':
             return linpred
         elif which == 'prob':
-            counts = np.atleast_2d(np.arange(0, np.max(self.endog)+1))
+            counts = np.atleast_2d(np.arange(0, np.max(self.endog) + 1))
             mu = self.predict(params, exog=exog, exposure=exposure,
                               offset=offset)[:, None]
             return genpoisson_p.pmf(counts, mu, params[-1],

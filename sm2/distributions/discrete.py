@@ -29,7 +29,7 @@ genpoisson_p = genpoisson_p_gen(name='genpoisson_p',
 class zipoisson_gen(rv_discrete):
     """Zero Inflated Poisson distribution"""
     def _argcheck(self, mu, w):
-        return (mu > 0) & (w >= 0) & (w<=1)
+        return (mu > 0) & (w >= 0) & (w <= 1)
 
     def _logpmf(self, x, mu, w):
         return _lazywhere(x != 0, (x, mu, w),
@@ -48,12 +48,12 @@ zipoisson = zipoisson_gen(name='zipoisson',
 class zigeneralizedpoisson_gen(rv_discrete):
     """Zero Inflated Generalized Poisson distribution"""
     def _argcheck(self, mu, alpha, p, w):
-        return (mu > 0) & (w >= 0) & (w<=1)
+        return (mu > 0) & (w >= 0) & (w <= 1)
 
     def _logpmf(self, x, mu, alpha, p, w):
         return _lazywhere(x != 0, (x, mu, alpha, p, w),
-                          (lambda x, mu, alpha, p, w: np.log(1. - w) + 
-                          genpoisson_p.logpmf(x, mu, alpha, p)),
+                          (lambda x, mu, alpha, p, w: np.log(1. - w) +
+                           genpoisson_p.logpmf(x, mu, alpha, p)),
                           np.log(w + (1. - w) *
                           genpoisson_p.pmf(x, mu, alpha, p)))
 
@@ -68,13 +68,13 @@ zigenpoisson = zigeneralizedpoisson_gen(name='zigenpoisson',
 class zinegativebinomial_gen(rv_discrete):
     """Zero Inflated Generalized Negative Binomial distribution"""
     def _argcheck(self, mu, alpha, p, w):
-        return (mu > 0) & (w >= 0) & (w<=1)
+        return (mu > 0) & (w >= 0) & (w <= 1)
 
     def _logpmf(self, x, mu, alpha, p, w):
         s, p = self.convert_params(mu, alpha, p)
         return _lazywhere(x != 0, (x, s, p, w),
-                          (lambda x, s, p, w: np.log(1. - w) + 
-                          nbinom.logpmf(x, s, p)),
+                          (lambda x, s, p, w: np.log(1. - w) +
+                           nbinom.logpmf(x, s, p)),
                           np.log(w + (1. - w) *
                           nbinom.pmf(x, s, p)))
 
@@ -82,7 +82,7 @@ class zinegativebinomial_gen(rv_discrete):
         return np.exp(self._logpmf(x, mu, alpha, p, w))
 
     def convert_params(self, mu, alpha, p):
-        size = 1. / alpha * mu**(2-p)
+        size = 1. / alpha * mu**(2 - p)
         prob = size / (size + mu)
         return (size, prob)
 

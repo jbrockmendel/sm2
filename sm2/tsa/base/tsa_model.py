@@ -1,5 +1,3 @@
-
-import datetime
 import warnings
 
 from six import integer_types
@@ -38,8 +36,8 @@ _missing_param_doc = base._missing_param_doc
 
 
 class TimeSeriesModel(base.LikelihoodModel):
-
-    __doc__ = _tsa_doc % {"model": _model_doc, "params": _generic_params,
+    __doc__ = _tsa_doc % {"model": _model_doc,
+                          "params": _generic_params,
                           "extra_params": _missing_param_doc,
                           "extra_sections": ""}
 
@@ -533,9 +531,9 @@ class TimeSeriesModelResults(base.LikelihoodModelResults):
 class TimeSeriesResultsWrapper(wrap.ResultsWrapper):
     _attrs = {}
     _wrap_attrs = wrap.union_dicts(base.LikelihoodResultsWrapper._wrap_attrs,
-                                    _attrs)
+                                   _attrs)
     _methods = {'predict': 'dates'}
-    _wrap_methods = wrap.union_dicts(base.LikelihoodResultsWrapper._wrap_methods,
-                                     _methods)
-wrap.populate_wrapper(TimeSeriesResultsWrapper,
+    _wrap_methods = wrap.union_dicts(
+        base.LikelihoodResultsWrapper._wrap_methods, _methods)
+wrap.populate_wrapper(TimeSeriesResultsWrapper,  # noqa:E305
                       TimeSeriesModelResults)

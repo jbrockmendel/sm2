@@ -86,9 +86,6 @@ class ARResultsOLS(object):
             predictresults = np.loadtxt(filename)
             fv = predictresults[:300, 0]
             pv = predictresults[300:, 1]
-            pv_lb = predictresults[300:, 2]
-            pv_ub = predictresults[300:, 3]
-            pv_se = predictresults[300:, 4]
             del predictresults
 
             # cases - in sample predict
@@ -139,9 +136,6 @@ class ARResultsOLS(object):
             predictresults = np.loadtxt(filename)
             fv = predictresults[:300, 0]
             pv = predictresults[300:, 1]
-            pv_lb = predictresults[300:, 2]
-            pv_ub = predictresults[300:, 3]
-            pv_se = predictresults[300:, 4]
 
             # cases - in sample predict
             # n = -1, start = 0 (fitted values)
@@ -184,7 +178,6 @@ class ARResultsMLE(object):
             filename2 = os.path.join(cur_dir,
                                      "results_ar_forecast_mle_dynamic.csv")
             predictresults = np.loadtxt(filename, delimiter=",")
-            year = predictresults[:, 0]
             pv = predictresults[:, 1]
             dynamicpv = np.genfromtxt(filename2, delimiter=",", skip_header=1)
 

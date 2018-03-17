@@ -428,7 +428,7 @@ class AR(tsa_model.TimeSeriesModel):
         if ic != 't-stat':
             for lag in range(k, maxlag + 1):
                 # have to reinstantiate the model to keep comparable models
-                endog_tmp = endog[maxlag-lag:]
+                endog_tmp = endog[maxlag - lag:]
                 fit = AR(endog_tmp).fit(maxlag=lag, method=method,
                                         full_output=0, trend=trend,
                                         maxiter=100, disp=0)
@@ -589,8 +589,8 @@ class AR(tsa_model.TimeSeriesModel):
         #elif method == "yw":
         #    params, omega = yule_walker(endog, order=maxlag,
         #            method="mle", demean=False)
-           # how to handle inference after Yule-Walker?
-        #    self.params = params #TODO: don't attach here
+        #    # how to handle inference after Yule-Walker?
+        #    self.params = params  # TODO: don't attach here
         #    self.omega = omega
 
         pinv_exog = np.linalg.pinv(X)

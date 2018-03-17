@@ -1,6 +1,5 @@
 import os
 import warnings
-from datetime import datetime
 
 from six import BytesIO
 from six.moves import cPickle
@@ -178,6 +177,7 @@ class CheckArmaResultsMixin(object):
                             self.decimal_fittedvalues)
 
     decimal_pvalues = DECIMAL_2
+
     def test_pvalues(self):
         assert_almost_equal(self.res1.pvalues,
                             self.res2.pvalues,
@@ -199,7 +199,7 @@ class CheckArmaResultsMixin(object):
 
     @pytest.mark.smoke
     def test_summary(self):
-        table = self.res1.summary()
+        self.res1.summary()
 
 
 @pytest.mark.not_vetted
@@ -375,7 +375,7 @@ class Test_Y_ARMA50_Const(CheckArmaResultsMixin, CheckForecastMixin):
         endog = y_arma[:, 10]
         cls.res1 = ARMA(endog, order=(5, 0)).fit(trend="c", disp=-1)
         (cls.res1.forecast_res, cls.res1.forecast_err,
-                confint) = cls.res1.forecast(10)
+         confint) = cls.res1.forecast(10)
         cls.res2 = results_arma.Y_arma50c()
 
 
@@ -627,7 +627,7 @@ def test_start_params_bug():
         1149, 1439, 1600, 1876, 1885, 1962, 2280, 2711, 2591, 2411])
     with warnings.catch_warnings():
         warnings.simplefilter("ignore")
-        res = ARMA(data, order=(4, 1)).fit(start_ar_lags=5, disp=-1)
+        ARMA(data, order=(4, 1)).fit(start_ar_lags=5, disp=-1)
 
 
 @pytest.mark.not_vetted
@@ -1088,7 +1088,7 @@ def test_arma_predict_indices():
                         ('1709', 9, False)]
 
     for case in start_test_cases:
-        _check_start(*((model,) + case))
+        _check_start(model, *case)
 
     # the length of sunspot is 309, so last index is 208
     end_test_cases = [(None, 308, 0),
@@ -1763,7 +1763,7 @@ def test_arima_predict_q2():
 
 @pytest.mark.not_vetted
 def test_arima_predict_pandas_nofreq():
-    # this is issue GH#712
+    # GH#712
     dates = ["2010-01-04", "2010-01-05", "2010-01-06", "2010-01-07",
              "2010-01-08", "2010-01-11", "2010-01-12", "2010-01-11",
              "2010-01-12", "2010-01-13", "2010-01-17"]
@@ -1890,7 +1890,6 @@ def test_arima_no_diff():
 @pytest.mark.not_vetted
 def test_arimax():
     dta = datasets.macrodata.load_pandas().data
-    dates = pd.date_range("1959", periods=len(dta), freq='Q')
     dta.index = cpi_dates
     dta = dta[["realdpi", "m1", "realgdp"]]
     y = dta.pop("realdpi")
@@ -1968,13 +1967,7 @@ def test_arima_1123():
     arparams = np.array([.75, -.25])
     maparams = np.array([.65, .35])
 
-    arparam = np.r_[1, -arparams]
-    maparam = np.r_[1, maparams]
-
     nobs = 20
-
-    dates = pd.date_range(start='1980', periods=nobs, freq='A')
-
     y = arma_generate_sample(arparams, maparams, nobs)
 
     X = np.random.randn(nobs)
@@ -2122,7 +2115,6 @@ def test_arima_dates_startatend():
 @pytest.mark.not_vetted
 def test_arima_diff2():
     dta = datasets.macrodata.load_pandas().data['cpi']
-    dates = pd.date_range("1959", periods=len(dta), freq='Q')
     dta.index = cpi_dates
     mod = ARIMA(dta, (3, 2, 1)).fit(disp=-1)
     fc, fcerr, conf_int = mod.forecast(10)
@@ -2195,7 +2187,7 @@ def test_arima111_predict_exog_2127():
     model = ARIMA(ef, (1, 1, 1), exog=ue)
     res = model.fit(transparams=False, pgtol=1e-8, iprint=0, disp=0)
     assert res.mle_retvals['warnflag'] == 0
-    predicts = res.predict(start=len(ef), end = len(ef) + 10,
+    predicts = res.predict(start=len(ef), end=len(ef) + 10,
                            exog=ue[-11:], typ='levels')
 
     # regression test, not verified numbers
@@ -2217,9 +2209,7 @@ def test_arima111_predict_exog_2127():
 @pytest.mark.not_vetted
 def test_ARIMA_exog_predict():
     # test forecasting and dynamic prediction with exog against Stata
-
     dta = datasets.macrodata.load_pandas().data
-    dates = pd.date_range("1959", periods=len(dta), freq='Q')
     cpi_dates = pd.PeriodIndex(start='1959Q1', end='2009Q3', freq='Q')
     dta.index = cpi_dates
 
@@ -2375,7 +2365,7 @@ def test_arima_fit_multiple_calls():
     assert mod.exog_names == ['const', 'ar.L1.y', 'ma.L1.y', 'ma.L2.y']
 
     with warnings.catch_warnings(record=True):
-        res = mod.fit(disp=0, start_params=[np.mean(y), .1, .1, .1])
+        mod.fit(disp=0, start_params=[np.mean(y), .1, .1, .1])
     assert mod.exog_names == ['const', 'ar.L1.y', 'ma.L1.y', 'ma.L2.y']
 
     # test multiple calls when there is only a constant term
@@ -2386,7 +2376,7 @@ def test_arima_fit_multiple_calls():
     assert mod.exog_names == ['const']
 
     with warnings.catch_warnings(record=True):
-        res = mod.fit(disp=0, start_params=[np.mean(y)])
+        mod.fit(disp=0, start_params=[np.mean(y)])
     assert mod.exog_names == ['const']
 
 
@@ -2415,9 +2405,9 @@ def test_long_ar_start_params():
 
     model = ARMA(y, order=(2, 2))
 
-    res = model.fit(method='css', start_ar_lags=10, disp=0)
-    res = model.fit(method='css-mle', start_ar_lags=10, disp=0)
-    res = model.fit(method='mle', start_ar_lags=10, disp=0)
+    model.fit(method='css', start_ar_lags=10, disp=0)
+    model.fit(method='css-mle', start_ar_lags=10, disp=0)
+    model.fit(method='mle', start_ar_lags=10, disp=0)
     with pytest.raises(ValueError):
         model.fit(start_ar_lags=nobs + 5, disp=0)
 
@@ -2468,7 +2458,7 @@ def test_arima_exog_predict_1d():
     x = np.random.random(100)
     mod = ARMA(y, (2, 1), x).fit(disp=-1)
     newx = np.random.random(10)
-    results = mod.forecast(steps=10, alpha=0.05, exog=newx)
+    mod.forecast(steps=10, alpha=0.05, exog=newx)
 
 
 @pytest.mark.smoke
@@ -2491,7 +2481,7 @@ def test_arima_dataframe_integer_name():
     dr = pd.date_range("1990", periods=len(vals), freq='Q')
     ts = pd.Series(vals, index=dr)
     df = pd.DataFrame(ts)
-    mod = ARIMA(df, (2, 0, 2))
+    mod = ARIMA(df, (2, 0, 2))  # TODO: maybe _fit_ this model?
 
 
 # ----------------------------------------------------------------

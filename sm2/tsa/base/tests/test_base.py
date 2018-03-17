@@ -65,7 +65,6 @@ def test_predict_freq():
     #                            freq="AS-APR")
     expected_dates = pd.date_range("2006-4-30", "2016-4-30", freq="A-APR")
     tm.assert_index_equal(predict_dates, expected_dates)
-    #tm.assert_series_equal(predict_dates, expected_dates)
 
 
 @pytest.mark.not_vetted
@@ -84,8 +83,7 @@ def test_keyerror_start_date():
 
 @pytest.mark.not_vetted
 def test_period_index():
-    # test GH#1285
-
+    # GH#1285
     dates = pd.PeriodIndex(start="1/1/1990", periods=20, freq="M")
     x = np.arange(1, 21.)
 
@@ -124,4 +122,4 @@ def test_get_predict_start_end():
     desired = (1, 9, 11)
     for start in predict_starts:
         for end in predict_ends:
-            assert model._get_prediction_index(start, end)[:3] ==desired
+            assert model._get_prediction_index(start, end)[:3] == desired
