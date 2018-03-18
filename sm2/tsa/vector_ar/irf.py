@@ -259,9 +259,6 @@ class IRAnalysis(BaseIRAnalysis):
         Notes
         -----
         Lütkepohl eq 3.7.5
-
-        Returns
-        -------
         """
         if orth:
             return self._orth_cov()
@@ -609,10 +606,6 @@ class IRAnalysis(BaseIRAnalysis):
         Notes
         -----
         eq. 3.7.7 (non-orth), 3.7.10 (orth)
-
-        Returns
-        -------
-
         """
         Ik = np.eye(self.neqs)
         PIk = np.kron(self.P.T, Ik)

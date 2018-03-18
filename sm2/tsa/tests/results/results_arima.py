@@ -35,7 +35,7 @@ class ARIMA111(object):
             self.bic = self.icstats[5]
             self.fittedvalues = self.xb[1:]  # no idea why this initial value
             self.linear = self.y[1:]
-            #their bse are OPG
+            # their bse are OPG
             #self.bse = np.diag(self.cov_params) ** .5
 
             # from gretl
@@ -198,7 +198,7 @@ class ARIMA211(object):
             self.linear = self.y[1:]
             self.k_diff = 1
 
-            #their bse are OPG
+            # their bse are OPG
             #self.bse = np.diag(self.cov_params) ** .5
             # from gretl
             self.arroots = [1.027 + 0j, 5.7255 + 0j]

@@ -5,17 +5,16 @@ Statistical tools for time series analysis
 """
 import warnings
 
-from six import string_types, integer_types
+from six import integer_types
 from six.moves import range, zip
 
 import numpy as np
 from scipy import stats
-import pandas as pd
 
 from sm2.compat.scipy import _next_regular
 
 from sm2.tools.sm_exceptions import InterpolationWarning, MissingDataError
-from sm2.tools.tools import add_constant, Bunch
+from sm2.tools.tools import add_constant
 
 from sm2.regression.linear_model import OLS, yule_walker
 

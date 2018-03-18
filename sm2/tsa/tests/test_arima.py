@@ -1321,7 +1321,7 @@ def test_arima_predict_css():
     fv = res1.model.predict(params, start, end, typ='levels')
     assert_almost_equal(fv, fc[start:end + 1], DECIMAL_4)
     # start 0, end >nobs 1960q1 - 2015q4
-    #TODO: why detoriating precision?
+    # TODO: why detoriating precision?
     fv = res1.model.predict(params, start, end, typ='levels')
     assert_almost_equal(fv, fc[start:end + 1], DECIMAL_4)
     # start >p, end >0 1965q1 - 1971q4
@@ -1462,7 +1462,7 @@ def test_arima_predict_css_diffs():
     fv = res1.model.predict(params, start, end)
     assert_almost_equal(fv, fc[start:end + 1], DECIMAL_4)
     # start 0, end >nobs 1960q1 - 2015q4
-    #TODO: why detoriating precision?
+    # TODO: why detoriating precision?
     fv = res1.model.predict(params, start, end)
     assert_almost_equal(fv, fc[start:end + 1], DECIMAL_4)
     # start >p, end >0 1965q1 - 1971q4
@@ -1601,7 +1601,7 @@ def test_arima_predict_mle_diffs():
     fv = res1.model.predict(params, start, end)
     assert_almost_equal(fv, fc[start:end + 1], DECIMAL_4)
     # start 0, end >nobs 1960q1 - 2015q4
-    #TODO: why detoriating precision?
+    # TODO: why detoriating precision?
     fv = res1.model.predict(params, start, end)
     assert_almost_equal(fv, fc[start:end + 1], DECIMAL_4)
     # start >p, end >0 1965q1 - 1971q4
@@ -1720,12 +1720,14 @@ def test_1dexog():
         mod.predict(193, 202, exog[-10:], dynamic=True)
 
         dta.index = pd.Index(cpi_dates)
-        mod = ARMA(dta['realcons'], (1, 1), dta['m1']).fit(disp=-1)
-        mod.predict(dta.index[-10], dta.index[-1],
+        mod = ARMA(dta['realcons'], (1, 1), dta['m1'])
+        res = mod.fit(disp=-1)
+        res.predict(dta.index[-10], dta.index[-1],
                     exog=dta['m1'][-10:], dynamic=True)
 
-        mod = ARMA(dta['realcons'], (1, 1), dta['m1']).fit(trend='nc', disp=-1)
-        mod.predict(dta.index[-10], dta.index[-1],
+        mod = ARMA(dta['realcons'], (1, 1), dta['m1'])
+        res = mod.fit(trend='nc', disp=-1)
+        res.predict(dta.index[-10], dta.index[-1],
                     exog=dta['m1'][-10:], dynamic=True)
 
 
@@ -1853,11 +1855,11 @@ def test_arima_predict_exog():
 
     # conditional sum of squares
     #arima_forecasts = pd.read_csv(current_path + "/results/"
-    #                        "results_arima_exog_forecasts_css.csv")
+    #                              "results_arima_exog_forecasts_css.csv")
     #predict_expected = arima_forecasts["predict"].dropna()
     #arma_res = ARMA(y.values, order=(2, 1), exog=X[:100]).fit(trend="c",
-    #                                                         method="css",
-    #                                                         disp=-1)
+    #                                                          method="css",
+    #                                                          disp=-1)
 
     #params = np.array([2.152350033809826, -0.103602399018814,
     #                   0.566716580421188, -0.326208009247944,
@@ -2338,7 +2340,9 @@ def test_ARIMA_exog_predict():
                                    exog=exog_full.values[197:])
     forecast_002 = res_002.forecast(steps=len(exog_full.values[197:]),
                                     exog=exog_full.values[197:])
-    forecast_002 = forecast_002[0]  # TODO we are not checking the other results
+    forecast_002 = forecast_002[0]
+    # TODO: we are not checking the other results
+
     assert_allclose(fpredict_002,
                     res_f002[-len(fpredict_002):],
                     rtol=1e-4, atol=1e-6)

@@ -43,7 +43,7 @@ class CheckOLSRobust(object):
         res1 = self.res1
         res2 = self.res2
         rtol = getattr(self, 'rtol', 1e-10)
-        rtolh = getattr(self, 'rtolh', 1e-12)
+        rtolh = getattr(self, 'rtolh', 1e-12)  # TODO: use this??
         mat = np.eye(len(res1.params))
         tt = res1.t_test(mat, cov_p=self.cov_robust)
         # has 'effect', 'pvalue', 'sd', 'tvalue'
@@ -274,7 +274,7 @@ class TestOLSRobust2SmallNew(TestOLSRobust1, CheckOLSRobustNewMixin):
         r_chi2 = 4.667944083588736
         r_df = 1
         assert_warns(InvalidTestWarning, res1.compare_lr_test, res_ols2)
-        
+
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
             chi2, pval, df = res1.compare_lr_test(res_ols2)
@@ -384,7 +384,8 @@ class TestOLSRobustCluster2(CheckOLSRobustCluster, CheckOLSRobustNewMixin):
 
 
 @pytest.mark.not_vetted
-class TestOLSRobustCluster2Input(CheckOLSRobustCluster, CheckOLSRobustNewMixin):
+class TestOLSRobustCluster2Input(CheckOLSRobustCluster,
+                                 CheckOLSRobustNewMixin):
     # compare with `reg cluster`
 
     def setup(self):
@@ -425,6 +426,7 @@ class TestOLSRobustCluster2Input(CheckOLSRobustCluster, CheckOLSRobustNewMixin):
                                               groups=groups2,
                                               use_correction=True,
                                               use_t=True)
+        # TODO: Do something with res?
 
 
 @pytest.mark.not_vetted
@@ -467,7 +469,8 @@ class TestOLSRobustCluster2Fit(CheckOLSRobustCluster, CheckOLSRobustNewMixin):
 
 
 @pytest.mark.not_vetted
-class TestOLSRobustCluster2Large(CheckOLSRobustCluster, CheckOLSRobustNewMixin):
+class TestOLSRobustCluster2Large(CheckOLSRobustCluster,
+                                 CheckOLSRobustNewMixin):
     # compare with `reg cluster`
 
     def setup(self):
@@ -497,17 +500,18 @@ class TestOLSRobustCluster2Large(CheckOLSRobustCluster, CheckOLSRobustNewMixin):
 
 
 @pytest.mark.not_vetted
-class TestOLSRobustCluster2LargeFit(CheckOLSRobustCluster, CheckOLSRobustNewMixin):
+class TestOLSRobustCluster2LargeFit(CheckOLSRobustCluster,
+                                    CheckOLSRobustNewMixin):
     # compare with `reg cluster`
 
     def setup(self):
         model = OLS(self.res1.model.endog, self.res1.model.exog)
         #res_ols = self.res1.model.fit(cov_type='cluster',
         res_ols = model.fit(cov_type='cluster',
-                                      cov_kwds=dict(groups=self.groups,
-                                                    use_correction=False,
-                                                    use_t=False,
-                                                    df_correction=True))
+                            cov_kwds=dict(groups=self.groups,
+                                          use_correction=False,
+                                          use_t=False,
+                                          df_correction=True))
         self.res3 = self.res1
         self.res1 = res_ols
         self.bse_robust = res_ols.bse
@@ -621,16 +625,17 @@ class TestOLSRobustClusterNWP(CheckOLSRobustCluster, CheckOLSRobustNewMixin):
 
 
 @pytest.mark.not_vetted
-class TestOLSRobustClusterNWPGroupsFit(CheckOLSRobustCluster, CheckOLSRobustNewMixin):
+class TestOLSRobustClusterNWPGroupsFit(CheckOLSRobustCluster,
+                                       CheckOLSRobustNewMixin):
     # compare with `reg cluster`
 
     def setup(self):
         res_ols = self.res1.model.fit(cov_type='nw-panel',
-                                      cov_kwds = dict(groups=self.groups,
-                                                      maxlags=4,
-                                                      use_correction='hac',
-                                                      use_t=True,
-                                                      df_correction=False))
+                                      cov_kwds=dict(groups=self.groups,
+                                                    maxlags=4,
+                                                    use_correction='hac',
+                                                    use_t=True,
+                                                    df_correction=False))
         self.res3 = self.res1
         self.res1 = res_ols
         self.bse_robust = res_ols.bse
@@ -654,14 +659,16 @@ class TestOLSRobustCluster2G(CheckOLSRobustCluster, CheckOLSRobustNewMixin):
 
     def setup(self):
         res_ols = self.res1.get_robustcov_results('cluster',
-                                                  groups=(self.groups, self.time),
+                                                  groups=(self.groups,
+                                                          self.time),
                                                   use_correction=True,
                                                   use_t=True)
         self.res3 = self.res1
         self.res1 = res_ols
         self.bse_robust = res_ols.bse
         self.cov_robust = res_ols.cov_params()
-        cov1 = sw.cov_cluster_2groups(self.res1, self.groups, group2=self.time,
+        cov1 = sw.cov_cluster_2groups(self.res1, self.groups,
+                                      group2=self.time,
                                       use_correction=True)[0]
         se1 = sw.se_cov(cov1)
         self.bse_robust2 = se1
@@ -669,17 +676,20 @@ class TestOLSRobustCluster2G(CheckOLSRobustCluster, CheckOLSRobustNewMixin):
         self.small = True
         self.res2 = res2.results_cluster_2groups_small
 
-        self.rtol = 0.35  # only f_pvalue and confint for constant differ >rtol=0.05
+        # only f_pvalue and confint for constant differ >rtol=0.05
+        self.rtol = 0.35
         self.rtolh = 1e-10
 
 
 @pytest.mark.not_vetted
-class TestOLSRobustCluster2GLarge(CheckOLSRobustCluster, CheckOLSRobustNewMixin):
+class TestOLSRobustCluster2GLarge(CheckOLSRobustCluster,
+                                  CheckOLSRobustNewMixin):
     # compare with `reg cluster`
 
     def setup(self):
         res_ols = self.res1.get_robustcov_results('cluster',
-                                                  groups=(self.groups, self.time),
+                                                  groups=(self.groups,
+                                                          self.time),
                                                   use_correction=False, #True,
                                                   use_t=False)
         self.res3 = self.res1
@@ -755,7 +765,8 @@ class TestWLSRobustCluster2(CheckWLSRobustCluster, CheckOLSRobustNewMixin):
 
 # not available yet for WLS
 @pytest.mark.not_vetted
-class TestWLSRobustCluster2Large(CheckWLSRobustCluster, CheckOLSRobustNewMixin):
+class TestWLSRobustCluster2Large(CheckWLSRobustCluster,
+                                 CheckOLSRobustNewMixin):
     # compare with `reg cluster`
 
     def setup(self):
@@ -904,17 +915,27 @@ def test_cov_type_fixed_scale():
     weights = 1. / sigma**2
 
     res = WLS(ydata, xdata, weights=weights).fit()
-    assert_allclose(res.bse, [0.20659803, 0.57204404], rtol=1e-3)
+    assert_allclose(res.bse,
+                    [0.20659803, 0.57204404],
+                    rtol=1e-3)
 
     res = WLS(ydata, xdata, weights=weights).fit()
-    assert_allclose(res.bse, [0.20659803, 0.57204404], rtol=1e-3)
+    assert_allclose(res.bse,
+                    [0.20659803, 0.57204404],
+                    rtol=1e-3)
 
     res = WLS(ydata, xdata, weights=weights).fit(cov_type='fixed scale')
-    assert_allclose(res.bse, [0.30714756, 0.85045308], rtol=1e-3)
+    assert_allclose(res.bse,
+                    [0.30714756, 0.85045308],
+                    rtol=1e-3)
 
     res = WLS(ydata, xdata, weights=weights / 9.).fit(cov_type='fixed scale')
-    assert_allclose(res.bse, [3*0.30714756, 3*0.85045308], rtol=1e-3)
+    assert_allclose(res.bse,
+                    [3 * 0.30714756, 3 * 0.85045308],
+                    rtol=1e-3)
 
     res = WLS(ydata, xdata, weights=weights).fit(cov_type='fixed scale',
-                                                  cov_kwds={'scale':9})
-    assert_allclose(res.bse, [3*0.30714756, 3*0.85045308], rtol=1e-3)
+                                                 cov_kwds={'scale': 9})
+    assert_allclose(res.bse,
+                    [3 * 0.30714756, 3 * 0.85045308],
+                    rtol=1e-3)
