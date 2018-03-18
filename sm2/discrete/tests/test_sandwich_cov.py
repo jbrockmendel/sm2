@@ -187,7 +187,6 @@ class TestPoissonHC1Generic(CheckCountRobustMixin):
         mod = cls.model_cls(endog, exog)
         cls.res1 = mod.fit(disp=False)
 
-        #res_hc0_ = cls.res1.get_robustcov_results('HC1')
         get_robustcov_results(cls.res1._results, 'HC1', use_self=True)
         cls.bse_rob = cls.res1.bse
         nobs, k_vars = mod.exog.shape
@@ -346,7 +345,6 @@ class TestGLMPoissonHC1Generic(CheckCountRobustMixin):
         mod = cls.model_cls(endog, exog, family=families.Poisson())
         cls.res1 = mod.fit()
 
-        #res_hc0_ = cls.res1.get_robustcov_results('HC1')
         get_robustcov_results(cls.res1._results, 'HC1', use_self=True)
         cls.bse_rob = cls.res1.bse
         nobs, k_vars = mod.exog.shape

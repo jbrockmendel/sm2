@@ -83,7 +83,7 @@ class GenericZeroInflated(CountModel):
             self._hessian_inflate = self._hessian_probit
         else:
             raise ValueError("inflation == %s, which is not handled"
-                             % inflation)
+                             % inflation)  # pragma: no cover
 
         self.inflation = inflation
         self.k_extra = self.k_inflate
@@ -91,7 +91,7 @@ class GenericZeroInflated(CountModel):
         if len(self.exog) != len(self.exog_infl):
             raise ValueError('exog and exog_infl have different number of'
                              'observation. `missing` handling is '
-                             'not supported')
+                             'not supported')  # pragma: no cover
 
         infl_names = ['inflate_%s' % i
                       for i in self.model_infl.data.param_names]
@@ -206,7 +206,7 @@ class GenericZeroInflated(CountModel):
                         auto_trim_tol=0.01, size_trim_tol=1e-4,
                         qc_tol=0.03, **kwargs):
 
-        if method not in ['l1', 'l1_cvxopt_cp']:
+        if method not in ['l1', 'l1_cvxopt_cp']:  # pragma: no cover
             raise ValueError("argument method == %s, which is not "
                              "handled" % method)
 
@@ -466,7 +466,7 @@ class GenericZeroInflated(CountModel):
         elif which == 'prob':
             return self._predict_prob(params, exog, exog_infl,
                                       exposure, offset)
-        else:
+        else:  # pragma: no cover
             raise ValueError('which = %s is not available' % which)
 
 
@@ -543,14 +543,14 @@ class ZeroInflatedPoisson(GenericZeroInflated):
 
         counts = np.atleast_2d(np.arange(0, np.max(self.endog) + 1))
 
+        w = self.model_infl.predict(params_infl, exog_infl)
         if len(exog_infl.shape) < 2:
             transform = True
-            w = np.atleast_2d(
-                self.model_infl.predict(params_infl, exog_infl))[:, None]
+            w = np.atleast_2d(w)
         else:
             transform = False
-            w = self.model_infl.predict(params_infl, exog_infl)[:, None]
 
+        w = w[:, None]
         w = np.clip(w, np.finfo(float).eps, 1 - np.finfo(float).eps)
         mu = self.model_main.predict(params_main, exog,
                                      offset=offset)[:, None]
@@ -628,14 +628,14 @@ class ZeroInflatedGeneralizedPoisson(GenericZeroInflated):
         p = self.model_main.parameterization
         counts = np.atleast_2d(np.arange(0, np.max(self.endog) + 1))
 
+        w = self.model_infl.predict(params_infl, exog_infl)
         if len(exog_infl.shape) < 2:
             transform = True
-            w = np.atleast_2d(
-                self.model_infl.predict(params_infl, exog_infl))[:, None]
+            w = np.atleast_2d(w)
         else:
             transform = False
-            w = self.model_infl.predict(params_infl, exog_infl)[:, None]
 
+        w = w[:, None]
         w[w == 1.] = np.nextafter(1, 0)
         mu = self.model_main.predict(params_main, exog,
                                      exposure=exposure, offset=offset)[:, None]
@@ -714,14 +714,14 @@ class ZeroInflatedNegativeBinomialP(GenericZeroInflated):
         p = self.model_main.parameterization
         counts = np.arange(0, np.max(self.endog) + 1)
 
+        w = self.model_infl.predict(params_infl, exog_infl)
         if len(exog_infl.shape) < 2:
             transform = True
-            w = np.atleast_2d(
-                self.model_infl.predict(params_infl, exog_infl))[:, None]
+            w = np.atleast_2d(w)
         else:
             transform = False
-            w = self.model_infl.predict(params_infl, exog_infl)[:, None]
 
+        w = w[:, None]
         w = np.clip(w, np.finfo(float).eps, 1 - np.finfo(float).eps)
         mu = self.model_main.predict(params_main, exog,
                                      exposure=exposure, offset=offset)[:, None]
@@ -759,18 +759,6 @@ class L1ZeroInflatedPoissonResults(L1CountResults, ZeroInflatedPoissonResults):
     pass
 
 
-class ZeroInflatedPoissonResultsWrapper(lm.RegressionResultsWrapper):
-    pass
-wrap.populate_wrapper(ZeroInflatedPoissonResultsWrapper,  # noqa:E305
-                      ZeroInflatedPoissonResults)
-
-
-class L1ZeroInflatedPoissonResultsWrapper(lm.RegressionResultsWrapper):
-    pass
-wrap.populate_wrapper(L1ZeroInflatedPoissonResultsWrapper,  # noqa:E305
-                      L1ZeroInflatedPoissonResults)
-
-
 class ZeroInflatedGeneralizedPoissonResults(CountResults):
     __doc__ = _discrete_results_docs % {
         "one_line_description": "A results class for Zero Inflated "
@@ -799,22 +787,6 @@ class L1ZeroInflatedGeneralizedPoissonResults(L1CountResults,
     pass
 
 
-class ZeroInflatedGeneralizedPoissonResultsWrapper(
-        lm.RegressionResultsWrapper):
-    pass
-wrap.populate_wrapper(  # noqa:E305
-    ZeroInflatedGeneralizedPoissonResultsWrapper,
-    ZeroInflatedGeneralizedPoissonResults)
-
-
-class L1ZeroInflatedGeneralizedPoissonResultsWrapper(
-        lm.RegressionResultsWrapper):
-    pass
-wrap.populate_wrapper(  # noqa:E305
-    L1ZeroInflatedGeneralizedPoissonResultsWrapper,
-    L1ZeroInflatedGeneralizedPoissonResults)
-
-
 class ZeroInflatedNegativeBinomialResults(CountResults):
     __doc__ = _discrete_results_docs % {
         "one_line_description": "A results class for Zero Inflated "
@@ -841,6 +813,38 @@ class ZeroInflatedNegativeBinomialResults(CountResults):
 class L1ZeroInflatedNegativeBinomialResults(L1CountResults,
         ZeroInflatedNegativeBinomialResults):  # noqa:E128
     pass
+
+
+# -------------------------------------------------------------
+# Wrapper Classes
+
+
+class ZeroInflatedPoissonResultsWrapper(lm.RegressionResultsWrapper):
+    pass
+wrap.populate_wrapper(ZeroInflatedPoissonResultsWrapper,  # noqa:E305
+                      ZeroInflatedPoissonResults)
+
+
+class L1ZeroInflatedPoissonResultsWrapper(lm.RegressionResultsWrapper):
+    pass
+wrap.populate_wrapper(L1ZeroInflatedPoissonResultsWrapper,  # noqa:E305
+                      L1ZeroInflatedPoissonResults)
+
+
+class ZeroInflatedGeneralizedPoissonResultsWrapper(
+        lm.RegressionResultsWrapper):
+    pass
+wrap.populate_wrapper(  # noqa:E305
+    ZeroInflatedGeneralizedPoissonResultsWrapper,
+    ZeroInflatedGeneralizedPoissonResults)
+
+
+class L1ZeroInflatedGeneralizedPoissonResultsWrapper(
+        lm.RegressionResultsWrapper):
+    pass
+wrap.populate_wrapper(  # noqa:E305
+    L1ZeroInflatedGeneralizedPoissonResultsWrapper,
+    L1ZeroInflatedGeneralizedPoissonResults)
 
 
 class ZeroInflatedNegativeBinomialResultsWrapper(lm.RegressionResultsWrapper):

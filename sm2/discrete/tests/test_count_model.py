@@ -58,7 +58,6 @@ class CheckGeneric(object):
 
     def test_init_keys(self):
         init_kwds = self.res1.model._get_init_kwds()
-        #assert_equal(sorted(list(init_kwds.keys())), self.init_keys)
         assert_equal(set(init_kwds.keys()), set(self.init_keys))
         for key, value in self.init_kwds.items():
             assert_equal(init_kwds[key], value)
@@ -531,8 +530,6 @@ class TestZeroInflatedNegativeBinomialP_predict(object):
         probs_unique = res.predict(exog=[[1, 0], [1, 1]],
                                    exog_infl=np.asarray([[1], [1]]),
                                    which='prob')
-        # no default for exog_infl yet
-        #probs_unique = res.predict(exog=[[1, 0], [1, 1]], which='prob')
 
         probs_unique2 = probs[[1, nobs - 1]]
 

@@ -55,6 +55,11 @@ def fit_l1_cvxopt_cp(f, score, start_params, args, kwargs, disp=False,
         number of iterative refinement steps when solving KKT equations
         (default: 1).
     """
+    if kwargs.get('qc_verbose', False):  # pragma: no cover
+        # TODO: Update docstring to reflect this restriction
+        raise NotImplementedError("option `qc_verbose` is available upstream, "
+                                  "but is disabled in sm2.")
+
     start_params = np.array(start_params).ravel('F')
 
     # Extract arguments
@@ -107,9 +112,8 @@ def fit_l1_cvxopt_cp(f, score, start_params, args, kwargs, disp=False,
     # Post-process
     # QC
     qc_tol = kwargs['qc_tol']
-    qc_verbose = kwargs['qc_verbose']
     passed = l1_solvers_common.qc_results(params, alpha, score,
-                                          qc_tol, qc_verbose)
+                                          qc_tol, qc_verbose=False)
     # Possibly trim
     trim_mode = kwargs['trim_mode']
     size_trim_tol = kwargs['size_trim_tol']
@@ -121,7 +125,7 @@ def fit_l1_cvxopt_cp(f, score, start_params, args, kwargs, disp=False,
                                                        auto_trim_tol)
 
     # Pack up return values
-    # TODO These retvals are returned as mle_retvals...but the fit wasn't ML
+    # TODO: These retvals are returned as mle_retvals...but the fit wasn't ML
     if full_output:
         fopt = f_0(x)
         gopt = float('nan')  # Objective is non-differentiable
@@ -134,13 +138,10 @@ def fit_l1_cvxopt_cp(f, score, start_params, args, kwargs, disp=False,
                    'gopt': gopt, 'hopt': hopt,
                    'trimmed': trimmed,
                    'warnflag': warnflag}
+        return params, retvals
     else:
         x = np.array(results['x']).ravel()
         params = x[:k_params]
-
-    if full_output:
-        return params, retvals
-    else:
         return params
 
 

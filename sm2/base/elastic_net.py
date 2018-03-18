@@ -236,10 +236,7 @@ def _build_result(model, params, method, itr):
         klass = rslt.__class__
 
     # Not all models have a scale
-    if hasattr(rslt, 'scale'):
-        scale = rslt.scale
-    else:
-        scale = 1.
+    scale = getattr(rslt, 'scale', 1.)
 
     # Assuming a standard signature for creating results classes.
     refit = klass(model, params, cov, scale=scale)

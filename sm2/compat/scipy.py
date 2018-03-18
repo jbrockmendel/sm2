@@ -75,12 +75,12 @@ def _lazywhere(cond, arrays, f, fillvalue=None, f2=None):
     broadcasted together.
     """
     if fillvalue is None:
-        if f2 is None:
+        if f2 is None:  # pragma: no cover
             raise ValueError("One of (fillvalue, f2) must be given.")
         else:
             fillvalue = np.nan
     else:
-        if f2 is not None:
+        if f2 is not None:  # pragma: no cover
             raise ValueError("Only one of (fillvalue, f2) can be given.")
 
     arrays = np.broadcast_arrays(*arrays)

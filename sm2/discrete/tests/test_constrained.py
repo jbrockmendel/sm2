@@ -422,7 +422,9 @@ class CheckGLMConstrainedMixin(CheckPoissonConstrainedMixin):
 
         assert_allclose(res1.bic, res2.bic, rtol=1e-10)
         # bic is deviance based
-        #assert_allclose(res1.bic, res2.infocrit[5], rtol=1e-10)
+        # TODO: Does this comment refer to the line above, or the now-deleted
+        # line below that compares res1.bic to res2.infocrit[5]?
+
         assert_allclose(res1.deviance, res2.deviance, rtol=1e-10)
         # TODO: which chi2 are these
         #assert_allclose(res1.pearson_chi2, res2.chi2, rtol=1e-10)
@@ -439,8 +441,6 @@ class TestGLMLogitConstrained1(CheckGLMConstrainedMixin):
     @classmethod
     def setup_class(cls):
         cls.res2 = reslogit.results_constraint1
-        #res1ul = Logit(data.endog, data.exog).fit(method="newton", disp=0)
-
         mod1 = cls.model_cls(spector_data.endog, spector_data.exog,
                              family=families.Binomial())
 
@@ -460,7 +460,6 @@ class TestGLMLogitConstrained2(CheckGLMConstrainedMixin):
     @classmethod
     def setup_class(cls):
         cls.res2 = reslogit.results_constraint2
-        #res1ul = Logit(data.endog, data.exog).fit(method="newton", disp=0)
         mod1 = cls.model_cls(spector_data.endog, spector_data.exog,
                              family=families.Binomial())
 
@@ -512,8 +511,6 @@ class TestGLMLogitConstrained2HC(CheckGLMConstrainedMixin):
     @classmethod
     def setup_class(cls):
         cls.res2 = reslogit.results_constraint2_robust
-        #res1ul = Logit(data.endog, data.exog).fit(method="newton", disp=0)
-
         mod1 = cls.model_cls(spector_data.endog, spector_data.exog,
                              family=families.Binomial())
 
