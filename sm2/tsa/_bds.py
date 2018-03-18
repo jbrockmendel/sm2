@@ -48,10 +48,10 @@ def distance_indicators(x, epsilon=None, distance=1.5):
     """
     x = np.asarray(x)
 
-    if epsilon is not None and epsilon <= 0:
+    if epsilon is not None and epsilon <= 0:  # pragma: no cover
         raise ValueError("Threshold distance must be positive if specified."
                          " Got epsilon of %f" % epsilon)
-    if distance <= 0:
+    if distance <= 0:  # pragma: no cover
         raise ValueError("Threshold distance must be positive."
                          " Got distance multiplier %f" % distance)
 
@@ -83,11 +83,10 @@ def correlation_sum(indicators, embedding_dim):
         Correlation sum
     indicators_joint
         matrix of joint-distance-threshold indicators
-
     """
-    if not indicators.ndim == 2:
+    if not indicators.ndim == 2:  # pragma: no cover
         raise ValueError('Indicators must be a matrix')
-    if not indicators.shape[0] == indicators.shape[1]:
+    if not indicators.shape[0] == indicators.shape[1]:  # pragma: no cover
         raise ValueError('Indicator matrix must be symmetric (square)')
 
     if embedding_dim == 1:
@@ -200,12 +199,11 @@ def bds(x, max_dim=2, epsilon=None, distance=1.5):
     Implementation conditions on the first m-1 initial values, which are
     required to calculate the m-histories:
     x_t^m = (x_t, x_{t-1}, ... x_{t-(m-1)})
-
     """
     x = np.asarray(x)
     nobs_full = len(x)
 
-    if max_dim < 2 or max_dim >= nobs_full:
+    if max_dim < 2 or max_dim >= nobs_full:  # pragma: no cover
         raise ValueError("Maximum embedding dimension must be in the range "
                          "[2, len(x)-1]. Got %d." % max_dim)
 

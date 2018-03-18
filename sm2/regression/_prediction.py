@@ -90,6 +90,7 @@ class PredictionResults(object):
         return res
 
 
+# TODO: not hit in tests; should be a method anyway?
 def get_prediction(self, exog=None, transform=True, weights=None,
                    row_labels=None, pred_kwds=None):
     """

@@ -17,15 +17,15 @@ _array_precision = {'f': 0, 'd': 1, 'F': 0, 'D': 1}
 
 # Linear Least Squares
 
-def lstsq(a, b, cond=None, overwrite_a=0, overwrite_b=0):
+def lstsq(a, b, cond=None, overwrite_a=0, overwrite_b=0):  # pragma: no cover
     raise NotImplementedError("lstsq not ported from upstream")
 
 
-def pinv(a, cond=None, rcond=None):
+def pinv(a, cond=None, rcond=None):  # pragma: no cover
     raise NotImplementedError("pinv not ported from upstream")
 
 
-def pinv2(a, cond=None, rcond=None):
+def pinv2(a, cond=None, rcond=None):  # pragma: no cover
     raise NotImplementedError("pinv2 not ported from upstream")
 
 
@@ -50,5 +50,5 @@ def logdet_symm(m, check_symm=False):
     return 2 * np.sum(np.log(c.diagonal()))
 
 
-def stationary_solve(r, b):
+def stationary_solve(r, b):  # pragma: no cover
     raise NotImplementedError("stationary_solve not ported from upstream")

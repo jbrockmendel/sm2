@@ -6,17 +6,10 @@ import numpy as np
 import pandas as pd
 
 
-def _check_period_index(x, freq="M"):
-    if not isinstance(x.index, (pd.DatetimeIndex, pd.PeriodIndex)):
-        raise ValueError("The index must be a DatetimeIndex or PeriodIndex")
-
-    if x.index.freq is not None:
-        inferred_freq = x.index.freqstr
-    else:
-        inferred_freq = pd.infer_freq(x.index)
-    if not inferred_freq.startswith(freq):
-        raise ValueError("Expected frequency {}. Got {}".format(inferred_freq,
-                                                                freq))
+def _check_period_index(x, freq="M"):  # pragma: no cover
+    raise NotImplementedError("_check_period_index not ported from upstream, "
+                              "as it is only used in tsaplots, "
+                              "which is not (yet) ported")
 
 
 def is_data_frame(obj):
@@ -72,11 +65,11 @@ def interpret_data(data, colnames=None, rownames=None):
     # sanity check
     if len(colnames) != values.shape[1]:
         raise ValueError('length of colnames does not match number '
-                         'of columns in data')
+                         'of columns in data')  # pragma: no cover
 
     if rownames is not None and len(rownames) != len(values):
         raise ValueError('length of rownames does not match number '
-                         'of rows in data')
+                         'of rows in data')  # pragma: no cover
 
     return values, colnames, rownames
 
@@ -101,13 +94,10 @@ def is_using_pandas(endog, exog):
     return (isinstance(endog, klasses) or isinstance(exog, klasses))
 
 
-def is_array_like(endog, exog):
-    try:  # do it like this in case of mixed types, ie., ndarray and list
-        endog = np.asarray(endog)
-        exog = np.asarray(exog)
-        return True
-    except (ValueError, TypeError):
-        return False
+def _is_array_like(endog, exog):  # pragma: no cover
+    raise NotImplementedError("_is_array_like not ported from upstream, "
+                              "as it is only used in iolib.foreign, "
+                              "which is itself not ported.")
 
 
 def is_using_patsy(endog, exog):
@@ -127,7 +117,6 @@ def is_recarray(data):
 _is_structured_ndarray = is_structured_ndarray
 _is_recarray = is_recarray
 _is_using_patsy = is_using_patsy
-_is_array_like = is_array_like
 _is_using_pandas = is_using_pandas
 _is_using_ndarray = is_using_ndarray
 _is_using_ndarray_type = is_using_ndarray_type

@@ -169,7 +169,7 @@ def acorr_lm(x, maxlag=None, autolag='AIC', store=False, regresults=False):
             bestic, icbestlag = min((v.aic, k) for k, v in results.items())
         elif autolag.lower() == 'bic':
             icbest, icbestlag = min((v.bic, k) for k, v in results.items())
-        else:
+        else:  # pragma: no cover
             raise ValueError("autolag can only be None, 'AIC' or 'BIC'")
 
         # rerun ols with best ic
@@ -354,10 +354,11 @@ def het_white(resid, exog, retres=False):
     now test statistic reproduces Greene 5th, example 11.3
     """
     from sm2.regression.linear_model import OLS
+    # TODO: I don't like this dependency
 
     x = np.asarray(exog)
     y = np.asarray(resid)
-    if x.ndim == 1:
+    if x.ndim == 1:  # pragma: no cover
         raise ValueError('x should have constant and at least one '
                          'more variable')
 

@@ -54,15 +54,19 @@ def qc_results(params, alpha, score, qc_tol, qc_verbose=False):
             # If |fprime| is too big, then something went wrong
             if (abs(fprime[i]) - alpha[i]) / alpha[i] > qc_tol:
                 passed_array[i] = False
-    qc_dict = dict(
-        fprime=fprime, alpha=alpha, params=params, passed_array=passed_array)
+
+    qc_dict = dict(fprime=fprime,
+                   alpha=alpha,
+                   params=params,
+                   passed_array=passed_array)
+
     passed = passed_array.min()
     if not passed:
         num_failed = (passed_array == False).sum()  # noqa:E712
-        message = 'QC check did not pass for %d out of %d parameters' % (
-            num_failed, k_params)
-        message += '\nTry increasing solver accuracy or number of iterations'\
-            ', decreasing alpha, or switch solvers'
+        message = ('QC check did not pass for %d out of %d parameters'
+                   % (num_failed, k_params))
+        message += ('\nTry increasing solver accuracy or number of iterations'
+                    ', decreasing alpha, or switch solvers')
         if qc_verbose:
             message += _get_verbose_addon(qc_dict)
         print(message)
@@ -70,7 +74,7 @@ def qc_results(params, alpha, score, qc_tol, qc_verbose=False):
     return passed
 
 
-def _get_verbose_addon(qc_dict):
+def _get_verbose_addon(qc_dict):  # TODO: not hit in tests.  Deprecate?
     alpha = qc_dict['alpha']
     params = qc_dict['params']
     fprime = qc_dict['fprime']
@@ -155,6 +159,6 @@ def do_trim_params(params, k_params, alpha, score, passed, trim_mode,
     else:
         # TODO: fix upstream this just raises "Exception"
         raise ValueError("trim_mode == %s, which is not recognized"
-                         % (trim_mode))
+                         % (trim_mode))  # pragma: no cover
 
     return params, np.asarray(trimmed)

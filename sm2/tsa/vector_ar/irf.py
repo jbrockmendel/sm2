@@ -115,7 +115,7 @@ class BaseIRAnalysis(object):
         """
         svar = self.svar
 
-        if orth and svar:
+        if orth and svar:  # pragma: no cover
             raise ValueError("For SVAR system, set orth=False")
 
         if orth:
@@ -133,7 +133,8 @@ class BaseIRAnalysis(object):
 
         elif stderr_type not in ['asym', 'mc', 'sz1', 'sz2', 'sz3']:
             raise ValueError("Error type must be either "
-                             "'asym', 'mc', 'sz1', 'sz2', or 'sz3'")
+                             "'asym', 'mc', 'sz1', 'sz2', "
+                             "or 'sz3'")  # pragma: no cover
         else:
             if stderr_type == 'asym':
                 stderr = self.cov(orth=orth)
@@ -194,7 +195,6 @@ class BaseIRAnalysis(object):
             Number of replications for monte carlo standard errors
         seed: int
             np.random.seed for Monte Carlo replications
-
         """
         if orth:
             title = 'Cumulative responses responses (orthogonalized)'
@@ -205,8 +205,9 @@ class BaseIRAnalysis(object):
             cum_effects = self.cum_effects
             lr_effects = self.lr_effects
 
-        if stderr_type not in ['asym', 'mc']:
-            raise TypeError
+        if stderr_type not in ['asym', 'mc']:  # pragma: no cover
+            # TODO: Upstream this TypeError, needs fixing
+            raise ValueError("stderr_type '%s' not recognized" % stderr_type)
         else:
             if stderr_type == 'asym':
                 stderr = self.cum_effect_cov(orth=orth)
@@ -701,5 +702,5 @@ class IRAnalysis(BaseIRAnalysis):
 
         return np.dot(Lk.T, scipy.linalg.inv(B))
 
-    def fevd_table(self):
+    def fevd_table(self):  # TODO: raise NotImplementedError?
         pass

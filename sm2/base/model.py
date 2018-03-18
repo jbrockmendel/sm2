@@ -161,6 +161,7 @@ class Model(object):
         ((endog, exog), missing_idx, design_info) = tmp
 
         if drop_cols is not None and len(drop_cols) > 0:
+            # TODO: not hit in tests
             cols = [x for x in exog.columns if x not in drop_cols]
             if len(cols) < len(exog.columns):
                 exog = exog[cols]
@@ -278,7 +279,7 @@ class LikelihoodModel(Model):
             elif self.exog is not None:
                 # fails for shape (K,)?
                 start_params = [0] * self.exog.shape[1]
-            else:
+            else:  # pragma: no cover
                 raise ValueError("If exog is None, then start_params should "
                                  "be specified")
         return start_params
@@ -982,13 +983,13 @@ class LikelihoodModelResults(wrap.SaveLoadMixin, Results):
             dot_fun = np.dot
 
         if (cov_p is None and self.normalized_cov_params is None and
-                not hasattr(self, 'cov_params_default')):
+                not hasattr(self, 'cov_params_default')):  # pragma: no cover
             raise ValueError('need covariance of parameters for computing '
                              '(unnormalized) covariances')
         if column is not None and (r_matrix is not None or other is not None):
             raise ValueError('Column should be specified without other '
-                             'arguments.')
-        if other is not None and r_matrix is None:
+                             'arguments.')  # pragma: no cover
+        if other is not None and r_matrix is None:  # pragma: no cover
             raise ValueError('other can only be specified with r_matrix')
 
         if cov_p is None:
@@ -1007,7 +1008,7 @@ class LikelihoodModelResults(wrap.SaveLoadMixin, Results):
                 return cov_p[column[:, None], column]
         elif r_matrix is not None:
             r_matrix = np.asarray(r_matrix)
-            if r_matrix.shape == ():
+            if r_matrix.shape == ():  # pragma: no cover
                 raise ValueError("r_matrix should be 1d or 2d")
             if other is None:
                 other = r_matrix
@@ -1118,8 +1119,8 @@ class LikelihoodModelResults(wrap.SaveLoadMixin, Results):
         if (cov_p is None and self.normalized_cov_params is None and
                 not hasattr(self, 'cov_params_default')):
             raise ValueError('Need covariance of parameters for computing '
-                             'T statistics')
-        if num_params != self.params.shape[0]:
+                             'T statistics')  # pragma: no cover
+        if num_params != self.params.shape[0]:  # pragma: no cover
             raise ValueError('r_matrix and params are not aligned')
         if q_matrix is None:
             q_matrix = np.zeros(num_ttests)
@@ -1127,7 +1128,7 @@ class LikelihoodModelResults(wrap.SaveLoadMixin, Results):
             q_matrix = np.asarray(q_matrix)
             q_matrix = q_matrix.squeeze()
         if q_matrix.size > 1:
-            if q_matrix.shape[0] != num_ttests:
+            if q_matrix.shape[0] != num_ttests:  # pragma: no cover
                 raise ValueError("r_matrix and q_matrix must have the same "
                                  "number of rows")
 
@@ -1321,7 +1322,7 @@ class LikelihoodModelResults(wrap.SaveLoadMixin, Results):
         if (self.normalized_cov_params is None and cov_p is None and
                 invcov is None and not hasattr(self, 'cov_params_default')):
             raise ValueError('need covariance of parameters for computing '
-                             'F statistics')
+                             'F statistics')  # pragma: no cover
 
         cparams = np.dot(r_matrix, self.params[:, None])
         J = float(r_matrix.shape[0])  # number of restrictions

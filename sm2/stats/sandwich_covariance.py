@@ -253,7 +253,7 @@ def _get_sandwich_arrays(results, cov_type=''):
             # temporary asarray
             xu /= np.sqrt(np.asarray(results.model.freq_weights)[:, None])
 
-    else:
+    else:  # pragma: no cover
         raise ValueError('need either tuple of (jac, hessian_inv) or results' +
                          'instance')
 
@@ -581,7 +581,7 @@ def cov_cluster_2groups(results, group, group2=None, use_correction=True):
     verified against Peterson's table, (4 decimal print precision)
     """
     if group2 is None:
-        if group.ndim != 2 or group.shape[1] != 2:
+        if group.ndim != 2 or group.shape[1] != 2:  # pragma: no cover
             raise ValueError('if group2 is not given, then groups needs to be '
                              'an array with two columns')
         group0 = group[:, 0]
@@ -713,7 +713,7 @@ def lagged_groups(x, lag, groupidx):
             out0.append(x[l + lag:u])
             out_lagged.append(x[l:u - lag])
 
-    if out0 == []:
+    if out0 == []:  # pragma: no cover
         raise ValueError('all groups are empty taking lags')
     return np.vstack(out0), np.vstack(out_lagged)
 

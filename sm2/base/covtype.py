@@ -275,7 +275,7 @@ def get_robustcov_results(self, cov_type='HC1', use_t=None, **kwds):
     elif cov_type.lower() == 'hac-groupsum':
         # Driscoll-Kraay standard errors
         n_groups = hac_groupsum(self, res, kwds, adjust_df, cov_type)
-    else:
+    else:  # pragma: no cover
         raise ValueError('cov_type not recognized. See docstring for '
                          'available options and spelling')
 

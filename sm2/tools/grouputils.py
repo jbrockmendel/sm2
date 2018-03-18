@@ -34,6 +34,10 @@ import numpy as np
 # though there the call goes through the Group constructor
 def combine_indices(groups, prefix='', sep='.', return_labels=False):
     """use np.unique to get integer group indices for product, intersection"""
+    if return_labels:  # pragma: no cover
+        raise NotImplementedError("Option `return_labels` from upstream is "
+                                  "deprecated.  Only `False` is "
+                                  "accepted here.")
     if isinstance(groups, tuple):
         groups = np.column_stack(groups)
     else:
@@ -64,12 +68,7 @@ def combine_indices(groups, prefix='', sep='.', return_labels=False):
         # uni.dtype = dt
         # uni.shape = (uni.size//ncols, ncols)
 
-    if return_labels:
-        label = [(prefix + sep.join(['%s'] * len(uni[0]))) % tuple(ii)
-                 for ii in uni]
-        return uni_inv, uni_idx, uni, label
-    else:
-        return uni_inv, uni_idx, uni
+    return uni_inv, uni_idx, uni
 
 
 import sys
@@ -78,7 +77,7 @@ for name in ['Group', 'Grouping', 'GroupSorted',
              'group_sums', 'group_sums_dummy', 'dummy_sparse',
              '_is_hierarchical', '_make_hierarchical_index',
              '_make_generic_names']:
-    def func(*args, **kwargs):
+    def func(*args, **kwargs):  # pragma: no cover
         """placeholder for function not ported from upstream"""
         raise NotImplementedError("{name} not ported from upstream"
                                   .format(name=name))

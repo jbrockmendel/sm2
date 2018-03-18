@@ -6,7 +6,7 @@ import numpy as np
 import pandas as pd
 
 from sm2.iolib.table import SimpleTable
-from sm2.iolib.tableformatting import gen_fmt, fmt_2, fmt_params, fmt_2cols
+from sm2.iolib.tableformatting import fmt_params, fmt_2cols
 
 
 def forg(x, prec=3):
@@ -25,223 +25,11 @@ def forg(x, prec=3):
         raise NotImplementedError  # TODO: Should this be ValueError?
 
 
+# TODO: not hit in tests?  how is that possible?
 def summary(self, yname=None, xname=None, title=0, alpha=.05,
-            returns='text', model_info=None):
-    """
-    Parameters
-    -----------
-    yname : string
-            optional, Default is `Y`
-    xname : list of strings
-            optional, Default is `X.#` for # in p the number of regressors
-    Confidance interval : (0, 1) not implimented
-    title : string
-            optional, Default is 'Generalized linear model'
-    returns : {'text', 'table', 'csv', 'latex', 'html'}
-
-    Returns
-    -------
-    Default :
-    returns='print'
-            Prints the summarized results
-
-    Option :
-    returns='text'
-            Prints the summarized results
-
-    Option :
-    returns='table'
-        SimpleTable instance : summarizing the fit of a linear model.
-
-    Option :
-    returns='csv'
-        returns a string of csv of the results, to import into a spreadsheet
-
-    Option :
-    returns='latex'
-    Not implemented yet
-
-    Option :
-    returns='HTML'
-    Not implemented yet
-
-    Examples (needs updating)
-    --------
-    >>> import sm2.api as sm
-    >>> data = sm.datasets.longley.load()
-    >>> data.exog = sm.add_constant(data.exog)
-    >>> ols_results = sm.OLS(data.endog, data.exog).results
-    >>> print ols_results.summary()
-    ...
-
-    Notes
-    -----
-    conf_int calculated from normal dist.
-    """
-    # TODO: Make sure all self.model.__class__.__name__ are listed
-    model_types = {'OLS': 'Ordinary least squares',
-                   'GLS': 'Generalized least squares',
-                   'GLSAR': 'Generalized least squares with AR(p)',
-                   'WLS': 'Weighted least squares',
-                   'RLM': 'Robust linear model',
-                   'GLM': 'Generalized linear model'}
-    model_methods = {'OLS': 'Least Squares',
-                     'GLS': 'Least Squares',
-                     'GLSAR': 'Least Squares',
-                     'WLS': 'Least Squares',
-                     'RLM': '?',
-                     'GLM': '?'}
-    if title == 0:
-        title = model_types[self.model.__class__.__name__]
-    if yname is None:
-        try:
-            yname = self.model.endog_names
-        except AttributeError:
-            yname = 'y'
-    if xname is None:
-        try:
-            xname = self.model.exog_names
-        except AttributeError:
-            xname = ['var_%d' % i for i in range(len(self.params))]
-    time_now = time.localtime()
-    time_of_day = [time.strftime("%H:%M:%S", time_now)]
-    date = time.strftime("%a, %d %b %Y", time_now)
-    modeltype = self.model.__class__.__name__
-    #dist_family = self.model.family.__class__.__name__
-    nobs = self.nobs
-    df_model = self.df_model
-    df_resid = self.df_resid
-
-    # General part of the summary table, Applicable to all? models
-    # ------------------------------------------------------------
-    # TODO: define this generically, overwrite in model classes
-    # replace definition of stubs data by single list
-    # e.g.
-    gen_left = [('Model type:', [modeltype]),
-                ('Date:', [date]),
-                ('Dependent Variable:', yname),
-                # TODO: What happens with multiple names?
-                ('df model', [df_model])]
-    gen_stubs_left, gen_data_left = zip_longest(*gen_left)  # transpose row col
-
-    gen_title = title
-    gen_header = None
-    #gen_stubs_left = ('Model type:',
-    #                  'Date:',
-    #                  'Dependent Variable:',
-    #                  'df model'
-    #              )
-    #gen_data_left = [[modeltype],
-    #                 [date],
-    #                 yname, # What happens with multiple names?
-    #                 [df_model]
-    #                 ]
-    gen_table_left = SimpleTable(gen_data_left,
-                                 gen_header,
-                                 gen_stubs_left,
-                                 title=gen_title,
-                                 txt_fmt=gen_fmt)
-
-    gen_stubs_right = ('Method:',
-                       'Time:',
-                       'Number of Obs:',
-                       'df resid')
-    gen_data_right = ([modeltype],  # was dist family need to look at more  TODO: What does this comment mean?
-                      time_of_day,
-                      [nobs],
-                      [df_resid])
-    gen_table_right = SimpleTable(gen_data_right,
-                                  gen_header,
-                                  gen_stubs_right,
-                                  title=gen_title,
-                                  txt_fmt=gen_fmt)
-    gen_table_left.extend_right(gen_table_right)
-    general_table = gen_table_left
-
-    # Parameters part of the summary table
-    # ------------------------------------
-    # Note: this is not necessary since we standardized names,
-    # only t versus normal
-    tstats = {'OLS': self.t(),
-              'GLS': self.t(),
-              'GLSAR': self.t(),
-              'WLS': self.t(),
-              'RLM': self.t(),
-              'GLM': self.t()}
-    prob_stats = {'OLS': self.pvalues,
-                  'GLS': self.pvalues,
-                  'GLSAR': self.pvalues,
-                  'WLS': self.pvalues,
-                  'RLM': self.pvalues,
-                  'GLM': self.pvalues}
-    # Dictionary to store the header names for the parameter part of the
-    # summary table. look up by modeltype
-    alp = str((1 - alpha) * 100) + '%'
-    param_header = {
-        'OLS': ['coef', 'std err', 't', 'P>|t|', alp + ' Conf. Interval'],
-        'GLS': ['coef', 'std err', 't', 'P>|t|', alp + ' Conf. Interval'],
-        'GLSAR': ['coef', 'std err', 't', 'P>|t|', alp + ' Conf. Interval'],
-        'WLS': ['coef', 'std err', 't', 'P>|t|', alp + ' Conf. Interval'],
-        'GLM': ['coef', 'std err', 't', 'P>|t|', alp + ' Conf. Interval'],
-        # glm uses t-distribution
-        'RLM': ['coef', 'std err', 'z', 'P>|z|', alp + ' Conf. Interval']
-        # checke z
-    }
-    params_stubs = xname
-    params = self.params
-    conf_int = self.conf_int(alpha)
-    std_err = self.bse
-    exog_len = list(range(len(xname)))
-    tstat = tstats[modeltype]
-    prob_stat = prob_stats[modeltype]
-
-    # Simpletable should be able to handle the formating
-    params_data = list(zip(["%#6.4g" % (params[i]) for i in exog_len],
-                           ["%#6.4f" % (std_err[i]) for i in exog_len],
-                           ["%#6.4f" % (tstat[i]) for i in exog_len],
-                           ["%#6.4f" % (prob_stat[i]) for i in exog_len],
-                           ["(%#5g, %#5g)" % tuple(conf_int[i])
-                            for i in exog_len]))
-    parameter_table = SimpleTable(params_data,
-                                  param_header[modeltype],
-                                  params_stubs,
-                                  title=None,
-                                  txt_fmt=fmt_2)
-
-    # special table
-    # -------------
-    # TODO: exists in linear_model, what about other models
-    # residual diagnostics
-
-    # output options
-    # --------------
-    # TODO: JP the rest needs to be fixed, similar to summary in linear_model
-
-    def ols_printer():
-        """
-        print summary table for ols models
-        """
-        table = str(general_table) + '\n' + str(parameter_table)
-        return table
-
-    def ols_to_csv():
-        """
-        exports ols summary data to csv
-        """
-        pass
-
-    def glm_printer():
-        table = str(general_table) + '\n' + str(parameter_table)
-        return table
-
-    printers = {'OLS': ols_printer,
-                'GLM': glm_printer}
-
-    if returns == 'print':
-        try:
-            return printers[modeltype]()
-        except KeyError:
-            return printers['OLS']()
+            returns='text', model_info=None):  # pragma: no cover
+    raise NotImplementedError("summary not ported from upstream, "
+                              "as it is neither used nor tested there.")
 
 
 def _getnames(self, yname=None, xname=None):
@@ -300,7 +88,7 @@ def summary_top(results, title=None, gleft=None, gright=None,
     if title is None:
         title = results.model.__class__.__name__ + 'Regression Results'
 
-    if gen_left is None:
+    if gen_left is None:  # TODO: not hit in tests
         # default: General part of the summary table, Applicable to all? models
         gen_left = [('Dep. Variable:', None),
                     ('Model type:', None),
@@ -493,7 +281,7 @@ def summary_params_frame(results, yname=None, xname=None, alpha=.05,
         # TODO: check whether I don't want to refactor this
         # we need to give parameter alpha to conf_int
         results, params, std_err, tvalues, pvalues, conf_int = results
-    else:
+    else:  # TODO: not hit in tests
         params = results.params
         std_err = results.bse
         tvalues = results.tvalues  # is this sometimes called zvalues
@@ -519,64 +307,10 @@ def summary_params_frame(results, yname=None, xname=None, alpha=.05,
 
 
 def summary_params_2d(result, extras=None, endog_names=None, exog_names=None,
-                      title=None):
-    """create summary table of regression parameters with several equations
-
-    This allows interleaving of parameters with bse and/or tvalues
-
-    Parameters
-    ----------
-    result : result instance
-        the result instance with params and attributes in extras
-    extras : list of strings
-        additional attributes to add below a parameter row, e.g. bse or tvalues
-    endog_names : None or list of strings
-        names for rows of the parameter array (multivariate endog)
-    exog_names : None or list of strings
-        names for columns of the parameter array (exog)
-    alpha : float
-        level for confidence intervals, default 0.95
-    title : None or string
-
-    Returns
-    -------
-    tables : list of SimpleTable
-        this contains a list of all seperate Subtables
-    table_all : SimpleTable
-        the merged table with results concatenated for each row of the
-        parameter array
-    """
-    if endog_names is None:
-        # TODO: note the [1:] is specific to current MNLogit
-        endog_names = ['endog_%d' % i
-                       for i in np.unique(result.model.endog)[1:]]
-    if exog_names is None:
-        exog_names = ['var%d' % i for i in range(len(result.params))]
-
-    # TODO: check formatting options with different values
-    res_params = [[forg(item, prec=4) for item in row]
-                  for row in result.params]
-    if extras:
-        # maybe this should be a simple triple loop instead of
-        # list comprehension?
-        extras_list = [[['%10s' % ('(' + forg(v, prec=3).strip() + ')')
-                         for v in col]
-                        for col in getattr(result, what)]
-                       for what in extras]
-        data = list(zip(res_params, *extras_list))
-        data = [i for j in data for i in j]
-        stubs = zip(endog_names, *[[''] * len(endog_names)] * len(extras))
-        stubs = [i for j in stubs for i in j]
-    else:
-        data = res_params
-        stubs = endog_names
-
-    txt_fmt = copy.deepcopy(fmt_params)
-    txt_fmt.update(dict(data_fmts=["%s"] * result.params.shape[1]))
-    return SimpleTable(data, headers=exog_names,
-                       stubs=stubs,
-                       title=title,
-                       txt_fmt=txt_fmt)
+                      title=None):  # pragma: no cover
+    raise NotImplementedError("summary_params_2d not ported from upstream, "
+                              "as it is only used in one example file there, "
+                              "and never tested.")
 
 
 def summary_params_2dflat(result, endog_names=None, exog_names=None, alpha=0.05,
@@ -623,7 +357,7 @@ def summary_params_2dflat(result, endog_names=None, exog_names=None, alpha=0.05,
             raise ValueError('endog_names has wrong length')
         n_equ = 1
 
-    if not isinstance(endog_names, list):
+    if not isinstance(endog_names, list):  # TODO: not hit in tests
         # this might be specific to multinomial logit type, move?
         if endog_names is None:
             endog_basename = 'endog'
@@ -716,7 +450,7 @@ def summary_return(tables, return_fmt='text'):
         return table.as_latex_tabular()
     elif return_fmt == 'html':
         return "\n".join(table.as_html() for table in tables)
-    else:
+    else:  # pragma: no cover
         raise ValueError('available output formats are text, csv, latex, html')
 
 
@@ -800,7 +534,7 @@ class Summary(object):
             _, table = summary_params_2dflat(res, endog_names=yname,
                                              exog_names=xname,
                                              alpha=alpha, use_t=use_t)
-        else:
+        else:  # pragma: no cover
             raise ValueError('params has to be 1d or 2d')
         self.tables.append(table)
 

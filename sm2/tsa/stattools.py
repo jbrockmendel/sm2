@@ -106,7 +106,7 @@ def _autolag(mod, endog, exog, startlag, maxlag, method, modargs=(),
                 bestlag = lag
                 icbest = icbest
                 break
-    else:
+    else:  # pragma: no cover
         raise ValueError("Information Criterion %s not understood." % method)
 
     if not regresults:
@@ -339,7 +339,8 @@ def acovf(x, unbiased=False, demean=True, fft=False, missing='none'):
 
     missing = missing.lower()
     if missing not in ['none', 'raise', 'conservative', 'drop']:
-        raise ValueError("missing option %s not understood" % missing)
+        raise ValueError("`missing` option %s not understood"
+                         % missing)  # pragma: no cover
     if missing == 'none':
         deal_with_masked = False
     else:
@@ -416,6 +417,7 @@ def q_stat(x, nobs, type="ljungbox"):
     ------
     Written to be used with acf.
     """
+    # TODO: don't use `type` as a kwarg name
     x = np.asarray(x)
     if type == "ljungbox":
         ret = (nobs * (nobs + 2) *
@@ -696,7 +698,8 @@ def ccf(x, y, unbiased=True):
     return cvf / (np.std(x) * np.std(y))
 
 
-def periodogram(X):  # TODO: not tested
+# TODO: not tested; consider un-porting, as it isn't _really_ used upstream
+def periodogram(X):
     """
     Returns the periodogram for the natural frequency of X
 
@@ -847,7 +850,7 @@ def grangercausalitytests(x, maxlag, addconst=True, verbose=True):
     http://en.wikipedia.org/wiki/Granger_causality
     Greene: Econometric Analysis
     """
-    if verbose:
+    if verbose:  # pragma: no cover
         raise NotImplementedError("Option `verbose` from upstream is "
                                   "not supported")
     x = np.asarray(x)
@@ -985,7 +988,7 @@ def coint(y0, y1, trend='c', method='aeg', maxlag=None, autolag='aic',
     """
 
     trend = trend.lower()
-    if trend not in ['c', 'nc', 'ct', 'ctt']:
+    if trend not in ['c', 'nc', 'ct', 'ctt']:  # pragma: no cover
         raise ValueError("trend option %s not understood" % trend)
     y0 = np.asarray(y0)
     y1 = np.asarray(y1)
@@ -1023,109 +1026,21 @@ def coint(y0, y1, trend='c', method='aeg', maxlag=None, autolag='aic',
 
 
 def _safe_arma_fit(y, order, model_kw, trend, fit_kw, start_params=None):
-    raise NotImplementedError('_safe_arma_fit not ported from upstream')
+    raise NotImplementedError("_safe_arma_fit not ported from "
+                              "upstream")  # pragma: no cover
 
 
 def arma_order_select_ic(y, max_ar=4, max_ma=2, ic='bic', trend='c',
-                         model_kw={}, fit_kw={}):
-    """
-    Returns information criteria for many ARMA models
-
-    Parameters
-    ----------
-    y : array-like
-        Time-series data
-    max_ar : int
-        Maximum number of AR lags to use. Default 4.
-    max_ma : int
-        Maximum number of MA lags to use. Default 2.
-    ic : str, list
-        Information criteria to report. Either a single string or a list
-        of different criteria is possible.
-    trend : str
-        The trend to use when fitting the ARMA models.
-    model_kw : dict
-        Keyword arguments to be passed to the ``ARMA`` model
-    fit_kw : dict
-        Keyword arguments to be passed to ``ARMA.fit``.
-
-    Returns
-    -------
-    obj : Results object
-        Each ic is an attribute with a DataFrame for the results. The AR order
-        used is the row index. The ma order used is the column index. The
-        minimum orders are available as ``ic_min_order``.
-
-    Examples
-    --------
-
-    >>> from sm2.tsa.arima_process import arma_generate_sample
-    >>> import sm2.api as sm
-    >>> import numpy as np
-
-    >>> arparams = np.array([.75, -.25])
-    >>> maparams = np.array([.65, .35])
-    >>> arparams = np.r_[1, -arparams]
-    >>> maparam = np.r_[1, maparams]
-    >>> nobs = 250
-    >>> np.random.seed(2014)
-    >>> y = arma_generate_sample(arparams, maparams, nobs)
-    >>> res = sm.tsa.arma_order_select_ic(y, ic=['aic', 'bic'], trend='nc')
-    >>> res.aic_min_order
-    >>> res.bic_min_order
-
-    Notes
-    -----
-    This method can be used to tentatively identify the order of an ARMA
-    process, provided that the time series is stationary and invertible. This
-    function computes the full exact MLE estimate of each model and can be,
-    therefore a little slow. An implementation using approximate estimates
-    will be provided in the future. In the meantime, consider passing
-    {method : 'css'} to fit_kw.
-    """
-    ar_range = list(range(0, max_ar + 1))
-    ma_range = list(range(0, max_ma + 1))
-    if isinstance(ic, string_types):
-        ic = [ic]
-    elif not isinstance(ic, (list, tuple)):
-        raise ValueError("Need a list or a tuple for ic if not a string.")
-
-    results = np.zeros((len(ic), max_ar + 1, max_ma + 1))
-
-    for ar in ar_range:
-        for ma in ma_range:
-            if ar == 0 and ma == 0 and trend == 'nc':
-                results[:, ar, ma] = np.nan
-                continue
-
-            mod = _safe_arma_fit(y, (ar, ma), model_kw, trend, fit_kw)
-            if mod is None:
-                results[:, ar, ma] = np.nan
-                continue
-
-            for i, criteria in enumerate(ic):
-                results[i, ar, ma] = getattr(mod, criteria)
-
-    dfs = [pd.DataFrame(res, columns=ma_range, index=ar_range)
-           for res in results]
-
-    res = dict(zip(ic, dfs))
-
-    # add the minimums to the results dict
-    min_res = {}
-    for i, result in res.items():
-        mins = np.where(result.min().min() == result)
-        min_res.update({i + '_min_order': (mins[0][0], mins[1][0])})
-    res.update(min_res)
-
-    return Bunch(**res)
+                         model_kw={}, fit_kw={}):  # pragma: no cover
+    raise NotImplementedError("arma_order_select_ic not ported from upstream, "
+                              "as it is only used in tests")
 
 
 def has_missing(data):
     """
     Returns True if 'data' contains missing entries, otherwise False
     """
-    return np.isnan(np.sum(data))
+    return np.isnan(np.sum(data))  # TODO: Don't do it like this...
 
 
 def kpss(x, regression='c', lags=None, store=False):

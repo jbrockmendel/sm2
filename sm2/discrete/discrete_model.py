@@ -2123,8 +2123,8 @@ class MNLogit(MultinomialModel):
         Notes
         -----
         In the multinomial logit model.
-        .. math:: \frac{\exp\left(\beta_{j}^{\prime}x_{i}\right)}{\sum_{k=0}^{J}\exp\left(\beta_{k}^{\prime}x_{i}\right)}
-        """
+        .. math:: \frac{\exp(\beta_{j}^{\prime}x_{i})}{\sum_{k=0}^{J}\exp(\beta_{k}^{\prime}x_{i})}
+        """  # noqa:E501
         eXB = np.column_stack((np.ones(len(X)), np.exp(X)))
         return eXB / eXB.sum(1)[:, None]
 
@@ -2146,7 +2146,7 @@ class MNLogit(MultinomialModel):
         Notes
         ------
         .. math:: \ln L
-            =\sum_{i=1}^{n}\sum_{j=0}^{J}d_{ij}\ln\left(\frac{\exp\left(\beta_{j}^{\prime}x_{i}\right)}{\sum_{k=0}^{J}\exp\left(\beta_{k}^{\prime}x_{i}\right)}\right)
+            =\sum_{i=1}^{n}\sum_{j=0}^{J}d_{ij}\ln\left(\frac{\exp(\beta_{j}^{\prime}x_{i})}{\sum_{k=0}^{J}\exp(\beta_{k}^{\prime}x_{i})}\right)
 
         where :math:`d_{ij}=1` if individual `i` chose alternative `j` and 0
         if not.
@@ -2251,7 +2251,7 @@ class MNLogit(MultinomialModel):
         Notes
         -----
         .. math:: \frac{\partial\ln L_{i}}{\partial\beta_{j}}
-            =\left(d_{ij}-\frac{\exp\left(\beta_{j}^{\prime}x_{i}\right)}{\sum_{k=0}^{J}\exp\left(\beta_{k}^{\prime}x_{i}\right)}\right)x_{i}
+            =\left(d_{ij}-\frac{\exp(\beta_{j}^{\prime}x_{i})}{\sum_{k=0}^{J}\exp(\beta_{k}^{\prime}x_{i})}\right)x_{i}
 
         for :math:`j=1, ..., J`, for observations :math:`i=1, ..., n`
 
@@ -2263,7 +2263,8 @@ class MNLogit(MultinomialModel):
         Xb = np.dot(self.exog, params)
         firstterm = self.wendog[:, 1:] - self.cdf(Xb)[:, 1:]
         # NOTE: might need to switch terms if params is reshaped
-        return (firstterm[:, :, None] * self.exog[:, None, :]).reshape(self.nobs, -1)
+        return (firstterm[:, :, None] *
+                self.exog[:, None, :]).reshape(self.nobs, -1)
 
     def hessian(self, params):
         r"""
@@ -2516,7 +2517,9 @@ class NegativeBinomial(CountModel):
             dalpha = dalphas.sum()
         else:
             # nb2
-            #prob = a1 / (a1 + mu)
+            # in this case:
+            #   a1 = 1 / alpha
+            #   prob = a1 / (a1 + mu)
             dparams = exog * a1 * (y - mu) / (mu + a1)
             da1 = -alpha**-2
             dalpha = (dgpart + np.log(prob) - (y - mu) / (a1 + mu)).sum() * da1
@@ -2686,9 +2689,9 @@ class NegativeBinomial(CountModel):
         if df_resid is None:
             df_resid = resid.shape[0]
         if self.loglike_method == 'nb2':
-            #params.append(np.linalg.pinv(mu[:, None]).dot(resid**2 / mu - 1))
             a = ((resid**2 / mu - 1) / mu).sum() / df_resid
-        else:  # i.e. self.loglike_method == 'nb1':
+        else:
+            # i.e. self.loglike_method == 'nb1':
             a = (resid**2 / mu - 1).sum() / df_resid
         return a
 
@@ -3113,7 +3116,7 @@ class NegativeBinomialP(CountModel):
 
         if callback is None:
             # work around perfect separation callback GH#3895
-            callback = lambda *x: x
+            callback = lambda *x: x  # noqa: E731
 
         # TODO: can we skip CountModel and go straight to DiscreteModel?
         mlefit = CountModel.fit(self, start_params=start_params,

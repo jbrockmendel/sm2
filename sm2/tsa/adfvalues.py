@@ -405,7 +405,7 @@ def mackinnoncrit(N=1, regression="c", nobs=np.inf):
         http://ideas.repec.org/p/qed/wpaper/1227.html
     """
     reg = regression
-    if reg not in ['c', 'ct', 'nc', 'ctt']:
+    if reg not in ['c', 'ct', 'nc', 'ctt']:  # pragma: no cover
         raise ValueError("regression keyword %s not understood" % reg)
     if nobs is np.inf:
         return tau_regs[reg][N - 1, :, 0]

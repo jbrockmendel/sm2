@@ -24,39 +24,9 @@ def _make_dictnames(tmp_arr, offset=0):
     return col_map
 
 
-def drop_missing(Y, X=None, axis=1):
-    """
-    Returns views on the arrays Y and X where missing observations are dropped.
-
-    Y : array-like
-    X : array-like, optional
-    axis : int
-        Axis along which to look for missing observations.  Default is 1, ie.,
-        observations in rows.
-
-    Returns
-    -------
-    Y : array
-        All Y where the
-    X : array
-
-    Notes
-    -----
-    If either Y or X is 1d, it is reshaped to be 2d.
-    """
-    Y = np.asarray(Y)
-    if Y.ndim == 1:
-        Y = Y[:, None]
-    if X is not None:
-        X = np.array(X)
-        if X.ndim == 1:
-            X = X[:, None]
-        keepidx = np.logical_and(~np.isnan(Y).any(axis),
-                                 ~np.isnan(X).any(axis))
-        return Y[keepidx], X[keepidx]
-    else:
-        keepidx = ~np.isnan(Y).any(axis)
-        return Y[keepidx]
+def drop_missing(Y, X=None, axis=1):  # pragma: no cover
+    raise NotImplementedError("drop_missing not ported from upstream, "
+                              "as it is neither used nor tested there.")
 
 
 # TODO: needs to better preserve dtype and be more flexible
@@ -139,14 +109,14 @@ def categorical(data, col=None, dictnames=False, drop=False, ):
     >>> design2 = sm.tools.categorical(struct_ar, col='str_instr', drop=True)
     """
     if isinstance(col, (list, tuple)):
-        if len(col) != 1:
+        if len(col) != 1:  # pragma: no cover
             raise ValueError("Can only convert one column at a time")
         col = col[0]
 
     # TODO: add a NameValidator function
     # catch recarrays and structured arrays
     if data.dtype.names or data.__class__ is np.recarray:
-        if not col and np.squeeze(data).ndim > 1:
+        if not col and np.squeeze(data).ndim > 1:  # pragma: no cover
             raise IndexError("col is None and the input array is not 1d")
         if isinstance(col, integer_types):
             col = data.dtype.names[col]
@@ -164,7 +134,7 @@ def categorical(data, col=None, dictnames=False, drop=False, ):
         if _swap:
             tmp_dummy = np.squeeze(tmp_dummy).swapaxes(1, 0)
 
-        if not tmp_arr.dtype.names:  # how do we get to this code path?
+        if not tmp_arr.dtype.names:  # TODO: how do we get to this code path?
             tmp_arr = [asstr2(item) for item in np.squeeze(tmp_arr)]
         elif tmp_arr.dtype.names:
             tmp_arr = [asstr2(item) for item in np.squeeze(tmp_arr.tolist())]
@@ -200,7 +170,7 @@ def categorical(data, col=None, dictnames=False, drop=False, ):
     # handle ndarrays and catch array-like for an error
     elif data.__class__ is np.ndarray or not isinstance(data, np.ndarray):
         # TODO: Do we not allow subclasses of ndarray?  why not just isinstance?
-        if not isinstance(data, np.ndarray):
+        if not isinstance(data, np.ndarray):  # pragma: no cover
             # TODO: WTF isnt the error message the exact opposite of correct?
             raise NotImplementedError("Array-like objects are not supported")
 
@@ -232,7 +202,7 @@ def categorical(data, col=None, dictnames=False, drop=False, ):
                     col_map = _make_dictnames(tmp_arr, offset=1)
                     return data, col_map
                 return data
-        else:
+        else:  # pragma: no cover
             raise IndexError("The index %s is not understood" % col)
 
 
@@ -275,7 +245,7 @@ def add_constant(data, prepend=True, has_constant='skip'):
     x = np.asanyarray(data)
     if x.ndim == 1:
         x = x[:, None]
-    elif x.ndim > 2:
+    elif x.ndim > 2:  # pragma: no cover
         raise ValueError('Only implementd 2-dimensional arrays')
 
     is_nonzero_const = np.ptp(x, axis=0) == 0
@@ -373,7 +343,7 @@ def recipr(x):
     return out
 
 
-def recipr0(x):
+def recipr0(x):  # pragma: no cover
     raise NotImplementedError("recipr0 not ported from upstream, "
                               "as it is unused and barely-tested.")
 
@@ -408,7 +378,7 @@ def fullrank(X, r=None):
     return np.asarray(np.transpose(value)).astype(np.float64)
 
 
-def unsqueeze(data, axis, oldshape):
+def unsqueeze(data, axis, oldshape):  # pragma: no cover
     raise NotImplementedError("unsqueeze not ported from upstream")
 
 
@@ -481,6 +451,6 @@ class Bunch(dict):
         self.__dict__ = self
 
 
-def _ensure_2d(x, ndarray=False):
+def _ensure_2d(x, ndarray=False):  # pragma: no cover
     raise NotImplementedError("_ensure_2d not ported from upstream as it "
                               "is only used in one sandbox module.")

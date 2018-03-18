@@ -11,7 +11,7 @@ from pandas.util._decorators import Substitution
 
 
 def _check_method(method, methods):
-    if method not in methods:
+    if method not in methods:  # pragma: no cover
         raise ValueError("Unknown fit method %s" % method)
 
 
@@ -247,14 +247,16 @@ class Optimizer(object):
         model_instance.add_constraint("x1 + x2 = 2")
         result = model_instance.fit()
         """
-        pass
+        raise NotImplementedError
+        # TODO: upstream just passes, fix it there too
 
     def _fit_regularized(self, params):
         # TODO: code won't necessarily be general here. 3 options.
         # 1) setup for scipy.optimize.fmin_sqlsqp
         # 2) setup for cvxopt
         # 3) setup for openopt
-        pass
+        raise NotImplementedError
+        # TODO: upstream just passes, fix it there too
 
 # --------------------------------------------------------------------
 # Helper functions to fit
@@ -292,7 +294,7 @@ def _fit_minimize(f, score, start_params, fargs, kwargs, disp=True,
                    'fcalls': res.nfev, 'warnflag': res.status,
                    'converged': res.success}
         if retall:
-            retvals.update({'allvecs': res.values()})
+            retvals['allvecs'] = res.values()
 
     return xopt, retvals
 
@@ -310,7 +312,7 @@ def _fit_newton(f, score, start_params, fargs, kwargs, disp=True,
            np.any(np.abs(newparams - oldparams) > tol)):
         H = np.asarray(hess(newparams))
         # regularize Hessian, not clear what ridge factor should be
-        # keyword option with absolute default 1e-10, see #1847
+        # keyword option with absolute default 1e-10, see GH#1847
         if not np.all(ridge_factor == 0):
             H[np.diag_indices(H.shape[0])] += ridge_factor
         oldparams = newparams
@@ -323,7 +325,7 @@ def _fit_newton(f, score, start_params, fargs, kwargs, disp=True,
     fval = f(newparams, *fargs)  # this is the negative likelihood
     if iterations == maxiter:
         warnflag = 1
-        if disp:
+        if disp:  # TODO: not hit in tests.  remove?
             print("Warning: Maximum number of iterations has been "
                   "exceeded.")
             print("         Current function value: %f" % fval)
@@ -344,7 +346,7 @@ def _fit_newton(f, score, start_params, fargs, kwargs, disp=True,
                    'Hessian': hopt, 'warnflag': warnflag,
                    'converged': converged}
         if retall:
-            retvals.update({'allvecs': history})
+            retvals['allvecs'] = history
 
     else:
         xopt = newparams
@@ -367,14 +369,14 @@ def _fit_bfgs(f, score, start_params, fargs, kwargs, disp=True,
         if not retall:
             xopt, fopt, gopt, Hinv, fcalls, gcalls, warnflag = retvals
         else:
-            (xopt, fopt, gopt, Hinv, fcalls,
-             gcalls, warnflag, allvecs) = retvals
+            allvecs = retvals[-1]
+            xopt, fopt, gopt, Hinv, fcalls, gcalls, warnflag = retvals[:7]
         converged = not warnflag
         retvals = {'fopt': fopt, 'gopt': gopt, 'Hinv': Hinv,
                    'fcalls': fcalls, 'gcalls': gcalls,
                    'warnflag': warnflag, 'converged': converged}
         if retall:
-            retvals.update({'allvecs': allvecs})
+            retvals['allvecs'] = allvecs
     else:
         xopt = retvals
         retvals = None
@@ -427,10 +429,10 @@ def _fit_lbfgs(f, score, start_params, fargs, kwargs, disp=True,
     # The second option is to use the provided score function.
     # The third option is to use the score component of a provided
     # function that simultaneously evaluates the log likelihood and score.
-    if epsilon and not approx_grad:
+    if epsilon and not approx_grad:  # pragma: no cover
         raise ValueError('a finite-differences epsilon was provided '
                          'even though we are not using approx_grad')
-    if approx_grad and loglike_and_score:
+    if approx_grad and loglike_and_score:  # pragma: no cover
         raise ValueError('gradient approximation was requested '
                          'even though an analytic loglike_and_score function '
                          'was given')
@@ -490,7 +492,7 @@ def _fit_nm(f, score, start_params, fargs, kwargs, disp=True,
                    'fcalls': fcalls, 'warnflag': warnflag,
                    'converged': converged}
         if retall:
-            retvals.update({'allvecs': allvecs})
+            retvals['allvecs'] = allvecs
     else:
         xopt = retvals
         retvals = None
@@ -517,7 +519,7 @@ def _fit_cg(f, score, start_params, fargs, kwargs, disp=True,
         retvals = {'fopt': fopt, 'fcalls': fcalls, 'gcalls': gcalls,
                    'warnflag': warnflag, 'converged': converged}
         if retall:
-            retvals.update({'allvecs': allvecs})
+            retvals['allvecs'] = allvecs
 
     else:
         xopt = retvals
@@ -547,7 +549,7 @@ def _fit_ncg(f, score, start_params, fargs, kwargs, disp=True,
                    'hcalls': hcalls, 'warnflag': warnflag,
                    'converged': converged}
         if retall:
-            retvals.update({'allvecs': allvecs})
+            retvals['allvecs'] = allvecs
     else:
         xopt = retvals
         retvals = None
@@ -577,7 +579,7 @@ def _fit_powell(f, score, start_params, fargs, kwargs, disp=True,
                    'fcalls': fcalls, 'warnflag': warnflag,
                    'converged': converged}
         if retall:
-            retvals.update({'allvecs': allvecs})
+            retvals['allvecs'] = allvecs
     else:
         xopt = retvals
         retvals = None
@@ -588,7 +590,8 @@ def _fit_powell(f, score, start_params, fargs, kwargs, disp=True,
 def _fit_basinhopping(f, score, start_params, fargs, kwargs, disp=True,
                       maxiter=100, callback=None, retall=False,
                       full_output=True, hess=None):
-    if 'basinhopping' not in vars(optimize):
+    if 'basinhopping' not in vars(optimize):  # pragma: no cover
+        # TODO: I think this is irrelevant for supported versions of scipy
         raise ValueError('basinhopping solver is not available, use '
                          'e.g. bfgs instead!')
 

@@ -32,7 +32,7 @@ def sumofsq(x, axis=0):
 
 
 def _check_ar_start(start, k_ar, method, dynamic):
-    if (method == 'cmle' or dynamic) and start < k_ar:
+    if (method == 'cmle' or dynamic) and start < k_ar:  # pragma: no cover
         raise ValueError("Start must be >= k_ar for conditional MLE "
                          "or dynamic forecast. Got %d" % start)
 
@@ -71,7 +71,7 @@ class AR(tsa_model.TimeSeriesModel):
         if endog.ndim == 1:
             endog = endog[:, None]
             self.endog = endog  # to get shapes right
-        elif endog.ndim > 1 and endog.shape[1] != 1:
+        elif endog.ndim > 1 and endog.shape[1] != 1:  # pragma: no cover
             raise ValueError("Only the univariate case is implemented")
 
     def initialize(self):
@@ -152,7 +152,7 @@ class AR(tsa_model.TimeSeriesModel):
             super(AR, self)._get_prediction_index(start, end, index))
 
         # This replaces the _validate() call
-        if 'mle' not in method and start < k_ar:
+        if 'mle' not in method and start < k_ar:  # pragma: no cover
             raise ValueError("Start must be >= k_ar for conditional MLE or "
                              "dynamic forecast. Got %s" % start)
         # Other validation
@@ -197,7 +197,7 @@ class AR(tsa_model.TimeSeriesModel):
         start, end, out_of_sample, _ = (
             self._get_prediction_index(start, end, dynamic))
 
-        if start - end > 1:
+        if start - end > 1:  # pragma: no cover
             raise ValueError("end is before start")
 
         k_ar = self.k_ar
@@ -528,7 +528,7 @@ class AR(tsa_model.TimeSeriesModel):
         sm2.base.model.LikelihoodModel.fit
         """
         method = method.lower()
-        if method not in ['cmle', 'yw', 'mle']:
+        if method not in ['cmle', 'yw', 'mle']:  # pragma: no cover
             raise ValueError("Method %s not recognized" % method)
 
         self.method = method
@@ -544,7 +544,7 @@ class AR(tsa_model.TimeSeriesModel):
         # select lag length
         if ic is not None:
             ic = ic.lower()
-            if ic not in ['aic', 'bic', 'hqic', 't-stat']:
+            if ic not in ['aic', 'bic', 'hqic', 't-stat']:  # pragma: no cover
                 raise ValueError("ic option %s not understood" % ic)
             k_ar = self.select_order(k_ar, ic, trend, method)
 
@@ -572,7 +572,7 @@ class AR(tsa_model.TimeSeriesModel):
             if start_params is None:
                 start_params = OLS(Y, X).fit().params
             else:
-                if len(start_params) != k_trend + k_ar:
+                if len(start_params) != k_trend + k_ar:  # pragma: no cover
                     raise ValueError("Length of start params is %d. There"
                                      " are %d parameters." %
                                      (len(start_params), k_trend + k_ar))

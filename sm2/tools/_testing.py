@@ -6,11 +6,9 @@ Warning: these functions will be changed without warning as the need
 during refactoring arises.
 
 The first group of functions provide consistency checks
-
 """
 import numpy as np
 from numpy.testing import assert_allclose
-import pytest
 
 # the following are copied from
 # sm2.base.tests.test_generic_methods.CheckGenericMixin
@@ -75,62 +73,11 @@ def check_ftest_pvalues(results):
     '''
 
 
-# TODO The following is not (yet) guaranteed across models
-# @knownfailureif(True)
 def check_fitted(results):
-    # ignore wrapper for isinstance check
-    from sm2.discrete.discrete_model import DiscreteResults
-    # FIXME: work around GEE has no wrapper
-    if hasattr(results, '_results'):
-        results = results._results
-    else:
-        results = results
-    if (isinstance(results, DiscreteResults) or
-            results.__class__.__name__ == 'GLMResults'):
-        # __name__ check is a kludge to avoid needing an import from upstream
-        raise pytest.skip()
-
-    res = results
-    fitted = res.fittedvalues
-    assert_allclose(res.model.endog - fitted, res.resid, rtol=1e-12)
-    assert_allclose(fitted, res.predict(), rtol=1e-12)
+    raise NotImplementedError("check_fitted not ported from upstream, "
+                              "as it is not used (or tested) there")
 
 
-def check_predict_types(results):
-    res = results
-    # squeeze to make 1d for single regressor test case
-    p_exog = np.squeeze(np.asarray(res.model.exog[:2]))
-
-    # ignore wrapper for isinstance check
-    from sm2.discrete.discrete_model import DiscreteResults
-
-    # FIXME: work around GEE has no wrapper
-    if hasattr(results, '_results'):
-        results = results._results
-    else:
-        results = results
-
-    if (isinstance(results, DiscreteResults) or
-            results.__class__.__name__ == 'GLMResults'):
-        # __name__ check is a kludge to avoid needing an import from upstream
-        # SMOKE test only  TODO
-        res.predict(p_exog)
-        res.predict(p_exog.tolist())
-        res.predict(p_exog[0].tolist())
-    else:
-        fitted = res.fittedvalues[:2]
-        assert_allclose(fitted, res.predict(p_exog), rtol=1e-12)
-        # this needs reshape to column-vector:
-        assert_allclose(fitted, res.predict(np.squeeze(p_exog).tolist()),
-                        rtol=1e-12)
-        # only one prediction:
-        assert_allclose(fitted[:1], res.predict(p_exog[0].tolist()),
-                        rtol=1e-12)
-        assert_allclose(fitted[:1], res.predict(p_exog[0]),
-                        rtol=1e-12)
-
-        # predict doesn't preserve DataFrame, e.g. dot converts to ndarray
-        # import pandas
-        # predicted = res.predict(pandas.DataFrame(p_exog))
-        # assert isinstance(predicted, pandas.DataFrame)
-        # assert_allclose(predicted, fitted, rtol=1e-12)
+def check_predict_types(results):  # pragma: no cover
+    raise NotImplementedError("check_predict_types not ported from upstream, "
+                              "as it is not used (or tested) there")

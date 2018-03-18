@@ -234,7 +234,7 @@ class TestDiagnosticG(object):
     def test_acorr_breusch_godfrey(self):
         res = self.res
 
-        #bgf = bgtest(fm, order=4, type="F")
+        #> bgf = bgtest(fm, order=4, type="F")
         breuschgodfrey_f = dict(statistic=1.179280833676792,
                                 pvalue=0.321197487261203,
                                 parameters=(4, 195,), distr='f')
@@ -470,7 +470,8 @@ class TestDiagnosticG(object):
         # R library(strucchange)
         # > sc = sctest(ginv ~ ggdp + lint, type="OLS-CUSUM")
         # > mkhtest(sc, 'cusum_ols', 'BB')
-        cusum_ols = dict(statistic=1.055750610401214, pvalue=0.2149567397376543,
+        cusum_ols = dict(statistic=1.055750610401214,
+                         pvalue=0.2149567397376543,
                          parameters=(), distr='BB')  # Brownian Bridge
 
         k_vars = 3
@@ -603,8 +604,10 @@ class TestDiagnosticG(object):
 
         ad1 = diagnostic.normal_ad(res.resid)
         compare_t_est(ad1, adr1, decimal=(11, 13))
+
         ad2 = diagnostic.normal_ad(res.resid**2)
         assert np.isinf(ad2[0])
+
         ad3 = diagnostic.normal_ad(res.resid[:20])
         compare_t_est(ad3, adr3, decimal=(11, 12))
 
@@ -650,9 +653,9 @@ class TestDiagnosticG(object):
         fn = os.path.join(cur_dir, "results", "influence_measures_R.csv")
         infl_r = pd.read_csv(fn, index_col=0)
         # not used yet:
-        #fn = os.path.join(cur_dir, "results", "influence_measures_bool_R.csv")
-        #conv = lambda s: 1 if s == 'TRUE' else 0
-        #converters = dict(zip(lrange(7), [conv] * 7))
+        # fn = os.path.join(cur_dir, "results", "influence_measures_bool_R.csv")
+        # conv = lambda s: 1 if s == 'TRUE' else 0
+        # converters = dict(zip(lrange(7), [conv] * 7))
         #infl_bool_r  = pd.read_csv(fn, index_col=0, converters=converters)
         infl_r2 = np.asarray(infl_r)
         assert_almost_equal(infl.dfbetas, infl_r2[:, :3], decimal=13)
@@ -779,8 +782,8 @@ def test_influence_wrapped():
     fn = os.path.join(cur_dir, "results", "influence_measures_R.csv")
     infl_r = pd.read_csv(fn, index_col=0)
     # not used yet:
-    #fn = os.path.join(cur_dir, "results", "influence_measures_bool_R.csv")
-    #conv = lambda s: 1 if s == 'TRUE' else 0
+    # fn = os.path.join(cur_dir, "results", "influence_measures_bool_R.csv")
+    # conv = lambda s: 1 if s == 'TRUE' else 0
     #infl_bool_r  = pd.read_csv(fn, index_col=0,
     #                           converters=dict(zip(lrange(7), [conv]*7)))
     infl_r2 = np.asarray(infl_r)
