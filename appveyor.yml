@@ -4,12 +4,16 @@ environment:
     - PYTHON_VERSION: 27
     - PYTHON_VERSION: 35
     - PYTHON_VERSION: 36
+
+# follow pandas convention by only testing x64.  See comments in pandas'
+# appveyor.yml file for how to run on x86
 platform:
   - x64
-  - x86
 
 install:
-  - python -m pip install -U tox
+  - pip install pytest
+  - pip install -r requirements.txt
+  - python setup.py build_ext --inplace
 
 test_script:
-  - tox
+  - pytest sm2
