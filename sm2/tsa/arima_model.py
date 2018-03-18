@@ -252,7 +252,7 @@ def cumsum_n(x, n):
 
 
 def _check_arima_start(start, k_ar, k_diff, method, dynamic):
-    if start < 0:
+    if start < 0:  # pragma: no cover
         raise ValueError("The start index %d of the original series "
                          "has been differenced away" % start)
     elif (dynamic or 'mle' not in method) and start < k_ar:
@@ -562,7 +562,7 @@ class ARMA(tsa_model.TimeSeriesModel):
             raise ValueError("The computed initial MA coefficients are not "
                              "invertible\nYou should induce invertibility, "
                              "choose a different model order, or you can\n"
-                             "pass your own start_params.")
+                             "pass your own start_params.")  # pragma: no cover
 
         # check MA coefficients
         return start_params
@@ -734,7 +734,8 @@ class ARMA(tsa_model.TimeSeriesModel):
         start, end, out_of_sample, _ = (
             self._get_prediction_index(start, end, dynamic))
 
-        if out_of_sample and (exog is None and self.k_exog > 0):
+        if out_of_sample and (exog is None and
+                              self.k_exog > 0):  # pragma: no cover
             raise ValueError("You must provide exog for ARMAX")
 
         endog = self.endog
@@ -792,7 +793,7 @@ class ARMA(tsa_model.TimeSeriesModel):
             return self.loglike_kalman(params, set_sigma2)
         elif method == 'css':
             return self.loglike_css(params, set_sigma2)
-        else:
+        else:  # pragma: no cover
             raise ValueError("Method %s not understood" % method)
 
     def loglike_kalman(self, params, set_sigma2=True):
@@ -1079,7 +1080,7 @@ class ARIMA(ARMA):
             end -= k_ar
 
         # This replaces the _validate() call
-        if 'mle' not in method and start < k_ar - k_diff:
+        if 'mle' not in method and start < k_ar - k_diff:  # pragma: no cover
             raise ValueError("Start must be >= k_ar for conditional "
                              "MLE or dynamic forecast. Got %s" % start)
         # Other validation
@@ -1569,7 +1570,7 @@ class ARMAResults(tsa_model.TimeSeriesModelResults):
                 if len(exog) != self.k_exog:
                     raise ValueError("1d exog given and len(exog) != k_exog")
                 exog = exog[None, :]
-            if exog.shape[0] != steps:
+            if exog.shape[0] != steps:  # pragma: no cover
                 raise ValueError("new exog needed for each step")
             # prepend in-sample exog observations
             if self.k_ar > 0:

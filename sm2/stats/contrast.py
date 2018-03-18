@@ -91,7 +91,8 @@ class ContrastResults(object):
             lower = self.effect - q * self.sd
             upper = self.effect + q * self.sd
             return np.column_stack((lower, upper))
-        else:
+        else:  # pragma: no cover
+            # TODO: Should this be a ValueError?
             raise NotImplementedError('Confidence Interval not available')
 
     def __array__(self):
@@ -178,7 +179,8 @@ class ContrastResults(object):
                                         yname=yname, xname=xname,
                                         use_t=use_t, alpha=alpha)
             return summ
-        else:
+        else:  # pragma: no cover
+            # TODO: Should this be a ValueError?
             # TODO: create something nicer
             raise NotImplementedError('only available for t and z')
 
@@ -281,6 +283,8 @@ class Contrast(object):
         self._contrast_matrix = contrastfromcols(self.T, self.D)
         try:
             self.rank = self.matrix.shape[1]
+            # FIXME: there is no `matrix` attribute!
+            #        this is always just catching an AttributeError?
         except:
             self.rank = 1
 
@@ -321,7 +325,7 @@ def contrastfromcols(L, D, pseudo=None):
 
     n, p = D.shape
 
-    if L.shape[0] != n and L.shape[1] != p:
+    if L.shape[0] != n and L.shape[1] != p:  # pragma: no cover
         raise ValueError("shape of L and D mismatched")
 
     if pseudo is None:

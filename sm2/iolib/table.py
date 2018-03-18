@@ -90,7 +90,9 @@ from itertools import cycle
 import csv
 
 
-def csv2st(csvfile, headers=False, stubs=False, title=None):
+def csv2st(csvfile, headers=False, stubs=False, title=None):  # pragma: no cover
+    raise NotImplementedError("csv2st not ported from upstream, "
+                              "as it is neither used nor tested there.")
     """Return SimpleTable instance,
     created from the data in `csvfile`,
     which is in comma separated values format.
@@ -298,9 +300,10 @@ class SimpleTable(list):
 
         return rows
 
-    def pad(self, s, width, align):
-        """DEPRECATED: just use the pad function"""
-        return pad(s, width, align)
+    def pad(self, s, width, align):  # pragma: no cover
+        raise NotImplementedError("pad not ported from upstream, "
+                                  "as its docstring says it is deprecated, "
+                                  "and it is neither used nor tested there.")
 
     def _get_colwidths(self, output_format, **fmt_dict):
         """Return list, the calculated widths of each column."""

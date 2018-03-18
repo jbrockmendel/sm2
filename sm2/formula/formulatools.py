@@ -48,7 +48,7 @@ def handle_formula_data(Y, X, formula, depth=0, missing='drop'):
     exog : array-like
         Should preserve the input type of Y,X. Could be None.
     """
-    # half ass attempt to handle other formula objects
+    # half-assed attempt to handle other formula objects
     if isinstance(formula, tuple(iterkeys(formula_handler))):
         return formula_handler[type(formula)]
 

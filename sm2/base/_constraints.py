@@ -120,42 +120,11 @@ class TransformRestriction(object):
         return params.dot(self.transf_mat)
 
 
-def transform_params_constraint(params, Sinv, R, q):
-    """find the parameters that statisfy linear constraint from unconstraint
-
-    The linear constraint R params = q is imposed.
-
-    Parameters
-    ----------
-    params : array_like
-        unconstraint parameters
-    Sinv : ndarray, 2d, symmetric
-        covariance matrix of the parameter estimate
-    R : ndarray, 2d
-        constraint matrix
-    q : ndarray, 1d
-        values of the constraint
-
-    Returns
-    -------
-    params_constraint : ndarray
-        parameters of the same length as params satisfying the constraint
-
-    Notes
-    -----
-    This is the exact formula for OLS and other linear models. It will be
-    a local approximation for nonlinear models.
-
-    TODO: Is Sinv always the covariance matrix?
-    In the linear case it can be (X'X)^{-1} or sigmahat^2 (X'X)^{-1}.
-
-    My guess is that this is the point in the subspace that satisfies
-    the constraint that has minimum Mahalanobis distance. Proof ?
-    """
-    rsr = R.dot(Sinv).dot(R.T)
-
-    reduction = Sinv.dot(R.T).dot(np.linalg.solve(rsr, R.dot(params) - q))
-    return params - reduction
+def transform_params_constraint(params, Sinv, R, q):  # pragma: no cover
+    raise NotImplementedError("transform_params_constraint not ported from "
+                              "upstream, as it is only used in one examples "
+                              "file (examples/try_fit_constrained.py), "
+                              "and never tested.")
 
 
 def fit_constrained(model, constraint_matrix, constraint_values,
@@ -249,6 +218,8 @@ def fit_constrained(model, constraint_matrix, constraint_values,
     return params_orig, cov_params, res_constr
 
 
+# TODO: not hit in tests; upstream it is _only_ used in test_constrained,
+#       and _once_ at that.
 def fit_constrained_wrap(model, constraints, start_params=None, **fit_kwds):
     """fit_constraint that returns a results instance
 

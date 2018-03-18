@@ -78,7 +78,7 @@ for name in ['Group', 'Grouping', 'GroupSorted',
              'group_sums', 'group_sums_dummy', 'dummy_sparse',
              '_is_hierarchical', '_make_hierarchical_index',
              '_make_generic_names']:
-    def func(*args, **kwargs):
+    def func(*args, **kwargs):  # pragma: no cover
         """placeholder for function not ported from upstream"""
         raise NotImplementedError("{name} not ported from upstream"
                                   .format(name=name))

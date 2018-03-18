@@ -183,7 +183,8 @@ def get_lilliefors_table(dist='norm'):
         alpha_large = alpha[:-1]
         size_large = np.concatenate([size, higher_sizes])
         crit_lf_large = np.vstack([crit_lf[:-4, :-1], higher_crit_lf])
-        # TODO: Should something be done with crit_lf_large?
+        # TODO: Should something be done with alpha_large,
+        #       size_large, crit_lf_large?
 
     elif dist == 'exp':
         alpha = np.array([0.2, 0.15, 0.1, 0.05, 0.01])[::-1]
@@ -225,8 +226,8 @@ def get_lilliefors_table(dist='norm'):
 
         size = np.concatenate([size, higher_sizes])
         crit_lf = np.vstack([crit_lf, higher_crit_lf])
-    else:
-        raise ValueError("Invalid dist parameter. dist must be 'norm' or 'exp'")
+    else:  # pragma: no cover
+        raise ValueError("Invalid `dist` parameter, must be 'norm' or 'exp'")
 
     lf = TableDist(alpha, size, crit_lf)
     return lf
@@ -263,7 +264,6 @@ def pval_lf(Dmax, n):
     References
     ----------
     DallalWilkinson1986
-
     """
     # TODO: check boundaries, valid range for n and Dmax
     if n > 100:
@@ -334,9 +334,8 @@ def kstest_fit(x, dist='norm', pvalmethod='approx'):
         test_d = stats.expon.cdf
         lilliefors_table = lilliefors_table_expon
         pvalmethod = 'table'
-    else:
-        raise ValueError("Invalid dist parameter. dist must be "
-                         "'norm' or 'exp'")
+    else:  # pragma: no cover
+        raise ValueError("Invalid `dist` parameter, must be 'norm' or 'exp'")
 
     d_ks = ksstat(z, test_d, alternative='two_sided')
 
@@ -391,11 +390,11 @@ class TableDist(object):
         return polyn
 
     @property
-    def poly2d(self):
+    def poly2d(self):  # pragma: no cover
         raise NotImplementedError("Not ported from upstream")
 
     @property
-    def polyrbf(self):
+    def polyrbf(self):  # pragma: no cover
         raise NotImplementedError("Not ported from upstream")
 
     def _critvals(self, n):
@@ -475,13 +474,13 @@ class TableDist(object):
             probs[cond_interior] = interp1d(critv, alpha)(x[cond_interior])
             return probs
 
-    def crit2(self, prob, n):
+    def crit2(self, prob, n):  # pragma: no cover
         raise NotImplementedError("Not ported from upstream")
 
-    def crit(self, prob, n):
+    def crit(self, prob, n):  # pragma: no cover
         raise NotImplementedError("Not ported from upstream")
 
-    def crit3(self, prob, n):
+    def crit3(self, prob, n):  # pragma: no cover
         raise NotImplementedError("Not ported from upstream")
 
 

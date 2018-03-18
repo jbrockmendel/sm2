@@ -522,7 +522,7 @@ class VAR(tsa_model.TimeSeriesModel):
     def __init__(self, endog, exog=None, dates=None, freq=None,
                  missing='none'):
         super(VAR, self).__init__(endog, exog, dates, freq, missing=missing)
-        if self.endog.ndim == 1:
+        if self.endog.ndim == 1:  # pragma: no cover
             raise ValueError("Only gave one variable to VAR")
         self.y = self.endog  # keep alias for now
         # TODO: get rid of this alias
@@ -622,8 +622,9 @@ class VAR(tsa_model.TimeSeriesModel):
         if ic is not None:
             selections = self.select_order(maxlags=maxlags)
             if not hasattr(selections, ic):
-                raise Exception("%s not recognized, must be among %s"
-                                % (ic, sorted(selections)))
+                # TODO: upstream this is Exception, fix to ValueError
+                raise ValueError("%s not recognized, must be among %s"
+                                 % (ic, sorted(selections)))
             lags = getattr(selections, ic)
             if verbose:
                 print(selections)
@@ -916,10 +917,10 @@ class VARProcess(object):
         """
         if self.exog is None and exog_future is not None:
             raise ValueError("No exog in model, so no exog_future supported "
-                             "in forecast method.")
+                             "in forecast method.")  # pragma: no cover
         if self.exog is not None and exog_future is None:
             raise ValueError("Please provide an exog_future argument to "
-                             "the forecast method.")
+                             "the forecast method.")  # pragma: no cover
         trend_coefs = None if self.coefs_exog.size == 0 else self.coefs_exog.T
 
         exogs = []
@@ -1577,7 +1578,7 @@ class VARResults(VARProcess):
     def reorder(self, order):
         """Reorder variables for structural specification
         """
-        if len(order) != len(self.params[0, :]):
+        if len(order) != len(self.params[0, :]):  # pragma: no cover
             raise ValueError("Reorder specification length should match "
                              "number of endogenous variables")
         # This converts order to list of integers if given as strings
@@ -1641,7 +1642,7 @@ class VARResults(VARProcess):
         .. [1] Lütkepohl, H. 2005.
                *New Introduction to Multiple Time Series Analysis*. Springer.
         """
-        if not (0 < signif < 1):
+        if not (0 < signif < 1):  # pragma: no cover
             raise ValueError("signif has to be between 0 and 1")
 
         allowed_types = (string_types, int)
@@ -1650,7 +1651,7 @@ class VARResults(VARProcess):
             caused = [caused]
         if not all(isinstance(c, allowed_types) for c in caused):
             raise TypeError("caused has to be of type string or int (or a "
-                            "sequence of these types).")
+                            "sequence of these types).")  # pragma: no cover
         caused = [self.names[c] if type(c) == int else c for c in caused]
         caused_ind = [util.get_index(self.names, c) for c in caused]
 
@@ -1658,8 +1659,9 @@ class VARResults(VARProcess):
             if isinstance(causing, allowed_types):
                 causing = [causing]
             if not all(isinstance(c, allowed_types) for c in causing):
-                raise TypeError("causing has to be of type string or int (or "
-                                "a sequence of these types) or None.")
+                raise TypeError("causing has to be of type string or int "
+                                "(or a sequence of these types) "
+                                "or None.")  # pragma: no cover
             causing = [self.names[c] if type(c) == int else c for c in causing]
             causing_ind = [util.get_index(self.names, c) for c in causing]
 
@@ -1698,7 +1700,8 @@ class VARResults(VARProcess):
             df = (num_restr, k * self.df_resid)
             dist = stats.f(*df)
         else:
-            raise Exception('kind %s not recognized' % kind)
+            # TODO: this is Exception upstream, fix to ValueError
+            raise ValueError('kind %s not recognized' % kind)
 
         pvalue = dist.sf(statistic)
         crit_value = dist.ppf(1 - signif)

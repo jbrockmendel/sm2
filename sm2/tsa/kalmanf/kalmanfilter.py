@@ -40,24 +40,24 @@ _not_ported = ("Not ported from upstream.  "
 
 
 def _init_diffuse(T, R):
-    raise NotImplementedError(_not_ported)
+    raise NotImplementedError(_not_ported)  # pragma: no cover
 
 
 def kalmansmooth(F, A, H, Q, R, y, X, xi10):
-    raise NotImplementedError(_not_ported)
+    raise NotImplementedError(_not_ported)  # pragma: no cover
 
 
 def kalmanfilter(F, A, H, Q, R, y, X, xi10, ntrain, history=False):
-    raise NotImplementedError(_not_ported.split(",")[0])
+    raise NotImplementedError(_not_ported.split(",")[0])  # pragma: no cover
 
 
 class StateSpaceModel(object):
     def __init__(self, endog, exog=None, **kwargs):
-        raise NotImplementedError(_not_ported)
+        raise NotImplementedError(_not_ported)  # pragma: no cover
 
 
 def updatematrices(params, y, xi10, ntrain, penalty, upperbound, lowerbound):
-    raise NotImplementedError(_not_ported)
+    raise NotImplementedError(_not_ported)  # pragma: no cover
 
 
 class KalmanFilter(object):
@@ -178,9 +178,10 @@ class KalmanFilter(object):
             return kalman_loglike.kalman_filter_complex(y, k, k_ar, k_ma,
                                                         k_lags, int(nobs),
                                                         Z_mat, R_mat, T_mat)[0]
-        else:
-            raise TypeError("dtype %s is not supported.  "
-                            "Please file a bug report" % paramsdtype)
+        else:  # pragma: no cover
+            # TODO: upstream this raises TypeError, should be fixed there
+            raise ValueError("dtype %s is not supported.  "
+                             "Please file a bug report" % paramsdtype)
 
     @classmethod
     def _init_kalman_state(cls, params, arma_model):
@@ -246,9 +247,10 @@ class KalmanFilter(object):
         elif np.issubdtype(paramsdtype, np.complex128):
             func = kalman_loglike.kalman_loglike_complex
             Z_mat = Z_mat.astype(complex)
-        else:
-            raise TypeError("This dtype %s is not supported.  "
-                            "Please file a bug report." % paramsdtype)
+        else:  # pragma: no cover
+            # TODO: upstream this raises TypeError, should be fixed there
+            raise ValueError("This dtype %s is not supported.  "
+                             "Please file a bug report." % paramsdtype)
 
         loglike, sigma2 = func(y, k, k_ar, k_ma, k_lags,
                                int(nobs), Z_mat, R_mat, T_mat)

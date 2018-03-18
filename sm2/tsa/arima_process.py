@@ -540,12 +540,12 @@ def lpol_fiar(d, n=20):
     return ar
 
 
-def lpol_sdiff(s):
+def lpol_sdiff(s):  # pragma: no cover
     raise NotImplementedError("lpol_sdiff not ported from upstream, as it is "
                               "neither used nor tested there.")
 
 
-def deconvolve(num, den, n=None):
+def deconvolve(num, den, n=None):  # pragma: no cover
     raise NotImplementedError("deconvolve not ported from upstream, as it is "
                               "neither used nor tested there.  Its docstring "
                               "says it is mostly-copied from "

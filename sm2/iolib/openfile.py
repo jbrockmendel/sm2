@@ -22,7 +22,7 @@ class EmptyContextManager(object):
         return False
 
     def __getattr__(self, name):
-        return getattr(self._obj, name)
+        return getattr(self._obj, name)  # TODO: not used; needed?
 
 
 if PY3:
@@ -67,9 +67,9 @@ def get_file_obj(fname, mode='r', encoding=None):
     try:
         # Make sure the object has the write methods
         if 'r' in mode:
-            fname.read
+            assert hasattr(fname, 'read')
         if 'w' in mode or 'a' in mode:
-            fname.write
-    except AttributeError:
+            assert hasattr(fname, 'write')
+    except AssertionError:  # pragma: no cover
         raise ValueError('fname must be a string or a file-like object')
     return EmptyContextManager(fname)

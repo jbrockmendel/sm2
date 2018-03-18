@@ -899,7 +899,7 @@ class OLS(WLS):
             return self._fit_ridge(alpha)
 
         # In the future we could add support for other penalties, e.g. SCAD.
-        if method != "elastic_net":
+        if method != "elastic_net":  # pragma: no cover
             raise ValueError("method for fit_regularized must be elastic_net")
 
         # Set default parameters.
@@ -1026,7 +1026,7 @@ class GLSAR(GLS):
             self.rho = np.zeros(self.order, np.float64)
         else:
             self.rho = np.squeeze(np.asarray(rho))
-            if len(self.rho.shape) not in [0, 1]:
+            if len(self.rho.shape) not in [0, 1]:  # pragma: no cover
                 raise ValueError("AR parameters must be a scalar or a vector")
             if self.rho.shape == ():
                 self.rho.shape = (1,)
@@ -1183,7 +1183,7 @@ def yule_walker(X, order=1, method="unbiased", df=None, inv=False,
     # First link here is useful
     # http://www-stat.wharton.upenn.edu/~steele/Courses/956/ResourceDetails/YuleWalkerAndMore.htm
     method = str(method).lower()
-    if method not in ["unbiased", "mle"]:
+    if method not in ["unbiased", "mle"]:  # pragma: no cover
         raise ValueError("ACF estimation method must be 'unbiased' or 'MLE'")
 
     X = np.array(X, dtype=np.float64)
@@ -1197,7 +1197,7 @@ def yule_walker(X, order=1, method="unbiased", df=None, inv=False,
         denom = lambda k: n - k  # noqa:E731
     else:
         denom = lambda k: n  # noqa:E731
-    if X.ndim > 1 and X.shape[1] != 1:
+    if X.ndim > 1 and X.shape[1] != 1:  # pragma: no cover
         raise ValueError("expecting a vector to estimate AR parameters")
 
     r = np.zeros(order + 1, np.float64)
@@ -1394,6 +1394,7 @@ class RegressionResults(base.LikelihoodModelResults):
             setattr(self, key, kwargs[key])
 
     def __str__(self):
+        # FIXME: This should _return_ something right?
         self.summary()
 
     def conf_int(self, alpha=.05, cols=None):
@@ -1413,6 +1414,7 @@ class RegressionResults(base.LikelihoodModelResults):
         The confidence interval is based on Student's t-distribution.
         """
         # keep method for docstring for now
+        # TODO: can we get rid of this?
         ci = super(RegressionResults, self).conf_int(alpha=alpha, cols=cols)
         return ci
 
@@ -1649,7 +1651,7 @@ class RegressionResults(base.LikelihoodModelResults):
         -------
         An array wresid standardized by the sqrt if scale
         """
-        if not hasattr(self, 'resid'):
+        if not hasattr(self, 'resid'):  # pragma: no cover
             raise ValueError('Method requires residuals.')
         eps = np.finfo(self.wresid.dtype).eps
         if np.sqrt(self.scale) < 10 * eps * self.model.endog.mean():
@@ -1681,7 +1683,6 @@ class RegressionResults(base.LikelihoodModelResults):
         model are spanned by the regressors in the larger model and
         the regressand is identical.
         """
-
         if self.model.nobs != restricted.model.nobs:
             return False
 
@@ -1773,7 +1774,7 @@ class RegressionResults(base.LikelihoodModelResults):
             groups = self.cov_kwds['groups']
             # TODO: Might need demean option in S_crosssection by group?
             Sinv = np.linalg.inv(sw.S_crosssection(scores, groups))
-        else:
+        else:  # pragma: no cover
             raise ValueError('Only nonrobust, HC, HAC and cluster are '
                              'currently connected')
 
@@ -1979,7 +1980,7 @@ class RegressionResults(base.LikelihoodModelResults):
             res.cov_kwds['scale'] = scale = kwds.get('scale', 1.)
             res.cov_params_default = scale * res.normalized_cov_params
         elif cov_type.upper() in ('HC0', 'HC1', 'HC2', 'HC3'):
-            if kwds:
+            if kwds:  # pragma: no cover
                 raise ValueError('heteroscedasticity robust covarians '
                                  'does not use keywords')
             res.cov_kwds['description'] = (
@@ -2039,7 +2040,7 @@ class RegressionResults(base.LikelihoodModelResults):
                 # Note: sw.cov_cluster_2groups has 3 returns
                 res.cov_params_default = sw.cov_cluster_2groups(
                     self, groups, use_correction=use_correction)[0]
-            else:
+            else:  # pragma: no cover
                 raise ValueError('only two groups are supported')
             res.cov_kwds['description'] = (
                 'Standard Errors are robust to' +
@@ -2052,7 +2053,7 @@ class RegressionResults(base.LikelihoodModelResults):
             # Driscoll-Kraay standard errors
             n_groups = covtype.hac_groupsum(self, res, kwds,
                                             adjust_df, cov_type)
-        else:
+        else:  # pragma: no cover
             raise ValueError('cov_type not recognized. See docstring for '
                              'available options and spelling')
 
@@ -2171,7 +2172,7 @@ class RegressionResults(base.LikelihoodModelResults):
         return smry
 
     def summary2(self, yname=None, xname=None, title=None, alpha=.05,
-                 float_format="%.4f"):
+                 float_format="%.4f"):  # pragma: no cover
         raise NotImplementedError("summary2 not ported from upstream")
 
 
@@ -2182,19 +2183,20 @@ class OLSResults(RegressionResults):
     As of 2018-03-05 none of the OLSResults-specific methods are ported
     from upstream.
     """
-    def get_influence(self):
+    def get_influence(self):  # pragma: no cover
         raise NotImplementedError("get_influence not ported from upstream")
 
-    def outlier_test(self, method='bonf', alpha=.05):
+    def outlier_test(self, method='bonf', alpha=.05):  # pragma: no cover
         raise NotImplementedError("get_influence not ported from upstream")
 
     def el_test(self, b0_vals, param_nums, return_weights=0,
                 ret_params=0, method='nm',
-                stochastic_exog=1, return_params=0):
+                stochastic_exog=1, return_params=0):  # pragma: no cover
         raise NotImplementedError("el_test not ported from upstream")
 
     def conf_int_el(self, param_num, sig=.05, upper_bound=None,
-                    lower_bound=None, method='nm', stochastic_exog=1):
+                    lower_bound=None, method='nm',
+                    stochastic_exog=1):  # pragma: no cover
         raise NotImplementedError("conf_int_el not ported from upstream")
 
 

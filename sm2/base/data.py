@@ -13,9 +13,11 @@ import sm2.tools.data as data_util
 from sm2.tools.sm_exceptions import MissingDataError
 
 
-def _asarray_2dcolumns(x):
-    if np.asarray(x).ndim > 1 and np.asarray(x).squeeze().ndim == 1:
-        return
+def _asarray_2dcolumns(x):  # pragma: no cover
+    raise NotImplementedError("_asarray_2dcolumns not ported from upstream, "
+                              "as it is not used (or tested) there.  "
+                              "Also it apparently does nothing, "
+                              "but in two separate ways.")
 
 
 def _asarray_2d_null_rows(x):
@@ -84,13 +86,13 @@ class ModelData(object):
     def __getstate__(self):
         from copy import copy
         d = copy(self.__dict__)
-        if "design_info" in d:
+        if "design_info" in d:  # TOOD: not hit in tests
             del d["design_info"]
             d["restore_design_info"] = True
         return d
 
     def __setstate__(self, d):
-        if "restore_design_info" in d:
+        if "restore_design_info" in d:  # TODO: not hit in tests
             # NOTE: there may be a more performant way to do this
             from patsy import dmatrices, PatsyError
             exc = []
@@ -235,7 +237,7 @@ class ModelData(object):
                     combined_2d_names += [key]
                 else:
                     raise ValueError("Arrays with more than 2 dimensions "
-                                     "aren't yet handled")
+                                     "aren't (yet) handled")
 
         if missing_idx is not None:
             nan_mask = missing_idx
@@ -305,7 +307,7 @@ class ModelData(object):
             combined.update({name: None for name in none_array_names})
 
             return combined, np.where(~nan_mask)[0].tolist()
-        else:
+        else:  # pragma: no cover
             raise ValueError("missing option %s not understood" % missing)
 
     def _convert_endog_exog(self, endog, exog):
@@ -317,7 +319,7 @@ class ModelData(object):
             xarr = self._get_xarr(exog)
             if xarr.ndim == 1:
                 xarr = xarr[:, None]
-            if xarr.ndim != 2:
+            if xarr.ndim != 2:  # pragma: no cover
                 raise ValueError("exog is not 1d or 2d")
 
         return yarr, xarr
@@ -615,7 +617,7 @@ def handle_data_class_factory(endog, exog):
     # keep this check last
     elif data_util._is_using_ndarray(endog, exog):
         klass = ModelData
-    else:
+    else:  # pragma: no cover
         raise ValueError('unrecognized data structures: %s / %s' %
                          (type(endog), type(exog)))
     return klass

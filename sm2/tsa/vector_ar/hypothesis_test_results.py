@@ -102,8 +102,8 @@ class CausalityTestResults(HypothesisTestResults):
         self.caused = caused
         self.test = test
         if method is None or method.lower() not in ["f", "wald"]:
-            raise ValueError('The method ("f" for F-test, "wald" for '
-                             "Wald-test) must not be None.")
+            raise ValueError('method ("f" for F-test, "wald" for Wald-test) '
+                             'must not be None.')  # pragma: no cover
         method = method.capitalize()
         # attributes used in summary and string representation:
         title = "Granger" if self.test == "granger" else "Instantaneous"
