@@ -6,7 +6,7 @@ import numpy as np
 import pandas as pd
 
 from sm2.iolib.table import SimpleTable
-from sm2.iolib.tableformatting import gen_fmt, fmt_2, fmt_params, fmt_2cols
+from sm2.iolib.tableformatting import fmt_params, fmt_2cols
 
 
 def forg(x, prec=3):

@@ -95,7 +95,7 @@ class ContrastResults(object):
             # TODO: Should this be a ValueError?
             raise NotImplementedError('Confidence Interval not available')
 
-    def __array__(self):
+    def __array__(self):  # TODO: not hit in tests.  what is this for?
         if hasattr(self, "fvalue"):
             return self.fvalue
         else:
@@ -270,7 +270,7 @@ class Contrast(object):
         """
         Construct a contrast matrix C so that
 
-        colspan(np.dot(D, C)) = colspan(np.dot(D, np.dot(np.linalg.pinv(D), T)))
+        colspan(D.dot(C)) = colspan(np.dot(D, np.dot(np.linalg.pinv(D), T)))
 
         where np.linalg.pinv(D) is the generalized inverse of D=design.
         """
@@ -359,7 +359,6 @@ class WaldTestResults(object):
 
         self.distribution = distribution
         self.statistic = statistic
-        #self.sd = sd
         self.dist_args = dist_args
 
         # The following is because I don't know which we want
@@ -370,7 +369,7 @@ class WaldTestResults(object):
             if self.distribution == 'F':
                 self.df_denom = table['df_denom'].values
 
-        else:
+        else:  # TODO: not hit in tests
             if self.distribution is 'chi2':
                 self.dist = stats.chi2
                 self.df_constraints = self.dist_args[0]  # assumes tuple
@@ -396,7 +395,7 @@ class WaldTestResults(object):
             col_names.append('df denom')
         return col_names
 
-    def summary_frame(self):
+    def summary_frame(self):  # TODO: not hit in tests
         # needs to be a method for consistency
         if hasattr(self, '_dframe'):
             return self._dframe
@@ -405,7 +404,7 @@ class WaldTestResults(object):
         self.dframe = self.table.rename(columns=renaming)
         return self.dframe
 
-    def __str__(self):
+    def __str__(self):  # TODO: not hit in tests
         return self.summary_frame().to_string()
 
     def __repr__(self):

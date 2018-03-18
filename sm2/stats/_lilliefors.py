@@ -378,7 +378,8 @@ class TableDist(object):
 
         self.n_alpha = len(alpha)
         self.signcrit = np.sign(np.diff(self.crit_table, 1).mean())
-        if self.signcrit > 0:  # increasing
+        if self.signcrit > 0:
+            # increasing
             self.critv_bounds = self.crit_table[:, [0, 1]]
         else:
             self.critv_bounds = self.crit_table[:, [1, 0]]
@@ -462,7 +463,7 @@ class TableDist(object):
             elif x > critv[-1]:
                 return alpha[-1]
             return interp1d(critv, alpha)(x)[()]  # WTF is [()]?
-        else:
+        else:  # TODO: not hit in tests
             # vectorized
             cond_low = (x < critv[0])
             cond_high = (x > critv[-1])

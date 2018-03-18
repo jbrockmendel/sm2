@@ -294,7 +294,7 @@ def _fit_minimize(f, score, start_params, fargs, kwargs, disp=True,
                    'fcalls': res.nfev, 'warnflag': res.status,
                    'converged': res.success}
         if retall:
-            retvals.update({'allvecs': res.values()})
+            retvals['allvecs'] = res.values()
 
     return xopt, retvals
 
@@ -312,7 +312,7 @@ def _fit_newton(f, score, start_params, fargs, kwargs, disp=True,
            np.any(np.abs(newparams - oldparams) > tol)):
         H = np.asarray(hess(newparams))
         # regularize Hessian, not clear what ridge factor should be
-        # keyword option with absolute default 1e-10, see #1847
+        # keyword option with absolute default 1e-10, see GH#1847
         if not np.all(ridge_factor == 0):
             H[np.diag_indices(H.shape[0])] += ridge_factor
         oldparams = newparams
@@ -325,7 +325,7 @@ def _fit_newton(f, score, start_params, fargs, kwargs, disp=True,
     fval = f(newparams, *fargs)  # this is the negative likelihood
     if iterations == maxiter:
         warnflag = 1
-        if disp:
+        if disp:  # TODO: not hit in tests.  remove?
             print("Warning: Maximum number of iterations has been "
                   "exceeded.")
             print("         Current function value: %f" % fval)
@@ -346,7 +346,7 @@ def _fit_newton(f, score, start_params, fargs, kwargs, disp=True,
                    'Hessian': hopt, 'warnflag': warnflag,
                    'converged': converged}
         if retall:
-            retvals.update({'allvecs': history})
+            retvals['allvecs'] = history
 
     else:
         xopt = newparams
@@ -369,14 +369,14 @@ def _fit_bfgs(f, score, start_params, fargs, kwargs, disp=True,
         if not retall:
             xopt, fopt, gopt, Hinv, fcalls, gcalls, warnflag = retvals
         else:
-            (xopt, fopt, gopt, Hinv, fcalls,
-             gcalls, warnflag, allvecs) = retvals
+            allvecs = retvals[-1]
+            xopt, fopt, gopt, Hinv, fcalls, gcalls, warnflag = retvals[:7]
         converged = not warnflag
         retvals = {'fopt': fopt, 'gopt': gopt, 'Hinv': Hinv,
                    'fcalls': fcalls, 'gcalls': gcalls,
                    'warnflag': warnflag, 'converged': converged}
         if retall:
-            retvals.update({'allvecs': allvecs})
+            retvals['allvecs'] = allvecs
     else:
         xopt = retvals
         retvals = None
@@ -492,7 +492,7 @@ def _fit_nm(f, score, start_params, fargs, kwargs, disp=True,
                    'fcalls': fcalls, 'warnflag': warnflag,
                    'converged': converged}
         if retall:
-            retvals.update({'allvecs': allvecs})
+            retvals['allvecs'] = allvecs
     else:
         xopt = retvals
         retvals = None
@@ -519,7 +519,7 @@ def _fit_cg(f, score, start_params, fargs, kwargs, disp=True,
         retvals = {'fopt': fopt, 'fcalls': fcalls, 'gcalls': gcalls,
                    'warnflag': warnflag, 'converged': converged}
         if retall:
-            retvals.update({'allvecs': allvecs})
+            retvals['allvecs'] = allvecs
 
     else:
         xopt = retvals
@@ -549,7 +549,7 @@ def _fit_ncg(f, score, start_params, fargs, kwargs, disp=True,
                    'hcalls': hcalls, 'warnflag': warnflag,
                    'converged': converged}
         if retall:
-            retvals.update({'allvecs': allvecs})
+            retvals['allvecs'] = allvecs
     else:
         xopt = retvals
         retvals = None
@@ -579,7 +579,7 @@ def _fit_powell(f, score, start_params, fargs, kwargs, disp=True,
                    'fcalls': fcalls, 'warnflag': warnflag,
                    'converged': converged}
         if retall:
-            retvals.update({'allvecs': allvecs})
+            retvals['allvecs'] = allvecs
     else:
         xopt = retvals
         retvals = None
