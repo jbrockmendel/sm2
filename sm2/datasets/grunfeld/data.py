@@ -92,7 +92,7 @@ def load_pandas():
 
 def _get_data():
     filepath = os.path.dirname(os.path.abspath(__file__))
-    with open(filepath + '/grunfeld.csv', 'rb') as f:
-        data = np.recfromtxt(f, delimiter=",",
+    with open(filepath + '/grunfeld.csv', 'rb') as fd:
+        data = np.recfromtxt(fd, delimiter=",",
                              names=True, dtype="f8,f8,f8,a17,f8")
     return data

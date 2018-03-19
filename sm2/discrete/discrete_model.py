@@ -2887,6 +2887,7 @@ class NegativeBinomialP(CountModel):
         """
         return np.sum(self.loglikeobs(params))
 
+    # TODO: This is pretty slow.  can it be optimized?
     def loglikeobs(self, params):
         """
         Loglikelihood for observations of Generalized Negative
@@ -2923,6 +2924,7 @@ class NegativeBinomialP(CountModel):
 
         return llf
 
+    # TODO: This is pretty slow.  can it be optimized?
     def score_obs(self, params):
         """
         Generalized Negative Binomial (NB-P) model score (gradient)
@@ -2988,6 +2990,7 @@ class NegativeBinomialP(CountModel):
         else:
             return score
 
+    # TODO: This is pretty slow.  can it be optimized?
     def hessian(self, params):
         """
         Generalized Negative Binomial (NB-P) model hessian maxtrix
@@ -3353,7 +3356,7 @@ class DiscreteResults(base.LikelihoodModelResults):
 
     @cache_readonly
     def llnull(self):
-
+        # TODO: slow, 1.086 seconds per call in tests
         model = self.model
         kwds = model._get_init_kwds().copy()
         for key in getattr(model, '_null_drop_keys', []):

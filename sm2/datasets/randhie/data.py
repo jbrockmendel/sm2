@@ -44,12 +44,14 @@ NOTE = """::
         hlthp   - 1 if self-rated health is poor
         (Omitted category is excellent self-rated health)
 """
+import os
 
-from numpy import recfromtxt
+import pandas as pd
+
 from sm2.datasets import utils as du
-from os.path import dirname, abspath
 
-PATH = '%s/%s' % (dirname(abspath(__file__)), 'randhie.csv')
+cur_dir = os.path.dirname(os.path.abspath(__file__))
+PATH = os.path.join(cur_dir, 'randhie.csv')
 
 
 def load():
@@ -80,12 +82,10 @@ def load_pandas():
     Load instance:
         a class of the data with array attrbutes 'endog' and 'exog'
     """
-    from pandas import read_csv
-    data = read_csv(PATH)
+    data = pd.read_csv(PATH)
     return du.process_recarray_pandas(data, endog_idx=0)
 
 
 def _get_data():
-    with open(PATH, "rb") as f:
-        data = recfromtxt(f, delimiter=",", names=True, dtype=float)
-    return data
+    data = pd.read_csv(PATH)
+    return data.astype('f8').to_records(index=False)

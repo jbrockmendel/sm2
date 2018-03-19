@@ -102,7 +102,7 @@ class GenericZeroInflated(CountModel):
         self._null_drop_keys = ['exog_infl']
 
     def loglike(self, params):
-        """
+        r"""
         Loglikelihood of Generic Zero Inflated model
 
         Parameters
@@ -118,14 +118,14 @@ class GenericZeroInflated(CountModel):
 
         Notes
         --------
-        .. math:: \\ln L=\\sum_{y_{i}=0}\\ln(w_{i}+(1-w_{i})*P_{main\\_model})+
-            \\sum_{y_{i}>0}(\\ln(1-w_{i})+L_{main\\_model})
+        .. math:: \ln L=\sum_{y_{i}=0}\ln(w_{i}+(1-w_{i})*P_{main\_model})+
+            \sum_{y_{i}>0}(\ln(1-w_{i})+L_{main\_model})
             where P - pdf of main model, L - loglike function of main model.
         """
         return np.sum(self.loglikeobs(params))
 
     def loglikeobs(self, params):
-        """
+        r"""
         Loglikelihood for observations of Generic Zero Inflated model
 
         Parameters
@@ -141,8 +141,8 @@ class GenericZeroInflated(CountModel):
 
         Notes
         --------
-        .. math:: \\ln L=\\ln(w_{i}+(1-w_{i})*P_{main\\_model})+
-            \\ln(1-w_{i})+L_{main\\_model}
+        .. math:: \ln L=\ln(w_{i}+(1-w_{i})*P_{main\_model})+
+            \ln(1-w_{i})+L_{main\_model}
             where P - pdf of main model, L - loglike function of main model.
 
         for observations :math:`i=1,...,n`

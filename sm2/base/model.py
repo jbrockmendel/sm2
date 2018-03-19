@@ -11,7 +11,7 @@ from scipy import stats
 from sm2.tools.data import _is_using_pandas
 from sm2.tools.tools import recipr, nan_dot
 from sm2.tools.decorators import resettable_cache, cache_readonly
-from sm2.tools.numdiff import approx_fprime
+from sm2.tools.numdiff import approx_fprime, approx_hess
 from sm2.tools.sm_exceptions import (ValueWarning, HessianInversionWarning,
                                      ConvergenceWarning)
 
@@ -369,9 +369,8 @@ class LikelihoodModel(Model):
                 Hinv = eigvecs.dot(np.diag(1.0 / eigvals)).dot(eigvecs.T)
                 Hinv = np.asfortranarray((Hinv + Hinv.T) / 2.0)
             else:
-                from warnings import warn
-                warn('Inverting hessian failed, no bse or cov_params '
-                     'available', HessianInversionWarning)
+                warnings.warn('Inverting hessian failed, no bse or cov_params '
+                              'available', HessianInversionWarning)
                 Hinv = None
 
         if 'cov_type' in kwargs:
@@ -553,7 +552,6 @@ class GenericLikelihoodModel(LikelihoodModel):
         """
         Hessian of log-likelihood evaluated at params
         """
-        from sm2.tools.numdiff import approx_hess
         # need options for hess (epsilon)
         return approx_hess(params, self.loglike)
 

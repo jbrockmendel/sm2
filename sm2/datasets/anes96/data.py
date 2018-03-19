@@ -85,11 +85,12 @@ NOTE = """::
                 from "Left" to "Right".
             logpopul - log(popul + .1)
 """
+import os
 
-from numpy import recfromtxt, log
+import numpy as np
 import numpy.lib.recfunctions as nprf
+
 from sm2.datasets import utils as du
-from os.path import dirname, abspath
 
 
 def load():
@@ -121,10 +122,11 @@ def load_pandas():
 
 
 def _get_data():
-    filepath = dirname(abspath(__file__))
-    with open(filepath + '/anes96.csv', "rb") as f:
-        data = recfromtxt(f, delimiter="\t", names=True, dtype=float)
-        logpopul = log(data['popul'] + .1)
+    cur_dir = os.path.dirname(os.path.abspath(__file__))
+    path = os.path.join(cur_dir, 'anes96.csv')
+    with open(path, "rb") as fd:
+        data = np.recfromtxt(fd, delimiter="\t", names=True, dtype=float)
+        logpopul = np.log(data['popul'] + .1)
         data = nprf.append_fields(data, 'logpopul', logpopul, usemask=False,
                                   asrecarray=True)
     return data

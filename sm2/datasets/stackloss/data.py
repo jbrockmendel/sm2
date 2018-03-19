@@ -29,10 +29,11 @@ NOTE = """::
         WATERTEMP - Cooling water temperature in the absorption tower
         ACIDCONC  - Acid concentration of circulating acid minus 50 times 10.
 """
+import os
 
-from numpy import recfromtxt
+import numpy as np
+
 from sm2.datasets import utils as du
-from os.path import dirname, abspath
 
 
 def load():
@@ -62,8 +63,9 @@ def load_pandas():
 
 
 def _get_data():
-    filepath = dirname(abspath(__file__))
-    with open(filepath + '/stackloss.csv', "rb") as f:
-        data = recfromtxt(f, delimiter=",",
-                          names=True, dtype=float)
+    cur_dir = os.path.dirname(os.path.abspath(__file__))
+    path = os.path.join(cur_dir, 'stackloss.csv')
+    with open(path, "rb") as fd:
+        data = np.recfromtxt(fd, delimiter=",",
+                             names=True, dtype=float)
     return data

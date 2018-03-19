@@ -65,7 +65,7 @@ def load_pandas():
 
 def _get_data():
     filepath = dirname(abspath(__file__))
-    with open(filepath + '/spector.csv', "rb") as f:
-        data = np.recfromtxt(f, delimiter=" ",
+    with open(filepath + '/spector.csv', "rb") as fd:
+        data = np.recfromtxt(fd, delimiter=" ",
                              names=True, dtype=float, usecols=(1, 2, 3, 4))
     return data

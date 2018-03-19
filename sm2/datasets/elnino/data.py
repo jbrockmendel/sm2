@@ -32,13 +32,12 @@ NOTE = """::
         TEMPERATURE - average sea surface temperature in degrees Celcius
                       (12 columns, one per month).
 """
+import os
 
-
-from numpy import recfromtxt
-from pandas import DataFrame
+import numpy as np
+import pandas as pd
 
 from sm2.datasets.utils import Dataset
-from os.path import dirname, abspath
 
 
 def load():
@@ -62,13 +61,14 @@ def load():
 
 def load_pandas():
     dataset = load()
-    dataset.data = DataFrame(dataset.data)
+    dataset.data = pd.DataFrame(dataset.data)
     return dataset
 
 
 def _get_data():
-    filepath = dirname(abspath(__file__))
-    with open(filepath + '/elnino.csv', 'rb') as f:
-        data = recfromtxt(f, delimiter=",",
-                          names=True, dtype=float)
+    cur_dir = os.path.dirname(os.path.abspath(__file__))
+    path = os.path.join(cur_dir, 'elnino.csv')
+    with open(path, 'rb') as fd:
+        data = np.recfromtxt(fd, delimiter=",",
+                             names=True, dtype=float)
     return data

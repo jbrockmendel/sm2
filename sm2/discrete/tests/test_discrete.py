@@ -2480,6 +2480,7 @@ def test_mnlogit_factor():
 # ------------------------------------------------------------------
 # Test that different optimization methods produce the same results
 
+# TODO: mark as slow?  its 32.6 seconds in profiling
 # TODO: mark as an internal-consistency test?
 # TODO: GH reference?
 @pytest.mark.not_vetted
