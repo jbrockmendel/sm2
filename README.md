@@ -9,3 +9,56 @@ Ideally sm2 will be a drop-in replacement for statsmodels.  In places where
 this fails, feel free to open an issue.
 
 With luck, fixes made here will eventually be ported upstream.
+
+
+Changes vs Statsmodels
+----------------------
+- sm2 contains a subset of the functionality of statsmodels.  The first big
+difference is that statsmodels is more feature-complete.
+
+- An enormous amount of code-cleanup has been done in sm2.  Thousands of lines
+of unused, untested, or deprecated code have been removed.  _Many_ thousands
+of flake8 formatting issues have been cleaned up.
+
+
+Contributing
+------------
+Issues and Pull Requests are welcome.  If you are looking a place to start,
+here are some suggestions:
+
+- Search for comments starting with `# TODO:` or `# FIXME:`
+     - Some comments are copied from upstream and _should_ have these labels
+       but are missing them.  If you find a comment that should have one of
+       these labels (or is just unclear), add the label.
+
+- Many tests from upstream are marked with `pytest.mark.not_vetted` to reflect
+  the fact that they haven't been reviewed since being ported from statsmodels.
+  To "vet" a test, try to determine:
+    - Is this a "smoke test"?  If so, it should be marked with
+      `pytest.mark.smoke`.
+    - Is this a test for a specific bug?  Can an Issue reference
+      (e.g. `# GH#1234`) be included?
+    - Is there something specific being tested?  If so, the test name should
+      be made informative and often a comment should be added
+      (e.g. `# test function foo.bar in case where baz argument is
+      near-singular`)
+    - Is this testing results produced by statsmodels/sm2 against results
+      produced by another package?  If so, it should be clear how those results
+      were produced.  The original authors put a lot of effort into producing
+      these comparisons; they should be reproducible.
+
+- There are some spots where tests are meager and could use some attention:
+    - `tsa.vector_ar.irf`
+    - `regression._prediction`
+    - `stats.sandwich_covariance`
+
+- As of 2018-03-19 there are still 390 flake8 warnings/errors.  For many of
+  these, fixing them requires figuring out what the writer's attention was
+  upstream.
+
+- As of 2018-03-19 about 20% of statsmodels has been ported to sm2 (though a
+  much larger percentage of the usable, non-redundant, non-deprecated code).
+  If there are portions of statsmodels that you want or need, don't be shy.
+
+- If there is a change you parrticularly like, make a Pull Request upstream
+  to get it implemented directly in statsmodels.
