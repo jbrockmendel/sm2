@@ -35,8 +35,7 @@ DECIMAL_1 = 1
 
 current_path = os.path.dirname(os.path.abspath(__file__))
 path = os.path.join(current_path, 'results', 'y_arma_data.csv')
-# Note: upstream uses np.genfromtxt, which differs ~8e-16
-y_arma = pd.read_csv(path).values
+y_arma = pd.read_csv(path, float_precision='high').values
 
 cpi_dates = pd.PeriodIndex(start='1959q1', end='2009q3', freq='Q')
 sun_dates = pd.PeriodIndex(start='1700', end='2008', freq='A')
@@ -1050,17 +1049,6 @@ def test_arma_predict_indices():
     with pytest.raises(ValueError):
         model._get_prediction_index('1708', None, True)
 
-    # raises - start out of sample
-    # TODO: remove these, start out of sample now allowed
-    # assert_raises(ValueError, model._get_prediction_index,
-    #                *(311, None, True))
-    # assert_raises(ValueError, model._get_prediction_index,
-    #                *(311, None, False))
-    # assert_raises(ValueError, model._get_prediction_index,
-    #                *('2010', None, True))
-    # assert_raises(ValueError, model._get_prediction_index,
-    #                *('2010', None, False))
-
     # works - in-sample
     # None
     # given, expected, dynamic
@@ -1133,17 +1121,6 @@ def test_arima_predict_indices():
         model._get_prediction_index(0, None, False)
     with pytest.raises(KeyError):
         model._get_prediction_index('1959Q1', None, False)
-
-    # raises - start out of sample
-    # TODO: start out of sample is now allowed; remove this code
-    # assert_raises(ValueError, model._get_prediction_index,
-    #               *(204, None, True))
-    # assert_raises(ValueError, model._get_prediction_index,
-    #               *(204, None, False))
-    # assert_raises(ValueError, model._get_prediction_index,
-    #               *('2010Q1', None, True))
-    # assert_raises(ValueError, model._get_prediction_index,
-    #               *('2010Q1', None, False))
 
     # works - in-sample
     # None

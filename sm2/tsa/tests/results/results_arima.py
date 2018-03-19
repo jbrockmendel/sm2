@@ -82,8 +82,8 @@ class ARIMA111(object):
             #cov_params = np.array([[0.00369569, -0.00271777, 0.00269806],
             #                       [0, 0.00209573, -0.00224559],
             #                       [0, 0, 0.00342769]])
-            #self.cov_params = cov_params + cov_params.T - \
-            #                np.diag(np.diag(cov_params))
+            #self.cov_params = (cov_params + cov_params.T -
+            #                   np.diag(np.diag(cov_params)))
             #self.bse = np.diag(np.sqrt(self.cov_params))
             self.resid = [-0.015830, -0.236884, -0.093946, -0.281152,
                           -0.089983, -0.226336, -0.351666, -0.198703,
@@ -427,8 +427,8 @@ class ARIMA112(object):
             #         [0, 9.69682e-04, -9.70767e-04, -8.99814e-04],
             #         [0, 0, 0.00698068, -0.00443871],
             #         [0, 0, 0, 0.00713662]])
-            #self.cov_params = cov_params + cov_params.T - \
-            #                np.diag(np.diag(cov_params))
+            #self.cov_params = (cov_params + cov_params.T -
+            #                   np.diag(np.diag(cov_params)))
             #self.bse = np.diag(np.sqrt(self.cov_params))
             self.forecast = forecast_results['fc112c_css'][-25:]
             self.forecasterr = forecast_results['fc112cse_css'][-25:]

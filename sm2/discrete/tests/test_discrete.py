@@ -56,8 +56,7 @@ from .results.results_discrete import Spector, DiscreteL1, RandHIE, Anes
 
 cur_dir = os.path.dirname(os.path.abspath(__file__))
 prob_path = os.path.join(cur_dir, "results", "predict_prob_poisson.csv")
-probs_res = pd.read_csv(prob_path, header=None).values
-# Note: pd.read_csv vs np.loadtxt (used upstream) mismatch by ~5e-17
+probs_res = pd.read_csv(prob_path, header=None, float_precision='high').values
 
 sm3533_path = os.path.join(cur_dir, "results", "sm3533.csv")
 sm3533 = pd.read_csv(sm3533_path)

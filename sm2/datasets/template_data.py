@@ -28,7 +28,7 @@ Any other useful information that does not fit into the above categories.
 """
 import os
 
-import numpy as np
+import pandas as pd
 
 from sm2.datasets import utils as du
 
@@ -60,7 +60,5 @@ def _get_data():
     cur_dir = os.path.dirname(os.path.abspath(__file__))
     # EDIT THE FOLLOWING TO POINT TO DatasetName.csv #
     path = os.path.join(cur_dir, 'DatasetName.csv')
-    with open(path, 'rb') as fd:
-        data = np.recfromtxt(fd,
-                             delimiter=",", names=True, dtype=float)
-    return data
+    data = pd.read_csv(path, float_precision='high')
+    return data.astype('f8').to_records(index=False)

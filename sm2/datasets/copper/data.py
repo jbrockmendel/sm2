@@ -40,7 +40,7 @@ Years are included in the data file though not returned by load.
 """
 import os
 
-import numpy as np
+import pandas as pd
 
 from sm2.datasets import utils as du
 
@@ -61,11 +61,8 @@ def load():
 def _get_data():
     cur_dir = os.path.dirname(os.path.abspath(__file__))
     path = os.path.join(cur_dir, 'copper.csv')
-    with open(path, 'rb') as fd:
-        data = np.recfromtxt(fd, delimiter=",",
-                             names=True, dtype=float,
-                             usecols=(1, 2, 3, 4, 5, 6))
-    return data
+    data = pd.read_csv(path, float_precision='high')
+    return data.iloc[:, 1:7].astype('f8').to_records(index=False)
 
 
 def load_pandas():

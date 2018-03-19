@@ -52,11 +52,11 @@ NOTE = """::
         household, divided by the total number of Family households.
     urban
         % of population in Urbanized Areas as of 2010 Census. Urbanized
-        Areas are area of 50,000 or more people."""
-
+        Areas are area of 50,000 or more people.
+"""
 import os
 
-import numpy as np
+import pandas as pd
 
 from sm2.datasets import utils as du
 
@@ -84,7 +84,7 @@ def load_pandas():
 
 
 def _get_data():
-    filepath = os.path.dirname(os.path.abspath(__file__))
-    with open(filepath + '/statecrime.csv', 'rb') as fd:
-        data = np.recfromtxt(fd, delimiter=",", names=True, dtype=None)
-    return data
+    cur_dir = os.path.dirname(os.path.abspath(__file__))
+    path = os.path.join(cur_dir, 'statecrime.csv')
+    data = pd.read_csv(path, float_precision='high')
+    return data.to_records(index=False)

@@ -31,10 +31,11 @@ NOTE = """::
         PSI   - participation in program
         GPA   - Student's grade point average
 """
+import os
 
-import numpy as np
+import pandas as pd
+
 from sm2.datasets import utils as du
-from os.path import dirname, abspath
 
 
 def load():
@@ -64,8 +65,7 @@ def load_pandas():
 
 
 def _get_data():
-    filepath = dirname(abspath(__file__))
-    with open(filepath + '/spector.csv', "rb") as fd:
-        data = np.recfromtxt(fd, delimiter=" ",
-                             names=True, dtype=float, usecols=(1, 2, 3, 4))
-    return data
+    cur_dir = os.path.dirname(os.path.abspath(__file__))
+    path = os.path.join(cur_dir, 'spector.csv')
+    data = pd.read_csv(path, delimiter=" ")
+    return data.iloc[:, 1:5].astype('f8').to_records(index=False)
