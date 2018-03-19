@@ -702,7 +702,9 @@ class TestGLMGaussHACPanel(CheckDiscreteGLM):
 
     def test_kwd(self):
         # test corrected keyword name
-        assert_allclose(self.res1b.bse, self.res1.bse, rtol=1e-12)
+        assert_allclose(self.res1b.bse,
+                        self.res1.bse,
+                        rtol=1e-12)
 
 
 @pytest.mark.skip(reason="GLM not ported from upstream")
@@ -750,4 +752,6 @@ class TestGLMGaussHACGroupsum(CheckDiscreteGLM):
 
     def test_kwd(self):
         # test corrected keyword name
-        assert_allclose(self.res1b.bse, self.res1.bse, rtol=1e-12)
+        assert_allclose(self.res1b.bse,
+                        self.res1.bse,
+                        rtol=1e-12)

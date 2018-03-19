@@ -101,29 +101,6 @@ class GenericZeroInflated(CountModel):
         self._init_keys.extend(['exog_infl', 'inflation'])
         self._null_drop_keys = ['exog_infl']
 
-    def loglike(self, params):
-        r"""
-        Loglikelihood of Generic Zero Inflated model
-
-        Parameters
-        ----------
-        params : array-like
-            The parameters of the model.
-
-        Returns
-        -------
-        loglike : float
-            The log-likelihood function of the model evaluated at `params`.
-            See notes.
-
-        Notes
-        --------
-        .. math:: \ln L=\sum_{y_{i}=0}\ln(w_{i}+(1-w_{i})*P_{main\_model})+
-            \sum_{y_{i}>0}(\ln(1-w_{i})+L_{main\_model})
-            where P - pdf of main model, L - loglike function of main model.
-        """
-        return np.sum(self.loglikeobs(params))
-
     def loglikeobs(self, params):
         r"""
         Loglikelihood for observations of Generic Zero Inflated model

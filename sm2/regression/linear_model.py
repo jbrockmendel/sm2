@@ -549,7 +549,6 @@ class GLS(RegressionModel):
     def fit_regularized(self, method="elastic_net", alpha=0.,
                         L1_wt=1., start_params=None, profile_scale=False,
                         refit=False, **kwargs):
-        # Docstring attached below
 
         # Need to adjust since RSS/n term in elastic net uses nominal
         # n in denominator
@@ -702,8 +701,6 @@ class WLS(RegressionModel):
     def fit_regularized(self, method="elastic_net", alpha=0.,
                         L1_wt=1., start_params=None, profile_scale=False,
                         refit=False, **kwargs):
-        # Docstring attached below
-
         # Need to adjust since RSS/n in elastic net uses nominal n in
         # denominator
         alpha = alpha * np.sum(self.weights) / len(self.weights)
@@ -797,11 +794,10 @@ class OLS(WLS):
         ssr = np.sum(resid**2)
         if scale is None:
             # profile log likelihood
-            llf = (-nobs2 * np.log(2 * np.pi) - nobs2 * np.log(ssr / nobs) -
-                   nobs2)
+            llf = -.5 * nobs * (np.log(2 * np.pi) + np.log(ssr / nobs) + 1)
         else:
             # log-likelihood
-            llf = -nobs2 * np.log(2 * np.pi * scale) - ssr / (2 * scale)
+            llf = -.5 * (nobs * np.log(2 * np.pi * scale) + ssr / scale)
         return llf
 
     def whiten(self, Y):
@@ -894,7 +890,6 @@ class OLS(WLS):
     def fit_regularized(self, method="elastic_net", alpha=0.,
                         L1_wt=1., start_params=None, profile_scale=False,
                         refit=False, **kwargs):
-        # Docstring attached below
 
         from sm2.base.elastic_net import fit_elasticnet
 
@@ -1060,7 +1055,6 @@ class GLSAR(GLS):
             estimation.  Stops if
 
             max(abs(last - current) / abs(last)) < rtol
-
         """
         # TODO: update this after going through example.
         converged = False
@@ -1118,7 +1112,6 @@ class GLSAR(GLS):
         Returns
         -------
         whitened array
-
         """
         # TODO: notation for AR process
         X = np.asarray(X, np.float64)

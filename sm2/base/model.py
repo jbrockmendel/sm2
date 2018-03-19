@@ -231,8 +231,13 @@ class LikelihoodModel(Model):
 
     def loglike(self, params):
         """
-        Log-likelihood of model.
+        Log-likelihood of model.  Default implementation wraps loglikeobs.
         """
+        return np.sum(self.loglikeobs(params))
+        # TODO: For multi-equation models we only want to sum over 1 axis?
+
+    def loglikeobs(self, params):
+        """Log-likelihood of model evaluated pointwise"""
         raise NotImplementedError  # pragma: no cover
 
     def score(self, params):
@@ -521,9 +526,6 @@ class GenericLikelihoodModel(LikelihoodModel):
 
     def reduceparams(self, params):
         return params[self.fixed_paramsmask]
-
-    def loglike(self, params):
-        return self.loglikeobs(params).sum(0)
 
     def nloglike(self, params):
         return -self.loglikeobs(params).sum(0)

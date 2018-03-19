@@ -24,23 +24,19 @@ def test_pandas_nodates_index():
     # nanosecond support)
     # (This test also doesn't make sense for Pandas < 0.14 since we don't
     # support nanosecond index in Pandas < 0.14)
-    try:
-        # Check for Numpy < 1.7
-        pd.to_offset('N')
-    except:
-        pass
-    else:
-        data = [988, 819, 964]
-        # index=pd.date_range('1970-01-01', periods=3, freq='QS')
-        index = pd.to_datetime([100, 101, 102])
-        s = pd.Series(data, index=index)
+    # Upstream included a check for numpy < 1.7, but we require much more
+    # recent numpy
+    data = [988, 819, 964]
+    # index=pd.date_range('1970-01-01', periods=3, freq='QS')
+    index = pd.to_datetime([100, 101, 102])
+    s = pd.Series(data, index=index)
 
-        actual_str = (index[0].strftime('%Y-%m-%d %H:%M:%S.%f') +
-                      str(index[0].value))
-        assert actual_str == '1970-01-01 00:00:00.000000100'
-        mod = TimeSeriesModel(s)
-        start, end, out_of_sample, _ = mod._get_prediction_index(0, 4)
-        assert len(mod.data.predict_dates) == 5
+    actual_str = (index[0].strftime('%Y-%m-%d %H:%M:%S.%f') +
+                  str(index[0].value))
+    assert actual_str == '1970-01-01 00:00:00.000000100'
+    mod = TimeSeriesModel(s)
+    start, end, out_of_sample, _ = mod._get_prediction_index(0, 4)
+    assert len(mod.data.predict_dates) == 5
 
 
 @pytest.mark.not_vetted
@@ -49,11 +45,9 @@ def test_predict_freq():
     x = np.arange(1, 36.)
 
     # there's a bug in pandas up to 0.10.2 for YearBegin
-    #dates = date_range("1972-4-1", "2007-4-1", freq="AS-APR")
     dates = pd.date_range("1972-4-30", "2006-4-30", freq="A-APR")
     series = pd.Series(x, index=dates)
     model = TimeSeriesModel(series)
-    #np.testing.assert_(model.data.freq == "AS-APR")
     assert model._index.freqstr == "A-APR"
 
     start, end, out_of_sample, _ = (
@@ -61,8 +55,6 @@ def test_predict_freq():
 
     predict_dates = model.data.predict_dates
 
-    #expected_dates = date_range("2006-12-31", "2016-12-31",
-    #                            freq="AS-APR")
     expected_dates = pd.date_range("2006-4-30", "2016-4-30", freq="A-APR")
     tm.assert_index_equal(predict_dates, expected_dates)
 
@@ -71,8 +63,6 @@ def test_predict_freq():
 def test_keyerror_start_date():
     x = np.arange(1, 36.)
 
-    # there's a bug in pandas up to 0.10.2 for YearBegin
-    #dates = date_range("1972-4-1", "2007-4-1", freq="AS-APR")
     dates = pd.date_range("1972-4-30", "2006-4-30", freq="A-APR")
     series = pd.Series(x, index=dates)
     model = TimeSeriesModel(series)
