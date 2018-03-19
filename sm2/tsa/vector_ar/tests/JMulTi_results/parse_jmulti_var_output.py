@@ -301,57 +301,12 @@ def load_results_jmulti(dataset, dt_s_list):
 
         # ---------------------------------------------------------------------
         # parse output related to lag order selection:
-        lagorder_file = dataset.__str__() + "_" + source + "_" + dt_string \
-            + "_lagorder" + ".txt"
-        lagorder_file = os.path.join(cur_dir, lagorder_file)
-        lagorder_file = open(lagorder_file, encoding='latin_1')
-        results["lagorder"] = dict()
-        aic_start = "Akaike Info Criterion:"
-        fpe_start = "Final Prediction Error:"
-        hqic_start = "Hannan-Quinn Criterion:"
-        bic_start = "Schwarz Criterion:"
-        for line in lagorder_file:
-            if line.startswith(aic_start):
-                results["lagorder"]["aic"] = int(line[len(aic_start):])
-            elif line.startswith(fpe_start):
-                results["lagorder"]["fpe"] = int(line[len(fpe_start):])
-            elif line.startswith(hqic_start):
-                results["lagorder"]["hqic"] = int(line[len(hqic_start):])
-            elif line.startswith(bic_start):
-                results["lagorder"]["bic"] = int(line[len(bic_start):])
-        lagorder_file.close()
+        results["lagorder"] = parse_lagorder_file(dataset, source, dt_string)
 
         # ---------------------------------------------------------------------
         # parse output related to non-normality-test:
-        test_norm_file = (dataset.__str__() + "_" + source + "_" + dt_string +
-                          "_diag" + ".txt")
-        test_norm_file = os.path.join(cur_dir, test_norm_file)
-        test_norm_file = open(test_norm_file, encoding='latin_1')
-        results["test_norm"] = dict()
-        section_start_marker = "TESTS FOR NONNORMALITY"
-        section_reached = False
-        subsection_start_marker = "Introduction to Multiple Time Series A"
-        subsection_reached = False
-        line_start_statistic = "joint test statistic:"
-        line_start_pvalue = " p-value:"
-        for line in test_norm_file:
-            if not section_reached:
-                if section_start_marker in line:
-                    section_reached = True  # section w/ relevant results found
-                continue
-            if not subsection_reached:
-                if subsection_start_marker in line:
-                    subsection_reached = True
-                continue
-            if "joint_pvalue" in results["test_norm"].keys():
-                break
-            if line.startswith(line_start_statistic):
-                line_end = line[len(line_start_statistic):]
-                results["test_norm"]["joint_test_statistic"] = float(line_end)
-            if line.startswith(line_start_pvalue):
-                line_end = line[len(line_start_pvalue):]
-                results["test_norm"]["joint_pvalue"] = float(line_end)
-        test_norm_file.close()
+        results["test_norm"] = parse_non_normality_results(dataset, source,
+                                                           dt_string)
 
         # ---------------------------------------------------------------------
         # parse output related to testing the whiteness of the residuals:
@@ -367,6 +322,72 @@ def load_results_jmulti(dataset, dt_s_list):
     return results_dict_per_det_terms
 
 
+# TODO: near-identical func in parse_jmulti_vecm_output
+def parse_non_normality_results(dataset, source, dt_string):
+    # parse output related to non-normality-test:
+    tnresults = {}
+
+    fname = (dataset.__str__() + "_" + source + "_" +
+             dt_string + "_diag" + ".txt")
+    path = os.path.join(cur_dir, fname)
+
+    section_start_marker = "TESTS FOR NONNORMALITY"
+    section_reached = False
+    subsection_start_marker = "Introduction to Multiple Time Series A"
+    subsection_reached = False
+    line_start_statistic = "joint test statistic:"
+    line_start_pvalue = " p-value:"
+
+    with open(path, encoding='latin_1') as fd:
+        for line in fd:
+            if not section_reached:
+                if section_start_marker in line:
+                    section_reached = True  # section w/ relevant results found
+                continue
+            if not subsection_reached:
+                if subsection_start_marker in line:
+                    subsection_reached = True
+                continue
+            if "joint_pvalue" in tnresults.keys():
+                break
+            if line.startswith(line_start_statistic):
+                line_end = line[len(line_start_statistic):]
+                tnresults["joint_test_statistic"] = float(line_end)
+            if line.startswith(line_start_pvalue):
+                line_end = line[len(line_start_pvalue):]
+                tnresults["joint_pvalue"] = float(line_end)
+
+    return tnresults
+
+
+# TODO: near-identical func in parse_jmulti_vecm_output
+def parse_lagorder_file(dataset, source, dt_string):
+    lresults = {}
+
+    fname = (dataset.__str__() + "_" + source + "_" +
+             dt_string + "_lagorder" + ".txt")
+    path = os.path.join(cur_dir, fname)
+
+    aic_start = "Akaike Info Criterion:"
+    fpe_start = "Final Prediction Error:"
+    hqic_start = "Hannan-Quinn Criterion:"
+    bic_start = "Schwarz Criterion:"
+
+    with open(path, encoding='latin_1') as fd:
+        for line in fd:
+            if line.startswith(aic_start):
+                lresults["aic"] = int(line[len(aic_start):])
+            elif line.startswith(fpe_start):
+                lresults["fpe"] = int(line[len(fpe_start):])
+            elif line.startswith(hqic_start):
+                lresults["hqic"] = int(line[len(hqic_start):])
+            elif line.startswith(bic_start):
+                lresults["bic"] = int(line[len(bic_start):])
+
+    return lresults
+
+
+# TODO: near-identical func in parse_jmulti_vecm_output
 def parse_whiteness_file(dataset, source, dt_string):
     # parse output related to testing the whiteness of the residuals:
     wfname = (dataset.__str__() + "_" + source + "_" +

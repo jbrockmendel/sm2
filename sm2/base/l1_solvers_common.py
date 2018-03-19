@@ -60,11 +60,6 @@ def qc_results(params, alpha, score, qc_tol, qc_verbose=False):
             if (abs(fprime[i]) - alpha[i]) / alpha[i] > qc_tol:
                 passed_array[i] = False
 
-    qc_dict = dict(fprime=fprime,
-                   alpha=alpha,
-                   params=params,
-                   passed_array=passed_array)
-
     passed = passed_array.min()
     if not passed:
         num_failed = (passed_array == False).sum()  # noqa:E712

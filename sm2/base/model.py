@@ -1706,10 +1706,12 @@ class ResultMixin(object):
             self.bootstrap_results = results
         return results.mean(0), results.std(0), results
 
-    def get_nlfun(self, fun):
+    def get_nlfun(self, fun):  # pragma: no cover
         # I think this is supposed to get the delta method that is currently
         # in miscmodels count (as part of Poisson example)
-        pass
+        raise NotImplementedError("Not ported from upstream, "
+                                  "as it is not used or tested there.  "
+                                  "Also all it does is `pass`.")
 
 
 # TODO: _none_ of this is covered in any tests (summary.__doc__ is copied)
