@@ -53,7 +53,6 @@ NOTE = """::
         realint   - Real interest rate (tbilrate - infl)
 """
 import os
-
 import numpy as np
 import pandas as pd
 
@@ -92,6 +91,8 @@ def _get_data():
         data = np.recfromtxt(fd, delimiter=",",
                              names=True, dtype=float)
     return data
+    data = pd.read_csv(path)
+    return data.astype('f8').to_records(index=False)
 
 
 variable_names = ["realcons", "realgdp", "realinv"]

@@ -61,7 +61,7 @@ class Y_arma11(object):
             self.arroots = [1.2634 + 0.0000j]
             self.maroots = [-2.6104 + 0.0000j]
             #self.bse = [0.042369318062, 0.065703859674]
-            # NOTE: bse, cov_params, tvalues taken from R
+            # NOTE: bse, cov_params, and tvalues taken from R
             self.bse = [0.0424015620491, 0.0608752234378]
             #self.cov_params = [
             #   [0.0017952, -0.0010996],
@@ -182,7 +182,7 @@ class Y_arma41(object):
             self.arroots = [1.0184 + 0.0000j, 0.2960 - 0.9803j,
                             0.2960 + 0.9803j, -1.4747 + 0.0000j]
             self.maroots = [-29.7219 + 0.0000j]
-            # NOTE: bse, cov_params, and t are from R
+            # NOTE: bse, cov_params, and tvalues are from R
             #self.bse = [0.077822066628, 0.112199961491, 0.104986211369,
             #            0.068394652456, 0.113996438269]
             self.bse = [0.09554032, 0.13387533, 0.12691479,
@@ -194,16 +194,11 @@ class Y_arma41(object):
             #   [-0.0047067, 0.0069576, -0.0067771, 0.0046778, 0.0054205],
             #   [-0.0070610, 0.0098601, -0.0089971, 0.0054205, 0.012995]]
             self.cov_params = [
-                [0.009127952, -0.01243259, 0.011488329,
-                 -0.007070855, -0.011031907],
-                [-0.012432590, 0.01792260, -0.016597806,
-                 0.010136298, 0.015053122],
-                [0.011488329, -0.01659781, 0.016107364,
-                 -0.009851695, -0.013923062],
-                [-0.007070855, 0.01013630, -0.009851695,
-                 0.006472410, 0.008562476],
-                [-0.011031907, 0.01505312, -0.013923062,
-                 0.008562476, 0.018107521]]
+                [.009127952, -.01243259, .011488329, -.007070855, -.011031907],
+                [-.012432590, .01792260, -.016597806, .010136298, .015053122],
+                [.011488329, -.01659781, .016107364, -.009851695, -.013923062],
+                [-.007070855, .01013630, -.009851695, .006472410, .008562476],
+                [-.011031907, .01505312, -.013923062, .008562476, .018107521]]
             self.hqic = 674.640335476392
             self.llf = -327.085865780964
             self.resid = resids_css[4:, 2]
@@ -348,7 +343,7 @@ class Y_arma02(object):
             self.tvalues = [3.433, -13.53]
             self.sigma2 = 1.122887152869 ** 2
         elif method == "css":
-            # bse, cov_params, tvalues taken from R
+            # NOTE: bse, cov_params, tvalues taken from R
             self.params = [0.175605240783, -0.688421349504]
             self.aic = 773.725350463014
             self.bic = 784.289733216601
@@ -398,7 +393,7 @@ class Y_arma11c(object):
             #self.params = [1.625462134333, 0.666386002049, 0.409512270580]
             # NOTE: gretl gives the intercept not the mean,
             #       x-12-arima and R agree with us
-            # NOTE: params, bse, cov_params, tvals from R
+            # NOTE: params, bse, cov_params, tvalues from R
             self.params = [4.872477127267, 0.666395534262, 0.409517026658]
             self.aic = 734.613526514951
             self.bic = 748.683338100810
@@ -698,7 +693,7 @@ class Y_arma50c(object):
             self.forecast = forecast_results['fc50c']
             self.forecasterr = forecast_results['fe50c']
         elif method == "css":
-            # NOTE: params, bse, cov_params, tvalues from R
+            # NOTE: params, bse, cov_params, and tvalues from R
             # likelihood based results from x-12 arima
             #self.params = [0.843173779572, 0.755433266689, -0.296886816205,
             #               0.253572751789, 0.276975022313, -0.172637420881]
