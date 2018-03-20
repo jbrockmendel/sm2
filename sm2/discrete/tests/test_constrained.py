@@ -16,7 +16,7 @@ import patsy
 import pytest
 
 from sm2.discrete.discrete_model import Poisson
-from sm2.base._constraints import fit_constrained
+from sm2.base._constraints import fit_constrained, fit_constrained_wrap
 
 from sm2.tools.tools import add_constant
 from sm2 import datasets
@@ -496,7 +496,6 @@ class TestGLMLogitConstrained2(CheckGLMConstrainedMixin):
         # minimal test
         res2 = self.res2  # reference results
 
-        from sm2.base._constraints import fit_constrained_wrap
         res_wrap = fit_constrained_wrap(self.res1m.model, self.constraints_rq)
         assert_allclose(res_wrap.params, res2.params, rtol=1e-6)
         assert_allclose(res_wrap.params, res2.params, rtol=1e-6)

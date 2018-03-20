@@ -238,11 +238,17 @@ def _get_sandwich_arrays(results, cov_type=''):
             xu = results.model.jac(results.params)
             hessian_inv = np.linalg.inv(results.model.hessian(results.params))
         elif hasattr(results.model, 'score_obs'):
-            xu = results.model.score_obs(results.params)
-            hessian_inv = np.linalg.inv(results.model.hessian(results.params))
+            # TODO: If all models have this, then do this without a try/except
+            try:
+                xu = results.model.score_obs(results.params)
+            except NotImplementedError:
+                # fall back to not-hasattr case
+                xu = results.model.wexog * results.wresid[:, None]
+                hessian_inv = np.asarray(results.normalized_cov_params)
+            else:
+                hessian_inv = np.linalg.inv(results.model.hessian(results.params))
         else:
             xu = results.model.wexog * results.wresid[:, None]
-
             hessian_inv = np.asarray(results.normalized_cov_params)
 
         # experimental support for freq_weights
