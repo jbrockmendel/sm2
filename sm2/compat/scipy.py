@@ -4,7 +4,7 @@ import numpy as np
 
 
 # TODO: de-privatize?
-def _next_regular(target):
+def _next_regular(target):  # noqa:C901
     """
     Find the next regular number greater than or equal to target.
     Regular numbers are composites of the prime factors 2, 3, and 5.
@@ -39,11 +39,13 @@ def _next_regular(target):
             p35 *= 3
             if p35 == target:
                 return p35
+
         if p35 < match:
             match = p35
         p5 *= 5
         if p5 == target:
             return p5
+
     if p5 < match:
         match = p5
     return match
@@ -75,12 +77,12 @@ def _lazywhere(cond, arrays, f, fillvalue=None, f2=None):
     broadcasted together.
     """
     if fillvalue is None:
-        if f2 is None:
+        if f2 is None:  # pragma: no cover
             raise ValueError("One of (fillvalue, f2) must be given.")
         else:
             fillvalue = np.nan
     else:
-        if f2 is not None:
+        if f2 is not None:  # pragma: no cover
             raise ValueError("Only one of (fillvalue, f2) can be given.")
 
     arrays = np.broadcast_arrays(*arrays)

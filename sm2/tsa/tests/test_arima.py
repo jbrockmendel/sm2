@@ -35,8 +35,7 @@ DECIMAL_1 = 1
 
 current_path = os.path.dirname(os.path.abspath(__file__))
 path = os.path.join(current_path, 'results', 'y_arma_data.csv')
-# Note: upstream uses np.genfromtxt, which differs ~8e-16
-y_arma = pd.read_csv(path).values
+y_arma = pd.read_csv(path, float_precision='high').values
 
 cpi_dates = pd.PeriodIndex(start='1959q1', end='2009q3', freq='Q')
 sun_dates = pd.PeriodIndex(start='1700', end='2008', freq='A')
@@ -84,7 +83,7 @@ def test_compare_arma():
     assert_almost_equal(resls[0] / dres.params,
                         np.ones(dres.params.shape),
                         decimal=1)
-    #rescm also contains variance estimate as last element of params
+    # rescm also contains variance estimate as last element of params
 
     #assert_almost_equal(np.abs(rescm.params[:-1] / d.params),
     #                    np.ones(d.params.shape), decimal=1)
@@ -817,11 +816,11 @@ def test_arma_predict_mle_dates():
         mod._get_prediction_index('1701', '1751', True)
 
     start, end = 2, 51
-    _, _, _, _ = mod._get_prediction_index('1702', '1751', False)
+    mod._get_prediction_index('1702', '1751', False)
     tm.assert_index_equal(mod.data.predict_dates, sun_dates[start:end + 1])
 
     start, end = 308, 333
-    _, _, _, _ = mod._get_prediction_index('2008', '2033', False)
+    mod._get_prediction_index('2008', '2033', False)
     tm.assert_index_equal(mod.data.predict_dates, sun_predict_dates)
 
 
@@ -868,6 +867,7 @@ def test_arima_predict_css_dates():
 
 @pytest.mark.not_vetted
 def test_arma_predict_css_dates():
+    # TODO: GH reference?
     sunspots = datasets.sunspots.load().data['SUNACTIVITY']
     mod = ARMA(sunspots, (9, 0), dates=sun_dates, freq='A')
     mod.method = 'css'
@@ -958,29 +958,41 @@ def test_arima_predict_mle():
 
     # Dynamic
 
-    # start < p, end <p 1959q2 - 1959q4
-    # NOTE: should raise
-    #start, end = 1, 3
-    #fv = res1.predict(start, end, dynamic=True, typ='levels')
-    #assert_almost_equal(fv, arima_forecasts[:, 15])
-    # start < p, end 0 1959q3 - 1960q1
+    with pytest.raises(ValueError):
+        # Start must be >= k_ar for conditional MLE or dynamic forecast. Got 0
+        # start < p, end <p 1959q2 - 1959q4
+        start, end = 1, 3
+        fv = res1.predict(start, end, dynamic=True, typ='levels')
+        #assert_almost_equal(fv, arima_forecasts[:, 15])
 
-    # NOTE: below should raise an error
-    #start, end = 2, 4
-    #fv = res1.predict(start, end, dynamic=True, typ='levels')
-    #assert_almost_equal(fv, fcdyn[5:end + 1], DECIMAL_4)
-    # start < p, end >0 1959q3 - 1971q4
-    #start, end = 2, 51
-    #fv = res1.predict(start, end, dynamic=True, typ='levels')
-    #assert_almost_equal(fv, fcdyn[5:end + 1], DECIMAL_4)
-    # # start < p, end nobs 1959q3 - 2009q3
-    #start, end = 2, 202
-    #fv = res1.predict(start, end, dynamic=True, typ='levels')
-    #assert_almost_equal(fv, fcdyn[5:end + 1], DECIMAL_4)
-    # # start < p, end >nobs 1959q3 - 2015q4
-    #start, end = 2, 227
-    #fv = res1.predict(start, end, dynamic=True, typ='levels')
-    #assert_almost_equal(fv, fcdyn[5:end + 1], DECIMAL_4)
+    with pytest.raises(ValueError):
+        # Start must be >= k_ar for conditional MLE or dynamic forecast. Got 1
+        # start < p, end 0 1959q3 - 1960q1
+        start, end = 2, 4
+        fv = res1.predict(start, end, dynamic=True, typ='levels')
+        #assert_almost_equal(fv, fcdyn[5:end + 1], DECIMAL_4)
+
+    with pytest.raises(ValueError):
+        # Start must be >= k_ar for conditional MLE or dynamic forecast. Got 1
+        # start < p, end >0 1959q3 - 1971q4
+        start, end = 2, 51
+        fv = res1.predict(start, end, dynamic=True, typ='levels')
+        #assert_almost_equal(fv, fcdyn[5:end + 1], DECIMAL_4)
+
+    with pytest.raises(ValueError):
+        # Start must be >= k_ar for conditional MLE or dynamic forecast. Got 1
+        # start < p, end nobs 1959q3 - 2009q3
+        start, end = 2, 202
+        fv = res1.predict(start, end, dynamic=True, typ='levels')
+        #assert_almost_equal(fv, fcdyn[5:end + 1], DECIMAL_4)
+
+    with pytest.raises(ValueError):
+        # Start must be >= k_ar for conditional MLE or dynamic forecast. Got 1
+        # start < p, end >nobs 1959q3 - 2015q4
+        start, end = 2, 227
+        fv = res1.predict(start, end, dynamic=True, typ='levels')
+        #assert_almost_equal(fv, fcdyn[5:end + 1], DECIMAL_4)
+
     # start 0, end >0 1960q1 - 1971q4
     start, end = 5, 51
     fv = res1.predict(start, end, dynamic=True, typ='levels')
@@ -1049,17 +1061,6 @@ def test_arma_predict_indices():
         model._get_prediction_index('1700', None, True)
     with pytest.raises(ValueError):
         model._get_prediction_index('1708', None, True)
-
-    # raises - start out of sample
-    # TODO: remove these, start out of sample now allowed
-    # assert_raises(ValueError, model._get_prediction_index,
-    #                *(311, None, True))
-    # assert_raises(ValueError, model._get_prediction_index,
-    #                *(311, None, False))
-    # assert_raises(ValueError, model._get_prediction_index,
-    #                *('2010', None, True))
-    # assert_raises(ValueError, model._get_prediction_index,
-    #                *('2010', None, False))
 
     # works - in-sample
     # None
@@ -1133,17 +1134,6 @@ def test_arima_predict_indices():
         model._get_prediction_index(0, None, False)
     with pytest.raises(KeyError):
         model._get_prediction_index('1959Q1', None, False)
-
-    # raises - start out of sample
-    # TODO: start out of sample is now allowed; remove this code
-    # assert_raises(ValueError, model._get_prediction_index,
-    #               *(204, None, True))
-    # assert_raises(ValueError, model._get_prediction_index,
-    #               *(204, None, False))
-    # assert_raises(ValueError, model._get_prediction_index,
-    #               *('2010Q1', None, True))
-    # assert_raises(ValueError, model._get_prediction_index,
-    #               *('2010Q1', None, False))
 
     # works - in-sample
     # None
@@ -1297,21 +1287,35 @@ def test_arima_predict_css():
     fcdyn3 = arima_forecasts[:, 3]
     fcdyn4 = arima_forecasts[:, 4]
 
-    # NOTE: should raise
-    #start, end = 1, 3
-    #fv = res1.model.predict(params, start, end)
-    # # start < p, end 0 1959q3 - 1960q1
-    #start, end = 2, 4
-    #fv = res1.model.predict(params, start, end)
-    # # start < p, end >0 1959q3 - 1971q4
-    #start, end = 2, 51
-    #fv = res1.model.predict(params, start, end)
-    # # start < p, end nobs 1959q3 - 2009q3
-    #start, end = 2, 202
-    #fv = res1.model.predict(params, start, end)
-    # # start < p, end >nobs 1959q3 - 2015q4
-    #start, end = 2, 227
-    #fv = res1.model.predict(params, start, end)
+    with pytest.raises(ValueError):
+        # Start must be >= k_ar for conditional MLE or dynamic forecast. Got 0
+        start, end = 1, 3
+        fv = res1.model.predict(params, start, end)
+
+    with pytest.raises(ValueError):
+        # Start must be >= k_ar for conditional MLE or dynamic forecast. Got 1
+        # start < p, end 0 1959q3 - 1960q1
+        start, end = 2, 4
+        fv = res1.model.predict(params, start, end)
+
+    with pytest.raises(ValueError):
+        # Start must be >= k_ar for conditional MLE or dynamic forecast. Got 1
+        # start < p, end >0 1959q3 - 1971q4
+        start, end = 2, 51
+        fv = res1.model.predict(params, start, end)
+
+    with pytest.raises(ValueError):
+        # Start must be >= k_ar for conditional MLE or dynamic forecast. Got 1
+        # start < p, end nobs 1959q3 - 2009q3
+        start, end = 2, 202
+        fv = res1.model.predict(params, start, end)
+
+    with pytest.raises(ValueError):
+        # Start must be >= k_ar for conditional MLE or dynamic forecast. Got 1
+        # start < p, end >nobs 1959q3 - 2015q4
+        start, end = 2, 227
+        fv = res1.model.predict(params, start, end)
+
     # start 0, end >0 1960q1 - 1971q4
     start, end = 5, 51
     fv = res1.model.predict(params, start, end, typ='levels')
@@ -1321,7 +1325,7 @@ def test_arima_predict_css():
     fv = res1.model.predict(params, start, end, typ='levels')
     assert_almost_equal(fv, fc[start:end + 1], DECIMAL_4)
     # start 0, end >nobs 1960q1 - 2015q4
-    #TODO: why detoriating precision?
+    # TODO: why detoriating precision?
     fv = res1.model.predict(params, start, end, typ='levels')
     assert_almost_equal(fv, fc[start:end + 1], DECIMAL_4)
     # start >p, end >0 1965q1 - 1971q4
@@ -1355,22 +1359,36 @@ def test_arima_predict_css():
 
     # Dynamic
 
-    # NOTE: should raise
-    # start < p, end <p 1959q2 - 1959q4
-    #start, end = 1, 3
-    #fv = res1.predict(start, end, dynamic=True)
-    # start < p, end 0 1959q3 - 1960q1
-    #start, end = 2, 4
-    #fv = res1.predict(start, end, dynamic=True)
-    # # start < p, end >0 1959q3 - 1971q4
-    #start, end = 2, 51
-    #fv = res1.predict(start, end, dynamic=True)
-    # # start < p, end nobs 1959q3 - 2009q3
-    #start, end = 2, 202
-    #fv = res1.predict(start, end, dynamic=True)
-    # # start < p, end >nobs 1959q3 - 2015q4
-    #start, end = 2, 227
-    #fv = res1.predict(start, end, dynamic=True)
+    with pytest.raises(ValueError):
+        # Start must be >= k_ar for conditional MLE or dynamic forecast. Got 0
+        # start < p, end <p 1959q2 - 1959q4
+        start, end = 1, 3
+        fv = res1.predict(start, end, dynamic=True)
+
+    with pytest.raises(ValueError):
+        # Start must be >= k_ar for conditional MLE or dynamic forecast. Got 1
+        # start < p, end 0 1959q3 - 1960q1
+        start, end = 2, 4
+        fv = res1.predict(start, end, dynamic=True)
+
+    with pytest.raises(ValueError):
+        # Start must be >= k_ar for conditional MLE or dynamic forecast. Got 1
+        # start < p, end >0 1959q3 - 1971q4
+        start, end = 2, 51
+        fv = res1.predict(start, end, dynamic=True)
+
+    with pytest.raises(ValueError):
+        # Start must be >= k_ar for conditional MLE or dynamic forecast. Got 1
+        # start < p, end nobs 1959q3 - 2009q3
+        start, end = 2, 202
+        fv = res1.predict(start, end, dynamic=True)
+
+    with pytest.raises(ValueError):
+        # Start must be >= k_ar for conditional MLE or dynamic forecast. Got 1
+        # start < p, end >nobs 1959q3 - 2015q4
+        start, end = 2, 227
+        fv = res1.predict(start, end, dynamic=True)
+
     # start 0, end >0 1960q1 - 1971q4
     start, end = 5, 51
     fv = res1.model.predict(params, start, end, dynamic=True, typ='levels')
@@ -1438,21 +1456,35 @@ def test_arima_predict_css_diffs():
     fcdyn3 = arima_forecasts[:, 3]
     fcdyn4 = arima_forecasts[:, 4]
 
-    # NOTE: should raise
-    #start, end = 1, 3
-    #fv = res1.model.predict(params, start, end)
-    # # start < p, end 0 1959q3 - 1960q1
-    #start, end = 2, 4
-    #fv = res1.model.predict(params, start, end)
-    # # start < p, end >0 1959q3 - 1971q4
-    #start, end = 2, 51
-    #fv = res1.model.predict(params, start, end)
-    # # start < p, end nobs 1959q3 - 2009q3
-    #start, end = 2, 202
-    #fv = res1.model.predict(params, start, end)
-    # # start < p, end >nobs 1959q3 - 2015q4
-    #start, end = 2, 227
-    #fv = res1.model.predict(params, start, end)
+    with pytest.raises(ValueError):
+        # Start must be >= k_ar for conditional MLE or dynamic forecast. Got 0
+        start, end = 1, 3
+        fv = res1.model.predict(params, start, end)
+
+    with pytest.raises(ValueError):
+        # Start must be >= k_ar for conditional MLE or dynamic forecast. Got 1
+        # start < p, end 0 1959q3 - 1960q1
+        start, end = 2, 4
+        fv = res1.model.predict(params, start, end)
+
+    with pytest.raises(ValueError):
+        # Start must be >= k_ar for conditional MLE or dynamic forecast. Got 1
+        # start < p, end >0 1959q3 - 1971q4
+        start, end = 2, 51
+        fv = res1.model.predict(params, start, end)
+
+    with pytest.raises(ValueError):
+        # Start must be >= k_ar for conditional MLE or dynamic forecast. Got 1
+        # start < p, end nobs 1959q3 - 2009q3
+        start, end = 2, 202
+        fv = res1.model.predict(params, start, end)
+
+    with pytest.raises(ValueError):
+        # Start must be >= k_ar for conditional MLE or dynamic forecast. Got 1
+        # start < p, end >nobs 1959q3 - 2015q4
+        start, end = 2, 227
+        fv = res1.model.predict(params, start, end)
+
     # start 0, end >0 1960q1 - 1971q4
     start, end = 5, 51
     fv = res1.model.predict(params, start, end)
@@ -1462,7 +1494,7 @@ def test_arima_predict_css_diffs():
     fv = res1.model.predict(params, start, end)
     assert_almost_equal(fv, fc[start:end + 1], DECIMAL_4)
     # start 0, end >nobs 1960q1 - 2015q4
-    #TODO: why detoriating precision?
+    # TODO: why detoriating precision?
     fv = res1.model.predict(params, start, end)
     assert_almost_equal(fv, fc[start:end + 1], DECIMAL_4)
     # start >p, end >0 1965q1 - 1971q4
@@ -1496,22 +1528,35 @@ def test_arima_predict_css_diffs():
 
     # Dynamic
 
-    # NOTE: should raise
-    # start < p, end <p 1959q2 - 1959q4
-    #start, end = 1, 3
-    #fv = res1.predict(start, end, dynamic=True)
-    # start < p, end 0 1959q3 - 1960q1
-    #start, end = 2, 4
-    #fv = res1.predict(start, end, dynamic=True)
-    # # start < p, end >0 1959q3 - 1971q4
-    #start, end = 2, 51
-    #fv = res1.predict(start, end, dynamic=True)
-    # # start < p, end nobs 1959q3 - 2009q3
-    #start, end = 2, 202
-    #fv = res1.predict(start, end, dynamic=True)
-    # # start < p, end >nobs 1959q3 - 2015q4
-    #start, end = 2, 227
-    #fv = res1.predict(start, end, dynamic=True)
+    with pytest.raises(ValueError):
+        # Start must be >= k_ar for conditional MLE or dynamic forecast. Got 0
+        # start < p, end <p 1959q2 - 1959q4
+        start, end = 1, 3
+        fv = res1.predict(start, end, dynamic=True)
+
+    with pytest.raises(ValueError):
+        # Start must be >= k_ar for conditional MLE or dynamic forecast. Got 1
+        # start < p, end 0 1959q3 - 1960q1
+        start, end = 2, 4
+        fv = res1.predict(start, end, dynamic=True)
+
+    with pytest.raises(ValueError):
+        # Start must be >= k_ar for conditional MLE or dynamic forecast. Got 1
+        # start < p, end >0 1959q3 - 1971q4
+        start, end = 2, 51
+        fv = res1.predict(start, end, dynamic=True)
+
+    with pytest.raises(ValueError):
+        # Start must be >= k_ar for conditional MLE or dynamic forecast. Got 1
+        # start < p, end nobs 1959q3 - 2009q3
+        start, end = 2, 202
+        fv = res1.predict(start, end, dynamic=True)
+
+    with pytest.raises(ValueError):
+        # start < p, end >nobs 1959q3 - 2015q4
+        start, end = 2, 227
+        fv = res1.predict(start, end, dynamic=True)
+
     # start 0, end >0 1960q1 - 1971q4
     start, end = 5, 51
     fv = res1.model.predict(params, start, end, dynamic=True)
@@ -1578,6 +1623,7 @@ def test_arima_predict_mle_diffs():
     fcdyn4 = arima_forecasts[:, 4]
 
     # NOTE: should raise
+    # TODO: The above comment appears wrong.  See GH#4358
     start, end = 1, 3
     fv = res1.model.predict(params, start, end)
     # start < p, end 0 1959q3 - 1960q1
@@ -1592,6 +1638,7 @@ def test_arima_predict_mle_diffs():
     # start < p, end >nobs 1959q3 - 2015q4
     start, end = 2, 227
     fv = res1.model.predict(params, start, end)
+    # -----------------------------------------
     # start 0, end >0 1960q1 - 1971q4
     start, end = 5, 51
     fv = res1.model.predict(params, start, end)
@@ -1601,7 +1648,7 @@ def test_arima_predict_mle_diffs():
     fv = res1.model.predict(params, start, end)
     assert_almost_equal(fv, fc[start:end + 1], DECIMAL_4)
     # start 0, end >nobs 1960q1 - 2015q4
-    #TODO: why detoriating precision?
+    # TODO: why detoriating precision?
     fv = res1.model.predict(params, start, end)
     assert_almost_equal(fv, fc[start:end + 1], DECIMAL_4)
     # start >p, end >0 1965q1 - 1971q4
@@ -1635,22 +1682,35 @@ def test_arima_predict_mle_diffs():
 
     # Dynamic
 
-    # NOTE: should raise
-    # start < p, end <p 1959q2 - 1959q4
-    #start, end = 1, 3
-    #fv = res1.predict(start, end, dynamic=True)
-    # start < p, end 0 1959q3 - 1960q1
-    #start, end = 2, 4
-    #fv = res1.predict(start, end, dynamic=True)
-    # # start < p, end >0 1959q3 - 1971q4
-    #start, end = 2, 51
-    #fv = res1.predict(start, end, dynamic=True)
-    # # start < p, end nobs 1959q3 - 2009q3
-    #start, end = 2, 202
-    #fv = res1.predict(start, end, dynamic=True)
-    # # start < p, end >nobs 1959q3 - 2015q4
-    #start, end = 2, 227
-    #fv = res1.predict(start, end, dynamic=True)
+    with pytest.raises(ValueError):
+        # Start must be >= k_ar for conditional MLE or dynamic forecast. got 0
+        # start < p, end <p 1959q2 - 1959q4
+        start, end = 1, 3
+        fv = res1.predict(start, end, dynamic=True)
+
+    with pytest.raises(ValueError):
+        # Start must be >= k_ar for conditional MLE or dynamic forecast. got 1
+        # start < p, end 0 1959q3 - 1960q1
+        start, end = 2, 4
+        fv = res1.predict(start, end, dynamic=True)
+    with pytest.raises(ValueError):
+        # Start must be >= k_ar for conditional MLE or dynamic forecast. Got 1
+        # start < p, end >0 1959q3 - 1971q4
+        start, end = 2, 51
+        fv = res1.predict(start, end, dynamic=True)
+
+    with pytest.raises(ValueError):
+        # Start must be >= k_ar for conditional MLE or dynamic forecast. Got 1
+        # start < p, end nobs 1959q3 - 2009q3
+        start, end = 2, 202
+        fv = res1.predict(start, end, dynamic=True)
+
+    with pytest.raises(ValueError):
+        # Start must be >= k_ar for conditional MLE or dynamic forecast. Got 1
+        # start < p, end >nobs 1959q3 - 2015q4
+        start, end = 2, 227
+        fv = res1.predict(start, end, dynamic=True)
+
     # start 0, end >0 1960q1 - 1971q4
     start, end = 5, 51
     fv = res1.model.predict(params, start, end, dynamic=True)
@@ -1720,12 +1780,14 @@ def test_1dexog():
         mod.predict(193, 202, exog[-10:], dynamic=True)
 
         dta.index = pd.Index(cpi_dates)
-        mod = ARMA(dta['realcons'], (1, 1), dta['m1']).fit(disp=-1)
-        mod.predict(dta.index[-10], dta.index[-1],
+        mod = ARMA(dta['realcons'], (1, 1), dta['m1'])
+        res = mod.fit(disp=-1)
+        res.predict(dta.index[-10], dta.index[-1],
                     exog=dta['m1'][-10:], dynamic=True)
 
-        mod = ARMA(dta['realcons'], (1, 1), dta['m1']).fit(trend='nc', disp=-1)
-        mod.predict(dta.index[-10], dta.index[-1],
+        mod = ARMA(dta['realcons'], (1, 1), dta['m1'])
+        res = mod.fit(trend='nc', disp=-1)
+        res.predict(dta.index[-10], dta.index[-1],
                     exog=dta['m1'][-10:], dynamic=True)
 
 
@@ -1822,9 +1884,9 @@ def test_arima_predict_exog():
     #np.random.seed(123)
     #y = arma_generate_sample(arparams, maparams, nobs, burnin=100)
 
-    # # make an exogenous trend
+    # make an exogenous trend
     #X = np.array(range(nobs)) / 20.0
-    # # add a constant
+    # add a constant
     #y += 2.5
 
     path = os.path.join(current_path, 'results',
@@ -1853,38 +1915,22 @@ def test_arima_predict_exog():
 
     # conditional sum of squares
     #arima_forecasts = pd.read_csv(current_path + "/results/"
-    #                        "results_arima_exog_forecasts_css.csv")
+    #                              "results_arima_exog_forecasts_css.csv")
     #predict_expected = arima_forecasts["predict"].dropna()
     #arma_res = ARMA(y.values, order=(2, 1), exog=X[:100]).fit(trend="c",
-    #                                                         method="css",
-    #                                                         disp=-1)
+    #                                                          method="css",
+    #                                                          disp=-1)
 
     #params = np.array([2.152350033809826, -0.103602399018814,
     #                   0.566716580421188, -0.326208009247944,
     #                   0.102142932143421])
     #predict = arma_res.model.predict(params)
-    # # in-sample
+    # in-sample
     #assert_almost_equal(predict, predict_expected.values[:98], 6)
 
     #predict = arma_res.model.predict(params, end=124, exog=X[100:])
-    # # exog for out-of-sample and in-sample dynamic
+    # exog for out-of-sample and in-sample dynamic
     #assert_almost_equal(predict, predict_expected.values, 3)
-
-
-@pytest.mark.not_vetted
-@pytest.mark.smoke
-def test_arima_no_diff():
-    # GH#736
-    # smoke test, predict will break if we have ARIMAResults but
-    # ARMA model, need ARIMA(p, 0, q) to return an ARMA in init.
-    ar = [1, -.75, .15, .35]
-    ma = [1, .25, .9]
-    y = arma_generate_sample(ar, ma, 100)
-    mod = ARIMA(y, (3, 0, 2))
-    assert type(mod) is ARMA
-    res = mod.fit(disp=-1)
-    # smoke test just to be sure
-    res.predict()
 
 
 @pytest.mark.not_vetted
@@ -1961,8 +2007,8 @@ def test_bad_start_params():
 
 
 @pytest.mark.not_vetted
-def test_arima_1123():
-    # test ARMAX predict when trend is none
+def test_armax_predict_no_trend():
+    # GH#1123 test ARMAX predict doesn't ignore exog when trend is none
     np.random.seed(12345)
     arparams = np.array([.75, -.25])
     maparams = np.array([.65, .35])
@@ -2018,6 +2064,7 @@ def test_small_data():
     # X-12 arima will estimate, gretl refuses to estimate likely a problem
     # in start params regression.
     res = mod.fit(trend="nc", disp=0, start_params=[.1, .1, .1, .1])
+    # TODO: mark these last two as smoke?
     mod = ARIMA(y, (1, 0, 2))
     with warnings.catch_warnings():
         warnings.simplefilter("ignore")
@@ -2312,7 +2359,7 @@ def test_ARIMA_exog_predict():
                     res_f111[-len(predicted_arima_f):],
                     rtol=1e-4, atol=1e-4)
 
-    # test for forecast with 0 ar fix in #2457 numbers again from Stata
+    # test for forecast with 0 ar fix in GH#2457 numbers again from Stata
 
     res_f002 = np.array([
         7.70178181209, 7.67445481224, 7.6715373765, 7.6772915319,
@@ -2338,7 +2385,9 @@ def test_ARIMA_exog_predict():
                                    exog=exog_full.values[197:])
     forecast_002 = res_002.forecast(steps=len(exog_full.values[197:]),
                                     exog=exog_full.values[197:])
-    forecast_002 = forecast_002[0]  # TODO we are not checking the other results
+    forecast_002 = forecast_002[0]
+    # TODO: we are not checking the other results
+
     assert_allclose(fpredict_002,
                     res_f002[-len(fpredict_002):],
                     rtol=1e-4, atol=1e-6)
@@ -2482,6 +2531,21 @@ def test_arima_dataframe_integer_name():
     ts = pd.Series(vals, index=dr)
     df = pd.DataFrame(ts)
     mod = ARIMA(df, (2, 0, 2))  # TODO: maybe _fit_ this model?
+
+
+@pytest.mark.smoke
+def test_arima_no_diff():
+    # GH#736
+    # smoke test, predict will break if we have ARIMAResults but
+    # ARMA model, need ARIMA(p, 0, q) to return an ARMA in init.
+    ar = [1, -.75, .15, .35]
+    ma = [1, .25, .9]
+    y = arma_generate_sample(ar, ma, 100)
+    mod = ARIMA(y, (3, 0, 2))
+    assert type(mod) is ARMA
+    res = mod.fit(disp=-1)
+    # smoke test just to be sure
+    res.predict()
 
 
 # ----------------------------------------------------------------

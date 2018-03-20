@@ -114,7 +114,6 @@ class TransformRestriction(object):
 
         This transform can be applied to the original parameters as well
         as to the data. If params is 2-d, then each row is transformed.
-
         """
         params = np.asarray(params)
         return params.dot(self.transf_mat)

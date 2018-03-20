@@ -443,6 +443,7 @@ class SimpleTable(list):
                 formatted_rows.append(
                     row.as_string(output_format='latex', **fmt))
             prev_aligns = aligns
+
         # tabular does not support caption, but make it available for
         # figure environment
         if self.title:

@@ -18,8 +18,9 @@ def _check_margeff_args(at, method):
     Checks valid options for margeff
     """
     if at not in ['overall', 'mean', 'median', 'zero', 'all']:
-        raise ValueError("%s not a valid option for `at`." % at)
-    if method not in ['dydx', 'eyex', 'dyex', 'eydx']:
+        raise ValueError("%s not a valid option for `at`."
+                         % at)  # pragma: no cover
+    if method not in ['dydx', 'eyex', 'dyex', 'eydx']:  # pragma: no cover
         raise ValueError("method is not understood.  Got %s" % method)
 
 
@@ -27,9 +28,9 @@ def _check_discrete_args(at, method):
     """
     Checks the arguments for margeff if the exogenous variables are discrete.
     """
-    if method in ['dyex', 'eyex']:
+    if method in ['dyex', 'eyex']:  # pragma: no cover
         raise ValueError("%s not allowed for discrete variables" % method)
-    if at in ['median', 'zero']:
+    if at in ['median', 'zero']:  # pragma: no cover
         raise ValueError("%s not allowed for discrete variables" % at)
 
 
@@ -364,12 +365,14 @@ def margeff_cov_with_se(model, params, exog, cov_params, at, derivative,
     return cov_me, np.sqrt(np.diag(cov_me))
 
 
-def margeff():
-    pass
+def margeff():  # pragma: no cover
+    raise NotImplementedError("margeff not ported from upstream, "
+                              "as all it does there is pass.")
 
 
 def _check_at_is_all(method):
-    if method['at'] == 'all':
+    if method['at'] == 'all':  # pragma: no cover
+        # TODO: Should this be a ValueError?
         raise NotImplementedError("Only margeff are available when `at` is "
                                   "all. Please input specific points if you "
                                   "would like to do inference.")
@@ -496,6 +499,7 @@ class DiscreteMargins(object):
         upper = self.margeff + q * me_se
         return np.asarray(list(zip(lower, upper)))
 
+    # TODO: not hit in tests
     def summary(self, alpha=.05):
         """
         Returns a summary table for marginal effects

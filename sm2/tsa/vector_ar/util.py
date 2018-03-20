@@ -74,15 +74,17 @@ def make_lag_names(names, lag_order, trendorder=1, exog=None):
             lag_names.append('L' + str(i) + '.' + name)
 
     # handle the constant name
+    # Note: unicode literals are relevant for py2 tests,
+    # see test_arima.test_arima_wrapper
     if trendorder != 0:
-        lag_names.insert(0, 'const')
+        lag_names.insert(0, u'const')
     if trendorder > 1:
-        lag_names.insert(1, 'trend')
+        lag_names.insert(1, u'trend')
     if trendorder > 2:
-        lag_names.insert(2, 'trend**2')
+        lag_names.insert(2, u'trend**2')
     if exog is not None:
         for i in range(exog.shape[1]):
-            lag_names.insert(trendorder + i, "exog" + str(i))
+            lag_names.insert(trendorder + i, u"exog" + str(i))
     return lag_names
 
 

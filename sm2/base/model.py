@@ -11,7 +11,7 @@ from scipy import stats
 from sm2.tools.data import _is_using_pandas
 from sm2.tools.tools import recipr, nan_dot
 from sm2.tools.decorators import resettable_cache, cache_readonly
-from sm2.tools.numdiff import approx_fprime
+from sm2.tools.numdiff import approx_fprime, approx_hess
 from sm2.tools.sm_exceptions import (ValueWarning, HessianInversionWarning,
                                      ConvergenceWarning)
 
@@ -231,8 +231,13 @@ class LikelihoodModel(Model):
 
     def loglike(self, params):
         """
-        Log-likelihood of model.
+        Log-likelihood of model.  Default implementation wraps loglikeobs.
         """
+        return np.sum(self.loglikeobs(params))
+        # TODO: For multi-equation models we only want to sum over 1 axis?
+
+    def loglikeobs(self, params):
+        """Log-likelihood of model evaluated pointwise"""
         raise NotImplementedError  # pragma: no cover
 
     def score(self, params):
@@ -369,9 +374,8 @@ class LikelihoodModel(Model):
                 Hinv = eigvecs.dot(np.diag(1.0 / eigvals)).dot(eigvecs.T)
                 Hinv = np.asfortranarray((Hinv + Hinv.T) / 2.0)
             else:
-                from warnings import warn
-                warn('Inverting hessian failed, no bse or cov_params '
-                     'available', HessianInversionWarning)
+                warnings.warn('Inverting hessian failed, no bse or cov_params '
+                              'available', HessianInversionWarning)
                 Hinv = None
 
         if 'cov_type' in kwargs:
@@ -523,9 +527,6 @@ class GenericLikelihoodModel(LikelihoodModel):
     def reduceparams(self, params):
         return params[self.fixed_paramsmask]
 
-    def loglike(self, params):
-        return self.loglikeobs(params).sum(0)
-
     def nloglike(self, params):
         return -self.loglikeobs(params).sum(0)
 
@@ -553,7 +554,6 @@ class GenericLikelihoodModel(LikelihoodModel):
         """
         Hessian of log-likelihood evaluated at params
         """
-        from sm2.tools.numdiff import approx_hess
         # need options for hess (epsilon)
         return approx_hess(params, self.loglike)
 
@@ -1706,10 +1706,12 @@ class ResultMixin(object):
             self.bootstrap_results = results
         return results.mean(0), results.std(0), results
 
-    def get_nlfun(self, fun):
+    def get_nlfun(self, fun):  # pragma: no cover
         # I think this is supposed to get the delta method that is currently
         # in miscmodels count (as part of Poisson example)
-        pass
+        raise NotImplementedError("Not ported from upstream, "
+                                  "as it is not used or tested there.  "
+                                  "Also all it does is `pass`.")
 
 
 # TODO: _none_ of this is covered in any tests (summary.__doc__ is copied)

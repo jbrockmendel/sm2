@@ -40,6 +40,11 @@ def qc_results(params, alpha, score, qc_tol, qc_verbose=False):
     ------
     Warning message if QC check fails.
     """
+    if qc_verbose:  # pragma: no cover
+        # TODO: Update docstring to reflect this restriction
+        raise NotImplementedError("option `qc_verbose` is available upstream, "
+                                  "but is disabled in sm2.")
+
     # Check for fatal errors
     assert not np.isnan(params).max()
     assert (params == params.ravel('F')).min(), "params should be 1-d"
@@ -55,11 +60,6 @@ def qc_results(params, alpha, score, qc_tol, qc_verbose=False):
             if (abs(fprime[i]) - alpha[i]) / alpha[i] > qc_tol:
                 passed_array[i] = False
 
-    qc_dict = dict(fprime=fprime,
-                   alpha=alpha,
-                   params=params,
-                   passed_array=passed_array)
-
     passed = passed_array.min()
     if not passed:
         num_failed = (passed_array == False).sum()  # noqa:E712
@@ -67,30 +67,13 @@ def qc_results(params, alpha, score, qc_tol, qc_verbose=False):
                    % (num_failed, k_params))
         message += ('\nTry increasing solver accuracy or number of iterations'
                     ', decreasing alpha, or switch solvers')
-        if qc_verbose:
-            message += _get_verbose_addon(qc_dict)
-        print(message)
+        print(message)  # TODO: Don't print
 
     return passed
 
 
-def _get_verbose_addon(qc_dict):  # TODO: not hit in tests.  Deprecate?
-    alpha = qc_dict['alpha']
-    params = qc_dict['params']
-    fprime = qc_dict['fprime']
-    passed_array = qc_dict['passed_array']
-
-    addon = '\n------ verbose QC printout -----------------'
-    addon = '\n------ Recall the problem was rescaled by 1 / nobs ---'
-    addon += '\n|%-10s|%-10s|%-10s|%-10s|' % (
-        'passed', 'alpha', 'fprime', 'param')
-    addon += '\n--------------------------------------------'
-    for i in range(len(alpha)):
-        addon += '\n|%-10s|%-10.3e|%-10.3e|%-10.3e|' % (passed_array[i],
-                                                        alpha[i],
-                                                        fprime[i],
-                                                        params[i])
-    return addon
+def _get_verbose_addon(qc_dict):  # pragma: no cover
+    raise NotImplementedError("_get_verbose_addon not ported from upstream")
 
 
 def do_trim_params(params, k_params, alpha, score, passed, trim_mode,

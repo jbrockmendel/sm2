@@ -49,6 +49,11 @@ def fit_l1_slsqp(f, score, start_params, args, kwargs, disp=False,
     acc : float (default 1e-6)
         Requested accuracy as used by slsqp
     """
+    if kwargs.get('qc_verbose', False):  # pragma: no cover
+        # TODO: Update docstring to reflect this restriction
+        raise NotImplementedError("option `qc_verbose` is available upstream, "
+                                  "but is disabled in sm2.")
+
     start_params = np.array(start_params).ravel('F')
 
     # Extract values
@@ -93,9 +98,8 @@ def fit_l1_slsqp(f, score, start_params, args, kwargs, disp=False,
     # Post-process
     # QC
     qc_tol = kwargs['qc_tol']
-    qc_verbose = kwargs['qc_verbose']
     passed = l1_solvers_common.qc_results(params, alpha, score,
-                                          qc_tol, qc_verbose)
+                                          qc_tol, qc_verbose=False)
     # Possibly trim
     trim_mode = kwargs['trim_mode']
     size_trim_tol = kwargs['size_trim_tol']
@@ -107,7 +111,7 @@ def fit_l1_slsqp(f, score, start_params, args, kwargs, disp=False,
                                                        auto_trim_tol)
 
     # Pack up return values
-    # TODO These retvals are returned as mle_retvals...but the fit wasn't ML.
+    # TODO: These retvals are returned as mle_retvals...but the fit wasn't ML.
     # This could be confusing someday.
     if full_output:
         x_full, fx, its, imode, smode = results
@@ -124,8 +128,6 @@ def fit_l1_slsqp(f, score, start_params, args, kwargs, disp=False,
                    'hopt': hopt,
                    'trimmed': trimmed,
                    'warnflag': warnflag}
-
-    if full_output:
         return params, retvals
     else:
         return params

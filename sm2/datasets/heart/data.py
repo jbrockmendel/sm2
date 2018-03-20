@@ -29,8 +29,7 @@ NOTE = """::
         censored - indicates if an observation is censored.  1 is uncensored
 """
 import os
-import numpy as np
-
+import pandas as pd
 from sm2.datasets import utils as du
 
 
@@ -61,6 +60,5 @@ def load_pandas():
 def _get_data():
     cur_dir = os.path.dirname(os.path.abspath(__file__))
     path = os.path.join(cur_dir, 'heart.csv')
-    with open(path, 'rb') as fd:
-        data = np.recfromtxt(fd, delimiter=",", names=True, dtype=float)
+    data = pd.read_csv(path).astype('f8').to_records(index=False)
     return data

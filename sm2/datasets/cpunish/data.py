@@ -41,10 +41,11 @@ NOTE = """::
 
     State names are included in the data file, though not returned by load.
 """
+import os
 
-from numpy import recfromtxt
+import pandas as pd
+
 from sm2.datasets import utils as du
-from os.path import dirname, abspath
 
 
 def load():
@@ -74,9 +75,7 @@ def load_pandas():
 
 
 def _get_data():
-    filepath = dirname(abspath(__file__))
-    with open(filepath + '/cpunish.csv', 'rb') as f:
-        data = recfromtxt(f, delimiter=",",
-                          names=True, dtype=float,
-                          usecols=(1, 2, 3, 4, 5, 6, 7))
-    return data
+    cur_dir = os.path.dirname(os.path.abspath(__file__))
+    path = os.path.join(cur_dir, 'cpunish.csv')
+    data = pd.read_csv(path, float_precision='high')
+    return data.iloc[:, 1:8].astype('f8').to_records(index=False)

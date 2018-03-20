@@ -426,50 +426,12 @@ def load_results_jmulti(dataset):
 
         # ---------------------------------------------------------------------
         # parse output related to lag order selection:
-        lagorder_file = ("vecm_" + dataset.__str__() + "_" + source + "_" +
-                         dt_string + "_lagorder" + ".txt")
-        lagorder_file = os.path.join(cur_dir, lagorder_file)
-        lagorder_file = open(lagorder_file, encoding='latin_1')
-        results["lagorder"] = dict()
-        aic_start = "Akaike Info Criterion:"
-        fpe_start = "Final Prediction Error:"
-        hqic_start = "Hannan-Quinn Criterion:"
-        bic_start = "Schwarz Criterion:"
-        for line in lagorder_file:
-            if line.startswith(aic_start):
-                results["lagorder"]["aic"] = int(line[len(aic_start):])
-            elif line.startswith(fpe_start):
-                results["lagorder"]["fpe"] = int(line[len(fpe_start):])
-            elif line.startswith(hqic_start):
-                results["lagorder"]["hqic"] = int(line[len(hqic_start):])
-            elif line.startswith(bic_start):
-                results["lagorder"]["bic"] = int(line[len(bic_start):])
-        lagorder_file.close()
+        results["lagorder"] = parse_lagorder_file(dataset, source, dt_string)
 
         # ---------------------------------------------------------------------
         # parse output related to non-normality-test:
-        test_norm_file = ("vecm_" + dataset.__str__() + "_" + source + "_" +
-                          dt_string + "_diag" + ".txt")
-        test_norm_file = os.path.join(cur_dir, test_norm_file)
-        test_norm_file = open(test_norm_file, encoding='latin_1')
-        results["test_norm"] = dict()
-        reading_values = False
-        line_start_statistic = "joint test statistic:"
-        line_start_pvalue = " p-value:"
-        for line in test_norm_file:
-            if not reading_values:
-                if "Introduction to Multiple Time Series Analysis" in line:
-                    reading_values = True  # section w/ relevant results found
-                continue
-            if "joint_pvalue" in results["test_norm"].keys():
-                break
-            if line.startswith(line_start_statistic):
-                line_end = line[len(line_start_statistic):]
-                results["test_norm"]["joint_test_statistic"] = float(line_end)
-            if line.startswith(line_start_pvalue):
-                line_end = line[len(line_start_pvalue):]
-                results["test_norm"]["joint_pvalue"] = float(line_end)
-        test_norm_file.close()
+        results["test_norm"] = parse_non_normality_results(dataset, source,
+                                                           dt_string)
 
         # ---------------------------------------------------------------------
         # parse output related to testing the whiteness of the residuals:
@@ -486,7 +448,65 @@ def load_results_jmulti(dataset):
     return results_dict_per_det_terms
 
 
-# TODO: near-identical to version in parse_jmulti_var_output?
+# TODO: near-identical to version in parse_jmulti_var_output
+def parse_non_normality_results(dataset, source, dt_string):
+    # parse output related to non-normality-test:
+    tnresults = {}
+
+    fname = ("vecm_" + dataset.__str__() + "_" + source + "_" +
+             dt_string + "_diag" + ".txt")
+    path = os.path.join(cur_dir, fname)
+
+    reading_values = False
+    line_start_statistic = "joint test statistic:"
+    line_start_pvalue = " p-value:"
+
+    with open(path, encoding='latin_1') as fd:
+        for line in fd:
+            if not reading_values:
+                if "Introduction to Multiple Time Series Analysis" in line:
+                    reading_values = True  # section w/ relevant results found
+                continue
+            if "joint_pvalue" in tnresults.keys():
+                break
+            if line.startswith(line_start_statistic):
+                line_end = line[len(line_start_statistic):]
+                tnresults["joint_test_statistic"] = float(line_end)
+            if line.startswith(line_start_pvalue):
+                line_end = line[len(line_start_pvalue):]
+                tnresults["joint_pvalue"] = float(line_end)
+
+    return tnresults
+
+
+# TODO: near-identical to version in parse_jmulti_var_output
+def parse_lagorder_file(dataset, source, dt_string):
+    lresults = {}
+
+    fname = ("vecm_" + dataset.__str__() + "_" + source + "_" +
+             dt_string + "_lagorder" + ".txt")
+    path = os.path.join(cur_dir, fname)
+
+    aic_start = "Akaike Info Criterion:"
+    fpe_start = "Final Prediction Error:"
+    hqic_start = "Hannan-Quinn Criterion:"
+    bic_start = "Schwarz Criterion:"
+
+    with open(path, encoding='latin_1') as fd:
+        for line in fd:
+            if line.startswith(aic_start):
+                lresults["aic"] = int(line[len(aic_start):])
+            elif line.startswith(fpe_start):
+                lresults["fpe"] = int(line[len(fpe_start):])
+            elif line.startswith(hqic_start):
+                lresults["hqic"] = int(line[len(hqic_start):])
+            elif line.startswith(bic_start):
+                lresults["bic"] = int(line[len(bic_start):])
+
+    return lresults
+
+
+# TODO: near-identical to version in parse_jmulti_var_output
 def parse_whiteness_file(dataset, source, dt_string):
     # parse output related to testing the whiteness of the residuals:
     wfname = ("vecm_" + dataset.__str__() + "_" + source + "_" +

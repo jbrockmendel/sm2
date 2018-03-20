@@ -948,33 +948,6 @@ class Poisson(CountModel):
         """
         return np.exp(stats.poisson.logpmf(self.endog, np.exp(X)))
 
-    def loglike(self, params):
-        r"""
-        Loglikelihood of Poisson model
-
-        Parameters
-        ----------
-        params : array-like
-            The parameters of the model.
-
-        Returns
-        -------
-        loglike : float
-            The log-likelihood function of the model evaluated at `params`.
-            See notes.
-
-        Notes
-        --------
-        .. math:: \ln L
-            =\sum_{i=1}^{n}\left[-\lambda_{i}+y_{i}x_{i}^{\prime}\beta-\ln y_{i}!\right]
-        """  # noqa:E501
-        offset = getattr(self, "offset", 0)
-        exposure = getattr(self, "exposure", 0)
-        Xb = np.dot(self.exog, params)
-        linpred = Xb + offset + exposure
-        endog = self.endog
-        return np.sum(-np.exp(linpred) + endog * linpred - gammaln(endog + 1))
-
     def loglikeobs(self, params):
         r"""
         Loglikelihood for observations of Poisson model
@@ -1259,31 +1232,6 @@ class GeneralizedPoisson(CountModel):
         kwds = super(GeneralizedPoisson, self)._get_init_kwds()
         kwds['p'] = self.parameterization + 1
         return kwds
-
-    def loglike(self, params):
-        r"""
-        Loglikelihood of Generalized Poisson model
-
-        Parameters
-        ----------
-        params : array-like
-            The parameters of the model.
-
-        Returns
-        -------
-        loglike : float
-            The log-likelihood function of the model evaluated at `params`.
-            See notes.
-
-        Notes
-        --------
-        .. math:: \ln L=\sum_{i=1}^{n}\left[\mu_{i}+(y_{i}-1)*ln(\mu_{i}+
-            \alpha*\mu_{i}^{p-1}*y_{i})-y_{i}*ln(1+\alpha*\mu_{i}^{p-1})-
-            ln(y_{i}!)-\frac{\mu_{i}+\alpha*\mu_{i}^{p-1}*y_{i}}{1+\alpha*
-            \mu_{i}^{p-1}}\right]
-
-        """
-        return np.sum(self.loglikeobs(params))
 
     def loglikeobs(self, params):
         r"""
@@ -1706,33 +1654,6 @@ class Logit(BinaryModel):
         negexp = np.exp(-X)
         return negexp / (1 + negexp)**2
 
-    def loglike(self, params):
-        """
-        Log-likelihood of logit model.
-
-        Parameters
-        -----------
-        params : array-like
-            The parameters of the logit model.
-
-        Returns
-        -------
-        loglike : float
-            The log-likelihood function of the model evaluated at `params`.
-            See notes.
-
-        Notes
-        ------
-        .. math:: \\ln L
-            =\\sum_{i}\\ln\\Lambda\\left(q_{i}x_{i}^{\\prime}\\beta\\right)
-
-        Where :math:`q=2y-1`. This simplification comes from the fact that the
-        logistic distribution is symmetric.
-        """
-        q = 2 * self.endog - 1
-        Xb = np.dot(self.exog, params)
-        return np.sum(np.log(self.cdf(q * Xb)))
-
     def loglikeobs(self, params):
         """
         Log-likelihood of logit model for each observation.
@@ -1899,33 +1820,6 @@ class Probit(BinaryModel):
         """
         X = np.asarray(X)
         return stats.norm._pdf(X)
-
-    def loglike(self, params):
-        r"""
-        Log-likelihood of probit model (i.e., the normal distribution).
-
-        Parameters
-        ----------
-        params : array-like
-            The parameters of the model.
-
-        Returns
-        -------
-        loglike : float
-            The log-likelihood function of the model evaluated at `params`.
-            See notes.
-
-        Notes
-        -----
-        .. math:: \ln L=\sum_{i}\ln\Phi\left(q_{i}x_{i}^{\prime}\beta\right)
-
-        Where :math:`q=2y-1`. This simplification comes from the fact that the
-        normal distribution is symmetric.
-        """
-        Xb = np.dot(self.exog, params)
-        q = 2 * self.endog - 1
-        prob = self.cdf(q * Xb)
-        return np.sum(np.log(np.clip(prob, FLOAT_EPS, 1)))
 
     def loglikeobs(self, params):
         r"""
@@ -2127,34 +2021,6 @@ class MNLogit(MultinomialModel):
         """  # noqa:E501
         eXB = np.column_stack((np.ones(len(X)), np.exp(X)))
         return eXB / eXB.sum(1)[:, None]
-
-    def loglike(self, params):
-        r"""
-        Log-likelihood of the multinomial logit model.
-
-        Parameters
-        ----------
-        params : array-like
-            The parameters of the multinomial logit model.
-
-        Returns
-        -------
-        loglike : float
-            The log-likelihood function of the model evaluated at `params`.
-            See notes.
-
-        Notes
-        ------
-        .. math:: \ln L
-            =\sum_{i=1}^{n}\sum_{j=0}^{J}d_{ij}\ln\left(\frac{\exp(\beta_{j}^{\prime}x_{i})}{\sum_{k=0}^{J}\exp(\beta_{k}^{\prime}x_{i})}\right)
-
-        where :math:`d_{ij}=1` if individual `i` chose alternative `j` and 0
-        if not.
-        """  # noqa:E501
-        params = params.reshape(self.K, -1, order='F')
-        Xb = np.dot(self.exog, params)
-        logprob = np.log(self.cdf(Xb))
-        return np.sum(self.wendog * logprob)
 
     def loglikeobs(self, params):
         r"""
@@ -2445,43 +2311,6 @@ class NegativeBinomial(CountModel):
     def _ll_geometric(self, params):
         # we give alpha of 1 because it's actually log(alpha) where alpha=0
         return self._ll_nbin(params, 1, 0)
-
-    def loglike(self, params):
-        r"""
-        Loglikelihood for negative binomial model
-
-        Parameters
-        ----------
-        params : array-like
-            The parameters of the model. If `loglike_method` is nb1 or
-            nb2, then the ancillary parameter is expected to be the
-            last element.
-
-        Returns
-        -------
-        llf : float
-            The loglikelihood value at `params`
-
-        Notes
-        -----
-        Following notation in Greene (2008), with negative binomial
-        heterogeneity parameter :math:`\alpha`:
-
-        .. math::
-
-           \lambda_i &= exp(X\beta) \\
-           \theta &= 1 / \alpha \\
-           g_i &= \theta \lambda_i^Q \\
-           w_i &= g_i/(g_i + \lambda_i) \\
-           r_i &= \theta / (\theta+\lambda_i) \\
-           ln \mathcal{L}_i &= ln \Gamma(y_i+g_i)
-                - ln \Gamma(1+y_i) + g_iln (r_i) + y_i ln(1-r_i)
-
-        where :math`Q=0` for NB2 and geometric and :math:`Q=1` for NB1.
-        For the geometric, :math:`\alpha=0` as well.
-        """
-        llf = np.sum(self.loglikeobs(params))
-        return llf
 
     def _score_geom(self, params):
         y = self.endog[:, None]
@@ -2870,23 +2699,7 @@ class NegativeBinomialP(CountModel):
         kwds['p'] = self.parameterization
         return kwds
 
-    def loglike(self, params):
-        """
-        Loglikelihood of Generalized Negative Binomial (NB-P) model
-
-        Parameters
-        ----------
-        params : array-like
-            The parameters of the model.
-
-        Returns
-        -------
-        loglike : float
-            The log-likelihood function of the model evaluated at `params`.
-            See notes.
-        """
-        return np.sum(self.loglikeobs(params))
-
+    # TODO: This is pretty slow.  can it be optimized?
     def loglikeobs(self, params):
         """
         Loglikelihood for observations of Generalized Negative
@@ -2923,6 +2736,7 @@ class NegativeBinomialP(CountModel):
 
         return llf
 
+    # TODO: This is pretty slow.  can it be optimized?
     def score_obs(self, params):
         """
         Generalized Negative Binomial (NB-P) model score (gradient)
@@ -2988,6 +2802,7 @@ class NegativeBinomialP(CountModel):
         else:
             return score
 
+    # TODO: This is pretty slow.  can it be optimized?
     def hessian(self, params):
         """
         Generalized Negative Binomial (NB-P) model hessian maxtrix
@@ -3353,11 +3168,12 @@ class DiscreteResults(base.LikelihoodModelResults):
 
     @cache_readonly
     def llnull(self):
-
+        # TODO: slow, 1.086 seconds per call in tests
         model = self.model
         kwds = model._get_init_kwds().copy()
         for key in getattr(model, '_null_drop_keys', []):
             del kwds[key]
+
         # TODO: what parameters to pass to fit?
         mod_null = model.__class__(model.endog, np.ones(self.nobs), **kwds)
         # TODO: consider catching and warning on convergence failure?
@@ -3375,7 +3191,9 @@ class DiscreteResults(base.LikelihoodModelResults):
         else:
             sp_null = None
 
-        opt_kwds = dict(method='bfgs', warn_convergence=False, maxiter=10000,
+        opt_kwds = dict(method='bfgs',
+                        warn_convergence=False,
+                        maxiter=10000,
                         disp=0)
         opt_kwds.update(optim_kwds)
 
