@@ -1,3 +1,4 @@
+__all__ = ["GLM", "families"]
 from .generalized_linear_model import GLM
 # from .generalized_estimating_equations import GEE, OrdinalGEE, NominalGEE
 # from .bayes_mixed_glm import BinomialBayesMixedGLM, PoissonBayesMixedGLM
