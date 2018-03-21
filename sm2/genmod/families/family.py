@@ -5,6 +5,8 @@ The one parameter exponential family distributions used by GLM.
 # see
 # www.biostat.jhsph.edu/~qli/biostatistics_r_doc/library/stats/html/family.html
 # for comparison to R, and McCullagh and Nelder
+from __future__ import division
+
 import warnings
 import inspect
 

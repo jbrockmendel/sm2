@@ -467,9 +467,7 @@ class GLM(base.LikelihoodModel):
         score_obs : ndarray, 2d
             The first derivative of the loglikelihood function evaluated at
             params for each observation.
-
         """
-
         score_factor = self.score_factor(params, scale=scale)
         return score_factor[:, None] * self.exog
 
@@ -490,7 +488,6 @@ class GLM(base.LikelihoodModel):
         score : ndarray_1d
             The first derivative of the loglikelihood function calculated as
             the sum of `score_obs`
-
         """
         return self.score_obs(params, scale=scale).sum(0)
 
@@ -513,7 +510,6 @@ class GLM(base.LikelihoodModel):
         score_factor : ndarray_1d
             A 1d weight vector used in the calculation of the score_obs.
             The score_obs are obtained by `score_factor[:, None] * exog`
-
         """
         mu = self.predict(params)
         if scale is None:
@@ -523,7 +519,7 @@ class GLM(base.LikelihoodModel):
         score_factor /= self.family.variance(mu)
         score_factor *= self.iweights
 
-        if not scale == 1:
+        if scale != 1:
             score_factor /= scale
 
         return score_factor
@@ -549,7 +545,6 @@ class GLM(base.LikelihoodModel):
             A 1d weight vector used in the calculation of the Hessian.
             The hessian is obtained by `(exog.T * hessian_factor).dot(exog)`
         """
-
         # calculating eim_factor
         mu = self.predict(params)
         if scale is None:

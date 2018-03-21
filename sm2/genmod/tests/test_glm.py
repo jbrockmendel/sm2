@@ -234,11 +234,16 @@ class CheckComparisonMixin(object):
 
     def test_compare_discrete(self):
         res1 = self.res1
-        resd = self.resd
 
         # score
         score1 = res1.model.score(res1.params)
         score_obs1 = res1.model.score_obs(res1.params)
+
+        # Troubleshooting travis failures that don't happen locally
+        assert res1.model.exog.dtype == 'f8'
+        assert res1.params.dtype == 'f8'
+        assert score_obs1.dtype == 'f8'
+
         assert_allclose(score1, score_obs1.sum(0), atol=1e-20)
         assert_allclose(score1, np.zeros(score_obs1.shape[1]), atol=1e-7)
 
