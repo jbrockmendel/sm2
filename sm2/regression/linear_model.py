@@ -206,7 +206,6 @@ class RegressionModel(base.LikelihoodModel):
         The residual degree of freedom, defined as the number of observations
         minus the rank of the regressor matrix.
         """
-
         if self._df_resid is None:
             if self.rank is None:
                 self.rank = np.linalg.matrix_rank(self.exog)
@@ -294,6 +293,7 @@ class RegressionModel(base.LikelihoodModel):
             self.effects = effects = np.dot(Q.T, self.wendog)
             beta = np.linalg.solve(R, effects)
 
+        # TODO: Is this necessary given the existing properties?
         if self._df_model is None:
             self._df_model = float(self.rank - self.k_constant)
         if self._df_resid is None:
