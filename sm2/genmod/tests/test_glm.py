@@ -10,8 +10,7 @@ from six.moves import range
 
 import pytest
 import numpy as np
-from numpy.testing import (assert_almost_equal, assert_equal,
-                           assert_allclose, assert_array_less)
+from numpy.testing import assert_almost_equal, assert_equal, assert_allclose
 from scipy import stats
 import pandas as pd
 
@@ -179,7 +178,7 @@ class CheckModelResultsMixin(object):
                             self.decimal_bic)
 
     def test_degrees(self):
-        assert_equal(self.res1.model.df_resid, self.res2.df_resid)
+        assert self.res1.model.df_resid == self.res2.df_resid
 
     decimal_fittedvalues = DECIMAL_4
 
@@ -216,27 +215,46 @@ class CheckModelResultsMixin(object):
 
 
 class CheckComparisonMixin(object):
+    def test_params(self):
+        assert_allclose(self.res1.params,
+                        self.resd.params,
+                        rtol=1e-10)
+
+    def test_llf(self):
+        assert_allclose(self.res1.llf,
+                        self.resd.llf,
+                        rtol=1e-10)
+
+    def test_score_obs(self):
+        score_obs1 = self.res1.model.score_obs(self.res1.params)
+        score_obsd = self.resd.model.score_obs(self.resd.params)
+        assert_allclose(score_obs1,
+                        score_obsd,
+                        rtol=1e-10)
+
     def test_compare_discrete(self):
         res1 = self.res1
         resd = self.resd
 
-        assert_allclose(res1.llf, resd.llf, rtol=1e-10)
-        score_obs1 = res1.model.score_obs(res1.params)
-        score_obsd = resd.model.score_obs(resd.params)
-        assert_allclose(score_obs1, score_obsd, rtol=1e-10)
-
         # score
         score1 = res1.model.score(res1.params)
+        score_obs1 = res1.model.score_obs(res1.params)
         assert_allclose(score1, score_obs1.sum(0), atol=1e-20)
         assert_allclose(score1, np.zeros(score_obs1.shape[1]), atol=1e-7)
 
-        hessian1 = res1.model.hessian(res1.params, observed=False)
-        hessiand = resd.model.hessian(resd.params)
-        assert_allclose(hessian1, hessiand, rtol=1e-10)
+    def test_hessian_unobserved(self):
+        hessian1 = self.res1.model.hessian(self.res1.params, observed=False)
+        hessiand = self.resd.model.hessian(self.resd.params)
+        assert_allclose(hessian1,
+                        hessiand,
+                        rtol=1e-10)
 
-        hessian1 = res1.model.hessian(res1.params, observed=True)
-        hessiand = resd.model.hessian(resd.params)
-        assert_allclose(hessian1, hessiand, rtol=1e-9)
+    def test_hessian_observed(self):
+        hessian1 = self.res1.model.hessian(self.res1.params, observed=True)
+        hessiand = self.resd.model.hessian(self.resd.params)
+        assert_allclose(hessian1,
+                        hessiand,
+                        rtol=1e-9)
 
     def test_score_test(self):
         res1 = self.res1
@@ -244,19 +262,19 @@ class CheckComparisonMixin(object):
         st, pv, df = res1.model.score_test(res1.params, k_constraints=1)
         assert_allclose(st, 0, atol=1e-20)
         assert_allclose(pv, 1, atol=1e-10)
-        assert_equal(df, 1)
+        assert df == 1
 
         st, pv, df = res1.model.score_test(res1.params, k_constraints=0)
         assert_allclose(st, 0, atol=1e-20)
         assert np.isnan(pv)
-        assert_equal(df, 0)
+        assert df == 0
 
         # TODO: no verified numbers largely SMOKE test
         exog_extra = res1.model.exog[:, 1]**2
         st, pv, df = res1.model.score_test(res1.params, exog_extra=exog_extra)
-        assert_array_less(0.1, st)
-        assert_array_less(0.1, pv)
-        assert_equal(df, 1)
+        assert 0.1 < st
+        assert 0.1 < pv
+        assert dt == 1
 
 
 # TODO:
@@ -303,6 +321,12 @@ class CheckComparisonMixin(object):
 #    pass
 
 #class test_glm_bernoulli_logc(CheckModelResultsMixin):
+#    pass
+
+#class TestGlmPoissonIdentity(CheckModelResultsMixin):
+#    pass
+
+#class TestGlmPoissonPower(CheckModelResultsMixin):
 #    pass
 
 
@@ -539,13 +563,6 @@ class TestGlmPoisson(CheckModelResultsMixin, CheckComparisonMixin):
         cls.resd = modd.fit(start_params=cls.res1.params * 0.9, disp=False)
 
 
-#class TestGlmPoissonIdentity(CheckModelResultsMixin):
-#    pass
-
-#class TestGlmPoissonPower(CheckModelResultsMixin):
-#    pass
-
-
 class TestGlmInvgauss(CheckModelResultsMixin):
     @classmethod
     def setup_class(cls):
@@ -656,7 +673,7 @@ class TestGlmPoissonOffset(CheckModelResultsMixin):
         endog[[2, 4, 6, 8]] = np.nan
         mod = GLM(endog, self.data.exog, family=sm.families.Poisson(),
                   exposure=self.exposure, missing='drop')
-        assert_equal(mod.exposure.shape[0], 13)
+        assert mod.exposure.shape[0] == 13
 
     def test_offset_exposure(self):
         # exposure=x and offset=log(x) should have the same effect
@@ -760,11 +777,11 @@ def test_attribute_writable_resettable():
     data = sm.datasets.longley.load()
     endog, exog = data.endog, data.exog
     glm_model = sm.GLM(endog, exog)
-    assert_equal(glm_model.family.link.power, 1.0)
+    assert glm_model.family.link.power == 1.0
     glm_model.family.link.power = 2.
-    assert_equal(glm_model.family.link.power, 2.0)
+    assert glm_model.family.link.power == 2.0
     glm_model2 = sm.GLM(endog, exog)
-    assert_equal(glm_model2.family.link.power, 1.0)
+    assert glm_model2.family.link.power == 1.0
 
 
 class TestStartParams(CheckModelResultsMixin):
@@ -1175,18 +1192,18 @@ def test_glm_irls_method():
     res_g1 = mod.fit(start_params=res1.params, method='bfgs')
 
     for r in [res1, res2, res3]:
-        assert_equal(r.mle_settings['optimizer'], 'IRLS')
-        assert_equal(r.method, 'IRLS')
+        assert r.mle_settings['optimizer'] == 'IRLS'
+        assert r.method == 'IRLS'
 
-    assert_equal(res1.mle_settings['wls_method'], 'lstsq')
-    assert_equal(res2.mle_settings['wls_method'], 'pinv')
-    assert_equal(res3.mle_settings['wls_method'], 'qr')
+    assert res1.mle_settings['wls_method'] == 'lstsq'
+    assert res2.mle_settings['wls_method'] == 'pinv'
+    assert res3.mle_settings['wls_method'] == 'qr'
 
     assert hasattr(res2.results_wls.model, 'pinv_wexog')
     assert hasattr(res3.results_wls.model, 'exog_Q')
 
     # fit_gradient currently does not attach mle_settings
-    assert_equal(res_g1.method, 'bfgs')
+    assert res_g1.method == 'bfgs'
 
 
 class CheckWtdDuplicationMixin(object):
@@ -1506,10 +1523,8 @@ class TestWtdGlmGammaScale_dev(CheckWtdDuplicationMixin):
         freq_weights = self.weight
         mod_misisng = GLM(endog, exog, family=self.res1.model.family,
                           freq_weights=freq_weights, missing='drop')
-        assert_equal(mod_misisng.freq_weights.shape[0],
-                     mod_misisng.endog.shape[0])
-        assert_equal(mod_misisng.freq_weights.shape[0],
-                     mod_misisng.exog.shape[0])
+        assert mod_misisng.freq_weights.shape[0] == mod_misisng.endog.shape[0]
+        assert mod_misisng.freq_weights.shape[0] == mod_misisng.exog.shape[0]
         keep_idx = np.array([1, 3, 5, 7, 9, 10, 11, 12, 13, 14, 15, 16])
         assert_equal(mod_misisng.freq_weights, self.weight[keep_idx])
 
@@ -1608,8 +1623,8 @@ class CheckTweedie(object):
                         atol=1e-6, rtol=1e-6)
 
     def test_df(self):
-        assert_equal(self.res1.df_model, self.res2.df_model)
-        assert_equal(self.res1.df_resid, self.res2.df_resid)
+        assert self.res1.df_model == self.res2.df_model
+        assert self.res1.df_resid == self.res2.df_resid
 
     def test_fittedvalues(self):
         l = len(self.res1.fittedvalues) - 1
@@ -1855,7 +1870,7 @@ class TestRegularized(object):
                 # Confirm that we are doing better than glmnet.
                 llf_r = plf(params)
                 llf_sm = plf(sm_result.params)
-                assert_equal(np.sign(llf_sm - llf_r), 1)
+                assert np.sign(llf_sm - llf_r) == 1
 
 
 class TestConvergence(object):
@@ -1887,9 +1902,8 @@ class TestConvergence(object):
         # is the initial guess based off of start_params or the
         # estimate thereof. The third value (index = 2) is the actual "first
         # iteration"
-        assert_equal(expected_iterations, actual_iterations)
-        assert_equal(len(self.res.fit_history['deviance']) - 2,
-                     actual_iterations)
+        assert expected_iterations == actual_iterations
+        assert len(self.res.fit_history['deviance']) - 2 == actual_iterations
 
     def test_convergence_rtol_only(self):
         atol = 0
@@ -1901,9 +1915,8 @@ class TestConvergence(object):
         # is the initial guess based off of start_params or the
         # estimate thereof. The third value (index = 2) is the actual "first
         # iteration"
-        assert_equal(expected_iterations, actual_iterations)
-        assert_equal(len(self.res.fit_history['deviance']) - 2,
-                     actual_iterations)
+        assert expected_iterations == actual_iterations
+        assert len(self.res.fit_history['deviance']) - 2 == actual_iterations
 
     def test_convergence_atol_rtol(self):
         atol = 1e-8
@@ -1915,9 +1928,8 @@ class TestConvergence(object):
         # is the initial guess based off of start_params or the
         # estimate thereof. The third value (index = 2) is the actual "first
         # iteration"
-        assert_equal(expected_iterations, actual_iterations)
-        assert_equal(len(self.res.fit_history['deviance']) - 2,
-                     actual_iterations)
+        assert expected_iterations == actual_iterations
+        assert len(self.res.fit_history['deviance']) - 2 == actual_iterations
 
     def test_convergence_atol_only_params(self):
         atol = 1e-8
@@ -1930,9 +1942,8 @@ class TestConvergence(object):
         # is the initial guess based off of start_params or the
         # estimate thereof. The third value (index = 2) is the actual "first
         # iteration"
-        assert_equal(expected_iterations, actual_iterations)
-        assert_equal(len(self.res.fit_history['deviance']) - 2,
-                     actual_iterations)
+        assert expected_iterations == actual_iterations
+        assert len(self.res.fit_history['deviance']) - 2 == actual_iterations
 
     def test_convergence_rtol_only_params(self):
         atol = 0
@@ -1945,9 +1956,8 @@ class TestConvergence(object):
         # is the initial guess based off of start_params or the
         # estimate thereof. The third value (index = 2) is the actual "first
         # iteration"
-        assert_equal(expected_iterations, actual_iterations)
-        assert_equal(len(self.res.fit_history['deviance']) - 2,
-                     actual_iterations)
+        assert expected_iterations == actual_iterations
+        assert len(self.res.fit_history['deviance']) - 2 == actual_iterations
 
     def test_convergence_atol_rtol_params(self):
         atol = 1e-8
@@ -1960,9 +1970,8 @@ class TestConvergence(object):
         # is the initial guess based off of start_params or the
         # estimate thereof. The third value (index = 2) is the actual "first
         # iteration"
-        assert_equal(expected_iterations, actual_iterations)
-        assert_equal(len(self.res.fit_history['deviance']) - 2,
-                     actual_iterations)
+        assert expected_iterations == actual_iterations
+        assert len(self.res.fit_history['deviance']) - 2 == actual_iterations
 
 
 def test_poisson_deviance():
@@ -2020,11 +2029,9 @@ def test_wtd_patsy_missing():
                  SOUTH + DEGREE"""
     mod_misisng = GLM.from_formula(formula, data=data.pandas,
                                    freq_weights=weights)
-    assert_equal(mod_misisng.freq_weights.shape[0],
-                 mod_misisng.endog.shape[0])
-    assert_equal(mod_misisng.freq_weights.shape[0],
-                 mod_misisng.exog.shape[0])
-    assert_equal(mod_misisng.freq_weights.shape[0], 12)
+    assert mod_misisng.freq_weights.shape[0] == mod_misisng.endog.shape[0]
+    assert mod_misisng.freq_weights.shape[0] == mod_misisng.exog.shape[0]
+    assert mod_misisng.freq_weights.shape[0] == 12
     keep_weights = np.array([2, 4, 6, 8, 10, 11, 12, 13, 14, 15, 16, 17])
     assert_equal(mod_misisng.freq_weights, keep_weights)
 
