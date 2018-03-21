@@ -274,7 +274,7 @@ class CheckComparisonMixin(object):
         st, pv, df = res1.model.score_test(res1.params, exog_extra=exog_extra)
         assert 0.1 < st
         assert 0.1 < pv
-        assert dt == 1
+        assert df == 1
 
 
 # TODO:
