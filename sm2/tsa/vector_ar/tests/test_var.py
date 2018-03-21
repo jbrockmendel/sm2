@@ -4,6 +4,7 @@ Test VAR Model
 """
 import os
 import sys
+import warnings
 
 from six import BytesIO
 from six.moves import range, StringIO
@@ -259,12 +260,14 @@ class TestVARResults(CheckIRF, CheckFEVD):
     @classmethod
     def setup_class(cls):
         cls.data = get_macrodata()
-        cls.model = VAR(cls.data)
-        cls.names = cls.model.endog_names
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            cls.model = VAR(cls.data)
+            cls.res = cls.model.fit(maxlags=cls.p)
 
+        cls.names = cls.model.endog_names
         cls.ref = RResults()
         cls.k = len(cls.ref.names)
-        cls.res = cls.model.fit(maxlags=cls.p)
 
         cls.irf = cls.res.irf(cls.ref.nirfs)
         cls.nahead = cls.ref.nahead
@@ -275,8 +278,10 @@ class TestVARResults(CheckIRF, CheckFEVD):
     def test_constructor(self):
         # make sure this works with no names
         ndarr = self.data.view((float, 3), type=np.ndarray)
-        model = VAR(ndarr)
-        model.fit(self.p)
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            model = VAR(ndarr)
+            model.fit(self.p)
 
     def test_names(self):
         assert self.model.endog_names == list(self.ref.names)
@@ -349,11 +354,15 @@ class TestVARResults(CheckIRF, CheckFEVD):
     def test_lagorder_select(self):
         ics = ['aic', 'fpe', 'hqic', 'bic']
         for ic in ics:
-            self.model.fit(maxlags=10, ic=ic, verbose=True)
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore")
+                self.model.fit(maxlags=10, ic=ic, verbose=True)
 
     def test_fit_invalid_ic(self):
         with pytest.raises(Exception):
-            self.model.fit(ic='foo')
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore")
+                self.model.fit(ic='foo')
 
     def test_nobs(self):
         assert self.res.nobs == self.ref.nobs
@@ -402,12 +411,15 @@ class TestVARResults(CheckIRF, CheckFEVD):
 
     @pytest.mark.smoke
     def test_select_order(self):
-        self.model.fit(10, ic='aic', verbose=True)
-        self.model.fit(10, ic='fpe', verbose=True)
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
 
-        # bug
-        model = VAR(self.model.endog)
-        model.select_order()
+            self.model.fit(10, ic='aic', verbose=True)
+            self.model.fit(10, ic='fpe', verbose=True)
+
+            # bug
+            model = VAR(self.model.endog)
+            model.select_order()
 
     def test_is_stable(self):
         # may not necessarily be true for other datasets
@@ -470,7 +482,10 @@ class TestVARResults(CheckIRF, CheckFEVD):
         names2.append(names[2])
         names2.append(names[0])
         names2.append(names[1])
-        res2 = VAR(data2).fit(maxlags=self.p)
+
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            res2 = VAR(data2).fit(maxlags=self.p)
 
         # use reorder function
         res3 = self.res.reorder(['realinv', 'realgdp', 'realcons'])
@@ -558,13 +573,20 @@ def test_var_trend():
     # GH#2271
     data = get_macrodata().view((float, 3), type=np.ndarray)
 
-    model = VAR(data)
-    results = model.fit(4, trend='c')
-    results.irf(10)
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+
+        model = VAR(data)
+        results = model.fit(4, trend='c')
+        results.irf(10)
 
     data_nc = data - data.mean(0)
-    model_nc = VAR(data_nc)
-    model_nc.fit(4, trend='nc')
+
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+
+        model_nc = VAR(data_nc)
+        model_nc.fit(4, trend='nc')
 
 
 @pytest.mark.not_vetted
@@ -574,14 +596,21 @@ def test_irf_trend():
     # to get similar AR coefficients and IRF
     data = get_macrodata().view((float, 3), type=np.ndarray)
 
-    model = VAR(data)
-    results = model.fit(4, trend='c')
-    irf = results.irf(10)
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+
+        model = VAR(data)
+        results = model.fit(4, trend='c')
+        irf = results.irf(10)
 
     data_nc = data - data.mean(0)
-    model_nc = VAR(data_nc)
-    results_nc = model_nc.fit(4, trend='nc')
-    irf_nc = results_nc.irf(10)
+
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+
+        model_nc = VAR(data_nc)
+        results_nc = model_nc.fit(4, trend='nc')
+        irf_nc = results_nc.irf(10)
 
     assert_allclose(irf_nc.stderr()[1:4],
                     irf.stderr()[1:4],
@@ -593,9 +622,12 @@ def test_irf_trend():
     #                       index=data.index, columns=data.columns)
     data_t = data + trend[:, None]
 
-    model_t = VAR(data_t)
-    results_t = model_t.fit(4, trend='ct')
-    irf_t = results_t.irf(10)
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+
+        model_t = VAR(data_t)
+        results_t = model_t.fit(4, trend='ct')
+        irf_t = results_t.irf(10)
 
     assert_allclose(irf_t.stderr()[1:4],
                     irf.stderr()[1:4],

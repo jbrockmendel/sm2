@@ -229,22 +229,29 @@ class LikelihoodModel(Model):
     # TODO: if the intent is to re-initialize the model with new data then this
     # method needs to take inputs...
 
-    def loglike(self, params):
+    def loglike(self, params, **kwargs):
         """
-        Log-likelihood of model.  Default implementation wraps loglikeobs.
+        Log-likelihood of model.  Default implementation sums loglikeobs.
         """
-        return np.sum(self.loglikeobs(params))
+        return np.sum(self.loglikeobs(params, **kwargs))
         # TODO: For multi-equation models we only want to sum over 1 axis?
 
-    def loglikeobs(self, params):
+    def loglikeobs(self, params, **kwargs):
         """Log-likelihood of model evaluated pointwise"""
         raise NotImplementedError  # pragma: no cover
 
-    def score(self, params):
+    def score(self, params, **kwargs):
         """
-        Score vector of model.
+        Score vector of model.  Default implementation sums score_obs.
 
         The gradient of logL with respect to each parameter.
+        """
+        return self.score_obs(params, **kwargs).sum(axis=0)
+
+    def score_obs(self, params, **kwargs):
+        """
+        Score vector of model evaluated pointwise.  The gradient of loglikeobs
+        with respect to each parameter.
         """
         raise NotImplementedError  # pragma: no cover
 
@@ -533,14 +540,6 @@ class GenericLikelihoodModel(LikelihoodModel):
     def loglikeobs(self, params):
         return -self.nloglikeobs(params)
 
-    def score(self, params):
-        """
-        Gradient of log-likelihood evaluated at params
-        """
-        kwds = {}
-        kwds.setdefault('centered', True)
-        return approx_fprime(params, self.loglike, **kwds).ravel()
-
     def score_obs(self, params, **kwds):
         """
         Jacobian/Gradient of log-likelihood evaluated at params for each
@@ -637,6 +636,7 @@ class Results(object):
         self.params = params
         self.model = model
         if hasattr(model, 'k_constant'):
+            # TODO: This attribute should _always_ exist
             self.k_constant = model.k_constant
 
     def predict(self, exog=None, transform=True, *args, **kwargs):
@@ -1785,6 +1785,7 @@ class GenericLikelihoodModelResults(LikelihoodModelResults, ResultMixin):
             self.df_resid = self.endog.shape[0] - self.df_model
             # retrofitting the model, used in t_test TODO: check design
             self.model.df_resid = self.df_resid
+            # FIXME: dont alter model in-place
 
         self._cache = resettable_cache()
         self.__dict__.update(mlefit.__dict__)

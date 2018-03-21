@@ -5,7 +5,7 @@ import pandas as pd
 import pandas.util.testing as tm
 
 from sm2.base import data as sm_data
-from sm2.api import Logit, OLS
+from sm2.api import Logit, OLS, GLM, families
 from sm2.formula import handle_formula_data
 from sm2.datasets import macrodata, longley
 from sm2.tools.sm_exceptions import MissingDataError
@@ -743,9 +743,16 @@ class CheckHasConstant(object):
             # "some models raise on singular".  This doesnt affect us for
             # the time being (likely because of skipped GLM/RLM tests).
             # When it does, re-enable but catch something more specific.
-            res = mod.fit(**fit_kwds)
-            np.testing.assert_equal(res.model.k_constant, result[0])
-            np.testing.assert_equal(res.model.data.k_constant, result[0])
+            try:
+                res = mod.fit(**fit_kwds)
+            except np.linalg.LinAlgError:
+                # upstream puts the next two assertions in a try/except
+                # block, _and_ catches _everything_ instead of just the one
+                # relevant error.
+                continue
+            else:
+                np.testing.assert_equal(res.model.k_constant, result[0])
+                np.testing.assert_equal(res.model.data.k_constant, result[0])
 
     @classmethod
     def setup_class(cls):
@@ -792,18 +799,12 @@ class TestHasConstantOLS(CheckHasConstant):
         cls.y = cls.y_c
 
 
-@pytest.mark.skip(reason="GLM not ported from upstream")
 @pytest.mark.not_vetted
 class TestHasConstantGLM(CheckHasConstant):
     fit_kwds = {}
 
     @staticmethod
     def mod(y, x):
-        # dummies to prevent flake8 complaints until these are ported
-        GLM = None
-        families = None
-        # from statsmodels.genmod.generalized_linear_model import GLM
-        # from statsmodels.genmod import families
         return GLM(y, x, family=families.Binomial())
 
     @classmethod

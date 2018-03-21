@@ -354,7 +354,6 @@ def het_white(resid, exog, retres=False):
     now test statistic reproduces Greene 5th, example 11.3
     """
     from sm2.regression.linear_model import OLS
-    # TODO: I don't like this dependency
 
     x = np.asarray(exog)
     y = np.asarray(resid)

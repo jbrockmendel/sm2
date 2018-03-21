@@ -152,6 +152,7 @@ class DiscreteModel(base.LikelihoodModel):
     call signature expected of child classes in addition to those of
     sm2.model.LikelihoodModel.
     """
+
     def __init__(self, endog, exog, **kwargs):
         self.nobs = exog.shape[0]  # TODO: Do this at a higher level
         super(DiscreteModel, self).__init__(endog, exog, **kwargs)
@@ -318,6 +319,10 @@ class DiscreteModel(base.LikelihoodModel):
             # they raise at the _end_ of the call (and redundantly)
             raise ValueError("argument method == %s, which is not handled"
                              % method)
+        if qc_verbose:
+            # TODO: Update docstring to reflect this restriction
+            raise NotImplementedError("option `qc_verbose` is available "
+                                      "upstream, but is disabled in sm2.")
 
         cov_params_func = self.cov_params_func_l1
 
@@ -1120,6 +1125,7 @@ class Poisson(CountModel):
         linpred = Xb + offset + exposure
         L = np.exp(linpred)
         return np.dot(self.endog - L, self.exog)
+        # Note: this is non-trivially more performant than wrapping score_obs
 
     def score_obs(self, params):
         """
@@ -1268,8 +1274,8 @@ class GeneralizedPoisson(CountModel):
         mu_p = np.power(mu, p)
         a1 = 1 + alpha * mu_p
         a2 = mu + (a1 - 1) * endog
-        return (np.log(mu) + (endog - 1) * np.log(a2) - endog *
-                np.log(a1) - gammaln(endog + 1) - a2 / a1)
+        return (np.log(mu) + (endog - 1) * np.log(a2) -
+                endog * np.log(a1) - gammaln(endog + 1) - a2 / a1)
 
     @copy_doc(Poisson._get_start_params_null.__doc__)
     def _get_start_params_null(self):
@@ -1423,15 +1429,19 @@ class GeneralizedPoisson(CountModel):
         y = self.endog[:, None]
         mu = self.predict(params)[:, None]
         mu_p = np.power(mu, p)
-        a1 = 1 + alpha * mu_p
-        a2 = mu + alpha * mu_p * y
-        a3 = alpha * p * mu ** (p - 1)
+        amp = alpha * mu_p
+        a1 = 1 + amp
+        a2 = mu + amp * y
+        a3 = amp * p / mu
         a4 = a3 * y
         dmudb = mu * exog
 
         dalpha = (mu_p * (y * ((y - 1) / a2 - 2 / a1) + a2 / a1**2))
-        dparams = dmudb * (-a4 / a1 + a3 * a2 / (a1 ** 2) + (1 + a4) *
-                           ((y - 1) / a2 - 1 / a1) + 1 / mu)
+        dparams = dmudb * (-a4 / a1 +
+                           a3 * a2 / (a1 ** 2) +
+                           (1 + a4) * ((y - 1) / a2 - 1 / a1) +
+                           1 / mu)
+
 
         return np.concatenate((dparams, np.atleast_2d(dalpha)),
                               axis=1)
@@ -1502,9 +1512,10 @@ class GeneralizedPoisson(CountModel):
         y = self.endog[:, None]
         mu = self.predict(params)[:, None]
         mu_p = np.power(mu, p)
-        a1 = 1 + alpha * mu_p
-        a2 = mu + alpha * mu_p * y
-        a3 = alpha * p * mu ** (p - 1)
+        amp = alpha * mu_p
+        a1 = 1 + amp
+        a2 = mu + amp * y
+        a3 = amp * p / mu
         a4 = a3 * y
         a5 = p * mu ** (p - 1)
         dmudb = mu * exog
@@ -1517,21 +1528,33 @@ class GeneralizedPoisson(CountModel):
             for j in range(i + 1):
                 hess_arr[i, j] = np.sum(
                     mu * exog[:, i, None] * exog[:, j, None] *
-                    (mu * (a3 * a4 / a1**2 - 2 * a3**2 * a2 / a1**3 + 2 * a3 *
-                     (a4 + 1) / a1**2 - a4 * p / (mu * a1) + a3 * p * a2 /
-                     (mu * a1**2) + a4 / (mu * a1) - a3 * a2 / (mu * a1**2) +
-                     (y - 1) * a4 * (p - 1) / (a2 * mu) - (y - 1) *
-                     (1 + a4)**2 / a2**2 - a4 * (p - 1) / (a1 * mu) - 1 /
-                     mu**2) + (-a4 / a1 + a3 * a2 / a1**2 + (y - 1) *
-                     (1 + a4) / a2 - (1 + a4) / a1 + 1 / mu)), axis=0)
+                    (mu * (a3 * a4 / a1**2 -
+                           2 * a3**2 * a2 / a1**3 +
+                           2 * a3 * (a4 + 1) / a1**2 -
+                           a4 * p / (mu * a1) +
+                           a3 * p * a2 / (mu * a1**2) +
+                           a4 / (mu * a1) -
+                           a3 * a2 / (mu * a1**2) +
+                           (y - 1) * a4 * (p - 1) / (a2 * mu) -
+                           (y - 1) * (1 + a4)**2 / a2**2 -
+                           a4 * (p - 1) / (a1 * mu) -
+                           1 / mu**2) +
+                    (-a4 / a1 +
+                     a3 * a2 / a1**2 +
+                     (y - 1) * (1 + a4) / a2 -
+                     (1 + a4) / a1 +
+                     1 / mu)), axis=0)
         tri_idx = np.triu_indices(dim, k=1)
         hess_arr[tri_idx] = hess_arr.T[tri_idx]
 
         # for dl/dparams dalpha
-        dldpda = np.sum((2 * a4 * mu_p / a1**2 - 2 * a3 * mu_p * a2 / a1**3 -
-                        mu_p * y * (y - 1) * (1 + a4) / a2**2 + mu_p *
-                        (1 + a4) / a1**2 + a5 * y * (y - 1) / a2 - 2 *
-                        a5 * y / a1 + a5 * a2 / a1**2) * dmudb,
+        dldpda = np.sum((2 * a4 * mu_p / a1**2 -
+                         2 * a3 * mu_p * a2 / a1**3 -
+                         mu_p * y * (y - 1) * (1 + a4) / a2**2 +
+                         mu_p * (1 + a4) / a1**2 +
+                         a5 * y * (y - 1) / a2 -
+                         2 * a5 * y / a1 +
+                         a5 * a2 / a1**2) * dmudb,
                         axis=0)
 
         hess_arr[-1, :-1] = dldpda
@@ -1706,6 +1729,7 @@ class Logit(BinaryModel):
         Xb = np.dot(self.exog, params)
         L = self.cdf(Xb)
         return np.dot(self.endog - L, self.exog)
+        # Note: this is non-trivially more performant than wrapping score_obs
 
     def score_obs(self, params):
         """
@@ -1881,6 +1905,7 @@ class Probit(BinaryModel):
         L = q * self.pdf(q * Xb) / np.clip(self.cdf(q * Xb),
                                            FLOAT_EPS, 1 - FLOAT_EPS)
         return np.dot(L, self.exog)
+        # Note: this is non-trivially more performant than wrapping score_obs
 
     def score_obs(self, params):
         r"""
@@ -2083,6 +2108,7 @@ class MNLogit(MultinomialModel):
         firstterm = self.wendog[:, 1:] - self.cdf(Xb)[:, 1:]
         # NOTE: might need to switch terms if params is reshaped
         return np.dot(firstterm.T, self.exog).flatten()
+        # Note: this is non-trivially more performant than wrapping score_obs
 
     def loglike_and_score(self, params):
         """
@@ -2499,8 +2525,7 @@ class NegativeBinomial(CountModel):
 
     # TODO: replace this with analytic where is it used?
     def score_obs(self, params):
-        sc = approx_fprime_cs(params, self.loglikeobs)
-        return sc
+        return approx_fprime_cs(params, self.loglikeobs)
 
     @copy_doc(Poisson._get_start_params_null.__doc__)
     def _get_start_params_null(self):
@@ -2769,7 +2794,7 @@ class NegativeBinomialP(CountModel):
         a3 = y + a1
         a4 = p * a1 / mu
 
-        dgpart = special.digamma(a3) - special.digamma(a1)
+        dgpart = special.digamma(y + a1) - special.digamma(a1)
 
         dparams = ((a4 * dgpart - (1 + a4) * a3 / a2) +
                    y / mu + a4 * (1 + np.log(a1 / a2)))
@@ -2839,16 +2864,18 @@ class NegativeBinomialP(CountModel):
         dim = exog.shape[1]
         hess_arr = np.zeros((dim + 1, dim + 1))
 
-        dgpart = special.digamma(a3) - special.digamma(a1)
-        pgpart = special.polygamma(1, a1) - special.polygamma(1, a3)
+        dgpart = special.digamma(y + a1) - special.digamma(a1)
+        pgpart = special.polygamma(1, a1) - special.polygamma(1, y + a1)
 
         coeff = mu**2 * (((1 + a4)**2 * a3 / a2**2 -
-                          a3 * (a5 - a4 / mu) / a2 - y / mu**2 -
+                          a3 * (a5 - a4 / mu) / a2 -
+                          y / mu**2 -
                           2 * a4 * (1 + a4) / a2 +
                           a5 * (np.log(a1 / a2) + dgpart + 2) -
                           a4 * (np.log(a1 / a2) + dgpart + 1) / mu -
                           a4**2 * pgpart) +
-                         (-(1 + a4) * a3 / a2 + y / mu +
+                         (-(1 + a4) * a3 / a2 +
+                          y / mu +
                           a4 * (np.log(a1 / a2) + dgpart + 1)) / mu)
 
         for i in range(dim):
@@ -2862,7 +2889,9 @@ class NegativeBinomialP(CountModel):
                               a4 * pgpart) / alpha).sum(axis=1)
 
         da2 = (a1 * (2 * np.log(a1 / a2) + 2 * dgpart + 3 -
-                     2 * a3 / a2 - a1 * pgpart - 2 * a1 / a2 +
+                     2 * a3 / a2 -
+                     a1 * pgpart -
+                     2 * a1 / a2 +
                      a1 * a3 / a2**2) / alpha**2)
 
         hess_arr[-1, -1] = da2.sum()
@@ -3410,33 +3439,6 @@ class GeneralizedPoissonResults(NegativeBinomialResults):
         return (1 + self.params[-1] * mu**p)**2
 
 
-class L1CountResults(DiscreteResults):
-    __doc__ = _discrete_results_docs % {
-        "one_line_description": "A results class for count data fit by "
-                                "l1 regularization",
-        "extra_attr": _l1_results_attr}
-
-    def __init__(self, model, cntfit):
-        # TODO: Make this happen higher up the chain.  Not doing it here breaks
-        # thing sin count_model
-        self.params = cntfit.params
-
-        super(L1CountResults, self).__init__(model, cntfit)
-        # self.trimmed is a boolean array with T/F telling whether or not that
-        # entry in params has been set zero'd out.
-        self.trimmed = cntfit.mle_retvals['trimmed']
-        self.nnz_params = (self.trimmed == False).sum()  # noqa:E712
-
-        # Set degrees of freedom.  In doing so,
-        # adjust for extra parameter in NegativeBinomial nb1 and nb2
-        # extra parameter is not included in df_model
-        k_extra = getattr(self.model, 'k_extra', 0)
-
-        nobs = self.model.endog.shape[0]
-        self.df_model = self.nnz_params - 1 - k_extra
-        self.df_resid = float(nobs - self.nnz_params) + k_extra
-
-
 class PoissonResults(CountResults):
     def predict_prob(self, n=None, exog=None, exposure=None, offset=None,
                      transform=True):
@@ -3466,18 +3468,6 @@ class PoissonResults(CountResults):
                           transform=transform, linear=False)[:, None]
         # uses broadcasting
         return stats.poisson.pmf(counts, mu)
-
-
-class L1PoissonResults(L1CountResults, PoissonResults):
-    pass
-
-
-class L1NegativeBinomialResults(L1CountResults, NegativeBinomialResults):
-    pass
-
-
-class L1GeneralizedPoissonResults(L1CountResults, GeneralizedPoissonResults):
-    pass
 
 
 class OrderedResults(DiscreteResults):
@@ -3665,22 +3655,6 @@ class ProbitResults(BinaryResults):
         return endog * pdf / cdf - (1 - endog) * pdf / (1 - cdf)
 
 
-class L1BinaryResults(BinaryResults):
-    __doc__ = _discrete_results_docs % {
-        "one_line_description": "Results instance for binary data fit "
-                                "by l1 regularization",
-        "extra_attr": _l1_results_attr}
-
-    def __init__(self, model, bnryfit):
-        super(L1BinaryResults, self).__init__(model, bnryfit)
-        # self.trimmed is a boolean array with T/F telling whether or not that
-        # entry in params has been set zero'd out.
-        self.trimmed = bnryfit.mle_retvals['trimmed']
-        self.nnz_params = (self.trimmed == False).sum()  # noqa:E712
-        self.df_model = self.nnz_params - 1
-        self.df_resid = float(self.model.endog.shape[0] - self.nnz_params)
-
-
 class MultinomialResults(DiscreteResults):
     __doc__ = _discrete_results_docs % {
         "one_line_description": "A results class for multinomial data",
@@ -3790,7 +3764,69 @@ class MultinomialResults(DiscreteResults):
         raise NotImplementedError("summary2 not ported from upstream")
 
 
-class L1MultinomialResults(MultinomialResults):
+# --------------------------------------------------------------------
+# L1 Results classes
+
+class L1ResultsMixin(object):
+    @property
+    def nnz_params(self):
+        return (~self.trimmed).sum()
+
+
+class L1CountResults(DiscreteResults, L1ResultsMixin):
+    __doc__ = _discrete_results_docs % {
+        "one_line_description": "A results class for count data fit by "
+                                "l1 regularization",
+        "extra_attr": _l1_results_attr}
+
+    def __init__(self, model, cntfit):
+        # TODO: Make this happen higher up the chain.  Not doing it here breaks
+        # thing sin count_model
+        self.params = cntfit.params
+
+        super(L1CountResults, self).__init__(model, cntfit)
+        # self.trimmed is a boolean array with T/F telling whether or not that
+        # entry in params has been set zero'd out.
+        self.trimmed = cntfit.mle_retvals['trimmed']
+
+        # Set degrees of freedom.  In doing so,
+        # adjust for extra parameter in NegativeBinomial nb1 and nb2
+        # extra parameter is not included in df_model
+        k_extra = getattr(self.model, 'k_extra', 0)
+
+        nobs = self.model.endog.shape[0]
+        self.df_model = self.nnz_params - 1 - k_extra
+        self.df_resid = float(nobs - self.nnz_params) + k_extra
+
+
+class L1PoissonResults(L1CountResults, PoissonResults):
+    pass
+
+
+class L1NegativeBinomialResults(L1CountResults, NegativeBinomialResults):
+    pass
+
+
+class L1GeneralizedPoissonResults(L1CountResults, GeneralizedPoissonResults):
+    pass
+
+
+class L1BinaryResults(BinaryResults, L1ResultsMixin):
+    __doc__ = _discrete_results_docs % {
+        "one_line_description": "Results instance for binary data fit "
+                                "by l1 regularization",
+        "extra_attr": _l1_results_attr}
+
+    def __init__(self, model, bnryfit):
+        super(L1BinaryResults, self).__init__(model, bnryfit)
+        # self.trimmed is a boolean array with T/F telling whether or not that
+        # entry in params has been set zero'd out.
+        self.trimmed = bnryfit.mle_retvals['trimmed']
+        self.df_model = self.nnz_params - 1
+        self.df_resid = float(self.model.endog.shape[0] - self.nnz_params)
+
+
+class L1MultinomialResults(MultinomialResults, L1ResultsMixin):
     __doc__ = _discrete_results_docs % {
         "one_line_description": "A results class for multinomial data "
                                 "fit by l1 regularization",
@@ -3801,7 +3837,6 @@ class L1MultinomialResults(MultinomialResults):
         # self.trimmed is a boolean array with T/F telling whether or not that
         # entry in params has been set zero'd out.
         self.trimmed = mlefit.mle_retvals['trimmed']
-        self.nnz_params = (self.trimmed == False).sum()  # noqa:E712
 
         # Note: J-1 constants
         self.df_model = self.nnz_params - (self.J - 1)

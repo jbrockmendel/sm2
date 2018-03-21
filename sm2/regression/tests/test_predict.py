@@ -13,13 +13,13 @@ from sm2.tools.tools import add_constant
 from sm2.regression.linear_model import OLS, WLS
 from sm2.regression._prediction import get_prediction
 
-# Dummies to avoid flake8 warnings for not-yet-ported genmod names
-GLM = None
-links = None
-params_transform_univariate = None
+from sm2.genmod.generalized_linear_model import GLM
+from sm2.genmod.families import links
+from sm2.genmod._prediction import params_transform_univariate
 
 
-# taken from upstream sandbox.regression.predstd
+# taken from upstream sandbox.regression.predstd;
+# this is not a good long-term home for this function.
 def wls_prediction_std(res, exog=None, weights=None, alpha=0.05):
     """calculate standard deviation and confidence interval for prediction
 
@@ -241,7 +241,6 @@ class TestWLSPrediction(object):
         sf2 = pred_res2.summary_frame()
         assert_equal(sf2.columns.tolist(), col_names)
 
-    @pytest.mark.skip(reason="GLM not ported from upstream")
     def test_glm(self):
         # preliminary, getting started with basic test for GLM.get_prediction
         res_wls = self.res_wls

@@ -21,9 +21,9 @@ from sm2.regression.linear_model import OLS
 import sm2.tools._testing as smt
 
 # Dummies to avoid flake8 warnings for skipped tests
-GLM = None
-families = None
-links = None
+from sm2.genmod.generalized_linear_model import GLM
+from sm2.genmod import families
+from sm2.genmod.families import links
 
 from .results import results_count_robust_cluster as results_st
 
@@ -138,7 +138,6 @@ class TestNegbinClu(CheckCountRobustMixin):
         cls.get_robust_clu()
 
 
-@pytest.mark.skip(reason="GLM not ported from upstream")
 @pytest.mark.not_vetted
 class TestGLMPoissonClu(CheckCountRobustMixin):
     res2 = results_st.results_poisson_clu
@@ -306,7 +305,6 @@ class TestPoissonCluExposureGeneric(CheckCountRobustMixin):
         cls.corr_fact = np.sqrt(corr_fact)
 
 
-@pytest.mark.skip(reason="GLM not ported from upstream")
 @pytest.mark.not_vetted
 class TestGLMPoissonCluGeneric(CheckCountRobustMixin):
     res2 = results_st.results_poisson_clu
@@ -334,7 +332,6 @@ class TestGLMPoissonCluGeneric(CheckCountRobustMixin):
 
 
 # TODO: refactor xxxFit to full testing results
-@pytest.mark.skip(reason="GLM not ported from upstream")
 @pytest.mark.not_vetted
 class TestGLMPoissonHC1Generic(CheckCountRobustMixin):
     res2 = results_st.results_poisson_hc1
@@ -353,7 +350,6 @@ class TestGLMPoissonHC1Generic(CheckCountRobustMixin):
         cls.corr_fact = np.sqrt(1. / corr_fact)
 
 
-@pytest.mark.skip(reason="GLM not ported from upstream")
 @pytest.mark.not_vetted
 class TestGLMPoissonCluFit(CheckCountRobustMixin):
     res2 = results_st.results_poisson_clu
@@ -385,7 +381,6 @@ class TestGLMPoissonCluFit(CheckCountRobustMixin):
         cls.corr_fact = np.sqrt(corr_fact)
 
 
-@pytest.mark.skip(reason="GLM not ported from upstream")
 @pytest.mark.not_vetted
 class TestGLMPoissonHC1Fit(CheckCountRobustMixin):
     res2 = results_st.results_poisson_hc1
@@ -459,7 +454,7 @@ class TestNegbinCluFit(CheckCountRobustMixin):
     model_cls = smd.NegativeBinomial
     cov_kwds = dict(groups=group,
                     use_correction=True,
-                    df_correction=True),  # TODO has no effect
+                    df_correction=True)  # TODO has no effect
 
     @classmethod
     def setup_class(cls):
@@ -523,7 +518,6 @@ class CheckDiscreteGLM(object):
         #    assert_allclose(res1.bse, res2.bse, rtol=1e-13)
 
 
-@pytest.mark.skip(reason="GLM not ported from upstream")
 @pytest.mark.not_vetted
 class TestGLMLogit(CheckDiscreteGLM):
     cov_type = 'cluster'
@@ -541,7 +535,6 @@ class TestGLMLogit(CheckDiscreteGLM):
         cls.res2 = mod1.fit(cov_type=cls.cov_type, cov_kwds=cls.cov_kwds)
 
 
-@pytest.mark.skip(reason="GLM not ported from upstream")
 @pytest.mark.not_vetted
 @pytest.mark.xfail(reason="This test is mangled upstream.  Has comment: "
                           "invalid link. What's Probit as GLM?")
@@ -562,7 +555,6 @@ class TestGLMProbit(CheckDiscreteGLM):
         cls.res2 = mod1.fit(cov_type=cls.cov_type, cov_kwds=cls.cov_kwds)
 
 
-@pytest.mark.skip(reason="GLM not ported from upstream")
 @pytest.mark.not_vetted
 class TestGLMGaussNonRobust(CheckDiscreteGLM):
     cov_type = 'nonrobust'
@@ -578,7 +570,6 @@ class TestGLMGaussNonRobust(CheckDiscreteGLM):
         cls.res2 = mod2.fit(cov_kwds=cls.cov_kwds)
 
 
-@pytest.mark.skip(reason="GLM not ported from upstream")
 @pytest.mark.not_vetted
 class TestGLMGaussClu(CheckDiscreteGLM):
     cov_type = 'cluster'
@@ -594,7 +585,6 @@ class TestGLMGaussClu(CheckDiscreteGLM):
         cls.res2 = mod2.fit(cov_type=cls.cov_type, cov_kwds=cls.cov_kwds)
 
 
-@pytest.mark.skip(reason="GLM not ported from upstream")
 @pytest.mark.not_vetted
 class TestGLMGaussHC(CheckDiscreteGLM):
     cov_type = 'HC0'
@@ -610,7 +600,6 @@ class TestGLMGaussHC(CheckDiscreteGLM):
         cls.res2 = mod2.fit(cov_type=cls.cov_type, cov_kwds=cls.cov_kwds)
 
 
-@pytest.mark.skip(reason="GLM not ported from upstream")
 @pytest.mark.not_vetted
 class TestGLMGaussHAC(CheckDiscreteGLM):
     cov_type = 'HAC'
@@ -626,7 +615,6 @@ class TestGLMGaussHAC(CheckDiscreteGLM):
         cls.res2 = mod2.fit(cov_type=cls.cov_type, cov_kwds=cls.cov_kwds)
 
 
-@pytest.mark.skip(reason="GLM not ported from upstream")
 @pytest.mark.not_vetted
 class TestGLMGaussHACUniform(CheckDiscreteGLM):
     cov_type = 'HAC'
@@ -678,7 +666,6 @@ class TestGLMGaussHACUniform(CheckDiscreteGLM):
                         rtol=1e-6)
 
 
-@pytest.mark.skip(reason="GLM not ported from upstream")
 @pytest.mark.not_vetted
 class TestGLMGaussHACPanel(CheckDiscreteGLM):
     cov_type = 'hac-panel'
@@ -694,11 +681,11 @@ class TestGLMGaussHACPanel(CheckDiscreteGLM):
     def setup_class(cls):
         mod1 = cls.model_cls(endog.copy(), exog.copy(),
                              family=families.Gaussian())
-        cls.res1 = mod1.fit(cov_type=cls.cov_type, cov_kwds=cls.kwds)
-        cls.res1b = mod1.fit(cov_type='nw-panel', cov_kwds=cls.kwds)
+        cls.res1 = mod1.fit(cov_type=cls.cov_type, cov_kwds=cls.cov_kwds)
+        cls.res1b = mod1.fit(cov_type='nw-panel', cov_kwds=cls.cov_kwds)
 
         mod2 = OLS(endog, exog)
-        cls.res2 = mod2.fit(cov_type=cls.cov_type, cov_kwds=cls.kwds)
+        cls.res2 = mod2.fit(cov_type=cls.cov_type, cov_kwds=cls.cov_kwds)
 
     def test_kwd(self):
         # test corrected keyword name
@@ -707,7 +694,6 @@ class TestGLMGaussHACPanel(CheckDiscreteGLM):
                         rtol=1e-12)
 
 
-@pytest.mark.skip(reason="GLM not ported from upstream")
 @pytest.mark.not_vetted
 class TestGLMGaussHACPanelGroups(CheckDiscreteGLM):
     cov_type = 'hac-panel'
@@ -729,7 +715,6 @@ class TestGLMGaussHACPanelGroups(CheckDiscreteGLM):
         cls.res2 = mod2.fit(cov_type=cls.cov_type, cov_kwds=cls.cov_kwds)
 
 
-@pytest.mark.skip(reason="GLM not ported from upstream")
 @pytest.mark.not_vetted
 class TestGLMGaussHACGroupsum(CheckDiscreteGLM):
     cov_type = 'hac-groupsum'

@@ -477,7 +477,7 @@ class GLS(RegressionModel):
 
         Returns
         -------
-        np.dot(cholsigmainv,X)
+        np.dot(cholsigmainv, X)
 
         See Also
         --------
@@ -654,7 +654,6 @@ class WLS(RegressionModel):
         whitened : array-like
             sqrt(weights)*X
         """
-
         X = np.asarray(X)
         if X.ndim == 1:
             return X * np.sqrt(self.weights)
@@ -1810,7 +1809,6 @@ class RegressionResults(base.LikelihoodModelResults):
         the assumption of homoscedasticity and no autocorrelation
         (sphericity).
         """
-
         has_robust1 = getattr(self, 'cov_type', 'nonrobust') != 'nonrobust'
         has_robust2 = (getattr(restricted, 'cov_type', 'nonrobust') !=
                        'nonrobust')
@@ -1859,7 +1857,6 @@ class RegressionResults(base.LikelihoodModelResults):
 
         Notes
         -----
-
         The exact likelihood ratio is valid for homoskedastic data,
         and is defined as
 

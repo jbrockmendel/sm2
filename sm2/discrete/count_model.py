@@ -266,9 +266,6 @@ class GenericZeroInflated(CountModel):
 
         return np.hstack((dldw, dldp))
 
-    def score(self, params):
-        return self.score_obs(params).sum(0)
-
     def _hessian_main(self, params):
         pass
 

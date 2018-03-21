@@ -178,6 +178,7 @@ def get_robustcov_results(self, cov_type='HC1', use_t=None, **kwds):
     adjust_df = set_df_adjustment(kwds, cov_type)
     res.cov_kwds['adjust_df'] = adjust_df
 
+    n_groups = None  # not present upstream
     # verify and set kwds, and calculate cov
     # TODO: this should be outsourced in a function so we can reuse it in
     #       other models
@@ -335,6 +336,7 @@ def hac_panel(self, res, kwds, cov_type):
 # down repeated code in linear_model
 def hac_groupsum(self, res, kwds, adjust_df, cov_type):
     # Driscoll-Kraay standard errors
+    n_groups = None
     res.cov_kwds['time'] = time = kwds['time']
     # TODO: nlags is currently required
     # nlags = kwds.get('nlags', True)

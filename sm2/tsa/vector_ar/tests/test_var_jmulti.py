@@ -1,14 +1,15 @@
 from __future__ import absolute_import, print_function
+import warnings
 
 from six.moves import range
 
 import numpy as np
 from numpy.testing import assert_allclose
 import pytest
+import pandas.util.testing as tm
 
 import sm2.datasets.macrodata.data as macro
 from sm2.tsa.vector_ar.var_model import VAR
-
 
 from .JMulTi_results.parse_jmulti_vecm_output import sublists
 from .JMulTi_results.parse_jmulti_var_output import load_results_jmulti
@@ -118,10 +119,15 @@ def case(request):
     endog = loaded.reshape((-1, len(variables)))
     exog = generate_exog_from_season(seasonal, len(endog))
 
-    model = VAR(endog, exog)
-    res = model.fit(maxlags=4,
-                    trend=trend,
-                    method="ols")
+    with warnings.catch_warnings():
+        # `rcond` parameter will change to the default of machine
+        # precision times ``max(M, N)`` where M and N are the input
+        # matrix dimensions.v
+        warnings.simplefilter("ignore")
+        model = VAR(endog, exog)
+        res = model.fit(maxlags=4,
+                        trend=trend,
+                        method="ols")
 
     expected = load_results_jmulti(dataset, dt_s_list)[(trend, seasonal)]
     return res, expected, trend, seasonal, dataset, endog, exog
@@ -132,8 +138,11 @@ def test_lag_order_selection(case):
     res, expected, trend = case[:3]
     endog_tot, exog = case[-2:]
 
-    model = VAR(endog_tot, exog)
-    obtained_all = model.select_order(10, trend=trend)
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        model = VAR(endog_tot, exog)
+        obtained_all = model.select_order(10, trend=trend)
+
     for ic in ["aic", "fpe", "hqic", "bic"]:
         obtained = getattr(obtained_all, ic)
         desired = expected["lagorder"][ic]
@@ -396,7 +405,13 @@ def test_whiteness(case):
 
     lags = expected["whiteness"]["tested order"]
 
-    obtained = res.test_whiteness_new(nlags=lags)
+    with warnings.catch_warnings():
+        # `rcond` parameter will change to the default of machine
+        # precision times ``max(M, N)`` where M and N are the input
+        # matrix dimensions.v
+        warnings.simplefilter("ignore")
+        obtained = res.test_whiteness_new(nlags=lags)
+
     # test statistic
     desired = expected["whiteness"]["test statistic"]
     assert_allclose(obtained.test_statistic, desired,
@@ -406,7 +421,13 @@ def test_whiteness(case):
     assert_allclose(obtained.pvalue, desired,
                     rtol, atol, False)
 
-    obtained = res.test_whiteness_new(nlags=lags, adjusted=True)
+    with warnings.catch_warnings():
+        # `rcond` parameter will change to the default of machine
+        # precision times ``max(M, N)`` where M and N are the input
+        # matrix dimensions.v
+        warnings.simplefilter("ignore")
+        obtained = res.test_whiteness_new(nlags=lags, adjusted=True)
+
     # test statistic (adjusted Portmanteau test)
     desired = expected["whiteness"]["test statistic adj."]
     assert_allclose(obtained.test_statistic, desired,
@@ -423,10 +444,14 @@ def test_exceptions(case):
     # instant causality:
     # 0<signif<1
     with pytest.raises(ValueError):
-        res.test_inst_causality(0, 0)
-        # this means signif=0
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            res.test_inst_causality(0, 0)
+            # this means signif=0
 
     # causing must be int, str or iterable of int or str
     with pytest.raises(TypeError):
-        res.test_inst_causality([0.5])
-        # 0.5 not an int
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            res.test_inst_causality([0.5])
+            # 0.5 not an int
