@@ -286,7 +286,6 @@ class TestGenericRLM(CheckGenericMixin):
         self.results = sm.RLM(y, self.exog).fit()
 
 
-@pytest.mark.skip(reason="GLM not ported from upstream")
 @pytest.mark.not_vetted
 class TestGenericGLM(CheckGenericMixin):
     def setup(self):
@@ -512,7 +511,6 @@ class TestWaldAnovaOLSF(CheckAnovaMixin):
         assert np.isnan(predicted1.values[0])
 
 
-@pytest.mark.skip(reason="GLM not ported from upstream")
 @pytest.mark.not_vetted
 class TestWaldAnovaGLM(CheckAnovaMixin):
     mod_kwargs = {}

@@ -22,15 +22,16 @@ from sm2.tools.tools import add_constant
 from sm2 import datasets
 
 # dummies for not-yet-ported names
-GLM = None
-families = None
+from sm2.api import GLM, families
+#GLM = None
+#families = None
 
 spector_data = datasets.spector.load()
 spector_data.exog = add_constant(spector_data.exog, prepend=False)
 
 from .results import results_poisson_constrained as results
-# from .results import results_glm_logit_constrained as reslogit
-reslogit = None  # dummy to suppress flake8 complaints
+from .results import results_glm_logit_constrained as reslogit
+#reslogit = None  # dummy to suppress flake8 complaints
 
 DEBUG = False
 
@@ -330,7 +331,6 @@ class TestPoissonConstrained2c(CheckPoissonConstrainedMixin):
                                         start_params=cls.res1[0])
 
 
-@pytest.mark.skip(reason="GLM not ported from upstream")
 @pytest.mark.not_vetted
 class TestGLMPoissonConstrained1a(CheckPoissonConstrainedMixin):
     res2 = results.results_noexposure_constraint
@@ -352,7 +352,6 @@ class TestGLMPoissonConstrained1a(CheckPoissonConstrainedMixin):
         cls.res1m = mod.fit_constrained(constr, atol=1e-10)
 
 
-@pytest.mark.skip(reason="GLM not ported from upstream")
 @pytest.mark.not_vetted
 class TestGLMPoissonConstrained1b(CheckPoissonConstrainedMixin):
     res2 = results.results_exposure_constraint
@@ -405,7 +404,6 @@ class TestGLMPoissonConstrained1b(CheckPoissonConstrainedMixin):
                         rtol=1e-10)
 
 
-@pytest.mark.skip(reason="GLM not ported from upstream")
 @pytest.mark.not_vetted
 class CheckGLMConstrainedMixin(CheckPoissonConstrainedMixin):
     # add tests for some GLM specific attributes
@@ -430,7 +428,6 @@ class CheckGLMConstrainedMixin(CheckPoissonConstrainedMixin):
         #assert_allclose(res1.pearson_chi2, res2.chi2, rtol=1e-10)
 
 
-@pytest.mark.skip(reason="GLM not ported from upstream")
 @pytest.mark.not_vetted
 class TestGLMLogitConstrained1(CheckGLMConstrainedMixin):
     idx = slice(None)
@@ -451,7 +448,6 @@ class TestGLMLogitConstrained1(CheckGLMConstrainedMixin):
         cls.res1 = fit_constrained(mod1, R, q)
 
 
-@pytest.mark.skip(reason="GLM not ported from upstream")
 @pytest.mark.not_vetted
 class TestGLMLogitConstrained2(CheckGLMConstrainedMixin):
     idx = slice(None)  # params sequence same as Stata
@@ -501,7 +497,6 @@ class TestGLMLogitConstrained2(CheckGLMConstrainedMixin):
         assert_allclose(res_wrap.params, res2.params, rtol=1e-6)
 
 
-@pytest.mark.skip(reason="GLM not ported from upstream")
 @pytest.mark.not_vetted
 class TestGLMLogitConstrained2HC(CheckGLMConstrainedMixin):
     idx = slice(None)  # params sequence same as Stata

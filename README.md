@@ -20,6 +20,8 @@ difference is that statsmodels is more feature-complete.
 of unused, untested, or deprecated code have been removed.  _Many_ thousands
 of flake8 formatting issues have been cleaned up.
 
+- `summary2` methods have not been ported from upstream, will
+raise `NotImplementedError`.
 
 Contributing
 ------------

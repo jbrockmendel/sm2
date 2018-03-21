@@ -213,7 +213,6 @@ class TestRemoveDataPickleRLM(RemoveDataPickle):
         self.results = sm.RLM(y, self.exog).fit()
 
 
-@pytest.mark.skip(reason="GLM not ported from upstream")
 @pytest.mark.not_vetted
 class TestRemoveDataPickleGLM(RemoveDataPickle):
     def setup(self):
