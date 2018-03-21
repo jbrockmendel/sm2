@@ -786,7 +786,6 @@ class OLS(WLS):
         The likelihood function evaluated at params.
         """
         nobs = float(self.nobs)
-        nobs2 = nobs / 2.0
         resid = self.endog - np.dot(self.exog, params)
         if hasattr(self, 'offset'):
             resid -= self.offset
@@ -1982,63 +1981,13 @@ class RegressionResults(base.LikelihoodModelResults):
             # TODO cannot access cov without calling se first
             getattr(self, cov_type.upper() + '_se')
             res.cov_params_default = getattr(self, 'cov_' + cov_type.upper())
-        elif cov_type.lower() == 'hac':
-            maxlags = kwds['maxlags']   # required?, default in cov_hac_simple
-            res.cov_kwds['maxlags'] = maxlags
-            weights_func = kwds.get('weights_func', sw.weights_bartlett)
-            res.cov_kwds['weights_func'] = weights_func
-            use_correction = kwds.get('use_correction', False)
-            res.cov_kwds['use_correction'] = use_correction
-            res.cov_kwds['description'] = (
-                'Standard Errors are heteroscedasticity and ' +
-                'autocorrelation robust (HAC) using %d lags and %s small ' +
-                'sample correction') % (maxlags,
-                                        ['without', 'with'][use_correction])
 
-            res.cov_params_default = sw.cov_hac_simple(
-                self, nlags=maxlags, weights_func=weights_func,
-                use_correction=use_correction)
+        elif cov_type.lower() == 'hac':
+            n_groups = covtype.hac_stderrs(self, res, kwds)
         elif cov_type.lower() == 'cluster':
             # cluster robust standard errors, one- or two-way
-            groups = kwds['groups']
-            if not hasattr(groups, 'shape'):
-                groups = np.asarray(groups).T
-
-            if groups.ndim >= 2:
-                groups = groups.squeeze()
-
-            res.cov_kwds['groups'] = groups
-            use_correction = kwds.get('use_correction', True)
-            res.cov_kwds['use_correction'] = use_correction
-            if groups.ndim == 1:
-                if adjust_df:
-                    # need to find number of groups
-                    # duplicate work
-                    self.n_groups = n_groups = len(np.unique(groups))
-                res.cov_params_default = sw.cov_cluster(
-                    self, groups, use_correction=use_correction)
-
-            elif groups.ndim == 2:
-                if hasattr(groups, 'values'):
-                    groups = groups.values
-
-                if adjust_df:
-                    # need to find number of groups
-                    # duplicate work
-                    n_groups0 = len(np.unique(groups[:, 0]))
-                    n_groups1 = len(np.unique(groups[:, 1]))
-                    self.n_groups = (n_groups0, n_groups1)
-                    n_groups = min(n_groups0, n_groups1)  # use for adjust_df
-
-                # Note: sw.cov_cluster_2groups has 3 returns
-                res.cov_params_default = sw.cov_cluster_2groups(
-                    self, groups, use_correction=use_correction)[0]
-            else:  # pragma: no cover
-                raise ValueError('only two groups are supported')
-            res.cov_kwds['description'] = (
-                'Standard Errors are robust to' +
-                'cluster correlation ' + '(' + cov_type + ')')
-
+            n_groups = covtype.clustered_stderrs(self, res, kwds,
+                                                 cov_type, adjust_df)
         elif cov_type.lower() == 'hac-panel':
             # cluster robust standard errors
             n_groups = covtype.hac_panel(self, res, kwds, cov_type)
