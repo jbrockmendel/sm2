@@ -705,6 +705,7 @@ class ARResults(tsa_model.TimeSeriesModelResults):
         # TODO: cmle vs mle?
         self.df_model = k_ar + k_trend
         self.df_resid = self.model.df_resid = n_totobs - self.df_model
+        # FIXME: Dont set model.df_resid here!
 
     @cache_writable()
     def sigma2(self):
@@ -741,8 +742,7 @@ class ARResults(tsa_model.TimeSeriesModelResults):
         # Include constant as estimated free parameter and double the loss
         return np.log(self.sigma2) + 2 * (1 + self.df_model) / self.nobs
         # Stata defintion
-        #nobs = self.nobs
-        #return -2 * self.llf/nobs + 2 * (self.k_ar+self.k_trend)/nobs
+        #return -2 * self.llf/self.nobs + 2 * (self.k_ar+self.k_trend)/self.nobs
 
     @cache_readonly
     def hqic(self):
@@ -753,7 +753,6 @@ class ARResults(tsa_model.TimeSeriesModelResults):
         return (np.log(self.sigma2) + 2 * np.log(np.log(nobs)) / nobs *
                 (1 + self.df_model))
         # Stata
-        #nobs = self.nobs
         #return -2 * self.llf/nobs + 2 * np.log(np.log(nobs))/nobs * \
         #        (self.k_ar + self.k_trend)
 
@@ -772,8 +771,8 @@ class ARResults(tsa_model.TimeSeriesModelResults):
         # Include constant as est. free parameter
         return np.log(self.sigma2) + (1 + self.df_model) * np.log(nobs) / nobs
         # Stata
-        # return -2 * self.llf/nobs + np.log(nobs)/nobs * (self.k_ar + \
-        #       self.k_trend)
+        # return -2 * self.llf/nobs + np.log(nobs)/nobs * (self.k_ar +
+        #                                                  self.k_trend)
 
     @cache_readonly
     def resid(self):

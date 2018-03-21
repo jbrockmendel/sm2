@@ -62,14 +62,34 @@ class Model(object):
     """ % {'params_doc': _model_params_doc,
            'extra_params_doc': _missing_param_doc + _extra_param_doc}
 
-    def __init__(self, endog, exog=None, **kwargs):
-        missing = kwargs.pop('missing', 'none')
-        hasconst = kwargs.pop('hasconst', None)
-        self.data = self._handle_data(endog, exog, missing, hasconst,
-                                      **kwargs)
+    @property
+    def endog_names(self):
+        """Names of endogenous variables"""
+        return self.data.ynames
+
+    @property
+    def exog_names(self):
+        """Names of exogenous variables"""
+        return self.data.xnames
+
+    @property
+    def k_exog(self):
+        if self.exog is None:
+            return 0
+        elif self.exog.ndim == 1:
+            # This happens in count_model, should probably be avoided
+            return 1
+        return self.exog.shape[1]
+
+    def __init__(self, endog, exog=None,
+                 missing='none', hasconst=None, **kwargs):
+
+        self.data = self._handle_data(endog, exog, missing, hasconst, **kwargs)
+
         self.k_constant = self.data.k_constant
         self.exog = self.data.exog
         self.endog = self.data.endog
+
         self._data_attr = []
         self._data_attr.extend(['exog', 'endog', 'data.exog', 'data.endog'])
         if 'formula' not in kwargs:  # won't be able to unpickle without these
@@ -85,7 +105,6 @@ class Model(object):
         """
         kwds = dict(((key, getattr(self, key, None))
                      for key in self._init_keys))
-
         return kwds
 
     def _handle_data(self, endog, exog, missing, hasconst, **kwargs):
@@ -184,16 +203,6 @@ class Model(object):
         mod.data.frame = data
         return mod
 
-    @property
-    def endog_names(self):
-        """Names of endogenous variables"""
-        return self.data.ynames
-
-    @property
-    def exog_names(self):
-        """Names of exogenous variables"""
-        return self.data.xnames
-
     def fit(self):
         """
         Fit a model to data.
@@ -213,7 +222,6 @@ class LikelihoodModel(Model):
     """
     Likelihood model is a subclass of Model.
     """
-
     def __init__(self, endog, exog=None, **kwargs):
         super(LikelihoodModel, self).__init__(endog, exog, **kwargs)
         self.initialize()
@@ -1782,7 +1790,7 @@ class GenericLikelihoodModelResults(LikelihoodModelResults, ResultMixin):
         if hasattr(model, 'df_resid'):
             self.df_resid = model.df_resid
         else:
-            self.df_resid = self.endog.shape[0] - self.df_model
+            self.df_resid = self.nobs - self.df_model
             # retrofitting the model, used in t_test TODO: check design
             self.model.df_resid = self.df_resid
             # FIXME: dont alter model in-place
@@ -1843,5 +1851,4 @@ class GenericLikelihoodModelResults(LikelihoodModelResults, ResultMixin):
                              yname=yname, xname=xname, title=title)
         smry.add_table_params(self, yname=yname, xname=xname, alpha=alpha,
                               use_t=False)
-
         return smry

@@ -445,6 +445,17 @@ class ARMA(tsa_model.TimeSeriesModel):
         "extra_params": "",
         "extra_sections": _armax_notes % {"Model": "ARMA"}}
 
+    @property
+    def k_exog(self):
+        # TODO: can we merge this special case back in with the general case?
+        exog = self.data.exog  # get it after it's gone through processing
+        if exog is not None:
+            if exog.ndim == 1:
+                exog = exog[:, None]
+            return exog.shape[1]  # number of exog. variables excl. const
+        else:
+            return 0
+
     def __init__(self, endog, order, exog=None, dates=None, freq=None,
                  missing='none'):
         super(ARMA, self).__init__(endog, exog, dates, freq, missing=missing)
@@ -453,13 +464,6 @@ class ARMA(tsa_model.TimeSeriesModel):
         self.k_ar = k_ar = order[0]
         self.k_ma = k_ma = order[1]
         self.k_lags = max(k_ar, k_ma + 1)
-        if exog is not None:
-            if exog.ndim == 1:
-                exog = exog[:, None]
-            k_exog = exog.shape[1]  # number of exog. variables excl. const
-        else:
-            k_exog = 0
-        self.k_exog = k_exog
 
     def _fit_start_params_hr(self, order, start_ar_lags=None):
         """
@@ -1210,77 +1214,83 @@ class ARIMA(ARMA):
                 self.k_ma = q
                 return predictedvalues
         elif typ == 'levels':
-            endog = self.data.endog
-            if not dynamic:
-                predict = super(ARIMA, self).predict(params, start, end, exog,
-                                                     dynamic)
+            return self._predict_levels(params, start, end, exog, dynamic)
 
-                start, end, out_of_sample, _ = (
-                    self._get_prediction_index(start, end, dynamic))
+    def _predict_levels(self, params, start, end, exog, dynamic):
+        # to be called from `predict` in case where `typ` == "level"
+        endog = self.data.endog
+        if not dynamic:
+            predict = super(ARIMA, self).predict(params, start, end, exog,
+                                                 dynamic)
 
-                d = self.k_diff
-                if 'mle' in self.method:
-                    start += d - 1  # for case where d == 2
-                    end += d - 1
-                    # add each predicted diff to lagged endog
-                    if out_of_sample:
-                        fv = predict[:-out_of_sample] + endog[start:end + 1]
-                        if d == 2:  # TODO: make a general solution to this
-                            fv += np.diff(endog[start - 1:end + 1])
-                        levels = unintegrate_levels(endog[-d:], d)
-                        fv = np.r_[fv,
-                                   unintegrate(predict[-out_of_sample:],
-                                               levels)[d:]]
-                    else:
-                        fv = predict + endog[start:end + 1]
-                        if d == 2:
-                            fv += np.diff(endog[start - 1:end + 1])
+            start, end, out_of_sample, _ = self._get_prediction_index(start,
+                                                                      end,
+                                                                      dynamic)
+
+            d = self.k_diff
+            if 'mle' in self.method:
+                start += d - 1  # for case where d == 2
+                end += d - 1
+                # add each predicted diff to lagged endog
+                if out_of_sample:
+                    fv = predict[:-out_of_sample] + endog[start:end + 1]
+                    if d == 2:  # TODO: make a general solution to this
+                        fv += np.diff(endog[start - 1:end + 1])
+                    levels = unintegrate_levels(endog[-d:], d)
+                    fv = np.r_[fv,
+                               unintegrate(predict[-out_of_sample:],
+                                           levels)[d:]]
                 else:
-                    k_ar = self.k_ar
-                    if out_of_sample:
-                        fv = (predict[:-out_of_sample] +
-                              endog[max(start, self.k_ar - 1):end + k_ar + 1])
-                        if d == 2:
-                            fv += np.diff(endog[start - 1:end + 1])
-                        levels = unintegrate_levels(endog[-d:], d)
-                        fv = np.r_[fv,
-                                   unintegrate(predict[-out_of_sample:],
-                                               levels)[d:]]
-                    else:
-                        fv = predict + endog[max(start, k_ar):end + k_ar + 1]
-                        if d == 2:
-                            fv += np.diff(endog[start - 1:end + 1])
+                    fv = predict + endog[start:end + 1]
+                    if d == 2:
+                        fv += np.diff(endog[start - 1:end + 1])
             else:
-                # IFF we need to use pre-sample values assume pre-sample
-                # residuals are zero, do this by a hack
-                if start == self.k_ar + self.k_diff or start is None:
-                    # do the first k_diff+1 separately
-                    p = self.k_ar
-                    q = self.k_ma
-                    k_exog = self.k_exog
-                    k_trend = self.k_trend
-                    k_diff = self.k_diff
-                    (trendparam, exparams,
-                     arparams, maparams) = _unpack_params(params, (p, q),
-                                                          k_trend,
-                                                          k_exog,
-                                                          reverse=True)
-                    # this is the hack
-                    self.k_ma = 0
-
-                    predict = super(ARIMA, self).predict(params, start, end,
-                                                         exog, dynamic)
-                    if not start:
-                        start, _, _, _ = self._get_prediction_index(
-                            start, end, dynamic)
-                        start += k_diff
-                    self.k_ma = q
-                    return endog[start - 1] + np.cumsum(predict)
+                k_ar = self.k_ar
+                if out_of_sample:
+                    fv = (predict[:-out_of_sample] +
+                          endog[max(start, self.k_ar - 1):end + k_ar + 1])
+                    if d == 2:
+                        fv += np.diff(endog[start - 1:end + 1])
+                    levels = unintegrate_levels(endog[-d:], d)
+                    fv = np.r_[fv,
+                               unintegrate(predict[-out_of_sample:],
+                                           levels)[d:]]
                 else:
-                    predict = super(ARIMA, self).predict(params, start, end,
-                                                         exog, dynamic)
-                    return endog[start - 1] + np.cumsum(predict)
-            return fv
+                    fv = predict + endog[max(start, k_ar):end + k_ar + 1]
+                    if d == 2:
+                        fv += np.diff(endog[start - 1:end + 1])
+        else:
+            # IFF we need to use pre-sample values assume pre-sample
+            # residuals are zero, do this by a hack
+            if start == self.k_ar + self.k_diff or start is None:
+                # do the first k_diff+1 separately
+                p = self.k_ar
+                q = self.k_ma
+                k_exog = self.k_exog
+                k_trend = self.k_trend
+                k_diff = self.k_diff
+                (trendparam, exparams,
+                 arparams, maparams) = _unpack_params(params, (p, q),
+                                                      k_trend,
+                                                      k_exog,
+                                                      reverse=True)
+                # this is the hack
+                self.k_ma = 0
+
+                predict = super(ARIMA, self).predict(params, start, end,
+                                                     exog, dynamic)
+                if not start:
+                    start, _, _, _ = self._get_prediction_index(start, end,
+                                                                dynamic)
+                    start += k_diff
+                self.k_ma = q
+                return endog[start - 1] + np.cumsum(predict)
+            else:
+                predict = super(ARIMA, self).predict(params, start, end,
+                                                     exog, dynamic)
+                return endog[start - 1] + np.cumsum(predict)
+        return fv
+
 
 
 class ARMAResults(tsa_model.TimeSeriesModelResults):
@@ -1396,6 +1406,7 @@ class ARMAResults(tsa_model.TimeSeriesModelResults):
         super(ARMAResults, self).__init__(model, params, normalized_cov_params,
                                           scale)
         self.sigma2 = model.sigma2
+        # TODO: make sigma2 a kwarg, dont set it in model
         nobs = model.nobs
         self.nobs = nobs
         k_exog = model.k_exog
@@ -1410,7 +1421,7 @@ class ARMAResults(tsa_model.TimeSeriesModelResults):
         df_model = k_exog + k_trend + k_ar + k_ma
         self.df_model = df_model
         self.df_resid = self.nobs - df_model
-        self._cache = resettable_cache()
+        self._cache = resettable_cache()  # TODO: Is this necessary?
 
     @cache_readonly
     def arroots(self):
@@ -1430,7 +1441,7 @@ class ARMAResults(tsa_model.TimeSeriesModelResults):
         """
         z = self.arroots
         if not z.size:
-            return
+            return  # TODO: return empty array?
         return np.arctan2(z.imag, z.real) / (2 * np.pi)
 
     @cache_readonly
@@ -1443,7 +1454,7 @@ class ARMAResults(tsa_model.TimeSeriesModelResults):
         """
         z = self.maroots
         if not z.size:
-            return
+            return  # TODO: return empty array?
         return np.arctan2(z.imag, z.real) / (2 * np.pi)
 
     @cache_readonly

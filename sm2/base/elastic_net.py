@@ -131,6 +131,7 @@ def fit_elasticnet(model, method="coord_descent", maxiter=100,
     along coordinate axes.
     """
     k_exog = model.exog.shape[1]
+    assert k_exog == model.k_exog
 
     loglike_kwds = {} if loglike_kwds is None else loglike_kwds
     score_kwds = {} if score_kwds is None else score_kwds
@@ -213,6 +214,7 @@ def _build_result(model, params, method, itr):
     # Fit the reduced model to get standard errors and other
     # post-estimation results.
     k_exog = model.exog.shape[1]
+    assert k_exog == model.k_exog
 
     ii = np.flatnonzero(params)
     cov = np.zeros((k_exog, k_exog))

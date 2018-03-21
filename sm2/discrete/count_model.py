@@ -67,11 +67,6 @@ class GenericZeroInflated(CountModel):
             self.exog_infl = exog_infl
             self.k_inflate = exog_infl.shape[1]
 
-        if len(exog.shape) == 1:
-            self.k_exog = 1
-        else:
-            self.k_exog = exog.shape[1]
-
         self.infl = inflation
         if inflation == 'logit':
             self.model_infl = Logit(np.zeros(self.exog_infl.shape[0]),
@@ -132,7 +127,7 @@ class GenericZeroInflated(CountModel):
 
         w = np.clip(w, np.finfo(float).eps, 1 - np.finfo(float).eps)
         llf_main = self.model_main.loglikeobs(params_main)
-        zero_idx = np.nonzero(y == 0)[0]
+        zero_idx = np.nonzero(y == 0)[0]  # TODO: Cache some of these?
         nonzero_idx = np.nonzero(y)[0]
 
         llf = np.zeros_like(y, dtype=np.float64)
@@ -262,6 +257,7 @@ class GenericZeroInflated(CountModel):
             dldw[nonzero_idx, :] = -(self.exog_infl[nonzero_idx].T *
                                      w[nonzero_idx]).T
         elif self.inflation == 'probit':
+            # TODO: Maybe do this _before_ all the junk above?
             return approx_fprime(params, self.loglikeobs)
 
         return np.hstack((dldw, dldp))
@@ -333,6 +329,7 @@ class GenericZeroInflated(CountModel):
         hess_arr_infl = self._hessian_inflate(params)
 
         if hess_arr_main is None or hess_arr_infl is None:
+            # TODO: approx_hess is quite slow.  Are there any analytic options?
             return approx_hess(params, self.loglike)
 
         dim = self.k_exog + self.k_inflate
@@ -572,6 +569,11 @@ class ZeroInflatedGeneralizedPoisson(GenericZeroInflated):
                 L1ZeroInflatedGeneralizedPoissonResults,
                 L1ZeroInflatedGeneralizedPoissonResultsWrapper)}
 
+    @property
+    def k_exog(self):
+        # TODO: maybe document WHY this is different from elsewhere?
+        return self.exog.shape[1] + 1
+
     def __init__(self, endog, exog, exog_infl=None, offset=None, exposure=None,
                  inflation='logit', p=2, missing='none', **kwargs):
         cls = ZeroInflatedGeneralizedPoisson
@@ -586,7 +588,6 @@ class ZeroInflatedGeneralizedPoisson(GenericZeroInflated):
                                              offset=offset,
                                              exposure=exposure, p=p)
         self.distribution = zigenpoisson
-        self.k_exog += 1
         self.k_extra += 1
         self.exog_names.append("alpha")
 
@@ -658,6 +659,11 @@ class ZeroInflatedNegativeBinomialP(GenericZeroInflated):
             "fit_regularized": (L1ZeroInflatedNegativeBinomialResults,
                                 L1ZeroInflatedNegativeBinomialResultsWrapper)}
 
+    @property
+    def k_exog(self):
+        # TODO: maybe document WHY this is different from elsewhere?
+        return self.exog.shape[1] + 1
+
     def __init__(self, endog, exog, exog_infl=None, offset=None, exposure=None,
                  inflation='logit', p=2, missing='none', **kwargs):
         cls = ZeroInflatedNegativeBinomialP
@@ -672,7 +678,6 @@ class ZeroInflatedNegativeBinomialP(GenericZeroInflated):
                                             offset=offset,
                                             exposure=exposure, p=p)
         self.distribution = zinegbin
-        self.k_exog += 1
         self.k_extra += 1
         self.exog_names.append("alpha")
 

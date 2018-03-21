@@ -43,7 +43,7 @@ def test_inverse():
     np.random.seed(3285)
     for link in Links:
         for k in range(10):
-            p = np.random.uniform(0, 1) # In domain for all families
+            p = np.random.uniform(0, 1)  # In domain for all families
             d = link.inverse(link(p))
             assert_allclose(d, p, atol=1e-8, err_msg=str(link))
 
@@ -89,7 +89,7 @@ def test_inverse_deriv():
 
     for link in Links:
         for k in range(10):
-            z = -np.log(np.random.uniform()) # In domain for all families
+            z = -np.log(np.random.uniform())  # In domain for all families
             d = link.inverse_deriv(z)
             f = 1 / link.deriv(link.inverse(z))
             assert_allclose(d, f, rtol=1e-8, atol=1e-10,

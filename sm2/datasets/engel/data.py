@@ -64,4 +64,3 @@ def _get_data():
     path = os.path.join(cur_dir, 'engel.csv')
     data = pd.read_csv(path, float_precision='high')
     return data.astype('f8').to_records(index=False)
-

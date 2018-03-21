@@ -48,15 +48,11 @@ base_period_indexes = [
     pd.PeriodIndex(start='1950-01-01', periods=nobs, freq='W'),
     pd.PeriodIndex(start='1950-01-01', periods=nobs, freq='M'),
     pd.PeriodIndex(start='1950-01-01', periods=nobs, freq='Q'),
-    pd.PeriodIndex(start='1950-01-01', periods=nobs, freq='A')]
-try:
-    # Only later versions of pandas support these
-    base_period_indexes += [
-        pd.PeriodIndex(start='1950-01-01', periods=nobs, freq='2Q'),
-        pd.PeriodIndex(start='1950-01-01', periods=nobs, freq='5s'),
-        pd.PeriodIndex(start='1950-01-01', periods=nobs, freq='1D10min')]
-except:
-    pass
+    pd.PeriodIndex(start='1950-01-01', periods=nobs, freq='A'),
+    pd.PeriodIndex(start='1950-01-01', periods=nobs, freq='2Q'),
+    pd.PeriodIndex(start='1950-01-01', periods=nobs, freq='5s'),
+    pd.PeriodIndex(start='1950-01-01', periods=nobs, freq='1D10min')]
+
 
 date_indexes = [(x, None) for x in base_date_indexes]
 period_indexes = [(x, None) for x in base_period_indexes]
@@ -651,16 +647,14 @@ def test_prediction_increment_pandas_dates():
 
 @pytest.mark.not_vetted
 def test_prediction_increment_pandas_dates_nanosecond():
-    # This test is only valid if the version of Pandas has nanosecond support
-    # and is > 0.14
-    try:
-        # Date-based index
-        endog = dta[2].copy()
-        endog.index = pd.DatetimeIndex(start='1970-01-01', periods=len(endog),
-                                       freq='N')
-        mod = tsa_model.TimeSeriesModel(endog)
-    except:
-        raise pytest.skip()
+    # upstream has a try/except that skips this test for pandas <= 0.14.  Since
+    # that is several years old, we assume that case away.
+
+    # Date-based index
+    endog = dta[2].copy()
+    endog.index = pd.DatetimeIndex(start='1970-01-01', periods=len(endog),
+                                   freq='N')
+    mod = tsa_model.TimeSeriesModel(endog)
 
     # Basic prediction: [0, end]; the index is the date index
     start_key = 0
