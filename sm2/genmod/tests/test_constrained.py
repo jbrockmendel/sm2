@@ -8,6 +8,8 @@ Created on Sun Jan  7 09:21:39 2018
 
 Author: Josef Perktold
 """
+import pytest
+
 import numpy as np
 from numpy.testing import assert_allclose, assert_equal
 
@@ -16,6 +18,7 @@ from sm2.regression.linear_model import OLS, WLS
 from sm2.genmod.generalized_linear_model import GLM
 
 
+@pytest.mark.not_vetted
 class ConstrainedCompareMixin(object):
 
     @classmethod
@@ -59,6 +62,7 @@ class ConstrainedCompareMixin(object):
         assert_allclose(res1.resid_response, res2.resid, rtol=1e-10)
 
 
+@pytest.mark.not_vetted
 class TestGLMGaussianOffset(ConstrainedCompareMixin):
 
     @classmethod
@@ -71,6 +75,7 @@ class TestGLMGaussianOffset(ConstrainedCompareMixin):
         cls.idx_p_uc = np.arange(cls.exogc.shape[1])
 
 
+@pytest.mark.not_vetted
 class TestGLMGaussianConstrained(ConstrainedCompareMixin):
 
     @classmethod
@@ -81,6 +86,7 @@ class TestGLMGaussianConstrained(ConstrainedCompareMixin):
         cls.res1 = mod.fit_constrained('x1=0.5')
 
 
+@pytest.mark.not_vetted
 class TestGLMGaussianOffsetHC(ConstrainedCompareMixin):
 
     @classmethod
@@ -94,6 +100,7 @@ class TestGLMGaussianOffsetHC(ConstrainedCompareMixin):
         cls.idx_p_uc = np.arange(cls.exogc.shape[1])
 
 
+@pytest.mark.not_vetted
 class TestGLMGaussianConstrainedHC(ConstrainedCompareMixin):
 
     @classmethod
@@ -105,6 +112,7 @@ class TestGLMGaussianConstrainedHC(ConstrainedCompareMixin):
         cls.res1 = mod.fit_constrained('x1=0.5', cov_type=cov_type)
 
 
+@pytest.mark.not_vetted
 class ConstrainedCompareWtdMixin(ConstrainedCompareMixin):
 
     @classmethod
@@ -129,6 +137,7 @@ class ConstrainedCompareWtdMixin(ConstrainedCompareMixin):
         cls.init()
 
 
+@pytest.mark.not_vetted
 class TestGLMWtdGaussianOffset(ConstrainedCompareWtdMixin):
 
     @classmethod
@@ -142,6 +151,7 @@ class TestGLMWtdGaussianOffset(ConstrainedCompareWtdMixin):
         cls.idx_p_uc = np.arange(cls.exogc.shape[1])
 
 
+@pytest.mark.not_vetted
 class TestGLMWtdGaussianConstrained(ConstrainedCompareWtdMixin):
 
     @classmethod
@@ -152,6 +162,7 @@ class TestGLMWtdGaussianConstrained(ConstrainedCompareWtdMixin):
         cls.res1 = mod.fit_constrained('x1=0.5')
 
 
+@pytest.mark.not_vetted
 class TestGLMWtdGaussianOffsetHC(ConstrainedCompareWtdMixin):
 
     @classmethod
@@ -166,6 +177,7 @@ class TestGLMWtdGaussianOffsetHC(ConstrainedCompareWtdMixin):
         cls.idx_p_uc = np.arange(cls.exogc.shape[1])
 
 
+@pytest.mark.not_vetted
 class TestGLMWtdGaussianConstrainedHC(ConstrainedCompareWtdMixin):
 
     @classmethod

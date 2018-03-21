@@ -51,6 +51,7 @@ cpunish_data.exog[:, 3] = np.log(cpunish_data.exog[:, 3])
 cpunish_data.exog = add_constant(cpunish_data.exog, prepend=False)
 
 
+@pytest.mark.not_vetted
 class CheckWeight(object):
     def test_basic(self):
         res1 = self.res1
@@ -139,6 +140,7 @@ class CheckWeight(object):
                             atol=1e-6, rtol=1e-6)
 
 
+@pytest.mark.not_vetted
 class TestGlmPoissonPlain(CheckWeight):
     @classmethod
     def setup_class(cls):
@@ -149,6 +151,7 @@ class TestGlmPoissonPlain(CheckWeight):
         cls.res2 = res_stata.results_poisson_none_nonrobust
 
 
+@pytest.mark.not_vetted
 class TestGlmPoissonFwNr(CheckWeight):
     @classmethod
     def setup_class(cls):
@@ -163,6 +166,7 @@ class TestGlmPoissonFwNr(CheckWeight):
         cls.res2 = res_stata.results_poisson_fweight_nonrobust
 
 
+@pytest.mark.not_vetted
 class TestGlmPoissonAwNr(CheckWeight):
     @classmethod
     def setup_class(cls):
@@ -188,6 +192,7 @@ class TestGlmPoissonAwNr(CheckWeight):
 
 
 # prob_weights fail with HC, not properly implemented yet
+@pytest.mark.not_vetted
 class TestGlmPoissonPwNr(CheckWeight):
     @classmethod
     def setup_class(cls):
@@ -214,6 +219,7 @@ class TestGlmPoissonPwNr(CheckWeight):
         super(cls, TestGlmPoissonPwNr).test_compare_optimizers(cls)
 
 
+@pytest.mark.not_vetted
 class TestGlmPoissonFwHC(CheckWeight):
     @classmethod
     def setup_class(cls):
@@ -233,6 +239,7 @@ class TestGlmPoissonFwHC(CheckWeight):
 
 
 # var_weights (aweights fail with HC, not properly implemented yet
+@pytest.mark.not_vetted
 class TestGlmPoissonAwHC(CheckWeight):
     @classmethod
     def setup_class(cls):
@@ -256,6 +263,7 @@ class TestGlmPoissonAwHC(CheckWeight):
         cls.res2 = res_stata.results_poisson_aweight_hc1
 
 
+@pytest.mark.not_vetted
 class TestGlmPoissonFwClu(CheckWeight):
     @classmethod
     def setup_class(cls):
@@ -280,6 +288,7 @@ class TestGlmPoissonFwClu(CheckWeight):
         cls.res2 = res_stata.results_poisson_fweight_clu1
 
 
+@pytest.mark.not_vetted
 class TestGlmTweedieAwNr(CheckWeight):
     @classmethod
     def setup_class(cls):
@@ -300,6 +309,7 @@ class TestGlmTweedieAwNr(CheckWeight):
         cls.res2 = res_r.results_tweedie_aweights_nonrobust
 
 
+@pytest.mark.not_vetted
 class TestGlmGammaAwNr(CheckWeight):
     @classmethod
     def setup_class(cls):
@@ -327,6 +337,7 @@ class TestGlmGammaAwNr(CheckWeight):
         assert_allclose(ll, self.res2.ll, atol=1e-6, rtol=1e-7)
 
 
+@pytest.mark.not_vetted
 class TestGlmGaussianAwNr(CheckWeight):
     @classmethod
     def setup_class(cls):
@@ -366,6 +377,7 @@ class TestGlmGaussianAwNr(CheckWeight):
         assert_allclose(llf_adj, res2.ll, atol=1e-6, rtol=1e-7)
 
 
+@pytest.mark.not_vetted
 def gen_endog(lin_pred, family_class, link, binom_version=0):
 
     np.random.seed(872)
@@ -407,6 +419,7 @@ def gen_endog(lin_pred, family_class, link, binom_version=0):
     return endog
 
 
+@pytest.mark.not_vetted
 def test_wtd_gradient_irls():
     # Compare the results when using gradient optimization and IRLS.
     # TODO: Find working examples for inverse_squared link
@@ -567,6 +580,7 @@ def get_dummies(x):
     return out
 
 
+@pytest.mark.not_vetted
 class TestRepeatedvsAggregated(CheckWeight):
     @classmethod
     def setup_class(cls):
@@ -598,6 +612,7 @@ class TestRepeatedvsAggregated(CheckWeight):
         cls.res2 = mod2.fit()
 
 
+@pytest.mark.not_vetted
 class TestRepeatedvsAverage(CheckWeight):
     @classmethod
     def setup_class(cls):
@@ -629,6 +644,7 @@ class TestRepeatedvsAverage(CheckWeight):
         cls.res2 = mod2.fit()
 
 
+@pytest.mark.not_vetted
 class TestTweedieRepeatedvsAggregated(CheckWeight):
     @classmethod
     def setup_class(cls):
@@ -661,6 +677,7 @@ class TestTweedieRepeatedvsAggregated(CheckWeight):
         cls.res2 = mod2.fit(rtol=1e-20, atol=0, tol_criterion='params')
 
 
+@pytest.mark.not_vetted
 class TestTweedieRepeatedvsAverage(CheckWeight):
     @classmethod
     def setup_class(cls):
@@ -694,6 +711,7 @@ class TestTweedieRepeatedvsAverage(CheckWeight):
         cls.res2 = mod2.fit(rtol=1e-10, atol=0, tol_criterion='params')
 
 
+@pytest.mark.not_vetted
 class TestBinomial0RepeatedvsAverage(CheckWeight):
     @classmethod
     def setup_class(cls):
@@ -727,6 +745,7 @@ class TestBinomial0RepeatedvsAverage(CheckWeight):
         cls.res2 = mod2.fit(rtol=1e-10, atol=0, tol_criterion='params')
 
 
+@pytest.mark.not_vetted
 class TestBinomial0RepeatedvsDuplicated(CheckWeight):
     @classmethod
     def setup_class(cls):
@@ -753,6 +772,7 @@ class TestBinomial0RepeatedvsDuplicated(CheckWeight):
         cls.res2 = mod2.fit()
 
 
+@pytest.mark.not_vetted
 @pytest.mark.skipif(sys.version_info < (3, 4), reason='old python')
 def test_warnings_raised():
     weights = [1, 1, 1, 2, 2, 2, 3, 3, 3, 1, 1, 1, 2, 2, 2, 3, 3]
@@ -780,6 +800,7 @@ def test_warnings_raised():
 weights = [1, 1, 1, 2, 2, 2, 3, 3, 3, 1, 1, 1, 2, 2, 2, 3, 3]
 
 
+@pytest.mark.not_vetted
 @pytest.mark.parametrize('formatted',
                          [weights, np.asarray(weights), pd.Series(weights)],
                          ids=['list', 'ndarray', 'Series'])
@@ -787,6 +808,7 @@ def test_weights_different_formats(formatted):
     check_weights_as_formats(formatted)
 
 
+@pytest.mark.not_vetted
 def check_weights_as_formats(weights):
     res = GLM(cpunish_data.endog, cpunish_data.exog,
               family=sm.families.Poisson(), freq_weights=weights
@@ -803,6 +825,7 @@ def check_weights_as_formats(weights):
     assert isinstance(res._iweights, np.ndarray)
 
 
+@pytest.mark.not_vetted
 class TestBinomialVsVarWeights(CheckWeight):
     @classmethod
     def setup_class(cls):
@@ -817,6 +840,7 @@ class TestBinomialVsVarWeights(CheckWeight):
                        var_weights=weights).fit()
 
 
+@pytest.mark.not_vetted
 class TestGlmGaussianWLS(CheckWeight):
     @classmethod
     def setup_class(cls):
@@ -839,6 +863,7 @@ class TestGlmGaussianWLS(CheckWeight):
         cls.res2 = wlsmodel.fit()
 
 
+@pytest.mark.not_vetted
 def test_incompatible_input():
     weights = [1, 1, 1, 2, 2, 2, 3, 3, 3, 1, 1, 1, 2, 2, 2, 3, 3]
     exog = cpunish_data.exog
@@ -865,6 +890,7 @@ def test_incompatible_input():
         GLM(endog, exog, family=family, var_weights=[weights, weights])
 
 
+@pytest.mark.not_vetted
 def test_poisson_residuals():
     nobs, k_exog = 100, 5
     np.random.seed(987125)
