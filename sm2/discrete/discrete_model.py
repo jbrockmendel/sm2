@@ -1087,12 +1087,15 @@ class Poisson(CountModel):
             res._results.normalized_cov_params = cov  # assume scale=1
         else:
             res._results.normalized_cov_params = None
+
         k_constr = len(q)
         res._results.df_resid += k_constr
         res._results.df_model -= k_constr
+        # FIXME: don't alter these in-place
         res._results.constraints = lc
         res._results.k_constr = k_constr
         res._results.results_constrained = res_constr
+        # TODO: De-duplicate with _constraints.fit_constrained_wrap and genmod
         return res
 
     def score(self, params):
@@ -1442,7 +1445,6 @@ class GeneralizedPoisson(CountModel):
                            (1 + a4) * ((y - 1) / a2 - 1 / a1) +
                            1 / mu)
 
-
         return np.concatenate((dparams, np.atleast_2d(dalpha)),
                               axis=1)
 
@@ -1539,11 +1541,11 @@ class GeneralizedPoisson(CountModel):
                            (y - 1) * (1 + a4)**2 / a2**2 -
                            a4 * (p - 1) / (a1 * mu) -
                            1 / mu**2) +
-                    (-a4 / a1 +
-                     a3 * a2 / a1**2 +
-                     (y - 1) * (1 + a4) / a2 -
-                     (1 + a4) / a1 +
-                     1 / mu)), axis=0)
+                     (-a4 / a1 +
+                      a3 * a2 / a1**2 +
+                      (y - 1) * (1 + a4) / a2 -
+                      (1 + a4) / a1 +
+                      1 / mu)), axis=0)
         tri_idx = np.triu_indices(dim, k=1)
         hess_arr[tri_idx] = hess_arr.T[tri_idx]
 
@@ -3110,13 +3112,19 @@ class DiscreteResults(base.LikelihoodModelResults):
                                 "variable models.",
         "extra_attr": ""}
 
+
     def __init__(self, model, mlefit, cov_type='nonrobust', cov_kwds=None,
                  use_t=None):
         #super(DiscreteResults, self).__init__(model, params,
         #        np.linalg.inv(-hessian), scale=1.)
         self.model = model
-        self.df_model = model.df_model
-        self.df_resid = model.df_resid
+        try:
+            self.df_model = model.df_model
+            self.df_resid = model.df_resid
+        except AttributeError:
+            # In some subclasses, df_model and df_resid are properties
+            # TODO: standardize this behavior
+            pass
         self._cache = resettable_cache()
         self.nobs = model.exog.shape[0]  # i.e. model.nobs
         self.__dict__.update(mlefit.__dict__)
@@ -3772,6 +3780,14 @@ class L1ResultsMixin(object):
     def nnz_params(self):
         return (~self.trimmed).sum()
 
+    @property
+    def df_resid(self):
+        # J is really only relevant for MultinomialResults, where
+        # there are J-1 constants
+        J = getattr(self, 'J', 2)
+        return float(self.nobs) - (self.df_model + (J - 1))
+
+
 
 class L1CountResults(DiscreteResults, L1ResultsMixin):
     __doc__ = _discrete_results_docs % {
@@ -3783,6 +3799,7 @@ class L1CountResults(DiscreteResults, L1ResultsMixin):
         # TODO: Make this happen higher up the chain.  Not doing it here breaks
         # thing sin count_model
         self.params = cntfit.params
+        self.nobs = model.endog.shape[0]
 
         super(L1CountResults, self).__init__(model, cntfit)
         # self.trimmed is a boolean array with T/F telling whether or not that
@@ -3794,9 +3811,7 @@ class L1CountResults(DiscreteResults, L1ResultsMixin):
         # extra parameter is not included in df_model
         k_extra = getattr(self.model, 'k_extra', 0)
 
-        nobs = self.model.endog.shape[0]
-        self.df_model = self.nnz_params - 1 - k_extra
-        self.df_resid = float(nobs - self.nnz_params) + k_extra
+        self.df_model = self.nnz_params - k_extra - 1
 
 
 class L1PoissonResults(L1CountResults, PoissonResults):
@@ -3818,12 +3833,14 @@ class L1BinaryResults(BinaryResults, L1ResultsMixin):
         "extra_attr": _l1_results_attr}
 
     def __init__(self, model, bnryfit):
+        self.nobs = model.endog.shape[0]
+
         super(L1BinaryResults, self).__init__(model, bnryfit)
         # self.trimmed is a boolean array with T/F telling whether or not that
         # entry in params has been set zero'd out.
         self.trimmed = bnryfit.mle_retvals['trimmed']
+
         self.df_model = self.nnz_params - 1
-        self.df_resid = float(self.model.endog.shape[0] - self.nnz_params)
 
 
 class L1MultinomialResults(MultinomialResults, L1ResultsMixin):
@@ -3833,14 +3850,16 @@ class L1MultinomialResults(MultinomialResults, L1ResultsMixin):
         "extra_attr": _l1_results_attr}
 
     def __init__(self, model, mlefit):
+        self.nobs = model.endog.shape[0]
+
         super(L1MultinomialResults, self).__init__(model, mlefit)
         # self.trimmed is a boolean array with T/F telling whether or not that
         # entry in params has been set zero'd out.
         self.trimmed = mlefit.mle_retvals['trimmed']
 
         # Note: J-1 constants
-        self.df_model = self.nnz_params - (self.J - 1)
-        self.df_resid = float(self.model.endog.shape[0] - self.nnz_params)
+        J = self.J
+        self.df_model = self.nnz_params - (J - 1)
 
 
 # --------------------------------------------------------------------
