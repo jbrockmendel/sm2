@@ -255,7 +255,6 @@ class TestDiagnosticG(object):
         bg3 = diagnostic.acorr_breusch_godfrey(res, nlags=14)
         assert_almost_equal(bg2, bg3, decimal=13)
 
-    @pytest.mark.skip(reason="acorr_ljungbox not ported from upstream")
     def test_acorr_ljung_box(self):
         # unit-test which may be useful later
         # ddof correction for fitted parameters in ARMA(p, q) fitdf=p+q
@@ -291,7 +290,6 @@ class TestDiagnosticG(object):
         compare_t_est([lb[-1], lbpval[-1]], ljung_box_4, decimal=(13, 13))
         compare_t_est([bp[-1], bppval[-1]], ljung_box_bp_4, decimal=(13, 13))
 
-    @pytest.mark.skip(reason="acorr_ljungbox not ported from upstream")
     def test_acorr_ljung_box_big_default(self):
         res = self.res
         # test with big dataset and default lag
@@ -316,7 +314,6 @@ class TestDiagnosticG(object):
                       ljung_box_bp_none,
                       decimal=(13, 13))
 
-    @pytest.mark.skip(reason="acorr_ljungbox not ported from upstream")
     def test_acorr_ljung_box_small_default(self):
         res = self.res
         # test with small dataset and default lag

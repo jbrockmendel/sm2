@@ -77,7 +77,17 @@ setuptools_kwargs = {
 # ------------------------------------------------------------------
 # Cython Preparation & Specification
 
-_pxifiles = []
+_pxifiles = ['sm2/tsa/regime_switching/_kim_smoother.pyx.in',
+             'sm2/tsa/regime_switching/_hamilton_filter.pyx.in'] + [
+             'sm2/tsa/statespace/{name}.pyx.in'.format(name=name)
+             for name in ['_kalman_filter', '_kalman_smoother',
+                          '_representation', '_simulation_smoother',
+                          '_statespace', '_tools']] + [
+             'sm2/tsa/statespace/_smoothers/{name}.pyx.in'.format(name=name)
+             for name in ['_alternative', '_classical', '_conventional',
+                          '_univariate']] + [
+             'sm2/tsa/statespace/_filters/{name}.pyx.in'.format(name=name)
+             for name in ['_conventional', '_inversions', '_univariate']]
 
 # TODO: Can we just put this with the next (only) use of CYTHON_INSTALLED?
 min_cython_ver = '0.24'
@@ -103,6 +113,13 @@ try:
         from Cython.Distutils import build_ext as _build_ext
     from Cython.Build import cythonize
     cython = True
+
+    try:
+        # TODO: Can we simplify this try/except?
+        from Cython import Tempita as tempita
+    except ImportError:
+        import tempita
+
 except ImportError:
     cython = False
 
@@ -115,7 +132,7 @@ class build_ext(_build_ext):
         if cython:
             for pxifile in _pxifiles:
                 # build pxifiles first, template extension must be .pxi.in
-                assert pxifile.endswith('.pxi.in')
+                assert pxifile.endswith(('.pxi.in', '.pyx.in'))
                 outfile = pxifile[:-3]
 
                 if (os.path.exists(outfile) and
@@ -284,7 +301,12 @@ extensions = [
               ["sm2/tsa/kalmanf/kalman_loglike.pyx"],
               include_dirs=["sm2/src", numpy_incl],
               depends=["sm2/src/capsule.h"],
-              define_macros=macros)]
+              define_macros=macros)] + [
+    Extension(x.replace('/', '.').replace('.pyx.in', ''),
+              [x.replace('.pyx.in', '.pyx')],
+              include_dirs=["sm2/src", numpy_incl],
+              define_macros=macros)
+    for x in _pxifiles]
 
 # ------------------------------------------------------------------
 
