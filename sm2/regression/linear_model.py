@@ -333,7 +333,6 @@ class RegressionModel(base.LikelihoodModel):
         """
         # JP: this doesn't look correct for GLMAR
         # SS: it needs its own predict method
-
         if exog is None:
             exog = self.exog
 
@@ -1351,6 +1350,11 @@ class RegressionResults(base.LikelihoodModelResults):
 
     _cache = {}  # needs to be a class attribute for scale setter?
 
+    @cache_readonly
+    def nobs(self):
+        # TODO: make this not-depend on wexog in case data has been removed
+        return float(self.model.wexog.shape[0])
+
     def __init__(self, model, params, normalized_cov_params=None, scale=1.,
                  cov_type='nonrobust', cov_kwds=None, use_t=None, **kwargs):
         super(RegressionResults, self).__init__(
@@ -1411,10 +1415,6 @@ class RegressionResults(base.LikelihoodModelResults):
         # TODO: can we get rid of this?
         ci = super(RegressionResults, self).conf_int(alpha=alpha, cols=cols)
         return ci
-
-    @cache_readonly
-    def nobs(self):
-        return float(self.model.wexog.shape[0])
 
     @cache_readonly
     def fittedvalues(self):

@@ -20,18 +20,13 @@ from sm2.base._constraints import fit_constrained, fit_constrained_wrap
 
 from sm2.tools.tools import add_constant
 from sm2 import datasets
-
-# dummies for not-yet-ported names
 from sm2.api import GLM, families
-#GLM = None
-#families = None
 
 spector_data = datasets.spector.load()
 spector_data.exog = add_constant(spector_data.exog, prepend=False)
 
 from .results import results_poisson_constrained as results
 from .results import results_glm_logit_constrained as reslogit
-#reslogit = None  # dummy to suppress flake8 complaints
 
 DEBUG = False
 

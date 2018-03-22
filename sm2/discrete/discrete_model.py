@@ -2869,16 +2869,12 @@ class NegativeBinomialP(CountModel):
         dgpart = special.digamma(y + a1) - special.digamma(a1)
         pgpart = special.polygamma(1, a1) - special.polygamma(1, y + a1)
 
-        coeff = mu**2 * (((1 + a4)**2 * a3 / a2**2 -
-                          a3 * (a5 - a4 / mu) / a2 -
-                          y / mu**2 -
-                          2 * a4 * (1 + a4) / a2 +
-                          a5 * (np.log(a1 / a2) + dgpart + 2) -
-                          a4 * (np.log(a1 / a2) + dgpart + 1) / mu -
-                          a4**2 * pgpart) +
-                         (-(1 + a4) * a3 / a2 +
-                          y / mu +
-                          a4 * (np.log(a1 / a2) + dgpart + 1)) / mu)
+        coeff = mu**2 * ((1 + a4)**2 * a3 / a2**2 -
+                         a3 * a5 / a2 -
+                         2 * a4 * (1 + a4) / a2 +
+                         a5 * (np.log(a1 / a2) + dgpart + 2) -
+                         a4**2 * pgpart -
+                         a3 / a2 / mu)
 
         for i in range(dim):
             hess_arr[i, :-1] = np.sum(exog[:, :].T * exog[:, i] * coeff,
