@@ -1934,8 +1934,6 @@ class RegressionResults(base.LikelihoodModelResults):
     # TODO: De-duplicate with covtype.get_robustcov_results
     @copy_doc(covtype.get_robustcov_results.__doc__)
     def get_robustcov_results(self, cov_type='HC1', use_t=None, **kwds):
-        import sm2.stats.sandwich_covariance as sw
-
         cov_type = covtype.normalize_cov_type(cov_type)
 
         if 'kernel' in kwds:

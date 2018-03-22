@@ -1462,7 +1462,7 @@ class GLMResults(base.LikelihoodModelResults):
 
     @cache_readonly
     def resid_response(self):
-        return self._n_trials * (self._endog-self.mu)
+        return self._n_trials * (self._endog - self.mu)
 
     @cache_readonly
     def resid_pearson(self):
@@ -1577,14 +1577,11 @@ class GLMResults(base.LikelihoodModelResults):
 
     @cache_readonly
     def bic(self):
-        return (self.deviance -
-                (self.model.wnobs - self.df_model - 1) *
-                np.log(self.model.wnobs))
+        return self.deviance - self.df_resid * np.log(self.model.wnobs)
 
     @copy_doc(pred.get_prediction_glm.__doc__)
     def get_prediction(self, exog=None, exposure=None, offset=None,
-                       transform=True, linear=False,
-                       row_labels=None):
+                       transform=True, linear=False, row_labels=None):
 
         import sm2.regression._prediction as linpred
 
@@ -1725,4 +1722,4 @@ class GLMResultsWrapper(lm.RegressionResultsWrapper):
         'resid_working': 'rows'}
     _wrap_attrs = wrap.union_dicts(lm.RegressionResultsWrapper._wrap_attrs,
                                    _attrs)
-wrap.populate_wrapper(GLMResultsWrapper, GLMResults)
+wrap.populate_wrapper(GLMResultsWrapper, GLMResults)  # noqa:E305

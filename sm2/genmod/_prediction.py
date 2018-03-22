@@ -130,7 +130,6 @@ class PredictionResults(object):
         to_include['mean_ci_lower'] = ci_mean[:, 0]
         to_include['mean_ci_upper'] = ci_mean[:, 1]
 
-
         self.table = to_include
         # OrderedDict doesn't work to preserve sequence
         # pandas dict doesn't handle 2d_array

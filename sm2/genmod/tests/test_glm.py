@@ -34,7 +34,7 @@ DECIMAL_0 = 0
 try:
     import matplotlib.pyplot as plt  # noqa: F401
     have_matplotlib = True
-except:
+except ImportError:
     have_matplotlib = False
 
 pdf_output = False

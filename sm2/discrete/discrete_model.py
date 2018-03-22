@@ -3112,7 +3112,6 @@ class DiscreteResults(base.LikelihoodModelResults):
                                 "variable models.",
         "extra_attr": ""}
 
-
     def __init__(self, model, mlefit, cov_type='nonrobust', cov_kwds=None,
                  use_t=None):
         #super(DiscreteResults, self).__init__(model, params,
@@ -3786,7 +3785,6 @@ class L1ResultsMixin(object):
         # there are J-1 constants
         J = getattr(self, 'J', 2)
         return float(self.nobs) - (self.df_model + (J - 1))
-
 
 
 class L1CountResults(DiscreteResults, L1ResultsMixin):
