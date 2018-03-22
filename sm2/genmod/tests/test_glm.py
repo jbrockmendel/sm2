@@ -349,6 +349,8 @@ class CheckComparisonMixin(object):
 
 @pytest.mark.not_vetted
 class TestGlmGaussian(CheckModelResultsMixin):
+    res2 = results_glm.Longley
+
     decimal_resids = DECIMAL_3
     decimal_params = DECIMAL_2
     decimal_bic = DECIMAL_0
@@ -363,7 +365,6 @@ class TestGlmGaussian(CheckModelResultsMixin):
         cls.data.exog = add_constant(cls.data.exog, prepend=False)
         cls.res1 = GLM(cls.data.endog, cls.data.exog,
                        family=sm.families.Gaussian()).fit()
-        cls.res2 = results_glm.Longley()
 
     def test_compare_OLS(self):
         res1 = self.res1
@@ -389,6 +390,8 @@ class TestGlmGaussian(CheckModelResultsMixin):
 
 @pytest.mark.not_vetted
 class TestGaussianLog(CheckModelResultsMixin):
+    res2 = results_glm.GaussianLog
+
     decimal_aic_R = DECIMAL_0
     decimal_aic_Stata = DECIMAL_2
     decimal_loglike = DECIMAL_0
@@ -408,11 +411,12 @@ class TestGaussianLog(CheckModelResultsMixin):
         GaussLog_Model = GLM(cls.lny, cls.X,
                              family=sm.families.Gaussian(links.log()))
         cls.res1 = GaussLog_Model.fit()
-        cls.res2 = results_glm.GaussianLog()
 
 
 @pytest.mark.not_vetted
 class TestGaussianInverse(CheckModelResultsMixin):
+    res2 = results_glm.GaussianInverse
+
     decimal_bic = DECIMAL_1
     decimal_aic_R = DECIMAL_1
     decimal_aic_Stata = DECIMAL_3
@@ -432,11 +436,12 @@ class TestGaussianInverse(CheckModelResultsMixin):
         InverseLink_Model = GLM(cls.y_inv, cls.X, family=fam)
         InverseLink_Res = InverseLink_Model.fit()
         cls.res1 = InverseLink_Res
-        cls.res2 = results_glm.GaussianInverse()
 
 
 @pytest.mark.not_vetted
 class TestGlmBinomial(CheckModelResultsMixin):
+    res2 = results_glm.Star98
+
     decimal_resids = DECIMAL_1
     decimal_bic = DECIMAL_2
 
@@ -445,19 +450,18 @@ class TestGlmBinomial(CheckModelResultsMixin):
         """
         Test Binomial family with canonical logit link using star98 dataset.
         """
-
         data = sm.datasets.star98.load()
         data.exog = add_constant(data.exog, prepend=False)
         cls.res1 = GLM(data.endog, data.exog,
                        family=sm.families.Binomial()).fit()
-        cls.res2 = results_glm.Star98()
 
 
 @pytest.mark.not_vetted
 class TestGlmBernoulli(CheckModelResultsMixin, CheckComparisonMixin):
+    res2 = results_glm.Lbw
+
     @classmethod
     def setup_class(cls):
-        cls.res2 = results_glm.Lbw()
         cls.res1 = GLM(cls.res2.endog, cls.res2.exog,
                        family=sm.families.Binomial()).fit()
 
@@ -522,7 +526,8 @@ class TestGlmGamma(CheckModelResultsMixin):
             res1 = GLM(data.endog, data.exog,
                        family=sm.families.Gamma()).fit()
         cls.res1 = res1
-        res2 = results_glm.Scotvote()
+        res2 = results_glm.Scotvote
+        # FIXME: dont update in-place?
         # R doesn't count degree of freedom for scale with gamma
         res2.aic_R += 2
         cls.res2 = res2
@@ -530,20 +535,21 @@ class TestGlmGamma(CheckModelResultsMixin):
 
 @pytest.mark.not_vetted
 class TestGlmGammaLog(CheckModelResultsMixin):
+    res2 = results_glm.CancerLog
+
     decimal_resids = DECIMAL_3
     decimal_aic_R = DECIMAL_0
     decimal_fittedvalues = DECIMAL_3
 
     @classmethod
     def setup_class(cls):
-        res2 = results_glm.CancerLog()
-        cls.res1 = GLM(res2.endog, res2.exog,
+        cls.res1 = GLM(cls.res2.endog, cls.res2.exog,
                        family=sm.families.Gamma(link=links.log())).fit()
-        cls.res2 = res2
 
 
 @pytest.mark.not_vetted
 class TestGlmGammaIdentity(CheckModelResultsMixin):
+    res2 = results_glm.CancerIdentity()
     decimal_resids = -100  # TODO Very off from Stata?
     decimal_params = DECIMAL_2
     decimal_aic_R = DECIMAL_0
@@ -551,17 +557,17 @@ class TestGlmGammaIdentity(CheckModelResultsMixin):
 
     @classmethod
     def setup_class(cls):
-        res2 = results_glm.CancerIdentity()
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
-            model = GLM(res2.endog, res2.exog,
+            model = GLM(cls.res2.endog, cls.res2.exog,
                         family=sm.families.Gamma(link=links.identity()))
             cls.res1 = model.fit()
-        cls.res2 = res2
 
 
 @pytest.mark.not_vetted
 class TestGlmPoisson(CheckModelResultsMixin, CheckComparisonMixin):
+    res2 = results_glm.Cpunish
+
     @classmethod
     def setup_class(cls):
         """
@@ -574,7 +580,6 @@ class TestGlmPoisson(CheckModelResultsMixin, CheckComparisonMixin):
         cls.data.exog = add_constant(cls.data.exog, prepend=False)
         cls.res1 = GLM(cls.data.endog, cls.data.exog,
                        family=sm.families.Poisson()).fit()
-        cls.res2 = results_glm.Cpunish()
         # compare with discrete, start close to save time
         modd = discrete.Poisson(cls.data.endog, cls.data.exog)
         cls.resd = modd.fit(start_params=cls.res1.params * 0.9, disp=False)
@@ -582,6 +587,8 @@ class TestGlmPoisson(CheckModelResultsMixin, CheckComparisonMixin):
 
 @pytest.mark.not_vetted
 class TestGlmInvgauss(CheckModelResultsMixin):
+    res2 = results_glm.InvGauss()
+
     decimal_aic_R = DECIMAL_0
     decimal_loglike = DECIMAL_0
 
@@ -596,41 +603,39 @@ class TestGlmInvgauss(CheckModelResultsMixin):
         generate the data.  Results are read from model_results, which
         were obtained by running R_ig.s
         """
-        res2 = results_glm.InvGauss()
-        res1 = GLM(res2.endog, res2.exog,
+        res1 = GLM(cls.res2.endog, cls.res2.exog,
                    family=sm.families.InverseGaussian()).fit()
         cls.res1 = res1
-        cls.res2 = res2
 
 
 @pytest.mark.not_vetted
 class TestGlmInvgaussLog(CheckModelResultsMixin):
+    res2 = results_glm.InvGaussLog
+
     decimal_aic_R = -10  # TODO: Big difference vs R.
     decimal_resids = DECIMAL_3
 
     @classmethod
     def setup_class(cls):
-        res2 = results_glm.InvGaussLog()
-        model = GLM(res2.endog, res2.exog,
+        model = GLM(cls.res2.endog, cls.res2.exog,
                     family=sm.families.InverseGaussian(link=links.log()))
         cls.res1 = model.fit()
-        cls.res2 = res2
 
 
 @pytest.mark.not_vetted
 class TestGlmInvgaussIdentity(CheckModelResultsMixin):
+    res2 = results_glm.InvGaussIdentity
     decimal_aic_R = -10  # TODO: Big difference vs R
     decimal_fittedvalues = DECIMAL_3
     decimal_params = DECIMAL_3
 
     @classmethod
     def setup_class(cls):
-        data = results_glm.Medpar1()
+        data = results_glm.Medpar1
         family = sm.families.InverseGaussian(link=links.identity())
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
             cls.res1 = GLM(data.endog, data.exog, family=family).fit()
-        cls.res2 = results_glm.InvGaussIdentity()
 
 
 @pytest.mark.not_vetted
@@ -652,13 +657,16 @@ class TestGlmNegbinomial(CheckModelResultsMixin):
         cls.data.exog = add_constant(cls.data.exog, prepend=False)
         cls.res1 = GLM(cls.data.endog, cls.data.exog,
                        family=sm.families.NegativeBinomial()).fit(scale='x2')
-        res2 = results_glm.Committee()
+        res2 = results_glm.Committee
+        # FIXME: Not sure editing in-place is a good idea
         res2.aic_R += 2  # They don't count a degree of freedom for the scale
         cls.res2 = res2
 
 
 @pytest.mark.not_vetted
 class TestGlmPoissonOffset(CheckModelResultsMixin):
+    res2 = results_glm.Cpunish_offset
+
     decimal_params = DECIMAL_4
     decimal_bse = DECIMAL_4
     decimal_aic_R = 3
@@ -673,7 +681,6 @@ class TestGlmPoissonOffset(CheckModelResultsMixin):
         cls.exposure = exposure
         cls.res1 = GLM(data.endog, data.exog, family=sm.families.Poisson(),
                        exposure=exposure).fit()
-        cls.res2 = results_glm.Cpunish_offset()
 
     def test_missing(self):
         # make sure offset is dropped correctly
@@ -769,7 +776,8 @@ def test_score_test_OLS():
 
 @pytest.mark.not_vetted
 class TestStartParams(CheckModelResultsMixin):
-    # Test Precisions
+    res2 = results_glm.Longley
+
     decimal_resids = DECIMAL_3
     decimal_params = DECIMAL_2
     decimal_bic = DECIMAL_0
@@ -785,7 +793,6 @@ class TestStartParams(CheckModelResultsMixin):
         params = sm.OLS(cls.data.endog, cls.data.exog).fit().params
         cls.res1 = GLM(cls.data.endog, cls.data.exog,
                        family=sm.families.Gaussian()).fit(start_params=params)
-        cls.res2 = results_glm.Longley()
 
 
 @pytest.mark.not_vetted
@@ -1333,6 +1340,8 @@ class CheckTweedie(object):
 
 @pytest.mark.not_vetted
 class TestTweediePower15(CheckTweedie):
+    res2 = results_glm.CpunishTweediePower15
+
     @classmethod
     def setup_class(cls):
         cls.data = sm.datasets.cpunish.load_pandas()
@@ -1343,11 +1352,11 @@ class TestTweediePower15(CheckTweedie):
         cls.res1 = sm.GLM(endog=cls.data.endog,
                           exog=cls.data.exog[['INCOME', 'SOUTH']],
                           family=family_link).fit()
-        cls.res2 = results_glm.CpunishTweediePower15()
-
 
 @pytest.mark.not_vetted
 class TestTweediePower2(CheckTweedie):
+    res2 = results_glm.CpunishTweediePower2
+
     @classmethod
     def setup_class(cls):
         cls.data = sm.datasets.cpunish.load_pandas()
@@ -1358,11 +1367,12 @@ class TestTweediePower2(CheckTweedie):
         cls.res1 = sm.GLM(endog=cls.data.endog,
                           exog=cls.data.exog[['INCOME', 'SOUTH']],
                           family=family_link).fit()
-        cls.res2 = results_glm.CpunishTweediePower2()
 
 
 @pytest.mark.not_vetted
 class TestTweedieLog1(CheckTweedie):
+    res2 = results_glm.CpunishTweedieLog1
+
     @classmethod
     def setup_class(cls):
         cls.data = sm.datasets.cpunish.load_pandas()
@@ -1373,11 +1383,12 @@ class TestTweedieLog1(CheckTweedie):
         cls.res1 = sm.GLM(endog=cls.data.endog,
                           exog=cls.data.exog[['INCOME', 'SOUTH']],
                           family=family_link).fit()
-        cls.res2 = results_glm.CpunishTweedieLog1()
 
 
 @pytest.mark.not_vetted
 class TestTweedieLog15Fair(CheckTweedie):
+    res2 = results_glm.FairTweedieLog15
+
     @classmethod
     def setup_class(cls):
         data = sm.datasets.fair.load_pandas()
@@ -1387,7 +1398,6 @@ class TestTweedieLog15Fair(CheckTweedie):
                           exog=data.exog[['rate_marriage', 'age',
                                           'yrs_married']],
                           family=family_link).fit()
-        cls.res2 = results_glm.FairTweedieLog15()
 
 
 @pytest.mark.not_vetted

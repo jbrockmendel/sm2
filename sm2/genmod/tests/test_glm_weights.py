@@ -158,15 +158,20 @@ class CheckWeight(object):
                              TestBinomial0RepeatedvsAverage)):
             return None
         res2 = self.res1.model.fit(method=method, optim_hessian=optim_hessian)
-        assert_allclose(res1.params, res2.params, atol=1e-3, rtol=2e-3)
+        assert_allclose(res1.params,
+                        res2.params,
+                        atol=1e-3, rtol=2e-3)
 
         H = res2.model.hessian(res2.params, observed=False)
         res2_bse = np.sqrt(-np.diag(np.linalg.inv(H)))
-        assert_allclose(res1.bse, res2_bse, atol=1e-3, rtol=1e-3)
+        assert_allclose(res1.bse,
+                        res2_bse,
+                        atol=1e-3, rtol=1e-3)
 
     def test_pearson_chi2(self):
         if hasattr(self.res2, 'chi2'):
-            assert_allclose(self.res1.pearson_chi2, self.res2.deviance_p,
+            assert_allclose(self.res1.pearson_chi2,
+                            self.res2.deviance_p,
                             atol=1e-6, rtol=1e-6)
 
 
@@ -176,8 +181,9 @@ class TestGlmPoissonPlain(CheckWeight):
 
     @classmethod
     def setup_class(cls):
-        cls.res1 = GLM(cpunish_data.endog, cpunish_data.exog,
-                       family=sm.families.Poisson()).fit()
+        model = GLM(cpunish_data.endog, cpunish_data.exog,
+                    family=sm.families.Poisson())
+        cls.res1 = model.fit()
 
 
 @pytest.mark.not_vetted
@@ -189,9 +195,10 @@ class TestGlmPoissonFwNr(CheckWeight):
         fweights = [1, 1, 1, 2, 2, 2, 3, 3, 3, 1, 1, 1, 2, 2, 2, 3, 3]
         fweights = np.array(fweights)
 
-        cls.res1 = GLM(cpunish_data.endog, cpunish_data.exog,
-                       family=sm.families.Poisson(),
-                       freq_weights=fweights).fit()
+        model = GLM(cpunish_data.endog, cpunish_data.exog,
+                    family=sm.families.Poisson(),
+                    freq_weights=fweights)
+        cls.res1 = model.fit()
 
 
 @pytest.mark.not_vetted
@@ -205,8 +212,9 @@ class TestGlmPoissonAwNr(CheckWeight):
         nobs = len(cpunish_data.endog)
         aweights = fweights / wsum * nobs
 
-        cls.res1 = GLM(cpunish_data.endog, cpunish_data.exog,
-                       family=sm.families.Poisson(), var_weights=aweights).fit()
+        model = GLM(cpunish_data.endog, cpunish_data.exog,
+                    family=sm.families.Poisson(), var_weights=aweights)
+        cls.res1 = model.fit()
 
         # Need to copy to avoid inplace adjustment
         cls.res2 = copy.copy(res_stata.results_poisson_aweight_nonrobust)
@@ -338,7 +346,7 @@ class TestGlmGammaAwNr(CheckWeight):
     @classmethod
     def setup_class(cls):
         from .results.results_glm import CancerLog
-        res2 = CancerLog()
+        res2 = CancerLog
         endog = res2.endog
         exog = res2.exog[:, :-1]
         exog = sm.add_constant(exog, prepend=True)
