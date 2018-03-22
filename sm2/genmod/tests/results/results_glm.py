@@ -608,7 +608,7 @@ class Cancer(object):
         self.endog = data.studytime
         design = np.column_stack((data.age, data.drug))
         design = categorical(design, col=1, drop=True)
-        design = np.delete(design, 1, axis=1) # drop first dummy
+        design = np.delete(design, 1, axis=1)  # drop first dummy
         self.exog = add_constant(design, prepend=False)
 
 
@@ -673,14 +673,14 @@ class CancerLog(Cancer):
         self.bse = np.array([
             0.0147328, 0.19694727, 0.19772507, 0.83534671])
 
-        self.aic_R = 331.89022395372069
-
-        self.aic_Stata = 7.403608467857651
         self.deviance = 16.174635536991005
         self.scale = 0.31805268736385695
 
-        #self.llf = -160.94511197686035  # From R
-        self.llf = -173.6866032285836  # from Staa
+        self.aic_R = 331.89022395372069
+        self.aic_Stata = 7.403608467857651
+
+        # self.llf = -160.94511197686035     # From R; we're using Stata version
+        self.llf = -173.6866032285836        # from Stata
         self.bic_Stata = -154.1582089453923  # from Stata
         self.df_model = 3
         self.df_resid = 44
@@ -768,12 +768,14 @@ class CancerIdentity(Cancer):
         self.aic_Stata = 7.381090276021671
         self.deviance = 15.093762327607557
         self.scale = 0.29512089119443752
-        self.null_deviance = 27.92207137420696  # from R bug in RPy
+        self.null_deviance = 27.92207137420696  # from R; bug in RPy
         # NOTE: our scale is Stata's dispers_p (pearson?)
         # NOTE: if scale is analagous to Stata's dispersion, then this might be
         # where the discrepancies come from?
-        #self.llf = -159.19604559476483  # From R
-        self.llf = -173.1461666245201  # From Stata
+
+        # self.llf = -159.19604559476483  # From R; we're using Stata version
+        self.llf = -173.1461666245201     # From Stata
+
         self.bic_Stata = -155.2390821535193
         self.df_model = 3
         self.df_resid = 44
@@ -1932,7 +1934,7 @@ class InvGaussLog(Medpar1):
         self.aic_Stata = 6.619000588187141
         self.deviance = 304.27188306012789
         self.scale = 0.10240599519220173
-        # self.llf = -9268.9182107979905  # from R
+        # self.llf = -9268.9182107979905  # from R; we're using Stata version
         self.llf = -12162.72308108797  # from Stata, big rounding diff with R
         self.bic_Stata = -29849.51723280784
         self.chi2 = 398.5465213008323   # from Stata not in sm
@@ -2688,7 +2690,7 @@ class InvGaussIdentity(Medpar1):
         filename = os.path.join(os.path.dirname(os.path.abspath(__file__)),
                                 "igaussident_resids.csv")
         self.resids = np.genfromtxt(open(filename, 'rb'), delimiter=",")
-        self.null_deviance = 335.1539777981053  # from R, Rpy bug
+        self.null_deviance = 335.1539777981053  # from R; Rpy bug
         self.df_null = 3675
         self.deviance = 305.33661191013988
         self.df_resid = 3673
@@ -2698,8 +2700,8 @@ class InvGaussIdentity(Medpar1):
         self.bic_Stata = -29848.45250412075
         self.llf_stata = -12163.25544543151
         self.chi2 = 567.1229375785638  # in Stata not sm
-        # self.llf = -9275.3386384410078  # from R
-        self.llf = -12163.25545    # from Stata, big diff with R
+        # self.llf = -9275.3386384410078  # from R; we're using Stata version
+        self.llf = -12163.25545           # from Stata, big diff with R
         self.scale = 0.10115387793455666
         self.pearson_chi2 = 371.5346609292967  # deviance_p in Stata
         self.fittedvalues = np.array([
@@ -3464,7 +3466,7 @@ class Committee(object):
             [2.218985e-1, 2.073287e-1, 6.911358e+2, 8.168764e-1, 12.43929],
             [2.455925e-1, 2.266392e-1, 1.992506e-1, 2.579483e-1, 2.747237e-1],
             [-7.589526e-1, -1.153008, -2.56739e+2, -2.407166, -14.14742]])
-        self.null_deviance = 27.81104693643434  # from R, Rpy bug
+        self.null_deviance = 27.81104693643434  # from R; Rpy bug
         self.params = np.array([
             -0.0268147, 1.25103364, 2.91070663,
             -0.34799563, 0.00659808, -0.31303026, -6.44847076])
@@ -3477,7 +3479,7 @@ class Committee(object):
         self.aic_Stata = 10.83328660860436
         self.deviance = 5.615520158267981
         self.scale = 0.38528595746569905
-        self.llf = -101.33286676188968  # from R
+        self.llf = -101.33286676188968        # from R
         self.llf_Stata = -101.3328660860436   # same as R
         self.bic_Stata = -33.32900074962649
         self.chi2 = 5.008550263545408
@@ -3505,8 +3507,8 @@ class Wfs(object):
                        -.11709716]
         self.bse = [.0527437, .0510688, .0511949, .0512138, .0500341,
                     .0324963, .0283292, .0226563, .0309871, .0552107, .0549118]
-        self.aic_R = 522.14215776  # R adds 2 for dof to AIC
-        self.aic_Stata = 7.459173652869477  # stata divides by nobs
+        self.aic_R = 522.14215776            # R adds 2 for dof to AIC
+        self.aic_Stata = 7.459173652869477   # stata divides by nobs
         # self.deviance = 70.6652992116034   # from Stata
         self.deviance = 70.665301270867  # from R
         self.scale = 1.0
@@ -3579,12 +3581,12 @@ class CpunishTweediePower15(object):
         # self.null_deviance = 3731.85161919  # N/A
         self.params = [0.0000471043, 6.4721324886]
         self.bse = [0.0000246888, 3.5288126173]
-        # self.aic_R = 522.14215776  # R adds 2 for dof to AIC
-        # self.aic_Stata = 7.459173652869477  # stata divides by nobs
-        # self.deviance = 70.6652992116034   # from Stata
-        self.deviance = 36.087307138233  # from R
+        # self.aic_R = 522.14215776            # R adds 2 for dof to AIC
+        # self.aic_Stata = 7.459173652869477   # stata divides by nobs
+        # self.deviance = 70.6652992116034     # from Stata
+        self.deviance = 36.087307138233        # from R
         # self.scale = 1.0
-        # self.llf = -250.0710778504317  # from Stata, ours with scale=1
+        # self.llf = -250.0710778504317        # from Stata, ours with scale=1
         # self.bic_Stata = -179.9959200693088  # no bic in R?
         self.df_model = 1
         self.df_resid = 15

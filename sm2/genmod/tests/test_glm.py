@@ -626,11 +626,10 @@ class TestGlmInvgaussIdentity(CheckModelResultsMixin):
     @classmethod
     def setup_class(cls):
         data = results_glm.Medpar1()
+        family = sm.families.InverseGaussian(link=links.identity())
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
-            cls.res1 = GLM(data.endog, data.exog,
-                            family=sm.families.InverseGaussian(
-                                link=links.identity())).fit()
+            cls.res1 = GLM(data.endog, data.exog, family=family).fit()
         cls.res2 = results_glm.InvGaussIdentity()
 
 
@@ -1056,7 +1055,7 @@ class TestWtdGlmPoissonClu(CheckWtdDuplicationMixin):
             fit_kwds = dict(cov_type='cluster',
                             cov_kwds={'groups': gidr, 'use_correction': False})
             model = GLM(cls.endog_big, cls.exog_big,
-                           family=sm.families.Poisson())
+                        family=sm.families.Poisson())
             cls.res2 = model.fit(start_params=start_params, **fit_kwds)
 
 
@@ -1071,10 +1070,10 @@ class TestWtdGlmBinomial(CheckWtdDuplicationMixin):
         cls.endog = cls.endog / 100
         cls.endog_big = cls.endog_big / 100
         cls.res1 = GLM(cls.endog, cls.exog,
-                        freq_weights=cls.weight,
-                        family=sm.families.Binomial()).fit()
+                       freq_weights=cls.weight,
+                       family=sm.families.Binomial()).fit()
         cls.res2 = GLM(cls.endog_big, cls.exog_big,
-                        family=sm.families.Binomial()).fit()
+                       family=sm.families.Binomial()).fit()
 
 
 @pytest.mark.not_vetted

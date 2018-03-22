@@ -122,7 +122,6 @@ class PredictionResults(object):
 
     def summary_frame(self, what='all', alpha=0.05):
         # TODO: finish and cleanup
-        #ci_obs = self.conf_int(alpha=alpha, obs=True) # need to split
         ci_mean = self.conf_int(alpha=alpha)
         to_include = OrderedDict()
         to_include['mean'] = self.predicted_mean

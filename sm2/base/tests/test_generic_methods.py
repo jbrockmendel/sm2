@@ -84,13 +84,16 @@ class CheckGenericMixin(object):
                  for k in range(k_vars)]
         assert_allclose(pvals, res.pvalues, rtol=5e-10, atol=1e-25)
 
-        # sutomatic use_f based on results class use_t
+        # automatic use_f based on results class use_t
         pvals = [res.wald_test(np.eye(k_vars)[k]).pvalue
                  for k in range(k_vars)]
         assert_allclose(pvals, res.pvalues, rtol=5e-10, atol=1e-25)
 
+    @pytest.mark.smoke
+    def test_summary(self):
+        res = self.results
         # label for pvalues in summary
-        string_use_t = 'P>|z|' if use_t is False else 'P>|t|'
+        string_use_t = 'P>|z|' if res.use_t is False else 'P>|t|'
         summ = str(res.summary())
         assert string_use_t in summ
 

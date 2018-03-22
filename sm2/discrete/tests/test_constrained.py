@@ -109,6 +109,7 @@ class CheckPoissonConstrainedMixin(object):
         df_r = res2.N - res2.df_m - 1
         assert res1.df_resid == df_r
 
+    # TODO: test needs informative name
     def test_other(self):
         # some results may not be valid or available for all models
         if not hasattr(self, 'res1m'):
