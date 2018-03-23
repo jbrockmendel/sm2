@@ -212,7 +212,9 @@ class CheckOLSRobustNewMixin(object):
         rtol = 1e-5
         # Note we always use df_resid for scale
         # Stata uses nobs or df_resid for rmse, not always available in Stata
-        #assert_allclose(res1.scale, res2.rmse**2 * res2.N / (res2.N - res2.df_m - 1), rtol=rtol)
+        #assert_allclose(res1.scale,
+        #                 res2.rmse**2 * res2.N / (res2.N - res2.df_m - 1),
+        #                 rtol=rtol)
         skip = False
         if hasattr(res2, 'rss'):
             scale = res2.rss / (res2.N - res2.df_m - 1)
@@ -264,7 +266,7 @@ class TestOLSRobust2SmallNew(TestOLSRobust1, CheckOLSRobustNewMixin):
         self.res2 = res.results_ivhc0_small
 
     def test_compare(self):
-        #check that we get a warning using the nested compare methods
+        # check that we get a warning using the nested compare methods
         res1 = self.res1
         endog = res1.model.endog
         exog = res1.model.exog[:, [0, 2]]  # drop one variable

@@ -333,7 +333,6 @@ class RegressionModel(base.LikelihoodModel):
         """
         # JP: this doesn't look correct for GLMAR
         # SS: it needs its own predict method
-
         if exog is None:
             exog = self.exog
 
@@ -1351,6 +1350,11 @@ class RegressionResults(base.LikelihoodModelResults):
 
     _cache = {}  # needs to be a class attribute for scale setter?
 
+    @cache_readonly
+    def nobs(self):
+        # TODO: make this not-depend on wexog in case data has been removed
+        return float(self.model.wexog.shape[0])
+
     def __init__(self, model, params, normalized_cov_params=None, scale=1.,
                  cov_type='nonrobust', cov_kwds=None, use_t=None, **kwargs):
         super(RegressionResults, self).__init__(
@@ -1411,10 +1415,6 @@ class RegressionResults(base.LikelihoodModelResults):
         # TODO: can we get rid of this?
         ci = super(RegressionResults, self).conf_int(alpha=alpha, cols=cols)
         return ci
-
-    @cache_readonly
-    def nobs(self):
-        return float(self.model.wexog.shape[0])
 
     @cache_readonly
     def fittedvalues(self):
@@ -1934,8 +1934,6 @@ class RegressionResults(base.LikelihoodModelResults):
     # TODO: De-duplicate with covtype.get_robustcov_results
     @copy_doc(covtype.get_robustcov_results.__doc__)
     def get_robustcov_results(self, cov_type='HC1', use_t=None, **kwds):
-        import sm2.stats.sandwich_covariance as sw
-
         cov_type = covtype.normalize_cov_type(cov_type)
 
         if 'kernel' in kwds:
@@ -2012,7 +2010,7 @@ class RegressionResults(base.LikelihoodModelResults):
                                    weights=weights, row_labels=row_labels,
                                    **kwds)
 
-    @copy_doc(base.GenericLikelihoodModelResults.summary.__doc__)
+    @copy_doc(base.Results.summary.__doc__)
     def summary(self, yname=None, xname=None, title=None, alpha=.05):
         # TODO: import where we need it (for now), add as cached attributes
         from sm2.stats.stattools import (jarque_bera, omni_normtest,

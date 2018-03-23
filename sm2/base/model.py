@@ -10,7 +10,7 @@ from scipy import stats
 
 from sm2.tools.data import _is_using_pandas
 from sm2.tools.tools import recipr, nan_dot
-from sm2.tools.decorators import resettable_cache, cache_readonly
+from sm2.tools.decorators import resettable_cache, cache_readonly, copy_doc
 from sm2.tools.numdiff import approx_fprime, approx_hess
 from sm2.tools.sm_exceptions import (ValueWarning, HessianInversionWarning,
                                      ConvergenceWarning)
@@ -707,7 +707,31 @@ class Results(object):
         else:
             return predict_results
 
-    def summary(self):
+    def summary(self, yname=None, xname=None, title=None, alpha=.05):
+        """Summarize the Regression Results
+
+        Parameters
+        -----------
+        yname : string, optional
+            Default is `y`
+        xname : list of strings, optional
+            Default is `var_##` for ## in p the number of regressors
+        title : string, optional
+            Title for the top table. If not None, then this replaces the
+            default title
+        alpha : float
+            significance level for the confidence intervals
+
+        Returns
+        -------
+        smry : Summary instance
+            this holds the summary tables and text, which can be printed or
+            converted to various output formats.
+
+        See Also
+        --------
+        sm2.iolib.summary.Summary : class to hold summary results
+        """
         # TODO: Make this raise upstream instead of just "pass"
         raise NotImplementedError  # pragma: no cover
 
@@ -1798,31 +1822,8 @@ class GenericLikelihoodModelResults(LikelihoodModelResults, ResultMixin):
         self._cache = resettable_cache()
         self.__dict__.update(mlefit.__dict__)
 
+    @copy_doc(Results.summary.__doc__)
     def summary(self, yname=None, xname=None, title=None, alpha=.05):
-        """Summarize the Regression Results
-
-        Parameters
-        -----------
-        yname : string, optional
-            Default is `y`
-        xname : list of strings, optional
-            Default is `var_##` for ## in p the number of regressors
-        title : string, optional
-            Title for the top table. If not None, then this replaces the
-            default title
-        alpha : float
-            significance level for the confidence intervals
-
-        Returns
-        -------
-        smry : Summary instance
-            this holds the summary tables and text, which can be printed or
-            converted to various output formats.
-
-        See Also
-        --------
-        sm2.iolib.summary.Summary : class to hold summary results
-        """
         top_left = [('Dep. Variable:', None),
                     ('Model:', None),
                     ('Method:', ['Maximum Likelihood']),

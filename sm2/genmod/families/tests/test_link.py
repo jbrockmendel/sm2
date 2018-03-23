@@ -2,6 +2,7 @@
 Test functions for genmod.families.links
 """
 from six.moves import range
+import pytest
 import numpy as np
 from numpy.testing import assert_allclose, assert_equal
 
@@ -30,70 +31,70 @@ def get_domainvalue(link):
     Get a value in the domain for a given family.
     """
     z = -np.log(np.random.uniform(0, 1))
-    if type(link) == type(cloglog):  # prone to overflow
+    if link is cloglog:  # prone to overflow
         z = min(z, 3)
-    elif type(link) == type(negbinom):  # domain is negative numbers
+    elif link is negbinom:  # domain is negative numbers
         z = -z
     return z
 
 
-def test_inverse():
+@pytest.mark.parametrize('link', Links)
+def test_inverse(link):
     # Logic check that link.inverse(link) and link(link.inverse) are
     # the identity.
     np.random.seed(3285)
-    for link in Links:
-        for k in range(10):
-            p = np.random.uniform(0, 1)  # In domain for all families
-            d = link.inverse(link(p))
-            assert_allclose(d, p, atol=1e-8, err_msg=str(link))
+    for k in range(10):  # TODO: WTF does looping over k do here?
+        p = np.random.uniform(0, 1)  # In domain for all families
+        d = link.inverse(link(p))
+        assert_allclose(d, p, atol=1e-8)
 
-            z = get_domainvalue(link)
-            d = link(link.inverse(z))
-            assert_allclose(d, z, atol=1e-8, err_msg=str(link))
+        z = get_domainvalue(link)
+        d = link(link.inverse(z))
+        assert_allclose(d, z, atol=1e-8)
 
 
-def test_deriv():
+@pytest.mark.parametrize('link', Links)
+def test_deriv(link):
     # Check link function derivatives using numeric differentiation.
     np.random.seed(24235)
-    for link in Links:
-        for k in range(10):
-            p = np.random.uniform(0, 1)
-            d = link.deriv(p)
-            da = nd.approx_fprime(np.r_[p], link)
-            assert_allclose(d, da, rtol=1e-6, atol=1e-6,
-                            err_msg=str(link))
+    for k in range(10):  # TODO: WTF does looping over k do here?
+        p = np.random.uniform(0, 1)
+        d = link.deriv(p)
+        da = nd.approx_fprime(np.r_[p], link)
+        assert_allclose(d, da,
+                        rtol=1e-6, atol=1e-6)
 
 
-def test_deriv2():
+@pytest.mark.parametrize('link', Links)
+def test_deriv2(link):
     # Check link function second derivatives using numeric differentiation.
     np.random.seed(24235)
 
-    for link in Links:
-        # TODO: Resolve errors with the numeric derivatives
-        if type(link) == type(probit):
-            continue
-        for k in range(10):
-            p = np.random.uniform(0, 1)
-            p = np.clip(p, 0.01, 0.99)
-            if type(link) == type(cauchy):
-                p = np.clip(p, 0.03, 0.97)
-            d = link.deriv2(p)
-            da = nd.approx_fprime(np.r_[p], link.deriv)
-            assert_allclose(d, da, rtol=1e-6, atol=1e-6,
-                            err_msg=str(link))
+    # TODO: Resolve errors with the numeric derivatives
+    if link is probit:
+        raise pytest.skip()
+    for k in range(10):  # TODO: WTF does looping over k do here?
+        p = np.random.uniform(0, 1)
+        p = np.clip(p, 0.01, 0.99)
+        if link is cauchy:
+            p = np.clip(p, 0.03, 0.97)
+        d = link.deriv2(p)
+        da = nd.approx_fprime(np.r_[p], link.deriv)
+        assert_allclose(d, da,
+                        rtol=1e-6, atol=1e-6)
 
 
-def test_inverse_deriv():
+@pytest.mark.parametrize('link', Links)
+def test_inverse_deriv(link):
     # Logic check that inverse_deriv equals 1/link.deriv(link.inverse)
     np.random.seed(24235)
 
-    for link in Links:
-        for k in range(10):
-            z = -np.log(np.random.uniform())  # In domain for all families
-            d = link.inverse_deriv(z)
-            f = 1 / link.deriv(link.inverse(z))
-            assert_allclose(d, f, rtol=1e-8, atol=1e-10,
-                            err_msg=str(link))
+    for k in range(10):  # TODO: WTF does looping over k do here?
+        z = -np.log(np.random.uniform())  # In domain for all families
+        d = link.inverse_deriv(z)
+        f = 1 / link.deriv(link.inverse(z))
+        assert_allclose(d, f,
+                        rtol=1e-8, atol=1e-10)
 
 
 def test_invlogit_stability():

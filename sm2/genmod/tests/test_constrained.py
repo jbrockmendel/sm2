@@ -39,12 +39,15 @@ class ConstrainedCompareMixin(object):
         mod_ols_c = OLS(y - 0.5 * x[:, 1], xc)
         mod_ols_c.exog_names[:] = ['const', 'x2', 'x3', 'x4']
         cls.mod2 = mod_ols_c
+
         cls.init()
 
     def test_params(self):
         res1 = self.res1
         res2 = self.res2
-        assert_allclose(res1.params[self.idx_p_uc], res2.params, rtol=1e-10)
+        assert_allclose(res1.params[self.idx_p_uc],
+                        res2.params,
+                        rtol=1e-10)
 
     def test_se(self):
         res1 = self.res1
@@ -54,12 +57,16 @@ class ConstrainedCompareMixin(object):
         assert_allclose(res1.scale, res2.scale, rtol=1e-10)
         assert_allclose(res1.bse[self.idx_p_uc], res2.bse, rtol=1e-10)
         assert_allclose(res1.cov_params()[self.idx_p_uc[:, None],
-                        self.idx_p_uc], res2.cov_params(), rtol=1e-10)
+                                          self.idx_p_uc],
+                        res2.cov_params(),
+                        rtol=1e-10)
 
     def test_resid(self):
         res1 = self.res1
         res2 = self.res2
-        assert_allclose(res1.resid_response, res2.resid, rtol=1e-10)
+        assert_allclose(res1.resid_response,
+                        res2.resid,
+                        rtol=1e-10)
 
 
 @pytest.mark.not_vetted
@@ -134,6 +141,7 @@ class ConstrainedCompareWtdMixin(ConstrainedCompareMixin):
         mod_ols_c = WLS(y - 0.5 * x[:, 1], xc, weights=cls.aweights)
         mod_ols_c.exog_names[:] = ['const', 'x2', 'x3', 'x4']
         cls.mod2 = mod_ols_c
+
         cls.init()
 
 

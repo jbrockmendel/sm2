@@ -122,7 +122,6 @@ class PredictionResults(object):
 
     def summary_frame(self, what='all', alpha=0.05):
         # TODO: finish and cleanup
-        #ci_obs = self.conf_int(alpha=alpha, obs=True) # need to split
         ci_mean = self.conf_int(alpha=alpha)
         to_include = OrderedDict()
         to_include['mean'] = self.predicted_mean
@@ -130,7 +129,7 @@ class PredictionResults(object):
         to_include['mean_ci_lower'] = ci_mean[:, 0]
         to_include['mean_ci_upper'] = ci_mean[:, 1]
 
-
+        # TODO: Do we _need_ to attach this?
         self.table = to_include
         # OrderedDict doesn't work to preserve sequence
         # pandas dict doesn't handle 2d_array

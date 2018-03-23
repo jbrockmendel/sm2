@@ -80,6 +80,7 @@ class PredictionResults(object):
         to_include['obs_ci_lower'] = ci_obs[:, 0]
         to_include['obs_ci_upper'] = ci_obs[:, 1]
 
+        # TODO: Do we _need_ to attach this?
         self.table = to_include
         # OrderedDict doesn't work to preserve sequence
         # pandas dict doesn't handle 2d_array
@@ -90,7 +91,6 @@ class PredictionResults(object):
         return res
 
 
-# TODO: not hit in tests; should be a method anyway?
 def get_prediction(self, exog=None, transform=True, weights=None,
                    row_labels=None, pred_kwds=None):
     """

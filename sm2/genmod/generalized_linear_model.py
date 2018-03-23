@@ -298,6 +298,12 @@ class GLM(base.LikelihoodModel):
     def df_resid(self):
         return self.wnobs - (self.df_model + 1)
 
+    @cache_readonly
+    def nobs(self):
+        # TODO: make sure this is retained if/when data is stripped
+        # TODO: Do this further up the inheritance hierarchy
+        return self.endog.shape[0]
+
     def __init__(self, endog, exog, family=None, offset=None,
                  exposure=None, freq_weights=None, var_weights=None,
                  missing='none', **kwargs):
@@ -312,7 +318,7 @@ class GLM(base.LikelihoodModel):
 
         if exposure is not None:
             exposure = np.log(exposure)
-        if offset is not None:  # this should probably be done upstream
+        if offset is not None:  # TODO: this should probably be done upstream
             offset = np.asarray(offset)
 
         if freq_weights is not None:
@@ -329,13 +335,13 @@ class GLM(base.LikelihoodModel):
                                   var_weights=var_weights, **kwargs)
         self._check_inputs(family, self.offset, self.exposure, self.endog,
                            self.freq_weights, self.var_weights)
+        # TODO: Dont delete attributes
         if offset is None:
             delattr(self, 'offset')
         if exposure is None:
             delattr(self, 'exposure')
 
-        self.nobs = self.endog.shape[0]
-
+        # TODO: Make this more systematic
         # things to remove_data
         self._data_attr.extend(['weights', 'pinv_wexog', 'mu', 'freq_weights',
                                 'var_weights', 'iweights', '_offset_exposure',
@@ -567,6 +573,7 @@ class GLM(base.LikelihoodModel):
         score_factor = self.score_factor(params, scale=1.)
         if eim_factor.ndim > 1 or score_factor.ndim > 1:
             raise RuntimeError('something wrong')
+            # TODO: better error message
 
         tmp = self.family.variance(mu) * self.family.link.deriv2(mu)
         tmp += self.family.variance.deriv(mu) * self.family.link.deriv(mu)
@@ -1005,6 +1012,7 @@ class GLM(base.LikelihoodModel):
         as `results_wls` attribute.
         """
         self.scaletype = scale
+        # FIXME: Don't set this attribute!
 
         if method.lower() == "irls":
             return self._fit_irls(start_params=start_params, maxiter=maxiter,
@@ -1243,7 +1251,6 @@ class GLM(base.LikelihoodModel):
         The estimation creates a new model with transformed design matrix,
         exog, and converts the results back to the original parameterization.
 
-
         Parameters
         ----------
         constraints : formula expression or tuple
@@ -1462,7 +1469,7 @@ class GLMResults(base.LikelihoodModelResults):
 
     @cache_readonly
     def resid_response(self):
-        return self._n_trials * (self._endog-self.mu)
+        return self._n_trials * (self._endog - self.mu)
 
     @cache_readonly
     def resid_pearson(self):
@@ -1577,14 +1584,11 @@ class GLMResults(base.LikelihoodModelResults):
 
     @cache_readonly
     def bic(self):
-        return (self.deviance -
-                (self.model.wnobs - self.df_model - 1) *
-                np.log(self.model.wnobs))
+        return self.deviance - self.df_resid * np.log(self.model.wnobs)
 
     @copy_doc(pred.get_prediction_glm.__doc__)
     def get_prediction(self, exog=None, exposure=None, offset=None,
-                       transform=True, linear=False,
-                       row_labels=None):
+                       transform=True, linear=False, row_labels=None):
 
         import sm2.regression._prediction as linpred
 
@@ -1725,4 +1729,4 @@ class GLMResultsWrapper(lm.RegressionResultsWrapper):
         'resid_working': 'rows'}
     _wrap_attrs = wrap.union_dicts(lm.RegressionResultsWrapper._wrap_attrs,
                                    _attrs)
-wrap.populate_wrapper(GLMResultsWrapper, GLMResults)
+wrap.populate_wrapper(GLMResultsWrapper, GLMResults)  # noqa:E305

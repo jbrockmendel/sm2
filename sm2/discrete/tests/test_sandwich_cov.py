@@ -648,7 +648,9 @@ class TestGLMGaussHACUniform(CheckDiscreteGLM):
 
         # regression test for bse values
         bse = np.array([2.82203924, 4.60199596, 11.01275064])
-        assert_allclose(res1a.bse, bse, rtol=1e-6)
+        assert_allclose(res1a.bse,
+                        bse,
+                        rtol=1e-6)
 
         assert res1a.cov_kwds['weights_func'] is sw.weights_uniform
 
