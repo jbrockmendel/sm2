@@ -15,11 +15,14 @@ import numpy as np
 cimport numpy as cnp
 cnp.import_array()
 
+from libc.math cimport log as dlog, abs as dabs, exp as dexp
+
 cimport scipy.linalg.cython_blas as blas
 cimport scipy.linalg.cython_lapack as lapack
 
-from sm2.src.math cimport *
 cimport sm2.tsa.statespace._tools as tools
+
+from sm2.src.math cimport zabs, zlog, NPY_PI
 
 {{py:
 

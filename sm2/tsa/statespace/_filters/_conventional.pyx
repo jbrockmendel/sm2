@@ -11,6 +11,7 @@ cimport numpy as cnp
 cimport scipy.linalg.cython_blas as blas
 cimport scipy.linalg.cython_lapack as lapack
 
+from sm2.src.math cimport NPY_PI
 from sm2.src.math cimport *
 
 # ### Missing Observation Conventional Kalman filter
@@ -21,13 +22,13 @@ from sm2.src.math cimport *
 # covariance matrix are enforced to be zero matrices, and the loglikelihood
 # is defined to be zero.
 
-cdef int sforecast_missing_conventional(
-        sKalmanFilter kfilter, sStatespace model):
+cdef int dforecast_missing_conventional(
+        dKalmanFilter kfilter, dStatespace model):
     cdef:
         int i, j
         int inc = 1
         int design_t = 0
-        cnp.float32_t alpha = 1
+        cnp.float64_t alpha = 1
 
     # #### Forecast for time t  
     # `forecast` $= Z_t a_t + d_t$
@@ -51,32 +52,32 @@ cdef int sforecast_missing_conventional(
             kfilter._forecast_error_cov[j + i * kfilter.k_endog] = 0
 
 
-cdef int supdating_missing_conventional(
-        sKalmanFilter kfilter, sStatespace model):
+cdef int dupdating_missing_conventional(
+        dKalmanFilter kfilter, dStatespace model):
     cdef:
         int inc = 1
 
     # Simply copy over the input arrays ($a_t, P_t$) to the filtered arrays
     # ($a_{t|t}, P_{t|t}$)
     # Note: use kfilter dimensions since we just want to copy whole arrays;
-    blas.scopy(
+    blas.dcopy(
         &kfilter.k_states, kfilter._input_state, &inc,
         kfilter._filtered_state, &inc)
-    blas.scopy(
+    blas.dcopy(
         &kfilter.k_states2, kfilter._input_state_cov, &inc,
         kfilter._filtered_state_cov, &inc)
 
-cdef cnp.float32_t sinverse_missing_conventional(
-        sKalmanFilter kfilter, sStatespace model,
-        cnp.float32_t determinant)  except *:
+cdef cnp.float64_t dinverse_missing_conventional(
+        dKalmanFilter kfilter, dStatespace model,
+        cnp.float64_t determinant)  except *:
     # Since the inverse of the forecast error covariance matrix is not
     # stored, we don't need to fill it (e.g. with NPY_NAN values). Instead,
     # just do a noop here and return a zero determinant ($|0|$).
     return 0.0
 
-cdef cnp.float32_t sloglikelihood_missing_conventional(
-        sKalmanFilter kfilter, sStatespace model,
-        cnp.float32_t determinant):
+cdef cnp.float64_t dloglikelihood_missing_conventional(
+        dKalmanFilter kfilter, dStatespace model,
+        cnp.float64_t determinant):
     return 0.0
 
 # ### Conventional Kalman filter
@@ -86,14 +87,14 @@ cdef cnp.float32_t sloglikelihood_missing_conventional(
 #
 # See Durbin and Koopman (2012) Chapter 4
 
-cdef int sforecast_conventional(
-        sKalmanFilter kfilter, sStatespace model):
+cdef int dforecast_conventional(
+        dKalmanFilter kfilter, dStatespace model):
 
     cdef:
         int inc = 1, ld, i, j
-        cnp.float32_t alpha = 1.0
-        cnp.float32_t beta = 0.0
-        cnp.float32_t gamma = -1.0
+        cnp.float64_t alpha = 1.0
+        cnp.float64_t beta = 0.0
+        cnp.float64_t gamma = -1.0
 
     # #### Forecast for time t  
     # `forecast` $= Z_t a_t + d_t$
@@ -102,12 +103,12 @@ cdef int sforecast_conventional(
     # from the previous iteration of the filter (for $t > 0$).
 
     # $\\# = d_t$
-    blas.scopy(
+    blas.dcopy(
         &model._k_endog, model._obs_intercept, &inc,
         kfilter._forecast, &inc)
     # `forecast` $= 1.0 * Z_t a_t + 1.0 * \\#$  
     # $(p \times 1) = (p \times m) (m \times 1) + (p \times 1)$
-    blas.sgemv(
+    blas.dgemv(
         "N", &model._k_endog, &model._k_states,
         &alpha, model._design, &model._k_endog,
         kfilter._input_state, &inc,
@@ -117,12 +118,12 @@ cdef int sforecast_conventional(
     # `forecast_error` $\equiv v_t = y_t -$ `forecast`
 
     # $\\# = y_t$
-    blas.scopy(
+    blas.dcopy(
         &model._k_endog, model._obs, &inc,
         kfilter._forecast_error, &inc)
     # $v_t = -1.0 * $ `forecast` $ + \\#$
     # $(p \times 1) = (p \times 1) + (p \times 1)$
-    blas.saxpy(
+    blas.daxpy(
         &model._k_endog, &gamma, kfilter._forecast, &inc,
         kfilter._forecast_error, &inc)
 
@@ -130,7 +131,7 @@ cdef int sforecast_conventional(
     # `tmp1` array used here, dimension $(m \times p)$  
     # $\\#_1 = P_t Z_t'$  
     # $(m \times p) = (m \times m) (p \times m)'$
-    blas.sgemm(
+    blas.dgemm(
         "N", "T", &model._k_states, &model._k_endog, &model._k_states,
         &alpha, kfilter._input_state_cov, &kfilter.k_states,
         model._design, &model._k_endog,
@@ -144,13 +145,13 @@ cdef int sforecast_conventional(
     # TODO make sure when converged, the copies are made correctly
     if not kfilter.converged:
         # $\\# = H_t$
-        # blas.scopy(&kfilter.k_endog2, kfilter._obs_cov, &inc, kfilter._forecast_error_cov, &inc)
+        # blas.dcopy(&kfilter.k_endog2, kfilter._obs_cov, &inc, kfilter._forecast_error_cov, &inc)
         for i in range(model._k_endog): # columns
             for j in range(model._k_endog): # rows
                 kfilter._forecast_error_cov[j + i * kfilter.k_endog] = model._obs_cov[j + i * model._k_endog]
 
         # $F_t = 1.0 * Z_t \\#_1 + 1.0 * \\#$
-        blas.sgemm(
+        blas.dgemm(
             "N", "N", &model._k_endog, &model._k_endog, &model._k_states,
             &alpha, model._design, &model._k_endog,
             kfilter._tmp1, &kfilter.k_states,
@@ -158,22 +159,22 @@ cdef int sforecast_conventional(
 
     return 0
 
-cdef int supdating_conventional(
-        sKalmanFilter kfilter, sStatespace model):
+cdef int dupdating_conventional(
+        dKalmanFilter kfilter, dStatespace model):
     # Constants
     cdef:
         int inc = 1
-        cnp.float32_t alpha = 1.0
-        cnp.float32_t beta = 0.0
-        cnp.float32_t gamma = -1.0
+        cnp.float64_t alpha = 1.0
+        cnp.float64_t beta = 0.0
+        cnp.float64_t gamma = -1.0
     
     # #### Filtered state for time t
     # $a_{t|t} = a_t + P_t Z_t' F_t^{-1} v_t$  
     # $a_{t|t} = 1.0 * \\#_1 \\#_2 + 1.0 a_t$
-    blas.scopy(
+    blas.dcopy(
         &kfilter.k_states, kfilter._input_state, &inc,
         kfilter._filtered_state, &inc)
-    blas.sgemv("N", &model._k_states, &model._k_endog,
+    blas.dgemv("N", &model._k_states, &model._k_endog,
         &alpha, kfilter._tmp1, &kfilter.k_states,
         kfilter._tmp2, &inc,
         &alpha, kfilter._filtered_state, &inc)
@@ -185,14 +186,14 @@ cdef int supdating_conventional(
     # *Note*: this and does nothing at all to `filtered_state_cov` if
     # converged == True
     if not kfilter.converged:
-        blas.scopy(
+        blas.dcopy(
             &kfilter.k_states2, kfilter._input_state_cov, &inc,
             kfilter._filtered_state_cov, &inc)
 
         # `tmp0` array used here, dimension $(m \times m)$  
         # $\\#_0 = 1.0 * \\#_1 \\#_3$  
         # $(m \times m) = (m \times p) (p \times m)$
-        blas.sgemm(
+        blas.dgemm(
             "N", "N", &model._k_states, &model._k_states, &model._k_endog,
             &alpha, kfilter._tmp1, &kfilter.k_states,
             kfilter._tmp3, &kfilter.k_endog,
@@ -200,7 +201,7 @@ cdef int supdating_conventional(
 
         # $P_{t|t} = - 1.0 * \\# P_t + 1.0 * P_t$  
         # $(m \times m) = (m \times m) (m \times m) + (m \times m)$
-        blas.sgemm(
+        blas.dgemm(
             "N", "N", &model._k_states, &model._k_states, &model._k_states,
             &gamma, kfilter._tmp0, &kfilter.k_states,
             kfilter._input_state_cov, &kfilter.k_states,
@@ -217,7 +218,7 @@ cdef int supdating_conventional(
         # `tmp00` array used here, dimension $(m \times m)$  
         # $\\#_{00} = 1.0 * T_t P_t$  
         # $(m \times m) = (m \times m) (m \times m)$
-        blas.sgemm(
+        blas.dgemm(
             "N", "N", &model._k_states, &model._k_states, &model._k_states,
             &alpha, model._transition, &model._k_states,
             kfilter._input_state_cov, &kfilter.k_states,
@@ -225,7 +226,7 @@ cdef int supdating_conventional(
 
         # K_t = 1.0 * \\#_{00} \\#_3'
         # $(m \times p) = (m \times m) (m \times p)$
-        blas.sgemm(
+        blas.dgemm(
             "N", "T", &model._k_states, &model._k_endog, &model._k_states,
             &alpha, kfilter._tmp00, &kfilter.k_states,
             kfilter._tmp3, &kfilter.k_endog,
@@ -233,20 +234,20 @@ cdef int supdating_conventional(
 
     return 0
 
-cdef int sprediction_conventional(
-        sKalmanFilter kfilter, sStatespace model):
+cdef int dprediction_conventional(
+        dKalmanFilter kfilter, dStatespace model):
     cdef:
         int inc = 1
-        cnp.float32_t alpha = 1.0
-        cnp.float32_t beta = 0.0
-        cnp.float32_t gamma = -1.0
+        cnp.float64_t alpha = 1.0
+        cnp.float64_t beta = 0.0
+        cnp.float64_t gamma = -1.0
 
     # #### Predicted state for time t+1
     # $a_{t+1} = T_t a_{t|t} + c_t$
-    blas.scopy(
+    blas.dcopy(
         &model._k_states, model._state_intercept, &inc,
         kfilter._predicted_state, &inc)
-    blas.sgemv(
+    blas.dgemv(
         "N", &model._k_states, &model._k_states,
         &alpha, model._transition, &model._k_states,
         kfilter._filtered_state, &inc,
@@ -258,7 +259,7 @@ cdef int sprediction_conventional(
     # *Note*: this and does nothing at all to `predicted_state_cov` if
     # converged == True
     if not kfilter.converged:
-        blas.scopy(
+        blas.dcopy(
             &model._k_states2, model._selected_state_cov, &inc,
             kfilter._predicted_state_cov, &inc)
         # `tmp0` array used here, dimension $(m \times m)$  
@@ -266,14 +267,14 @@ cdef int sprediction_conventional(
         # $\\#_0 = T_t P_{t|t} $
 
         # $(m \times m) = (m \times m) (m \times m)$
-        blas.sgemm(
+        blas.dgemm(
             "N", "N", &model._k_states, &model._k_states, &model._k_states,
             &alpha, model._transition, &model._k_states,
             kfilter._filtered_state_cov, &kfilter.k_states,
             &beta, kfilter._tmp0, &kfilter.k_states)
         # $P_{t+1} = 1.0 \\#_0 T_t' + 1.0 \\#$  
         # $(m \times m) = (m \times m) (m \times m) + (m \times m)$
-        blas.sgemm(
+        blas.dgemm(
             "N", "T", &model._k_states, &model._k_states, &model._k_states,
             &alpha, kfilter._tmp0, &kfilter.k_states,
             model._transition, &model._k_states,
@@ -282,19 +283,19 @@ cdef int sprediction_conventional(
     return 0
 
 
-cdef cnp.float32_t sloglikelihood_conventional(
-        sKalmanFilter kfilter, sStatespace model,
-        cnp.float32_t determinant):
+cdef cnp.float64_t dloglikelihood_conventional(
+        dKalmanFilter kfilter, dStatespace model,
+        cnp.float64_t determinant):
     # Constants
     cdef:
-        cnp.float32_t loglikelihood
+        cnp.float64_t loglikelihood
         int inc = 1
-        cnp.float32_t alpha = 1.0
-        cnp.float32_t beta = 0.0
+        cnp.float64_t alpha = 1.0
+        cnp.float64_t beta = 0.0
 
     loglikelihood = -0.5 * (model._k_endog * dlog(2 * NPY_PI) + dlog(determinant))
 
-    loglikelihood = loglikelihood - 0.5 * blas.sdot(&model._k_endog, kfilter._forecast_error, &inc, kfilter._tmp2, &inc)
+    loglikelihood = loglikelihood - 0.5 * blas.ddot(&model._k_endog, kfilter._forecast_error, &inc, kfilter._tmp2, &inc)
 
     return loglikelihood
 
@@ -596,13 +597,13 @@ cdef cnp.complex128_t zloglikelihood_conventional(
 # covariance matrix are enforced to be zero matrices, and the loglikelihood
 # is defined to be zero.
 
-cdef int dforecast_missing_conventional(
-        dKalmanFilter kfilter, dStatespace model):
+cdef int sforecast_missing_conventional(
+        sKalmanFilter kfilter, sStatespace model):
     cdef:
         int i, j
         int inc = 1
         int design_t = 0
-        cnp.float64_t alpha = 1
+        cnp.float32_t alpha = 1
 
     # #### Forecast for time t  
     # `forecast` $= Z_t a_t + d_t$
@@ -626,32 +627,32 @@ cdef int dforecast_missing_conventional(
             kfilter._forecast_error_cov[j + i * kfilter.k_endog] = 0
 
 
-cdef int dupdating_missing_conventional(
-        dKalmanFilter kfilter, dStatespace model):
+cdef int supdating_missing_conventional(
+        sKalmanFilter kfilter, sStatespace model):
     cdef:
         int inc = 1
 
     # Simply copy over the input arrays ($a_t, P_t$) to the filtered arrays
     # ($a_{t|t}, P_{t|t}$)
     # Note: use kfilter dimensions since we just want to copy whole arrays;
-    blas.dcopy(
+    blas.scopy(
         &kfilter.k_states, kfilter._input_state, &inc,
         kfilter._filtered_state, &inc)
-    blas.dcopy(
+    blas.scopy(
         &kfilter.k_states2, kfilter._input_state_cov, &inc,
         kfilter._filtered_state_cov, &inc)
 
-cdef cnp.float64_t dinverse_missing_conventional(
-        dKalmanFilter kfilter, dStatespace model,
-        cnp.float64_t determinant)  except *:
+cdef cnp.float32_t sinverse_missing_conventional(
+        sKalmanFilter kfilter, sStatespace model,
+        cnp.float32_t determinant)  except *:
     # Since the inverse of the forecast error covariance matrix is not
     # stored, we don't need to fill it (e.g. with NPY_NAN values). Instead,
     # just do a noop here and return a zero determinant ($|0|$).
     return 0.0
 
-cdef cnp.float64_t dloglikelihood_missing_conventional(
-        dKalmanFilter kfilter, dStatespace model,
-        cnp.float64_t determinant):
+cdef cnp.float32_t sloglikelihood_missing_conventional(
+        sKalmanFilter kfilter, sStatespace model,
+        cnp.float32_t determinant):
     return 0.0
 
 # ### Conventional Kalman filter
@@ -661,14 +662,14 @@ cdef cnp.float64_t dloglikelihood_missing_conventional(
 #
 # See Durbin and Koopman (2012) Chapter 4
 
-cdef int dforecast_conventional(
-        dKalmanFilter kfilter, dStatespace model):
+cdef int sforecast_conventional(
+        sKalmanFilter kfilter, sStatespace model):
 
     cdef:
         int inc = 1, ld, i, j
-        cnp.float64_t alpha = 1.0
-        cnp.float64_t beta = 0.0
-        cnp.float64_t gamma = -1.0
+        cnp.float32_t alpha = 1.0
+        cnp.float32_t beta = 0.0
+        cnp.float32_t gamma = -1.0
 
     # #### Forecast for time t  
     # `forecast` $= Z_t a_t + d_t$
@@ -677,12 +678,12 @@ cdef int dforecast_conventional(
     # from the previous iteration of the filter (for $t > 0$).
 
     # $\\# = d_t$
-    blas.dcopy(
+    blas.scopy(
         &model._k_endog, model._obs_intercept, &inc,
         kfilter._forecast, &inc)
     # `forecast` $= 1.0 * Z_t a_t + 1.0 * \\#$  
     # $(p \times 1) = (p \times m) (m \times 1) + (p \times 1)$
-    blas.dgemv(
+    blas.sgemv(
         "N", &model._k_endog, &model._k_states,
         &alpha, model._design, &model._k_endog,
         kfilter._input_state, &inc,
@@ -692,12 +693,12 @@ cdef int dforecast_conventional(
     # `forecast_error` $\equiv v_t = y_t -$ `forecast`
 
     # $\\# = y_t$
-    blas.dcopy(
+    blas.scopy(
         &model._k_endog, model._obs, &inc,
         kfilter._forecast_error, &inc)
     # $v_t = -1.0 * $ `forecast` $ + \\#$
     # $(p \times 1) = (p \times 1) + (p \times 1)$
-    blas.daxpy(
+    blas.saxpy(
         &model._k_endog, &gamma, kfilter._forecast, &inc,
         kfilter._forecast_error, &inc)
 
@@ -705,7 +706,7 @@ cdef int dforecast_conventional(
     # `tmp1` array used here, dimension $(m \times p)$  
     # $\\#_1 = P_t Z_t'$  
     # $(m \times p) = (m \times m) (p \times m)'$
-    blas.dgemm(
+    blas.sgemm(
         "N", "T", &model._k_states, &model._k_endog, &model._k_states,
         &alpha, kfilter._input_state_cov, &kfilter.k_states,
         model._design, &model._k_endog,
@@ -719,13 +720,13 @@ cdef int dforecast_conventional(
     # TODO make sure when converged, the copies are made correctly
     if not kfilter.converged:
         # $\\# = H_t$
-        # blas.dcopy(&kfilter.k_endog2, kfilter._obs_cov, &inc, kfilter._forecast_error_cov, &inc)
+        # blas.scopy(&kfilter.k_endog2, kfilter._obs_cov, &inc, kfilter._forecast_error_cov, &inc)
         for i in range(model._k_endog): # columns
             for j in range(model._k_endog): # rows
                 kfilter._forecast_error_cov[j + i * kfilter.k_endog] = model._obs_cov[j + i * model._k_endog]
 
         # $F_t = 1.0 * Z_t \\#_1 + 1.0 * \\#$
-        blas.dgemm(
+        blas.sgemm(
             "N", "N", &model._k_endog, &model._k_endog, &model._k_states,
             &alpha, model._design, &model._k_endog,
             kfilter._tmp1, &kfilter.k_states,
@@ -733,22 +734,22 @@ cdef int dforecast_conventional(
 
     return 0
 
-cdef int dupdating_conventional(
-        dKalmanFilter kfilter, dStatespace model):
+cdef int supdating_conventional(
+        sKalmanFilter kfilter, sStatespace model):
     # Constants
     cdef:
         int inc = 1
-        cnp.float64_t alpha = 1.0
-        cnp.float64_t beta = 0.0
-        cnp.float64_t gamma = -1.0
+        cnp.float32_t alpha = 1.0
+        cnp.float32_t beta = 0.0
+        cnp.float32_t gamma = -1.0
     
     # #### Filtered state for time t
     # $a_{t|t} = a_t + P_t Z_t' F_t^{-1} v_t$  
     # $a_{t|t} = 1.0 * \\#_1 \\#_2 + 1.0 a_t$
-    blas.dcopy(
+    blas.scopy(
         &kfilter.k_states, kfilter._input_state, &inc,
         kfilter._filtered_state, &inc)
-    blas.dgemv("N", &model._k_states, &model._k_endog,
+    blas.sgemv("N", &model._k_states, &model._k_endog,
         &alpha, kfilter._tmp1, &kfilter.k_states,
         kfilter._tmp2, &inc,
         &alpha, kfilter._filtered_state, &inc)
@@ -760,14 +761,14 @@ cdef int dupdating_conventional(
     # *Note*: this and does nothing at all to `filtered_state_cov` if
     # converged == True
     if not kfilter.converged:
-        blas.dcopy(
+        blas.scopy(
             &kfilter.k_states2, kfilter._input_state_cov, &inc,
             kfilter._filtered_state_cov, &inc)
 
         # `tmp0` array used here, dimension $(m \times m)$  
         # $\\#_0 = 1.0 * \\#_1 \\#_3$  
         # $(m \times m) = (m \times p) (p \times m)$
-        blas.dgemm(
+        blas.sgemm(
             "N", "N", &model._k_states, &model._k_states, &model._k_endog,
             &alpha, kfilter._tmp1, &kfilter.k_states,
             kfilter._tmp3, &kfilter.k_endog,
@@ -775,7 +776,7 @@ cdef int dupdating_conventional(
 
         # $P_{t|t} = - 1.0 * \\# P_t + 1.0 * P_t$  
         # $(m \times m) = (m \times m) (m \times m) + (m \times m)$
-        blas.dgemm(
+        blas.sgemm(
             "N", "N", &model._k_states, &model._k_states, &model._k_states,
             &gamma, kfilter._tmp0, &kfilter.k_states,
             kfilter._input_state_cov, &kfilter.k_states,
@@ -792,7 +793,7 @@ cdef int dupdating_conventional(
         # `tmp00` array used here, dimension $(m \times m)$  
         # $\\#_{00} = 1.0 * T_t P_t$  
         # $(m \times m) = (m \times m) (m \times m)$
-        blas.dgemm(
+        blas.sgemm(
             "N", "N", &model._k_states, &model._k_states, &model._k_states,
             &alpha, model._transition, &model._k_states,
             kfilter._input_state_cov, &kfilter.k_states,
@@ -800,7 +801,7 @@ cdef int dupdating_conventional(
 
         # K_t = 1.0 * \\#_{00} \\#_3'
         # $(m \times p) = (m \times m) (m \times p)$
-        blas.dgemm(
+        blas.sgemm(
             "N", "T", &model._k_states, &model._k_endog, &model._k_states,
             &alpha, kfilter._tmp00, &kfilter.k_states,
             kfilter._tmp3, &kfilter.k_endog,
@@ -808,20 +809,20 @@ cdef int dupdating_conventional(
 
     return 0
 
-cdef int dprediction_conventional(
-        dKalmanFilter kfilter, dStatespace model):
+cdef int sprediction_conventional(
+        sKalmanFilter kfilter, sStatespace model):
     cdef:
         int inc = 1
-        cnp.float64_t alpha = 1.0
-        cnp.float64_t beta = 0.0
-        cnp.float64_t gamma = -1.0
+        cnp.float32_t alpha = 1.0
+        cnp.float32_t beta = 0.0
+        cnp.float32_t gamma = -1.0
 
     # #### Predicted state for time t+1
     # $a_{t+1} = T_t a_{t|t} + c_t$
-    blas.dcopy(
+    blas.scopy(
         &model._k_states, model._state_intercept, &inc,
         kfilter._predicted_state, &inc)
-    blas.dgemv(
+    blas.sgemv(
         "N", &model._k_states, &model._k_states,
         &alpha, model._transition, &model._k_states,
         kfilter._filtered_state, &inc,
@@ -833,7 +834,7 @@ cdef int dprediction_conventional(
     # *Note*: this and does nothing at all to `predicted_state_cov` if
     # converged == True
     if not kfilter.converged:
-        blas.dcopy(
+        blas.scopy(
             &model._k_states2, model._selected_state_cov, &inc,
             kfilter._predicted_state_cov, &inc)
         # `tmp0` array used here, dimension $(m \times m)$  
@@ -841,14 +842,14 @@ cdef int dprediction_conventional(
         # $\\#_0 = T_t P_{t|t} $
 
         # $(m \times m) = (m \times m) (m \times m)$
-        blas.dgemm(
+        blas.sgemm(
             "N", "N", &model._k_states, &model._k_states, &model._k_states,
             &alpha, model._transition, &model._k_states,
             kfilter._filtered_state_cov, &kfilter.k_states,
             &beta, kfilter._tmp0, &kfilter.k_states)
         # $P_{t+1} = 1.0 \\#_0 T_t' + 1.0 \\#$  
         # $(m \times m) = (m \times m) (m \times m) + (m \times m)$
-        blas.dgemm(
+        blas.sgemm(
             "N", "T", &model._k_states, &model._k_states, &model._k_states,
             &alpha, kfilter._tmp0, &kfilter.k_states,
             model._transition, &model._k_states,
@@ -857,19 +858,19 @@ cdef int dprediction_conventional(
     return 0
 
 
-cdef cnp.float64_t dloglikelihood_conventional(
-        dKalmanFilter kfilter, dStatespace model,
-        cnp.float64_t determinant):
+cdef cnp.float32_t sloglikelihood_conventional(
+        sKalmanFilter kfilter, sStatespace model,
+        cnp.float32_t determinant):
     # Constants
     cdef:
-        cnp.float64_t loglikelihood
+        cnp.float32_t loglikelihood
         int inc = 1
-        cnp.float64_t alpha = 1.0
-        cnp.float64_t beta = 0.0
+        cnp.float32_t alpha = 1.0
+        cnp.float32_t beta = 0.0
 
     loglikelihood = -0.5 * (model._k_endog * dlog(2 * NPY_PI) + dlog(determinant))
 
-    loglikelihood = loglikelihood - 0.5 * blas.ddot(&model._k_endog, kfilter._forecast_error, &inc, kfilter._tmp2, &inc)
+    loglikelihood = loglikelihood - 0.5 * blas.sdot(&model._k_endog, kfilter._forecast_error, &inc, kfilter._tmp2, &inc)
 
     return loglikelihood
 

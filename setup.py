@@ -295,6 +295,9 @@ if linetrace:
     macros = [('CYTHON_TRACE', '1'), ('CYTHON_TRACE_NOGIL', '1')]
 
 numpy_incl = pkg_resources.resource_filename('numpy', 'core/include')
+from numpy.distutils.misc_util import get_info
+# TODO: Can we do this without numpy import?
+npymath = get_info("npymath")
 
 extensions = [
     Extension("sm2.tsa.kalmanf.kalman_loglike",
@@ -304,7 +307,7 @@ extensions = [
               define_macros=macros)] + [
     Extension(x.replace('/', '.').replace('.pyx.in', ''),
               [x.replace('.pyx.in', '.pyx')],
-              include_dirs=["sm2/src", numpy_incl],
+              include_dirs=["sm2/src", numpy_incl] + npymath['include_dirs'],
               define_macros=macros)
     for x in _pxifiles]
 

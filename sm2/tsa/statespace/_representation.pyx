@@ -15,18 +15,21 @@ import numpy as np
 cimport numpy as cnp
 cnp.import_array()
 
+from libc.math cimport log as dlog, abs as dabs, exp as dexp
+
 cimport scipy.linalg.cython_blas as blas
 cimport scipy.linalg.cython_lapack as lapack
 
-from sm2.src.math cimport *
 cimport sm2.tsa.statespace._tools as tools
+
+from sm2.src.math cimport zabs, zlog, NPY_PI
 
 cdef int FORTRAN = 1
 
 ## State Space Representation
-cdef class sStatespace(object):
+cdef class dStatespace(object):
     """
-    sStatespace(obs, design, obs_intercept, obs_cov, transition, state_intercept, selection, state_cov)
+    dStatespace(obs, design, obs_intercept, obs_cov, transition, state_intercept, selection, state_cov)
 
     *See Durbin and Koopman (2012), Chapter 4 for all notation*
     """
@@ -73,11 +76,11 @@ cdef class sStatespace(object):
     # but in the recursions below it will be 0-indexed in the Python arrays.
     # 
     # *Old notation: y, -, mu, beta_tt_init, P_tt_init*
-    # cdef readonly cnp.float32_t [::1,:] obs, obs_intercept, state_intercept
-    # cdef readonly cnp.float32_t [:] initial_state
-    # cdef readonly cnp.float32_t [::1,:] initial_state_cov
+    # cdef readonly cnp.float64_t [::1,:] obs, obs_intercept, state_intercept
+    # cdef readonly cnp.float64_t [:] initial_state
+    # cdef readonly cnp.float64_t [::1,:] initial_state_cov
     # *Old notation: H, R, F, G, Q*, G Q* G'*
-    # cdef readonly cnp.float32_t [::1,:,:] design, obs_cov, transition, selection, state_cov, selected_state_cov
+    # cdef readonly cnp.float64_t [::1,:,:] design, obs_cov, transition, selection, state_cov, selected_state_cov
 
     # `missing` is a $(p \times T)$ boolean matrix where a row is a $(p \times 1)$ vector
     # in which the $i$th position is $1$ if $y_{i,t}$ is to be considered a missing value.  
@@ -101,40 +104,40 @@ cdef class sStatespace(object):
     # cdef public int companion_transition
 
     # Temporary arrays
-    # cdef cnp.float32_t [::1,:] tmp
+    # cdef cnp.float64_t [::1,:] tmp
 
     # Temporary selection arrays
-    # cdef readonly cnp.float32_t [:] selected_obs
+    # cdef readonly cnp.float64_t [:] selected_obs
     # The following are contiguous memory segments which are then used to
     # store the data in the above matrices.
-    # cdef readonly cnp.float32_t [:] selected_design
-    # cdef readonly cnp.float32_t [:] selected_obs_cov
+    # cdef readonly cnp.float64_t [:] selected_design
+    # cdef readonly cnp.float64_t [:] selected_obs_cov
 
     # Temporary transformation arrays
-    # cdef readonly cnp.float32_t [::1,:] transform_cholesky
-    # cdef readonly cnp.float32_t [::1,:] transform_obs_cov
-    # cdef readonly cnp.float32_t [::1,:] transform_design
-    # cdef readonly cnp.float32_t transform_determinant
+    # cdef readonly cnp.float64_t [::1,:] transform_cholesky
+    # cdef readonly cnp.float64_t [::1,:] transform_obs_cov
+    # cdef readonly cnp.float64_t [::1,:] transform_design
+    # cdef readonly cnp.float64_t transform_determinant
 
-    # cdef readonly cnp.float32_t [:] collapse_obs
-    # cdef readonly cnp.float32_t [:] collapse_obs_tmp
-    # cdef readonly cnp.float32_t [::1,:] collapse_design
-    # cdef readonly cnp.float32_t [::1,:] collapse_obs_cov
-    # cdef readonly cnp.float32_t [::1,:] collapse_cholesky
-    # cdef readonly cnp.float32_t collapse_loglikelihood
+    # cdef readonly cnp.float64_t [:] collapse_obs
+    # cdef readonly cnp.float64_t [:] collapse_obs_tmp
+    # cdef readonly cnp.float64_t [::1,:] collapse_design
+    # cdef readonly cnp.float64_t [::1,:] collapse_obs_cov
+    # cdef readonly cnp.float64_t [::1,:] collapse_cholesky
+    # cdef readonly cnp.float64_t collapse_loglikelihood
 
     # Pointers  
-    # cdef cnp.float32_t * _obs
-    # cdef cnp.float32_t * _design
-    # cdef cnp.float32_t * _obs_intercept
-    # cdef cnp.float32_t * _obs_cov
-    # cdef cnp.float32_t * _transition
-    # cdef cnp.float32_t * _state_intercept
-    # cdef cnp.float32_t * _selection
-    # cdef cnp.float32_t * _state_cov
-    # cdef cnp.float32_t * _selected_state_cov
-    # cdef cnp.float32_t * _initial_state
-    # cdef cnp.float32_t * _initial_state_cov
+    # cdef cnp.float64_t * _obs
+    # cdef cnp.float64_t * _design
+    # cdef cnp.float64_t * _obs_intercept
+    # cdef cnp.float64_t * _obs_cov
+    # cdef cnp.float64_t * _transition
+    # cdef cnp.float64_t * _state_intercept
+    # cdef cnp.float64_t * _selection
+    # cdef cnp.float64_t * _state_cov
+    # cdef cnp.float64_t * _selected_state_cov
+    # cdef cnp.float64_t * _initial_state
+    # cdef cnp.float64_t * _initial_state_cov
 
     # Current location dimensions
     # cdef int _k_endog, _k_states, _k_posdef, _k_endog2, _k_states2, _k_posdef2, _k_endogstates, _k_statesposdef
@@ -143,14 +146,14 @@ cdef class sStatespace(object):
     # ### Initialize state space model
     # *Note*: The initial state and state covariance matrix must be provided.
     def __init__(self,
-                 cnp.float32_t [::1, :]   obs,
-                 cnp.float32_t [::1, :, :] design,
-                 cnp.float32_t [::1, :]   obs_intercept,
-                 cnp.float32_t [::1, :, :] obs_cov,
-                 cnp.float32_t [::1, :, :] transition,
-                 cnp.float32_t [::1, :]   state_intercept,
-                 cnp.float32_t [::1, :, :] selection,
-                 cnp.float32_t [::1, :, :] state_cov,
+                 cnp.float64_t [::1, :]   obs,
+                 cnp.float64_t [::1, :, :] design,
+                 cnp.float64_t [::1, :]   obs_intercept,
+                 cnp.float64_t [::1, :, :] obs_cov,
+                 cnp.float64_t [::1, :, :] transition,
+                 cnp.float64_t [::1, :]   state_intercept,
+                 cnp.float64_t [::1, :, :] selection,
+                 cnp.float64_t [::1, :, :] state_cov,
                  diagonal_obs_cov=-1):
 
         # Local variables
@@ -229,7 +232,7 @@ cdef class sStatespace(object):
         # (we only allocate memory for time-varying array if necessary)
         if self.state_cov.shape[2] > 1 or self.selection.shape[2] > 1:
             dim3[2] = self.nobs
-        self.selected_state_cov = cnp.PyArray_ZEROS(3, dim3, cnp.NPY_FLOAT32, FORTRAN)
+        self.selected_state_cov = cnp.PyArray_ZEROS(3, dim3, cnp.NPY_FLOAT64, FORTRAN)
 
         # Handle missing data
         self.missing = np.array(np.isnan(obs), dtype=np.int32, order="F")
@@ -239,32 +242,32 @@ cdef class sStatespace(object):
         # Create the temporary array
         # Holds arrays of dimension $(m \times m)$
         dim2[0] = self.k_states; dim2[1] = max(self.k_states, self.k_posdef)
-        self.tmp = cnp.PyArray_ZEROS(2, dim2, cnp.NPY_FLOAT32, FORTRAN)
+        self.tmp = cnp.PyArray_ZEROS(2, dim2, cnp.NPY_FLOAT64, FORTRAN)
 
         # Arrays for missing data
         dim1[0] = self.k_endog;
-        self.selected_obs = cnp.PyArray_ZEROS(1, dim1, cnp.NPY_FLOAT32, FORTRAN)
+        self.selected_obs = cnp.PyArray_ZEROS(1, dim1, cnp.NPY_FLOAT64, FORTRAN)
         dim1[0] = self.k_endog;
-        self.selected_obs_intercept = cnp.PyArray_ZEROS(1, dim1, cnp.NPY_FLOAT32, FORTRAN)
+        self.selected_obs_intercept = cnp.PyArray_ZEROS(1, dim1, cnp.NPY_FLOAT64, FORTRAN)
         dim1[0] = self.k_endog * self.k_states;
-        self.selected_design = cnp.PyArray_ZEROS(1, dim1, cnp.NPY_FLOAT32, FORTRAN)
+        self.selected_design = cnp.PyArray_ZEROS(1, dim1, cnp.NPY_FLOAT64, FORTRAN)
         dim1[0] = self.k_endog**2;
-        self.selected_obs_cov = cnp.PyArray_ZEROS(1, dim1, cnp.NPY_FLOAT32, FORTRAN)
+        self.selected_obs_cov = cnp.PyArray_ZEROS(1, dim1, cnp.NPY_FLOAT64, FORTRAN)
 
         # Arrays for transformations
         dim2[0] = self.k_endog; dim2[1] = self.k_endog
-        self.transform_cholesky = cnp.PyArray_ZEROS(2, dim2, cnp.NPY_FLOAT32, FORTRAN)
-        self.transform_obs_cov = cnp.PyArray_ZEROS(2, dim2, cnp.NPY_FLOAT32, FORTRAN)
+        self.transform_cholesky = cnp.PyArray_ZEROS(2, dim2, cnp.NPY_FLOAT64, FORTRAN)
+        self.transform_obs_cov = cnp.PyArray_ZEROS(2, dim2, cnp.NPY_FLOAT64, FORTRAN)
         dim2[0] = self.k_endog; dim2[1] = self.k_states
-        self.transform_design = cnp.PyArray_ZEROS(2, dim2, cnp.NPY_FLOAT32, FORTRAN)
+        self.transform_design = cnp.PyArray_ZEROS(2, dim2, cnp.NPY_FLOAT64, FORTRAN)
 
         dim1[0] = self.k_states
-        self.collapse_obs = cnp.PyArray_ZEROS(1, dim1, cnp.NPY_FLOAT32, FORTRAN)
-        self.collapse_obs_tmp = cnp.PyArray_ZEROS(1, dim1, cnp.NPY_FLOAT32, FORTRAN)
+        self.collapse_obs = cnp.PyArray_ZEROS(1, dim1, cnp.NPY_FLOAT64, FORTRAN)
+        self.collapse_obs_tmp = cnp.PyArray_ZEROS(1, dim1, cnp.NPY_FLOAT64, FORTRAN)
         dim2[0] = self.k_states; dim2[1] = self.k_states
-        self.collapse_design = cnp.PyArray_ZEROS(2, dim2, cnp.NPY_FLOAT32, FORTRAN)
-        self.collapse_obs_cov = cnp.PyArray_ZEROS(2, dim2, cnp.NPY_FLOAT32, FORTRAN)
-        self.collapse_cholesky = cnp.PyArray_ZEROS(2, dim2, cnp.NPY_FLOAT32, FORTRAN)
+        self.collapse_design = cnp.PyArray_ZEROS(2, dim2, cnp.NPY_FLOAT64, FORTRAN)
+        self.collapse_obs_cov = cnp.PyArray_ZEROS(2, dim2, cnp.NPY_FLOAT64, FORTRAN)
+        self.collapse_cholesky = cnp.PyArray_ZEROS(2, dim2, cnp.NPY_FLOAT64, FORTRAN)
 
         # Initialize location
         self.t = 0
@@ -339,7 +342,7 @@ cdef class sStatespace(object):
     # Initialize the filter with specific values, assumed to be known with
     # certainty or else as filled with parameters from a maximum likelihood
     # estimation run.
-    def initialize_known(self, cnp.float32_t [:] initial_state, cnp.float32_t [::1, :] initial_state_cov):
+    def initialize_known(self, cnp.float64_t [:] initial_state, cnp.float64_t [::1, :] initial_state_cov):
         """
         initialize_known(initial_state, initial_state_cov)
         """
@@ -358,14 +361,14 @@ cdef class sStatespace(object):
     # can lead to "large rounding errors" (p. 125).
     # 
     # *Note:* see Durbin and Koopman section 5.6.1
-    def initialize_approximate_diffuse(self, cnp.float32_t variance=1e2):
+    def initialize_approximate_diffuse(self, cnp.float64_t variance=1e2):
         """
         initialize_approximate_diffuse(variance=1e2)
         """
         cdef cnp.npy_intp dim[1]
         dim[0] = self.k_states
-        self.initial_state = cnp.PyArray_ZEROS(1, dim, cnp.NPY_FLOAT32, FORTRAN)
-        self.initial_state_cov = np.eye(self.k_states, dtype=np.float32).T * variance
+        self.initial_state = cnp.PyArray_ZEROS(1, dim, cnp.NPY_FLOAT64, FORTRAN)
+        self.initial_state_cov = np.eye(self.k_states, dtype=float).T * variance
 
         self.initialized = True
 
@@ -380,65 +383,65 @@ cdef class sStatespace(object):
         cdef int i, info, inc = 1
         cdef int k_states2 = self.k_states**2
         cdef cnp.float64_t asum, tol = 1e-9
-        cdef cnp.float32_t scalar
+        cdef cnp.float64_t scalar
         cdef int [::1,:] ipiv
 
         # Create selected state covariance matrix
-        sselect_cov(self.k_states, self.k_posdef,
+        dselect_cov(self.k_states, self.k_posdef,
                                    &self.tmp[0, 0],
                                    &self.selection[0, 0, 0],
                                    &self.state_cov[0, 0, 0],
                                    &self.selected_state_cov[0, 0, 0])
 
         # Initial state mean
-        asum = blas.sasum(&self.k_states, &self.state_intercept[0, 0], &inc)
+        asum = blas.dasum(&self.k_states, &self.state_intercept[0, 0], &inc)
 
         dim1[0] = self.k_states
-        self.initial_state = cnp.PyArray_ZEROS(1, dim1, cnp.NPY_FLOAT32, FORTRAN)
+        self.initial_state = cnp.PyArray_ZEROS(1, dim1, cnp.NPY_FLOAT64, FORTRAN)
         if asum > tol:
             dim2[0] = self.k_states
             dim2[1] = self.k_states
             ipiv = cnp.PyArray_ZEROS(2, dim2, cnp.NPY_INT32, FORTRAN)
 
             # I - T
-            blas.scopy(
+            blas.dcopy(
                 &k_states2, &self.transition[0, 0, 0], &inc,
                 &self.tmp[0,0], &inc)
             scalar = -1.0
-            blas.sscal(&k_states2, &scalar, &self.tmp[0, 0], &inc)
+            blas.dscal(&k_states2, &scalar, &self.tmp[0, 0], &inc)
             for i in range(self.k_states):
                 self.tmp[i, i] = self.tmp[i, i] + 1
 
             # c
-            blas.scopy(
+            blas.dcopy(
                 &self.k_states, &self.state_intercept[0, 0], &inc,
                 &self.initial_state[0], &inc)
 
             # Solve (I - T) x = c
-            lapack.sgetrf(
+            lapack.dgetrf(
                 &self.k_states, &self.k_states, &self.tmp[0, 0], &self.k_states,
                 &ipiv[0, 0], &info)
-            lapack.sgetrs(
+            lapack.dgetrs(
                 'N', &self.k_states, &inc, &self.tmp[0, 0], &self.k_states,
                 &ipiv[0, 0], &self.initial_state[0], &self.k_states, &info)
 
         dim2[0] = self.k_states; dim2[1] = self.k_states
-        self.initial_state_cov = cnp.PyArray_ZEROS(2, dim2, cnp.NPY_FLOAT32, FORTRAN)
+        self.initial_state_cov = cnp.PyArray_ZEROS(2, dim2, cnp.NPY_FLOAT64, FORTRAN)
 
         # Create a copy of the transition matrix (to avoid overwriting it)
-        blas.scopy(
+        blas.dcopy(
             &k_states2, &self.transition[0, 0, 0], &inc,
             &self.tmp[0, 0], &inc)
 
         # Copy the selected state covariance to the initial state covariance
         # (it will be overwritten with the appropriate matrix)
-        blas.scopy(
+        blas.dcopy(
             &k_states2, &self.selected_state_cov[0, 0, 0], &inc,
             &self.initial_state_cov[0, 0], &inc)
 
         # Solve the discrete Lyapunov equation to the get initial state
         # covariance matrix
-        tools._ssolve_discrete_lyapunov(
+        tools._dsolve_discrete_lyapunov(
             &self.tmp[0, 0],
             &self.initial_state_cov[0, 0],
             self.k_states, complex_step)
@@ -544,7 +547,7 @@ cdef class sStatespace(object):
             selected_state_cov_t = t
             self._selected_state_cov = &self.selected_state_cov[0, 0, selected_state_cov_t]
 
-            sselect_cov(
+            dselect_cov(
                 self.k_states, self.k_posdef,
                 &self.tmp[0, 0],
                 self._selection,
@@ -616,7 +619,7 @@ cdef class sStatespace(object):
                 self.selected_obs_intercept[k] = self._obs_intercept[i]
 
                 # i is rows, k is rows
-                blas.scopy(
+                blas.dcopy(
                     &self.k_states, &self._design[i], &self.k_endog,
                     &self.selected_design[k], &k_endog)
 
@@ -653,8 +656,8 @@ cdef class sStatespace(object):
             int obs_cov_t, design_t
             int info
             int reset_missing
-            cnp.float32_t * _transform_obs_cov = &self.transform_obs_cov[0, 0]
-            cnp.float32_t * _transform_cholesky = &self.transform_cholesky[0, 0]
+            cnp.float64_t * _transform_obs_cov = &self.transform_obs_cov[0, 0]
+            cnp.float64_t * _transform_cholesky = &self.transform_cholesky[0, 0]
 
         # Compute the cholesky decomposition of *self._obs_cov
         if self.diagonal_obs_cov:
@@ -677,10 +680,10 @@ cdef class sStatespace(object):
                                    'currently support an observation intercept.')
 
             # LDL decomposition
-            blas.scopy(
+            blas.dcopy(
                 &self._k_endog2, self._obs_cov, &inc,
                 _transform_cholesky, &inc)
-            info = tools._sldl(_transform_cholesky, self._k_endog)
+            info = tools._dldl(_transform_cholesky, self._k_endog)
 
             # Check for errors
             if info > 0:
@@ -710,10 +713,10 @@ cdef class sStatespace(object):
         if not self._nmissing == self.k_endog:
             # If we have some missing elements, selected_obs is already populated
             if self._nmissing == 0:
-                blas.scopy(
+                blas.dcopy(
                     &self._k_endog, &self.obs[0, t], &inc,
                     &self.selected_obs[0], &inc)
-            lapack.strtrs(
+            lapack.dtrtrs(
                 "L", "N", "U", &self._k_endog, &inc,
                 _transform_cholesky, &self.k_endog,
                 &self.selected_obs[0], &self._k_endog, &info)
@@ -729,10 +732,10 @@ cdef class sStatespace(object):
 
         # Solve for Z_t^*, if necessary
         if t == 0 or self.design.shape[2] > 1 or reset_missing:
-            blas.scopy(
+            blas.dcopy(
                 &self._k_endogstates, self._design, &inc,
                 &self.transform_design[0, 0], &inc)
-            lapack.strtrs(
+            lapack.dtrtrs(
                 "L", "N", "U", &self._k_endog, &self._k_states,
                 _transform_cholesky, &self.k_endog,
                 &self.transform_design[0, 0], &self._k_endog,
@@ -757,9 +760,9 @@ cdef class sStatespace(object):
             int obs_cov_t, design_t
             int info
             int reset_missing
-            cnp.float32_t alpha = 1.0
-            cnp.float32_t beta = 0.0
-            cnp.float32_t gamma = -1.0
+            cnp.float64_t alpha = 1.0
+            cnp.float64_t beta = 0.0
+            cnp.float64_t gamma = -1.0
             int k_states = self._k_states
             int k_states2 = self._k_states2
             int k_endogstates = self._k_endogstates
@@ -803,11 +806,11 @@ cdef class sStatespace(object):
         # Perform the Cholesky decomposition of H_t, if necessary
         if t == 0 or self.obs_cov.shape[2] > 1 or reset_missing:
             # Cholesky decomposition: $H = L L'$  
-            blas.scopy(
+            blas.dcopy(
                 &self._k_endog2, self._obs_cov, &inc,
                 &self.transform_cholesky[0, 0], &inc)
             # Use LDA=self.k_endog so that we can use the memoryview slicing below
-            lapack.spotrf(
+            lapack.dpotrf(
                 "L", &self._k_endog, &self.transform_cholesky[0, 0], &self.k_endog, &info)
 
             # Check for errors
@@ -827,10 +830,10 @@ cdef class sStatespace(object):
         # Get $Z_t \equiv C^{-1}$, if necessary  
         if t == 0 or self.obs_cov.shape[2] > 1 or self.design.shape[2] > 1 or reset_missing:
             # Calculate $H_t^{-1} Z_t \equiv (Z_t' H_t^{-1})'$ via Cholesky solver
-            blas.scopy(
+            blas.dcopy(
                 &self._k_endogstates, self._design, &inc,
                 &self.transform_design[0, 0], &inc)
-            lapack.spotrs(
+            lapack.dpotrs(
                 "L", &self._k_endog, &k_states,
                 &self.transform_cholesky[0, 0], &self.k_endog,
                 &self.transform_design[0, 0], &self._k_endog,
@@ -842,18 +845,18 @@ cdef class sStatespace(object):
         
             # Calculate $(H_t^{-1} Z_t)' Z_t$  
             # $(m \times m) = (m \times p) (p \times p) (p \times m)$
-            blas.sgemm(
+            blas.dgemm(
                 "T", "N", &k_states, &k_states, &self._k_endog,
                 &alpha, self._design, &self._k_endog,
                 &self.transform_design[0, 0], &self._k_endog,
                 &beta, &self.collapse_cholesky[0, 0], &self._k_states)
 
             # Calculate $(Z_t' H_t^{-1} Z_t)^{-1}$ via Cholesky inversion  
-            lapack.spotrf("U", &k_states, &self.collapse_cholesky[0, 0], &self.k_states, &info)
-            lapack.spotri("U", &k_states, &self.collapse_cholesky[0, 0], &self.k_states, &info)
+            lapack.dpotrf("U", &k_states, &self.collapse_cholesky[0, 0], &self.k_states, &info)
+            lapack.dpotri("U", &k_states, &self.collapse_cholesky[0, 0], &self.k_states, &info)
 
             # Calculate $C_t$ (the upper triangular cholesky decomposition of $(Z_t' H_t^{-1} Z_t)^{-1}$)  
-            lapack.spotrf("U", &k_states, &self.collapse_cholesky[0, 0], &self.k_states, &info)
+            lapack.dpotrf("U", &k_states, &self.collapse_cholesky[0, 0], &self.k_states, &info)
 
             # Check for errors
             if info > 0:
@@ -864,10 +867,10 @@ cdef class sStatespace(object):
             # Calculate $C_t'^{-1} \equiv Z_t$  
             # Do so by solving the system: $C_t' x = I$  
             # (Recall that collapse_obs_cov is an identity matrix)
-            blas.scopy(
+            blas.dcopy(
                 &self._k_states2, &self.collapse_obs_cov[0, 0], &inc,
                 &self.collapse_design[0, 0], &inc)
-            lapack.strtrs(
+            lapack.dtrtrs(
                 "U", "T", "N", &k_states, &k_states,
                 &self.collapse_cholesky[0, 0], &self._k_states,
                 &self.collapse_design[0, 0], &self._k_states,
@@ -879,17 +882,17 @@ cdef class sStatespace(object):
         if not self._nmissing == self.k_endog:
             # If we have some missing elements, selected_obs is already populated
             if self._nmissing == 0:
-                blas.scopy(
+                blas.dcopy(
                     &self.k_endog, &self.obs[0, t], &inc,
                     &self.selected_obs[0], &inc)
             # $\\# = Z_t' H_t^{-1} y_t$
-            blas.sgemv(
+            blas.dgemv(
                 "T", &self._k_endog, &k_states,
                 &alpha, &self.transform_design[0, 0], &self._k_endog,
                 &self.selected_obs[0], &inc,
                 &beta, &self.collapse_obs[0], &inc)
             # $y_t^* = C_t \\#$  
-            blas.strmv(
+            blas.dtrmv(
                 "U", "N", "N", &k_states,
                 &self.collapse_cholesky[0, 0], &self._k_states,
                 &self.collapse_obs[0], &inc)
@@ -904,16 +907,16 @@ cdef class sStatespace(object):
             # 
 
             # $ \\# = C_t' y_t^*$
-            blas.scopy(
+            blas.dcopy(
                 &k_states, &self.collapse_obs[0], &inc,
                 &self.collapse_obs_tmp[0], &inc)
-            blas.strmv(
+            blas.dtrmv(
                 "U", "T", "N", &k_states,
                 &self.collapse_cholesky[0, 0], &self._k_states,
                 &self.collapse_obs_tmp[0], &inc)
 
             # $e_t = - Z_t C_t' y_t^* + y_t$
-            blas.sgemv(
+            blas.dgemv(
                 "N", &self._k_endog, &k_states,
                 &gamma, self._design, &self._k_endog,
                 &self.collapse_obs_tmp[0], &inc,
@@ -924,7 +927,7 @@ cdef class sStatespace(object):
             # So we want $e_t' L^{-1}' L^{-1} e_t = (L^{-1} e_t)' L^{-1} e_t$  
             # We have $L$ in `transform_cholesky`, so we want to do a linear  
             # solve of $L x = e_t$  where L is lower triangular
-            lapack.strtrs(
+            lapack.dtrtrs(
                 "L", "N", "N", &self._k_endog, &inc,
                 &self.transform_cholesky[0, 0], &self.k_endog,
                 &self.selected_obs[0], &self._k_endog,
@@ -957,14 +960,14 @@ cdef class sStatespace(object):
 
 
 # ### Selected covariance matrice
-cdef int sselect_cov(int k, int k_posdef,
-                         cnp.float32_t* tmp,
-                         cnp.float32_t* selection,
-                         cnp.float32_t* cov,
-                         cnp.float32_t* selected_cov):
+cdef int dselect_cov(int k, int k_posdef,
+                         cnp.float64_t* tmp,
+                         cnp.float64_t* selection,
+                         cnp.float64_t* cov,
+                         cnp.float64_t* selected_cov):
     cdef:
-        cnp.float32_t alpha = 1.0
-        cnp.float32_t beta = 0.0
+        cnp.float64_t alpha = 1.0
+        cnp.float64_t beta = 0.0
 
     # Only need to do something if there is a covariance matrix
     # (i.e k_posdof == 0)
@@ -984,14 +987,14 @@ cdef int sselect_cov(int k, int k_posdef,
 
         # $\\#_0 = 1.0 * R_t Q_t$  
         # $(m \times r) = (m \times r) (r \times r)$
-        blas.sgemm(
+        blas.dgemm(
             "N", "N", &k, &k_posdef, &k_posdef,
             &alpha, selection, &k,
             cov, &k_posdef,
             &beta, tmp, &k)
         # $Q_t^* = 1.0 * \\#_0 R_t'$  
         # $(m \times m) = (m \times r) (m \times r)'$
-        blas.sgemm(
+        blas.dgemm(
             "N", "T", &k, &k, &k_posdef,
             &alpha, tmp, &k,
             selection, &k,
@@ -1972,9 +1975,9 @@ cdef int zselect_cov(int k, int k_posdef,
             &beta, selected_cov, &k)
 
 ## State Space Representation
-cdef class dStatespace(object):
+cdef class sStatespace(object):
     """
-    dStatespace(obs, design, obs_intercept, obs_cov, transition, state_intercept, selection, state_cov)
+    sStatespace(obs, design, obs_intercept, obs_cov, transition, state_intercept, selection, state_cov)
 
     *See Durbin and Koopman (2012), Chapter 4 for all notation*
     """
@@ -2021,11 +2024,11 @@ cdef class dStatespace(object):
     # but in the recursions below it will be 0-indexed in the Python arrays.
     # 
     # *Old notation: y, -, mu, beta_tt_init, P_tt_init*
-    # cdef readonly cnp.float64_t [::1,:] obs, obs_intercept, state_intercept
-    # cdef readonly cnp.float64_t [:] initial_state
-    # cdef readonly cnp.float64_t [::1,:] initial_state_cov
+    # cdef readonly cnp.float32_t [::1,:] obs, obs_intercept, state_intercept
+    # cdef readonly cnp.float32_t [:] initial_state
+    # cdef readonly cnp.float32_t [::1,:] initial_state_cov
     # *Old notation: H, R, F, G, Q*, G Q* G'*
-    # cdef readonly cnp.float64_t [::1,:,:] design, obs_cov, transition, selection, state_cov, selected_state_cov
+    # cdef readonly cnp.float32_t [::1,:,:] design, obs_cov, transition, selection, state_cov, selected_state_cov
 
     # `missing` is a $(p \times T)$ boolean matrix where a row is a $(p \times 1)$ vector
     # in which the $i$th position is $1$ if $y_{i,t}$ is to be considered a missing value.  
@@ -2049,40 +2052,40 @@ cdef class dStatespace(object):
     # cdef public int companion_transition
 
     # Temporary arrays
-    # cdef cnp.float64_t [::1,:] tmp
+    # cdef cnp.float32_t [::1,:] tmp
 
     # Temporary selection arrays
-    # cdef readonly cnp.float64_t [:] selected_obs
+    # cdef readonly cnp.float32_t [:] selected_obs
     # The following are contiguous memory segments which are then used to
     # store the data in the above matrices.
-    # cdef readonly cnp.float64_t [:] selected_design
-    # cdef readonly cnp.float64_t [:] selected_obs_cov
+    # cdef readonly cnp.float32_t [:] selected_design
+    # cdef readonly cnp.float32_t [:] selected_obs_cov
 
     # Temporary transformation arrays
-    # cdef readonly cnp.float64_t [::1,:] transform_cholesky
-    # cdef readonly cnp.float64_t [::1,:] transform_obs_cov
-    # cdef readonly cnp.float64_t [::1,:] transform_design
-    # cdef readonly cnp.float64_t transform_determinant
+    # cdef readonly cnp.float32_t [::1,:] transform_cholesky
+    # cdef readonly cnp.float32_t [::1,:] transform_obs_cov
+    # cdef readonly cnp.float32_t [::1,:] transform_design
+    # cdef readonly cnp.float32_t transform_determinant
 
-    # cdef readonly cnp.float64_t [:] collapse_obs
-    # cdef readonly cnp.float64_t [:] collapse_obs_tmp
-    # cdef readonly cnp.float64_t [::1,:] collapse_design
-    # cdef readonly cnp.float64_t [::1,:] collapse_obs_cov
-    # cdef readonly cnp.float64_t [::1,:] collapse_cholesky
-    # cdef readonly cnp.float64_t collapse_loglikelihood
+    # cdef readonly cnp.float32_t [:] collapse_obs
+    # cdef readonly cnp.float32_t [:] collapse_obs_tmp
+    # cdef readonly cnp.float32_t [::1,:] collapse_design
+    # cdef readonly cnp.float32_t [::1,:] collapse_obs_cov
+    # cdef readonly cnp.float32_t [::1,:] collapse_cholesky
+    # cdef readonly cnp.float32_t collapse_loglikelihood
 
     # Pointers  
-    # cdef cnp.float64_t * _obs
-    # cdef cnp.float64_t * _design
-    # cdef cnp.float64_t * _obs_intercept
-    # cdef cnp.float64_t * _obs_cov
-    # cdef cnp.float64_t * _transition
-    # cdef cnp.float64_t * _state_intercept
-    # cdef cnp.float64_t * _selection
-    # cdef cnp.float64_t * _state_cov
-    # cdef cnp.float64_t * _selected_state_cov
-    # cdef cnp.float64_t * _initial_state
-    # cdef cnp.float64_t * _initial_state_cov
+    # cdef cnp.float32_t * _obs
+    # cdef cnp.float32_t * _design
+    # cdef cnp.float32_t * _obs_intercept
+    # cdef cnp.float32_t * _obs_cov
+    # cdef cnp.float32_t * _transition
+    # cdef cnp.float32_t * _state_intercept
+    # cdef cnp.float32_t * _selection
+    # cdef cnp.float32_t * _state_cov
+    # cdef cnp.float32_t * _selected_state_cov
+    # cdef cnp.float32_t * _initial_state
+    # cdef cnp.float32_t * _initial_state_cov
 
     # Current location dimensions
     # cdef int _k_endog, _k_states, _k_posdef, _k_endog2, _k_states2, _k_posdef2, _k_endogstates, _k_statesposdef
@@ -2091,14 +2094,14 @@ cdef class dStatespace(object):
     # ### Initialize state space model
     # *Note*: The initial state and state covariance matrix must be provided.
     def __init__(self,
-                 cnp.float64_t [::1, :]   obs,
-                 cnp.float64_t [::1, :, :] design,
-                 cnp.float64_t [::1, :]   obs_intercept,
-                 cnp.float64_t [::1, :, :] obs_cov,
-                 cnp.float64_t [::1, :, :] transition,
-                 cnp.float64_t [::1, :]   state_intercept,
-                 cnp.float64_t [::1, :, :] selection,
-                 cnp.float64_t [::1, :, :] state_cov,
+                 cnp.float32_t [::1, :]   obs,
+                 cnp.float32_t [::1, :, :] design,
+                 cnp.float32_t [::1, :]   obs_intercept,
+                 cnp.float32_t [::1, :, :] obs_cov,
+                 cnp.float32_t [::1, :, :] transition,
+                 cnp.float32_t [::1, :]   state_intercept,
+                 cnp.float32_t [::1, :, :] selection,
+                 cnp.float32_t [::1, :, :] state_cov,
                  diagonal_obs_cov=-1):
 
         # Local variables
@@ -2177,7 +2180,7 @@ cdef class dStatespace(object):
         # (we only allocate memory for time-varying array if necessary)
         if self.state_cov.shape[2] > 1 or self.selection.shape[2] > 1:
             dim3[2] = self.nobs
-        self.selected_state_cov = cnp.PyArray_ZEROS(3, dim3, cnp.NPY_FLOAT64, FORTRAN)
+        self.selected_state_cov = cnp.PyArray_ZEROS(3, dim3, cnp.NPY_FLOAT32, FORTRAN)
 
         # Handle missing data
         self.missing = np.array(np.isnan(obs), dtype=np.int32, order="F")
@@ -2187,32 +2190,32 @@ cdef class dStatespace(object):
         # Create the temporary array
         # Holds arrays of dimension $(m \times m)$
         dim2[0] = self.k_states; dim2[1] = max(self.k_states, self.k_posdef)
-        self.tmp = cnp.PyArray_ZEROS(2, dim2, cnp.NPY_FLOAT64, FORTRAN)
+        self.tmp = cnp.PyArray_ZEROS(2, dim2, cnp.NPY_FLOAT32, FORTRAN)
 
         # Arrays for missing data
         dim1[0] = self.k_endog;
-        self.selected_obs = cnp.PyArray_ZEROS(1, dim1, cnp.NPY_FLOAT64, FORTRAN)
+        self.selected_obs = cnp.PyArray_ZEROS(1, dim1, cnp.NPY_FLOAT32, FORTRAN)
         dim1[0] = self.k_endog;
-        self.selected_obs_intercept = cnp.PyArray_ZEROS(1, dim1, cnp.NPY_FLOAT64, FORTRAN)
+        self.selected_obs_intercept = cnp.PyArray_ZEROS(1, dim1, cnp.NPY_FLOAT32, FORTRAN)
         dim1[0] = self.k_endog * self.k_states;
-        self.selected_design = cnp.PyArray_ZEROS(1, dim1, cnp.NPY_FLOAT64, FORTRAN)
+        self.selected_design = cnp.PyArray_ZEROS(1, dim1, cnp.NPY_FLOAT32, FORTRAN)
         dim1[0] = self.k_endog**2;
-        self.selected_obs_cov = cnp.PyArray_ZEROS(1, dim1, cnp.NPY_FLOAT64, FORTRAN)
+        self.selected_obs_cov = cnp.PyArray_ZEROS(1, dim1, cnp.NPY_FLOAT32, FORTRAN)
 
         # Arrays for transformations
         dim2[0] = self.k_endog; dim2[1] = self.k_endog
-        self.transform_cholesky = cnp.PyArray_ZEROS(2, dim2, cnp.NPY_FLOAT64, FORTRAN)
-        self.transform_obs_cov = cnp.PyArray_ZEROS(2, dim2, cnp.NPY_FLOAT64, FORTRAN)
+        self.transform_cholesky = cnp.PyArray_ZEROS(2, dim2, cnp.NPY_FLOAT32, FORTRAN)
+        self.transform_obs_cov = cnp.PyArray_ZEROS(2, dim2, cnp.NPY_FLOAT32, FORTRAN)
         dim2[0] = self.k_endog; dim2[1] = self.k_states
-        self.transform_design = cnp.PyArray_ZEROS(2, dim2, cnp.NPY_FLOAT64, FORTRAN)
+        self.transform_design = cnp.PyArray_ZEROS(2, dim2, cnp.NPY_FLOAT32, FORTRAN)
 
         dim1[0] = self.k_states
-        self.collapse_obs = cnp.PyArray_ZEROS(1, dim1, cnp.NPY_FLOAT64, FORTRAN)
-        self.collapse_obs_tmp = cnp.PyArray_ZEROS(1, dim1, cnp.NPY_FLOAT64, FORTRAN)
+        self.collapse_obs = cnp.PyArray_ZEROS(1, dim1, cnp.NPY_FLOAT32, FORTRAN)
+        self.collapse_obs_tmp = cnp.PyArray_ZEROS(1, dim1, cnp.NPY_FLOAT32, FORTRAN)
         dim2[0] = self.k_states; dim2[1] = self.k_states
-        self.collapse_design = cnp.PyArray_ZEROS(2, dim2, cnp.NPY_FLOAT64, FORTRAN)
-        self.collapse_obs_cov = cnp.PyArray_ZEROS(2, dim2, cnp.NPY_FLOAT64, FORTRAN)
-        self.collapse_cholesky = cnp.PyArray_ZEROS(2, dim2, cnp.NPY_FLOAT64, FORTRAN)
+        self.collapse_design = cnp.PyArray_ZEROS(2, dim2, cnp.NPY_FLOAT32, FORTRAN)
+        self.collapse_obs_cov = cnp.PyArray_ZEROS(2, dim2, cnp.NPY_FLOAT32, FORTRAN)
+        self.collapse_cholesky = cnp.PyArray_ZEROS(2, dim2, cnp.NPY_FLOAT32, FORTRAN)
 
         # Initialize location
         self.t = 0
@@ -2287,7 +2290,7 @@ cdef class dStatespace(object):
     # Initialize the filter with specific values, assumed to be known with
     # certainty or else as filled with parameters from a maximum likelihood
     # estimation run.
-    def initialize_known(self, cnp.float64_t [:] initial_state, cnp.float64_t [::1, :] initial_state_cov):
+    def initialize_known(self, cnp.float32_t [:] initial_state, cnp.float32_t [::1, :] initial_state_cov):
         """
         initialize_known(initial_state, initial_state_cov)
         """
@@ -2306,14 +2309,14 @@ cdef class dStatespace(object):
     # can lead to "large rounding errors" (p. 125).
     # 
     # *Note:* see Durbin and Koopman section 5.6.1
-    def initialize_approximate_diffuse(self, cnp.float64_t variance=1e2):
+    def initialize_approximate_diffuse(self, cnp.float32_t variance=1e2):
         """
         initialize_approximate_diffuse(variance=1e2)
         """
         cdef cnp.npy_intp dim[1]
         dim[0] = self.k_states
-        self.initial_state = cnp.PyArray_ZEROS(1, dim, cnp.NPY_FLOAT64, FORTRAN)
-        self.initial_state_cov = np.eye(self.k_states, dtype=float).T * variance
+        self.initial_state = cnp.PyArray_ZEROS(1, dim, cnp.NPY_FLOAT32, FORTRAN)
+        self.initial_state_cov = np.eye(self.k_states, dtype=np.float32).T * variance
 
         self.initialized = True
 
@@ -2328,65 +2331,65 @@ cdef class dStatespace(object):
         cdef int i, info, inc = 1
         cdef int k_states2 = self.k_states**2
         cdef cnp.float64_t asum, tol = 1e-9
-        cdef cnp.float64_t scalar
+        cdef cnp.float32_t scalar
         cdef int [::1,:] ipiv
 
         # Create selected state covariance matrix
-        dselect_cov(self.k_states, self.k_posdef,
+        sselect_cov(self.k_states, self.k_posdef,
                                    &self.tmp[0, 0],
                                    &self.selection[0, 0, 0],
                                    &self.state_cov[0, 0, 0],
                                    &self.selected_state_cov[0, 0, 0])
 
         # Initial state mean
-        asum = blas.dasum(&self.k_states, &self.state_intercept[0, 0], &inc)
+        asum = blas.sasum(&self.k_states, &self.state_intercept[0, 0], &inc)
 
         dim1[0] = self.k_states
-        self.initial_state = cnp.PyArray_ZEROS(1, dim1, cnp.NPY_FLOAT64, FORTRAN)
+        self.initial_state = cnp.PyArray_ZEROS(1, dim1, cnp.NPY_FLOAT32, FORTRAN)
         if asum > tol:
             dim2[0] = self.k_states
             dim2[1] = self.k_states
             ipiv = cnp.PyArray_ZEROS(2, dim2, cnp.NPY_INT32, FORTRAN)
 
             # I - T
-            blas.dcopy(
+            blas.scopy(
                 &k_states2, &self.transition[0, 0, 0], &inc,
                 &self.tmp[0,0], &inc)
             scalar = -1.0
-            blas.dscal(&k_states2, &scalar, &self.tmp[0, 0], &inc)
+            blas.sscal(&k_states2, &scalar, &self.tmp[0, 0], &inc)
             for i in range(self.k_states):
                 self.tmp[i, i] = self.tmp[i, i] + 1
 
             # c
-            blas.dcopy(
+            blas.scopy(
                 &self.k_states, &self.state_intercept[0, 0], &inc,
                 &self.initial_state[0], &inc)
 
             # Solve (I - T) x = c
-            lapack.dgetrf(
+            lapack.sgetrf(
                 &self.k_states, &self.k_states, &self.tmp[0, 0], &self.k_states,
                 &ipiv[0, 0], &info)
-            lapack.dgetrs(
+            lapack.sgetrs(
                 'N', &self.k_states, &inc, &self.tmp[0, 0], &self.k_states,
                 &ipiv[0, 0], &self.initial_state[0], &self.k_states, &info)
 
         dim2[0] = self.k_states; dim2[1] = self.k_states
-        self.initial_state_cov = cnp.PyArray_ZEROS(2, dim2, cnp.NPY_FLOAT64, FORTRAN)
+        self.initial_state_cov = cnp.PyArray_ZEROS(2, dim2, cnp.NPY_FLOAT32, FORTRAN)
 
         # Create a copy of the transition matrix (to avoid overwriting it)
-        blas.dcopy(
+        blas.scopy(
             &k_states2, &self.transition[0, 0, 0], &inc,
             &self.tmp[0, 0], &inc)
 
         # Copy the selected state covariance to the initial state covariance
         # (it will be overwritten with the appropriate matrix)
-        blas.dcopy(
+        blas.scopy(
             &k_states2, &self.selected_state_cov[0, 0, 0], &inc,
             &self.initial_state_cov[0, 0], &inc)
 
         # Solve the discrete Lyapunov equation to the get initial state
         # covariance matrix
-        tools._dsolve_discrete_lyapunov(
+        tools._ssolve_discrete_lyapunov(
             &self.tmp[0, 0],
             &self.initial_state_cov[0, 0],
             self.k_states, complex_step)
@@ -2492,7 +2495,7 @@ cdef class dStatespace(object):
             selected_state_cov_t = t
             self._selected_state_cov = &self.selected_state_cov[0, 0, selected_state_cov_t]
 
-            dselect_cov(
+            sselect_cov(
                 self.k_states, self.k_posdef,
                 &self.tmp[0, 0],
                 self._selection,
@@ -2564,7 +2567,7 @@ cdef class dStatespace(object):
                 self.selected_obs_intercept[k] = self._obs_intercept[i]
 
                 # i is rows, k is rows
-                blas.dcopy(
+                blas.scopy(
                     &self.k_states, &self._design[i], &self.k_endog,
                     &self.selected_design[k], &k_endog)
 
@@ -2601,8 +2604,8 @@ cdef class dStatespace(object):
             int obs_cov_t, design_t
             int info
             int reset_missing
-            cnp.float64_t * _transform_obs_cov = &self.transform_obs_cov[0, 0]
-            cnp.float64_t * _transform_cholesky = &self.transform_cholesky[0, 0]
+            cnp.float32_t * _transform_obs_cov = &self.transform_obs_cov[0, 0]
+            cnp.float32_t * _transform_cholesky = &self.transform_cholesky[0, 0]
 
         # Compute the cholesky decomposition of *self._obs_cov
         if self.diagonal_obs_cov:
@@ -2625,10 +2628,10 @@ cdef class dStatespace(object):
                                    'currently support an observation intercept.')
 
             # LDL decomposition
-            blas.dcopy(
+            blas.scopy(
                 &self._k_endog2, self._obs_cov, &inc,
                 _transform_cholesky, &inc)
-            info = tools._dldl(_transform_cholesky, self._k_endog)
+            info = tools._sldl(_transform_cholesky, self._k_endog)
 
             # Check for errors
             if info > 0:
@@ -2658,10 +2661,10 @@ cdef class dStatespace(object):
         if not self._nmissing == self.k_endog:
             # If we have some missing elements, selected_obs is already populated
             if self._nmissing == 0:
-                blas.dcopy(
+                blas.scopy(
                     &self._k_endog, &self.obs[0, t], &inc,
                     &self.selected_obs[0], &inc)
-            lapack.dtrtrs(
+            lapack.strtrs(
                 "L", "N", "U", &self._k_endog, &inc,
                 _transform_cholesky, &self.k_endog,
                 &self.selected_obs[0], &self._k_endog, &info)
@@ -2677,10 +2680,10 @@ cdef class dStatespace(object):
 
         # Solve for Z_t^*, if necessary
         if t == 0 or self.design.shape[2] > 1 or reset_missing:
-            blas.dcopy(
+            blas.scopy(
                 &self._k_endogstates, self._design, &inc,
                 &self.transform_design[0, 0], &inc)
-            lapack.dtrtrs(
+            lapack.strtrs(
                 "L", "N", "U", &self._k_endog, &self._k_states,
                 _transform_cholesky, &self.k_endog,
                 &self.transform_design[0, 0], &self._k_endog,
@@ -2705,9 +2708,9 @@ cdef class dStatespace(object):
             int obs_cov_t, design_t
             int info
             int reset_missing
-            cnp.float64_t alpha = 1.0
-            cnp.float64_t beta = 0.0
-            cnp.float64_t gamma = -1.0
+            cnp.float32_t alpha = 1.0
+            cnp.float32_t beta = 0.0
+            cnp.float32_t gamma = -1.0
             int k_states = self._k_states
             int k_states2 = self._k_states2
             int k_endogstates = self._k_endogstates
@@ -2751,11 +2754,11 @@ cdef class dStatespace(object):
         # Perform the Cholesky decomposition of H_t, if necessary
         if t == 0 or self.obs_cov.shape[2] > 1 or reset_missing:
             # Cholesky decomposition: $H = L L'$  
-            blas.dcopy(
+            blas.scopy(
                 &self._k_endog2, self._obs_cov, &inc,
                 &self.transform_cholesky[0, 0], &inc)
             # Use LDA=self.k_endog so that we can use the memoryview slicing below
-            lapack.dpotrf(
+            lapack.spotrf(
                 "L", &self._k_endog, &self.transform_cholesky[0, 0], &self.k_endog, &info)
 
             # Check for errors
@@ -2775,10 +2778,10 @@ cdef class dStatespace(object):
         # Get $Z_t \equiv C^{-1}$, if necessary  
         if t == 0 or self.obs_cov.shape[2] > 1 or self.design.shape[2] > 1 or reset_missing:
             # Calculate $H_t^{-1} Z_t \equiv (Z_t' H_t^{-1})'$ via Cholesky solver
-            blas.dcopy(
+            blas.scopy(
                 &self._k_endogstates, self._design, &inc,
                 &self.transform_design[0, 0], &inc)
-            lapack.dpotrs(
+            lapack.spotrs(
                 "L", &self._k_endog, &k_states,
                 &self.transform_cholesky[0, 0], &self.k_endog,
                 &self.transform_design[0, 0], &self._k_endog,
@@ -2790,18 +2793,18 @@ cdef class dStatespace(object):
         
             # Calculate $(H_t^{-1} Z_t)' Z_t$  
             # $(m \times m) = (m \times p) (p \times p) (p \times m)$
-            blas.dgemm(
+            blas.sgemm(
                 "T", "N", &k_states, &k_states, &self._k_endog,
                 &alpha, self._design, &self._k_endog,
                 &self.transform_design[0, 0], &self._k_endog,
                 &beta, &self.collapse_cholesky[0, 0], &self._k_states)
 
             # Calculate $(Z_t' H_t^{-1} Z_t)^{-1}$ via Cholesky inversion  
-            lapack.dpotrf("U", &k_states, &self.collapse_cholesky[0, 0], &self.k_states, &info)
-            lapack.dpotri("U", &k_states, &self.collapse_cholesky[0, 0], &self.k_states, &info)
+            lapack.spotrf("U", &k_states, &self.collapse_cholesky[0, 0], &self.k_states, &info)
+            lapack.spotri("U", &k_states, &self.collapse_cholesky[0, 0], &self.k_states, &info)
 
             # Calculate $C_t$ (the upper triangular cholesky decomposition of $(Z_t' H_t^{-1} Z_t)^{-1}$)  
-            lapack.dpotrf("U", &k_states, &self.collapse_cholesky[0, 0], &self.k_states, &info)
+            lapack.spotrf("U", &k_states, &self.collapse_cholesky[0, 0], &self.k_states, &info)
 
             # Check for errors
             if info > 0:
@@ -2812,10 +2815,10 @@ cdef class dStatespace(object):
             # Calculate $C_t'^{-1} \equiv Z_t$  
             # Do so by solving the system: $C_t' x = I$  
             # (Recall that collapse_obs_cov is an identity matrix)
-            blas.dcopy(
+            blas.scopy(
                 &self._k_states2, &self.collapse_obs_cov[0, 0], &inc,
                 &self.collapse_design[0, 0], &inc)
-            lapack.dtrtrs(
+            lapack.strtrs(
                 "U", "T", "N", &k_states, &k_states,
                 &self.collapse_cholesky[0, 0], &self._k_states,
                 &self.collapse_design[0, 0], &self._k_states,
@@ -2827,17 +2830,17 @@ cdef class dStatespace(object):
         if not self._nmissing == self.k_endog:
             # If we have some missing elements, selected_obs is already populated
             if self._nmissing == 0:
-                blas.dcopy(
+                blas.scopy(
                     &self.k_endog, &self.obs[0, t], &inc,
                     &self.selected_obs[0], &inc)
             # $\\# = Z_t' H_t^{-1} y_t$
-            blas.dgemv(
+            blas.sgemv(
                 "T", &self._k_endog, &k_states,
                 &alpha, &self.transform_design[0, 0], &self._k_endog,
                 &self.selected_obs[0], &inc,
                 &beta, &self.collapse_obs[0], &inc)
             # $y_t^* = C_t \\#$  
-            blas.dtrmv(
+            blas.strmv(
                 "U", "N", "N", &k_states,
                 &self.collapse_cholesky[0, 0], &self._k_states,
                 &self.collapse_obs[0], &inc)
@@ -2852,16 +2855,16 @@ cdef class dStatespace(object):
             # 
 
             # $ \\# = C_t' y_t^*$
-            blas.dcopy(
+            blas.scopy(
                 &k_states, &self.collapse_obs[0], &inc,
                 &self.collapse_obs_tmp[0], &inc)
-            blas.dtrmv(
+            blas.strmv(
                 "U", "T", "N", &k_states,
                 &self.collapse_cholesky[0, 0], &self._k_states,
                 &self.collapse_obs_tmp[0], &inc)
 
             # $e_t = - Z_t C_t' y_t^* + y_t$
-            blas.dgemv(
+            blas.sgemv(
                 "N", &self._k_endog, &k_states,
                 &gamma, self._design, &self._k_endog,
                 &self.collapse_obs_tmp[0], &inc,
@@ -2872,7 +2875,7 @@ cdef class dStatespace(object):
             # So we want $e_t' L^{-1}' L^{-1} e_t = (L^{-1} e_t)' L^{-1} e_t$  
             # We have $L$ in `transform_cholesky`, so we want to do a linear  
             # solve of $L x = e_t$  where L is lower triangular
-            lapack.dtrtrs(
+            lapack.strtrs(
                 "L", "N", "N", &self._k_endog, &inc,
                 &self.transform_cholesky[0, 0], &self.k_endog,
                 &self.selected_obs[0], &self._k_endog,
@@ -2905,14 +2908,14 @@ cdef class dStatespace(object):
 
 
 # ### Selected covariance matrice
-cdef int dselect_cov(int k, int k_posdef,
-                         cnp.float64_t* tmp,
-                         cnp.float64_t* selection,
-                         cnp.float64_t* cov,
-                         cnp.float64_t* selected_cov):
+cdef int sselect_cov(int k, int k_posdef,
+                         cnp.float32_t* tmp,
+                         cnp.float32_t* selection,
+                         cnp.float32_t* cov,
+                         cnp.float32_t* selected_cov):
     cdef:
-        cnp.float64_t alpha = 1.0
-        cnp.float64_t beta = 0.0
+        cnp.float32_t alpha = 1.0
+        cnp.float32_t beta = 0.0
 
     # Only need to do something if there is a covariance matrix
     # (i.e k_posdof == 0)
@@ -2932,14 +2935,14 @@ cdef int dselect_cov(int k, int k_posdef,
 
         # $\\#_0 = 1.0 * R_t Q_t$  
         # $(m \times r) = (m \times r) (r \times r)$
-        blas.dgemm(
+        blas.sgemm(
             "N", "N", &k, &k_posdef, &k_posdef,
             &alpha, selection, &k,
             cov, &k_posdef,
             &beta, tmp, &k)
         # $Q_t^* = 1.0 * \\#_0 R_t'$  
         # $(m \times m) = (m \times r) (m \times r)'$
-        blas.dgemm(
+        blas.sgemm(
             "N", "T", &k, &k, &k_posdef,
             &alpha, tmp, &k,
             selection, &k,

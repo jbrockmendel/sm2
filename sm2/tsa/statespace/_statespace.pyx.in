@@ -26,6 +26,8 @@ cdef extern from "numpy/npy_math.h":
 cdef extern from "capsule.h":
     void *Capsule_AsVoidPtr(object ptr)
 
+from sm2.src.math cimport zabs, zlog
+
 {{py:
 
 TYPES = {
@@ -81,14 +83,6 @@ cdef int MEMORY_CONSERVE = (
 # By default, assume filter is initialized with predicted values (as in
 # Durbin and Koopman 2012)
 cdef int TIMING_INIT_PREDICTED = 0
-
-cdef inline cnp.float64_t zabs(cnp.complex128_t z):
-    return npy_cabs((<cnp.npy_cdouble *> &z)[0])
-
-cdef inline cnp.complex128_t zlog(cnp.complex128_t z):
-    cdef cnp.npy_cdouble x
-    x = npy_clog((<cnp.npy_cdouble*> &z)[0])
-    return (<cnp.complex128_t *> &x)[0]
 
 
 # ## BLAS / LAPACK functions

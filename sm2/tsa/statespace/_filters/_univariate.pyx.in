@@ -14,6 +14,7 @@ cimport numpy as cnp
 cimport scipy.linalg.cython_blas as blas
 cimport scipy.linalg.cython_lapack as lapack
 
+from sm2.src.math cimport NPY_PI
 from sm2.src.math cimport *
 from sm2.tsa.statespace._kalman_filter cimport (
     MEMORY_NO_LIKELIHOOD, MEMORY_NO_STD_FORECAST)
