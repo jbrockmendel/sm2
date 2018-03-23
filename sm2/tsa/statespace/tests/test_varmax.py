@@ -11,8 +11,7 @@ import re
 
 import pytest
 import numpy as np
-from numpy.testing import (assert_equal, assert_almost_equal,
-                           assert_raises, assert_allclose)
+from numpy.testing import assert_equal, assert_almost_equal, assert_allclose
 import pandas as pd
 
 from sm2.iolib.summary import forg
@@ -767,13 +766,16 @@ def test_misspecifications():
     endog = np.arange(20).reshape(10,2)
 
     # Bad trend specification
-    assert_raises(ValueError, varmax.VARMAX, endog, order=(1,0), trend='')
+    with pytest.raises(ValueError):
+        varmax.VARMAX(endog, order=(1,0), trend='')
 
     # Bad error_cov_type specification
-    assert_raises(ValueError, varmax.VARMAX, endog, order=(1,0), error_cov_type='')
+    with pytest.raises(ValueError):
+        varmax.VARMAX(endog, order=(1,0), error_cov_type='')
 
     # Bad order specification
-    assert_raises(ValueError, varmax.VARMAX, endog, order=(0,0))
+    with pytest.raises(ValueError):
+        varmax.VARMAX(endog, order=(0,0))
 
     with warnings.catch_warnings(record=True) as w:
         warnings.simplefilter('always')
@@ -829,17 +831,20 @@ def test_misc_exog():
 
         # Smoke tests for invalid exog
         oos_exog = np.random.normal(size=(1))
-        assert_raises(ValueError, res.forecast, steps=1, exog=oos_exog)
+        with pytest.raises(ValueError):
+            res.forecast(steps=1, exog=oos_exog)
 
         oos_exog = np.random.normal(size=(2, mod.k_exog))
-        assert_raises(ValueError, res.forecast, steps=1, exog=oos_exog)
+        with pytest.raises(ValueError):
+            res.forecast(steps=1, exog=oos_exog)
 
         oos_exog = np.random.normal(size=(1, mod.k_exog + 1))
-        assert_raises(ValueError, res.forecast, steps=1, exog=oos_exog)
+        with pytest.raises(ValueError):
+            res.forecast(steps=1, exog=oos_exog)
 
     # Test invalid model specifications
-    assert_raises(ValueError, varmax.VARMAX, endog, exog=np.zeros((10, 4)),
-                  order=(1, 0))
+    with pytest.raises(ValueError):
+        varmax.VARMAX(endog, exog=np.zeros((10, 4)), order=(1, 0))
 
 
 def test_predict_custom_index():

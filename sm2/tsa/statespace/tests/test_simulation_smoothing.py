@@ -21,7 +21,7 @@ from sm2.tsa.statespace.kalman_smoother import (
     SMOOTH_UNIVARIATE)
 from sm2.tsa.statespace.simulation_smoother import (
     SIMULATION_STATE, SIMULATION_DISTURBANCE, SIMULATION_ALL)
-from numpy.testing import assert_allclose, assert_almost_equal, assert_equal, assert_raises
+from numpy.testing import assert_allclose, assert_almost_equal, assert_equal
 import pytest
 
 current_path = os.path.dirname(os.path.abspath(__file__))
@@ -65,16 +65,16 @@ class MultivariateVARKnown(object):
         # Create the model
         mod = mlemodel.MLEModel(obs, k_states=3, k_posdef=3, **kwargs)
         mod['design'] = np.eye(3)
-        mod['obs_cov'] = np.array([[ 0.0000640649,  0.          ,  0.          ],
-                                   [ 0.          ,  0.0000572802,  0.          ],
-                                   [ 0.          ,  0.          ,  0.0017088585]])
-        mod['transition'] = np.array([[-0.1119908792,  0.8441841604,  0.0238725303],
-                                      [ 0.2629347724,  0.4996718412, -0.0173023305],
-                                      [-3.2192369082,  4.1536028244,  0.4514379215]])
+        mod['obs_cov'] = np.array([[ 0.0000640649, 0., 0.          ],
+                                   [ 0., 0.0000572802, 0.          ],
+                                   [ 0., 0., 0.0017088585]])
+        mod['transition'] = np.array([[-0.1119908792, 0.8441841604, 0.0238725303],
+                                      [ 0.2629347724, 0.4996718412, -0.0173023305],
+                                      [-3.2192369082, 4.1536028244, 0.4514379215]])
         mod['selection'] = np.eye(3)
-        mod['state_cov'] = np.array([[ 0.0000640649,  0.0000388496,  0.0002148769],
-                                     [ 0.0000388496,  0.0000572802,  0.000001555 ],
-                                     [ 0.0002148769,  0.000001555 ,  0.0017088585]])
+        mod['state_cov'] = np.array([[ 0.0000640649, 0.0000388496, 0.0002148769],
+                                     [ 0.0000388496, 0.0000572802, 0.000001555 ],
+                                     [ 0.0002148769, 0.000001555, 0.0017088585]])
         mod.initialize_approximate_diffuse(1e6)
         mod.ssm.filter_univariate = True
         cls.model = mod
@@ -440,7 +440,7 @@ class TestDFM(TestMultivariateVARKnown):
         # Data
         dta = datasets.macrodata.load_pandas().data
         dta.index = pd.date_range(start='1959-01-01', end='2009-7-01', freq='QS')
-        obs = np.log(dta[['realgdp','realcons','realinv']]).diff().iloc[1:] * 400
+        obs = np.log(dta[['realgdp', 'realcons', 'realinv']]).diff().iloc[1:] * 400
 
         if which == 'all':
             obs.iloc[:50, :] = np.nan
@@ -506,16 +506,16 @@ class MultivariateVAR(object):
         # Create the model
         mod = mlemodel.MLEModel(obs, k_states=3, k_posdef=3, **kwargs)
         mod['design'] = np.eye(3)
-        mod['obs_cov'] = np.array([[ 0.0000640649,  0.          ,  0.          ],
-                                   [ 0.          ,  0.0000572802,  0.          ],
-                                   [ 0.          ,  0.          ,  0.0017088585]])
-        mod['transition'] = np.array([[-0.1119908792,  0.8441841604,  0.0238725303],
-                                      [ 0.2629347724,  0.4996718412, -0.0173023305],
-                                      [-3.2192369082,  4.1536028244,  0.4514379215]])
+        mod['obs_cov'] = np.array([[0.0000640649, 0., 0.],
+                                   [0., 0.0000572802, 0.],
+                                   [0., 0., 0.0017088585]])
+        mod['transition'] = np.array([[-0.1119908792, 0.8441841604, 0.0238725303],
+                                      [0.2629347724, 0.4996718412, -0.0173023305],
+                                      [-3.2192369082, 4.1536028244, 0.4514379215]])
         mod['selection'] = np.eye(3)
-        mod['state_cov'] = np.array([[ 0.0000640649,  0.0000388496,  0.0002148769],
-                                     [ 0.0000388496,  0.0000572802,  0.000001555 ],
-                                     [ 0.0002148769,  0.000001555 ,  0.0017088585]])
+        mod['state_cov'] = np.array([[0.0000640649, 0.0000388496, 0.0002148769],
+                                     [0.0000388496, 0.0000572802, 0.000001555 ],
+                                     [0.0002148769, 0.000001555, 0.0017088585]])
         mod.initialize_approximate_diffuse(1e6)
         mod.ssm.filter_univariate = True
         cls.model = mod

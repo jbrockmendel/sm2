@@ -19,7 +19,7 @@ lutkepohl_dfm = {
         .33101874, .63927819,             # Factor transitions
     ],
     'bse_oim': [
-        .002006,  .0012514, .0012128,   # Factor loadings
+        .002006, .0012514, .0012128,   # Factor loadings
         .0003359, .0000184, .0000141,   # Idiosyncratic variances
         .1196637, .1218577,             # Factor transitions
     ],
@@ -71,7 +71,7 @@ lutkepohl_dfm_exog2 = {
         .2995768,                           # Factor transition
     ],
     'var_oim': [
-        .00004278,  2.659e-06, 3.766e-06, 
+        .00004278, 2.659e-06, 3.766e-06,
         .00013003, 6.536e-08,
         .00001079, 5.424e-09,
         8.393e-06, 4.217e-09,
@@ -92,8 +92,8 @@ lutkepohl_dfm_gen = {
         # Note: the following are the Cholesky of the covariance
         # matrix defined just above
         .04421108,                          # Cholesky, lower triangle
-        .00008238,  .01002313,
-        .00158738,  .00254603,  .00722343,
+        .00008238, .01002313,
+        .00158738, .00254603, .00722343,
         .987374,                            # Factor transition
         -.25613562, .00392166, .44859028,   # Error transition parameters
         .01635544, -.249141, .08170863,
@@ -179,8 +179,8 @@ lutkepohl_sur = {
         # Note: the following are the Cholesky of the covariance
         # matrix defined just above
         .04644384,                          # Cholesky, lower triangle
-        .00104212,  .0118926,
-        .00274999,  .00450315,  .00888196,
+        .00104212, .0118926,
+        .00274999, .00450315, .00888196,
     ],
     'var_oim': [
         .0001221, 6.137e-08,
@@ -209,7 +209,7 @@ lutkepohl_sur_auto = {
         8.402e-06, 4.222e-09,
         1.103e-07, 5.110e-10,
         .01259537, .19382105,
-        .00085936, .01321035, 
+        .00085936, .01321035,
     ],
     'loglike': 352.7250284160132,
     'aic': -685.4501,

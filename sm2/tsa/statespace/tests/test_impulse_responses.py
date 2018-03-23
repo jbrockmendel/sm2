@@ -10,13 +10,11 @@ import warnings
 import os
 
 import numpy as np
-from numpy.testing import (assert_allclose, assert_almost_equal, assert_equal,
-                           assert_raises)
+from numpy.testing import assert_allclose, assert_almost_equal, assert_equal
 import pandas as pd
 from scipy.signal import lfilter
 
-from sm2.tsa.statespace import (sarimax, structural, varmax,
-                                        dynamic_factor)
+from sm2.tsa.statespace import sarimax, structural, varmax, dynamic_factor
 
 
 def test_sarimax():

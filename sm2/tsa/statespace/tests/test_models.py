@@ -10,7 +10,7 @@ import re
 import warnings
 
 import numpy as np
-from numpy.testing import assert_almost_equal, assert_equal, assert_allclose, assert_raises
+from numpy.testing import assert_almost_equal, assert_equal, assert_allclose
 import pandas as pd
 import pytest
 
@@ -229,7 +229,8 @@ class LargeStateCovAR1(mlemodel.MLEModel):
 
 
 def test_large_kposdef():
-    assert_raises(ValueError, LargeStateCovAR1, np.arange(10))
+    with pytest.raises(ValueError):
+        LargeStateCovAR1(np.arange(10))
 
 
 class TestLargeStateCovAR1(object):

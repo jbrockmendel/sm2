@@ -11,7 +11,7 @@ import os
 
 import pytest
 import numpy as np
-from numpy.testing import assert_equal, assert_allclose, assert_raises
+from numpy.testing import assert_equal, assert_allclose
 import pandas as pd
 
 from sm2.tools import add_constant

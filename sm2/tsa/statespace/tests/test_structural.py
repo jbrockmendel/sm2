@@ -8,9 +8,9 @@ from __future__ import division, absolute_import, print_function
 import warnings
 import os
 
+import pytest
 import numpy as np
-from numpy.testing import (assert_equal, assert_almost_equal,
-                           assert_raises, assert_allclose)
+from numpy.testing import assert_equal, assert_almost_equal, assert_allclose
 import pandas as pd
 
 from sm2.datasets import macrodata
@@ -232,7 +232,8 @@ def test_specifications():
         assert_equal(mod.trend_specification, 'irregular')
 
     # Test an invalid string trend specification
-    assert_raises(ValueError, UnobservedComponents, endog, 'invalid spec')
+    with pytest.raises(ValueError):
+        UnobservedComponents(endog, 'invalid spec')
 
     # Test that if a trend component is specified without a level component,
     # a warning is issued and a deterministic level component is added
@@ -258,7 +259,8 @@ def test_specifications():
             assert_equal(str(w[0].message), message)
 
     # Test that a seasonal with period less than two is invalid
-    assert_raises(ValueError, UnobservedComponents, endog, seasonal=1)
+    with pytest.raises(ValueError):
+        UnobservedComponents(endog, seasonal=1)
 
 def test_start_params():
     # Test that the behavior is correct for multiple exogenous and / or
@@ -336,17 +338,20 @@ def test_misc_exog():
 
         # Smoke tests for invalid exog
         oos_exog = np.random.normal(size=(1))
-        assert_raises(ValueError, res.forecast, steps=1, exog=oos_exog)
+        with pytest.raises(ValueError):
+            res.forecast(steps=1, exog=oos_exog)
 
         oos_exog = np.random.normal(size=(2, mod.k_exog))
-        assert_raises(ValueError, res.forecast, steps=1, exog=oos_exog)
+        with pytest.raises(ValueError):
+            res.forecast(steps=1, exog=oos_exog)
 
         oos_exog = np.random.normal(size=(1, mod.k_exog + 1))
-        assert_raises(ValueError, res.forecast, steps=1, exog=oos_exog)
+        with pytest.raises(ValueError):
+            res.forecast(steps=1, exog=oos_exog)
 
     # Test invalid model specifications
-    assert_raises(ValueError, UnobservedComponents, endog, 'llevel',
-                  exog=np.zeros((10, 4)))
+    with pytest.raises(ValueErorr):
+        UnobservedComponents(endog, 'llevel', exog=np.zeros((10, 4)))
 
 
 def test_predict_custom_index():

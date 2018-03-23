@@ -9,7 +9,7 @@ from __future__ import division, absolute_import, print_function
 import warnings
 
 import numpy as np
-from numpy.testing import assert_equal, assert_allclose, assert_raises
+from numpy.testing import assert_equal, assert_allclose
 import pandas as pd
 
 from sm2.tsa.statespace import sarimax

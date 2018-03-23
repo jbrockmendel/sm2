@@ -6,8 +6,9 @@ License: BSD-3
 """
 from __future__ import division, absolute_import, print_function
 
+import pytest
 import numpy as np
-from numpy.testing import assert_equal, assert_allclose, assert_raises
+from numpy.testing import assert_equal, assert_allclose
 import pandas as pd
 
 from sm2.tools.numdiff import approx_fprime_cs
@@ -58,13 +59,21 @@ def test_params():
     check_transition_3(params)
 
     # Test for invalid parameter setting
-    assert_raises(IndexError, params.__setitem__, None, [1, 1])
+    with pytest.raises(IndexError):
+        params[None] = [1, 1]
 
     # Test for invalid parameter selection
-    assert_raises(IndexError, params.__getitem__, None)
-    assert_raises(IndexError, params.__getitem__, (0, 0))
-    assert_raises(IndexError, params.__getitem__, ('exog', 'exog'))
-    assert_raises(IndexError, params.__getitem__, ('exog', 0, 1))
+    with pytest.raises(IndexError):
+        params[None]
+
+    with pytest.raises(IndexError):
+        params[(0, 0)]
+
+    with pytest.raises(IndexError):
+        params[('exog', 'exog')]
+
+    with pytest.raises(IndexError):
+        params[('exog', 0, 1)]
 
 
 def test_init_endog():
@@ -84,13 +93,13 @@ def test_init_endog():
 
     # Invalid: k_regimes < 2
     endog = np.ones(10)
-    assert_raises(ValueError, markov_switching.MarkovSwitching, endog,
-                  k_regimes=1)
+    with pytest.raises(ValueError):
+        markov_switching.MarkovSwitching(endog, k_regimes=1)
 
     # Invalid: multiple endog columns
     endog = np.ones((10, 2))
-    assert_raises(ValueError, markov_switching.MarkovSwitching, endog,
-                  k_regimes=2)
+    with pytest.raises(ValueError):
+        markov_switching.MarkovSwitching(endog, k_regimes=2)
 
 
 def test_init_exog_tvtp():
@@ -103,8 +112,9 @@ def test_init_exog_tvtp():
 
     # Invalid exog_tvtp (too many obs)
     exog_tvtp = np.c_[np.ones((11, 1)), (np.arange(11) + 1)[:, np.newaxis]]
-    assert_raises(ValueError, markov_switching.MarkovSwitching, endog,
-                  k_regimes=2, exog_tvtp=exog_tvtp)
+    with pytest.raises(ValueError):
+        markov_switching.MarkovSwitching(endog, k_regimes=2,
+                                         exog_tvtp=exog_tvtp)
 
 
 def test_transition_matrix():
@@ -189,10 +199,12 @@ def test_initial_probabilities():
     assert_allclose(mod.initial_probabilities(params), [0.2, 0.8])
 
     # Invalid known initial probabilities (too many elements)
-    assert_raises(ValueError, mod.initialize_known, [0.2, 0.2, 0.6])
+    with pytest.raises(ValueError):
+        mod.initialize_known([0.2, 0.2, 0.6])
 
     # Invalid known initial probabilities (doesn't sum to 1)
-    assert_raises(ValueError, mod.initialize_known, [0.2, 0.2])
+    with pytest.raises(ValueError):
+        mod.initialize_known([0.2, 0.2])
 
     # Valid steady-state probabilities
     mod.initialize_steady_state()
@@ -201,7 +213,8 @@ def test_initial_probabilities():
     # Invalid steady-state probabilities (when mod has tvtp)
     endog = np.ones(10)
     mod = markov_switching.MarkovSwitching(endog, k_regimes=2, exog_tvtp=endog)
-    assert_raises(ValueError, mod.initialize_steady_state)
+    with pytest.raises(ValueError):
+        mod.initialize_steady_state()
 
 
 def test_logistic():

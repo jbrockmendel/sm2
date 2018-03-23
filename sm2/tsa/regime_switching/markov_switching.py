@@ -22,6 +22,7 @@ from sm2.tools.tools import Bunch, pinv_extended
 from sm2.tools.numdiff import approx_fprime_cs, approx_hess_cs
 from sm2.tools.decorators import cache_readonly, resettable_cache
 from sm2.tools.sm_exceptions import EstimationWarning
+from sm2.tools.eval_measures import aic, bic, hqic
 
 import sm2.tsa.base.tsa_model as tsbase
 
@@ -32,7 +33,6 @@ from ._hamilton_filter import (shamilton_filter, dhamilton_filter,
 from ._kim_smoother import (skim_smoother, dkim_smoother,
                             ckim_smoother, zkim_smoother)
 
-from statsmodels.tools.eval_measures import aic, bic, hqic
 
 prefix_hamilton_filter_map = {
     's': shamilton_filter, 'd': dhamilton_filter,
@@ -2265,13 +2265,10 @@ class MarkovSwitchingResultsWrapper(wrap.ResultsWrapper):
         'cov_params_approx': 'cov',
         'cov_params_default': 'cov',
         'cov_params_opg': 'cov',
-        'cov_params_robust': 'cov',
-    }
+        'cov_params_robust': 'cov'}
     _wrap_attrs = wrap.union_dicts(tsbase.TimeSeriesResultsWrapper._wrap_attrs,
                                    _attrs)
-    _methods = {
-        'forecast': 'dates',
-    }
+    _methods = {'forecast': 'dates'}
     _wrap_methods = wrap.union_dicts(
         tsbase.TimeSeriesResultsWrapper._wrap_methods, _methods)
 wrap.populate_wrapper(MarkovSwitchingResultsWrapper, MarkovSwitchingResults)

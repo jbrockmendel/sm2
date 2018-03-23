@@ -10,7 +10,7 @@ import os
 import warnings
 
 import numpy as np
-from numpy.testing import assert_equal, assert_allclose, assert_raises
+from numpy.testing import assert_equal, assert_allclose
 import pandas as pd
 
 from sm2.tsa.regime_switching import markov_switching, markov_regression

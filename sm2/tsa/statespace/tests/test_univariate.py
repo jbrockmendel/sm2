@@ -83,7 +83,7 @@ class TestClark1989(object):
         cls.model.transition[([1, 1], [1, 2], [0, 0])] = [phi_1, phi_2]
         cls.model.obs_cov[1, 1, 0] = sigma_ec**2
         cls.model.state_cov[
-            np.diag_indices(k_states)+(np.zeros(k_states, dtype=int),)] = [
+            np.diag_indices(k_states) + (np.zeros(k_states, dtype=int),)] = [
             sigma_v**2, sigma_e**2, 0, 0, sigma_w**2, sigma_vl**2
         ]
 
@@ -129,30 +129,30 @@ class TestClark1989(object):
         assert self.univariate_results.filter_univariate
 
         assert_allclose(
-            self.conventional_results.forecasts_error_cov[1,1,0],
+            self.conventional_results.forecasts_error_cov[1, 1, 0],
             143.03724478030821
         )
         assert_allclose(
-            self.univariate_results.forecasts_error_cov[1,1,0],
+            self.univariate_results.forecasts_error_cov[1, 1, 0],
             120.66208525029386
         )
 
     def test_forecasts(self):
         assert_almost_equal(
-            self.conventional_results.forecasts[0,:],
-            self.univariate_results.forecasts[0,:], 9
+            self.conventional_results.forecasts[0, :],
+            self.univariate_results.forecasts[0, :], 9
         )
 
     def test_forecasts_error(self):
         assert_almost_equal(
-            self.conventional_results.forecasts_error[0,:],
-            self.univariate_results.forecasts_error[0,:], 9
+            self.conventional_results.forecasts_error[0, :],
+            self.univariate_results.forecasts_error[0, :], 9
         )
 
     def test_forecasts_error_cov(self):
         assert_almost_equal(
-            self.conventional_results.forecasts_error_cov[0,0,:],
-            self.univariate_results.forecasts_error_cov[0,0,:], 9
+            self.conventional_results.forecasts_error_cov[0, 0, :],
+            self.univariate_results.forecasts_error_cov[0, 0, :], 9
         )
 
     def test_filtered_state(self):
@@ -244,10 +244,11 @@ class TestClark1989(object):
 class TestClark1989Alternate(TestClark1989):
     @classmethod
     def setup_class(cls, *args, **kwargs):
-        super(TestClark1989Alternate, cls).setup_class(alternate_timing=True, *args, **kwargs)
+        super(TestClark1989Alternate, cls).setup_class(alternate_timing=True,
+                                                       *args, **kwargs)
 
     def test_using_alterate(self):
-        assert(self.model._kalman_filter.filter_timing == 1)
+        assert self.model._kalman_filter.filter_timing == 1
 
 
 class MultivariateMissingGeneralObsCov(object):
@@ -260,7 +261,7 @@ class MultivariateMissingGeneralObsCov(object):
         # Data
         dta = datasets.macrodata.load_pandas().data
         dta.index = pd.date_range(start='1959-01-01', end='2009-7-01', freq='QS')
-        obs = dta[['realgdp','realcons','realinv']].diff().iloc[1:]
+        obs = dta[['realgdp', 'realcons', 'realinv']].diff().iloc[1:]
 
         if which == 'all':
             obs.iloc[:50, :] = np.nan
@@ -314,30 +315,30 @@ class MultivariateMissingGeneralObsCov(object):
         assert self.univariate_results.filter_univariate
 
         assert_allclose(
-            self.conventional_results.forecasts_error_cov[1,1,0],
+            self.conventional_results.forecasts_error_cov[1, 1, 0],
             1000000.77
         )
         assert_allclose(
-            self.univariate_results.forecasts_error_cov[1,1,0],
+            self.univariate_results.forecasts_error_cov[1, 1, 0],
             1000000.77
         )
 
     def test_forecasts(self):
         assert_almost_equal(
-            self.conventional_results.forecasts[0,:],
-            self.univariate_results.forecasts[0,:], 9
+            self.conventional_results.forecasts[0, :],
+            self.univariate_results.forecasts[0, :], 9
         )
 
     def test_forecasts_error(self):
         assert_almost_equal(
-            self.conventional_results.forecasts_error[0,:],
-            self.univariate_results.forecasts_error[0,:], 9
+            self.conventional_results.forecasts_error[0, :],
+            self.univariate_results.forecasts_error[0, :], 9
         )
 
     def test_forecasts_error_cov(self):
         assert_almost_equal(
-            self.conventional_results.forecasts_error_cov[0,0,:],
-            self.univariate_results.forecasts_error_cov[0,0,:], 9
+            self.conventional_results.forecasts_error_cov[0, 0, :],
+            self.univariate_results.forecasts_error_cov[0, 0, :], 9
         )
 
     def test_filtered_state(self):
@@ -466,14 +467,14 @@ class TestMultivariatePartialMissingGeneralObsCov(MultivariateMissingGeneralObsC
 
     def test_forecasts(self):
         assert_almost_equal(
-            self.conventional_results.forecasts[0,:],
-            self.univariate_results.forecasts[0,:], 8
+            self.conventional_results.forecasts[0, :],
+            self.univariate_results.forecasts[0, :], 8
         )
 
     def test_forecasts_error(self):
         assert_almost_equal(
-            self.conventional_results.forecasts_error[0,:],
-            self.univariate_results.forecasts_error[0,:], 8
+            self.conventional_results.forecasts_error[0, :],
+            self.univariate_results.forecasts_error[0, :], 8
         )
 
 
@@ -491,14 +492,14 @@ class TestMultivariateMixedMissingGeneralObsCov(MultivariateMissingGeneralObsCov
 
     def test_forecasts(self):
         assert_almost_equal(
-            self.conventional_results.forecasts[0,:],
-            self.univariate_results.forecasts[0,:], 8
+            self.conventional_results.forecasts[0, :],
+            self.univariate_results.forecasts[0, :], 8
         )
 
     def test_forecasts_error(self):
         assert_almost_equal(
-            self.conventional_results.forecasts_error[0,:],
-            self.univariate_results.forecasts_error[0,:], 8
+            self.conventional_results.forecasts_error[0, :],
+            self.univariate_results.forecasts_error[0, :], 8
         )
 
 
@@ -512,7 +513,7 @@ class TestMultivariateVAR(object):
         # Data
         dta = datasets.macrodata.load_pandas().data
         dta.index = pd.date_range(start='1959-01-01', end='2009-7-01', freq='QS')
-        obs = dta[['realgdp','realcons','realinv']].diff().iloc[1:]
+        obs = dta[['realgdp', 'realcons', 'realinv']].diff().iloc[1:]
 
         if which == 'all':
             obs.iloc[:50, :] = np.nan
@@ -530,16 +531,16 @@ class TestMultivariateVAR(object):
         # Create the model
         mod = MLEModel(obs, k_states=3, k_posdef=3, **kwargs)
         mod['design'] = np.eye(3)
-        mod['obs_cov'] = np.array([[ 609.0746647855,    0.          ,    0.          ],
-                                   [   0.          ,    1.8774916622,    0.          ],
-                                   [   0.          ,    0.          ,  124.6768281675]])
-        mod['transition'] = np.array([[-0.8110473405,  1.8005304445,  1.0215975772],
-                                      [-1.9846632699,  2.4091302213,  1.9264449765],
-                                      [ 0.9181658823, -0.2442384581, -0.6393462272]])
+        mod['obs_cov'] = np.array([[609.0746647855, 0., 0.],
+                                   [0., 1.8774916622, 0.],
+                                   [0., 0.,  124.6768281675]])
+        mod['transition'] = np.array([[-0.8110473405, 1.8005304445, 1.0215975772],
+                                      [-1.9846632699, 2.4091302213, 1.9264449765],
+                                      [0.9181658823, -0.2442384581, -0.6393462272]])
         mod['selection'] = np.eye(3)
-        mod['state_cov'] = np.array([[ 1552.9758843938,   612.7185121905,   877.6157204992],
-                                     [  612.7185121905,   467.8739411204,    70.608037339 ],
-                                     [  877.6157204992,    70.608037339 ,   900.5440385836]])
+        mod['state_cov'] = np.array([[1552.9758843938, 612.7185121905, 877.6157204992],
+                                     [612.7185121905, 467.8739411204, 70.608037339 ],
+                                     [877.6157204992, 70.608037339, 900.5440385836]])
         mod.initialize_approximate_diffuse(1e6)
         cls.model = mod.ssm
 
@@ -564,20 +565,20 @@ class TestMultivariateVAR(object):
 
     def test_forecasts(self):
         assert_almost_equal(
-            self.conventional_results.forecasts[0,:],
-            self.univariate_results.forecasts[0,:], 9
+            self.conventional_results.forecasts[0, :],
+            self.univariate_results.forecasts[0, :], 9
         )
 
     def test_forecasts_error(self):
         assert_almost_equal(
-            self.conventional_results.forecasts_error[0,:],
-            self.univariate_results.forecasts_error[0,:], 9
+            self.conventional_results.forecasts_error[0, :],
+            self.univariate_results.forecasts_error[0, :], 9
         )
 
     def test_forecasts_error_cov(self):
         assert_almost_equal(
-            self.conventional_results.forecasts_error_cov[0,0,:],
-            self.univariate_results.forecasts_error_cov[0,0,:], 9
+            self.conventional_results.forecasts_error_cov[0, 0, :],
+            self.univariate_results.forecasts_error_cov[0, 0, :], 9
         )
 
     def test_filtered_state(self):

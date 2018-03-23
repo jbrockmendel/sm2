@@ -266,23 +266,23 @@ cdef class {{prefix}}KalmanSmoother(object):
         #       that is related to the states.
 
         # Arrays for Kalman smoother output
-        dim2[0] = self.kfilter.k_states; dim2[1] = self.model.nobs+1;
+        dim2[0] = self.kfilter.k_states; dim2[1] = self.model.nobs + 1
         self.scaled_smoothed_estimator = cnp.PyArray_ZEROS(2, dim2, {{typenum}}, FORTRAN)
-        dim3[0] = self.kfilter.k_states; dim3[1] = self.kfilter.k_states; dim3[2] = self.model.nobs+1;
+        dim3[0] = self.kfilter.k_states; dim3[1] = self.kfilter.k_states; dim3[2] = self.model.nobs + 1
         self.scaled_smoothed_estimator_cov = cnp.PyArray_ZEROS(3, dim3, {{typenum}}, FORTRAN)
-        dim2[0] = self.kfilter.k_endog; dim2[1] = self.model.nobs;
+        dim2[0] = self.kfilter.k_endog; dim2[1] = self.model.nobs
         self.smoothing_error = cnp.PyArray_ZEROS(2, dim2, {{typenum}}, FORTRAN)
-        dim2[0] = self.kfilter.k_states; dim2[1] = self.model.nobs;
+        dim2[0] = self.kfilter.k_states; dim2[1] = self.model.nobs
         self.smoothed_state = cnp.PyArray_ZEROS(2, dim2, {{typenum}}, FORTRAN)
-        dim3[0] = self.kfilter.k_states; dim3[1] = self.kfilter.k_states; dim3[2] = self.model.nobs;
+        dim3[0] = self.kfilter.k_states; dim3[1] = self.kfilter.k_states; dim3[2] = self.model.nobs
         self.smoothed_state_cov = cnp.PyArray_ZEROS(3, dim3, {{typenum}}, FORTRAN)
         dim2[0] = self.kfilter.k_endog; dim2[1] = self.model.nobs;
         self.smoothed_measurement_disturbance = cnp.PyArray_ZEROS(2, dim2, {{typenum}}, FORTRAN)
         dim2[0] = self.kfilter.k_posdef; dim2[1] = self.model.nobs;
         self.smoothed_state_disturbance = cnp.PyArray_ZEROS(2, dim2, {{typenum}}, FORTRAN)
-        dim3[0] = self.kfilter.k_endog; dim3[1] = self.kfilter.k_endog; dim3[2] = self.model.nobs;
+        dim3[0] = self.kfilter.k_endog; dim3[1] = self.kfilter.k_endog; dim3[2] = self.model.nobs
         self.smoothed_measurement_disturbance_cov = cnp.PyArray_ZEROS(3, dim3, {{typenum}}, FORTRAN)
-        dim3[0] = self.kfilter.k_posdef; dim3[1] = self.kfilter.k_posdef; dim3[2] = self.model.nobs;
+        dim3[0] = self.kfilter.k_posdef; dim3[1] = self.kfilter.k_posdef; dim3[2] = self.model.nobs
         self.smoothed_state_disturbance_cov = cnp.PyArray_ZEROS(3, dim3, {{typenum}}, FORTRAN)
 
         # #### Arrays for temporary calculations
@@ -290,24 +290,24 @@ cdef class {{prefix}}KalmanSmoother(object):
         # temporary array, and a $\\#_i$ will represent a named temporary array.
 
         # # $L_t$ $(m \times m)$, also holds $(m \times r)$ sometimes
-        dim2[0] = self.kfilter.k_states; dim2[1] = max(self.kfilter.k_states, self.kfilter.k_posdef);
+        dim2[0] = self.kfilter.k_states; dim2[1] = max(self.kfilter.k_states, self.kfilter.k_posdef)
         self.tmpL = cnp.PyArray_ZEROS(2, dim2, {{typenum}}, FORTRAN)
         self._tmpL = &self.tmpL[0, 0]
         self.tmpL2 = cnp.PyArray_ZEROS(2, dim2, {{typenum}}, FORTRAN)
         self._tmpL2 = &self.tmpL2[0, 0]
 
         # # Holds arrays of dimension $(m \times m)$ and $(m \times r)$
-        dim2[0] = self.kfilter.k_states; dim2[1] = max(self.kfilter.k_states, self.kfilter.k_posdef);
+        dim2[0] = self.kfilter.k_states; dim2[1] = max(self.kfilter.k_states, self.kfilter.k_posdef)
         self.tmp0 = cnp.PyArray_ZEROS(2, dim2, {{typenum}}, FORTRAN)
         self._tmp0 = &self.tmp0[0, 0]
 
         # # Holds arrays of dimension $(m \times p)$
-        dim2[0] = self.kfilter.k_states; dim2[1] = self.kfilter.k_endog;
+        dim2[0] = self.kfilter.k_states; dim2[1] = self.kfilter.k_endog
         self.tmp00 = cnp.PyArray_ZEROS(2, dim2, {{typenum}}, FORTRAN)
         self._tmp00 = &self.tmp00[0, 0]
 
         # # Holds arrays of dimension $(m \times p)$
-        dim2[0] = self.kfilter.k_states; dim2[1] = self.kfilter.k_endog;
+        dim2[0] = self.kfilter.k_states; dim2[1] = self.kfilter.k_endog
         self.tmp000 = cnp.PyArray_ZEROS(2, dim2, {{typenum}}, FORTRAN)
         self._tmp000 = &self.tmp000[0, 0]
 
@@ -315,14 +315,14 @@ cdef class {{prefix}}KalmanSmoother(object):
         dim3[0] = self.kfilter.k_states; dim3[1] = self.kfilter.k_states; dim3[2] = self.model.nobs
         self.smoothed_state_autocov = cnp.PyArray_ZEROS(3, dim3, {{typenum}}, FORTRAN)
 
-        dim2[0] = self.kfilter.k_states; dim2[1] = self.kfilter.k_states;
+        dim2[0] = self.kfilter.k_states; dim2[1] = self.kfilter.k_states
         self.tmp_autocov = cnp.PyArray_ZEROS(2, dim2, {{typenum}}, FORTRAN)
         self._tmp_autocov = &self.tmp_autocov[0, 0]
 
         # Arrays for missing data
-        # dim1[0] = self.kfilter.k_endog * self.kfilter.k_states;
+        # dim1[0] = self.kfilter.k_endog * self.kfilter.k_states
         # self.selected_design = cnp.PyArray_ZEROS(1, dim1, {{typenum}}, FORTRAN)
-        # dim1[0] = self.kfilter.k_endog2;
+        # dim1[0] = self.kfilter.k_endog2
         # self.selected_obs_cov = cnp.PyArray_ZEROS(1, dim1, {{typenum}}, FORTRAN)
 
     def __reduce__(self):
@@ -379,10 +379,14 @@ cdef class {{prefix}}KalmanSmoother(object):
         self._tmp000 = &self.tmp000[0, 0]
         self._tmp_autocov = &self.tmp_autocov[0, 0]
 
-    cdef int check_filter_method_changed(self):
+    @cython.cfunc
+    @cython.returns(int)
+    def check_filter_method_changed(self):
         return not self.kfilter.filter_method == self.filter_method
 
-    cdef int reset_filter_method(self, int force_reset=True):
+    @cython.cfunc
+    @cython.returns(int)
+    def reset_filter_method(self, int force_reset=True):
         cdef int changed = self.check_filter_method_changed()
 
         if changed or force_reset:
@@ -396,7 +400,8 @@ cdef class {{prefix}}KalmanSmoother(object):
 
         return changed
 
-    cpdef set_smoother_output(self, int smoother_output, int force_reset=True):
+    @cython.ccall
+    def set_smoother_output(self, int smoother_output, int force_reset=True):
         if not smoother_output == self.smoother_output or force_reset:
             # Change the smoother output flag
             self.smoother_output = smoother_output
@@ -404,7 +409,8 @@ cdef class {{prefix}}KalmanSmoother(object):
             # Reset matrices
             self.reset(True)
 
-    cpdef set_smooth_method(self, int smooth_method):
+    @cython.ccall
+    def set_smooth_method(self, int smooth_method):
         cdef int _smooth_method
         self.smooth_method = smooth_method
 
@@ -429,7 +435,8 @@ cdef class {{prefix}}KalmanSmoother(object):
 
         self._smooth_method = _smooth_method
 
-    cpdef reset(self, int force_reset=False):
+    @cython.ccall
+    def reset(self, int force_reset=False):
         """
         reset(self)
 
@@ -439,9 +446,10 @@ cdef class {{prefix}}KalmanSmoother(object):
         self.reset_filter_method(force_reset)
 
         # Set the time
-        self.t = self.model.nobs-1
+        self.t = self.model.nobs - 1
 
-    cpdef seek(self, unsigned int t):
+    @cython.ccall
+    def seek(self, unsigned int t):
         """
         seek(self, t)
 
@@ -475,13 +483,14 @@ cdef class {{prefix}}KalmanSmoother(object):
         """
         Iterate the smoother across the entire set of observations.
         """
-        cdef int i
+        cdef:
+            int i
 
         # Reset the smoother
         self.reset()
         
         # Perform backwards smoothing iterations
-        for i in range(self.model.nobs-1,-1,-1):
+        for i in range(self.model.nobs - 1, -1, -1):
             next(self)
 
     def __next__(self):
@@ -530,7 +539,7 @@ cdef class {{prefix}}KalmanSmoother(object):
         # Smoothed state autocovariance matrix
         if self.smoother_output & SMOOTHER_STATE_AUTOCOV:
             if self.smooth_method & SMOOTH_ALTERNATIVE:
-                self._input_scaled_smoothed_estimator_cov = &self.scaled_smoothed_estimator_cov[0, 0, self.t+1]
+                self._input_scaled_smoothed_estimator_cov = &self.scaled_smoothed_estimator_cov[0, 0, self.t + 1]
             {{prefix}}smoothed_state_autocov_conventional(self, self.kfilter, self.model)
             if self.smooth_method & SMOOTH_ALTERNATIVE:
                 self._input_scaled_smoothed_estimator_cov = &self.scaled_smoothed_estimator_cov[0, 0, self.t]
@@ -588,7 +597,9 @@ cdef class {{prefix}}KalmanSmoother(object):
         #                               self.model.k_states,
         #                               self.model.k_posdef)
 
-    cdef void initialize_filter_object_pointers(self):
+    @cython.cfunc
+    @cython.returns(cython.void)
+    def initialize_filter_object_pointers(self):
         # cdef:
         #     int t = self.t
         #     int inc = 1
@@ -614,15 +625,15 @@ cdef class {{prefix}}KalmanSmoother(object):
 
         # Initialize object-level pointers to output arrays
         if self._smooth_method & (SMOOTH_CONVENTIONAL | SMOOTH_CLASSICAL | SMOOTH_UNIVARIATE):
-            self._input_scaled_smoothed_estimator = &self.scaled_smoothed_estimator[0, t+1]
-            self._input_scaled_smoothed_estimator_cov = &self.scaled_smoothed_estimator_cov[0, 0, t+1]
+            self._input_scaled_smoothed_estimator = &self.scaled_smoothed_estimator[0, t + 1]
+            self._input_scaled_smoothed_estimator_cov = &self.scaled_smoothed_estimator_cov[0, 0, t + 1]
             self._scaled_smoothed_estimator = &self.scaled_smoothed_estimator[0, t]
             self._scaled_smoothed_estimator_cov = &self.scaled_smoothed_estimator_cov[0, 0, t]
         else:  # if self._smooth_method & SMOOTH_ALTERNATIVE
             self._input_scaled_smoothed_estimator = &self.scaled_smoothed_estimator[0, t]
             self._input_scaled_smoothed_estimator_cov = &self.scaled_smoothed_estimator_cov[0, 0, t]
-            self._scaled_smoothed_estimator = &self.scaled_smoothed_estimator[0, t-1]
-            self._scaled_smoothed_estimator_cov = &self.scaled_smoothed_estimator_cov[0, 0, t-1]
+            self._scaled_smoothed_estimator = &self.scaled_smoothed_estimator[0, t - 1]
+            self._scaled_smoothed_estimator_cov = &self.scaled_smoothed_estimator_cov[0, 0, t - 1]
 
         self._smoothing_error = &self.smoothing_error[0, t]
         self._smoothed_state = &self.smoothed_state[0, t]

@@ -25,7 +25,7 @@ import sm2.base.wrapper as wrap
 from sm2.tools.numdiff import (_get_epsilon, approx_hess_cs,
                                        approx_fprime_cs, approx_fprime)
 from sm2.tools.decorators import cache_readonly, resettable_cache
-from statsmodels.tools.eval_measures import aic, bic, hqic
+from sm2.tools.eval_measures import aic, bic, hqic
 from sm2.tools.tools import pinv_extended, Bunch
 from sm2.tools.sm_exceptions import PrecisionWarning
 import sm2.genmod._prediction as pred

@@ -11,8 +11,7 @@ from numpy.testing import assert_allclose
 from distutils.version import LooseVersion
 
 from sm2 import datasets
-from sm2.tsa.statespace import (sarimax, structural, varmax,
-                                        dynamic_factor)
+from sm2.tsa.statespace import sarimax, structural, varmax, dynamic_factor
 macrodata = datasets.macrodata.load_pandas().data
 
 # Skip copy test on older NumPy since copy does not preserve order

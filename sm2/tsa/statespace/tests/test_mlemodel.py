@@ -9,8 +9,9 @@ import os
 import re
 import warnings
 
+import pytest
 import numpy as np
-from numpy.testing import assert_almost_equal, assert_equal, assert_allclose, assert_raises
+from numpy.testing import assert_almost_equal, assert_equal, assert_allclose
 import pandas as pd
 
 from sm2.tsa.statespace import (sarimax, varmax, kalman_filter,
@@ -139,7 +140,8 @@ def test_wrapping():
 
     # Change the attributes in the model class
     if compatibility_mode:
-        assert_raises(NotImplementedError, mod.set_filter_method, 100)
+        with pytest.raises(NotImplementedError):
+            mod.set_filter_method(100)
     else:
         mod.set_filter_method(100)
     mod.set_stability_method(101)
@@ -165,7 +167,8 @@ def test_wrapping():
     # Note: this error is only raised in the compatibility case, since the
     # newer filter logic checks for a valid filter mode at a different point
     if compatibility_mode:
-        assert_raises(NotImplementedError, mod.ssm._initialize_filter)
+        with pytest.raises(NotImplementedError):
+            mod.ssm._initialize_filter()
 
     # Now, test the setting of the other two methods by resetting the
     # filter method to a valid value
@@ -212,7 +215,8 @@ def test_score_misc():
 
 
 def test_from_formula():
-    assert_raises(NotImplementedError, lambda: MLEModel.from_formula(1,2,3))
+    with pytest.raises(NotImplementedError):
+        MLEModel.from_formula(1, 2, 3)
 
 
 def test_score_analytic_ar1():
@@ -348,7 +352,8 @@ def test_cov_params():
         res = mod.fit(res.params, disp=-1, cov_type='robust_approx')
         assert_equal(res.cov_type, 'robust_approx')
         assert_equal(res.cov_kwds['description'], 'Quasi-maximum likelihood covariance matrix used for robustness to some misspecifications; calculated using numerical (complex-step) differentiation.')
-        assert_raises(NotImplementedError, mod.fit, res.params, disp=-1, cov_type='invalid_cov_type')
+        with pytest.raises(NotImplementedError):
+            mod.fit(res.params, disp=-1, cov_type='invalid_cov_type')
 
 
 def test_transform():
@@ -405,7 +410,9 @@ def test_params():
     mod = MLEModel([1,2], **kwargs)
 
     # By default start_params raises NotImplementedError
-    assert_raises(NotImplementedError, lambda: mod.start_params)
+    with pytest.raises(NotImplementedError):
+        mod.start_params
+
     # But param names are by default an empty array
     assert_equal(mod.param_names, [])
 
@@ -456,7 +463,8 @@ def test_predict():
     # Test for passing a string to predict when dates are not set
     mod = MLEModel([1,2], **kwargs)
     res = mod.filter([])
-    assert_raises(KeyError, res.predict, dynamic='string')
+    with pytest.raises(KeyError):
+        res.predict(dynamic='string')
 
 
 def test_forecast():
@@ -522,14 +530,18 @@ def check_endog(endog, nobs=2, k_endog=1, **kwargs):
 
     return mod
 
+
 def test_basic_endog():
     # Test various types of basic python endog inputs (e.g. lists, scalars...)
 
     # Check cannot call with non-array-like
     # fails due to checks in Statsmodels base classes
-    assert_raises(ValueError, MLEModel, endog=1, k_states=1)
-    assert_raises(ValueError, MLEModel, endog='a', k_states=1)
-    assert_raises(ValueError, MLEModel, endog=True, k_states=1)
+    with pytest.raises(ValueError):
+        MLEModel(endog=1, k_states=1)
+    with pytest.raises(ValueError):
+        MLEModel(endog='a', k_states=1)
+    with pytest.raises(ValueError):
+        MLEModel(endog=True, k_states=1)
 
     # Check behavior with different types
     mod = MLEModel([1], **kwargs)
@@ -546,7 +558,8 @@ def test_basic_endog():
 
     mod = MLEModel(['a'], **kwargs)
     # raises error due to inability coerce string to numeric
-    assert_raises(ValueError, mod.filter, [])
+    with pytest.raises(ValueError):
+        mod.filter([])
 
     # Check that a different iterable tpyes give the expected result
     endog = [1.,2.]
@@ -560,6 +573,7 @@ def test_basic_endog():
     endog = (1.,2.)
     mod = check_endog(endog, **kwargs)
     mod.filter([])
+
 
 def test_numpy_endog():
     # Test various types of numpy endog inputs
@@ -582,7 +596,8 @@ def test_numpy_endog():
     # Example  (failure): 0-dim array
     endog = np.array(1.)
     # raises error due to len(endog) failing in Statsmodels base classes
-    assert_raises(TypeError, check_endog, endog, **kwargs)
+    with pytest.raises(TypeError):
+        check_endog(endog, **kwargs)
 
     # Example : 1-dim array, both C- and F-contiguous, length 2
     endog = np.array([1.,2.])
@@ -613,7 +628,8 @@ def test_numpy_endog():
     # raises error because arrays are always interpreted as
     # (nobs, k_endog), which means that k_endog=2 is incompatibile with shape
     # of design matrix (1, 1)
-    assert_raises(ValueError, check_endog, endog, **kwargs)
+    with pytest.raises(ValueError):
+        check_endog(endog, **kwargs)
 
     # Example : 2-dim array, F-contiguous, long-shaped (nobs, k_endog)
     endog = np.array([1., 2.]).reshape(1, 2).transpose()
@@ -635,12 +651,14 @@ def test_numpy_endog():
     # raises error because arrays are always interpreted as
     # (nobs, k_endog), which means that k_endog=2 is incompatibile with shape
     # of design matrix (1, 1)
-    assert_raises(ValueError, check_endog, endog, **kwargs)
+    with pytest.raises(ValueError):
+        check_endog(endog, **kwargs)
 
     # Example  (failure): 3-dim array
     endog = np.array([1., 2.]).reshape(2, 1, 1)
     # raises error due to direct ndim check in Statsmodels base classes
-    assert_raises(ValueError, check_endog, endog, **kwargs)
+    with pytest.raises(ValueError):
+        check_endog(endog, **kwargs)
 
     # Example : np.array with 2 columns
     # Update kwargs for k_endog=2
@@ -652,6 +670,7 @@ def test_numpy_endog():
     endog = np.array([[1., 2.], [3., 4.]])
     mod = check_endog(endog, k_endog=2, **kwargs2)
     mod.filter([])
+
 
 def test_pandas_endog():
     # Test various types of pandas endog inputs (e.g. TimeSeries, etc.)
@@ -671,7 +690,8 @@ def test_pandas_endog():
     # Example : pandas.Series, string datatype
     endog = pd.Series(['a'], index=dates)
     # raises error due to direct type casting check in Statsmodels base classes
-    assert_raises(ValueError, check_endog, endog, **kwargs)
+    with pytest.raises(ValueError):
+        check_endog(endog, **kwargs)
 
     # Example : pandas.Series
     endog = pd.Series([1., 2.], index=dates)
@@ -687,7 +707,8 @@ def test_pandas_endog():
     endog = pd.DataFrame({'a': [1., 2.], 'b': [3., 4.]}, index=dates)
     # raises error because 2-columns means k_endog=2, but the design matrix
     # set in **kwargs is shaped (1,1)
-    assert_raises(ValueError, check_endog, endog, **kwargs)
+    with pytest.raises(ValueError):
+        check_endog(endog, **kwargs)
 
     # Check behavior of the link maintained between passed `endog` and
     # `mod.endog` arrays
@@ -713,6 +734,7 @@ def test_pandas_endog():
     mod = check_endog(endog, k_endog=2, **kwargs2)
     mod.filter([])
 
+
 def test_diagnostics():
     mod, res = get_dummy_mod()
 
@@ -727,24 +749,29 @@ def test_diagnostics():
     desired = res.test_normality(method='jarquebera')
     assert_allclose(actual, desired)
 
-    assert_raises(NotImplementedError, res.test_normality, method='invalid')
+    with pytest.raises(NotImplementedError):
+        res.test_normality(method='invalid')
 
     actual = res.test_heteroskedasticity(method=None)
     desired = res.test_heteroskedasticity(method='breakvar')
     assert_allclose(actual, desired)
 
-    assert_raises(ValueError, res.test_heteroskedasticity, method=None, alternative='invalid')
-    assert_raises(NotImplementedError, res.test_heteroskedasticity, method='invalid')
+    with pytest.raises(ValueError):
+        res.test_heteroskedasticity(method=None, alternative='invalid')
+    with pytest.raises(NotImplementedError):
+        res.test_heteroskedasticity(method='invalid')
 
     actual = res.test_serial_correlation(method=None)
     desired = res.test_serial_correlation(method='ljungbox')
     assert_allclose(actual, desired)
 
-    assert_raises(NotImplementedError, res.test_serial_correlation, method='invalid')
+    with pytest.raises(NotImplementedError):
+        res.test_serial_correlation(method='invalid')
 
     # Smoke tests for other options
     actual = res.test_heteroskedasticity(method=None, alternative='d', use_f=False)
     desired = res.test_serial_correlation(method='boxpierce')
+
 
 def test_diagnostics_nile_eviews():
     # Test the diagnostic tests using the Nile dataset. Results are from 
@@ -774,6 +801,7 @@ def test_diagnostics_nile_eviews():
     # Test Jarque-Bera
     actual = res.test_normality(method='jarquebera')[0, :2]
     assert_allclose(actual, [0.041686, 0.979373], atol=1e-5)
+
 
 def test_diagnostics_nile_durbinkoopman():
     # Test the diagnostic tests using the Nile dataset. Results are from 
@@ -809,6 +837,8 @@ def test_diagnostics_nile_durbinkoopman():
     actual = res.test_heteroskedasticity(method='breakvar')[0, 0]
     assert_allclose(actual, [0.61], atol=1e-2)
 
+
+@pytest.mark.smoke
 def test_prediction_results():
     # Just smoke tests for the PredictionResults class, which is copied from
     # elsewhere in Statsmodels

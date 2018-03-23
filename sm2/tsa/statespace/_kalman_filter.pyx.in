@@ -596,7 +596,9 @@ cdef class {{prefix}}KalmanFilter(object):
         dim3[0] = self.k_endog; dim3[1] = self.k_endog; dim3[2] = storage;
         self.tmp4 = cnp.PyArray_ZEROS(3, dim3, {{typenum}}, FORTRAN)
 
-    cdef void set_dimensions(self):
+    @cython.cfunc
+    @cython.returns(cython.void)
+    def set_dimensions(self):
         """
         Set dimensions for the Kalman filter
 
@@ -634,7 +636,8 @@ cdef class {{prefix}}KalmanFilter(object):
         self.k_endogstates = self.k_endog * self.k_states
         self.k_statesposdef = self.k_states * self.k_posdef
 
-    cpdef set_filter_method(self, int filter_method, int force_reset=True):
+    @cython.ccall
+    def set_filter_method(self, int filter_method, int force_reset=True):
         """
         set_filter_method(self, filter_method, force_reset=True)
 
@@ -659,7 +662,8 @@ cdef class {{prefix}}KalmanFilter(object):
             # Seek to the beginning
             self.seek(0, True)
 
-    cpdef seek(self, unsigned int t, int reset_convergence=True):
+    @cython.ccall
+    def seek(self, unsigned int t, int reset_convergence=True):
         """
         seek(self, t, reset_convergence = True)
 
@@ -798,19 +802,29 @@ cdef class {{prefix}}KalmanFilter(object):
         # Advance the time
         self.t += 1
 
-    cdef void _forecasting(self):
+    @cython.cfunc
+    @cython.returns(cython.void)
+    def _forecasting(self):
         {{prefix}}forecast_univariate(self, self.model)
 
-    cdef {{cython_type}} _inversion(self):
+    @cython.cfunc
+    @cython.returns({{cython_type}})
+    def _inversion(self):
         {{prefix}}inverse_noop_univariate(self, self.model, self.determinant)
 
-    cdef void _updating(self):
+    @cython.cfunc
+    @cython.returns(cython.void)
+    def _updating(self):
         {{prefix}}updating_univariate(self, self.model)
 
-    cdef {{cython_type}} _calculate_loglikelihood(self):
+    @cython.cfunc
+    @cython.returns({{cython_type}})
+    def _calculate_loglikelihood(self):
         return {{prefix}}loglikelihood_univariate(self, self.model, self.determinant)
 
-    cdef void _prediction(self):
+    @cython.cfunc
+    @cython.returns(cython.void)
+    def _prediction(self):
         {{prefix}}prediction_univariate(self, self.model)
 
     cdef void initialize_statespace_object_pointers(self) except *:
@@ -832,7 +846,9 @@ cdef class {{prefix}}KalmanFilter(object):
             # doesn't work "out-of-the-box" right now
             self.converged = 0
 
-    cdef void initialize_filter_object_pointers(self):
+    @cython.cfunc
+    @cython.returns(cython.void)
+    def initialize_filter_object_pointers(self):
         cdef:
             int t = self.t
             int inc = 1
@@ -880,8 +896,12 @@ cdef class {{prefix}}KalmanFilter(object):
             # This means that the zeroth entry in the time-dimension can hold the
             # input array (even though it is no different than what is held in the
             # initial_state_* arrays).
-            blas.{{prefix}}copy(&self.model._k_states, self.model._initial_state, &inc, self._input_state, &inc)
-            blas.{{prefix}}copy(&self.model._k_states2, self.model._initial_state_cov, &inc, self._input_state_cov, &inc)
+            blas.{{prefix}}copy(
+                &self.model._k_states, self.model._initial_state, &inc,
+                self._input_state, &inc)
+            blas.{{prefix}}copy(
+                &self.model._k_states2, self.model._initial_state_cov, &inc,
+                self._input_state_cov, &inc)
 
         # Initialize object-level pointers to output arrays
         self._forecast = &self.forecast[0, forecast_t]
@@ -893,8 +913,8 @@ cdef class {{prefix}}KalmanFilter(object):
         self._filtered_state_cov = &self.filtered_state_cov[0, 0, filtered_t]
         
         if self.filter_timing == TIMING_INIT_PREDICTED:
-            self._predicted_state = &self.predicted_state[0, predicted_t+1]
-            self._predicted_state_cov = &self.predicted_state_cov[0, 0, predicted_t+1]
+            self._predicted_state = &self.predicted_state[0, predicted_t + 1]
+            self._predicted_state_cov = &self.predicted_state_cov[0, 0, predicted_t + 1]
         else:
             self._predicted_state = &self.predicted_state[0, predicted_t]
             self._predicted_state_cov = &self.predicted_state_cov[0, 0, predicted_t]
@@ -961,24 +981,35 @@ cdef class {{prefix}}KalmanFilter(object):
             # The prediction step is the same as the conventional Kalman
             # filter
 
-    cdef void post_convergence(self):
-        # Constants
+    @cython.cfunc
+    @cython.returns(cython.void)
+    def post_convergence(self):
         cdef:
             int inc = 1
 
         if self.converged:
             # $F_t$
-            blas.{{prefix}}copy(&self.k_endog2, self._converged_forecast_error_cov, &inc, self._forecast_error_cov, &inc)
+            blas.{{prefix}}copy(
+                &self.k_endog2, self._converged_forecast_error_cov, &inc,
+                self._forecast_error_cov, &inc)
             # $P_{t|t}$
-            blas.{{prefix}}copy(&self.k_states2, self._converged_filtered_state_cov, &inc, self._filtered_state_cov, &inc)
+            blas.{{prefix}}copy(
+                &self.k_states2, self._converged_filtered_state_cov, &inc,
+                self._filtered_state_cov, &inc)
             # $P_t$
-            blas.{{prefix}}copy(&self.k_states2, self._converged_predicted_state_cov, &inc, self._predicted_state_cov, &inc)
+            blas.{{prefix}}copy(
+                &self.k_states2, self._converged_predicted_state_cov, &inc,
+                self._predicted_state_cov, &inc)
             # $K_t$
-            blas.{{prefix}}copy(&self.k_endogstates, self._converged_kalman_gain, &inc, self._kalman_gain, &inc)
+            blas.{{prefix}}copy(
+                &self.k_endogstates, self._converged_kalman_gain, &inc,
+                self._kalman_gain, &inc)
             # $|F_t|$
             self.determinant = self.converged_determinant
 
-    cdef void numerical_stability(self):
+    @cython.cfunc
+    @cython.returns(cython.void)
+    def numerical_stability(self):
         cdef int i, j
         cdef int predicted_t = self.t
         cdef {{cython_type}} value
@@ -996,14 +1027,15 @@ cdef class {{prefix}}KalmanFilter(object):
             for i in range(self.k_states):
                 for j in range(i, self.k_states):
                     value = 0.5 * (
-                        self.predicted_state_cov[i,j,predicted_t] +
-                        self.predicted_state_cov[j,i,predicted_t]
+                        self.predicted_state_cov[i, j, predicted_t] +
+                        self.predicted_state_cov[j, i, predicted_t]
                     )
-                    self.predicted_state_cov[i,j,predicted_t] = value
-                    self.predicted_state_cov[j,i,predicted_t] = value
+                    self.predicted_state_cov[i, j, predicted_t] = value
+                    self.predicted_state_cov[j, i, predicted_t] = value
 
-    cdef void check_convergence(self):
-        # Constants
+    @cython.cfunc
+    @cython.returns(cython.void)
+    def check_convergence(self):
         cdef:
             int inc = 1, missing_flag = 0
             {{cython_type}} alpha = 1.0
@@ -1025,7 +1057,7 @@ cdef class {{prefix}}KalmanFilter(object):
             gain_t = 0
 
         # Figure out if there is a missing value
-        if self.model.nmissing[self.t] > 0 or (not self.t == 0 and self.model.nmissing[self.t-1] > 0):
+        if self.model.nmissing[self.t] > 0 or (not self.t == 0 and self.model.nmissing[self.t - 1] > 0):
             missing_flag = 1
 
         if self.time_invariant and not self.converged and not missing_flag:
@@ -1034,10 +1066,14 @@ cdef class {{prefix}}KalmanFilter(object):
             # `tmp0` array used here, dimension $(m \times m)$  
             # `tmp00` array used here, dimension $(1 \times 1)$  
             if self.filter_timing == TIMING_INIT_PREDICTED:
-                blas.{{prefix}}copy(&self.k_states2, self._input_state_cov, &inc, self._tmp0, &inc)
+                blas.{{prefix}}copy(
+                    &self.k_states2, self._input_state_cov, &inc,
+                    self._tmp0, &inc)
                 blas.{{prefix}}axpy(&self.k_states2, &gamma, self._predicted_state_cov, &inc, self._tmp0, &inc)
             elif self.t > 0:
-                blas.{{prefix}}copy(&self.k_states2, &self.predicted_state_cov[0,0,predicted_t], &inc, self._tmp0, &inc)
+                blas.{{prefix}}copy(
+                    &self.k_states2, &self.predicted_state_cov[0,0,predicted_t], &inc,
+                    self._tmp0, &inc)
                 blas.{{prefix}}axpy(&self.k_states2, &gamma, &self.predicted_state_cov[0,0,predicted_t-1], &inc, self._tmp0, &inc)
             else:
                 return
@@ -1049,7 +1085,10 @@ cdef class {{prefix}}KalmanFilter(object):
                 self.period_converged = self.t
 
             {{else}}
-            blas.{{prefix}}gemv("N", &inc, &self.k_states2, &alpha, self._tmp0, &inc, self._tmp0, &inc, &beta, self._tmp00, &inc)
+            blas.{{prefix}}gemv(
+                "N", &inc, &self.k_states2, &alpha, self._tmp0, &inc,
+                self._tmp0, &inc,
+                &beta, self._tmp00, &inc)
             if {{combined_prefix}}abs(self._tmp00[0]) < self.tolerance:
                 self.converged = 1
                 self.period_converged = self.t
@@ -1059,20 +1098,29 @@ cdef class {{prefix}}KalmanFilter(object):
             # converged storage
             if self.converged == 1:
                 # $F_t$
-                blas.{{prefix}}copy(&self.k_endog2, &self.forecast_error_cov[0, 0, forecast_t], &inc, self._converged_forecast_error_cov, &inc)
+                blas.{{prefix}}copy(
+                    &self.k_endog2, &self.forecast_error_cov[0, 0, forecast_t], &inc,
+                    self._converged_forecast_error_cov, &inc)
                 # $P_{t|t}$
-                blas.{{prefix}}copy(&self.k_states2, &self.filtered_state_cov[0, 0, filtered_t], &inc, self._converged_filtered_state_cov, &inc)
+                blas.{{prefix}}copy(
+                    &self.k_states2, &self.filtered_state_cov[0, 0, filtered_t], &inc,
+                    self._converged_filtered_state_cov, &inc)
                 # $P_t$
-                blas.{{prefix}}copy(&self.k_states2, &self.predicted_state_cov[0, 0, predicted_t], &inc, self._converged_predicted_state_cov, &inc)
+                blas.{{prefix}}copy(
+                    &self.k_states2, &self.predicted_state_cov[0, 0, predicted_t], &inc,
+                    self._converged_predicted_state_cov, &inc)
                 # $|F_t|$
                 self.converged_determinant = self.determinant
                 # $K_t$
-                blas.{{prefix}}copy(&self.k_endogstates, &self.kalman_gain[0, 0, gain_t], &inc, self._converged_kalman_gain, &inc)
+                blas.{{prefix}}copy(
+                    &self.k_endogstates, &self.kalman_gain[0, 0, gain_t], &inc,
+                    self._converged_kalman_gain, &inc)
 
-    cdef void migrate_storage(self):
+    @cython.cfunc
+    @cython.returns(cython.void)
+    def migrate_storage(self):
         cdef:
             int inc = 1
-
 
         # Forecast: 1 -> 0
         if self.conserve_memory & MEMORY_NO_FORECAST > 0:

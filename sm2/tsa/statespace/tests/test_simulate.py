@@ -9,13 +9,11 @@ import os
 import warnings
 
 import numpy as np
-from numpy.testing import (assert_allclose, assert_almost_equal, assert_equal,
-                           assert_raises)
+from numpy.testing import assert_allclose, assert_almost_equal, assert_equal
 import pandas as pd
 from scipy.signal import lfilter
 
-from sm2.tsa.statespace import (sarimax, structural, varmax,
-                                        dynamic_factor)
+from sm2.tsa.statespace import sarimax, structural, varmax, dynamic_factor
 from sm2.tsa.statespace.tools import compatibility_mode
 
 
@@ -387,7 +385,7 @@ def test_varmax():
     assert_allclose(actual, desired)
 
     # VAR(1)
-    transition = np.array([[0.5,  0.1],
+    transition = np.array([[0.5, 0.1],
                            [-0.1, 0.2]])
 
     mod = varmax.VARMAX([[0, 0]], order=(1, 0), trend='nc')

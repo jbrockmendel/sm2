@@ -126,8 +126,8 @@ cdef class {{prefix}}SimulationSmoother(object):
         cdef:
             cnp.npy_intp dim1[1]
             cnp.npy_intp dim2[2]
-        cdef {{cython_type}} [::1,:] obs
-        cdef {{cython_type}} [::1,:] secondary_obs
+        cdef {{cython_type}} [::1, :] obs
+        cdef {{cython_type}} [::1, :] secondary_obs
         cdef int nobs_endog
 
         # Use model nobs by default
@@ -160,7 +160,8 @@ cdef class {{prefix}}SimulationSmoother(object):
         # )
 
         # Simulated model objects
-        dim2[0] = model.k_endog; dim2[1] = self.nobs;
+        dim2[0] = model.k_endog
+        dim2[1] = self.nobs
         obs = cnp.PyArray_ZEROS(2, dim2, {{typenum}}, FORTRAN)
         self.simulated_model = {{prefix}}Statespace(
             obs, model.design, model.obs_intercept, model.obs_cov,
@@ -184,9 +185,9 @@ cdef class {{prefix}}SimulationSmoother(object):
         # Koopman (2002).
         self.has_missing = model.has_missing
         if self.has_missing:
-            dim2[0] = model.k_endog; dim2[1] = self.nobs;
+            dim2[0] = model.k_endog; dim2[1] = self.nobs
             secondary_obs = cnp.PyArray_ZEROS(2, dim2, {{typenum}}, FORTRAN)
-            blas.{{prefix}}copy(&nobs_endog, &model.obs[0,0], &inc, &secondary_obs[0,0], &inc)
+            blas.{{prefix}}copy(&nobs_endog, &model.obs[0, 0], &inc, &secondary_obs[0, 0], &inc)
             self.secondary_simulated_model = {{prefix}}Statespace(
                 secondary_obs, model.design, model.obs_intercept, model.obs_cov,
                 model.transition, model.state_intercept, model.selection,
@@ -204,7 +205,7 @@ cdef class {{prefix}}SimulationSmoother(object):
         # be run over y_t^* = y_t - y_t^+, which means the observation equation
         # intercept should be zero; make sure that it is
         else:
-            dim2[0] = self.model.k_endog; dim2[1] = self.model.obs_intercept.shape[1];
+            dim2[0] = self.model.k_endog; dim2[1] = self.model.obs_intercept.shape[1]
             self.simulated_model.obs_intercept = cnp.PyArray_ZEROS(2, dim2, {{typenum}}, FORTRAN)
 
 
@@ -222,38 +223,38 @@ cdef class {{prefix}}SimulationSmoother(object):
         self.n_initial_state_variates = self.model.k_states
 
         # Random variates
-        dim1[0] = self.n_disturbance_variates;
+        dim1[0] = self.n_disturbance_variates
         self.disturbance_variates = cnp.PyArray_ZEROS(1, dim1, {{typenum}}, FORTRAN)
-        dim1[0] = self.n_initial_state_variates;
+        dim1[0] = self.n_initial_state_variates
         self.initial_state_variates = cnp.PyArray_ZEROS(1, dim1, {{typenum}}, FORTRAN)
 
         # Simulated data (\tilde eta_t, \tilde eps_t, \tilde alpha_t)
         # Note that these are (k_endog x nobs), (k_posdef x nobs), (k_states x nobs)
-        dim2[0] = self.model.k_endog; dim2[1] = self.nobs;
+        dim2[0] = self.model.k_endog; dim2[1] = self.nobs
         self.simulated_measurement_disturbance = cnp.PyArray_ZEROS(2, dim2, {{typenum}}, FORTRAN)
-        dim2[0] = self.model.k_posdef; dim2[1] = self.nobs;
+        dim2[0] = self.model.k_posdef; dim2[1] = self.nobs
         self.simulated_state_disturbance = cnp.PyArray_ZEROS(2, dim2, {{typenum}}, FORTRAN)
-        dim2[0] = self.model.k_states; dim2[1] = self.nobs;
+        dim2[0] = self.model.k_states; dim2[1] = self.nobs
         self.simulated_state = cnp.PyArray_ZEROS(2, dim2, {{typenum}}, FORTRAN)
 
         # Generated data (y_t^+, alpha_t^+)
-        dim2[0] = self.model.k_endog; dim2[1] = self.nobs;
+        dim2[0] = self.model.k_endog; dim2[1] = self.nobs
         self.generated_obs = cnp.PyArray_ZEROS(2, dim2, {{typenum}}, FORTRAN)
-        dim2[0] = self.model.k_states; dim2[1] = self.nobs+1;
+        dim2[0] = self.model.k_states; dim2[1] = self.nobs + 1
         self.generated_state = cnp.PyArray_ZEROS(2, dim2, {{typenum}}, FORTRAN)
 
         # Temporary arrays
-        dim2[0] = self.model.k_states; dim2[1] = self.model.k_states;
+        dim2[0] = self.model.k_states; dim2[1] = self.model.k_states
         self.tmp0 = cnp.PyArray_ZEROS(2, dim2, {{typenum}}, FORTRAN) # chol(P_1)
-        dim2[0] = self.model.k_posdef; dim2[1] = self.model.k_posdef;
+        dim2[0] = self.model.k_posdef; dim2[1] = self.model.k_posdef
         self.tmp2 = cnp.PyArray_ZEROS(2, dim2, {{typenum}}, FORTRAN) # chol(Q_t)
-        dim2[0] = self.model.k_endog; dim2[1] = self.model.k_endog;
+        dim2[0] = self.model.k_endog; dim2[1] = self.model.k_endog
         self.tmp1 = cnp.PyArray_ZEROS(2, dim2, {{typenum}}, FORTRAN) # chol(H_t)
 
         # Pointers
-        self._tmp0 = &self.tmp0[0,0]
-        self._tmp1 = &self.tmp1[0,0]
-        self._tmp2 = &self.tmp2[0,0]
+        self._tmp0 = &self.tmp0[0, 0]
+        self._tmp1 = &self.tmp1[0, 0]
+        self._tmp2 = &self.tmp2[0, 0]
 
     def __reduce__(self):
         args = (self.model, self.filter_method, self.inversion_method,
@@ -287,10 +288,9 @@ cdef class {{prefix}}SimulationSmoother(object):
         self.tmp1 = state['tmp1']
 
     cdef void _reinitialize_temp_pointers(self) except *:
-        self._tmp0 = &self.tmp0[0,0]
-        self._tmp1 = &self.tmp1[0,0]
-        self._tmp2 = &self.tmp2[0,0]
-
+        self._tmp0 = &self.tmp0[0, 0]
+        self._tmp1 = &self.tmp1[0, 0]
+        self._tmp2 = &self.tmp2[0, 0]
 
     cpdef draw_disturbance_variates(self):
         self.disturbance_variates = np.random.normal(size=self.n_disturbance_variates)
@@ -347,7 +347,7 @@ cdef class {{prefix}}SimulationSmoother(object):
             int k_posdef2 = self.model.k_posdef**2
             int nobs_endog = self.nobs * self.model.k_endog
             int nobs_kstates = self.nobs * self.model.k_states
-            int nobs1_kstates = (self.nobs+1) * self.model.k_states
+            int nobs1_kstates = (self.nobs + 1) * self.model.k_states
             int nobs_posdef = self.nobs * self.model.k_posdef
         cdef:
             {{cython_type}} alpha = 1.0
@@ -361,12 +361,20 @@ cdef class {{prefix}}SimulationSmoother(object):
         # 0. Statespace initialization
         if not self.model.initialized:
             raise RuntimeError("Statespace model not initialized.")
-        blas.{{prefix}}copy(&k_states, &self.model.initial_state[0], &inc, &self.simulated_model.initial_state[0], &inc)
-        blas.{{prefix}}copy(&k_states2, &self.model.initial_state_cov[0,0], &inc, &self.simulated_model.initial_state_cov[0,0], &inc)
+        blas.{{prefix}}copy(
+            &k_states, &self.model.initial_state[0], &inc,
+            &self.simulated_model.initial_state[0], &inc)
+        blas.{{prefix}}copy(
+            &k_states2, &self.model.initial_state_cov[0, 0], &inc,
+            &self.simulated_model.initial_state_cov[0, 0], &inc)
 
         if self.has_missing:
-            blas.{{prefix}}copy(&k_states, &self.model.initial_state[0], &inc, &self.secondary_simulated_model.initial_state[0], &inc)
-            blas.{{prefix}}copy(&k_states2, &self.model.initial_state_cov[0,0], &inc, &self.secondary_simulated_model.initial_state_cov[0,0], &inc)
+            blas.{{prefix}}copy(
+                &k_states, &self.model.initial_state[0], &inc,
+                &self.secondary_simulated_model.initial_state[0], &inc)
+            blas.{{prefix}}copy(
+                &k_states2, &self.model.initial_state_cov[0, 0], &inc,
+                &self.secondary_simulated_model.initial_state_cov[0, 0], &inc)
 
         # 0. Kalman filter initialization: get alpha_1^+ ~ N(a_1, P_1)
         # Usually, this means transforming the N(0,1) random variate
@@ -377,12 +385,16 @@ cdef class {{prefix}}SimulationSmoother(object):
         # alpha_1^+ = initial_state + variate
         # However, if fixed_initial_state is True, then we just set:
         # alpha_1^+ = variate
-        blas.{{prefix}}copy(&k_states, &self.initial_state_variates[0], &inc, &self.generated_state[0,0], &inc)
+        blas.{{prefix}}copy(
+            &k_states, &self.initial_state_variates[0], &inc,
+            &self.generated_state[0, 0], &inc)
         if not self.fixed_initial_state:
-            self.cholesky(&self.model.initial_state_cov[0,0], self._tmp0, k_states)
+            self.cholesky(&self.model.initial_state_cov[0, 0], self._tmp0, k_states)
             if not self.pretransformed_initial_state_variates:
-                self.transform_variates(&self.generated_state[0,0], self._tmp0, k_states)
-            blas.{{prefix}}axpy(&k_states, &alpha, &self.model.initial_state[0], &inc, &self.generated_state[0,0], &inc)
+                self.transform_variates(&self.generated_state[0, 0], self._tmp0, k_states)
+            blas.{{prefix}}axpy(
+                &k_states, &alpha, &self.model.initial_state[0], &inc,
+                &self.generated_state[0,0], &inc)
 
 
         self.simulated_kfilter.seek(0) # reset the filter
@@ -395,7 +407,10 @@ cdef class {{prefix}}SimulationSmoother(object):
             # (but only if there is not missing data - in that case we will
             # combine the actual data with the generated data in the primary
             # model, so copy the actual data here and subtract data below)
-            blas.{{prefix}}copy(&nobs_endog, &self.model.obs[0,0], &inc, &self.simulated_model.obs[0,0], &inc)
+            blas.{{prefix}}copy(
+                &nobs_endog, &self.model.obs[0, 0], &inc,
+                &self.simulated_model.obs[0, 0], &inc)
+
         for t in range(self.nobs):
             # 1. Transform independent draws to w_t^+: eps_t^+ = ind_eps * chol(H_t)
             #                                          eta_t^+ = ind_eta * chol(Q_t)
@@ -406,26 +421,30 @@ cdef class {{prefix}}SimulationSmoother(object):
             #    Measurement disturbance (eps)
             # self._tmp1 = chol(H_t)
             if t == 0 or self.model.obs_cov.shape[2] > 1:
-                self.cholesky(&self.model.obs_cov[0,0,t], self._tmp1, k_endog)
+                self.cholesky(&self.model.obs_cov[0, 0, t], self._tmp1, k_endog)
 
             # eps_t^+ = ind_eps * chol(H_t)
             if not self.pretransformed_disturbance_variates:
                 self.transform_variates(&self.disturbance_variates[measurement_idx], self._tmp1, k_endog)
             # y_t^+
-            self.generate_obs(t, &self.generated_obs[0,t], &self.generated_state[0,t], &self.disturbance_variates[measurement_idx])
+            self.generate_obs(t, &self.generated_obs[0, t],
+                              &self.generated_state[0, t],
+                              &self.disturbance_variates[measurement_idx])
 
             measurement_idx += k_endog
 
             #    State disturbance (eta)
             # self._tmp1 = chol(Q_t)
             if t == 0 or self.model.state_cov.shape[2] > 1:
-                self.cholesky(&self.model.state_cov[0,0,t], self._tmp2, k_posdef)
+                self.cholesky(&self.model.state_cov[0, 0, t], self._tmp2, k_posdef)
 
             # eta_t^+ = ind_eta * chol(Q_t)
             if not self.pretransformed_disturbance_variates:
                 self.transform_variates(&self.disturbance_variates[state_idx], self._tmp2, k_posdef)
             # alpha_t+1^+
-            self.generate_state(t, &self.generated_state[0,t+1], &self.generated_state[0,t], &self.disturbance_variates[state_idx])
+            self.generate_state(t, &self.generated_state[0, t + 1],
+                                &self.generated_state[0, t],
+                                &self.disturbance_variates[state_idx])
 
             state_idx += k_posdef
 
@@ -438,7 +457,9 @@ cdef class {{prefix}}SimulationSmoother(object):
             # y_t^+ and y_t, we can instead run it over y_t^* = y_t - y_t^+
             if not self.has_missing:
                 #    Construct y_t^* = - y_t^+ + y_t
-                blas.{{prefix}}axpy(&k_endog, &gamma, &self.generated_obs[0,t], &inc, &self.simulated_model.obs[0, t], &inc)
+                blas.{{prefix}}axpy(
+                    &k_endog, &gamma, &self.generated_obs[0, t], &inc,
+                    &self.simulated_model.obs[0, t], &inc)
 
                 # 3. Iterate Kalman filter, based on y_t^*
                 #    (this will give us alpha_t+1^*)
@@ -447,7 +468,9 @@ cdef class {{prefix}}SimulationSmoother(object):
             else:
                 # 3-1. Iterate the Kalman filter on the y_t^+ data
                 #      to get alpha_t+1^+
-                blas.{{prefix}}copy(&k_endog, &self.generated_obs[0,t], &inc, &self.simulated_model.obs[0, t], &inc)
+                blas.{{prefix}}copy(
+                    &k_endog, &self.generated_obs[0, t], &inc,
+                    &self.simulated_model.obs[0, t], &inc)
                 next(self.simulated_kfilter)
 
                 # 3-2. Iterate the Kalman filter on the y_t data
@@ -483,41 +506,57 @@ cdef class {{prefix}}SimulationSmoother(object):
             if self.simulation_output & SIMULATE_DISTURBANCE:
                 # If there are partially missing entries, we need to re-order
                 # the smoothed measurment disturbances.
-                tools.{{prefix}}reorder_missing_vector(self.secondary_simulated_smoother.smoothed_measurement_disturbance, self.model.missing)
-                blas.{{prefix}}swap(&nobs_endog, &self.simulated_smoother.smoothed_measurement_disturbance[0,0], &inc,
-                                                 &self.secondary_simulated_smoother.smoothed_measurement_disturbance[0,0], &inc)
-                blas.{{prefix}}axpy(&nobs_endog, &gamma, &self.secondary_simulated_smoother.smoothed_measurement_disturbance[0,0], &inc,
-                                                         &self.simulated_smoother.smoothed_measurement_disturbance[0,0], &inc)
-                blas.{{prefix}}swap(&nobs_posdef, &self.simulated_smoother.smoothed_state_disturbance[0,0], &inc,
-                                                  &self.secondary_simulated_smoother.smoothed_state_disturbance[0,0], &inc)
-                blas.{{prefix}}axpy(&nobs_posdef, &gamma, &self.secondary_simulated_smoother.smoothed_state_disturbance[0,0], &inc,
-                                                          &self.simulated_smoother.smoothed_state_disturbance[0,0], &inc)
+                tools.{{prefix}}reorder_missing_vector(
+                    self.secondary_simulated_smoother.smoothed_measurement_disturbance, self.model.missing)
+                blas.{{prefix}}swap(
+                    &nobs_endog, &self.simulated_smoother.smoothed_measurement_disturbance[0, 0], &inc,
+                    &self.secondary_simulated_smoother.smoothed_measurement_disturbance[0, 0], &inc)
+                blas.{{prefix}}axpy(
+                    &nobs_endog, &gamma, &self.secondary_simulated_smoother.smoothed_measurement_disturbance[0, 0], &inc,
+                    &self.simulated_smoother.smoothed_measurement_disturbance[0, 0], &inc)
+                blas.{{prefix}}swap(
+                    &nobs_posdef, &self.simulated_smoother.smoothed_state_disturbance[0, 0], &inc,
+                    &self.secondary_simulated_smoother.smoothed_state_disturbance[0, 0], &inc)
+                blas.{{prefix}}axpy(
+                    &nobs_posdef, &gamma, &self.secondary_simulated_smoother.smoothed_state_disturbance[0, 0], &inc,
+                    &self.simulated_smoother.smoothed_state_disturbance[0, 0], &inc)
 
             if self.simulation_output & SIMULATE_STATE:
-                blas.{{prefix}}swap(&nobs_kstates, &self.simulated_smoother.smoothed_state[0,0], &inc,
-                                                   &self.secondary_simulated_smoother.smoothed_state[0,0], &inc)
-                blas.{{prefix}}axpy(&nobs_kstates, &gamma, &self.secondary_simulated_smoother.smoothed_state[0,0], &inc,
-                                                           &self.simulated_smoother.smoothed_state[0,0], &inc)
+                blas.{{prefix}}swap(
+                    &nobs_kstates, &self.simulated_smoother.smoothed_state[0, 0], &inc,
+                    &self.secondary_simulated_smoother.smoothed_state[0, 0], &inc)
+                blas.{{prefix}}axpy(
+                    &nobs_kstates, &gamma, &self.secondary_simulated_smoother.smoothed_state[0, 0], &inc,
+                    &self.simulated_smoother.smoothed_state[0, 0], &inc)
 
         # Construct the final simulated variables
         # This gives us \tilde w_t = \hat w_t^* + w_t^+                (simulation_output & SIMULATE_DISTURBANCE)
         #               \tilde alpha_t+1 = \hat alpha_t^* + alpha_t^+  (simulation_output & SIMULATE_STATE)
         if self.simulation_output & SIMULATE_DISTURBANCE:
             # \tilde eps_t = \hat eps_t^* + eps_t^+
-            blas.{{prefix}}copy(&nobs_endog, &self.disturbance_variates[0], &inc, &self.simulated_measurement_disturbance[0,0], &inc)
-            blas.{{prefix}}axpy(&nobs_endog, &alpha, &self.simulated_smoother.smoothed_measurement_disturbance[0,0], &inc,
-                                                     &self.simulated_measurement_disturbance[0,0], &inc)
+            blas.{{prefix}}copy(
+                &nobs_endog, &self.disturbance_variates[0], &inc,
+                &self.simulated_measurement_disturbance[0, 0], &inc)
+            blas.{{prefix}}axpy(
+                &nobs_endog, &alpha, &self.simulated_smoother.smoothed_measurement_disturbance[0, 0], &inc,
+                &self.simulated_measurement_disturbance[0, 0], &inc)
 
             # \tilde eta_t = \hat eta_t^* + eta_t^+
-            blas.{{prefix}}copy(&nobs_posdef, &self.disturbance_variates[nobs_endog], &inc, &self.simulated_state_disturbance[0,0], &inc)
-            blas.{{prefix}}axpy(&nobs_posdef, &alpha, &self.simulated_smoother.smoothed_state_disturbance[0,0], &inc,
-                                                     &self.simulated_state_disturbance[0,0], &inc)
+            blas.{{prefix}}copy(
+                &nobs_posdef, &self.disturbance_variates[nobs_endog], &inc,
+                &self.simulated_state_disturbance[0,0], &inc)
+            blas.{{prefix}}axpy(
+                &nobs_posdef, &alpha, &self.simulated_smoother.smoothed_state_disturbance[0, 0], &inc,
+                &self.simulated_state_disturbance[0, 0], &inc)
 
         if self.simulation_output & SIMULATE_STATE:
             # \tilde alpha_t = \hat alpha_t^* + alpha_t^+
-            blas.{{prefix}}copy(&nobs_kstates, &self.generated_state[0,0], &inc, &self.simulated_state[0,0], &inc)
-            blas.{{prefix}}axpy(&nobs_kstates, &alpha, &self.simulated_smoother.smoothed_state[0,0], &inc,
-                                                       &self.simulated_state[0,0], &inc)
+            blas.{{prefix}}copy(
+                &nobs_kstates, &self.generated_state[0, 0], &inc,
+                &self.simulated_state[0,0], &inc)
+            blas.{{prefix}}axpy(
+                &nobs_kstates, &alpha, &self.simulated_smoother.smoothed_state[0, 0], &inc,
+                &self.simulated_state[0, 0], &inc)
 
     cdef {{cython_type}} generate_obs(self, int t, {{cython_type}} * obs, {{cython_type}} * state, {{cython_type}} * variates):
         cdef:
@@ -531,18 +570,25 @@ cdef class {{prefix}}SimulationSmoother(object):
 
         # Get indices for possibly time-varying arrays
         if not self.model.time_invariant:
-            if self.model.design.shape[2] > 1:             design_t = t
-            if self.model.obs_intercept.shape[1] > 1:      obs_intercept_t = t
+            if self.model.design.shape[2] > 1:
+                design_t = t
+            if self.model.obs_intercept.shape[1] > 1:
+                obs_intercept_t = t
 
         # \\# = d_t + \varepsilon_t
-        blas.{{prefix}}copy(&k_endog, variates, &inc, obs, &inc)
-        blas.{{prefix}}axpy(&k_endog, &alpha, &self.model.obs_intercept[0,obs_intercept_t], &inc, obs, &inc)
+        blas.{{prefix}}copy(
+            &k_endog, variates, &inc,
+            obs, &inc)
+        blas.{{prefix}}axpy(
+            &k_endog, &alpha, &self.model.obs_intercept[0, obs_intercept_t], &inc,
+            obs, &inc)
 
         # y_t = \\# + Z_t alpha_t
-        blas.{{prefix}}gemv("N", &k_endog, &k_states,
-                            &alpha, &self.model.design[0,0,design_t], &k_endog,
-                                    state, &inc,
-                            &alpha, obs, &inc)
+        blas.{{prefix}}gemv(
+            "N", &k_endog, &k_states,
+            &alpha, &self.model.design[0, 0, design_t], &k_endog,
+            state, &inc,
+            &alpha, obs, &inc)
 
     cdef {{cython_type}} generate_state(self, int t, {{cython_type}} * state, {{cython_type}} * input_state, {{cython_type}} * variates):
         cdef:
@@ -557,22 +603,29 @@ cdef class {{prefix}}SimulationSmoother(object):
 
         # Get indices for possibly time-varying arrays
         if not self.model.time_invariant:
-            if self.model.state_intercept.shape[1] > 1:      state_intercept_t = t
-            if self.model.transition.shape[2] > 1:           transition_t = t
-            if self.model.selection.shape[2] > 1:            selection_t = t
+            if self.model.state_intercept.shape[1] > 1:
+                state_intercept_t = t
+            if self.model.transition.shape[2] > 1:
+                transition_t = t
+            if self.model.selection.shape[2] > 1:
+                selection_t = t
 
         # \\# = R_t eta_t + c_t
-        blas.{{prefix}}copy(&k_states, &self.model.state_intercept[0,state_intercept_t], &inc, state, &inc)
-        blas.{{prefix}}gemv("N", &k_states, &k_posdef,
-                            &alpha, &self.model.selection[0,0,selection_t], &k_states,
-                                    variates, &inc,
-                            &alpha, state, &inc)
+        blas.{{prefix}}copy(
+            &k_states, &self.model.state_intercept[0, state_intercept_t], &inc,
+            state, &inc)
+        blas.{{prefix}}gemv(
+            "N", &k_states, &k_posdef,
+            &alpha, &self.model.selection[0, 0, selection_t], &k_states,
+            variates, &inc,
+            &alpha, state, &inc)
 
         # alpha_{t+1} = T_t alpha_t + \\#
-        blas.{{prefix}}gemv("N", &k_states, &k_states,
-                            &alpha, &self.model.transition[0,0,transition_t], &k_states,
-                                    input_state, &inc,
-                            &alpha, state, &inc)
+        blas.{{prefix}}gemv(
+            "N", &k_states, &k_states,
+            &alpha, &self.model.transition[0, 0, transition_t], &k_states,
+            input_state, &inc,
+            &alpha, state, &inc)
 
     cdef void cholesky(self, {{cython_type}} * source, {{cython_type}} * destination, int n):
         cdef:
@@ -593,7 +646,8 @@ cdef class {{prefix}}SimulationSmoother(object):
         if n == 1:
             variates[0] = cholesky_factor[0] * variates[0]
         else:
-            blas.{{prefix}}trmv("L", "N", "N", &n, cholesky_factor, &n,
-                                                   variates, &inc)
+            blas.{{prefix}}trmv(
+                "L", "N", "N", &n, cholesky_factor, &n,
+                variates, &inc)
 
 {{endfor}}

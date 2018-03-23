@@ -18,12 +18,13 @@ import warnings
 import os
 
 import numpy as np
-from numpy.testing import assert_equal, assert_almost_equal, assert_raises, assert_allclose
+from numpy.testing import assert_equal, assert_almost_equal, assert_allclose
 import pandas as pd
 import pytest
 
 from sm2.tsa.statespace.representation import Representation
-from sm2.tsa.statespace.kalman_filter import KalmanFilter, FilterResults, PredictionResults
+from sm2.tsa.statespace.kalman_filter import (KalmanFilter, FilterResults,
+                                              PredictionResults)
 from sm2.tsa.statespace import tools, sarimax
 from .results import results_kalman_filter
 
@@ -559,14 +560,14 @@ def test_slice_notation():
         mod['designs',0,0] = 1
     def set_designs3():
         mod[0] = 1
-    assert_raises(IndexError, set_designs)
-    assert_raises(IndexError, set_designs2)
-    assert_raises(IndexError, set_designs3)
+    pytest.raises(IndexError, set_designs)
+    pytest.raises(IndexError, set_designs2)
+    pytest.raises(IndexError, set_designs3)
 
     # Test invalid __getitem__
-    assert_raises(IndexError, lambda: mod['designs'])
-    assert_raises(IndexError, lambda: mod['designs',0,0,0])
-    assert_raises(IndexError, lambda: mod[0])
+    pytest.raises(IndexError, lambda: mod['designs'])
+    pytest.raises(IndexError, lambda: mod['designs',0,0,0])
+    pytest.raises(IndexError, lambda: mod[0])
 
     # Test valid __setitem__, __getitem__
     assert_equal(mod.design[0,0,0], 0)
@@ -589,13 +590,13 @@ def test_representation():
     # Test an invalid number of states
     def zero_kstates():
         mod = Representation(1, 0)
-    assert_raises(ValueError, zero_kstates)
+    pytest.raises(ValueError, zero_kstates)
 
     # Test an invalid endogenous array
     def empty_endog():
         endog = np.zeros((0,0))
         mod = Representation(endog, k_states=2)
-    assert_raises(ValueError, empty_endog)
+    pytest.raises(ValueError, empty_endog)
 
     # Test a Fortran-ordered endogenous array (which will be assumed to be in
     # wide format: k_endog x nobs)
@@ -627,7 +628,7 @@ def test_bind():
     mod = Representation(2, k_states=2)
 
     # Test invalid endogenous array (it must be ndarray)
-    assert_raises(ValueError, lambda: mod.bind([1,2,3,4]))
+    pytest.raises(ValueError, lambda: mod.bind([1,2,3,4]))
 
     # Test valid (nobs x 1) endogenous array
     mod.bind(np.arange(10).reshape((5,2))*1.)
@@ -637,7 +638,7 @@ def test_bind():
     mod.bind(np.zeros((0,2),dtype=np.float64))
 
     # Test invalid (3-dim) endogenous array
-    assert_raises(ValueError, lambda: mod.bind(np.arange(12).reshape(2,2,3)*1.))
+    pytest.raises(ValueError, lambda: mod.bind(np.arange(12).reshape(2,2,3)*1.))
 
     # Test valid F-contiguous
     mod.bind(np.asfortranarray(np.arange(10).reshape(2,5)))
@@ -648,10 +649,10 @@ def test_bind():
     assert_equal(mod.nobs, 5)
 
     # Test invalid F-contiguous
-    assert_raises(ValueError, lambda: mod.bind(np.asfortranarray(np.arange(10).reshape(5,2))))
+    pytest.raises(ValueError, lambda: mod.bind(np.asfortranarray(np.arange(10).reshape(5,2))))
 
     # Test invalid C-contiguous
-    assert_raises(ValueError, lambda: mod.bind(np.arange(10).reshape(2,5)))
+    pytest.raises(ValueError, lambda: mod.bind(np.arange(10).reshape(2,5)))
 
 
 def test_initialization():
@@ -660,7 +661,7 @@ def test_initialization():
     mod = Representation(1, k_states=2)
 
     # Test invalid state initialization
-    assert_raises(RuntimeError, lambda: mod._initialize_state())
+    pytest.raises(RuntimeError, lambda: mod._initialize_state())
 
     # Test valid initialization
     initial_state = np.zeros(2,) + 1.5
@@ -671,14 +672,14 @@ def test_initialization():
 
     # Test invalid initial_state
     initial_state = np.zeros(10,)
-    assert_raises(ValueError, lambda: mod.initialize_known(initial_state, initial_state_cov))
+    pytest.raises(ValueError, lambda: mod.initialize_known(initial_state, initial_state_cov))
     initial_state = np.zeros((10,10))
-    assert_raises(ValueError, lambda: mod.initialize_known(initial_state, initial_state_cov))
+    pytest.raises(ValueError, lambda: mod.initialize_known(initial_state, initial_state_cov))
 
     # Test invalid initial_state_cov
     initial_state = np.zeros(2,) + 1.5
     initial_state_cov = np.eye(3)
-    assert_raises(ValueError, lambda: mod.initialize_known(initial_state, initial_state_cov))
+    pytest.raises(ValueError, lambda: mod.initialize_known(initial_state, initial_state_cov))
 
 
 def test_no_endog():
@@ -688,10 +689,10 @@ def test_no_endog():
     mod = KalmanFilter(k_endog=1, k_states=1)
 
     # directly call the _initialize_filter function
-    assert_raises(RuntimeError, mod._initialize_filter)
+    pytest.raises(RuntimeError, mod._initialize_filter)
     # indirectly call it through filtering
     mod.initialize_approximate_diffuse()
-    assert_raises(RuntimeError, mod.filter)
+    pytest.raises(RuntimeError, mod.filter)
 
 
 def test_cython():
@@ -777,8 +778,8 @@ def test_loglike():
 
     # Test that self.memory_no_likelihood = True raises an error
     mod.memory_no_likelihood = True
-    assert_raises(RuntimeError, mod.loglike)
-    assert_raises(RuntimeError, mod.loglikeobs)
+    pytest.raises(RuntimeError, mod.loglike)
+    pytest.raises(RuntimeError, mod.loglikeobs)
 
 
 def test_predict():
@@ -796,25 +797,25 @@ def test_predict():
     # Check that we need both forecasts and predicted output for prediction
     mod.memory_no_forecast = True
     res = mod.filter()
-    assert_raises(ValueError, res.predict)
+    pytest.raises(ValueError, res.predict)
     mod.memory_no_forecast = False
 
     mod.memory_no_predicted = True
     res = mod.filter()
-    assert_raises(ValueError, res.predict)
+    pytest.raises(ValueError, res.predict)
     mod.memory_no_predicted = False
 
     # Now get a clean filter object
     res = mod.filter()
 
     # Check that start < 0 is an error
-    assert_raises(ValueError, res.predict, start=-1)
+    pytest.raises(ValueError, res.predict, start=-1)
 
     # Check that end < start is an error
-    assert_raises(ValueError, res.predict, start=2, end=1)
+    pytest.raises(ValueError, res.predict, start=2, end=1)
 
     # Check that dynamic < 0 is an error
-    assert_raises(ValueError, res.predict, dynamic=-1)
+    pytest.raises(ValueError, res.predict, dynamic=-1)
 
     # Check that dynamic > end is an warning
     with warnings.catch_warnings(record=True) as w:
@@ -840,16 +841,16 @@ def test_predict():
 
     # Check that an error is raised when a new time-varying matrix is not
     # provided
-    assert_raises(ValueError, res.predict, end=res.nobs+1)
+    pytest.raises(ValueError, res.predict, end=res.nobs+1)
 
     # Check that an error is raised when a non-two-dimensional obs_intercept
     # is given
-    assert_raises(ValueError, res.predict, end=res.nobs+1,
+    pytest.raises(ValueError, res.predict, end=res.nobs+1,
                   obs_intercept=np.zeros(1))
 
     # Check that an error is raised when an obs_intercept with incorrect length
     # is given
-    assert_raises(ValueError, res.predict, end=res.nobs+1,
+    pytest.raises(ValueError, res.predict, end=res.nobs+1,
                   obs_intercept=np.zeros(2))
 
     # Check that start=None gives start=0 and end=None gives end=nobs
@@ -897,7 +898,7 @@ def test_predict():
     assert_equal(prediction_results.predicted_state_cov.shape, (1, 1, 2))
 
     # Check for invalid attribute
-    assert_raises(AttributeError, getattr, prediction_results, 'test')
+    pytest.raises(AttributeError, getattr, prediction_results, 'test')
 
     # Check that an error is raised when a non-two-dimensional obs_cov
     # is given
@@ -911,9 +912,9 @@ def test_predict():
     mod['state_cov', :] = 1
     res = mod.filter()
 
-    assert_raises(ValueError, res.predict, end=res.nobs+1,
+    pytest.raises(ValueError, res.predict, end=res.nobs+1,
                   obs_cov=np.zeros((1,1)))
-    assert_raises(ValueError, res.predict, end=res.nobs+1,
+    pytest.raises(ValueError, res.predict, end=res.nobs+1,
                   obs_cov=np.zeros((1,1,2)))
 
 
@@ -1021,7 +1022,7 @@ def test_simulate():
     mod['design', 0, 0] = 1.
     mod['transition', 0, 0] = 1.
     mod['selection', 0, 0] = 1.
-    assert_raises(ValueError, mod.simulate, nsimulations+1, measurement_shocks,
+    pytest.raises(ValueError, mod.simulate, nsimulations+1, measurement_shocks,
                   state_shocks)
 
     # ARMA(1,1): phi = [0.1], theta = [0.5], sigma^2 = 2
@@ -1130,9 +1131,9 @@ def test_impulse_responses():
     # Univariate model (random walk): test that an error is thrown when
     # a multivariate or empty "impulse" is sent
     mod = KalmanFilter(k_endog=1, k_states=1)
-    assert_raises(ValueError, mod.impulse_responses, impulse=1)
-    assert_raises(ValueError, mod.impulse_responses, impulse=[1,1])
-    assert_raises(ValueError, mod.impulse_responses, impulse=[])
+    pytest.raises(ValueError, mod.impulse_responses, impulse=1)
+    pytest.raises(ValueError, mod.impulse_responses, impulse=[1,1])
+    pytest.raises(ValueError, mod.impulse_responses, impulse=[])
 
     # Univariate model with two uncorrelated shocks
     mod = KalmanFilter(k_endog=1, k_states=2)

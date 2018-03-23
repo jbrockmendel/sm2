@@ -6,32 +6,33 @@ License: Simplified-BSD
 """
 from __future__ import division, absolute_import, print_function
 
+import pytest
 import numpy as np
 from numpy.testing import (
-    assert_allclose, assert_equal, assert_array_equal, assert_almost_equal,
-    assert_raises)
+    assert_allclose, assert_equal, assert_array_equal, assert_almost_equal)
 import pandas as pd
 from scipy.linalg import solve_discrete_lyapunov
 
 from sm2.tsa.statespace import tools
-from statsmodels.tsa.api import acovf
+# from statsmodels.tsa.api import acovf
+acovf = None  # dummy to suppress flake8 warnings
 
 # from .results import results_sarimax
 
 class TestCompanionMatrix(object):
 
     cases = [
-        (2, np.array([[0,1],[0,0]])),
-        ([1,-1,-2], np.array([[1,1],
-                              [2,0]])),
-        ([1,-1,-2,-3], np.array([[1,1,0],
-                                 [2,0,1],
-                                 [3,0,0]])),
-        ([1,-np.array([[1,2],[3,4]]),-np.array([[5,6],[7,8]])],
-         np.array([[1,2,5,6],
-                   [3,4,7,8],
-                   [1,0,0,0],
-                   [0,1,0,0]]).T)
+        (2, np.array([[0, 1], [0, 0]])),
+        ([1, -1, -2], np.array([[1, 1],
+                              [2, 0]])),
+        ([1, -1, -2, -3], np.array([[1, 1, 0],
+                                 [2, 0, 1],
+                                 [3, 0, 0]])),
+        ([1, -np.array([[1, 2], [3, 4]]), -np.array([[5, 6], [7, 8]])],
+         np.array([[1, 2, 5, 6],
+                   [3, 4, 7, 8],
+                   [1, 0, 0, 0],
+                   [0, 1, 0, 0]]).T)
     ]
 
     def test_cases(self):
@@ -43,7 +44,7 @@ class TestDiff(object):
     x = np.arange(10)
     cases = [
         # diff = 1
-        ([1,2,3], 1, None, 1, [1, 1]),
+        ([1, 2, 3], 1, None, 1, [1, 1]),
         # diff = 2
         (x, 2, None, 1, [0]*8),
         # diff = 1, seasonal_diff=1, seasonal_periods=4
@@ -60,7 +61,7 @@ class TestDiff(object):
     def test_cases(self):
         # Basic cases
         for series, diff, seasonal_diff, seasonal_periods, result in self.cases:
-            
+
             # Test numpy array
             x = tools.diff(series, diff, seasonal_diff, seasonal_periods)
             assert_almost_equal(x, result)
@@ -150,21 +151,21 @@ class TestSolveDiscreteLyapunov(object):
 class TestConcat(object):
 
     x = np.arange(10)
-    
+
     valid = [
-        (((1,2,3),(4,)), (1,2,3,4)),
-        (((1,2,3),[4]), (1,2,3,4)),
-        (([1,2,3],np.r_[4]), (1,2,3,4)),
-        ((np.r_[1,2,3],pd.Series([4])), 0, True, (1,2,3,4)),
-        ((pd.Series([1,2,3]),pd.Series([4])), 0, True, (1,2,3,4)),
-        ((np.c_[x[:2],x[:2]], np.c_[x[2:3],x[2:3]]), np.c_[x[:3],x[:3]]),
-        ((np.c_[x[:2],x[:2]].T, np.c_[x[2:3],x[2:3]].T), 1, np.c_[x[:3],x[:3]].T),
-        ((pd.DataFrame(np.c_[x[:2],x[:2]]), np.c_[x[2:3],x[2:3]]), 0, True, np.c_[x[:3],x[:3]]),
+        (((1, 2, 3), (4, )), (1, 2, 3, 4)),
+        (((1, 2, 3), [4]), (1, 2, 3, 4)),
+        (([1, 2, 3], np.r_[4]), (1, 2, 3, 4)),
+        ((np.r_[1, 2, 3], pd.Series([4])), 0, True, (1, 2, 3, 4)),
+        ((pd.Series([1, 2, 3]), pd.Series([4])), 0, True, (1, 2, 3, 4)),
+        ((np.c_[x[:2], x[:2]], np.c_[x[2:3], x[2:3]]), np.c_[x[:3], x[:3]]),
+        ((np.c_[x[:2], x[:2]].T, np.c_[x[2:3], x[2:3]].T), 1, np.c_[x[:3], x[:3]].T),
+        ((pd.DataFrame(np.c_[x[:2], x[:2]]), np.c_[x[2:3], x[2:3]]), 0, True, np.c_[x[:3], x[:3]]),
     ]
 
     invalid = [
-        (((1,2,3), pd.Series([4])), ValueError),
-        (((1,2,3), np.array([[1,2]])), ValueError)
+        (((1, 2, 3), pd.Series([4])), ValueError),
+        (((1, 2, 3), np.array([[1, 2]])), ValueError)
     ]
 
     def test_valid(self):
@@ -173,7 +174,8 @@ class TestConcat(object):
 
     def test_invalid(self):
         for args in self.invalid:
-            assert_raises(args[-1], tools.concat, *args[:-1])
+            with pytest.raises(args[-1]):
+                tools.concat(*args[:-1])
 
 class TestIsInvertible(object):
 
@@ -181,9 +183,9 @@ class TestIsInvertible(object):
         ([1, -0.5], True),
         ([1, 1-1e-9], True),
         ([1, 1], False),
-        ([1, 0.9,0.1], True),
-        (np.array([1,0.9,0.1]), True),
-        (pd.Series([1,0.9,0.1]), True)
+        ([1, 0.9, 0.1], True),
+        (np.array([1, 0.9, 0.1]), True),
+        (pd.Series([1, 0.9, 0.1]), True)
     ]
 
     def test_cases(self):
@@ -234,17 +236,17 @@ class TestStationaryUnivariate(object):
 class TestValidateMatrixShape(object):
     # name, shape, nrows, ncols, nobs
     valid = [
-        ('TEST', (5,2), 5, 2, None),
-        ('TEST', (5,2), 5, 2, 10),
-        ('TEST', (5,2,10), 5, 2, 10),
+        ('TEST', (5, 2), 5, 2, None),
+        ('TEST', (5, 2), 5, 2, 10),
+        ('TEST', (5, 2, 10), 5, 2, 10),
     ]
     invalid = [
-        ('TEST', (5,), 5, None, None),
-        ('TEST', (5,1,1,1), 5, 1, None),
-        ('TEST', (5,2), 10, 2, None),
-        ('TEST', (5,2), 5, 1, None),
-        ('TEST', (5,2,10), 5, 2, None),
-        ('TEST', (5,2,10), 5, 2, 5),
+        ('TEST', (5, ), 5, None, None),
+        ('TEST', (5, 1, 1, 1), 5, 1, None),
+        ('TEST', (5, 2), 10, 2, None),
+        ('TEST', (5, 2), 5, 1, None),
+        ('TEST', (5, 2, 10), 5, 2, None),
+        ('TEST', (5, 2, 10), 5, 2, 5),
     ]
 
     def test_valid_cases(self):
@@ -254,22 +256,22 @@ class TestValidateMatrixShape(object):
 
     def test_invalid_cases(self):
         for args in self.invalid:
-            assert_raises(
-                ValueError, tools.validate_matrix_shape, *args
-            )
+            with pytest.raises(ValueError):
+                tools.validate_matrix_shape(*args)
+
 
 class TestValidateVectorShape(object):
     # name, shape, nrows, ncols, nobs
     valid = [
         ('TEST', (5,), 5, None),
         ('TEST', (5,), 5, 10),
-        ('TEST', (5,10), 5, 10),
+        ('TEST', (5, 10), 5, 10),
     ]
     invalid = [
-        ('TEST', (5,2,10), 5, 10),
+        ('TEST', (5, 2, 10), 5, 10),
         ('TEST', (5,), 10, None),
-        ('TEST', (5,10), 5, None),
-        ('TEST', (5,10), 5, 5),
+        ('TEST', (5, 10), 5, None),
+        ('TEST', (5, 10), 5, 5),
     ]
 
     def test_valid_cases(self):
@@ -279,22 +281,23 @@ class TestValidateVectorShape(object):
 
     def test_invalid_cases(self):
         for args in self.invalid:
-            assert_raises(
-                ValueError, tools.validate_vector_shape, *args
-            )
+            with pytest.raises(ValueError):
+                tools.validate_vector_shape(*args)
 
+
+@pytest.mark.skip(reason="acovf not ported from upstream")
 def test_multivariate_acovf():
     _acovf = tools._compute_multivariate_acovf_from_coefficients
 
     # Test for a VAR(1) process. From Lutkepohl (2007), pages 27-28.
     # See (2.1.14) for Phi_1, (2.1.33) for Sigma_u, and (2.1.34) for Gamma_0
-    Sigma_u = np.array([[2.25, 0,   0],
-                        [0,    1.0, 0.5],
-                        [0,    0.5, 0.74]])
-    Phi_1 = np.array([[0.5, 0,   0],
+    Sigma_u = np.array([[2.25, 0, 0],
+                        [0, 1.0, 0.5],
+                        [0, 0.5, 0.74]])
+    Phi_1 = np.array([[0.5, 0, 0],
                       [0.1, 0.1, 0.3],
-                      [0,   0.2, 0.3]])
-    Gamma_0 = np.array([[3.0,   0.161, 0.019],
+                      [0, 0.2, 0.3]])
+    Gamma_0 = np.array([[3.0, 0.161, 0.019],
                         [0.161, 1.172, 0.674],
                         [0.019, 0.674, 0.954]])
     assert_allclose(_acovf([Phi_1], Sigma_u)[0], Gamma_0, atol=1e-3)
@@ -305,7 +308,7 @@ def test_multivariate_acovf():
     Sigma_u = np.diag([0.09, 0.04])
     Phi_1 = np.array([[0.5, 0.1],
                       [0.4, 0.5]])
-    Phi_2 = np.array([[0,    0],
+    Phi_2 = np.array([[0, 0],
                       [0.25, 0]])
     Gamma_0 = np.array([[0.131, 0.066],
                         [0.066, 0.181]])
@@ -464,33 +467,33 @@ def test_reorder_matrix_rows():
     missing[0, 0] = 1
     given[:, :, 0] = np.array([[21, 22, 23],
                                [31, 32, 33],
-                               [0,  0,  0]])
+                               [0, 0, 0]])
     desired[0, :, 0] = 0
 
     missing[:2, 1] = 1
     given[:, :, 1] = np.array([[31, 32, 33],
-                               [0,  0,  0],
-                               [0,  0,  0]])
+                               [0, 0, 0],
+                               [0, 0, 0]])
     desired[:2, :, 1] = 0
 
     missing[0, 2] = 1
     missing[2, 2] = 1
     given[:, :, 2] = np.array([[21, 22, 23],
-                               [0,  0,  0],
-                               [0,  0,  0]])
+                               [0, 0, 0],
+                               [0, 0, 0]])
     desired[0, :, 2] = 0
     desired[2, :, 2] = 0
 
     missing[1, 3] = 1
     given[:, :, 3] = np.array([[11, 12, 13],
                                [31, 32, 33],
-                               [0,  0,  0]])
+                               [0, 0, 0]])
     desired[1, :, 3] = 0
 
     missing[2, 4] = 1
     given[:, :, 4] = np.array([[11, 12, 13],
                                [21, 22, 23],
-                               [0,  0,  0]])
+                               [0, 0, 0]])
     desired[2, :, 4] = 0
 
     actual = np.asfortranarray(given)
@@ -571,19 +574,19 @@ def test_reorder_submatrix():
 
     given[:, :, 0] = np.array([[22, 23, 0],
                                [32, 33, 0],
-                               [0,  0,  0]])
+                               [0, 0, 0]])
     desired[0, :, 0] = 0
     desired[:, 0, 0] = 0
 
     given[:, :, 1] = np.array([[33, 0, 0],
-                               [0,  0, 0],
-                               [0,  0,  0]])
+                               [0, 0, 0],
+                               [0, 0, 0]])
     desired[:2, :, 1] = 0
     desired[:, :2, 1] = 0
 
     given[:, :, 2] = np.array([[22, 0, 0],
-                               [0,  0, 0],
-                               [0,  0, 0]])
+                               [0, 0, 0],
+                               [0, 0, 0]])
     desired[0, :, 2] = 0
     desired[:, 0, 2] = 0
     desired[2, :, 2] = 0
@@ -591,13 +594,13 @@ def test_reorder_submatrix():
 
     given[:, :, 3] = np.array([[11, 13, 0],
                                [31, 33, 0],
-                               [0,  0,  0]])
+                               [0, 0, 0]])
     desired[1, :, 3] = 0
     desired[:, 1, 3] = 0
 
     given[:, :, 4] = np.array([[11, 12, 0],
                                [21, 22, 0],
-                               [0,  0,  0]])
+                               [0, 0, 0]])
     desired[2, :, 4] = 0
     desired[:, 2, 4] = 0
 
@@ -628,19 +631,19 @@ def test_reorder_diagonal_submatrix():
 
     given[:, :, 0] = np.array([[22, 00, 0],
                                [00, 33, 0],
-                               [0,  0,  0]])
+                               [0, 0, 0]])
     desired[0, :, 0] = 0
     desired[:, 0, 0] = 0
 
     given[:, :, 1] = np.array([[33, 0, 0],
-                               [0,  0, 0],
-                               [0,  0,  0]])
+                               [0, 0, 0],
+                               [0, 0, 0]])
     desired[:2, :, 1] = 0
     desired[:, :2, 1] = 0
 
     given[:, :, 2] = np.array([[22, 0, 0],
-                               [0,  0, 0],
-                               [0,  0, 0]])
+                               [0, 0, 0],
+                               [0, 0, 0]])
     desired[0, :, 2] = 0
     desired[:, 0, 2] = 0
     desired[2, :, 2] = 0
@@ -648,13 +651,13 @@ def test_reorder_diagonal_submatrix():
 
     given[:, :, 3] = np.array([[11, 00, 0],
                                [00, 33, 0],
-                               [0,  0,  0]])
+                               [0, 0, 0]])
     desired[1, :, 3] = 0
     desired[:, 1, 3] = 0
 
     given[:, :, 4] = np.array([[11, 00, 0],
                                [00, 22, 0],
-                               [0,  0,  0]])
+                               [0, 0, 0]])
     desired[2, :, 4] = 0
     desired[:, 2, 4] = 0
 
