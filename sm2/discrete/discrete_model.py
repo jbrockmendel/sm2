@@ -158,10 +158,7 @@ class DiscreteModel(base.LikelihoodModel):
         super(DiscreteModel, self).__init__(endog, exog, **kwargs)
         self.raise_on_perfect_prediction = True
 
-        if not hasattr(self, 'nobs'):
-            # TODO: make this systematically impossible
-            self.nobs = self.exog.shape[0]
-        assert self.nobs == self.exog.shape[0]
+        assert self.nobs == self.exog.shape[0]  # i.e. not messed up in super
 
     def initialize(self):
         """
@@ -318,8 +315,8 @@ class DiscreteModel(base.LikelihoodModel):
             # TODO: fix upstream raises Exception, also in subclasses
             # they raise at the _end_ of the call (and redundantly)
             raise ValueError("argument method == %s, which is not handled"
-                             % method)
-        if qc_verbose:
+                             % method)  # pragma: no cover
+        if qc_verbose:  # pragma: no cover
             # TODO: Update docstring to reflect this restriction
             raise NotImplementedError("option `qc_verbose` is available "
                                       "upstream, but is disabled in sm2.")
@@ -446,7 +443,7 @@ class FitBase(DiscreteModel):
             # TODO: fix upstream raises Exception
             # (and does it at the _end_ of the call)
             raise ValueError("argument method == %s, which is not handled"
-                             % method)
+                             % method)  # pragma: no cover
 
         bnryfit = DiscreteModel.fit_regularized(self,
                                                 start_params=start_params,
@@ -776,7 +773,8 @@ class CountModel(FitBase):
             raise ValueError("offset is not the same length as endog")
 
         if exposure is not None and exposure.shape[0] != endog.shape[0]:
-            raise ValueError("exposure is not the same length as endog")
+            raise ValueError("exposure is not the same length "
+                             "as endog")  # pragma: no cover
 
     def _get_init_kwds(self):
         # this is a temporary fixup because exposure has been transformed
@@ -1374,7 +1372,7 @@ class GeneralizedPoisson(CountModel):
             # TODO: Fix upstream raises Exception
             # (and does it at the _end_ of the method)
             raise ValueError("argument method == %s, which is not handled"
-                             % method)
+                             % method)  # pragma: no cover
 
         if np.size(alpha) == 1 and alpha != 0:
             k_params = self.exog.shape[1] + self.k_extra
@@ -1456,6 +1454,7 @@ class GeneralizedPoisson(CountModel):
         else:
             return score
 
+    # TODO: Not hit in tests
     def _score_p(self, params):
         """
         Generalized Poisson model derivative of the log-likelihood
@@ -1604,7 +1603,7 @@ class GeneralizedPoisson(CountModel):
                               offset=offset)[:, None]
             return genpoisson_p.pmf(counts, mu, params[-1],
                                     self.parameterization + 1)
-        else:
+        else:  # pragma: no cover
             raise ValueError('keyword "which" not recognized')
 
 
@@ -2292,7 +2291,8 @@ class NegativeBinomial(CountModel):
             self.hessian = self._hessian_geom
             self.score = self._score_geom
             self.loglikeobs = self._ll_geometric
-        else:
+        else:  # pragma: no cover
+            # TODO: Should this be a ValueError?
             raise NotImplementedError("Likelihood type must nb1, nb2 or "
                                       "geometric")
 
@@ -2629,7 +2629,7 @@ class NegativeBinomial(CountModel):
             # TODO: fix upstream incorrectly raises Exception
             # (and does it at the very _end_ of the method)
             raise ValueError("argument method == %s, which is not handled"
-                             % method)
+                             % method)  # pragma: no cover
 
         if self.loglike_method.startswith('nb') and (np.size(alpha) == 1 and
                                                      alpha != 0):
@@ -2994,7 +2994,7 @@ class NegativeBinomialP(CountModel):
         if method not in ['l1', 'l1_cvxopt_cp']:
             # TODO: Fix upstream incorrectly raises TypeError
             raise ValueError("argument method == %s, which is not handled"
-                             % method)
+                             % method)  # pragma: no cover
 
         if np.size(alpha) == 1 and alpha != 0:
             k_params = self.exog.shape[1] + self.k_extra
@@ -3089,8 +3089,9 @@ class NegativeBinomialP(CountModel):
             mu = self.predict(params, exog, exposure, offset)
             size, prob = self.convert_params(params, mu)
             return stats.nbinom.pmf(counts, size[:, None], prob[:, None])
-        else:
-            raise TypeError('keyword "which" = %s not recognized' % which)
+        else:  # pragma: no cover
+            # TODO: fix upstream this is A TypeError
+            raise ValueError('keyword "which" = %s not recognized' % which)
 
     def convert_params(self, params, mu):
         alpha = params[-1]

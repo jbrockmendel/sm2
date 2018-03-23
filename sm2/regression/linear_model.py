@@ -376,6 +376,7 @@ class RegressionModel(base.LikelihoodModel):
             dist_class = stats.distributions.norm
         gen = dist_class(loc=fit, scale=np.sqrt(scale))
         return gen
+        # TODO: not hit in tests.  needed?
 
 
 class GLS(RegressionModel):
@@ -1202,6 +1203,7 @@ def yule_walker(X, order=1, method="unbiased", df=None, inv=False,
     rho = np.linalg.solve(R, r[1:])
     sigmasq = r[0] - (r[1:] * rho).sum()
     if inv:
+        # TODO: Not hit in tests; remove multiple-return?
         return rho, np.sqrt(sigmasq), np.linalg.inv(R)
     else:
         return rho, np.sqrt(sigmasq)
