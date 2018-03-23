@@ -2296,12 +2296,17 @@ class NegativeBinomial(CountModel):
             raise NotImplementedError("Likelihood type must nb1, nb2 or "
                                       "geometric")
 
-    # Workaround to pickle instance methods
     def __getstate__(self):
         odict = self.__dict__.copy()  # copy the dict since we change it
-        del odict['hessian']
-        del odict['score']
-        del odict['loglikeobs']
+        # Workaround to pickle instance methods; see GH#4083
+        import types
+        # TODO: can we just say `callable(odict[key])`?
+        methods = [key for key in odict
+                   if isinstance(odict[key], types.MethodType)]
+        for key in methods:
+            # In this case we need to get rid of hessian, score, and
+            # loglikeobs.  The implementation here is more general.
+            del odict[key]
         return odict
 
     def __setstate__(self, indict):
@@ -2461,14 +2466,12 @@ class NegativeBinomial(CountModel):
         alpha3 = alpha**3
         alpha2 = alpha**2
         mu2 = mu**2
-        dada = ((alpha3 * mu * (2 * log_alpha + 2 * dgpart + 3) -
-                2 * alpha3 * y +
-                alpha2 * mu2 * pgpart +
-                4 * alpha2 * mu * (log_alpha + dgpart) +
-                alpha2 * (2 * mu - y) +
-                2 * alpha * mu2 * pgpart +
-                2 * alpha * mu * (log_alpha + dgpart) +
-                mu2 * pgpart) / (alpha**4 * (alpha2 + 2 * alpha + 1)))
+        dada = ((2 * alpha * (alpha + 1)**2 * mu * (log_alpha + dgpart)
+                 + (alpha + 1)**2 * mu2 * pgpart
+                 + 3 * alpha3 * mu
+                 - 2 * alpha3 * y
+                 + alpha2 * (2 * mu - y)
+                 ) / (alpha**4 * (alpha + 1)**2))
         hess_arr[-1, -1] = dada.sum()
 
         return hess_arr
@@ -2758,8 +2761,7 @@ class NegativeBinomialP(CountModel):
         a2 = mu + a1
 
         llf = (gammaln(y + a1) - gammaln(y + 1) - gammaln(a1) +
-               a1 * np.log(a1) + y * np.log(mu) -
-               (y + a1) * np.log(a2))
+               a1 * np.log(a1 / a2) + y * np.log(mu / a2))
 
         return llf
 
@@ -2798,8 +2800,9 @@ class NegativeBinomialP(CountModel):
 
         dgpart = special.digamma(y + a1) - special.digamma(a1)
 
-        dparams = ((a4 * dgpart - (1 + a4) * a3 / a2) +
-                   y / mu + a4 * (1 + np.log(a1 / a2)))
+        dparams = (a4 * (dgpart + np.log(a1 / a2) + 1) -
+                   (1 + a4) * a3 / a2 +
+                   y / mu)
         dparams = (self.exog.T * mu * dparams).T
         dalpha = -a1 / alpha * (dgpart + np.log(a1 / a2) + 1 - a3 / a2)
 
@@ -3140,10 +3143,13 @@ class DiscreteResults(base.LikelihoodModelResults):
         # remove unpicklable methods
         mle_settings = getattr(self, 'mle_settings', None)
         if mle_settings is not None:
-            if 'callback' in mle_settings:
-                mle_settings['callback'] = None
-            if 'cov_params_func' in mle_settings:
-                mle_settings['cov_params_func'] = None
+            # `callback` and `cov_params_func` are the most likely culprits
+            # See GH#4083
+            methods = [key for key in mle_settings
+                       if callable(mle_settings[key])]
+            for key in methods:
+                mle_settings[key] = None
+            # TODO: move this higher up the class hierarchy?
         return self.__dict__
 
     @cache_readonly
