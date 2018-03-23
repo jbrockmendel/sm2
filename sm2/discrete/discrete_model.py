@@ -3333,7 +3333,7 @@ class DiscreteResults(base.LikelihoodModelResults):
         from sm2.discrete.discrete_margins import DiscreteMargins
         return DiscreteMargins(self, (at, method, atexog, dummy, count))
 
-    @copy_doc(base.GenericLikelihoodModelResults.summary.__doc__)
+    @copy_doc(base.Results.summary.__doc__)
     def summary(self, yname=None, xname=None, title=None, alpha=.05,
                 yname_list=None):
         top_left = [('Dep. Variable:', None),

@@ -2010,7 +2010,7 @@ class RegressionResults(base.LikelihoodModelResults):
                                    weights=weights, row_labels=row_labels,
                                    **kwds)
 
-    @copy_doc(base.GenericLikelihoodModelResults.summary.__doc__)
+    @copy_doc(base.Results.summary.__doc__)
     def summary(self, yname=None, xname=None, title=None, alpha=.05):
         # TODO: import where we need it (for now), add as cached attributes
         from sm2.stats.stattools import (jarque_bera, omni_normtest,
