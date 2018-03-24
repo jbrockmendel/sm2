@@ -86,7 +86,8 @@ class MarkovRegression(markov_switching.MarkovSwitching):
     def k_exog(self):
         if self.data.orig_exog is None:
             return 0
-        return self.data.orig_exog.shape[1] - self.k_trend  # TODO: Does this make sense at all?
+        return self.data.orig_exog.shape[1] - self.k_trend
+        # TODO: Does this make sense at all?
 
     def __init__(self, endog, k_regimes, trend='c', exog=None, order=0,
                  exog_tvtp=None, switching_trend=True, switching_exog=True,
