@@ -37,6 +37,7 @@ try:
 except ImportError:
     has_cvxopt = False
 
+# TODO: I think the next two try/except imports are always OK in sm2
 try:
     from scipy.optimize import basinhopping  # noqa:F401
     has_basinhopping = True
@@ -70,10 +71,7 @@ iris = pd.read_csv(iris_path).values
 
 @pytest.mark.not_vetted
 class CheckModelResults(object):
-    """
-    res2 should be the test results from RModelWrap
-    or the results as defined in model_results_data
-    """
+    """res2 is reference results from results_discrete"""
 
     @classmethod
     def setup_class(cls):

@@ -75,27 +75,9 @@ def fit_l1_cvxopt_cp(f, score, start_params, args, kwargs, disp=False,
     alpha = alpha * np.ones(k_params)
     assert alpha.min() >= 0
 
-    # Wrap up functions for cvxopt
-    def f_0(x):
-        return _objective_func(f, x, k_params, alpha, *args)
-
-    def Df(x):
-        return _fprime(score, x, k_params, alpha)
-
-    def H(x, z):
-        return _hessian_wrapper(hess, x, z, k_params)
-
     G = _get_G(k_params)  # Inequality constraint matrix, Gx \leq h
     h = matrix(0.0, (2 * k_params, 1))  # RHS in inequality constraint
-
-    # Define the optimization function
-    def F(x=None, z=None):
-        if x is None:
-            return 0, x0
-        elif z is None:
-            return f_0(x), Df(x)
-        else:
-            return f_0(x), Df(x), H(x, z)
+    f_0, F = _get_F(x0, args, f, score, hess, k_params, alpha)
 
     # Convert optimization settings to cvxopt form
     solvers.options['show_progress'] = disp
@@ -177,6 +159,30 @@ def _get_G(k_params):
     B = np.concatenate((imat, -imat), axis=1)
     C = np.concatenate((A, B), axis=0)
     return matrix(C)
+
+
+def _get_F(x0, args, f, score, hess, k_params, alpha):
+    # Define the optimization function
+
+    # Wrap up functions for cvxopt
+    def f_0(x):
+        return _objective_func(f, x, k_params, alpha, *args)
+
+    def Df(x):
+        return _fprime(score, x, k_params, alpha)
+
+    def H(x, z):
+        return _hessian_wrapper(hess, x, z, k_params)
+
+    def F(x=None, z=None):
+        if x is None:
+            return 0, x0
+        elif z is None:
+            return f_0(x), Df(x)
+        else:
+            return f_0(x), Df(x), H(x, z)
+
+    return f_0, F
 
 
 def _hessian_wrapper(hess, x, z, k_params):

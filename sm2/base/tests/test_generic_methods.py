@@ -84,13 +84,16 @@ class CheckGenericMixin(object):
                  for k in range(k_vars)]
         assert_allclose(pvals, res.pvalues, rtol=5e-10, atol=1e-25)
 
-        # sutomatic use_f based on results class use_t
+        # automatic use_f based on results class use_t
         pvals = [res.wald_test(np.eye(k_vars)[k]).pvalue
                  for k in range(k_vars)]
         assert_allclose(pvals, res.pvalues, rtol=5e-10, atol=1e-25)
 
+    @pytest.mark.smoke
+    def test_summary(self):
+        res = self.results
         # label for pvalues in summary
-        string_use_t = 'P>|z|' if use_t is False else 'P>|t|'
+        string_use_t = 'P>|z|' if res.use_t is False else 'P>|t|'
         summ = str(res.summary())
         assert string_use_t in summ
 
@@ -180,31 +183,34 @@ class CheckGenericMixin(object):
 @pytest.mark.not_vetted
 class TestGenericOLS(CheckGenericMixin):
     model_cls = sm.OLS
+    fit_kwargs = {}
 
     def setup(self):
         # fit for each test, because results will be changed by test
         x = self.exog
         np.random.seed(987689)
         y = x.sum(1) + np.random.randn(x.shape[0])
-        self.results = self.model_cls(y, self.exog).fit()
+        self.results = self.model_cls(y, self.exog).fit(**self.fit_kwargs)
 
 
 @pytest.mark.not_vetted
 class TestGenericOLSOneExog(CheckGenericMixin):
     # check with single regressor (no constant)
     model_cls = sm.OLS
+    fit_kwargs = {}
 
     def setup(self):
         # fit for each test, because results will be changed by test
         x = self.exog[:, 1]
         np.random.seed(987689)
         y = x + np.random.randn(x.shape[0])
-        self.results = self.model_cls(y, x).fit()
+        self.results = self.model_cls(y, x).fit(**self.fit_kwargs)
 
 
 @pytest.mark.not_vetted
 class TestGenericWLS(CheckGenericMixin):
     model_cls = sm.WLS
+    fit_kwargs = {}
 
     def setup(self):
         # fit for each test, because results will be changed by test
@@ -212,12 +218,18 @@ class TestGenericWLS(CheckGenericMixin):
         np.random.seed(987689)
         y = x.sum(1) + np.random.randn(x.shape[0])
         model = self.model_cls(y, self.exog, weights=np.ones(len(y)))
-        self.results = model.fit()
+        self.results = model.fit(**self.fit_kwargs)
 
 
 @pytest.mark.not_vetted
 class TestGenericPoisson(CheckGenericMixin):
     model_cls = sm.Poisson
+    fit_kwargs = {
+        "disp": False,
+        "method": "bfgs",
+        # use start_params to converge faster
+        "start_params": np.array([0.75334818, 0.99425553,
+                                  1.00494724, 1.00247112])}
 
     def setup(self):
         # fit for each test, because results will be changed by test
@@ -226,19 +238,22 @@ class TestGenericPoisson(CheckGenericMixin):
         y_count = np.random.poisson(np.exp(x.sum(1) - x.mean()))
         model = self.model_cls(y_count, x)
         # , exposure=np.ones(nobs), offset=np.zeros(nobs)) # bug with default
-        # use start_params to converge faster
-        start_params = np.array([0.75334818, 0.99425553,
-                                 1.00494724, 1.00247112])
-        self.results = model.fit(start_params=start_params, method='bfgs',
-                                 disp=0)
+        self.results = model.fit(**self.fit_kwargs)
 
         # TODO: temporary, fixed in master
         self.predict_kwds = dict(exposure=1, offset=0)
+        # TODO: Should these be used at some point?
 
 
 @pytest.mark.not_vetted
 class TestGenericNegativeBinomial(CheckGenericMixin):
     model_cls = sm.NegativeBinomial
+    fit_kwargs = {
+        "disp": False,
+        "start_params": np.array([-0.0565406, -0.21213599, 0.08783076,
+                                  -0.02991835, 0.22901974, 0.0621026,
+                                  0.06799283, 0.08406688, 0.18530969,
+                                  1.36645452])}
 
     def setup(self):
         # fit for each test, because results will be changed by test
@@ -248,16 +263,18 @@ class TestGenericNegativeBinomial(CheckGenericMixin):
         # FIXME: we're editing exog but then not _using_ it.
         # Editing data.exog instead causes tests to fail.
         mod = self.model_cls(data.endog, data.exog)
-        start_params = np.array([-0.0565406, -0.21213599, 0.08783076,
-                                 -0.02991835, 0.22901974, 0.0621026,
-                                 0.06799283, 0.08406688, 0.18530969,
-                                 1.36645452])
-        self.results = mod.fit(start_params=start_params, disp=0)
+        self.results = mod.fit(**self.fit_kwargs)
 
 
 @pytest.mark.not_vetted
 class TestGenericLogit(CheckGenericMixin):
     model_cls = sm.Logit
+    fit_kwargs = {
+        "disp": False,
+        "method": "bfgs",
+        # use start_params to converge faster
+        "start_params": np.array([-0.73403806, -1.00901514,
+                                  -0.97754543, -0.95648212])}
 
     def setup(self):
         # fit for each test, because results will be changed by test
@@ -268,90 +285,99 @@ class TestGenericLogit(CheckGenericMixin):
         y_bin = y_bin.astype(int)
         model = self.model_cls(y_bin, x)
         # , exposure=np.ones(nobs), offset=np.zeros(nobs)) # bug with default
-        # use start_params to converge faster
-        start_params = np.array([-0.73403806, -1.00901514,
-                                 -0.97754543, -0.95648212])
-        self.results = model.fit(start_params=start_params,
-                                 method='bfgs', disp=0)
+        self.results = model.fit(**self.fit_kwargs)
 
 
 @pytest.mark.skip(reason="RLM not ported from upstream")
 @pytest.mark.not_vetted
 class TestGenericRLM(CheckGenericMixin):
+    fit_kwargs = {}
+
     def setup(self):
         # fit for each test, because results will be changed by test
         x = self.exog
         np.random.seed(987689)
         y = x.sum(1) + np.random.randn(x.shape[0])
-        self.results = sm.RLM(y, self.exog).fit()
+        self.results = sm.RLM(y, self.exog).fit(**self.fit_kwargs)
 
 
 @pytest.mark.not_vetted
 class TestGenericGLM(CheckGenericMixin):
+    model_cls = sm.GLM
+    fit_kwargs = {}
+
     def setup(self):
         # fit for each test, because results will be changed by test
         x = self.exog
         np.random.seed(987689)
         y = x.sum(1) + np.random.randn(x.shape[0])
-        self.results = sm.GLM(y, self.exog).fit()
+        self.results = self.model_cls(y, self.exog).fit(**self.fit_kwargs)
 
 
 @pytest.mark.skip(reason="GEE not ported from upstream")
 @pytest.mark.not_vetted
 class TestGenericGEEPoisson(CheckGenericMixin):
+    fit_kwargs = {
+        # use start_params to speed up test, difficult convergence not tested
+        "start_params": np.array([0., 1., 1., 1.])}
+
     def setup(self):
         # fit for each test, because results will be changed by test
         x = self.exog
         np.random.seed(987689)
         y_count = np.random.poisson(np.exp(x.sum(1) - x.mean()))
         groups = np.random.randint(0, 4, size=x.shape[0])
-        # use start_params to speed up test, difficult convergence not tested
-        start_params = np.array([0., 1., 1., 1.])
 
         vi = sm.cov_struct.Independence()
         family = sm.families.Poisson()
         self.results = sm.GEE(y_count, self.exog, groups, family=family,
-                              cov_struct=vi).fit(start_params=start_params)
+                              cov_struct=vi).fit(**self.fit_kwargs)
 
 
 @pytest.mark.skip(reason="GEE not ported from upstream")
 @pytest.mark.not_vetted
 class TestGenericGEEPoissonNaive(CheckGenericMixin):
+    fit_kwargs = {
+        "cov_type": "naive",
+        # use start_params to speed up test, difficult convergence not tested
+        "start_params": np.array([0., 1., 1., 1.])}
+
     def setup(self):
         # fit for each test, because results will be changed by test
         x = self.exog
         np.random.seed(987689)
         y_count = np.random.poisson(np.exp(x.sum(1) - x.sum(1).mean(0)))
         groups = np.random.randint(0, 4, size=x.shape[0])
-        # use start_params to speed up test, difficult convergence not tested
-        start_params = np.array([0., 1., 1., 1.])
 
         vi = sm.cov_struct.Independence()
         family = sm.families.Poisson()
         self.results = sm.GEE(y_count, self.exog, groups, family=family,
-                              cov_struct=vi).fit(start_params=start_params,
-                                                 cov_type='naive')
+                              cov_struct=vi).fit(**self.fit_kwargs)
 
 
 @pytest.mark.skip(reason="GEE not ported from upstream")
 @pytest.mark.not_vetted
 class TestGenericGEEPoissonBC(CheckGenericMixin):
+    fit_kwargs = {
+        "cov_type": "bias_reduced",
+        # use start_params to speed up test; difficult convergence not tested
+        # expected estimated params are
+        # params_est = np.array([-0.0063238 , 0.99463752,
+        #                        1.02790201, 0.98080081])
+        "start_params": np.array([0., 1., 1., 1.])}
+
+    cov_type = 'bias_reduced'
     def setup(self):
         # fit for each test, because results will be changed by test
         x = self.exog
         np.random.seed(987689)
         y_count = np.random.poisson(np.exp(x.sum(1) - x.sum(1).mean(0)))
         groups = np.random.randint(0, 4, size=x.shape[0])
-        # use start_params to speed up test, difficult convergence not tested
-        start_params = np.array([0., 1., 1., 1.])
-        # params_est = np.array([-0.0063238 , 0.99463752,
-        #                        1.02790201, 0.98080081])
 
         vi = sm.cov_struct.Independence()
         family = sm.families.Poisson()
         mod = sm.GEE(y_count, self.exog, groups, family=family, cov_struct=vi)
-        self.results = mod.fit(start_params=start_params,
-                               cov_type='bias_reduced')
+        self.results = mod.fit(**self.fit_kwargs)
 
 
 # ------------------------------------------------------------------

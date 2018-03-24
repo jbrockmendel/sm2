@@ -6,7 +6,6 @@ from six.moves import range
 import numpy as np
 from numpy.testing import assert_allclose
 import pytest
-import pandas.util.testing as tm
 
 import sm2.datasets.macrodata.data as macro
 from sm2.tsa.vector_ar.var_model import VAR

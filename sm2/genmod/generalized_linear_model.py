@@ -294,6 +294,16 @@ class GLM(base.LikelihoodModel):
         the specific distribution weighting functions.
     """ % {'extra_params': base._missing_param_doc}
 
+    @property
+    def df_resid(self):
+        return self.wnobs - (self.df_model + 1)
+
+    @cache_readonly
+    def nobs(self):
+        # TODO: make sure this is retained if/when data is stripped
+        # TODO: Do this further up the inheritance hierarchy
+        return self.endog.shape[0]
+
     def __init__(self, endog, exog, family=None, offset=None,
                  exposure=None, freq_weights=None, var_weights=None,
                  missing='none', **kwargs):
@@ -308,7 +318,7 @@ class GLM(base.LikelihoodModel):
 
         if exposure is not None:
             exposure = np.log(exposure)
-        if offset is not None:  # this should probably be done upstream
+        if offset is not None:  # TODO: this should probably be done upstream
             offset = np.asarray(offset)
 
         if freq_weights is not None:
@@ -325,13 +335,13 @@ class GLM(base.LikelihoodModel):
                                   var_weights=var_weights, **kwargs)
         self._check_inputs(family, self.offset, self.exposure, self.endog,
                            self.freq_weights, self.var_weights)
+        # TODO: Dont delete attributes
         if offset is None:
             delattr(self, 'offset')
         if exposure is None:
             delattr(self, 'exposure')
 
-        self.nobs = self.endog.shape[0]
-
+        # TODO: Make this more systematic
         # things to remove_data
         self._data_attr.extend(['weights', 'pinv_wexog', 'mu', 'freq_weights',
                                 'var_weights', 'iweights', '_offset_exposure',
@@ -367,13 +377,11 @@ class GLM(base.LikelihoodModel):
 
         self.df_model = np.linalg.matrix_rank(self.exog) - 1
 
-        if (self.freq_weights is not None) and \
-           (self.freq_weights.shape[0] == self.endog.shape[0]):
+        if ((self.freq_weights is not None) and
+                (self.freq_weights.shape[0] == self.endog.shape[0])):
             self.wnobs = self.freq_weights.sum()
-            self.df_resid = self.wnobs - self.df_model - 1
         else:
             self.wnobs = self.exog.shape[0]
-            self.df_resid = self.exog.shape[0] - self.df_model - 1
 
     def _check_inputs(self, family, offset, exposure, endog, freq_weights,
                       var_weights):
@@ -425,7 +433,7 @@ class GLM(base.LikelihoodModel):
 
     def _get_init_kwds(self):
         # this is a temporary fixup because exposure has been transformed
-        # see #1609, copied from discrete_model.CountModel
+        # see GH#1609, copied from discrete_model.CountModel
         kwds = super(GLM, self)._get_init_kwds()
         if 'exposure' in kwds and kwds['exposure'] is not None:
             kwds['exposure'] = np.exp(kwds['exposure'])
@@ -471,6 +479,7 @@ class GLM(base.LikelihoodModel):
         score_factor = self.score_factor(params, scale=scale)
         return score_factor[:, None] * self.exog
 
+    # TODO: Defer to default implementation?
     def score(self, params, scale=None):
         """score, first derivative of the loglikelihood function
 
@@ -564,6 +573,7 @@ class GLM(base.LikelihoodModel):
         score_factor = self.score_factor(params, scale=1.)
         if eim_factor.ndim > 1 or score_factor.ndim > 1:
             raise RuntimeError('something wrong')
+            # TODO: better error message
 
         tmp = self.family.variance(mu) * self.family.link.deriv2(mu)
         tmp += self.family.variance.deriv(mu) * self.family.link.deriv(mu)
@@ -657,7 +667,6 @@ class GLM(base.LikelihoodModel):
         Notes
         -----
         not yet verified for case with scale not equal to 1.
-
         """
 
         if exog_extra is None:
@@ -732,16 +741,16 @@ class GLM(base.LikelihoodModel):
             else:
                 return self._estimate_x2_scale(mu)
 
-        if isinstance(self.scaletype, float):
+        elif isinstance(self.scaletype, float):
             return np.array(self.scaletype)
 
-        if isinstance(self.scaletype, str):
+        elif isinstance(self.scaletype, str):  # TODO: bytes/unicode?
             if self.scaletype.lower() == 'x2':
                 return self._estimate_x2_scale(mu)
             elif self.scaletype.lower() == 'dev':
                 return (self.family.deviance(self.endog, mu, self.var_weights,
                                              self.freq_weights, self.scale) /
-                        (self.df_resid))
+                        self.df_resid)
             else:
                 raise ValueError("Scale %s with type %s not understood" %
                                  (self.scaletype, type(self.scaletype)))
@@ -788,6 +797,7 @@ class GLM(base.LikelihoodModel):
                                np.log(mu)) / self.freq_weights.sum())
             power = brentq(psi_p, low, high, args=(mu))
         else:
+            # TODO: Should this be ValueError?
             raise NotImplementedError('Only brentq can currently be used')
         return power
 
@@ -883,7 +893,6 @@ class GLM(base.LikelihoodModel):
         to fit the model.  If any other value is used for ``n``, misleading
         results will be produced.
         """
-
         fit = self.predict(params, exog, exposure, offset, linear=False)
 
         import scipy.stats.distributions as dist
@@ -1001,9 +1010,9 @@ class GLM(base.LikelihoodModel):
         in future versions. If attach_wls' is true, then the final WLS
         instance of the IRLS iteration is attached to the results instance
         as `results_wls` attribute.
-
         """
         self.scaletype = scale
+        # FIXME: Don't set this attribute!
 
         if method.lower() == "irls":
             return self._fit_irls(start_params=start_params, maxiter=maxiter,
@@ -1116,22 +1125,23 @@ class GLM(base.LikelihoodModel):
         for iteration in range(maxiter):
             self.weights = (self.iweights * self.n_trials *
                             self.family.weights(mu))
-            wlsendog = (lin_pred + self.family.link.deriv(mu) * (self.endog-mu)
-                        - self._offset_exposure)
-            wls_results = reg_tools._MinimalWLS(
-                    wlsendog,
-                    wlsexog,
-                    self.weights).fit(method='lstsq')
+            wlsendog = (lin_pred +
+                        self.family.link.deriv(mu) * (self.endog - mu) -
+                        self._offset_exposure)
+            wls_mod = reg_tools._MinimalWLS(wlsendog,
+                                            wlsexog,
+                                            self.weights)
+            wls_results = wls_mod.fit(method='lstsq')
             lin_pred = np.dot(self.exog, wls_results.params)
             lin_pred += self._offset_exposure
             mu = self.family.fitted(lin_pred)
             history = self._update_history(wls_results, mu, history)
             self.scale = self.estimate_scale(mu)
             if endog.squeeze().ndim == 1 and np.allclose(mu - endog, 0):
-                msg = "Perfect separation detected, results not available"
-                raise PerfectSeparationError(msg)
-            converged = _check_convergence(criterion, iteration + 1, atol,
-                                           rtol)
+                raise PerfectSeparationError("Perfect separation detected, "
+                                             "results not available")
+            converged = _check_convergence(criterion, iteration + 1,
+                                           atol, rtol)
             if converged:
                 break
         self.mu = mu
@@ -1241,7 +1251,6 @@ class GLM(base.LikelihoodModel):
         The estimation creates a new model with transformed design matrix,
         exog, and converts the results back to the original parameterization.
 
-
         Parameters
         ----------
         constraints : formula expression or tuple
@@ -1260,9 +1269,7 @@ class GLM(base.LikelihoodModel):
         Returns
         -------
         results : Results instance
-
         """
-
         from patsy import DesignInfo
         from sm2.base._constraints import fit_constrained
 
@@ -1284,14 +1291,16 @@ class GLM(base.LikelihoodModel):
             res._results.normalized_cov_params = cov / res_constr.scale
         else:
             res._results.normalized_cov_params = None
+
         res._results.scale = res_constr.scale
         k_constr = len(q)
         res._results.df_resid += k_constr
         res._results.df_model -= k_constr
+        # FIXME: Don't update these inplace; also de-dup code with discrete
         res._results.constraints = lc
         res._results.k_constr = k_constr
         res._results.results_constrained = res_constr
-        # TODO: the next is not the best. history should bin in results
+        # TODO: the next is not the best. history should be in results
         res._results.model.history = res_constr.model.history
         return res
 
@@ -1394,13 +1403,16 @@ class GLMResults(base.LikelihoodModelResults):
     def __init__(self, model, params, normalized_cov_params, scale,
                  cov_type='nonrobust', cov_kwds=None, use_t=None):
         super(GLMResults, self).__init__(
-                model,
-                params,
-                normalized_cov_params=normalized_cov_params,
-                scale=scale)
+            model,
+            params,
+            normalized_cov_params=normalized_cov_params,
+            scale=scale)
+
         self.family = model.family
         self._endog = model.endog
+
         self.nobs = model.endog.shape[0]
+
         self._freq_weights = model.freq_weights
         self._var_weights = model.var_weights
         self._iweights = model.iweights
@@ -1408,11 +1420,13 @@ class GLMResults(base.LikelihoodModelResults):
             self._n_trials = self.model.n_trials
         else:
             self._n_trials = 1
+
         self.df_resid = model.df_resid
         self.df_model = model.df_model
+
         self.pinv_wexog = model.pinv_wexog
         self._cache = resettable_cache()
-        # are these intermediate results needed or can we just
+        # TODO: are these intermediate results needed or can we just
         # call the model's attributes?
 
         # for remove data and pickle without large arrays
@@ -1441,6 +1455,7 @@ class GLMResults(base.LikelihoodModelResults):
                           SpecificationWarning)
 
         if cov_type == 'nonrobust':
+            # TODO: Is this subsumed into get_robustcov_results?
             self.cov_type = 'nonrobust'
             self.cov_kwds = {'description': 'Standard Errors assume that the' +
                              ' covariance matrix of the errors is correctly ' +
@@ -1454,19 +1469,20 @@ class GLMResults(base.LikelihoodModelResults):
 
     @cache_readonly
     def resid_response(self):
-        return self._n_trials * (self._endog-self.mu)
+        return self._n_trials * (self._endog - self.mu)
 
     @cache_readonly
     def resid_pearson(self):
-        return (np.sqrt(self._n_trials) * (self._endog-self.mu) *
+        return (np.sqrt(self._n_trials) * (self._endog - self.mu) *
                 np.sqrt(self._var_weights) /
                 np.sqrt(self.family.variance(self.mu)))
 
     @cache_readonly
     def resid_working(self):
-        # Isn't self.resid_response is already adjusted by _n_trials?
-        val = (self.resid_response * self.family.link.deriv(self.mu))
-        val *= self._n_trials
+        # TODO: Isn't self.resid_response is already adjusted by _n_trials?
+        val = (self.resid_response *
+               self.family.link.deriv(self.mu) *
+               self._n_trials)
         return val
 
     @cache_readonly
@@ -1568,14 +1584,11 @@ class GLMResults(base.LikelihoodModelResults):
 
     @cache_readonly
     def bic(self):
-        return (self.deviance -
-                (self.model.wnobs - self.df_model - 1) *
-                np.log(self.model.wnobs))
+        return self.deviance - self.df_resid * np.log(self.model.wnobs)
 
     @copy_doc(pred.get_prediction_glm.__doc__)
     def get_prediction(self, exog=None, exposure=None, offset=None,
-                       transform=True, linear=False,
-                       row_labels=None):
+                       transform=True, linear=False, row_labels=None):
 
         import sm2.regression._prediction as linpred
 
@@ -1716,4 +1729,4 @@ class GLMResultsWrapper(lm.RegressionResultsWrapper):
         'resid_working': 'rows'}
     _wrap_attrs = wrap.union_dicts(lm.RegressionResultsWrapper._wrap_attrs,
                                    _attrs)
-wrap.populate_wrapper(GLMResultsWrapper, GLMResults)
+wrap.populate_wrapper(GLMResultsWrapper, GLMResults)  # noqa:E305

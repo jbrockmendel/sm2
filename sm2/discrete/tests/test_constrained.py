@@ -20,18 +20,13 @@ from sm2.base._constraints import fit_constrained, fit_constrained_wrap
 
 from sm2.tools.tools import add_constant
 from sm2 import datasets
-
-# dummies for not-yet-ported names
 from sm2.api import GLM, families
-#GLM = None
-#families = None
 
 spector_data = datasets.spector.load()
 spector_data.exog = add_constant(spector_data.exog, prepend=False)
 
 from .results import results_poisson_constrained as results
 from .results import results_glm_logit_constrained as reslogit
-#reslogit = None  # dummy to suppress flake8 complaints
 
 DEBUG = False
 
@@ -114,6 +109,7 @@ class CheckPoissonConstrainedMixin(object):
         df_r = res2.N - res2.df_m - 1
         assert res1.df_resid == df_r
 
+    # TODO: test needs informative name
     def test_other(self):
         # some results may not be valid or available for all models
         if not hasattr(self, 'res1m'):

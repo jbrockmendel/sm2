@@ -1425,7 +1425,7 @@ class Tweedie(Family):
             dev = ((endog - mu) / mu) - np.log(endog1 / mu)
         else:
             dev = (endog ** (2 - p) / ((1 - p) * (2 - p)) -
-                   endog * mu ** (1-p) / (1 - p) + mu ** (2 - p) / (2 - p))
+                   endog * mu ** (1 - p) / (1 - p) + mu ** (2 - p) / (2 - p))
         return 2 * dev
 
     def loglike_obs(self, endog, mu, var_weights=1., scale=1.):

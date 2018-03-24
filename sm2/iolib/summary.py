@@ -99,9 +99,11 @@ def summary_top(results, title=None, gleft=None, gright=None,
 
         try:
             results.llf
-            gen_left.append(('Log-Likelihood', None))
-        except:  # AttributeError, NotImplementedError
+        except (AttributeError, NotImplementedError):
+            # TODO: fix upstream bare exception
             pass
+        else:
+            gen_left.append(('Log-Likelihood', None))
 
         gen_right = []
 

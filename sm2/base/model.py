@@ -10,7 +10,7 @@ from scipy import stats
 
 from sm2.tools.data import _is_using_pandas
 from sm2.tools.tools import recipr, nan_dot
-from sm2.tools.decorators import resettable_cache, cache_readonly
+from sm2.tools.decorators import resettable_cache, cache_readonly, copy_doc
 from sm2.tools.numdiff import approx_fprime, approx_hess
 from sm2.tools.sm_exceptions import (ValueWarning, HessianInversionWarning,
                                      ConvergenceWarning)
@@ -62,14 +62,34 @@ class Model(object):
     """ % {'params_doc': _model_params_doc,
            'extra_params_doc': _missing_param_doc + _extra_param_doc}
 
-    def __init__(self, endog, exog=None, **kwargs):
-        missing = kwargs.pop('missing', 'none')
-        hasconst = kwargs.pop('hasconst', None)
-        self.data = self._handle_data(endog, exog, missing, hasconst,
-                                      **kwargs)
+    @property
+    def endog_names(self):
+        """Names of endogenous variables"""
+        return self.data.ynames
+
+    @property
+    def exog_names(self):
+        """Names of exogenous variables"""
+        return self.data.xnames
+
+    @property
+    def k_exog(self):
+        if self.exog is None:
+            return 0
+        elif self.exog.ndim == 1:
+            # This happens in count_model, should probably be avoided
+            return 1
+        return self.exog.shape[1]
+
+    def __init__(self, endog, exog=None,
+                 missing='none', hasconst=None, **kwargs):
+
+        self.data = self._handle_data(endog, exog, missing, hasconst, **kwargs)
+
         self.k_constant = self.data.k_constant
         self.exog = self.data.exog
         self.endog = self.data.endog
+
         self._data_attr = []
         self._data_attr.extend(['exog', 'endog', 'data.exog', 'data.endog'])
         if 'formula' not in kwargs:  # won't be able to unpickle without these
@@ -85,7 +105,6 @@ class Model(object):
         """
         kwds = dict(((key, getattr(self, key, None))
                      for key in self._init_keys))
-
         return kwds
 
     def _handle_data(self, endog, exog, missing, hasconst, **kwargs):
@@ -184,16 +203,6 @@ class Model(object):
         mod.data.frame = data
         return mod
 
-    @property
-    def endog_names(self):
-        """Names of endogenous variables"""
-        return self.data.ynames
-
-    @property
-    def exog_names(self):
-        """Names of exogenous variables"""
-        return self.data.xnames
-
     def fit(self):
         """
         Fit a model to data.
@@ -213,7 +222,6 @@ class LikelihoodModel(Model):
     """
     Likelihood model is a subclass of Model.
     """
-
     def __init__(self, endog, exog=None, **kwargs):
         super(LikelihoodModel, self).__init__(endog, exog, **kwargs)
         self.initialize()
@@ -699,7 +707,31 @@ class Results(object):
         else:
             return predict_results
 
-    def summary(self):
+    def summary(self, yname=None, xname=None, title=None, alpha=.05):
+        """Summarize the Regression Results
+
+        Parameters
+        -----------
+        yname : string, optional
+            Default is `y`
+        xname : list of strings, optional
+            Default is `var_##` for ## in p the number of regressors
+        title : string, optional
+            Title for the top table. If not None, then this replaces the
+            default title
+        alpha : float
+            significance level for the confidence intervals
+
+        Returns
+        -------
+        smry : Summary instance
+            this holds the summary tables and text, which can be printed or
+            converted to various output formats.
+
+        See Also
+        --------
+        sm2.iolib.summary.Summary : class to hold summary results
+        """
         # TODO: Make this raise upstream instead of just "pass"
         raise NotImplementedError  # pragma: no cover
 
@@ -1782,7 +1814,7 @@ class GenericLikelihoodModelResults(LikelihoodModelResults, ResultMixin):
         if hasattr(model, 'df_resid'):
             self.df_resid = model.df_resid
         else:
-            self.df_resid = self.endog.shape[0] - self.df_model
+            self.df_resid = self.nobs - self.df_model
             # retrofitting the model, used in t_test TODO: check design
             self.model.df_resid = self.df_resid
             # FIXME: dont alter model in-place
@@ -1790,31 +1822,8 @@ class GenericLikelihoodModelResults(LikelihoodModelResults, ResultMixin):
         self._cache = resettable_cache()
         self.__dict__.update(mlefit.__dict__)
 
+    @copy_doc(Results.summary.__doc__)
     def summary(self, yname=None, xname=None, title=None, alpha=.05):
-        """Summarize the Regression Results
-
-        Parameters
-        -----------
-        yname : string, optional
-            Default is `y`
-        xname : list of strings, optional
-            Default is `var_##` for ## in p the number of regressors
-        title : string, optional
-            Title for the top table. If not None, then this replaces the
-            default title
-        alpha : float
-            significance level for the confidence intervals
-
-        Returns
-        -------
-        smry : Summary instance
-            this holds the summary tables and text, which can be printed or
-            converted to various output formats.
-
-        See Also
-        --------
-        sm2.iolib.summary.Summary : class to hold summary results
-        """
         top_left = [('Dep. Variable:', None),
                     ('Model:', None),
                     ('Method:', ['Maximum Likelihood']),
@@ -1843,5 +1852,4 @@ class GenericLikelihoodModelResults(LikelihoodModelResults, ResultMixin):
                              yname=yname, xname=xname, title=title)
         smry.add_table_params(self, yname=yname, xname=xname, alpha=alpha,
                               use_t=False)
-
         return smry

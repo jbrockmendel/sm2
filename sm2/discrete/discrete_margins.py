@@ -134,9 +134,9 @@ def _get_margeff_exog(exog, at, atexog, ind):
                 k_vars = len(atexog)
             else:
                 k_vars = atexog.shape[1]
-            try:
-                assert k_vars == exog.shape[1]
-            except:
+            if k_vars != exog.shape[1]:
+                # TODO: upstream asserts equality and raises ValueError
+                # on failure... no clear reason.  fix this there.
                 raise ValueError("atexog does not have the same number "
                                  "of variables as exog")
             exog = atexog

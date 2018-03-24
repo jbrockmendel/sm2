@@ -27,7 +27,6 @@ class CheckStataResultsMixin(object):
         assert_almost_equal(res.bse,
                             results.bse,
                             3)
-        #assert_almost_equal(res.tvalues, results.tvalues, 3) 0.0003
         assert_allclose(res.tvalues,
                         results.tvalues,
                         atol=0, rtol=0.004)
