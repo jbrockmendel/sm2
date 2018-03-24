@@ -415,17 +415,16 @@ class SARIMAX(MLEModel):
 
         # Exogenous data
         (k_exog, exog) = prepare_exog(exog)
-        assert k_exog == self.k_exog, (k_exog, self.k_exog)
 
         # Redefine mle_regression to be true only if it was previously set to
         # true and there are exogenous regressors
         self.mle_regression = (
-            self.mle_regression and exog is not None and self.k_exog > 0
+            self.mle_regression and exog is not None and k_exog > 0
         )
         # State regression is regression with coefficients estiamted within
         # the state vector
         self.state_regression = (
-            not self.mle_regression and exog is not None and self.k_exog > 0
+            not self.mle_regression and exog is not None and k_exog > 0
         )
         # If all we have is a regression (so k_ar = k_ma = 0), then put the
         # error term as measurement error
@@ -438,7 +437,7 @@ class SARIMAX(MLEModel):
             k_states += (self.seasonal_periods * self._k_seasonal_diff +
                          self._k_diff)
         if self.state_regression:
-            k_states += self.k_exog
+            k_states += k_exog
 
         # Number of diffuse states
         k_diffuse_states = k_states
@@ -450,7 +449,7 @@ class SARIMAX(MLEModel):
         # Only have an error component to the states if k_posdef > 0
         self.state_error = k_posdef > 0
         if self.state_regression and self.time_varying_regression:
-            k_posdef += self.k_exog
+            k_posdef += k_exog
 
         # Diffuse initialization can be more sensistive to the variance value
         # in the case of state regression, so set a higher than usual default
@@ -466,7 +465,7 @@ class SARIMAX(MLEModel):
             self.measurement_error + 1
         )
         if self.mle_regression:
-            self.k_params += self.k_exog
+            self.k_params += k_exog
 
         # We need to have an array or pandas at this point
         self.orig_endog = endog
@@ -501,6 +500,8 @@ class SARIMAX(MLEModel):
         super(SARIMAX, self).__init__(
             endog, exog=exog, k_states=k_states, k_posdef=k_posdef, **kwargs
         )
+
+        assert k_exog == self.k_exog, (k_exog, self.k_exog)
 
         # Set as time-varying model if we have time-trend or exog
         if self.k_exog > 0 or len(self.polynomial_trend) > 1:

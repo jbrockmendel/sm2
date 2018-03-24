@@ -447,9 +447,8 @@ class UnobservedComponents(MLEModel):
 
         # Exogenous component
         (k_exog, exog) = prepare_exog(exog)
-        assert k_exog == self.k_exog, (k_exog, self.k_exog)
 
-        self.regression = self.k_exog > 0
+        self.regression = k_exog > 0
 
         # Model parameters
         k_states = (
@@ -457,7 +456,7 @@ class UnobservedComponents(MLEModel):
             (self.seasonal_periods - 1) * self.seasonal +
             self.cycle * 2 +
             self.ar_order +
-            (not self.mle_regression) * self.k_exog
+            (not self.mle_regression) * k_exog
         )
         k_posdef = (
             self.stochastic_level * self.level +
@@ -484,6 +483,7 @@ class UnobservedComponents(MLEModel):
         )
         self.setup()
 
+        assert k_exog == self.k_exog, (k_exog, self.k_exog)
         # Set as time-varying model if we have exog
         if self.k_exog > 0:
             self.ssm._time_invariant = False

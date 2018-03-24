@@ -164,11 +164,10 @@ class DynamicFactor(MLEModel):
 
         # Exogenous data
         (k_exog, exog) = prepare_exog(exog)
-        assert k_exog == self.k_exog, (k_exog, self.k_exog)
         
         # Note: at some point in the future might add state regression, as in
         # SARIMAX.
-        self.mle_regression = self.k_exog > 0
+        self.mle_regression = k_exog > 0
 
         # We need to have an array or pandas at this point
         if not _is_using_pandas(endog, None):
@@ -213,8 +212,10 @@ class DynamicFactor(MLEModel):
             endog, exog=exog, k_states=k_states, k_posdef=k_posdef, **kwargs
         )
 
+        assert k_exog == self.k_exog, (k_exog, self.k_exog)
+
         # Set as time-varying model if we have exog
-        if self.k_exog > 0:
+        if k_exog > 0:
             self.ssm._time_invariant = False
 
         # Initialize the components
