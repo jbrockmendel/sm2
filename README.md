@@ -23,6 +23,10 @@ of flake8 formatting issues have been cleaned up.
 - `summary2` methods have not been ported from upstream, will
 raise `NotImplementedError`.
 
+- `ARModel.fit` incorrectly sets `model.df_resid` upstream.  That has been
+fixed here.
+
+
 Contributing
 ------------
 Issues and Pull Requests are welcome.  If you are looking a place to start,

@@ -1381,9 +1381,6 @@ class CompareL1(object):
                         self.res2.pvalues,
                         atol=1e-4)
 
-        if self.res1.mle_retvals['converged'] == 'True':
-            # FIXME: KLUDGE for older sm returning the wrong thing
-            self.res1.mle_retvals['converged'] = True
         assert self.res1.mle_retvals['converged'] is True
 
 
@@ -1423,11 +1420,6 @@ class TestL1AlphaZeroLogit(CompareL11D):
 
     def test_converged(self):
         res = self.res1.model.fit_regularized(maxiter=1, **self.fit_reg_kwargs)
-
-        # see GH#2857
-        if res.mle_retvals['converged'] == 'Iteration limit exceeded':
-            # FIXME: KLUDGE for older sm
-            res.mle_retvals['converged'] = False
         assert res.mle_retvals['converged'] is False
 
 

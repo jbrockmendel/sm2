@@ -10,6 +10,7 @@ from six.moves import range, zip
 
 import numpy as np
 from scipy import stats
+from pandas.util._decorators import deprecate_kwarg
 
 from sm2.compat.scipy import _next_regular
 
@@ -394,8 +395,8 @@ def acovf(x, unbiased=False, demean=True, fft=False, missing='none'):
     return acov
 
 
-# FIXME: dont use "type" as arg name
-def q_stat(x, nobs, type="ljungbox"):
+@deprecate_kwarg("type", "method")
+def q_stat(x, nobs, method="ljungbox"):
     """
     Return's Ljung-Box Q Statistic
 
@@ -404,6 +405,8 @@ def q_stat(x, nobs, type="ljungbox"):
     nobs : int
         Number of observations in the entire sample (ie., not just the length
         of the autocorrelation function results.
+
+    TODO: The paramters section here is missing `method`
 
     Returns
     -------
@@ -416,9 +419,8 @@ def q_stat(x, nobs, type="ljungbox"):
     ------
     Written to be used with acf.
     """
-    # TODO: don't use `type` as a kwarg name
     x = np.asarray(x)
-    if type == "ljungbox":
+    if method == "ljungbox":
         ret = (nobs * (nobs + 2) *
                np.cumsum((1. / (nobs - np.arange(1, len(x) + 1))) * x**2))
     chi2 = stats.chi2.sf(ret, np.arange(1, len(x) + 1))
