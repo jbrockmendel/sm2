@@ -158,10 +158,7 @@ class DiscreteModel(base.LikelihoodModel):
         super(DiscreteModel, self).__init__(endog, exog, **kwargs)
         self.raise_on_perfect_prediction = True
 
-        if not hasattr(self, 'nobs'):
-            # TODO: make this systematically impossible
-            self.nobs = self.exog.shape[0]
-        assert self.nobs == self.exog.shape[0]
+        assert self.nobs == self.exog.shape[0]  # i.e. not messed up in super
 
     def initialize(self):
         """
@@ -318,8 +315,8 @@ class DiscreteModel(base.LikelihoodModel):
             # TODO: fix upstream raises Exception, also in subclasses
             # they raise at the _end_ of the call (and redundantly)
             raise ValueError("argument method == %s, which is not handled"
-                             % method)
-        if qc_verbose:
+                             % method)  # pragma: no cover
+        if qc_verbose:  # pragma: no cover
             # TODO: Update docstring to reflect this restriction
             raise NotImplementedError("option `qc_verbose` is available "
                                       "upstream, but is disabled in sm2.")
@@ -416,7 +413,20 @@ class DiscreteModel(base.LikelihoodModel):
         """
         raise NotImplementedError
 
+    def _wrap_derivative_exog(self, margeff, params, exog, dummy_idx,
+                              count_idx, transform):
+        if count_idx is not None:
+            from sm2.discrete.discrete_margins import _get_count_effects
+            margeff = _get_count_effects(margeff, exog, count_idx, transform,
+                                         self, params)
+        if dummy_idx is not None:
+            from sm2.discrete.discrete_margins import _get_dummy_effects
+            margeff = _get_dummy_effects(margeff, exog, dummy_idx, transform,
+                                         self, params)
+        return margeff
 
+
+# TODO: Can we just move this all the way up into DiscreteModel?
 class FitBase(DiscreteModel):
     """Mixin to wrap DiscreteModel.fit and fit_regularized"""
 
@@ -446,7 +456,7 @@ class FitBase(DiscreteModel):
             # TODO: fix upstream raises Exception
             # (and does it at the _end_ of the call)
             raise ValueError("argument method == %s, which is not handled"
-                             % method)
+                             % method)  # pragma: no cover
 
         bnryfit = DiscreteModel.fit_regularized(self,
                                                 start_params=start_params,
@@ -540,19 +550,14 @@ class BinaryModel(FitBase):
             exog = self.exog
         Xb = np.dot(exog, params)
         margeff = np.dot(self.pdf(Xb)[:, None], params[None, :])
+
         if 'ex' in transform:
             margeff *= exog
         if 'ey' in transform:
             margeff /= self.predict(params, exog)[:, None]
-        if count_idx is not None:
-            from sm2.discrete.discrete_margins import _get_count_effects
-            margeff = _get_count_effects(margeff, exog, count_idx, transform,
-                                         self, params)
-        if dummy_idx is not None:
-            from sm2.discrete.discrete_margins import _get_dummy_effects
-            margeff = _get_dummy_effects(margeff, exog, dummy_idx, transform,
-                                         self, params)
-        return margeff
+
+        return self._wrap_derivative_exog(margeff, params, exog, dummy_idx,
+                                          count_idx, transform)
 
 
 class MultinomialModel(BinaryModel):
@@ -729,19 +734,16 @@ class MultinomialModel(BinaryModel):
              for j in range(J)])
         margeff = np.transpose(margeff, (1, 2, 0))
         # swap the axes to make sure margeff are in order nobs, K, J
+
         if 'ex' in transform:
             margeff *= exog
         if 'ey' in transform:
             margeff /= self.predict(params, exog)[:, None, :]
+            # TODO: The extra ":" at the end of this line is the main difference
+            # between this and the other two versions of _derivative_exog
 
-        if count_idx is not None:
-            from sm2.discrete.discrete_margins import _get_count_effects
-            margeff = _get_count_effects(margeff, exog, count_idx, transform,
-                                         self, params)
-        if dummy_idx is not None:
-            from sm2.discrete.discrete_margins import _get_dummy_effects
-            margeff = _get_dummy_effects(margeff, exog, dummy_idx, transform,
-                                         self, params)
+        margeff = self._wrap_derivative_exog(margeff, params, exog, dummy_idx,
+                                             count_idx, transform)
         return margeff.reshape(len(exog), -1, order='F')
 
 
@@ -776,7 +778,8 @@ class CountModel(FitBase):
             raise ValueError("offset is not the same length as endog")
 
         if exposure is not None and exposure.shape[0] != endog.shape[0]:
-            raise ValueError("exposure is not the same length as endog")
+            raise ValueError("exposure is not the same length "
+                             "as endog")  # pragma: no cover
 
     def _get_init_kwds(self):
         # this is a temporary fixup because exposure has been transformed
@@ -850,15 +853,8 @@ class CountModel(FitBase):
         if 'ey' in transform:
             margeff /= self.predict(params, exog)[:, None]
 
-        if count_idx is not None:
-            from sm2.discrete.discrete_margins import _get_count_effects
-            margeff = _get_count_effects(margeff, exog, count_idx, transform,
-                                         self, params)
-        if dummy_idx is not None:
-            from sm2.discrete.discrete_margins import _get_dummy_effects
-            margeff = _get_dummy_effects(margeff, exog, dummy_idx, transform,
-                                         self, params)
-        return margeff
+        return self._wrap_derivative_exog(margeff, params, exog, dummy_idx,
+                                          count_idx, transform)
 
 
 class OrderedModel(DiscreteModel):
@@ -1001,6 +997,7 @@ class Poisson(CountModel):
         params = [np.log(const)]
         return params
 
+    # TODO: can we use FitBase?
     @copy_doc(DiscreteModel.fit.__doc__)
     def fit(self, start_params=None, method='newton', maxiter=35,
             full_output=1, disp=1, callback=None, **kwargs):
@@ -1374,7 +1371,7 @@ class GeneralizedPoisson(CountModel):
             # TODO: Fix upstream raises Exception
             # (and does it at the _end_ of the method)
             raise ValueError("argument method == %s, which is not handled"
-                             % method)
+                             % method)  # pragma: no cover
 
         if np.size(alpha) == 1 and alpha != 0:
             k_params = self.exog.shape[1] + self.k_extra
@@ -1456,6 +1453,7 @@ class GeneralizedPoisson(CountModel):
         else:
             return score
 
+    # TODO: Not hit in tests
     def _score_p(self, params):
         """
         Generalized Poisson model derivative of the log-likelihood
@@ -1604,7 +1602,7 @@ class GeneralizedPoisson(CountModel):
                               offset=offset)[:, None]
             return genpoisson_p.pmf(counts, mu, params[-1],
                                     self.parameterization + 1)
-        else:
+        else:  # pragma: no cover
             raise ValueError('keyword "which" not recognized')
 
 
@@ -2292,16 +2290,22 @@ class NegativeBinomial(CountModel):
             self.hessian = self._hessian_geom
             self.score = self._score_geom
             self.loglikeobs = self._ll_geometric
-        else:
+        else:  # pragma: no cover
+            # TODO: Should this be a ValueError?
             raise NotImplementedError("Likelihood type must nb1, nb2 or "
                                       "geometric")
 
-    # Workaround to pickle instance methods
     def __getstate__(self):
         odict = self.__dict__.copy()  # copy the dict since we change it
-        del odict['hessian']
-        del odict['score']
-        del odict['loglikeobs']
+        # Workaround to pickle instance methods; see GH#4083
+        import types
+        # TODO: can we just say `callable(odict[key])`?
+        methods = [key for key in odict
+                   if isinstance(odict[key], types.MethodType)]
+        for key in methods:
+            # In this case we need to get rid of hessian, score, and
+            # loglikeobs.  The implementation here is more general.
+            del odict[key]
         return odict
 
     def __setstate__(self, indict):
@@ -2461,14 +2465,12 @@ class NegativeBinomial(CountModel):
         alpha3 = alpha**3
         alpha2 = alpha**2
         mu2 = mu**2
-        dada = ((alpha3 * mu * (2 * log_alpha + 2 * dgpart + 3) -
-                2 * alpha3 * y +
-                alpha2 * mu2 * pgpart +
-                4 * alpha2 * mu * (log_alpha + dgpart) +
-                alpha2 * (2 * mu - y) +
-                2 * alpha * mu2 * pgpart +
-                2 * alpha * mu * (log_alpha + dgpart) +
-                mu2 * pgpart) / (alpha**4 * (alpha2 + 2 * alpha + 1)))
+        dada = ((2 * alpha * (alpha + 1)**2 * mu * (log_alpha + dgpart)
+                 + (alpha + 1)**2 * mu2 * pgpart
+                 + 3 * alpha3 * mu
+                 - 2 * alpha3 * y
+                 + alpha2 * (2 * mu - y)
+                 ) / (alpha**4 * (alpha + 1)**2))
         hess_arr[-1, -1] = dada.sum()
 
         return hess_arr
@@ -2626,7 +2628,7 @@ class NegativeBinomial(CountModel):
             # TODO: fix upstream incorrectly raises Exception
             # (and does it at the very _end_ of the method)
             raise ValueError("argument method == %s, which is not handled"
-                             % method)
+                             % method)  # pragma: no cover
 
         if self.loglike_method.startswith('nb') and (np.size(alpha) == 1 and
                                                      alpha != 0):
@@ -2758,8 +2760,7 @@ class NegativeBinomialP(CountModel):
         a2 = mu + a1
 
         llf = (gammaln(y + a1) - gammaln(y + 1) - gammaln(a1) +
-               a1 * np.log(a1) + y * np.log(mu) -
-               (y + a1) * np.log(a2))
+               a1 * np.log(a1 / a2) + y * np.log(mu / a2))
 
         return llf
 
@@ -2798,8 +2799,9 @@ class NegativeBinomialP(CountModel):
 
         dgpart = special.digamma(y + a1) - special.digamma(a1)
 
-        dparams = ((a4 * dgpart - (1 + a4) * a3 / a2) +
-                   y / mu + a4 * (1 + np.log(a1 / a2)))
+        dparams = (a4 * (dgpart + np.log(a1 / a2) + 1) -
+                   (1 + a4) * a3 / a2 +
+                   y / mu)
         dparams = (self.exog.T * mu * dparams).T
         dalpha = -a1 / alpha * (dgpart + np.log(a1 / a2) + 1 - a3 / a2)
 
@@ -2991,7 +2993,7 @@ class NegativeBinomialP(CountModel):
         if method not in ['l1', 'l1_cvxopt_cp']:
             # TODO: Fix upstream incorrectly raises TypeError
             raise ValueError("argument method == %s, which is not handled"
-                             % method)
+                             % method)  # pragma: no cover
 
         if np.size(alpha) == 1 and alpha != 0:
             k_params = self.exog.shape[1] + self.k_extra
@@ -3086,8 +3088,9 @@ class NegativeBinomialP(CountModel):
             mu = self.predict(params, exog, exposure, offset)
             size, prob = self.convert_params(params, mu)
             return stats.nbinom.pmf(counts, size[:, None], prob[:, None])
-        else:
-            raise TypeError('keyword "which" = %s not recognized' % which)
+        else:  # pragma: no cover
+            # TODO: fix upstream this is A TypeError
+            raise ValueError('keyword "which" = %s not recognized' % which)
 
     def convert_params(self, params, mu):
         alpha = params[-1]
@@ -3110,8 +3113,7 @@ class DiscreteResults(base.LikelihoodModelResults):
 
     def __init__(self, model, mlefit, cov_type='nonrobust', cov_kwds=None,
                  use_t=None):
-        #super(DiscreteResults, self).__init__(model, params,
-        #        np.linalg.inv(-hessian), scale=1.)
+        # NB: does _not_ call super(...).__init__
         self.model = model
         try:
             self.df_model = model.df_model
@@ -3140,10 +3142,13 @@ class DiscreteResults(base.LikelihoodModelResults):
         # remove unpicklable methods
         mle_settings = getattr(self, 'mle_settings', None)
         if mle_settings is not None:
-            if 'callback' in mle_settings:
-                mle_settings['callback'] = None
-            if 'cov_params_func' in mle_settings:
-                mle_settings['cov_params_func'] = None
+            # `callback` and `cov_params_func` are the most likely culprits
+            # See GH#4083
+            methods = [key for key in mle_settings
+                       if callable(mle_settings[key])]
+            for key in methods:
+                mle_settings[key] = None
+            # TODO: move this higher up the class hierarchy?
         return self.__dict__
 
     @cache_readonly
@@ -3369,11 +3374,6 @@ class DiscreteResults(base.LikelihoodModelResults):
         if hasattr(self, 'constraints'):
             smry.add_extra_txt(['Model has been estimated subject to linear '
                                 'equality constraints.'])
-
-        # diagnostic table not used yet
-        # smry.add_table_2cols(self, gleft=diagn_left, gright=diagn_right,
-        #                   yname=yname, xname=xname,
-        #                   title="")
         return smry
 
     def summary2(self, yname=None, xname=None, title=None, alpha=.05,

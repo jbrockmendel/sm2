@@ -135,6 +135,7 @@ class CachedAttribute(object):
 
     def __get__(self, obj, type=None):
         if obj is None:
+            # accessing the attribute on the class, not an instance
             return self.fget
 
         # Get the cache or set a default one if needed
@@ -153,7 +154,7 @@ class CachedAttribute(object):
             # Set the attribute in obj
             try:
                 _cache[name] = _cachedval
-            except KeyError:
+            except KeyError:  # TODO: How would this happen?
                 setattr(_cache, name, _cachedval)
 
             # Update the reset list if needed (and possible)
@@ -177,7 +178,7 @@ class CachedWritableAttribute(CachedAttribute):
         name = self.name
         try:
             _cache[name] = value
-        except KeyError:
+        except KeyError:  # TODO: How would this happen?
             setattr(_cache, name, value)
 
 
@@ -209,6 +210,5 @@ class cache_writable(_cache_readonly):
                                        resetlist=self.resetlist)
 
 
-def nottest(fn):
-    fn.__test__ = False
-    return fn
+def nottest(fn):  # pragma: no cover
+    raise NotImplementedError("nottest not ported from upstream")

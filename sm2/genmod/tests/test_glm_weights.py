@@ -752,33 +752,6 @@ class TestGlmGaussianWLS(CheckWeight):
 
 
 @pytest.mark.not_vetted
-def test_incompatible_input():
-    weights = [1, 1, 1, 2, 2, 2, 3, 3, 3, 1, 1, 1, 2, 2, 2, 3, 3]
-    exog = cpunish_data.exog
-    endog = cpunish_data.endog
-    family = sm.families.Poisson()
-    # Too short
-    with pytest.raises(ValueError):
-        GLM(endog, exog, family=family, freq_weights=weights[:-1])
-
-    with pytest.raises(ValueError):
-        GLM(endog, exog, family=family, var_weights=weights[:-1])
-    # Too long
-    with pytest.raises(ValueError):
-        GLM(endog, exog, family=family, freq_weights=weights + [3])
-
-    with pytest.raises(ValueError):
-        GLM(endog, exog, family=family, var_weights=weights + [3])
-
-    # Too many dimensions
-    with pytest.raises(ValueError):
-        GLM(endog, exog, family=family, freq_weights=[weights, weights])
-
-    with pytest.raises(ValueError):
-        GLM(endog, exog, family=family, var_weights=[weights, weights])
-
-
-@pytest.mark.not_vetted
 def test_poisson_residuals():
     nobs, k_exog = 100, 5
     np.random.seed(987125)
@@ -809,3 +782,28 @@ def test_poisson_residuals():
                     res_poi_w.resid_anscombe)
     assert_allclose(res_poi_e.resid_anscombe_unscaled,
                     res_poi_w.resid_anscombe)
+
+
+def test_incompatible_weights_input():
+    # TODO: GH reference?
+    weights = [1, 1, 1, 2, 2, 2, 3, 3, 3, 1, 1, 1, 2, 2, 2, 3, 3]
+    exog = cpunish_data.exog
+    endog = cpunish_data.endog
+    family = sm.families.Poisson()
+    # Too short
+    with pytest.raises(ValueError):
+        GLM(endog, exog, family=family, freq_weights=weights[:-1])
+    with pytest.raises(ValueError):
+        GLM(endog, exog, family=family, var_weights=weights[:-1])
+
+    # Too long
+    with pytest.raises(ValueError):
+        GLM(endog, exog, family=family, freq_weights=weights + [3])
+    with pytest.raises(ValueError):
+        GLM(endog, exog, family=family, var_weights=weights + [3])
+
+    # Too many dimensions
+    with pytest.raises(ValueError):
+        GLM(endog, exog, family=family, freq_weights=[weights, weights])
+    with pytest.raises(ValueError):
+        GLM(endog, exog, family=family, var_weights=[weights, weights])

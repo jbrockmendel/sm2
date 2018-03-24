@@ -304,6 +304,10 @@ class GLM(base.LikelihoodModel):
         # TODO: Do this further up the inheritance hierarchy
         return self.endog.shape[0]
 
+    @property
+    def _res_classes(self):
+        return {"fit": (GLMResults, GLMResultsWrapper)}
+
     def __init__(self, endog, exog, family=None, offset=None,
                  exposure=None, freq_weights=None, var_weights=None,
                  missing='none', **kwargs):
@@ -394,18 +398,18 @@ class GLM(base.LikelihoodModel):
         if exposure is not None:
             if not isinstance(self.family.link, families.links.Log):
                 raise ValueError("exposure can only be used with the log "
-                                 "link function")
+                                 "link function")  # pragma: no cover
             elif exposure.shape[0] != endog.shape[0]:
                 raise ValueError("exposure is not the same length as endog")
 
         if offset is not None:
-            if offset.shape[0] != endog.shape[0]:
+            if offset.shape[0] != endog.shape[0]:  # pragma: no cover
                 raise ValueError("offset is not the same length as endog")
 
         if freq_weights is not None:
             if freq_weights.shape[0] != endog.shape[0]:
                 raise ValueError("freq weights not the same length as endog")
-            if len(freq_weights.shape) > 1:
+            if len(freq_weights.shape) > 1:  # pragma: no cover
                 raise ValueError("freq weights has too many dimensions")
 
         # internal flag to store whether freq_weights were not None
@@ -421,7 +425,7 @@ class GLM(base.LikelihoodModel):
         if var_weights is not None:
             if var_weights.shape[0] != endog.shape[0]:
                 raise ValueError("var weights not the same length as endog")
-            if len(var_weights.shape) > 1:
+            if len(var_weights.shape) > 1:  # pragma: no cover
                 raise ValueError("var weights has too many dimensions")
 
         # internal flag to store whether var_weights were not None
@@ -585,6 +589,7 @@ class GLM(base.LikelihoodModel):
 
         if tmp.ndim > 1:
             raise RuntimeError('something wrong')
+            # TODO: Better error message
 
         if not scale == 1:
             oim_factor /= scale
@@ -670,7 +675,7 @@ class GLM(base.LikelihoodModel):
         """
 
         if exog_extra is None:
-            if k_constraints is None:
+            if k_constraints is None:  # pragma: no cover
                 raise ValueError('if exog_extra is None, then k_constraints'
                                  'needs to be given')
 
@@ -751,10 +756,10 @@ class GLM(base.LikelihoodModel):
                 return (self.family.deviance(self.endog, mu, self.var_weights,
                                              self.freq_weights, self.scale) /
                         self.df_resid)
-            else:
+            else:  # pragma: no cover
                 raise ValueError("Scale %s with type %s not understood" %
                                  (self.scaletype, type(self.scaletype)))
-        else:
+        else:  # pragma: no cover
             raise ValueError("Scale %s with type %s not understood" %
                              (self.scaletype, type(self.scaletype)))
 
@@ -845,7 +850,7 @@ class GLM(base.LikelihoodModel):
         if exposure is not None and not isinstance(self.family.link,
                                                    families.links.Log):
             raise ValueError("exposure can only be used with the log link "
-                             "function")
+                             "function")  # pragma: no cover
 
         # Use fit exposure if appropriate
         if exposure is None and exog is None and hasattr(self, 'exposure'):
@@ -865,6 +870,7 @@ class GLM(base.LikelihoodModel):
         else:
             return self.family.fitted(linpred)
 
+    # TODO: Not hit in tests; is this needed?
     def get_distribution(self, params, scale=1, exog=None, exposure=None,
                          offset=None):
         """
@@ -1062,11 +1068,13 @@ class GLM(base.LikelihoodModel):
         else:
             cov_p = rslt.normalized_cov_params / scale
 
-        glm_results = GLMResults(self, rslt.params,
-                                 cov_p,
-                                 scale,
-                                 cov_type=cov_type, cov_kwds=cov_kwds,
-                                 use_t=use_t)
+        res_cls, wrap_cls = self._res_classes["fit"]
+
+        glm_results = res_cls(self, rslt.params,
+                              cov_p,
+                              scale,
+                              cov_type=cov_type, cov_kwds=cov_kwds,
+                              use_t=use_t)
 
         # TODO: iteration count is not always available
         history = {'iteration': 0}
@@ -1077,7 +1085,7 @@ class GLM(base.LikelihoodModel):
         glm_results.method = method
         glm_results.fit_history = history
 
-        return GLMResultsWrapper(glm_results)
+        return wrap_cls(glm_results)
 
     def _fit_irls(self, start_params=None, maxiter=100, tol=1e-8,
                   scale=None, cov_type='nonrobust', cov_kwds=None,
@@ -1151,11 +1159,13 @@ class GLM(base.LikelihoodModel):
             wls_model = lm.WLS(wlsendog, wlsexog, self.weights)
             wls_results = wls_model.fit(method=wls_method2)
 
-        glm_results = GLMResults(self, wls_results.params,
-                                 wls_results.normalized_cov_params,
-                                 self.scale,
-                                 cov_type=cov_type, cov_kwds=cov_kwds,
-                                 use_t=use_t)
+        res_cls, wrap_cls = self._res_classes["fit"]
+
+        glm_results = res_cls(self, wls_results.params,
+                              wls_results.normalized_cov_params,
+                              self.scale,
+                              cov_type=cov_type, cov_kwds=cov_kwds,
+                              use_t=use_t)
 
         glm_results.method = "IRLS"
         glm_results.mle_settings = {}
@@ -1166,7 +1176,7 @@ class GLM(base.LikelihoodModel):
         history['iteration'] = iteration + 1
         glm_results.fit_history = history
         glm_results.converged = converged
-        return GLMResultsWrapper(glm_results)
+        return wrap_cls(glm_results)
 
     def fit_regularized(self, method="elastic_net", alpha=0.,
                         start_params=None, refit=False, **kwargs):
@@ -1223,7 +1233,7 @@ class GLM(base.LikelihoodModel):
         """
         from sm2.base.elastic_net import fit_elasticnet
 
-        if method != "elastic_net":
+        if method != "elastic_net":  # pragma: no cover
             raise ValueError("method for fit_regularied must be elastic_net")
 
         defaults = {"maxiter": 50, "L1_wt": 1, "cnvrg_tol": 1e-10,
@@ -1238,6 +1248,7 @@ class GLM(base.LikelihoodModel):
 
         self.mu = self.predict(result.params)
         self.scale = self.estimate_scale(self.mu)
+        # TODO: Don't set these attributes on the model instance
 
         return result
 
@@ -1608,6 +1619,7 @@ class GLMResults(base.LikelihoodModelResults):
                                       pred_kwds=pred_kwds)
         return res
 
+    # TODO: not hit in tests.  Is that because I made SaveLoadMixin?
     @copy_doc(base.LikelihoodModelResults.remove_data.__doc__)
     def remove_data(self):
         # GLM has alias/reference in result instance
