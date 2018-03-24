@@ -233,6 +233,7 @@ def _get_sandwich_arrays(results, cov_type=''):
         if hasattr(results, '_results'):
             # remove wrapper
             results = results._results
+
         # assume we have a results instance
         if hasattr(results.model, 'jac'):
             xu = results.model.jac(results.params)
@@ -261,38 +262,16 @@ def _get_sandwich_arrays(results, cov_type=''):
             xu /= np.sqrt(np.asarray(results.model.freq_weights)[:, None])
 
     else:  # pragma: no cover
-        raise ValueError('need either tuple of (jac, hessian_inv) or results' +
+        raise ValueError('need either tuple of (jac, hessian_inv) or results'
                          'instance')
 
     return xu, hessian_inv
 
 
-def _HCCM1(results, scale):
-    """
-    sandwich with pinv(x) * scale * pinv(x).T
-
-    where pinv(x) = (X'X)^(-1) X
-    and scale is (nobs, nobs), or (nobs,) with diagonal matrix diag(scale)
-
-    Parameters
-    ----------
-    results : result instance
-       need to contain regression results, uses results.model.pinv_wexog
-    scale : ndarray (nobs,) or (nobs, nobs)
-       scale matrix, treated as diagonal matrix if scale is one-dimensional
-
-    Returns
-    -------
-    H : ndarray (k_vars, k_vars)
-        robust covariance matrix for the parameter estimates
-    """
-    if scale.ndim == 1:
-        H = np.dot(results.model.pinv_wexog,
-                   scale[:, None] * results.model.pinv_wexog.T)
-    else:
-        H = np.dot(results.model.pinv_wexog,
-                   np.dot(scale, results.model.pinv_wexog.T))
-    return H
+def _HCCM1(results, scale):  # pragma: no cover
+    raise NotImplementedError("_HCCM1 is not ported from upstream, "
+                              "as it is only used by cov_crosssection_0, "
+                              "which itself is not used or tested.")
 
 
 def _HCCM2(hessian_inv, scale):
@@ -505,13 +484,12 @@ def S_crosssection(x, group):
     return S_white_simple(x_group_sums)
 
 
-def cov_crosssection_0(results, group):
-    """this one is still wrong, use cov_cluster instead"""
-    # TODO: currently used version of groupsums requires 2d resid
-    scale = S_crosssection(results.resid[:, None], group)
-    scale = np.squeeze(scale)
-    cov = _HCCM1(results, scale)
-    return cov
+def cov_crosssection_0(results, group):  # pragma: no cover
+    raise NotImplementedError("cov_crosssection_0 not ported from upstream, "
+                              "as it is not used (much less tested) there "
+                              "(except for in one example) and its docstring "
+                              "specifically says it is wrong and that "
+                              "cov_cluster should be used instead")
 
 
 def cov_cluster(results, group, use_correction=True):

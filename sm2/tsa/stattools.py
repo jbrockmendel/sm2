@@ -109,6 +109,7 @@ def _autolag(mod, endog, exog, startlag, maxlag, method, modargs=(),
     else:  # pragma: no cover
         raise ValueError("Information Criterion %s not understood." % method)
 
+    # TODO: remove multiple-return
     if not regresults:
         return icbest, bestlag
     else:
@@ -264,6 +265,7 @@ def adfuller(x, maxlag=None, regression="c", autolag='AIC',
     else:
         usedlag = maxlag
         icbest = None
+
     if regression != 'nc':
         resols = OLS(xdshort, add_trend(xdall[:, :usedlag + 1],
                      regression)).fit()
@@ -301,6 +303,7 @@ def adfuller(x, maxlag=None, regression="c", autolag='AIC',
             return adfstat, pvalue, usedlag, nobs, critvalues
         else:
             return adfstat, pvalue, usedlag, nobs, critvalues, icbest
+        # TODO: remove multiple-return
 
 
 def acovf(x, unbiased=False, demean=True, fft=False, missing='none'):
@@ -505,6 +508,7 @@ def acf(x, unbiased=False, nlags=40, qstat=False, fft=False, alpha=None,
             return acf, confint, qstat, pvalue
         else:
             return acf, qstat, pvalue
+    # TODO: remove multiple-return
 
 
 def pacf_yw(x, nlags=40, method='unbiased'):
