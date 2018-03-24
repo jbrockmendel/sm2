@@ -308,6 +308,8 @@ extensions = [
     Extension(x.replace('/', '.').replace('.pyx.in', ''),
               [x.replace('.pyx.in', '.pyx')],
               include_dirs=["sm2/src", numpy_incl] + npymath['include_dirs'],
+              libraries=npymath["libraries"],
+              library_dirs=npymath["library_dirs"],
               define_macros=macros)
     for x in _pxifiles]
 
