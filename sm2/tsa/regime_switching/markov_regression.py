@@ -94,12 +94,12 @@ class MarkovRegression(markov_switching.MarkovSwitching):
         self.switching_variance = switching_variance
 
         # Exogenous data
-        self.k_exog, exog = markov_switching.prepare_exog(exog)
+        k_exog, exog = markov_switching.prepare_exog(exog)
 
         # Trend
         nobs = len(endog)
         self.k_trend = 0
-        self._k_exog = self.k_exog
+        self._k_exog = k_exog
         trend_exog = None
         if trend == 'c':
             trend_exog = np.ones((nobs, 1))
@@ -119,6 +119,8 @@ class MarkovRegression(markov_switching.MarkovSwitching):
         super(MarkovRegression, self).__init__(
             endog, k_regimes, order=order, exog_tvtp=exog_tvtp, exog=exog,
             dates=dates, freq=freq, missing=missing)
+
+        assert k_exog == self.k_exog, (k_exog, self.k_exog)
 
         # Switching options
         if self.switching_trend is True or self.switching_trend is False:
