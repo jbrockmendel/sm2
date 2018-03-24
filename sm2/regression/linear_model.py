@@ -170,6 +170,15 @@ class RegressionModel(base.LikelihoodModel):
 
     Intended for subclassing.
     """
+    @property
+    def _res_classes(self):
+        from sm2.base.elastic_net import (
+            RegularizedResults, RegularizedResultsWrapper)
+
+        return {"fit": (RegressionResults, RegressionResultsWrapper),
+                "fit_regularized": (RegularizedResults,
+                                    RegularizedResultsWrapper)}
+
     def __init__(self, endog, exog, **kwargs):
         super(RegressionModel, self).__init__(endog, exog, **kwargs)
         self._data_attr.extend(['pinv_wexog', 'wendog', 'wexog', 'weights'])
@@ -299,18 +308,22 @@ class RegressionModel(base.LikelihoodModel):
         if self._df_resid is None:
             self.df_resid = self.nobs - self.rank
 
+        res_cls, wrap_cls = self._res_classes["fit"]
         if isinstance(self, OLS):
-            lfit = OLSResults(
+            lfit = res_cls(
                 self, beta,
                 normalized_cov_params=self.normalized_cov_params,
                 cov_type=cov_type, cov_kwds=cov_kwds, use_t=use_t)
+            # TODO: Why aren't we passing **kwargs here like we do in the
+            # other case?  If we can pass them anyway, we can get rid of this
+            # if/else block
         else:
-            lfit = RegressionResults(
+            lfit = res_cls(
                 self, beta,
                 normalized_cov_params=self.normalized_cov_params,
                 cov_type=cov_type, cov_kwds=cov_kwds, use_t=use_t,
                 **kwargs)
-        return RegressionResultsWrapper(lfit)
+        return wrap_cls(lfit)
 
     def predict(self, params, exog=None):
         """
@@ -562,10 +575,9 @@ class GLS(RegressionModel):
             profile_scale=profile_scale,
             refit=refit, **kwargs)
 
-        from sm2.base.elastic_net import (
-            RegularizedResults, RegularizedResultsWrapper)
-        rrslt = RegularizedResults(self, rslt.params)
-        return RegularizedResultsWrapper(rrslt)
+        res_cls, wrap_cls = self._res_classes["fit_regularized"]
+        rrslt = res_cls(self, rslt.params)
+        return wrap_cls(rrslt)
 
 
 class WLS(RegressionModel):
@@ -711,10 +723,9 @@ class WLS(RegressionModel):
             profile_scale=profile_scale,
             refit=refit, **kwargs)
 
-        from sm2.base.elastic_net import (RegularizedResults,
-                                          RegularizedResultsWrapper)
-        rrslt = RegularizedResults(self, rslt.params)
-        return RegularizedResultsWrapper(rrslt)
+        res_cls, wrap_cls = self._res_classes["fit_regularized"]
+        rrslt = res_cls(self, rslt.params)
+        return wrap_cls(rrslt)
 
 
 class OLS(WLS):
@@ -759,6 +770,12 @@ class OLS(WLS):
     No constant is added by the model unless you are using formulas.
     """ % {'params': base._model_params_doc,  # noqa:E501
            'extra_params': base._missing_param_doc + base._extra_param_doc}
+
+    @property
+    def _res_classes(self):
+        cls_dict = RegressionModel._res_classes.fget(self)
+        cls_dict["fit"] = (OLSResults, RegressionResultsWrapper)
+        return cls_dict
 
     # TODO: change example to use datasets.  This was the point of datasets!
     def __init__(self, endog, exog=None, missing='none', hasconst=None,

@@ -304,6 +304,10 @@ class GLM(base.LikelihoodModel):
         # TODO: Do this further up the inheritance hierarchy
         return self.endog.shape[0]
 
+    @property
+    def _res_classes(self):
+        return {"fit": (GLMResults, GLMResultsWrapper)}
+
     def __init__(self, endog, exog, family=None, offset=None,
                  exposure=None, freq_weights=None, var_weights=None,
                  missing='none', **kwargs):
@@ -1064,11 +1068,13 @@ class GLM(base.LikelihoodModel):
         else:
             cov_p = rslt.normalized_cov_params / scale
 
-        glm_results = GLMResults(self, rslt.params,
-                                 cov_p,
-                                 scale,
-                                 cov_type=cov_type, cov_kwds=cov_kwds,
-                                 use_t=use_t)
+        res_cls, wrap_cls = self._res_classes["fit"]
+
+        glm_results = res_cls(self, rslt.params,
+                              cov_p,
+                              scale,
+                              cov_type=cov_type, cov_kwds=cov_kwds,
+                              use_t=use_t)
 
         # TODO: iteration count is not always available
         history = {'iteration': 0}
@@ -1079,7 +1085,7 @@ class GLM(base.LikelihoodModel):
         glm_results.method = method
         glm_results.fit_history = history
 
-        return GLMResultsWrapper(glm_results)
+        return wrap_cls(glm_results)
 
     def _fit_irls(self, start_params=None, maxiter=100, tol=1e-8,
                   scale=None, cov_type='nonrobust', cov_kwds=None,
@@ -1153,11 +1159,13 @@ class GLM(base.LikelihoodModel):
             wls_model = lm.WLS(wlsendog, wlsexog, self.weights)
             wls_results = wls_model.fit(method=wls_method2)
 
-        glm_results = GLMResults(self, wls_results.params,
-                                 wls_results.normalized_cov_params,
-                                 self.scale,
-                                 cov_type=cov_type, cov_kwds=cov_kwds,
-                                 use_t=use_t)
+        res_cls, wrap_cls = self._res_classes["fit"]
+
+        glm_results = res_cls(self, wls_results.params,
+                              wls_results.normalized_cov_params,
+                              self.scale,
+                              cov_type=cov_type, cov_kwds=cov_kwds,
+                              use_t=use_t)
 
         glm_results.method = "IRLS"
         glm_results.mle_settings = {}
@@ -1168,7 +1176,7 @@ class GLM(base.LikelihoodModel):
         history['iteration'] = iteration + 1
         glm_results.fit_history = history
         glm_results.converged = converged
-        return GLMResultsWrapper(glm_results)
+        return wrap_cls(glm_results)
 
     def fit_regularized(self, method="elastic_net", alpha=0.,
                         start_params=None, refit=False, **kwargs):
@@ -1240,6 +1248,7 @@ class GLM(base.LikelihoodModel):
 
         self.mu = self.predict(result.params)
         self.scale = self.estimate_scale(self.mu)
+        # TODO: Don't set these attributes on the model instance
 
         return result
 

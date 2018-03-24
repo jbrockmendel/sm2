@@ -413,7 +413,20 @@ class DiscreteModel(base.LikelihoodModel):
         """
         raise NotImplementedError
 
+    def _wrap_derivative_exog(self, margeff, params, exog, dummy_idx,
+                              count_idx, transform):
+        if count_idx is not None:
+            from sm2.discrete.discrete_margins import _get_count_effects
+            margeff = _get_count_effects(margeff, exog, count_idx, transform,
+                                         self, params)
+        if dummy_idx is not None:
+            from sm2.discrete.discrete_margins import _get_dummy_effects
+            margeff = _get_dummy_effects(margeff, exog, dummy_idx, transform,
+                                         self, params)
+        return margeff
 
+
+# TODO: Can we just move this all the way up into DiscreteModel?
 class FitBase(DiscreteModel):
     """Mixin to wrap DiscreteModel.fit and fit_regularized"""
 
@@ -537,19 +550,14 @@ class BinaryModel(FitBase):
             exog = self.exog
         Xb = np.dot(exog, params)
         margeff = np.dot(self.pdf(Xb)[:, None], params[None, :])
+
         if 'ex' in transform:
             margeff *= exog
         if 'ey' in transform:
             margeff /= self.predict(params, exog)[:, None]
-        if count_idx is not None:
-            from sm2.discrete.discrete_margins import _get_count_effects
-            margeff = _get_count_effects(margeff, exog, count_idx, transform,
-                                         self, params)
-        if dummy_idx is not None:
-            from sm2.discrete.discrete_margins import _get_dummy_effects
-            margeff = _get_dummy_effects(margeff, exog, dummy_idx, transform,
-                                         self, params)
-        return margeff
+
+        return self._wrap_derivative_exog(margeff, params, exog, dummy_idx,
+                                          count_idx, transform)
 
 
 class MultinomialModel(BinaryModel):
@@ -726,19 +734,16 @@ class MultinomialModel(BinaryModel):
              for j in range(J)])
         margeff = np.transpose(margeff, (1, 2, 0))
         # swap the axes to make sure margeff are in order nobs, K, J
+
         if 'ex' in transform:
             margeff *= exog
         if 'ey' in transform:
             margeff /= self.predict(params, exog)[:, None, :]
+            # TODO: The extra ":" at the end of this line is the main difference
+            # between this and the other two versions of _derivative_exog
 
-        if count_idx is not None:
-            from sm2.discrete.discrete_margins import _get_count_effects
-            margeff = _get_count_effects(margeff, exog, count_idx, transform,
-                                         self, params)
-        if dummy_idx is not None:
-            from sm2.discrete.discrete_margins import _get_dummy_effects
-            margeff = _get_dummy_effects(margeff, exog, dummy_idx, transform,
-                                         self, params)
+        margeff = self._wrap_derivative_exog(margeff, params, exog, dummy_idx,
+                                             count_idx, transform)
         return margeff.reshape(len(exog), -1, order='F')
 
 
@@ -848,15 +853,8 @@ class CountModel(FitBase):
         if 'ey' in transform:
             margeff /= self.predict(params, exog)[:, None]
 
-        if count_idx is not None:
-            from sm2.discrete.discrete_margins import _get_count_effects
-            margeff = _get_count_effects(margeff, exog, count_idx, transform,
-                                         self, params)
-        if dummy_idx is not None:
-            from sm2.discrete.discrete_margins import _get_dummy_effects
-            margeff = _get_dummy_effects(margeff, exog, dummy_idx, transform,
-                                         self, params)
-        return margeff
+        return self._wrap_derivative_exog(margeff, params, exog, dummy_idx,
+                                          count_idx, transform)
 
 
 class OrderedModel(DiscreteModel):
@@ -999,6 +997,7 @@ class Poisson(CountModel):
         params = [np.log(const)]
         return params
 
+    # TODO: can we use FitBase?
     @copy_doc(DiscreteModel.fit.__doc__)
     def fit(self, start_params=None, method='newton', maxiter=35,
             full_output=1, disp=1, callback=None, **kwargs):
