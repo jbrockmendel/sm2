@@ -151,6 +151,8 @@ def acorr_ljungbox(x, lags=None, boxpierce=False):
     Greene
     Wikipedia
     """
+    from sm2.tsa.stattools import acf
+
     x = np.asarray(x)
     nobs = x.shape[0]
     if lags is None:
@@ -161,8 +163,7 @@ def acorr_ljungbox(x, lags=None, boxpierce=False):
     lags = np.asarray(lags)
     maxlag = max(lags)
 
-    from sm2.tsa.stattools import acf
-    acfx = acf(x, nlags=maxlag)  # normalize by nobs not (nobs - nlags)
+    acfx = acf(x, nlags=maxlag)  # normalize by nobs not (nobs-nlags)
     # SS: unbiased=False is default now
 
     acf2norm = acfx[1:maxlag + 1]**2 / (nobs - np.arange(1, maxlag + 1))
