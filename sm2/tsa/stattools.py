@@ -987,10 +987,10 @@ def coint(y0, y1, trend='c', method='aeg', maxlag=None, autolag='aic',
         Queen's University, Dept of Economics Working Papers 1227.
         http://ideas.repec.org/p/qed/wpaper/1227.html
     """
-
     trend = trend.lower()
     if trend not in ['c', 'nc', 'ct', 'ctt']:  # pragma: no cover
         raise ValueError("trend option %s not understood" % trend)
+
     y0 = np.asarray(y0)
     y1 = np.asarray(y1)
     if y1.ndim < 2:

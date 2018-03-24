@@ -106,10 +106,11 @@ def acorr_ljungbox(x, lags=None, boxpierce=False):
         data series, regression residuals when used as diagnostic test
     lags : None, int or array_like
         If lags is an integer then this is taken to be the largest lag
-        that is included, the test result is reported for all smaller lag length.
-        If lags is a list or array, then all lags are included up to the largest
-        lag in the list, however only the tests for the lags in the list are
-        reported.
+        that is included, the test result is reported for all smaller lag
+        length.
+        If lags is a list or array, then all lags are included up to the
+        largest lag in the list, however only the tests for the lags in the
+        list are reported.
         If lags is None, then the default maxlag is 'min((nobs // 2 - 2), 40)'
     boxpierce : {False, True}
         If true, then additional to the results of the Ljung-Box test also the

@@ -246,7 +246,8 @@ def _get_sandwich_arrays(results, cov_type=''):
                 xu = results.model.wexog * results.wresid[:, None]
                 hessian_inv = np.asarray(results.normalized_cov_params)
             else:
-                hessian_inv = np.linalg.inv(results.model.hessian(results.params))
+                hess = results.model.hessian(results.params)
+                hessian_inv = np.linalg.inv(hess)
         else:
             xu = results.model.wexog * results.wresid[:, None]
             hessian_inv = np.asarray(results.normalized_cov_params)

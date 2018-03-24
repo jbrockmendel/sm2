@@ -618,7 +618,7 @@ def test_irf_trend():
 
     trend = 1e-3 * np.arange(len(data)) / (len(data) - 1)
     # for pandas version, currently not used, if data is a pd.DataFrame
-    #data_t = pd.DataFrame(data.values + trend[:, None],
+    # data_t = pd.DataFrame(data.values + trend[:, None],
     #                       index=data.index, columns=data.columns)
     data_t = data + trend[:, None]
 

@@ -1292,7 +1292,6 @@ class ARIMA(ARMA):
         return fv
 
 
-
 class ARMAResults(tsa_model.TimeSeriesModelResults):
     """
     Class to hold results from fitting an ARMA model.
