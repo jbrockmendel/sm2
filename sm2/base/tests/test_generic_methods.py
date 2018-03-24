@@ -366,7 +366,6 @@ class TestGenericGEEPoissonBC(CheckGenericMixin):
         #                        1.02790201, 0.98080081])
         "start_params": np.array([0., 1., 1., 1.])}
 
-    cov_type = 'bias_reduced'
     def setup(self):
         # fit for each test, because results will be changed by test
         x = self.exog

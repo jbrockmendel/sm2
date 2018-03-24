@@ -1278,28 +1278,28 @@ class TestWtdTweediePower15(CheckWtdDuplicationMixin):
 @pytest.mark.not_vetted
 class CheckTweedie(object):
     def test_resid(self):
-        l = len(self.res1.resid_response) - 1
+        r1len = len(self.res1.resid_response) - 1
         l2 = len(self.res2.resid_response) - 1
         assert_allclose(np.concatenate((self.res1.resid_response[:17],
-                                        [self.res1.resid_response[l]])),
+                                        [self.res1.resid_response[r1len]])),
                         np.concatenate((self.res2.resid_response[:17],
                                         [self.res2.resid_response[l2]])),
                         rtol=1e-5, atol=1e-5)
 
         assert_allclose(np.concatenate((self.res1.resid_pearson[:17],
-                                        [self.res1.resid_pearson[l]])),
+                                        [self.res1.resid_pearson[r1len]])),
                         np.concatenate((self.res2.resid_pearson[:17],
                                         [self.res2.resid_pearson[l2]])),
                         rtol=1e-5, atol=1e-5)
 
         assert_allclose(np.concatenate((self.res1.resid_deviance[:17],
-                                        [self.res1.resid_deviance[l]])),
+                                        [self.res1.resid_deviance[r1len]])),
                         np.concatenate((self.res2.resid_deviance[:17],
                                         [self.res2.resid_deviance[l2]])),
                         rtol=1e-5, atol=1e-5)
 
         assert_allclose(np.concatenate((self.res1.resid_working[:17],
-                                        [self.res1.resid_working[l]])),
+                                        [self.res1.resid_working[r1len]])),
                         np.concatenate((self.res2.resid_working[:17],
                                         [self.res2.resid_working[l2]])),
                         rtol=1e-5, atol=1e-5)
@@ -1320,10 +1320,10 @@ class CheckTweedie(object):
         assert self.res1.df_resid == self.res2.df_resid
 
     def test_fittedvalues(self):
-        l = len(self.res1.fittedvalues) - 1
+        r1len = len(self.res1.fittedvalues) - 1
         l2 = len(self.res2.resid_response) - 1
         assert_allclose(np.concatenate((self.res1.fittedvalues[:17],
-                                        [self.res1.fittedvalues[l]])),
+                                        [self.res1.fittedvalues[r1len]])),
                         np.concatenate((self.res2.fittedvalues[:17],
                                         [self.res2.fittedvalues[l2]])),
                         atol=1e-4, rtol=1e-4)

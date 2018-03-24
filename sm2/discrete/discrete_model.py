@@ -3113,8 +3113,7 @@ class DiscreteResults(base.LikelihoodModelResults):
 
     def __init__(self, model, mlefit, cov_type='nonrobust', cov_kwds=None,
                  use_t=None):
-        #super(DiscreteResults, self).__init__(model, params,
-        #        np.linalg.inv(-hessian), scale=1.)
+        # NB: does _not_ call super(...).__init__
         self.model = model
         try:
             self.df_model = model.df_model
@@ -3375,11 +3374,6 @@ class DiscreteResults(base.LikelihoodModelResults):
         if hasattr(self, 'constraints'):
             smry.add_extra_txt(['Model has been estimated subject to linear '
                                 'equality constraints.'])
-
-        # diagnostic table not used yet
-        # smry.add_table_2cols(self, gleft=diagn_left, gright=diagn_right,
-        #                   yname=yname, xname=xname,
-        #                   title="")
         return smry
 
     def summary2(self, yname=None, xname=None, title=None, alpha=.05,
