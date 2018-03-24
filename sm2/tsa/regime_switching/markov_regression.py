@@ -82,6 +82,10 @@ class MarkovRegression(markov_switching.MarkovSwitching):
 
     """
 
+    @property
+    def k_exog(self):
+        return self.data.orig_exog.shape[1]  # TODO: Does this make sene at all?
+
     def __init__(self, endog, k_regimes, trend='c', exog=None, order=0,
                  exog_tvtp=None, switching_trend=True, switching_exog=True,
                  switching_variance=False, dates=None, freq=None,
@@ -121,6 +125,7 @@ class MarkovRegression(markov_switching.MarkovSwitching):
             dates=dates, freq=freq, missing=missing)
 
         assert k_exog == self.k_exog, (k_exog, self.k_exog)
+        # FIXME: this fails for some reason with k_exog == self.k_exog - 1
 
         # Switching options
         if self.switching_trend is True or self.switching_trend is False:
