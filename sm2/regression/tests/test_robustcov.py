@@ -230,7 +230,7 @@ class CheckOLSRobustNewMixin(object):
         if not skip:
             assert_allclose(res1.scale, scale, rtol=rtol)
 
-        if not res2.vcetype == 'Newey-West':
+        if res2.vcetype != 'Newey-West':
             # no rsquared in Stata
             r2 = res2.r2 if hasattr(res2, 'r2') else res2.r2c
             assert_allclose(res1.rsquared, r2,
@@ -699,7 +699,7 @@ class TestOLSRobustCluster2GLarge(CheckOLSRobustCluster,
         self.bse_robust = res_ols.bse
         self.cov_robust = res_ols.cov_params()
         cov1 = sw.cov_cluster_2groups(self.res1, self.groups, group2=self.time,
-                                       use_correction=False)[0]
+                                      use_correction=False)[0]
         se1 = sw.se_cov(cov1)
         self.bse_robust2 = se1
         self.cov_robust2 = cov1
@@ -721,7 +721,8 @@ class CheckWLSRobustCluster(CheckOLSRobust):
     @classmethod
     def setup_class(cls):
         dtapa = grunfeld.data.load_pandas()
-        #Stata example/data seems to miss last firm
+        # Stata example/data seems to miss last firm
+        # TODO: Is the comment above (from upstream) actionable?
         dtapa_endog = dtapa.endog[:200]
         dtapa_exog = dtapa.exog[:200]
         exog = add_constant(dtapa_exog[['value', 'capital']], prepend=False)
@@ -730,7 +731,7 @@ class CheckWLSRobustCluster(CheckOLSRobust):
                        weights=1 / dtapa_exog['value']).fit()
 
         firm_names, firm_id = np.unique(np.asarray(dtapa_exog[['firm']], 'S20'),
-                                    return_inverse=True)
+                                        return_inverse=True)
         cls.groups = firm_id
         #time indicator in range(max Ti)
         time = np.asarray(dtapa_exog[['year']])

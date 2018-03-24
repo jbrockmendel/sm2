@@ -366,8 +366,8 @@ class TimeSeriesModel(base.LikelihoodModel):
 
         """
         try:
-            loc, index, index_was_expanded = (
-                self._get_index_loc(key, base_index))
+            loc, index, index_was_expanded = self._get_index_loc(key,
+                                                                 base_index)
         except KeyError as e:
             try:
                 if not isinstance(key, (integer_types, np.integer)):
@@ -426,9 +426,7 @@ class TimeSeriesModel(base.LikelihoodModel):
         base index (or the model's index if the base index was not given) and
         then falling back to try again with the model row labels as the base
         index.
-
         """
-
         # Convert index keys (start, end) to index locations and get associated
         # indexes.
         try:
@@ -475,6 +473,7 @@ class TimeSeriesModel(base.LikelihoodModel):
                               ' `index` argument will only be used'
                               ' internally.', ValueWarning)
             prediction_index = pd.Index(index)
+
         # Now, if we *do not* have a supported index, but we were given some
         # kind of index...
         elif self._index_generated and not self._index_none:

@@ -106,10 +106,11 @@ def acorr_ljungbox(x, lags=None, boxpierce=False):
         data series, regression residuals when used as diagnostic test
     lags : None, int or array_like
         If lags is an integer then this is taken to be the largest lag
-        that is included, the test result is reported for all smaller lag length.
-        If lags is a list or array, then all lags are included up to the largest
-        lag in the list, however only the tests for the lags in the list are
-        reported.
+        that is included, the test result is reported for all smaller lag
+        length.
+        If lags is a list or array, then all lags are included up to the
+        largest lag in the list, however only the tests for the lags in the
+        list are reported.
         If lags is None, then the default maxlag is 'min((nobs // 2 - 2), 40)'
     boxpierce : {False, True}
         If true, then additional to the results of the Ljung-Box test also the
@@ -143,7 +144,7 @@ def acorr_ljungbox(x, lags=None, boxpierce=False):
 
     Examples
     --------
-    see example script
+    see example script  # TODO: either port this script or get new example
 
     References
     ----------
@@ -161,8 +162,10 @@ def acorr_ljungbox(x, lags=None, boxpierce=False):
 
     lags = np.asarray(lags)
     maxlag = max(lags)
-    acfx = acf(x, nlags=maxlag) # normalize by nobs not (nobs-nlags)
-                             # SS: unbiased=False is default now
+
+    acfx = acf(x, nlags=maxlag)  # normalize by nobs not (nobs-nlags)
+    # SS: unbiased=False is default now
+
     acf2norm = acfx[1:maxlag + 1]**2 / (nobs - np.arange(1, maxlag + 1))
     qljungbox = nobs * (nobs + 2) * np.cumsum(acf2norm)[lags - 1]
     pval = stats.chi2.sf(qljungbox, lags)
@@ -172,6 +175,7 @@ def acorr_ljungbox(x, lags=None, boxpierce=False):
         qboxpierce = nobs * np.cumsum(acfx[1:maxlag + 1]**2)[lags - 1]
         pvalbp = stats.chi2.sf(qboxpierce, lags)
         return qljungbox, pval, qboxpierce, pvalbp
+    # TODO: Get rid of multiple-return
 
 
 def acorr_lm(x, maxlag=None, autolag='AIC', store=False, regresults=False):
@@ -212,7 +216,6 @@ def acorr_lm(x, maxlag=None, autolag='AIC', store=False, regresults=False):
     --------
     het_arch
     acorr_breusch_godfrey
-    acorr_ljung_box
     """
     from sm2.regression.linear_model import OLS
     from sm2.tsa.tsatools import lagmat

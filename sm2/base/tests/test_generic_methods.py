@@ -366,7 +366,6 @@ class TestGenericGEEPoissonBC(CheckGenericMixin):
         #                        1.02790201, 0.98080081])
         "start_params": np.array([0., 1., 1., 1.])}
 
-    cov_type = 'bias_reduced'
     def setup(self):
         # fit for each test, because results will be changed by test
         x = self.exog
@@ -539,13 +538,14 @@ class TestWaldAnovaOLSF(CheckAnovaMixin):
 
 @pytest.mark.not_vetted
 class TestWaldAnovaGLM(CheckAnovaMixin):
+    model_cls = sm.GLM
     mod_kwargs = {}
     fit_kwargs = {"use_t": False}
 
     @classmethod
     def initialize(cls):
         formula = "np.log(Days+1) ~ C(Duration, Sum)*C(Weight, Sum)"
-        mod = sm.GLM.from_formula(formula, cls.data, **cls.mod_kwargs)
+        mod = cls.model_cls.from_formula(formula, cls.data, **cls.mod_kwargs)
         cls.res = mod.fit(**cls.fit_kwargs)
 
 

@@ -10,6 +10,7 @@ from six.moves import range, zip
 
 import numpy as np
 from scipy import stats
+from pandas.util._decorators import deprecate_kwarg
 
 from sm2.compat.scipy import _next_regular
 
@@ -108,6 +109,7 @@ def _autolag(mod, endog, exog, startlag, maxlag, method, modargs=(),
     else:  # pragma: no cover
         raise ValueError("Information Criterion %s not understood." % method)
 
+    # TODO: remove multiple-return
     if not regresults:
         return icbest, bestlag
     else:
@@ -263,6 +265,7 @@ def adfuller(x, maxlag=None, regression="c", autolag='AIC',
     else:
         usedlag = maxlag
         icbest = None
+
     if regression != 'nc':
         resols = OLS(xdshort, add_trend(xdall[:, :usedlag + 1],
                      regression)).fit()
@@ -300,6 +303,7 @@ def adfuller(x, maxlag=None, regression="c", autolag='AIC',
             return adfstat, pvalue, usedlag, nobs, critvalues
         else:
             return adfstat, pvalue, usedlag, nobs, critvalues, icbest
+        # TODO: remove multiple-return
 
 
 def acovf(x, unbiased=False, demean=True, fft=False, missing='none'):
@@ -394,8 +398,8 @@ def acovf(x, unbiased=False, demean=True, fft=False, missing='none'):
     return acov
 
 
-# FIXME: dont use "type" as arg name
-def q_stat(x, nobs, type="ljungbox"):
+@deprecate_kwarg("type", "method")
+def q_stat(x, nobs, method="ljungbox"):
     """
     Return's Ljung-Box Q Statistic
 
@@ -404,6 +408,8 @@ def q_stat(x, nobs, type="ljungbox"):
     nobs : int
         Number of observations in the entire sample (ie., not just the length
         of the autocorrelation function results.
+
+    TODO: The paramters section here is missing `method`
 
     Returns
     -------
@@ -416,9 +422,8 @@ def q_stat(x, nobs, type="ljungbox"):
     ------
     Written to be used with acf.
     """
-    # TODO: don't use `type` as a kwarg name
     x = np.asarray(x)
-    if type == "ljungbox":
+    if method == "ljungbox":
         ret = (nobs * (nobs + 2) *
                np.cumsum((1. / (nobs - np.arange(1, len(x) + 1))) * x**2))
     chi2 = stats.chi2.sf(ret, np.arange(1, len(x) + 1))
@@ -503,6 +508,7 @@ def acf(x, unbiased=False, nlags=40, qstat=False, fft=False, alpha=None,
             return acf, confint, qstat, pvalue
         else:
             return acf, qstat, pvalue
+    # TODO: remove multiple-return
 
 
 def pacf_yw(x, nlags=40, method='unbiased'):
@@ -985,10 +991,10 @@ def coint(y0, y1, trend='c', method='aeg', maxlag=None, autolag='aic',
         Queen's University, Dept of Economics Working Papers 1227.
         http://ideas.repec.org/p/qed/wpaper/1227.html
     """
-
     trend = trend.lower()
     if trend not in ['c', 'nc', 'ct', 'ctt']:  # pragma: no cover
         raise ValueError("trend option %s not understood" % trend)
+
     y0 = np.asarray(y0)
     y1 = np.asarray(y1)
     if y1.ndim < 2:

@@ -704,8 +704,7 @@ class ARResults(tsa_model.TimeSeriesModelResults):
         self.trendorder = trendorder
         # TODO: cmle vs mle?
         self.df_model = k_ar + k_trend
-        self.df_resid = self.model.df_resid = n_totobs - self.df_model
-        # FIXME: Dont set model.df_resid here!
+        self.df_resid = n_totobs - self.df_model
 
     @cache_writable()
     def sigma2(self):
