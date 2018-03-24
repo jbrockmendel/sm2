@@ -897,13 +897,15 @@ class CheckWtdDuplicationMixin(object):
         cls.exog_big = np.repeat(cls.exog, cls.weight, axis=0)
 
     def test_params(self):
-        assert_allclose(self.res1.params, self.res2.params,
+        assert_allclose(self.res1.params,
+                        self.res2.params,
                         atol=1e-6, rtol=1e-6)
 
     decimal_bse = DECIMAL_4
 
     def test_standard_errors(self):
-        assert_allclose(self.res1.bse, self.res2.bse,
+        assert_allclose(self.res1.bse,
+                        self.res2.bse,
                         rtol=1e-5, atol=1e-6)
 
     decimal_resids = DECIMAL_4
@@ -928,21 +930,26 @@ class CheckWtdDuplicationMixin(object):
     def test_aic(self):
         # R includes the estimation of the scale as a lost dof
         # Doesn't with Gamma though
-        assert_allclose(self.res1.aic, self.res2.aic,
+        assert_allclose(self.res1.aic,
+                        self.res2.aic,
                         atol=1e-6, rtol=1e-6)
 
     def test_deviance(self):
-        assert_allclose(self.res1.deviance, self.res2.deviance,
+        assert_allclose(self.res1.deviance,
+                        self.res2.deviance,
                         atol=1e-6, rtol=1e-6)
 
     def test_scale(self):
-        assert_allclose(self.res1.scale, self.res2.scale,
+        assert_allclose(self.res1.scale,
+                        self.res2.scale,
                         atol=1e-6, rtol=1e-6)
 
     def test_loglike(self):
         # Stata uses the below llf for these families
         # We differ with R for them
-        assert_allclose(self.res1.llf, self.res2.llf, 1e-6)
+        assert_allclose(self.res1.llf,
+                        self.res2.llf,
+                        1e-6)
 
     decimal_null_deviance = DECIMAL_4
 
@@ -954,14 +961,16 @@ class CheckWtdDuplicationMixin(object):
     decimal_bic = DECIMAL_4
 
     def test_bic(self):
-        assert_allclose(self.res1.bic, self.res2.bic,
+        assert_allclose(self.res1.bic,
+                        self.res2.bic,
                         atol=1e-6, rtol=1e-6)
 
     decimal_fittedvalues = DECIMAL_4
 
     def test_fittedvalues(self):
         res2_fitted = self.res2.predict(self.res1.model.exog)
-        assert_allclose(self.res1.fittedvalues, res2_fitted,
+        assert_allclose(self.res1.fittedvalues,
+                        res2_fitted,
                         atol=1e-5, rtol=1e-5)
 
     decimal_tpvalues = DECIMAL_4
@@ -969,11 +978,14 @@ class CheckWtdDuplicationMixin(object):
     def test_tpvalues(self):
         # test comparing tvalues and pvalues with normal implementation
         # make sure they use normal distribution (inherited in results class)
-        assert_allclose(self.res1.tvalues, self.res2.tvalues,
+        assert_allclose(self.res1.tvalues,
+                        self.res2.tvalues,
                         atol=1e-6, rtol=2e-4)
-        assert_allclose(self.res1.pvalues, self.res2.pvalues,
+        assert_allclose(self.res1.pvalues,
+                        self.res2.pvalues,
                         atol=1e-6, rtol=1e-6)
-        assert_allclose(self.res1.conf_int(), self.res2.conf_int(),
+        assert_allclose(self.res1.conf_int(),
+                        self.res2.conf_int(),
                         atol=1e-6, rtol=1e-6)
 
 
@@ -1305,14 +1317,18 @@ class CheckTweedie(object):
                         rtol=1e-5, atol=1e-5)
 
     def test_bse(self):
-        assert_allclose(self.res1.bse, self.res2.bse, atol=1e-6, rtol=1e6)
+        assert_allclose(self.res1.bse,
+                        self.res2.bse,
+                        atol=1e-6, rtol=1e6)
 
     def test_params(self):
-        assert_allclose(self.res1.params, self.res2.params,
+        assert_allclose(self.res1.params,
+                        self.res2.params,
                         atol=1e-5, rtol=1e-5)
 
     def test_deviance(self):
-        assert_allclose(self.res1.deviance, self.res2.deviance,
+        assert_allclose(self.res1.deviance,
+                        self.res2.deviance,
                         atol=1e-6, rtol=1e-6)
 
     def test_df(self):
@@ -1352,6 +1368,7 @@ class TestTweediePower15(CheckTweedie):
         cls.res1 = sm.GLM(endog=cls.data.endog,
                           exog=cls.data.exog[['INCOME', 'SOUTH']],
                           family=family_link).fit()
+
 
 @pytest.mark.not_vetted
 class TestTweediePower2(CheckTweedie):
@@ -1403,19 +1420,25 @@ class TestTweedieLog15Fair(CheckTweedie):
 @pytest.mark.not_vetted
 class CheckTweedieSpecial(object):
     def test_mu(self):
-        assert_allclose(self.res1.mu, self.res2.mu,
+        assert_allclose(self.res1.mu,
+                        self.res2.mu,
                         rtol=1e-5, atol=1e-5)
 
     def test_resid(self):
-        assert_allclose(self.res1.resid_response, self.res2.resid_response,
+        assert_allclose(self.res1.resid_response,
+                        self.res2.resid_response,
                         rtol=1e-5, atol=1e-5)
-        assert_allclose(self.res1.resid_pearson, self.res2.resid_pearson,
+        assert_allclose(self.res1.resid_pearson,
+                        self.res2.resid_pearson,
                         rtol=1e-5, atol=1e-5)
-        assert_allclose(self.res1.resid_deviance, self.res2.resid_deviance,
+        assert_allclose(self.res1.resid_deviance,
+                        self.res2.resid_deviance,
                         rtol=1e-5, atol=1e-5)
-        assert_allclose(self.res1.resid_working, self.res2.resid_working,
+        assert_allclose(self.res1.resid_working,
+                        self.res2.resid_working,
                         rtol=1e-5, atol=1e-5)
-        assert_allclose(self.res1.resid_anscombe, self.res2.resid_anscombe,
+        assert_allclose(self.res1.resid_anscombe,
+                        self.res2.resid_anscombe,
                         rtol=1e-5, atol=1e-5)
 
 
@@ -1681,6 +1704,9 @@ class TestConvergence(object):
         assert expected_iterations == actual_iterations
         assert len(self.res.fit_history['deviance']) - 2 == actual_iterations
 
+
+# ------------------------------------------------------------
+# Unsorted
 
 @pytest.mark.not_vetted
 def test_poisson_deviance():

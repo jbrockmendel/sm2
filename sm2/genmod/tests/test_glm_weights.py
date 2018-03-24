@@ -266,7 +266,7 @@ class TestGlmPoissonFwHC(CheckWeight):
         cls.corr_fact = np.sqrt((wsum - 1.) / wsum)
         model = GLM(cpunish_data.endog, cpunish_data.exog,
                     family=sm.families.Poisson(), freq_weights=fweights)
-        cls.res1 = model.fit(cov_type='HC0')  #,cov_kwds={'use_correction':False})
+        cls.res1 = model.fit(cov_type='HC0')  # ,cov_kwds={'use_correction':False})
 
 
 # var_weights (aweights fail with HC, not properly implemented yet
@@ -290,7 +290,7 @@ class TestGlmPoissonAwHC(CheckWeight):
         cls.corr_fact = np.sqrt((wsum - 1.) / wsum) * 0.98518473599905609
         model = GLM(cpunish_data.endog, cpunish_data.exog,
                     family=sm.families.Poisson(), var_weights=aweights)
-        cls.res1 = model.fit(cov_type='HC0')  #, cov_kwds={'use_correction':False})
+        cls.res1 = model.fit(cov_type='HC0')  # , cov_kwds={'use_correction':False})
 
 
 @pytest.mark.not_vetted

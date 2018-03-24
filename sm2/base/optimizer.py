@@ -322,20 +322,22 @@ def _fit_newton(f, score, start_params, fargs, kwargs, disp=True,
         if callback is not None:
             callback(newparams)
         iterations += 1
+
     fval = f(newparams, *fargs)  # this is the negative likelihood
+
     if iterations == maxiter:
         warnflag = 1
         if disp:  # TODO: not hit in tests.  remove?
-            print("Warning: Maximum number of iterations has been "
-                  "exceeded.")
-            print("         Current function value: %f" % fval)
-            print("         Iterations: %d" % iterations)
+            print("Warning: Maximum number of iterations has been exceeded.\n"
+                  "         Current function value: %f\n"
+                  "         Iterations: %d" % (iterations, fval))
     else:
         warnflag = 0
         if disp:
-            print("Optimization terminated successfully.")
-            print("         Current function value: %f" % fval)
-            print("         Iterations %d" % iterations)
+            print("Optimization terminated successfully.\n"
+                  "         Current function value: %f\n"
+                  "         Iterations %d" % (iterations, fval))
+
     if full_output:
         (xopt, fopt, niter,
          gopt, hopt) = (newparams, f(newparams, *fargs),
@@ -347,7 +349,6 @@ def _fit_newton(f, score, start_params, fargs, kwargs, disp=True,
                    'converged': converged}
         if retall:
             retvals['allvecs'] = history
-
     else:
         xopt = newparams
         retvals = None
