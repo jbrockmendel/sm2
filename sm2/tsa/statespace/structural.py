@@ -446,7 +446,8 @@ class UnobservedComponents(MLEModel):
             self.trend_specification = _mask_map.get(self.trend_mask, None)
 
         # Exogenous component
-        (self.k_exog, exog) = prepare_exog(exog)
+        (k_exog, exog) = prepare_exog(exog)
+        assert k_exog == self.k_exog, (k_exog, self.k_exog)
 
         self.regression = self.k_exog > 0
 

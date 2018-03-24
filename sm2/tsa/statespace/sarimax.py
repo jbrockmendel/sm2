@@ -414,7 +414,8 @@ class SARIMAX(MLEModel):
                 self._k_order = 0
 
         # Exogenous data
-        (self.k_exog, exog) = prepare_exog(exog)
+        (k_exog, exog) = prepare_exog(exog)
+        assert k_exog == self.k_exog, (k_exog, self.k_exog)
 
         # Redefine mle_regression to be true only if it was previously set to
         # true and there are exogenous regressors

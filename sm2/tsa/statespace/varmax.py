@@ -153,7 +153,8 @@ class VARMAX(MLEModel):
                  EstimationWarning)
 
         # Exogenous data
-        (self.k_exog, exog) = prepare_exog(exog)
+        (k_exog, exog) = prepare_exog(exog)
+        assert k_exog == self.k_exog, (k_exog, self.k_exog)
 
         # Note: at some point in the future might add state regression, as in
         # SARIMAX.
