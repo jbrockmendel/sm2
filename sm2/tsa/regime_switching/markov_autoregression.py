@@ -206,10 +206,10 @@ class MarkovAutoregression(markov_regression.MarkovRegression):
                     start = self.order - j
                     end = -j
                     if self._k_exog > 0:
-                        predict[ix] += ar_coeffs[j-1] * (
+                        predict[ix] += ar_coeffs[j - 1] * (
                             self.orig_endog[start:end] - xb[k][start:end])
                     else:
-                        predict[ix] += ar_coeffs[j-1] * (
+                        predict[ix] += ar_coeffs[j - 1] * (
                             self.orig_endog[start:end])
 
         return predict
@@ -381,10 +381,10 @@ class MarkovAutoregression(markov_regression.MarkovRegression):
         if np.any(self.switching_ar):
             for i in range(self.k_regimes):
                 param_names[self.parameters[i, 'autoregressive']] = [
-                    'ar.L%d[%d]' % (j+1, i) for j in range(self.order)]
+                    'ar.L%d[%d]' % (j + 1, i) for j in range(self.order)]
         else:
             param_names[self.parameters['autoregressive']] = [
-                'ar.L%d' % (j+1) for j in range(self.order)]
+                'ar.L%d' % (j + 1) for j in range(self.order)]
 
         return param_names.tolist()
 
@@ -478,7 +478,6 @@ class MarkovAutoregressionResults(markov_regression.MarkovRegressionResults):
         The parameters of the model.
     scale : float
         This is currently set to 1.0 and not used by the model or its results.
-
     """
     pass
 
@@ -486,5 +485,5 @@ class MarkovAutoregressionResults(markov_regression.MarkovRegressionResults):
 class MarkovAutoregressionResultsWrapper(
         markov_regression.MarkovRegressionResultsWrapper):
     pass
-wrap.populate_wrapper(MarkovAutoregressionResultsWrapper,
+wrap.populate_wrapper(MarkovAutoregressionResultsWrapper,  # noqa:E305
                       MarkovAutoregressionResults)

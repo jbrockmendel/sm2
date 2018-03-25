@@ -43,8 +43,6 @@ prefix_kim_smoother_map = {
 }
 
 
-
-
 def _logistic(x):
     """
     Note that this is not a vectorized function
@@ -170,7 +168,7 @@ def py_hamilton_filter(initial_probabilities, regime_transition,
 
     # Reshape regime_transition so we can use broadcasting
     shape = (k_regimes, k_regimes)
-    shape += (1,) * (order-1)
+    shape += (1,) * (order - 1)
     shape += (regime_transition.shape[-1],)
     regime_transition = np.reshape(regime_transition, shape)
 
@@ -198,7 +196,7 @@ def py_hamilton_filter(initial_probabilities, regime_transition,
         joint_likelihoods[t] = np.sum(tmp)
 
         # S_t, S_{t-1}, ..., S_{t-r} | t, stored at index t+1
-        filtered_joint_probabilities[..., t+1] = (
+        filtered_joint_probabilities[..., t + 1] = (
             tmp / joint_likelihoods[t])
 
     # S_t | t
@@ -290,10 +288,10 @@ def cy_hamilton_filter(initial_probabilities, regime_transition,
         predicted_joint_probabilities, filtered_joint_probabilities))
     func = prefix_hamilton_filter_map[prefix]
     func(nobs, k_regimes, order, regime_transition,
-         conditional_likelihoods.reshape(k_regimes**(order+1), nobs),
+         conditional_likelihoods.reshape(k_regimes**(order + 1), nobs),
          joint_likelihoods,
-         predicted_joint_probabilities.reshape(k_regimes**(order+1), nobs),
-         filtered_joint_probabilities.reshape(k_regimes**(order+1), nobs+1))
+         predicted_joint_probabilities.reshape(k_regimes**(order + 1), nobs),
+         filtered_joint_probabilities.reshape(k_regimes**(order + 1), nobs + 1))
 
     # S_t | t
     filtered_marginal_probabilities = filtered_joint_probabilities[..., 1:]
@@ -375,8 +373,8 @@ def py_kim_smoother(regime_transition, predicted_joint_probabilities,
         x = (filtered_joint_probabilities[..., t] *
              regime_transition[..., transition_t])
         # S_{t+1}, S_t, ..., S_{t-r+2} | T / S_{t+1}, S_t, ..., S_{t-r+2} | t
-        y = (smoothed_joint_probabilities[..., t+1] /
-             predicted_joint_probabilities[..., t+1])
+        y = (smoothed_joint_probabilities[..., t + 1] /
+             predicted_joint_probabilities[..., t + 1])
         # S_t, S_{t-1}, ..., S_{t-r+1} | T
         smoothed_joint_probabilities[..., t] = (x * y[..., None]).sum(axis=0)
 
@@ -444,9 +442,9 @@ def cy_kim_smoother(regime_transition, predicted_joint_probabilities,
         filtered_joint_probabilities))
     func = prefix_kim_smoother_map[prefix]
     func(nobs, k_regimes, order, regime_transition,
-         predicted_joint_probabilities.reshape(k_regimes**(order+1), nobs),
-         filtered_joint_probabilities.reshape(k_regimes**(order+1), nobs),
-         smoothed_joint_probabilities.reshape(k_regimes**(order+1), nobs))
+         predicted_joint_probabilities.reshape(k_regimes**(order + 1), nobs),
+         filtered_joint_probabilities.reshape(k_regimes**(order + 1), nobs),
+         smoothed_joint_probabilities.reshape(k_regimes**(order + 1), nobs))
 
     # Get smoothed marginal probabilities S_t | T by integrating out
     # S_{t-k+1}, S_{t-k+2}, ..., S_{t-1}
@@ -765,7 +763,7 @@ class MarkovSwitching(tsbase.TimeSeriesModel):
             coeffs = params[self.parameters[i, 'regime_transition']]
             regime_transition_matrix[:-1, i, :] = np.dot(
                 exog_tvtp,
-                np.reshape(coeffs, (self.k_regimes-1, self.k_tvtp)).T).T
+                np.reshape(coeffs, (self.k_regimes - 1, self.k_tvtp)).T).T
 
         # Perform the logistic transformation
         tmp = np.c_[np.zeros((nobs, self.k_regimes, 1)),
@@ -805,7 +803,7 @@ class MarkovSwitching(tsbase.TimeSeriesModel):
                 dtype=np.promote_types(np.float64, params.dtype))
             regime_transition_matrix[:-1, :, 0] = np.reshape(
                 params[self.parameters['regime_transition']],
-                (self.k_regimes-1, self.k_regimes))
+                (self.k_regimes - 1, self.k_regimes))
             regime_transition_matrix[-1, :, 0] = (
                 1 - np.sum(regime_transition_matrix[:-1, :, 0], axis=0))
         else:
@@ -1468,7 +1466,6 @@ class MarkovSwitching(tsbase.TimeSeriesModel):
         -----
         This is a private method for finding good starting parameters for MLE
         by scoring, where the defaults have been set heuristically.
-
         """
         if start_params is None:
             start_params = self.start_params
@@ -1543,14 +1540,13 @@ class MarkovSwitching(tsbase.TimeSeriesModel):
             # TODO add support for exog_tvtp_names
             param_names[self.parameters['regime_transition']] = [
                 'p[%d->%d].tvtp%d' % (j, i, k)
-                for i in range(self.k_regimes-1)
+                for i in range(self.k_regimes - 1)
                 for k in range(self.k_tvtp)
-                for j in range(self.k_regimes)
-                ]
+                for j in range(self.k_regimes)]
         else:
             param_names[self.parameters['regime_transition']] = [
                 'p[%d->%d]' % (j, i)
-                for i in range(self.k_regimes-1)
+                for i in range(self.k_regimes - 1)
                 for j in range(self.k_regimes)]
 
         return param_names.tolist()
@@ -2273,4 +2269,5 @@ class MarkovSwitchingResultsWrapper(wrap.ResultsWrapper):
     }
     _wrap_methods = wrap.union_dicts(
         tsbase.TimeSeriesResultsWrapper._wrap_methods, _methods)
-wrap.populate_wrapper(MarkovSwitchingResultsWrapper, MarkovSwitchingResults)
+wrap.populate_wrapper(MarkovSwitchingResultsWrapper,  # noqa:E305
+                      MarkovSwitchingResults)

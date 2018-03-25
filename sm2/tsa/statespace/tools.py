@@ -329,7 +329,8 @@ def companion_matrix(polynomial):
         else:
             inv = np.linalg.inv(polynomial[0])
             for i in range(n):
-                matrix[i * m:(i + 1) * m, :m] = -np.dot(inv, polynomial[i + 1]).T
+                matrix[i * m:(i + 1) * m, :m] = -np.dot(inv,
+                                                        polynomial[i + 1]).T
     return matrix
 
 
@@ -589,7 +590,8 @@ def unconstrain_stationary_univariate(constrained):
     y[n - 1:] = -constrained
     for k in range(n - 1, 0, -1):
         for i in range(k):
-            y[k - 1, i] = (y[k, i] - y[k, k]*y[k, k - i - 1]) / (1 - y[k, k]**2)
+            y[k - 1, i] = ((y[k, i] - y[k, k] * y[k, k - i - 1]) /
+                           (1 - y[k, k]**2))
     r = y.diagonal()
     x = r / ((1 - r**2)**0.5)
     return x
@@ -1135,7 +1137,7 @@ def _compute_multivariate_acovf_from_coefficients(
         ]
 
     if maxlag is None:
-        maxlag = order-1
+        maxlag = order - 1
 
     # Start with VAR(p): w_{t+1} = phi_1 w_t + ... + phi_p w_{t-p+1} + u_{t+1}
     # Then stack the VAR(p) into a VAR(1) in companion matrix form:
@@ -1313,7 +1315,7 @@ def _compute_multivariate_pacf_from_autocovariances(autocovariances,
             tmp_sum = autocovariances[s + 1].T.copy()
 
             for k in range(s):
-                tmp_sum -= np.dot(prev_forwards[k], autocovariances[s-k].T)
+                tmp_sum -= np.dot(prev_forwards[k], autocovariances[s - k].T)
 
             # Create the "last" (k = s+1) matrix
             # Note: this is for k = s+1. However, below we then have to
