@@ -6,9 +6,10 @@ License: BSD-3
 """
 from __future__ import division, absolute_import, print_function
 
+import pytest
 import numpy as np
 import pandas as pd
-from numpy.testing import assert_equal, assert_allclose, assert_raises
+from numpy.testing import assert_equal, assert_allclose
 
 from sm2.tools.numdiff import approx_fprime_cs
 from sm2.tsa.regime_switching import markov_switching
@@ -58,13 +59,18 @@ def test_params():
     check_transition_3(params)
 
     # Test for invalid parameter setting
-    assert_raises(IndexError, params.__setitem__, None, [1, 1])
+    with pytest.raises(IndexError):
+        params[None] = [1, 1]
 
     # Test for invalid parameter selection
-    assert_raises(IndexError, params.__getitem__, None)
-    assert_raises(IndexError, params.__getitem__, (0, 0))
-    assert_raises(IndexError, params.__getitem__, ('exog', 'exog'))
-    assert_raises(IndexError, params.__getitem__, ('exog', 0, 1))
+    with pytest.raises(IndexError):
+        params[None]
+    with pytest.raises(IndexError):
+        params[(0, 0)]
+    with pytest.raises(IndexError):
+        params[('exog', 'exog')]
+    with pytest.raises(IndexError):
+        params[('exog', 0, 1)]
 
 
 def test_init_endog():
@@ -84,13 +90,13 @@ def test_init_endog():
 
     # Invalid: k_regimes < 2
     endog = np.ones(10)
-    assert_raises(ValueError, markov_switching.MarkovSwitching, endog,
-                  k_regimes=1)
+    with pytest.raises(ValueError):
+        markov_switching.MarkovSwitching(endog, k_regimes=1)
 
     # Invalid: multiple endog columns
     endog = np.ones((10, 2))
-    assert_raises(ValueError, markov_switching.MarkovSwitching, endog,
-                  k_regimes=2)
+    with pytest.raises(ValueError):
+        markov_switching.MarkovSwitching(endog, k_regimes=2)
 
 
 def test_init_exog_tvtp():
@@ -103,8 +109,10 @@ def test_init_exog_tvtp():
 
     # Invalid exog_tvtp (too many obs)
     exog_tvtp = np.c_[np.ones((11, 1)), (np.arange(11) + 1)[:, np.newaxis]]
-    assert_raises(ValueError, markov_switching.MarkovSwitching, endog,
-                  k_regimes=2, exog_tvtp=exog_tvtp)
+    with pytest.raises(ValueError):
+        markov_switching.MarkovSwitching(endog,
+                                         k_regimes=2,
+                                         exog_tvtp=exog_tvtp)
 
 
 def test_transition_matrix():
@@ -119,7 +127,7 @@ def test_transition_matrix():
     # k_regimes = 3
     endog = np.ones(10)
     mod = markov_switching.MarkovSwitching(endog, k_regimes=3)
-    params = np.r_[[0]*3, [0.2]*3, 1.]
+    params = np.r_[[0] * 3, [0.2] * 3, 1.]
     transition_matrix = np.zeros((3, 3, 1))
     transition_matrix[1, :, 0] = 0.2
     transition_matrix[2, :, 0] = 0.8
@@ -150,23 +158,24 @@ def test_transition_matrix():
     p21 = np.exp(coeffs1) / (1 + np.exp(coeffs1))
     transition_matrix[0, 1, :] = p21
     transition_matrix[1, 1, :] = 1 - p21
-    assert_allclose(mod.regime_transition_matrix(params), transition_matrix,
+    assert_allclose(mod.regime_transition_matrix(params),
+                    transition_matrix,
                     atol=1e-10)
 
     # k_regimes = 3, tvtp
     endog = np.ones(10)
     exog_tvtp = np.c_[np.ones((10, 1)), (np.arange(10) + 1)[:, np.newaxis]]
-    mod = markov_switching.MarkovSwitching(
-        endog, k_regimes=3, exog_tvtp=exog_tvtp)
+    mod = markov_switching.MarkovSwitching(endog, k_regimes=3,
+                                           exog_tvtp=exog_tvtp)
 
     # If all TVTP regression coefficients are zero, then the logit transform
     # results in exp(0) / (1 + exp(0) + exp(0)) = 1/3 for all parameters;
     # since it's k_regimes=3 the remainder calculation is also 1/3.
-    params = np.r_[[0]*12]
+    params = np.r_[[0] * 12]
     assert_allclose(mod.regime_transition_matrix(params), 1 / 3)
 
     # Manually compute the TVTP coefficients for the first column
-    params = np.r_[[0]*6, [2]*6]
+    params = np.r_[[0] * 6, [2] * 6]
     transition_matrix = np.zeros((3, 3, 10))
 
     p11 = np.zeros(10)
@@ -189,10 +198,12 @@ def test_initial_probabilities():
     assert_allclose(mod.initial_probabilities(params), [0.2, 0.8])
 
     # Invalid known initial probabilities (too many elements)
-    assert_raises(ValueError, mod.initialize_known, [0.2, 0.2, 0.6])
+    with pytest.raises(ValueError):
+        mod.initialize_known([0.2, 0.2, 0.6])
 
     # Invalid known initial probabilities (doesn't sum to 1)
-    assert_raises(ValueError, mod.initialize_known, [0.2, 0.2])
+    with pytest.raises(ValueError):
+        mod.initialize_known([0.2, 0.2])
 
     # Valid steady-state probabilities
     mod.initialize_steady_state()
@@ -201,7 +212,8 @@ def test_initial_probabilities():
     # Invalid steady-state probabilities (when mod has tvtp)
     endog = np.ones(10)
     mod = markov_switching.MarkovSwitching(endog, k_regimes=2, exog_tvtp=endog)
-    assert_raises(ValueError, mod.initialize_steady_state)
+    with pytest.raises(ValueError):
+        mod.initialize_steady_state()
 
 
 def test_logistic():
@@ -217,7 +229,7 @@ def test_logistic():
     # For a vector, logistic(x) returns
     # np.exp(x[i]) / (1 + np.sum(np.exp(x[:]))) for each i
     # but squeezed
-    cases = [[1.], [0,1.], [-2,3.,1.2,-30.]]
+    cases = [[1.], [0, 1.], [-2, 3., 1.2, -30.]]
     for x in cases:
         actual = logistic(x)
         desired = [np.exp(i) / (1 + np.sum(np.exp(x))) for i in x]
@@ -228,7 +240,7 @@ def test_logistic():
     # but squeezed
     case = [[1.]]
     actual = logistic(case)
-    assert_equal(actual.shape, (1,1))
+    assert_equal(actual.shape, (1, 1))
     assert_allclose(actual, np.exp(1) / (1 + np.exp(1)))
 
     # Here, np.array(case) is 2x1, so it is interpreted as i=0,1 and t=0
@@ -246,7 +258,7 @@ def test_logistic():
     # For a 3-dim, logistic(x) returns
     # np.exp(x[i,j,t]) / (1 + np.sum(np.exp(x[:,j,t])))
     # for each i, each j, each t
-    case = np.arange(2*3*4).reshape(2, 3, 4)
+    case = np.arange(2 * 3 * 4).reshape(2, 3, 4)
     actual = logistic(case)
     for j in range(3):
         assert_allclose(actual[:, j, :], logistic(case[:, j, :]))
@@ -269,7 +281,7 @@ def test_partials_logistic():
     # np.exp(x[i]) / (1 + np.sum(np.exp(x[:]))) for each i
     # Then d logistic(x[i]) / dx[i] = (logistix(x) - logistic(x)**2)[i]
     # And d logistic(x[i]) / dx[j] = -(logistic(x[i]) * logistic[x[j]])
-    cases = [[1.], [0,1.], [-2,3.,1.2,-30.]]
+    cases = [[1.], [0, 1.], [-2, 3., 1.2, -30.]]
     for x in cases:
         evaluated = np.atleast_1d(logistic(x))
         partials = np.diag(evaluated - evaluated**2)
@@ -308,7 +320,7 @@ def test_partials_logistic():
     # For a 3-dim, logistic(x) returns
     # np.exp(x[i,j,t]) / (1 + np.sum(np.exp(x[:,j,t])))
     # for each i, each j, each t
-    case = np.arange(2*3*4).reshape(2, 3, 4)
+    case = np.arange(2 * 3 * 4).reshape(2, 3, 4)
     evaluated = logistic(case)
     partials = partials_logistic(case)
     for t in range(4):

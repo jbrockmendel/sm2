@@ -7,8 +7,6 @@ Hamilton filter
 Author: Chad Fulton  
 License: Simplified-BSD
 """
-import warnings
-
 cimport cython
 
 import numpy as np
@@ -39,7 +37,7 @@ def {{prefix}}hamilton_filter(int nobs, int k_regimes, int order,
         int k_regimes_order_m1 = k_regimes**(order - 1)
         int k_regimes_order = k_regimes**order
         int k_regimes_order_p1 = k_regimes**(order + 1)
-        {{cython_type}} [:] weighted_likelihoods, tmp_filtered_marginalized_probabilities
+        {{cython_type}}[:] weighted_likelihoods, tmp_filtered_marginalized_probabilities
 
     time_varying_regime_transition = regime_transition.shape[2] > 1
     weighted_likelihoods = np.zeros(k_regimes_order_p1, dtype={{dtype}})

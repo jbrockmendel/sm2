@@ -7,8 +7,6 @@ Kim smoother
 Author: Chad Fulton  
 License: Simplified-BSD
 """
-import warnings
-
 cimport cython
 
 import numpy as np
