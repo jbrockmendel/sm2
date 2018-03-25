@@ -309,6 +309,7 @@ class GenericZeroInflated(CountModel):
 
     def _hessian_probit(self, params):
         pass
+        # TODO: Should this maybe raise?
 
     def hessian(self, params):
         """
