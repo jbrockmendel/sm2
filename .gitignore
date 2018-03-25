@@ -11,6 +11,10 @@ dist
 
 *.c
 
+# pyx files for which there are template files
+_kim_smoother.pyx
+_hamilton_filter.pyx
+
 .git
 
 # Coverage report output

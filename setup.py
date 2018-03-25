@@ -77,7 +77,8 @@ setuptools_kwargs = {
 # ------------------------------------------------------------------
 # Cython Preparation & Specification
 
-_pxifiles = []
+_pxifiles = ['sm2/tsa/regime_switching/_kim_smoother.pyx.in',
+             'sm2/tsa/regime_switching/_hamilton_filter.pyx.in']
 
 # TODO: Can we just put this with the next (only) use of CYTHON_INSTALLED?
 min_cython_ver = '0.24'
@@ -103,6 +104,12 @@ try:
         from Cython.Distutils import build_ext as _build_ext
     from Cython.Build import cythonize
     cython = True
+    try:
+        # TODO: Can we simplify this try/except?
+        from Cython import Tempita as tempita
+    except ImportError:
+        import tempita
+
 except ImportError:
     cython = False
 
@@ -115,7 +122,7 @@ class build_ext(_build_ext):
         if cython:
             for pxifile in _pxifiles:
                 # build pxifiles first, template extension must be .pxi.in
-                assert pxifile.endswith('.pxi.in')
+                assert pxifile.endswith(('.pxi.in', 'pyx.in'))
                 outfile = pxifile[:-3]
 
                 if (os.path.exists(outfile) and
@@ -278,13 +285,23 @@ if linetrace:
     macros = [('CYTHON_TRACE', '1'), ('CYTHON_TRACE_NOGIL', '1')]
 
 numpy_incl = pkg_resources.resource_filename('numpy', 'core/include')
+from numpy.distutils.misc_util import get_info
+# TODO: Can we do this without numpy import?
+npymath = get_info("npymath")
 
 extensions = [
     Extension("sm2.tsa.kalmanf.kalman_loglike",
               ["sm2/tsa/kalmanf/kalman_loglike.pyx"],
               include_dirs=["sm2/src", numpy_incl],
               depends=["sm2/src/capsule.h"],
-              define_macros=macros)]
+              define_macros=macros)] + [
+    Extension(x.replace('/', '.').replace('.pyx.in', ''),
+              [x.replace('.pyx.in', '.pyx')],
+              include_dirs=["sm2/src", numpy_incl] + npymath['include_dirs'],
+              libraries=npymath["libraries"],
+              library_dirs=npymath["library_dirs"],
+              define_macros=macros)
+    for x in _pxifiles]
 
 # ------------------------------------------------------------------
 
