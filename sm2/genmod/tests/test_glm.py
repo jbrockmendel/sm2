@@ -754,27 +754,6 @@ class TestGlmPoissonOffset(CheckModelResultsMixin):
 
 
 @pytest.mark.not_vetted
-def test_score_test_OLS():
-    # nicer example than Longley
-    np.random.seed(5)
-    nobs = 100
-    sige = 0.5
-    x = np.random.uniform(0, 1, size=(nobs, 5))
-    x[:, 0] = 1
-    beta = 1. / np.arange(1., x.shape[1] + 1)
-    y = x.dot(beta) + sige * np.random.randn(nobs)
-
-    res_ols = sm.OLS(y, x).fit()
-    res_olsc = sm.OLS(y, x[:, :-2]).fit()
-    co = res_ols.compare_lm_test(res_olsc, demean=False)
-
-    res_glm = GLM(y, x[:, :-2], family=sm.families.Gaussian()).fit()
-    co2 = res_glm.model.score_test(res_glm.params, exog_extra=x[:, -2:])
-    # difference in df_resid versus nobs in scale see GH#1786
-    assert_allclose(co[0] * 97 / 100., co2[0], rtol=1e-13)
-
-
-@pytest.mark.not_vetted
 class TestStartParams(CheckModelResultsMixin):
     res2 = results_glm.Longley
 
@@ -793,93 +772,6 @@ class TestStartParams(CheckModelResultsMixin):
         params = sm.OLS(cls.data.endog, cls.data.exog).fit().params
         cls.res1 = GLM(cls.data.endog, cls.data.exog,
                        family=sm.families.Gaussian()).fit(start_params=params)
-
-
-@pytest.mark.not_vetted
-def test_glm_start_params():
-    # see GH#1604
-    y2 = np.array('0 1 0 0 0 1'.split(), int)
-    wt = np.array([50, 1, 50, 1, 5, 10])
-    y2 = np.repeat(y2, wt)
-    x2 = np.repeat([0, 0, 0.001, 100, -1, -1], wt)
-    mod = sm.GLM(y2, sm.add_constant(x2), family=sm.families.Binomial())
-    res = mod.fit(start_params=[-4, -5])
-    np.testing.assert_almost_equal(res.params,
-                                   [-4.60305022, -5.29634545],
-                                   6)
-
-
-@pytest.mark.not_vetted
-def test_loglike_no_opt():
-    # see GH#1728
-    y = np.asarray([0, 1, 0, 0, 1, 1, 0, 1, 1, 1])
-    x = np.arange(10, dtype=np.float64)
-
-    def llf(params):
-        lin_pred = params[0] + params[1] * x
-        pr = 1 / (1 + np.exp(-lin_pred))
-        return np.sum(y * np.log(pr) + (1 - y) * np.log(1 - pr))
-
-    for params in [[0, 0], [0, 1], [0.5, 0.5]]:
-        mod = sm.GLM(y, sm.add_constant(x), family=sm.families.Binomial())
-        res = mod.fit(start_params=params, maxiter=0)
-        like = llf(params)
-        assert_almost_equal(like, res.llf)
-
-
-@pytest.mark.not_vetted
-def test_formula_missing_exposure():
-    # see GH#2083
-    d = {'Foo': [1, 2, 10, 149], 'Bar': [1, 2, 3, np.nan],
-         'constant': [1] * 4, 'exposure': np.random.uniform(size=4),
-         'x': [1, 3, 2, 1.5]}
-    df = pd.DataFrame(d)
-
-    family = sm.families.Gaussian(link=links.log())
-
-    mod = GLM.from_formula("Foo ~ Bar", data=df, exposure=df.exposure,
-                           family=family)
-    assert type(mod.exposure) is np.ndarray
-
-    exposure = pd.Series(np.random.uniform(size=5))
-    df.loc[3, 'Bar'] = 4   # nan not relevant for ValueError for shape mismatch
-
-    with pytest.raises(ValueError):
-        GLM.from_formula("Foo ~ Bar", data=df,
-                         exposure=exposure, family=family)
-    with pytest.raises(ValueError):
-        GLM(df.Foo, df[['constant', 'Bar']],
-            exposure=exposure, family=family)
-
-
-@pytest.mark.not_vetted
-def test_glm_irls_method():
-    nobs, k_vars = 50, 4
-    np.random.seed(987126)
-    x = np.random.randn(nobs, k_vars - 1)
-    exog = add_constant(x, has_constant='add')
-    y = exog.sum(1) + np.random.randn(nobs)
-
-    mod = GLM(y, exog)
-    res1 = mod.fit()
-    res2 = mod.fit(wls_method='pinv', attach_wls=True)
-    res3 = mod.fit(wls_method='qr', attach_wls=True)
-    # fit_gradient does not attach mle_settings
-    res_g1 = mod.fit(start_params=res1.params, method='bfgs')
-
-    for r in [res1, res2, res3]:
-        assert r.mle_settings['optimizer'] == 'IRLS'
-        assert r.method == 'IRLS'
-
-    assert res1.mle_settings['wls_method'] == 'lstsq'
-    assert res2.mle_settings['wls_method'] == 'pinv'
-    assert res3.mle_settings['wls_method'] == 'qr'
-
-    assert hasattr(res2.results_wls.model, 'pinv_wexog')
-    assert hasattr(res3.results_wls.model, 'exog_Q')
-
-    # fit_gradient currently does not attach mle_settings
-    assert res_g1.method == 'bfgs'
 
 
 @pytest.mark.not_vetted
@@ -1708,6 +1600,64 @@ class TestConvergence(object):
 # ------------------------------------------------------------
 # Unsorted
 
+
+@pytest.mark.not_vetted
+def test_glm_start_params():
+    # see GH#1604
+    y2 = np.array('0 1 0 0 0 1'.split(), int)
+    wt = np.array([50, 1, 50, 1, 5, 10])
+    y2 = np.repeat(y2, wt)
+    x2 = np.repeat([0, 0, 0.001, 100, -1, -1], wt)
+    mod = sm.GLM(y2, sm.add_constant(x2), family=sm.families.Binomial())
+    res = mod.fit(start_params=[-4, -5])
+    np.testing.assert_almost_equal(res.params,
+                                   [-4.60305022, -5.29634545],
+                                   6)
+
+
+@pytest.mark.not_vetted
+def test_loglike_no_opt():
+    # see GH#1728
+    y = np.asarray([0, 1, 0, 0, 1, 1, 0, 1, 1, 1])
+    x = np.arange(10, dtype=np.float64)
+
+    def llf(params):
+        lin_pred = params[0] + params[1] * x
+        pr = 1 / (1 + np.exp(-lin_pred))
+        return np.sum(y * np.log(pr) + (1 - y) * np.log(1 - pr))
+
+    for params in [[0, 0], [0, 1], [0.5, 0.5]]:
+        mod = sm.GLM(y, sm.add_constant(x), family=sm.families.Binomial())
+        res = mod.fit(start_params=params, maxiter=0)
+        like = llf(params)
+        assert_almost_equal(like, res.llf)
+
+
+@pytest.mark.not_vetted
+def test_formula_missing_exposure():
+    # see GH#2083
+    d = {'Foo': [1, 2, 10, 149], 'Bar': [1, 2, 3, np.nan],
+         'constant': [1] * 4, 'exposure': np.random.uniform(size=4),
+         'x': [1, 3, 2, 1.5]}
+    df = pd.DataFrame(d)
+
+    family = sm.families.Gaussian(link=links.log())
+
+    mod = GLM.from_formula("Foo ~ Bar", data=df, exposure=df.exposure,
+                           family=family)
+    assert type(mod.exposure) is np.ndarray
+
+    exposure = pd.Series(np.random.uniform(size=5))
+    df.loc[3, 'Bar'] = 4   # nan not relevant for ValueError for shape mismatch
+
+    with pytest.raises(ValueError):
+        GLM.from_formula("Foo ~ Bar", data=df,
+                         exposure=exposure, family=family)
+    with pytest.raises(ValueError):
+        GLM(df.Foo, df[['constant', 'Bar']],
+            exposure=exposure, family=family)
+
+
 @pytest.mark.not_vetted
 def test_poisson_deviance():
     # see GH#3355 missing term in deviance if resid_response.sum() != 0
@@ -1759,6 +1709,57 @@ def test_wtd_patsy_missing():
     assert mod_misisng.freq_weights.shape[0] == 12
     keep_weights = np.array([2, 4, 6, 8, 10, 11, 12, 13, 14, 15, 16, 17])
     assert_equal(mod_misisng.freq_weights, keep_weights)
+
+
+@pytest.mark.not_vetted
+def test_glm_irls_method():
+    nobs, k_vars = 50, 4
+    np.random.seed(987126)
+    x = np.random.randn(nobs, k_vars - 1)
+    exog = add_constant(x, has_constant='add')
+    y = exog.sum(1) + np.random.randn(nobs)
+
+    mod = GLM(y, exog)
+    res1 = mod.fit()
+    res2 = mod.fit(wls_method='pinv', attach_wls=True)
+    res3 = mod.fit(wls_method='qr', attach_wls=True)
+    # fit_gradient does not attach mle_settings
+    res_g1 = mod.fit(start_params=res1.params, method='bfgs')
+
+    for r in [res1, res2, res3]:
+        assert r.mle_settings['optimizer'] == 'IRLS'
+        assert r.method == 'IRLS'
+
+    assert res1.mle_settings['wls_method'] == 'lstsq'
+    assert res2.mle_settings['wls_method'] == 'pinv'
+    assert res3.mle_settings['wls_method'] == 'qr'
+
+    assert hasattr(res2.results_wls.model, 'pinv_wexog')
+    assert hasattr(res3.results_wls.model, 'exog_Q')
+
+    # fit_gradient currently does not attach mle_settings
+    assert res_g1.method == 'bfgs'
+
+
+@pytest.mark.not_vetted
+def test_score_test_OLS():
+    # nicer example than Longley
+    np.random.seed(5)
+    nobs = 100
+    sige = 0.5
+    x = np.random.uniform(0, 1, size=(nobs, 5))
+    x[:, 0] = 1
+    beta = 1. / np.arange(1., x.shape[1] + 1)
+    y = x.dot(beta) + sige * np.random.randn(nobs)
+
+    res_ols = sm.OLS(y, x).fit()
+    res_olsc = sm.OLS(y, x[:, :-2]).fit()
+    co = res_ols.compare_lm_test(res_olsc, demean=False)
+
+    res_glm = GLM(y, x[:, :-2], family=sm.families.Gaussian()).fit()
+    co2 = res_glm.model.score_test(res_glm.params, exog_extra=x[:, -2:])
+    # difference in df_resid versus nobs in scale see GH#1786
+    assert_allclose(co[0] * 97 / 100., co2[0], rtol=1e-13)
 
 
 # ------------------------------------------------------------

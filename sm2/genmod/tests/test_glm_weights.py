@@ -178,26 +178,28 @@ class CheckWeight(object):
 @pytest.mark.not_vetted
 class TestGlmPoissonPlain(CheckWeight):
     res2 = res_stata.results_poisson_none_nonrobust
+    mod_kwargs = {"family": sm.families.Poisson()}
 
     @classmethod
     def setup_class(cls):
         model = GLM(cpunish_data.endog, cpunish_data.exog,
-                    family=sm.families.Poisson())
+                    **cls.mod_kwargs)
         cls.res1 = model.fit()
 
 
 @pytest.mark.not_vetted
 class TestGlmPoissonFwNr(CheckWeight):
     res2 = res_stata.results_poisson_fweight_nonrobust
+    mod_kwargs = {
+        "family": sm.families.Poisson(),
+        "freq_weights": np.array([1, 1, 1, 2, 2, 2, 3, 3,
+                                  3, 1, 1, 1, 2, 2, 2, 3, 3])
+    }
 
     @classmethod
     def setup_class(cls):
-        fweights = [1, 1, 1, 2, 2, 2, 3, 3, 3, 1, 1, 1, 2, 2, 2, 3, 3]
-        fweights = np.array(fweights)
-
         model = GLM(cpunish_data.endog, cpunish_data.exog,
-                    family=sm.families.Poisson(),
-                    freq_weights=fweights)
+                    **cls.mod_kwargs)
         cls.res1 = model.fit()
 
 

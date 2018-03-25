@@ -1746,7 +1746,7 @@ class ResultMixin(object):
                                   "Also all it does is `pass`.")
 
 
-# TODO: _none_ of this is covered in any tests (summary.__doc__ is copied)
+# TODO: _none_ of this is covered in any tests
 class GenericLikelihoodModelResults(LikelihoodModelResults, ResultMixin):
     """
     A results class for the discrete dependent variable models.
