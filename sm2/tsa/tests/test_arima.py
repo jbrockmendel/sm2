@@ -875,235 +875,6 @@ def test_arma_predict_css_dates():
         mod._get_prediction_index('1701', '1751', False)
 
 
-def _check_start(model, given, expected, dynamic):
-    start, _, _, _ = model._get_prediction_index(given, None, dynamic)
-    assert start == expected
-
-
-def _check_end(model, given, end_expect, out_of_sample_expect):
-    _, end, out_of_sample, _ = model._get_prediction_index(None, given, False)
-    assert end == end_expect
-    assert out_of_sample == out_of_sample_expect
-
-
-@pytest.mark.not_vetted
-def test_arma_predict_indices():
-    sunspots = datasets.sunspots.load().data['SUNACTIVITY']
-    model = ARMA(sunspots, (9, 0), dates=sun_dates, freq='A')
-    model.method = 'mle'
-
-    # raises - pre-sample + dynamic
-    with pytest.raises(ValueError):
-        model._get_prediction_index(0, None, True)
-    with pytest.raises(ValueError):
-        model._get_prediction_index(8, None, True)
-    with pytest.raises(ValueError):
-        model._get_prediction_index('1700', None, True)
-    with pytest.raises(ValueError):
-        model._get_prediction_index('1708', None, True)
-
-    # works - in-sample
-    # None
-    # given, expected, dynamic
-    start_test_cases = [(None, 9, True),
-                        # all start get moved back by k_diff
-                        (9, 9, True),
-                        (10, 10, True),
-                        # what about end of sample start - last value is first
-                        # forecast
-                        (309, 309, True),
-                        (308, 308, True),
-                        (0, 0, False),
-                        (1, 1, False),
-                        (4, 4, False),
-
-                        # all start get moved back by k_diff
-                        ('1709', 9, True),
-                        ('1710', 10, True),
-                        # what about end of sample start - last value is first
-                        # forecast
-                        ('2008', 308, True),
-                        ('2009', 309, True),
-                        ('1700', 0, False),
-                        ('1708', 8, False),
-                        ('1709', 9, False)]
-
-    for case in start_test_cases:
-        _check_start(model, *case)
-
-    # the length of sunspot is 309, so last index is 208
-    end_test_cases = [(None, 308, 0),
-                      (307, 307, 0),
-                      (308, 308, 0),
-                      (309, 308, 1),
-                      (312, 308, 4),
-                      (51, 51, 0),
-                      (333, 308, 25),
-
-                      ('2007', 307, 0),
-                      ('2008', 308, 0),
-                      ('2009', 308, 1),
-                      ('2012', 308, 4),
-                      ('1815', 115, 0),
-                      ('2033', 308, 25)]
-
-    for case in end_test_cases:
-        _check_end(model, *case)
-
-
-@pytest.mark.not_vetted
-def test_arima_predict_indices():
-    cpi = datasets.macrodata.load().data['cpi']
-    model = ARIMA(cpi, (4, 1, 1), dates=cpi_dates, freq='Q')
-    model.method = 'mle'
-
-    # starting indices
-
-    # raises - pre-sample + dynamic
-    with pytest.raises(ValueError):
-        model._get_prediction_index(0, None, True)
-    with pytest.raises(ValueError):
-        model._get_prediction_index(4, None, True)
-    with pytest.raises(KeyError):
-        model._get_prediction_index('1959Q1', None, True)
-    with pytest.raises(ValueError):
-        model._get_prediction_index('1960Q1', None, True)
-
-    # raises - index differenced away
-    with pytest.raises(ValueError):
-        model._get_prediction_index(0, None, False)
-    with pytest.raises(KeyError):
-        model._get_prediction_index('1959Q1', None, False)
-
-    # works - in-sample
-    # None
-    # given, expected, dynamic
-    start_test_cases = [(None, 4, True),
-                        # all start get moved back by k_diff
-                        (5, 4, True),
-                        (6, 5, True),
-                        # what about end of sample start - last value is first
-                        # forecast
-                        (203, 202, True),
-                        (1, 0, False),
-                        (4, 3, False),
-                        (5, 4, False),
-                        # all start get moved back by k_diff
-                        ('1960Q2', 4, True),
-                        ('1960Q3', 5, True),
-                        # what about end of sample start - last value is first
-                        # forecast
-                        ('2009Q4', 202, True),
-                        ('1959Q2', 0, False),
-                        ('1960Q1', 3, False),
-                        ('1960Q2', 4, False)]
-
-    for case in start_test_cases:
-        _check_start(model, *case)
-
-    # check raises
-    # TODO: make sure dates are passing through unmolested
-    #assert_raises(ValueError, model._get_predict_end, ("2001-1-1",))
-
-    # the length of diff(cpi) is 202, so last index is 201
-    end_test_cases = [(None, 201, 0),
-                      (201, 200, 0),
-                      (202, 201, 0),
-                      (203, 201, 1),
-                      (204, 201, 2),
-                      (51, 50, 0),
-                      (164 + 63, 201, 25),
-
-                      ('2009Q2', 200, 0),
-                      ('2009Q3', 201, 0),
-                      ('2009Q4', 201, 1),
-                      ('2010Q1', 201, 2),
-                      ('1971Q4', 50, 0),
-                      ('2015Q4', 201, 25)]
-
-    for case in end_test_cases:
-        _check_end(model, *case)
-
-    # check higher k_diff
-    # model.k_diff = 2
-    model = ARIMA(cpi, (4, 2, 1), dates=cpi_dates, freq='Q')
-    model.method = 'mle'
-
-    # raises - pre-sample + dynamic
-    with pytest.raises(ValueError):
-        model._get_prediction_index(0, None, True)
-    with pytest.raises(ValueError):
-        model._get_prediction_index(5, None, True)
-    with pytest.raises(KeyError):
-        model._get_prediction_index('1959Q1', None, True)
-    with pytest.raises(ValueError):
-        model._get_prediction_index('1960Q1', None, True)
-
-    # raises - index differenced away
-    with pytest.raises(ValueError):
-        model._get_prediction_index(1, None, False)
-    with pytest.raises(KeyError):
-        model._get_prediction_index('1959Q2', None, False)
-
-    start_test_cases = [(None, 4, True),
-                        # all start get moved back by k_diff
-                        (6, 4, True),
-                        # what about end of sample start - last value is first
-                        # forecast
-                        (203, 201, True),
-                        (2, 0, False),
-                        (4, 2, False),
-                        (5, 3, False),
-                        ('1960Q3', 4, True),
-                        # what about end of sample start - last value is first
-                        # forecast
-                        ('2009Q4', 201, True),
-                        ('2009Q4', 201, True),
-                        ('1959Q3', 0, False),
-                        ('1960Q1', 2, False),
-                        ('1960Q2', 3, False)]
-
-    for case in start_test_cases:
-        _check_start(model, *case)
-
-    end_test_cases = [(None, 200, 0),
-                      (201, 199, 0),
-                      (202, 200, 0),
-                      (203, 200, 1),
-                      (204, 200, 2),
-                      (51, 49, 0),
-                      (164 + 63, 200, 25),
-
-                      ('2009Q2', 199, 0),
-                      ('2009Q3', 200, 0),
-                      ('2009Q4', 200, 1),
-                      ('2010Q1', 200, 2),
-                      ('1971Q4', 49, 0),
-                      ('2015Q4', 200, 25)]
-
-    for case in end_test_cases:
-        _check_end(model, *case)
-
-
-@pytest.mark.not_vetted
-def test_arima_predict_indices_css():
-    cpi = datasets.macrodata.load().data['cpi']
-    # NOTE: Doing no-constant for now to kick the conditional exogenous
-    # GH#274 down the road
-    # go ahead and git the model to set up necessary variables
-    model = ARIMA(cpi, (4, 1, 1))
-    model.method = 'css'
-
-    with pytest.raises(ValueError):
-        model._get_prediction_index(0, None, False)
-    with pytest.raises(ValueError):
-        model._get_prediction_index(0, None, True)
-    with pytest.raises(ValueError):
-        model._get_prediction_index(2, None, False)
-    with pytest.raises(ValueError):
-        model._get_prediction_index(2, None, True)
-
-
 @pytest.mark.not_vetted
 def test_arima_wrapper():
     cpi = datasets.macrodata.load_pandas().data['cpi']
@@ -1146,6 +917,7 @@ def test_1dexog():
 @pytest.mark.not_vetted
 def test_arima_predict_bug():
     # predict_start_date wasn't getting set on start = None
+    # TODO: GH reference?
     dta = datasets.sunspots.load_pandas().data.SUNACTIVITY
     dta.index = pd.DatetimeIndex(start='1700', end='2009', freq='A')[:309]
     arma_mod20 = ARMA(dta, (2, 0)).fit(disp=-1)
@@ -2483,6 +2255,236 @@ def test_arima_predict_css_diffs():
     start, end = None, None
     fv = res1.model.predict(params, start, end, dynamic=True)
     assert_almost_equal(fv, fcdyn[5:203], DECIMAL_4)
+
+
+
+def _check_start(model, given, expected, dynamic):
+    start, _, _, _ = model._get_prediction_index(given, None, dynamic)
+    assert start == expected
+
+
+def _check_end(model, given, end_expect, out_of_sample_expect):
+    _, end, out_of_sample, _ = model._get_prediction_index(None, given, False)
+    assert end == end_expect
+    assert out_of_sample == out_of_sample_expect
+
+
+@pytest.mark.not_vetted
+def test_arma_predict_indices():
+    sunspots = datasets.sunspots.load().data['SUNACTIVITY']
+    model = ARMA(sunspots, (9, 0), dates=sun_dates, freq='A')
+    model.method = 'mle'
+
+    # raises - pre-sample + dynamic
+    with pytest.raises(ValueError):
+        model._get_prediction_index(0, None, True)
+    with pytest.raises(ValueError):
+        model._get_prediction_index(8, None, True)
+    with pytest.raises(ValueError):
+        model._get_prediction_index('1700', None, True)
+    with pytest.raises(ValueError):
+        model._get_prediction_index('1708', None, True)
+
+    # works - in-sample
+    # None
+    # given, expected, dynamic
+    start_test_cases = [(None, 9, True),
+                        # all start get moved back by k_diff
+                        (9, 9, True),
+                        (10, 10, True),
+                        # what about end of sample start - last value is first
+                        # forecast
+                        (309, 309, True),
+                        (308, 308, True),
+                        (0, 0, False),
+                        (1, 1, False),
+                        (4, 4, False),
+
+                        # all start get moved back by k_diff
+                        ('1709', 9, True),
+                        ('1710', 10, True),
+                        # what about end of sample start - last value is first
+                        # forecast
+                        ('2008', 308, True),
+                        ('2009', 309, True),
+                        ('1700', 0, False),
+                        ('1708', 8, False),
+                        ('1709', 9, False)]
+
+    for case in start_test_cases:
+        _check_start(model, *case)
+
+    # the length of sunspot is 309, so last index is 208
+    end_test_cases = [(None, 308, 0),
+                      (307, 307, 0),
+                      (308, 308, 0),
+                      (309, 308, 1),
+                      (312, 308, 4),
+                      (51, 51, 0),
+                      (333, 308, 25),
+
+                      ('2007', 307, 0),
+                      ('2008', 308, 0),
+                      ('2009', 308, 1),
+                      ('2012', 308, 4),
+                      ('1815', 115, 0),
+                      ('2033', 308, 25)]
+
+    for case in end_test_cases:
+        _check_end(model, *case)
+
+
+@pytest.mark.not_vetted
+def test_arima_predict_indices():
+    cpi = datasets.macrodata.load().data['cpi']
+    model = ARIMA(cpi, (4, 1, 1), dates=cpi_dates, freq='Q')
+    model.method = 'mle'
+
+    # starting indices
+
+    # raises - pre-sample + dynamic
+    with pytest.raises(ValueError):
+        model._get_prediction_index(0, None, True)
+    with pytest.raises(ValueError):
+        model._get_prediction_index(4, None, True)
+    with pytest.raises(KeyError):
+        model._get_prediction_index('1959Q1', None, True)
+    with pytest.raises(ValueError):
+        model._get_prediction_index('1960Q1', None, True)
+
+    # raises - index differenced away
+    with pytest.raises(ValueError):
+        model._get_prediction_index(0, None, False)
+    with pytest.raises(KeyError):
+        model._get_prediction_index('1959Q1', None, False)
+
+    # works - in-sample
+    # None
+    # given, expected, dynamic
+    start_test_cases = [(None, 4, True),
+                        # all start get moved back by k_diff
+                        (5, 4, True),
+                        (6, 5, True),
+                        # what about end of sample start - last value is first
+                        # forecast
+                        (203, 202, True),
+                        (1, 0, False),
+                        (4, 3, False),
+                        (5, 4, False),
+                        # all start get moved back by k_diff
+                        ('1960Q2', 4, True),
+                        ('1960Q3', 5, True),
+                        # what about end of sample start - last value is first
+                        # forecast
+                        ('2009Q4', 202, True),
+                        ('1959Q2', 0, False),
+                        ('1960Q1', 3, False),
+                        ('1960Q2', 4, False)]
+
+    for case in start_test_cases:
+        _check_start(model, *case)
+
+    # check raises
+    # TODO: make sure dates are passing through unmolested
+    #assert_raises(ValueError, model._get_predict_end, ("2001-1-1",))
+
+    # the length of diff(cpi) is 202, so last index is 201
+    end_test_cases = [(None, 201, 0),
+                      (201, 200, 0),
+                      (202, 201, 0),
+                      (203, 201, 1),
+                      (204, 201, 2),
+                      (51, 50, 0),
+                      (164 + 63, 201, 25),
+
+                      ('2009Q2', 200, 0),
+                      ('2009Q3', 201, 0),
+                      ('2009Q4', 201, 1),
+                      ('2010Q1', 201, 2),
+                      ('1971Q4', 50, 0),
+                      ('2015Q4', 201, 25)]
+
+    for case in end_test_cases:
+        _check_end(model, *case)
+
+    # check higher k_diff
+    # model.k_diff = 2
+    model = ARIMA(cpi, (4, 2, 1), dates=cpi_dates, freq='Q')
+    model.method = 'mle'
+
+    # raises - pre-sample + dynamic
+    with pytest.raises(ValueError):
+        model._get_prediction_index(0, None, True)
+    with pytest.raises(ValueError):
+        model._get_prediction_index(5, None, True)
+    with pytest.raises(KeyError):
+        model._get_prediction_index('1959Q1', None, True)
+    with pytest.raises(ValueError):
+        model._get_prediction_index('1960Q1', None, True)
+
+    # raises - index differenced away
+    with pytest.raises(ValueError):
+        model._get_prediction_index(1, None, False)
+    with pytest.raises(KeyError):
+        model._get_prediction_index('1959Q2', None, False)
+
+    start_test_cases = [(None, 4, True),
+                        # all start get moved back by k_diff
+                        (6, 4, True),
+                        # what about end of sample start - last value is first
+                        # forecast
+                        (203, 201, True),
+                        (2, 0, False),
+                        (4, 2, False),
+                        (5, 3, False),
+                        ('1960Q3', 4, True),
+                        # what about end of sample start - last value is first
+                        # forecast
+                        ('2009Q4', 201, True),
+                        ('2009Q4', 201, True),
+                        ('1959Q3', 0, False),
+                        ('1960Q1', 2, False),
+                        ('1960Q2', 3, False)]
+
+    for case in start_test_cases:
+        _check_start(model, *case)
+
+    end_test_cases = [(None, 200, 0),
+                      (201, 199, 0),
+                      (202, 200, 0),
+                      (203, 200, 1),
+                      (204, 200, 2),
+                      (51, 49, 0),
+                      (164 + 63, 200, 25),
+
+                      ('2009Q2', 199, 0),
+                      ('2009Q3', 200, 0),
+                      ('2009Q4', 200, 1),
+                      ('2010Q1', 200, 2),
+                      ('1971Q4', 49, 0),
+                      ('2015Q4', 200, 25)]
+
+    for case in end_test_cases:
+        _check_end(model, *case)
+
+
+@pytest.mark.not_vetted
+def test_arima_predict_indices_css():
+    cpi = datasets.macrodata.load().data['cpi']
+    # NOTE: Doing no-constant for now to kick the conditional exogenous
+    # GH#274 down the road
+    # go ahead and git the model to set up necessary variables
+    model = ARIMA(cpi, (4, 1, 1))
+    model.method = 'css'
+
+    with pytest.raises(ValueError):
+        model._get_prediction_index(0, None, False)
+    with pytest.raises(ValueError):
+        model._get_prediction_index(0, None, True)
+    with pytest.raises(ValueError):
+        model._get_prediction_index(2, None, False)
+    with pytest.raises(ValueError):
+        model._get_prediction_index(2, None, True)
 
 
 # ----------------------------------------------------------------
