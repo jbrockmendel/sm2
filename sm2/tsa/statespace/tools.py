@@ -5,13 +5,16 @@ Author: Chad Fulton
 License: Simplified-BSD
 """
 from __future__ import division, absolute_import, print_function
+import warnings
 
 import numpy as np
+from scipy import linalg
 from scipy.linalg import solve_sylvester
-import pandas as pd
-from statsmodels.tools.data import _is_using_pandas
+from scipy.linalg.blas import find_best_blas_type
 
-import warnings
+import pandas as pd
+
+from sm2.tools.data import _is_using_pandas
 
 
 compatibility_mode = False
@@ -209,18 +212,6 @@ def set_mode(compatibility=None):
 set_mode(compatibility=None)
 '''
 
-try:
-    from scipy.linalg.blas import find_best_blas_type
-except ImportError:  # pragma: no cover
-    # Shim for SciPy 0.11, derived from tag=0.11 scipy.linalg.blas
-    _type_conv = {'f': 's', 'd': 'd', 'F': 'c', 'D': 'z', 'G': 'z'}
-
-    def find_best_blas_type(arrays):
-        dtype, index = max(
-            [(ar.dtype, i) for i, ar in enumerate(arrays)])
-        prefix = _type_conv.get(dtype.char, 'd')
-        return prefix, dtype, None
-
 
 def companion_matrix(polynomial):
     r"""
@@ -248,7 +239,7 @@ def companion_matrix(polynomial):
     Given coefficients of a lag polynomial of the form:
 
     .. math::
-    
+
         c(L) = c_0 + c_1 L + \dots + c_p L^p
 
     returns a matrix of the form
@@ -291,7 +282,6 @@ def companion_matrix(polynomial):
     The coefficients from this form are defined to be :math:`c_i = - a_i`, and
     it is the :math:`c_i` coefficients that this function expects to be
     provided.
-
     """
     identity_matrix = False
     if isinstance(polynomial, int):
@@ -335,11 +325,11 @@ def companion_matrix(polynomial):
             matrix[:, 0] = -polynomial[1:] / polynomial[0]
         elif identity_matrix:
             for i in range(n):
-                matrix[i * m:(i + 1) * m, :m] = -polynomial[i+1].T
+                matrix[i * m:(i + 1) * m, :m] = -polynomial[i + 1].T
         else:
             inv = np.linalg.inv(polynomial[0])
             for i in range(n):
-                matrix[i * m:(i + 1) * m, :m] = -np.dot(inv, polynomial[i+1]).T
+                matrix[i * m:(i + 1) * m, :m] = -np.dot(inv, polynomial[i + 1]).T
     return matrix
 
 
@@ -375,22 +365,23 @@ def diff(series, k_diff=1, k_seasonal_diff=None, seasonal_periods=1):
     differenced : array
         The differenced array.
     """
-    pandas = _is_using_pandas(series, None)
-    differenced = np.asanyarray(series) if not pandas else series
+    is_pandas = _is_using_pandas(series, None)
+    differenced = np.asanyarray(series) if not is_pandas else series
 
     # Seasonal differencing
     if k_seasonal_diff is not None:
         while k_seasonal_diff > 0:
-            if not pandas:
+            if not is_pandas:
                 differenced = (
-                    differenced[seasonal_periods:] - differenced[:-seasonal_periods]
+                    differenced[seasonal_periods:] -
+                    differenced[:-seasonal_periods]
                 )
             else:
                 differenced = differenced.diff(seasonal_periods)[seasonal_periods:]
             k_seasonal_diff -= 1
 
     # Simple differencing
-    if not pandas:
+    if not is_pandas:
         differenced = np.diff(differenced, k_diff, axis=0)
     else:
         while k_diff > 0:
@@ -521,13 +512,13 @@ def solve_discrete_lyapunov(a, q, complex_step=False):
         aH = a.conj().transpose()
         aHI_inv = np.linalg.inv(aH + eye)
         b = np.dot(aH - eye, aHI_inv)
-        c = 2*np.dot(np.dot(np.linalg.inv(a + eye), q), aHI_inv)
+        c = 2 * np.dot(np.dot(np.linalg.inv(a + eye), q), aHI_inv)
         return solve_sylvester(b.conj().transpose(), b, -c)
     else:
         aH = a.transpose()
         aHI_inv = np.linalg.inv(aH + eye)
         b = np.dot(aH - eye, aHI_inv)
-        c = 2*np.dot(np.dot(np.linalg.inv(a + eye), q), aHI_inv)
+        c = 2 * np.dot(np.dot(np.linalg.inv(a + eye), q), aHI_inv)
         return solve_sylvester(b.transpose(), b, -c)
 
 
@@ -557,10 +548,9 @@ def constrain_stationary_univariate(unconstrained):
        Autoregressive-moving Average Models."
        Biometrika 71 (2) (August 1): 403-404.
     """
-
     n = unconstrained.shape[0]
     y = np.zeros((n, n), dtype=unconstrained.dtype)
-    r = unconstrained/((1 + unconstrained**2)**0.5)
+    r = unconstrained / ((1 + unconstrained**2)**0.5)
     for k in range(n):
         for i in range(k):
             y[k, i] = y[k - 1, i] + r[k] * y[k - 1, k - i - 1]
@@ -596,10 +586,10 @@ def unconstrain_stationary_univariate(constrained):
     """
     n = constrained.shape[0]
     y = np.zeros((n, n), dtype=constrained.dtype)
-    y[n-1:] = -constrained
-    for k in range(n-1, 0, -1):
+    y[n - 1:] = -constrained
+    for k in range(n - 1, 0, -1):
         for i in range(k):
-            y[k-1, i] = (y[k, i] - y[k, k]*y[k, k-i-1]) / (1 - y[k, k]**2)
+            y[k - 1, i] = (y[k, i] - y[k, k]*y[k, k - i - 1]) / (1 - y[k, k]**2)
     r = y.diagonal()
     x = r / ((1 - r**2)**0.5)
     return x
@@ -635,11 +625,7 @@ def _constrain_sv_less_than_one_python(unconstrained, order=None,
     There is a Cython implementation of this function that can be much faster,
     but which requires SciPy 0.14.0 or greater. See
     `constrain_stationary_multivariate` for details.
-
     """
-
-    from scipy import linalg
-
     constrained = []  # P_s,  s = 1, ..., p
     if order is None:
         order = len(unconstrained)
@@ -696,8 +682,6 @@ def _compute_coefficients_from_multivariate_pacf_python(
     but which requires SciPy 0.14.0 or greater. See
     `constrain_stationary_multivariate` for details.
     """
-    from scipy import linalg
-
     if order is None:
         order = len(partial_autocorrelations)
     if k_endog is None:
@@ -774,13 +758,13 @@ def _compute_coefficients_from_multivariate_pacf_python(
         # only has an effect if s >= 1
         for k in range(s):
             forwards.insert(k, prev_forwards[k] - np.dot(
-                forwards[-1], prev_backwards[s-(k+1)]))
+                forwards[-1], prev_backwards[s - (k + 1)]))
 
             backwards.insert(k, prev_backwards[k] - np.dot(
-                backwards[-1], prev_forwards[s-(k+1)]))
+                backwards[-1], prev_forwards[s - (k + 1)]))
 
-            autocovariances[s+1] += np.dot(autocovariances[k+1],
-                                           prev_forwards[s-(k+1)].T)
+            autocovariances[s + 1] += np.dot(autocovariances[k + 1],
+                                             prev_forwards[s - (k + 1)].T)
 
         # Create forward and backwards variances
         forward_variances.append(
@@ -796,10 +780,10 @@ def _compute_coefficients_from_multivariate_pacf_python(
 
         # Cholesky factors
         forward_factors.append(
-            linalg.cholesky(forward_variances[s+1], lower=True)
+            linalg.cholesky(forward_variances[s + 1], lower=True)
         )
         backward_factors.append(
-            linalg.cholesky(backward_variances[s+1], lower=True)
+            linalg.cholesky(backward_variances[s + 1], lower=True)
         )
 
     # If we do not want to use the transformed variance, we need to
@@ -895,7 +879,6 @@ def constrain_stationary_multivariate_python(unconstrained, error_variance,
        "Multivariate Partial Autocorrelations."
        In Proceedings of the Business and Economic Statistics Section, 349-53.
        American Statistical Association
-
     """
 
     use_list = type(unconstrained) == list
@@ -904,7 +887,7 @@ def constrain_stationary_multivariate_python(unconstrained, error_variance,
         order //= k_endog
 
         unconstrained = [
-            unconstrained[:k_endog, i*k_endog:(i+1)*k_endog]
+            unconstrained[:k_endog, i * k_endog:(i + 1) * k_endog]
             for i in range(order)
         ]
 
@@ -974,7 +957,7 @@ if has_trmm:
 
         if use_list:
             constrained = [
-                constrained[:k_endog, i*k_endog:(i+1)*k_endog]
+                constrained[:k_endog, i * k_endog:(i + 1) * k_endog]
                 for i in range(order)
             ]
 
@@ -1012,10 +995,7 @@ def _unconstrain_sv_less_than_one(constrained, order=None, k_endog=None):
     -----
     Corresponds to the inverse of Lemma 2.2 in Ansley and Kohn (1986). See
     `unconstrain_stationary_multivariate` for more details.
-
     """
-    from scipy import linalg
-
     unconstrained = []  # A_s,  s = 1, ..., p
     if order is None:
         order = len(constrained)
@@ -1080,7 +1060,7 @@ def _compute_multivariate_sample_acovf(endog, maxlag):
     for s in range(maxlag + 1):
         sample_autocovariances.append(np.zeros((k_endog, k_endog)))
         for t in range(nobs - s):
-            sample_autocovariances[s] += np.outer(endog[t], endog[t+s])
+            sample_autocovariances[s] += np.outer(endog[t], endog[t + s])
         sample_autocovariances[s] /= nobs
 
     return sample_autocovariances
@@ -1139,10 +1119,7 @@ def _compute_multivariate_acovf_from_coefficients(
 
     Autocovariances are calculated by solving the associated discrete Lyapunov
     equation of the state space representation of the VAR process.
-
     """
-    from scipy import linalg
-
     # Convert coefficients to a list of matrices, for use in
     # `companion_matrix`; get dimensions
     if type(coefficients) == list:
@@ -1153,7 +1130,7 @@ def _compute_multivariate_acovf_from_coefficients(
         order //= k_endog
 
         coefficients = [
-            coefficients[:k_endog, i*k_endog:(i+1)*k_endog]
+            coefficients[:k_endog, i * k_endog:(i + 1) * k_endog]
             for i in range(order)
         ]
 
@@ -1178,11 +1155,11 @@ def _compute_multivariate_acovf_from_coefficients(
     # autocovariances of w_t: \Gamma_i = E w_t w_t+i with \Gamma_0 = Var(w_t)
     # Note: these are okay, checked against ArmaProcess
     autocovariances = [
-        stacked_cov[:k_endog, i*k_endog:(i+1)*k_endog]
-        for i in range(min(order, maxlag+1))
+        stacked_cov[:k_endog, i * k_endog:(i + 1) * k_endog]
+        for i in range(min(order, maxlag + 1))
     ]
 
-    for i in range(maxlag - (order-1)):
+    for i in range(maxlag - (order - 1)):
         stacked_cov = np.dot(companion, stacked_cov)
         autocovariances += [
             stacked_cov[:k_endog, -k_endog:]
@@ -1212,7 +1189,6 @@ def _compute_multivariate_sample_pacf(endog, maxlag):
     sample_pacf : list
         A list of the first `maxlag` sample partial autocorrelation matrices.
         Each matrix is shaped `k_endog` x `k_endog`.
-
     """
     sample_autocovariances = _compute_multivariate_sample_acovf(endog, maxlag)
 
@@ -1251,12 +1227,9 @@ def _compute_multivariate_pacf_from_autocovariances(autocovariances,
     -----
     Computes sample partial autocorrelations if sample autocovariances are
     given.
-
     """
-    from scipy import linalg
-
     if order is None:
-        order = len(autocovariances)-1
+        order = len(autocovariances) - 1
     if k_endog is None:
         k_endog = autocovariances[0].shape[0]
 
@@ -1306,9 +1279,9 @@ def _compute_multivariate_pacf_from_autocovariances(autocovariances,
 
         for k in range(s):
             forward_variance -= np.dot(prev_forwards[k],
-                                       autocovariances[k+1])
+                                       autocovariances[k + 1])
             backward_variance -= np.dot(prev_backwards[k],
-                                        autocovariances[k+1].T)
+                                        autocovariances[k + 1].T)
 
         forward_variances.append(forward_variance)
         backward_variances.append(backward_variance)
@@ -1337,7 +1310,7 @@ def _compute_multivariate_pacf_from_autocovariances(autocovariances,
         else:
             # G := \Gamma_{s+1}' -
             #      \phi_{s,1} \Gamma_s' - .. - \phi_{s,s} \Gamma_1'
-            tmp_sum = autocovariances[s+1].T.copy()
+            tmp_sum = autocovariances[s + 1].T.copy()
 
             for k in range(s):
                 tmp_sum -= np.dot(prev_forwards[k], autocovariances[s-k].T)
@@ -1365,9 +1338,9 @@ def _compute_multivariate_pacf_from_autocovariances(autocovariances,
         # only has an effect if s >= 1
         for k in range(s):
             forwards.insert(k, prev_forwards[k] - np.dot(
-                forwards[-1], prev_backwards[s-(k+1)]))
+                forwards[-1], prev_backwards[s - (k + 1)]))
             backwards.insert(k, prev_backwards[k] - np.dot(
-                backwards[-1], prev_forwards[s-(k+1)]))
+                backwards[-1], prev_forwards[s - (k + 1)]))
 
         # Partial autocorrelation matrix: P_{s+1}
         # P = L^{-1} phi L*
@@ -1411,9 +1384,6 @@ def _compute_multivariate_pacf_from_coefficients(constrained, error_variance,
 
     Corresponds to the inverse of Lemma 2.1 in Ansley and Kohn (1986). See
     `unconstrain_stationary_multivariate` for more details.
-
-    Notes
-    -----
 
     Coefficients are assumed to be provided from the VAR model:
 
@@ -1477,7 +1447,6 @@ def unconstrain_stationary_multivariate(constrained, error_variance):
        "A Note on Reparameterizing a Vector Autoregressive Moving Average Model
        to Enforce Stationarity."
        Journal of Statistical Computation and Simulation 24 (2): 99-106.
-
     """
     use_list = type(constrained) == list
     if not use_list:
@@ -1485,7 +1454,7 @@ def unconstrain_stationary_multivariate(constrained, error_variance):
         order //= k_endog
 
         constrained = [
-            constrained[:k_endog, i*k_endog:(i+1)*k_endog]
+            constrained[:k_endog, i * k_endog:(i + 1) * k_endog]
             for i in range(order)
         ]
     else:
@@ -1642,7 +1611,6 @@ def reorder_missing_matrix(matrix, missing, reorder_rows=False,
     -------
     reordered_matrix : array_like
         The reordered matrix.
-
     """
     if prefix is None:
         prefix = find_best_blas_type((matrix,))[0]
@@ -1678,7 +1646,6 @@ def reorder_missing_vector(vector, missing, inplace=False, prefix=None):
     -------
     reordered_vector : array_like
         The reordered vector.
-
     """
     if prefix is None:
         prefix = find_best_blas_type((vector,))[0]
@@ -1727,7 +1694,6 @@ def copy_missing_matrix(A, B, missing, missing_rows=False, missing_cols=False,
     -------
     copied_matrix : array_like
         The matrix B with the non-missing submatrix of A copied onto it.
-
     """
     if prefix is None:
         prefix = find_best_blas_type((A, B))[0]
@@ -1773,7 +1739,6 @@ def copy_missing_vector(a, b, missing, inplace=False, prefix=None):
     -------
     copied_vector : array_like
         The vector b with the non-missing subvector of b copied onto it.
-
     """
     if prefix is None:
         prefix = find_best_blas_type((a, b))[0]
@@ -1830,7 +1795,6 @@ def copy_index_matrix(A, B, index, index_rows=False, index_cols=False,
     -------
     copied_matrix : array_like
         The matrix B with the non-index submatrix of A copied onto it.
-
     """
     if prefix is None:
         prefix = find_best_blas_type((A, B))[0]
@@ -1876,7 +1840,6 @@ def copy_index_vector(a, b, index, inplace=False, prefix=None):
     -------
     copied_vector : array_like
         The vector b with the non-index subvector of b copied onto it.
-
     """
     if prefix is None:
         prefix = find_best_blas_type((a, b))[0]
@@ -1896,7 +1859,6 @@ def copy_index_vector(a, b, index, inplace=False, prefix=None):
     copy(a, b, np.asfortranarray(index))
 
     return b
-
 
 
 def prepare_exog(exog):
