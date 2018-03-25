@@ -73,12 +73,13 @@ class ConstrainedCompareMixin(object):
 
 @pytest.mark.not_vetted
 class TestGLMGaussianOffset(ConstrainedCompareMixin):
+    model_cls = GLM
     fit_kwargs = {}
 
     @classmethod
     def init(cls):
-        mod = GLM(cls.endog, cls.exogc,
-                  offset=0.5 * cls.exog[:, cls.idx_c].squeeze())
+        mod = cls.model_cls(cls.endog, cls.exogc,
+                            offset=0.5 * cls.exog[:, cls.idx_c].squeeze())
         mod.exog_names[:] = ['const', 'x2', 'x3', 'x4']
         cls.res1 = mod.fit(**cls.fit_kwargs)
         cls.idx_p_uc = np.arange(cls.exogc.shape[1])
@@ -86,23 +87,25 @@ class TestGLMGaussianOffset(ConstrainedCompareMixin):
 
 @pytest.mark.not_vetted
 class TestGLMGaussianConstrained(ConstrainedCompareMixin):
+    model_cls = GLM
     fit_kwargs = {}
 
     @classmethod
     def init(cls):
-        mod = GLM(cls.endog, cls.exog)
+        mod = cls.model_cls(cls.endog, cls.exog)
         mod.exog_names[:] = ['const', 'x1', 'x2', 'x3', 'x4']
         cls.res1 = mod.fit_constrained('x1=0.5', **cls.fit_kwargs)
 
 
 @pytest.mark.not_vetted
 class TestGLMGaussianOffsetHC(ConstrainedCompareMixin):
+    model_cls = GLM
     fit_kwargs = {"cov_type": "HC0"}
 
     @classmethod
     def init(cls):
-        mod = GLM(cls.endog, cls.exogc,
-                  offset=0.5 * cls.exog[:, cls.idx_c].squeeze())
+        mod = cls.model_cls(cls.endog, cls.exogc,
+                            offset=0.5 * cls.exog[:, cls.idx_c].squeeze())
         mod.exog_names[:] = ['const', 'x2', 'x3', 'x4']
         cls.res1 = mod.fit(**cls.fit_kwargs)
         cls.idx_p_uc = np.arange(cls.exogc.shape[1])
@@ -110,11 +113,12 @@ class TestGLMGaussianOffsetHC(ConstrainedCompareMixin):
 
 @pytest.mark.not_vetted
 class TestGLMGaussianConstrainedHC(ConstrainedCompareMixin):
+    model_cls = GLM
     fit_kwargs = {"cov_type": "HC0"}
 
     @classmethod
     def init(cls):
-        mod = GLM(cls.endog, cls.exog)
+        mod = cls.model_cls(cls.endog, cls.exog)
         mod.exog_names[:] = ['const', 'x1', 'x2', 'x3', 'x4']
         cls.res1 = mod.fit_constrained('x1=0.5', **cls.fit_kwargs)
 
@@ -145,13 +149,14 @@ class ConstrainedCompareWtdMixin(ConstrainedCompareMixin):
 
 @pytest.mark.not_vetted
 class TestGLMWtdGaussianOffset(ConstrainedCompareWtdMixin):
+    model_cls = GLM
     fit_kwargs = {}
 
     @classmethod
     def init(cls):
-        mod = GLM(cls.endog, cls.exogc,
-                  offset=0.5 * cls.exog[:, cls.idx_c].squeeze(),
-                  var_weights=cls.aweights)
+        mod = cls.model_cls(cls.endog, cls.exogc,
+                            offset=0.5 * cls.exog[:, cls.idx_c].squeeze(),
+                            var_weights=cls.aweights)
         mod.exog_names[:] = ['const', 'x2', 'x3', 'x4']
         cls.res1 = mod.fit(**cls.fit_kwargs)
         cls.idx_p_uc = np.arange(cls.exogc.shape[1])
@@ -159,24 +164,26 @@ class TestGLMWtdGaussianOffset(ConstrainedCompareWtdMixin):
 
 @pytest.mark.not_vetted
 class TestGLMWtdGaussianConstrained(ConstrainedCompareWtdMixin):
+    model_cls = GLM
     fit_kwargs = {}
 
     @classmethod
     def init(cls):
-        mod = GLM(cls.endog, cls.exog, var_weights=cls.aweights)
+        mod = cls.model_cls(cls.endog, cls.exog, var_weights=cls.aweights)
         mod.exog_names[:] = ['const', 'x1', 'x2', 'x3', 'x4']
         cls.res1 = mod.fit_constrained('x1=0.5', **cls.fit_kwargs)
 
 
 @pytest.mark.not_vetted
 class TestGLMWtdGaussianOffsetHC(ConstrainedCompareWtdMixin):
+    model_cls = GLM
     fit_kwargs = {"cov_type": "HC0"}
 
     @classmethod
     def init(cls):
-        mod = GLM(cls.endog, cls.exogc,
-                  offset=0.5 * cls.exog[:, cls.idx_c].squeeze(),
-                  var_weights=cls.aweights)
+        mod = cls.model_cls(cls.endog, cls.exogc,
+                            offset=0.5 * cls.exog[:, cls.idx_c].squeeze(),
+                            var_weights=cls.aweights)
         mod.exog_names[:] = ['const', 'x2', 'x3', 'x4']
         cls.res1 = mod.fit(**cls.fit_kwargs)
         cls.idx_p_uc = np.arange(cls.exogc.shape[1])
@@ -184,10 +191,11 @@ class TestGLMWtdGaussianOffsetHC(ConstrainedCompareWtdMixin):
 
 @pytest.mark.not_vetted
 class TestGLMWtdGaussianConstrainedHC(ConstrainedCompareWtdMixin):
+    model_cls = GLM
     fit_kwargs = {"cov_type": "HC0"}
 
     @classmethod
     def init(cls):
-        mod = GLM(cls.endog, cls.exog, var_weights=cls.aweights)
+        mod = cls.model_cls(cls.endog, cls.exog, var_weights=cls.aweights)
         mod.exog_names[:] = ['const', 'x1', 'x2', 'x3', 'x4']
         cls.res1 = mod.fit_constrained('x1=0.5', **cls.fit_kwargs)

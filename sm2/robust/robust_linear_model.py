@@ -245,12 +245,12 @@ class RLM(base.LikelihoodModel):
         -------
         results : sm2.rlm.RLMresults
         """
-        if not cov.upper() in ["H1", "H2", "H3"]:
+        if cov.upper() not in ["H1", "H2", "H3"]:
             raise ValueError("Covariance matrix %s not understood" % cov)
         else:
             self.cov = cov.upper()
         conv = conv.lower()
-        if not conv in ["weights", "coefs", "dev", "sresid"]:
+        if conv not in ["weights", "coefs", "dev", "sresid"]:
             raise ValueError("Convergence argument %s not understood" % conv)
         self.scale_est = scale_est
 

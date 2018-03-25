@@ -12,7 +12,6 @@ from six.moves import range
 import numpy as np
 from scipy import stats
 
-from sm2.tools import tools
 from . import norms
 
 
@@ -230,7 +229,7 @@ class HuberScale(object):
         chi = lambda s: subset(s) * (resid / s)**2 / 2 + (1 - subset(s)) * (self.d**2 / 2)
         scalehist = [np.inf, s]
         niter = 1
-        while (np.abs(scalehist[niter-1] - scalehist[niter]) > self.tol
+        while (np.abs(scalehist[niter - 1] - scalehist[niter]) > self.tol
                and niter < self.maxiter):
             sqscale = np.sum(chi(scalehist[-1])) * scalehist[-1]**2 / (nobs * h)
             nscale = np.sqrt(sqscale)

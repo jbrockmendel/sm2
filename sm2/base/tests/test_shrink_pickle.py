@@ -194,7 +194,7 @@ class TestRemoveDataPickleLogit(RemoveDataPickle):
         y_bin = y_bin.astype(int)
         model = sm.Logit(y_bin, x)
         #               , exposure=np.ones(nobs),
-        #               offset=np.zeros(nobs)) #bug with default
+        #               offset=np.zeros(nobs)) # bug with default
         # use start_params to converge faster
         start_params = np.array([-0.73403806, -1.00901514,
                                  -0.97754543, -0.95648212])

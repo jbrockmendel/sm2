@@ -5,6 +5,7 @@ import functools
 from six.moves import reduce
 
 
+# TODO: Does this need to be part of ResultsWrapper at all?
 class SaveLoadMixin(object):
     """Mixin defining save and load methods"""
 
