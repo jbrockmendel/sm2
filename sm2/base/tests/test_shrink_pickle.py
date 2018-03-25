@@ -83,7 +83,7 @@ class RemoveDataPickle(object):
         res, plen = check_pickle(results._results)
 
         # for testing attach res
-        self.res = res
+        self.res = res  # TODO: Why?
 
         # Note: l_max is just a guess for the limit on the length of the pickle
         l_max = self.l_max
@@ -202,7 +202,6 @@ class TestRemoveDataPickleLogit(RemoveDataPickle):
                                  method='bfgs', disp=0)
 
 
-@pytest.mark.skip(reason="RLM not ported from upstream")
 @pytest.mark.not_vetted
 class TestRemoveDataPickleRLM(RemoveDataPickle):
     def setup(self):

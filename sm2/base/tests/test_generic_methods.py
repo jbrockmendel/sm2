@@ -288,9 +288,10 @@ class TestGenericLogit(CheckGenericMixin):
         self.results = model.fit(**self.fit_kwargs)
 
 
-@pytest.mark.skip(reason="RLM not ported from upstream")
+
 @pytest.mark.not_vetted
 class TestGenericRLM(CheckGenericMixin):
+    model_cls = sm.RLM
     fit_kwargs = {}
 
     def setup(self):
@@ -298,7 +299,7 @@ class TestGenericRLM(CheckGenericMixin):
         x = self.exog
         np.random.seed(987689)
         y = x.sum(1) + np.random.randn(x.shape[0])
-        self.results = sm.RLM(y, self.exog).fit(**self.fit_kwargs)
+        self.results = self.model_cls(y, self.exog).fit(**self.fit_kwargs)
 
 
 @pytest.mark.not_vetted
