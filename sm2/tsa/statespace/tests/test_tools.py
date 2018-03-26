@@ -368,7 +368,6 @@ def test_multivariate_pacf():
         atol=1e-2)
 
 
-@pytest.mark.skip(reason="set_mode not ported from upstream")
 class TestConstrainStationaryMultivariate(object):
 
     cases = [
@@ -424,7 +423,6 @@ class TestUnconstrainStationaryMultivariate(object):
             assert_allclose(result[0], unconstrained)
 
 
-@pytest.mark.skip(reason="set_mode not ported from upstream")
 class TestStationaryMultivariate(object):
     # Test that the constraint and unconstraint functions are inverses
 
@@ -471,7 +469,6 @@ class TestStationaryMultivariate(object):
             assert_allclose(reunconstrained, unconstrained, atol=1e-4)
 
 
-@pytest.mark.skip(reason="set_mode not ported from upstream")
 def test_reorder_matrix_rows():
     nobs = 5
     k_endog = 3
@@ -524,7 +521,6 @@ def test_reorder_matrix_rows():
     assert_equal(actual, desired)
 
 
-@pytest.mark.skip(reason="set_mode not ported from upstream")
 def test_reorder_matrix_cols():
     nobs = 5
     k_endog = 3
@@ -577,7 +573,6 @@ def test_reorder_matrix_cols():
     assert_equal(actual[:, :, 4], desired[:, :, 4])
 
 
-@pytest.mark.skip(reason="set_mode not ported from upstream")
 def test_reorder_submatrix():
     nobs = 5
     k_endog = 3
@@ -636,7 +631,6 @@ def test_reorder_submatrix():
     assert_equal(actual, desired)
 
 
-@pytest.mark.skip(reason="set_mode not ported from upstream")
 def test_reorder_diagonal_submatrix():
     nobs = 5
     k_endog = 3
@@ -699,7 +693,6 @@ def test_reorder_diagonal_submatrix():
     assert_equal(actual, desired)
 
 
-@pytest.mark.skip(reason="set_mode not ported from upstream")
 def test_reorder_vector():
     nobs = 5
     k_endog = 3
@@ -733,7 +726,6 @@ def test_reorder_vector():
     assert_equal(actual, desired)
 
 
-@pytest.mark.skip(reason="set_mode not ported from upstream")
 def test_copy_missing_matrix_rows():
     nobs = 5
     k_endog = 3
@@ -759,7 +751,6 @@ def test_copy_missing_matrix_rows():
     assert_equal(B, A)
 
 
-@pytest.mark.skip(reason="set_mode not ported from upstream")
 def test_copy_missing_matrix_cols():
     nobs = 5
     k_endog = 3
@@ -785,7 +776,6 @@ def test_copy_missing_matrix_cols():
     assert_equal(B, A)
 
 
-@pytest.mark.skip(reason="set_mode not ported from upstream")
 def test_copy_missing_submatrix():
     nobs = 5
     k_endog = 3
@@ -810,7 +800,6 @@ def test_copy_missing_submatrix():
     assert_equal(B, A)
 
 
-@pytest.mark.skip(reason="set_mode not ported from upstream")
 def test_copy_missing_diagonal_submatrix():
     nobs = 5
     k_endog = 3
@@ -840,7 +829,6 @@ def test_copy_missing_diagonal_submatrix():
     assert_equal(B, A)
 
 
-@pytest.mark.skip(reason="set_mode not ported from upstream")
 def test_copy_missing_vector():
     nobs = 5
     k_endog = 3
@@ -864,7 +852,6 @@ def test_copy_missing_vector():
     assert_equal(B, A)
 
 
-@pytest.mark.skip(reason="set_mode not ported from upstream")
 def test_copy_index_matrix_rows():
     nobs = 5
     k_endog = 3
@@ -891,7 +878,6 @@ def test_copy_index_matrix_rows():
     assert_equal(B, A)
 
 
-@pytest.mark.skip(reason="set_mode not ported from upstream")
 def test_copy_index_matrix_cols():
     nobs = 5
     k_endog = 3
@@ -918,7 +904,6 @@ def test_copy_index_matrix_cols():
     assert_equal(B, A)
 
 
-@pytest.mark.skip(reason="set_mode not ported from upstream")
 def test_copy_index_submatrix():
     nobs = 5
     k_endog = 3
@@ -945,7 +930,6 @@ def test_copy_index_submatrix():
     assert_equal(B, A)
 
 
-@pytest.mark.skip(reason="set_mode not ported from upstream")
 def test_copy_index_diagonal_submatrix():
     nobs = 5
     k_endog = 3
@@ -976,7 +960,6 @@ def test_copy_index_diagonal_submatrix():
     assert_equal(B, A)
 
 
-@pytest.mark.skip(reason="set_mode not ported from upstream")
 def test_copy_index_vector():
     nobs = 5
     k_endog = 3

@@ -10,7 +10,7 @@ import numpy as np
 from numpy.testing import assert_equal, assert_almost_equal
 
 from sm2.tools.eval_measures import (
-    maxabs, meanabs, medianabs, medianbias, mse, rmse, stde, vare,
+    maxabs, meanabs, medianabs, medianbias, mse, rmse, vare,
     aic, aic_sigma, aicc, aicc_sigma, bias, bic, bic_sigma,
     hqic, hqic_sigma, iqr)
 
@@ -19,7 +19,7 @@ def test_eval_measures():
     # mainly regression tests
 
     x = np.arange(20).reshape(4, 5)
-    y = np.ones((4,5))
+    y = np.ones((4, 5))
     assert_equal(iqr(x, y), 5 * np.ones(5))
     assert_equal(iqr(x, y, axis=1), 2 * np.ones(4))
     assert_equal(iqr(x, y, axis=None), 9)
@@ -49,24 +49,24 @@ def test_eval_measures():
                  np.array([7., 7.5, 8.5, 9.5, 10.5]))
 
     assert_equal(medianabs(x, y),
-                 np.array([6.5,   7.5,   8.5,   9.5,  10.5]))
+                 np.array([6.5, 7.5, 8.5, 9.5, 10.5]))
     assert_equal(medianabs(x, y, axis=1),
-                 np.array([1.,   6.,  11.,  16.]))
+                 np.array([1., 6., 11., 16.]))
 
     assert_equal(bias(x, y),
-                 np.array([6.5,   7.5,   8.5,   9.5,  10.5]))
+                 np.array([6.5, 7.5, 8.5, 9.5, 10.5]))
     assert_equal(bias(x, y, axis=1),
-                 np.array([1.,   6.,  11.,  16.]))
+                 np.array([1., 6., 11., 16.]))
 
     assert_equal(medianbias(x, y),
-                 np.array([6.5,   7.5,   8.5,   9.5,  10.5]))
+                 np.array([6.5, 7.5, 8.5, 9.5, 10.5]))
     assert_equal(medianbias(x, y, axis=1),
-                 np.array([1.,   6.,  11.,  16.]))
+                 np.array([1., 6., 11., 16.]))
 
     assert_equal(vare(x, y),
-                 np.array([31.25,  31.25,  31.25,  31.25,  31.25]))
+                 np.array([31.25, 31.25, 31.25, 31.25, 31.25]))
     assert_equal(vare(x, y, axis=1),
-                 np.array([2.,  2.,  2.,  2.]))
+                 np.array([2., 2., 2., 2.]))
 
 
 def test_ic():
@@ -88,8 +88,7 @@ def test_ic():
                             ic_sig(2, 10, 2),
                             decimal=14)
 
-
-    #examples penalty directly from formula
+    # examples penalty directly from formula
     n, k = 10, 2
     assert_almost_equal(aic(0, 10, 2),
                         2 * k,

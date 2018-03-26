@@ -703,7 +703,7 @@ class GLM(base.LikelihoodModel):
         # return a stats results instance instead?  Contrast?
         return chi2stat, pval, k_constraints
 
-    def _update_history(self, tmp_result, mu, history):
+    def _update_history(self, tmp_result, mu, history, scale):
         """
         Helper method to update history during iterative fit.
         """
@@ -711,7 +711,7 @@ class GLM(base.LikelihoodModel):
         history['deviance'].append(self.family.deviance(self.endog, mu,
                                                         self.var_weights,
                                                         self.freq_weights,
-                                                        self.scale))
+                                                        scale))
         return history
 
     def estimate_scale(self, mu):
@@ -1110,9 +1110,9 @@ class GLM(base.LikelihoodModel):
         else:
             lin_pred = np.dot(wlsexog, start_params) + self._offset_exposure
             mu = self.family.fitted(lin_pred)
-        self.scale = self.estimate_scale(mu)
+        scale = self.estimate_scale(mu)
         dev = self.family.deviance(self.endog, mu, self.var_weights,
-                                   self.freq_weights, self.scale)
+                                   self.freq_weights, scale)
         if np.isnan(dev):
             raise ValueError("The first guess on the deviance function "
                              "returned a nan.  This could be a boundary "
@@ -1127,7 +1127,7 @@ class GLM(base.LikelihoodModel):
         # params vector.
         if maxiter == 0:
             mu = self.family.fitted(lin_pred)
-            self.scale = self.estimate_scale(mu)
+            scale = self.estimate_scale(mu)
             wls_results = lm.RegressionResults(self, start_params, None)
             iteration = 0
         for iteration in range(maxiter):
@@ -1143,8 +1143,8 @@ class GLM(base.LikelihoodModel):
             lin_pred = np.dot(self.exog, wls_results.params)
             lin_pred += self._offset_exposure
             mu = self.family.fitted(lin_pred)
-            history = self._update_history(wls_results, mu, history)
-            self.scale = self.estimate_scale(mu)
+            history = self._update_history(wls_results, mu, history, scale)
+            scale = self.estimate_scale(mu)
             if endog.squeeze().ndim == 1 and np.allclose(mu - endog, 0):
                 raise PerfectSeparationError("Perfect separation detected, "
                                              "results not available")
@@ -1152,7 +1152,6 @@ class GLM(base.LikelihoodModel):
                                            atol, rtol)
             if converged:
                 break
-        self.mu = mu
 
         if maxiter > 0:  # Only if iterative used
             wls_method2 = 'pinv' if wls_method == 'lstsq' else wls_method
@@ -1163,7 +1162,7 @@ class GLM(base.LikelihoodModel):
 
         glm_results = res_cls(self, wls_results.params,
                               wls_results.normalized_cov_params,
-                              self.scale,
+                              scale,
                               cov_type=cov_type, cov_kwds=cov_kwds,
                               use_t=use_t)
 
@@ -1245,10 +1244,6 @@ class GLM(base.LikelihoodModel):
                                 start_params=start_params,
                                 refit=refit,
                                 **defaults)
-
-        self.mu = self.predict(result.params)
-        self.scale = self.estimate_scale(self.mu)
-        # TODO: Don't set these attributes on the model instance
 
         return result
 

@@ -26,6 +26,12 @@ raise `NotImplementedError`.
 - `ARModel.fit` incorrectly sets `model.df_resid` upstream.  That has been
 fixed here.
 
+- `GenericLikelihoodModelResults.__init__` incorrectly sets `model.df_resid`
+and `model.df_model`.  That has been fixed here.
+
+- `GeneralizedLinearModel.fit` incorrect sets `self.mu` and `self.scale`.
+This has been fixed here.  (:issue:`4032`)
+
 
 Contributing
 ------------

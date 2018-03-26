@@ -2257,7 +2257,6 @@ def test_arima_predict_css_diffs():
     assert_almost_equal(fv, fcdyn[5:203], DECIMAL_4)
 
 
-
 def _check_start(model, given, expected, dynamic):
     start, _, _, _ = model._get_prediction_index(given, None, dynamic)
     assert start == expected
