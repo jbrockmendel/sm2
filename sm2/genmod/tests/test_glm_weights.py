@@ -248,11 +248,11 @@ class TestGlmPoissonPwNr(CheckWeight):
                        family=sm.families.Poisson(),
                        freq_weights=fweights).fit(cov_type='HC1')
 
-    @pytest.mark.xfail(reason='Known to fail')  # TODO: Find a reason...
+    @pytest.mark.xfail(reason='prob_weights not yet implemented GH#4397')
     def test_bse(self):
         super(TestGlmPoissonPwNr, self).test_bse(self)
 
-    @pytest.mark.xfail(reason='Known to fail')  # TODO: find a reason
+    @pytest.mark.xfail(reason='prob_weights not yet implemented GH#4397')
     def test_compare_optimizers(self):
         super(TestGlmPoissonPwNr, self).test_compare_optimizers(self)
 
@@ -272,7 +272,7 @@ class TestGlmPoissonFwHC(CheckWeight):
         cls.corr_fact = np.sqrt((wsum - 1.) / wsum)
         model = GLM(cpunish_data.endog, cpunish_data.exog,
                     family=sm.families.Poisson(), freq_weights=fweights)
-        cls.res1 = model.fit(cov_type='HC0')  # ,cov_kwds={'use_correction':False})
+        cls.res1 = model.fit(cov_type='HC0')
 
 
 # var_weights (aweights fail with HC, not properly implemented yet
@@ -296,7 +296,7 @@ class TestGlmPoissonAwHC(CheckWeight):
         cls.corr_fact = np.sqrt((wsum - 1.) / wsum) * 0.98518473599905609
         model = GLM(cpunish_data.endog, cpunish_data.exog,
                     family=sm.families.Poisson(), var_weights=aweights)
-        cls.res1 = model.fit(cov_type='HC0')  # , cov_kwds={'use_correction':False})
+        cls.res1 = model.fit(cov_type='HC0')
 
 
 @pytest.mark.not_vetted

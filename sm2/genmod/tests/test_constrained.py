@@ -11,7 +11,7 @@ Author: Josef Perktold
 import pytest
 
 import numpy as np
-from numpy.testing import assert_allclose, assert_equal
+from numpy.testing import assert_allclose
 
 from sm2.tools.tools import add_constant
 from sm2.regression.linear_model import OLS, WLS
