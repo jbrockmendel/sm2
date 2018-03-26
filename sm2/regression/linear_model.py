@@ -1045,7 +1045,7 @@ class GLSAR(GLS):
                 self.rho.shape = (1,)
             self.order = self.rho.shape[0]
         if exog is None:
-            # JP this looks wrong, should be a regression on constant
+            # TODO: JP this looks wrong, should be a regression on constant
             # results for rho estimate now identical to yule-walker on y
             # super(AR, self).__init__(endog, add_constant(endog))
             super(GLSAR, self).__init__(endog, np.ones((endog.shape[0], 1)),
@@ -1926,6 +1926,7 @@ class RegressionResults(base.LikelihoodModelResults):
         """
 
         # See mailing list discussion October 17,
+        # TODO: link?  or at least year?
 
         if large_sample:
             return self.compare_lm_test(restricted, use_lr=True)

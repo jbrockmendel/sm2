@@ -304,6 +304,14 @@ class GLM(base.LikelihoodModel):
         # TODO: Do this further up the inheritance hierarchy
         return self.endog.shape[0]
 
+    @cache_readonly
+    def wnobs(self):
+        if ((self.freq_weights is not None) and
+                (self.freq_weights.shape[0] == self.endog.shape[0])):
+            return self.freq_weights.sum()
+        else:
+            return self.exog.shape[0]
+
     @property
     def _res_classes(self):
         return {"fit": (GLMResults, GLMResultsWrapper)}
@@ -380,12 +388,6 @@ class GLM(base.LikelihoodModel):
                                             np.transpose(self.pinv_wexog))
 
         self.df_model = np.linalg.matrix_rank(self.exog) - 1
-
-        if ((self.freq_weights is not None) and
-                (self.freq_weights.shape[0] == self.endog.shape[0])):
-            self.wnobs = self.freq_weights.sum()
-        else:
-            self.wnobs = self.exog.shape[0]
 
     def _check_inputs(self, family, offset, exposure, endog, freq_weights,
                       var_weights):
