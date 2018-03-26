@@ -534,7 +534,6 @@ class MarkovSwitchingParams(object):
     4
     >>> parameters.k_parameters['exog']
     3
-
     """
     def __init__(self, k_regimes):
         self.k_regimes = k_regimes
@@ -644,7 +643,6 @@ class MarkovSwitching(tsbase.TimeSeriesModel):
     "State-Space Models with Regime Switching:
     Classical and Gibbs-Sampling Approaches with Applications".
     MIT Press Books. The MIT Press.
-
     """
 
     def __init__(self, endog, k_regimes, order=0, exog_tvtp=None, exog=None,
@@ -744,7 +742,8 @@ class MarkovSwitching(tsbase.TimeSeriesModel):
                                    ' constructed.')
         elif self._initialization == 'known':
             probabilities = self._initial_probabilities
-        else:
+        else:  # pragma: no cover
+            # TODO: Should this be a ValueError?
             raise RuntimeError('Invalid initialization method selected.')
 
         return probabilities
@@ -794,7 +793,6 @@ class MarkovSwitching(tsbase.TimeSeriesModel):
         It is left-stochastic, meaning that each column sums to one (because
         it is certain that from one regime (j) you will transition to *some
         other regime*).
-
         """
         params = np.array(params, ndmin=1)
         if not self.tvtp:
@@ -1117,6 +1115,7 @@ class MarkovSwitching(tsbase.TimeSeriesModel):
         """
         return np.sum(self.loglikeobs(params, transformed))
 
+    # TODO: Just use default implementation from base class?
     def score(self, params, transformed=True):
         """
         Compute the score function at params.
@@ -1130,7 +1129,6 @@ class MarkovSwitching(tsbase.TimeSeriesModel):
             Whether or not `params` is already transformed. Default is True.
         """
         params = np.array(params, ndmin=1)
-
         return approx_fprime_cs(params, self.loglike, args=(transformed,))
 
     def score_obs(self, params, transformed=True):
@@ -1146,7 +1144,6 @@ class MarkovSwitching(tsbase.TimeSeriesModel):
             Whether or not `params` is already transformed. Default is True.
         """
         params = np.array(params, ndmin=1)
-
         return approx_fprime_cs(params, self.loglikeobs, args=(transformed,))
 
     def hessian(self, params, transformed=True):
@@ -1163,7 +1160,6 @@ class MarkovSwitching(tsbase.TimeSeriesModel):
             Whether or not `params` is already transformed. Default is True.
         """
         params = np.array(params, ndmin=1)
-
         return approx_hess_cs(params, self.loglike)
 
     def fit(self, start_params=None, transformed=True, cov_type='approx',
@@ -1236,7 +1232,6 @@ class MarkovSwitching(tsbase.TimeSeriesModel):
         Returns
         -------
         MarkovSwitchingResults
-
         """
 
         if start_params is None:
@@ -1272,6 +1267,7 @@ class MarkovSwitching(tsbase.TimeSeriesModel):
                                                   disp=disp, callback=callback,
                                                   skip_hessian=True, **kwargs)
 
+        # TODO: get rid of multiple-return
         # Just return the fitted parameters if requested
         if return_params:
             result = self.transform_params(mlefit.params)
@@ -1354,6 +1350,7 @@ class MarkovSwitching(tsbase.TimeSeriesModel):
                 delta = 2 * (llf[-1] - llf[-2]) / np.abs((llf[-1] + llf[-2]))
             i += 1
 
+        # TODO: Get rid of multiple-return
         # Just return the fitted parameters if requested
         if return_params:
             result = params[-1]
@@ -1481,7 +1478,7 @@ class MarkovSwitching(tsbase.TimeSeriesModel):
         scale = np.array(scale, ndmin=1)
         if scale.size == 1:
             scale = np.ones(self.k_params) * scale
-        if not scale.size == self.k_params:
+        if scale.size != self.k_params:
             raise ValueError('Scale of variates for random start'
                              ' parameter search must be given for each'
                              ' parameter or as a single scalar.')
@@ -1940,7 +1937,8 @@ class MarkovSwitchingResults(tsbase.TimeSeriesModelResults):
                 'Quasi-maximum likelihood covariance matrix used for'
                 ' robustness to some misspecifications; calculated using'
                 ' numerical (%s) differentiation.' % approx_type_str)
-        else:
+        else:  # pragma: no cover
+            # TODO: Should this be a ValueError?
             raise NotImplementedError('Invalid covariance matrix type.')
 
         return res

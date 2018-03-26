@@ -118,105 +118,38 @@ def se_cov(cov):
     return np.sqrt(np.diag(cov))
 
 
-# ----------- from linear_model.RegressionResults
-"""
-    HC0_se
-        White's (1980) heteroskedasticity robust standard errors.
-        Defined as sqrt(diag(X.T X)^(-1)X.T diag(e_i^(2)) X(X.T X)^(-1)
-        where e_i = resid[i]
-        HC0_se is a property.  It is not evaluated until it is called.
-        When it is called the RegressionResults instance will then have
-        another attribute cov_HC0, which is the full heteroskedasticity
-        consistent covariance matrix and also `het_scale`, which is in
-        this case just resid**2.  HCCM matrices are only appropriate for OLS.
-    HC1_se
-        MacKinnon and White's (1985) alternative heteroskedasticity robust
-        standard errors.
-        Defined as sqrt(diag(n/(n-p)*HC_0)
-        HC1_se is a property.  It is not evaluated until it is called.
-        When it is called the RegressionResults instance will then have
-        another attribute cov_HC1, which is the full HCCM and also `het_scale`,
-        which is in this case n/(n-p)*resid**2.  HCCM matrices are only
-        appropriate for OLS.
-    HC2_se
-        MacKinnon and White's (1985) alternative heteroskedasticity robust
-        standard errors.
-        Defined as (X.T X)^(-1)X.T diag(e_i^(2)/(1-h_ii)) X(X.T X)^(-1)
-        where h_ii = x_i(X.T X)^(-1)x_i.T
-        HC2_se is a property.  It is not evaluated until it is called.
-        When it is called the RegressionResults instance will then have
-        another attribute cov_HC2, which is the full HCCM and also `het_scale`,
-        which is in this case is resid^(2)/(1-h_ii).  HCCM matrices are only
-        appropriate for OLS.
-    HC3_se
-        MacKinnon and White's (1985) alternative heteroskedasticity robust
-        standard errors.
-        Defined as (X.T X)^(-1)X.T diag(e_i^(2)/(1-h_ii)^(2)) X(X.T X)^(-1)
-        where h_ii = x_i(X.T X)^(-1)x_i.T
-        HC3_se is a property.  It is not evaluated until it is called.
-        When it is called the RegressionResults instance will then have
-        another attribute cov_HC3, which is the full HCCM and also `het_scale`,
-        which is in this case is resid^(2)/(1-h_ii)^(2).  HCCM matrices are
-        only appropriate for OLS.
-
-"""
+# -----------------------------------------------------------------------
 
 
 # Note: HCCM stands for Heteroskedasticity Consistent Covariance Matrix
 def _HCCM(results, scale):
-    """
-    sandwich with pinv(x) * diag(scale) * pinv(x).T
-
-    where pinv(x) = (X'X)^(-1) X
-    and scale is (nobs,)
-    """
-    H = np.dot(results.model.pinv_wexog,
-               scale[:, None] * results.model.pinv_wexog.T)
-    return H
+    raise NotImplementedError("_HCCM not ported from upstream as it is "
+                              "neither used nor tested there "
+                              "(outside of one examples file)")
 
 
 def cov_hc0(results):
-    """
-    See sm2.RegressionResults
-    """
-    het_scale = results.resid**2  # or whitened residuals? only OLS?
-    cov_hc0 = _HCCM(results, het_scale)
-    return cov_hc0
+    raise NotImplementedError("cov_hc0 not ported from upstream as it is "
+                              "neither used nor tested there "
+                              "(outside of one examples file)")
 
 
 def cov_hc1(results):
-    """
-    See sm2.RegressionResults
-    """
-    het_scale = results.nobs / (results.df_resid) * (results.resid**2)
-    cov_hc1 = _HCCM(results, het_scale)
-    return cov_hc1
+    raise NotImplementedError("cov_hc1 not ported from upstream as it is "
+                              "neither used nor tested there "
+                              "(outside of one examples file)")
 
 
 def cov_hc2(results):
-    """
-    See sm2.RegressionResults
-    """
-    # probably could be optimized
-    h = np.diag(np.dot(results.model.exog,
-                       np.dot(results.normalized_cov_params,
-                              results.model.exog.T)))
-    het_scale = results.resid**2 / (1 - h)
-    cov_hc2_ = _HCCM(results, het_scale)
-    return cov_hc2_
+    raise NotImplementedError("cov_hc2 not ported from upstream as it is "
+                              "neither used nor tested there "
+                              "(outside of one examples file)")
 
 
 def cov_hc3(results):
-    """
-    See sm2.RegressionResults
-    """
-    # above probably could be optimized to only calc the diag
-    h = np.diag(np.dot(results.model.exog,
-                       np.dot(results.normalized_cov_params,
-                              results.model.exog.T)))
-    het_scale = (results.resid / (1 - h))**2
-    cov_hc3_ = _HCCM(results, het_scale)
-    return cov_hc3_
+    raise NotImplementedError("cov_hc3 not ported from upstream as it is "
+                              "neither used nor tested there "
+                              "(outside of one examples file)")
 
 
 # -------------------------------------------------------------------

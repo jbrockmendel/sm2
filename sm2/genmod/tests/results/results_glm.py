@@ -12,6 +12,8 @@ from sm2.tools.tools import add_constant, categorical
 
 from . import glm_test_resids
 
+cur_dir = os.path.dirname(os.path.abspath(__file__))
+
 
 class Longley(object):
     """
@@ -470,8 +472,7 @@ class Lbw(object):
     http://www.stata-press.com/data/r9/rmain.html
     """
     # data set up for data not in datasets
-    path = os.path.join(os.path.dirname(os.path.abspath(__file__)),
-                        "stata_lbw_glm.csv")
+    path = os.path.join(cur_dir, "stata_lbw_glm.csv")
     with open(path, 'rb') as fd:
         data = np.recfromcsv(path)  # TODO: use pd.read_csv?
     vfunc = np.vectorize(lambda x: x.strip(b"\""))
@@ -586,8 +587,7 @@ class Cancer(object):
 
     http://www.stata-press.com/data/r10/rmain.html
     """
-    path = os.path.join(os.path.dirname(os.path.abspath(__file__)),
-                        "stata_cancer_glm.csv")
+    path = os.path.join(cur_dir, "stata_cancer_glm.csv")
     with open(path, 'rb') as fd:
         data = np.recfromcsv(fd)  # TODO: use pd.read_csv?
     endog = data.studytime
@@ -844,10 +844,9 @@ class InvGauss(object):
 
     def __init__(self):
         # set up data
-        filename = os.path.join(os.path.dirname(os.path.abspath(__file__)),
-                                "inv_gaussian.csv")
-        data = np.genfromtxt(open(filename, 'rb'), delimiter=",",
-                             dtype=float)[1:]
+        path = os.path.join(cur_dir, "inv_gaussian.csv")
+        with open(path, 'rb') as fd:
+            data = np.genfromtxt(fd, delimiter=",", dtype=float)[1:]
         self.endog = data[:5000, 0]
         self.exog = data[:5000, 1:]
         self.exog = add_constant(self.exog, prepend=False)
@@ -1878,8 +1877,7 @@ class Medpar1(object):
 
     http://www.stata-press.com/data/hh2/medpar1
     """
-    path = os.path.join(os.path.dirname(os.path.abspath(__file__)),
-                        "stata_medpar1_glm.csv")
+    path = os.path.join(cur_dir, "stata_medpar1_glm.csv")
     with open(path, 'rb') as fd:
         data = np.recfromcsv(fd)  # TODO: use pd.read_csv?
 
@@ -1897,8 +1895,7 @@ class InvGaussLog(Medpar1):
     """
     InvGaussLog is used with TestGlmInvgaussLog
     """
-    path = os.path.join(os.path.dirname(os.path.abspath(__file__)),
-                        "medparlogresids.csv")
+    path = os.path.join(cur_dir, "medparlogresids.csv")
     with open(path, 'rb') as fd:
         resids = np.genfromtxt(fd, delimiter=",")
     del path, fd
@@ -2660,8 +2657,7 @@ class InvGaussIdentity(Medpar1):
     """
     params = np.array([0.44538838, -1.05872706, 2.83947966])
     bse = np.array([0.02586783, 0.13830023, 0.20834864])
-    path = os.path.join(os.path.dirname(os.path.abspath(__file__)),
-                        "igaussident_resids.csv")
+    path = os.path.join(cur_dir, "igaussident_resids.csv")
     with open(path, 'rb') as fd:
         resids = np.genfromtxt(fd, delimiter=",")
     null_deviance = 335.1539777981053  # from R; Rpy bug

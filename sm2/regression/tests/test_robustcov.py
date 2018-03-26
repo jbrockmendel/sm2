@@ -35,6 +35,36 @@ class CheckOLSRobust(object):
         assert_allclose(self.bse_robust, res2.bse, rtol=rtol)
         assert_allclose(self.cov_robust, res2.cov, rtol=rtol)
 
+    def test_t_test(self):
+        # Note: differences between small (t-distribution, ddof) and
+        # large (normal) F statistic has no ddof correction in large,
+        # but uses F distribution (?)
+        rtol = getattr(self, 'rtol', 1e-10)
+
+        res1 = self.res1
+        res2 = self.res2
+
+        mat = np.eye(len(res1.params))
+        tt = res1.t_test(mat, cov_p=self.cov_robust)
+
+        # has 'effect', 'pvalue', 'sd', 'tvalue'
+        # TODO confint missing
+        assert_allclose(tt.effect, res2.params, rtol=rtol)
+        assert_allclose(tt.sd, res2.bse, rtol=rtol)
+        assert_allclose(tt.tvalue, res2.tvalues, rtol=rtol)
+        if self.small:
+            assert_allclose(tt.pvalue,
+                            res2.pvalues,
+                            rtol=5 * rtol)
+        else:
+            pval = stats.norm.sf(np.abs(tt.tvalue)) * 2
+            assert_allclose(pval,
+                            res2.pvalues,
+                            rtol=5 * rtol, atol=1e-25)
+        # SMOKE
+        tt.summary()
+        tt.summary_frame()
+
     # TODO: Split these into reasonably-scoped tests
     def test_tests(self):
         # Note: differences between small (t-distribution, ddof) and
@@ -45,17 +75,6 @@ class CheckOLSRobust(object):
         rtol = getattr(self, 'rtol', 1e-10)
         rtolh = getattr(self, 'rtolh', 1e-12)  # TODO: use this??
         mat = np.eye(len(res1.params))
-        tt = res1.t_test(mat, cov_p=self.cov_robust)
-        # has 'effect', 'pvalue', 'sd', 'tvalue'
-        # TODO confint missing
-        assert_allclose(tt.effect, res2.params, rtol=rtol)
-        assert_allclose(tt.sd, res2.bse, rtol=rtol)
-        assert_allclose(tt.tvalue, res2.tvalues, rtol=rtol)
-        if self.small:
-            assert_allclose(tt.pvalue, res2.pvalues, rtol=5 * rtol)
-        else:
-            pval = stats.norm.sf(np.abs(tt.tvalue)) * 2
-            assert_allclose(pval, res2.pvalues, rtol=5 * rtol, atol=1e-25)
 
         ft = res1.f_test(mat[:-1], cov_p=self.cov_robust)
         if self.small:
@@ -79,9 +98,7 @@ class CheckOLSRobust(object):
             assert_equal(ft.df_denom, res2.Fdf2)
 
         # SMOKE
-        tt.summary()
         ft.summary()
-        tt.summary_frame()
 
 
 @pytest.mark.not_vetted

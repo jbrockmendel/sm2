@@ -1479,7 +1479,7 @@ class ARMAResults(tsa_model.TimeSeriesModelResults):
             return np.sqrt(-1. / hess[0])
         return np.sqrt(np.diag(-np.linalg.inv(hess)))
 
-    def cov_params(self):  # add scale argument?
+    def cov_params(self):  # TODO: add scale argument?
         params = self.params
         hess = self.model.hessian(params)
         return -np.linalg.inv(hess)

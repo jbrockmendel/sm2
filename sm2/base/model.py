@@ -592,8 +592,7 @@ class GenericLikelihoodModel(LikelihoodModel):
         """
         Fit the model using maximum likelihood.
 
-        The rest of the docstring is from
-        sm2.LikelihoodModel.fit
+        The rest of the docstring is from sm2.LikelihoodModel.fit
         """
         if start_params is None:
             if hasattr(self, 'start_params'):
@@ -773,7 +772,6 @@ class LikelihoodModelResults(wrap.SaveLoadMixin, Results):
         The scaling factor of the model given during instantiation.
     tvalues : array
         The t-values of the standard errors.
-
 
     Notes
     -----
@@ -1746,7 +1744,7 @@ class ResultMixin(object):
                                   "Also all it does is `pass`.")
 
 
-# TODO: _none_ of this is covered in any tests (summary.__doc__ is copied)
+# TODO: _none_ of this is covered in any tests
 class GenericLikelihoodModelResults(LikelihoodModelResults, ResultMixin):
     """
     A results class for the discrete dependent variable models.

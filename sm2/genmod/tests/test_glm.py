@@ -754,27 +754,6 @@ class TestGlmPoissonOffset(CheckModelResultsMixin):
 
 
 @pytest.mark.not_vetted
-def test_score_test_OLS():
-    # nicer example than Longley
-    np.random.seed(5)
-    nobs = 100
-    sige = 0.5
-    x = np.random.uniform(0, 1, size=(nobs, 5))
-    x[:, 0] = 1
-    beta = 1. / np.arange(1., x.shape[1] + 1)
-    y = x.dot(beta) + sige * np.random.randn(nobs)
-
-    res_ols = sm.OLS(y, x).fit()
-    res_olsc = sm.OLS(y, x[:, :-2]).fit()
-    co = res_ols.compare_lm_test(res_olsc, demean=False)
-
-    res_glm = GLM(y, x[:, :-2], family=sm.families.Gaussian()).fit()
-    co2 = res_glm.model.score_test(res_glm.params, exog_extra=x[:, -2:])
-    # difference in df_resid versus nobs in scale see GH#1786
-    assert_allclose(co[0] * 97 / 100., co2[0], rtol=1e-13)
-
-
-@pytest.mark.not_vetted
 class TestStartParams(CheckModelResultsMixin):
     res2 = results_glm.Longley
 
@@ -796,93 +775,6 @@ class TestStartParams(CheckModelResultsMixin):
 
 
 @pytest.mark.not_vetted
-def test_glm_start_params():
-    # see GH#1604
-    y2 = np.array('0 1 0 0 0 1'.split(), int)
-    wt = np.array([50, 1, 50, 1, 5, 10])
-    y2 = np.repeat(y2, wt)
-    x2 = np.repeat([0, 0, 0.001, 100, -1, -1], wt)
-    mod = sm.GLM(y2, sm.add_constant(x2), family=sm.families.Binomial())
-    res = mod.fit(start_params=[-4, -5])
-    np.testing.assert_almost_equal(res.params,
-                                   [-4.60305022, -5.29634545],
-                                   6)
-
-
-@pytest.mark.not_vetted
-def test_loglike_no_opt():
-    # see GH#1728
-    y = np.asarray([0, 1, 0, 0, 1, 1, 0, 1, 1, 1])
-    x = np.arange(10, dtype=np.float64)
-
-    def llf(params):
-        lin_pred = params[0] + params[1] * x
-        pr = 1 / (1 + np.exp(-lin_pred))
-        return np.sum(y * np.log(pr) + (1 - y) * np.log(1 - pr))
-
-    for params in [[0, 0], [0, 1], [0.5, 0.5]]:
-        mod = sm.GLM(y, sm.add_constant(x), family=sm.families.Binomial())
-        res = mod.fit(start_params=params, maxiter=0)
-        like = llf(params)
-        assert_almost_equal(like, res.llf)
-
-
-@pytest.mark.not_vetted
-def test_formula_missing_exposure():
-    # see GH#2083
-    d = {'Foo': [1, 2, 10, 149], 'Bar': [1, 2, 3, np.nan],
-         'constant': [1] * 4, 'exposure': np.random.uniform(size=4),
-         'x': [1, 3, 2, 1.5]}
-    df = pd.DataFrame(d)
-
-    family = sm.families.Gaussian(link=links.log())
-
-    mod = GLM.from_formula("Foo ~ Bar", data=df, exposure=df.exposure,
-                           family=family)
-    assert type(mod.exposure) is np.ndarray
-
-    exposure = pd.Series(np.random.uniform(size=5))
-    df.loc[3, 'Bar'] = 4   # nan not relevant for ValueError for shape mismatch
-
-    with pytest.raises(ValueError):
-        GLM.from_formula("Foo ~ Bar", data=df,
-                         exposure=exposure, family=family)
-    with pytest.raises(ValueError):
-        GLM(df.Foo, df[['constant', 'Bar']],
-            exposure=exposure, family=family)
-
-
-@pytest.mark.not_vetted
-def test_glm_irls_method():
-    nobs, k_vars = 50, 4
-    np.random.seed(987126)
-    x = np.random.randn(nobs, k_vars - 1)
-    exog = add_constant(x, has_constant='add')
-    y = exog.sum(1) + np.random.randn(nobs)
-
-    mod = GLM(y, exog)
-    res1 = mod.fit()
-    res2 = mod.fit(wls_method='pinv', attach_wls=True)
-    res3 = mod.fit(wls_method='qr', attach_wls=True)
-    # fit_gradient does not attach mle_settings
-    res_g1 = mod.fit(start_params=res1.params, method='bfgs')
-
-    for r in [res1, res2, res3]:
-        assert r.mle_settings['optimizer'] == 'IRLS'
-        assert r.method == 'IRLS'
-
-    assert res1.mle_settings['wls_method'] == 'lstsq'
-    assert res2.mle_settings['wls_method'] == 'pinv'
-    assert res3.mle_settings['wls_method'] == 'qr'
-
-    assert hasattr(res2.results_wls.model, 'pinv_wexog')
-    assert hasattr(res3.results_wls.model, 'exog_Q')
-
-    # fit_gradient currently does not attach mle_settings
-    assert res_g1.method == 'bfgs'
-
-
-@pytest.mark.not_vetted
 class CheckWtdDuplicationMixin(object):
     decimal_params = DECIMAL_4
 
@@ -897,13 +789,15 @@ class CheckWtdDuplicationMixin(object):
         cls.exog_big = np.repeat(cls.exog, cls.weight, axis=0)
 
     def test_params(self):
-        assert_allclose(self.res1.params, self.res2.params,
+        assert_allclose(self.res1.params,
+                        self.res2.params,
                         atol=1e-6, rtol=1e-6)
 
     decimal_bse = DECIMAL_4
 
     def test_standard_errors(self):
-        assert_allclose(self.res1.bse, self.res2.bse,
+        assert_allclose(self.res1.bse,
+                        self.res2.bse,
                         rtol=1e-5, atol=1e-6)
 
     decimal_resids = DECIMAL_4
@@ -928,21 +822,26 @@ class CheckWtdDuplicationMixin(object):
     def test_aic(self):
         # R includes the estimation of the scale as a lost dof
         # Doesn't with Gamma though
-        assert_allclose(self.res1.aic, self.res2.aic,
+        assert_allclose(self.res1.aic,
+                        self.res2.aic,
                         atol=1e-6, rtol=1e-6)
 
     def test_deviance(self):
-        assert_allclose(self.res1.deviance, self.res2.deviance,
+        assert_allclose(self.res1.deviance,
+                        self.res2.deviance,
                         atol=1e-6, rtol=1e-6)
 
     def test_scale(self):
-        assert_allclose(self.res1.scale, self.res2.scale,
+        assert_allclose(self.res1.scale,
+                        self.res2.scale,
                         atol=1e-6, rtol=1e-6)
 
     def test_loglike(self):
         # Stata uses the below llf for these families
         # We differ with R for them
-        assert_allclose(self.res1.llf, self.res2.llf, 1e-6)
+        assert_allclose(self.res1.llf,
+                        self.res2.llf,
+                        1e-6)
 
     decimal_null_deviance = DECIMAL_4
 
@@ -954,14 +853,16 @@ class CheckWtdDuplicationMixin(object):
     decimal_bic = DECIMAL_4
 
     def test_bic(self):
-        assert_allclose(self.res1.bic, self.res2.bic,
+        assert_allclose(self.res1.bic,
+                        self.res2.bic,
                         atol=1e-6, rtol=1e-6)
 
     decimal_fittedvalues = DECIMAL_4
 
     def test_fittedvalues(self):
         res2_fitted = self.res2.predict(self.res1.model.exog)
-        assert_allclose(self.res1.fittedvalues, res2_fitted,
+        assert_allclose(self.res1.fittedvalues,
+                        res2_fitted,
                         atol=1e-5, rtol=1e-5)
 
     decimal_tpvalues = DECIMAL_4
@@ -969,11 +870,14 @@ class CheckWtdDuplicationMixin(object):
     def test_tpvalues(self):
         # test comparing tvalues and pvalues with normal implementation
         # make sure they use normal distribution (inherited in results class)
-        assert_allclose(self.res1.tvalues, self.res2.tvalues,
+        assert_allclose(self.res1.tvalues,
+                        self.res2.tvalues,
                         atol=1e-6, rtol=2e-4)
-        assert_allclose(self.res1.pvalues, self.res2.pvalues,
+        assert_allclose(self.res1.pvalues,
+                        self.res2.pvalues,
                         atol=1e-6, rtol=1e-6)
-        assert_allclose(self.res1.conf_int(), self.res2.conf_int(),
+        assert_allclose(self.res1.conf_int(),
+                        self.res2.conf_int(),
                         atol=1e-6, rtol=1e-6)
 
 
@@ -1305,14 +1209,18 @@ class CheckTweedie(object):
                         rtol=1e-5, atol=1e-5)
 
     def test_bse(self):
-        assert_allclose(self.res1.bse, self.res2.bse, atol=1e-6, rtol=1e6)
+        assert_allclose(self.res1.bse,
+                        self.res2.bse,
+                        atol=1e-6, rtol=1e6)
 
     def test_params(self):
-        assert_allclose(self.res1.params, self.res2.params,
+        assert_allclose(self.res1.params,
+                        self.res2.params,
                         atol=1e-5, rtol=1e-5)
 
     def test_deviance(self):
-        assert_allclose(self.res1.deviance, self.res2.deviance,
+        assert_allclose(self.res1.deviance,
+                        self.res2.deviance,
                         atol=1e-6, rtol=1e-6)
 
     def test_df(self):
@@ -1352,6 +1260,7 @@ class TestTweediePower15(CheckTweedie):
         cls.res1 = sm.GLM(endog=cls.data.endog,
                           exog=cls.data.exog[['INCOME', 'SOUTH']],
                           family=family_link).fit()
+
 
 @pytest.mark.not_vetted
 class TestTweediePower2(CheckTweedie):
@@ -1403,19 +1312,25 @@ class TestTweedieLog15Fair(CheckTweedie):
 @pytest.mark.not_vetted
 class CheckTweedieSpecial(object):
     def test_mu(self):
-        assert_allclose(self.res1.mu, self.res2.mu,
+        assert_allclose(self.res1.mu,
+                        self.res2.mu,
                         rtol=1e-5, atol=1e-5)
 
     def test_resid(self):
-        assert_allclose(self.res1.resid_response, self.res2.resid_response,
+        assert_allclose(self.res1.resid_response,
+                        self.res2.resid_response,
                         rtol=1e-5, atol=1e-5)
-        assert_allclose(self.res1.resid_pearson, self.res2.resid_pearson,
+        assert_allclose(self.res1.resid_pearson,
+                        self.res2.resid_pearson,
                         rtol=1e-5, atol=1e-5)
-        assert_allclose(self.res1.resid_deviance, self.res2.resid_deviance,
+        assert_allclose(self.res1.resid_deviance,
+                        self.res2.resid_deviance,
                         rtol=1e-5, atol=1e-5)
-        assert_allclose(self.res1.resid_working, self.res2.resid_working,
+        assert_allclose(self.res1.resid_working,
+                        self.res2.resid_working,
                         rtol=1e-5, atol=1e-5)
-        assert_allclose(self.res1.resid_anscombe, self.res2.resid_anscombe,
+        assert_allclose(self.res1.resid_anscombe,
+                        self.res2.resid_anscombe,
                         rtol=1e-5, atol=1e-5)
 
 
@@ -1489,52 +1404,6 @@ class TestTweedieSpecialLog3(CheckTweedieSpecial):
         cls.res2 = sm.GLM(endog=cls.data.endog,
                           exog=cls.data.exog[['INCOME', 'SOUTH']],
                           family=family2).fit()
-
-
-@pytest.mark.not_vetted
-def test_TweediePowerEstimate():
-    # Test the Pearson estimate of the Tweedie variance and scale parameters.
-    #
-    # Ideally, this would match the following R code, but I can't
-    # make it work...
-    #
-    # setwd('c:/workspace')
-    # data <- read.csv('cpunish.csv', sep=",")
-    #
-    # library(tweedie)
-    #
-    # y <- c(1.00113835e+05, 6.89668315e+03, 6.15726842e+03,
-    #        1.41718806e+03, 5.11776456e+02, 2.55369154e+02,
-    #        1.07147443e+01, 3.56874698e+00, 4.06797842e-02,
-    #        7.06996731e-05, 2.10165106e-07, 4.34276938e-08,
-    #        1.56354040e-09, 0.00000000e+00, 0.00000000e+00,
-    #        0.00000000e+00, 0.00000000e+00)
-    #
-    # data$NewY <- y
-    #
-    # out <- tweedie.profile( NewY ~ INCOME + SOUTH - 1,
-    #                         p.vec=c(1.1, 1.2, 1.3, 1.4, 1.5, 1.6, 1.7, 1.8,
-    #                                 1.9), link.power=0,
-    #                         data=data, do.plot = TRUE)
-    data = sm.datasets.cpunish.load_pandas()
-    y = [1.00113835e+05, 6.89668315e+03, 6.15726842e+03,
-         1.41718806e+03, 5.11776456e+02, 2.55369154e+02,
-         1.07147443e+01, 3.56874698e+00, 4.06797842e-02,
-         7.06996731e-05, 2.10165106e-07, 4.34276938e-08,
-         1.56354040e-09, 0.00000000e+00, 0.00000000e+00,
-         0.00000000e+00, 0.00000000e+00]
-    model1 = sm.GLM(y, data.exog[['INCOME', 'SOUTH']],
-                    family=sm.families.Tweedie(link=links.log(),
-                                               var_power=1.5))
-    res1 = model1.fit()
-    model2 = sm.GLM((y - res1.mu) ** 2,
-                    np.column_stack((np.ones(len(res1.mu)), np.log(res1.mu))),
-                    family=sm.families.Gamma(links.log()))
-    res2 = model2.fit()
-    # Sample may be too small for this...
-    # assert_allclose(res1.scale, np.exp(res2.params[0]), rtol=0.25)
-    p = model1.estimate_tweedie_power(res1.mu)
-    assert_allclose(p, res2.params[1], rtol=0.25)
 
 
 @pytest.mark.not_vetted
@@ -1682,6 +1551,113 @@ class TestConvergence(object):
         assert len(self.res.fit_history['deviance']) - 2 == actual_iterations
 
 
+# ------------------------------------------------------------
+# Unsorted
+
+
+@pytest.mark.not_vetted
+def test_tweedie_power_estimate():
+    # Test the Pearson estimate of the Tweedie variance and scale parameters.
+    #
+    # Ideally, this would match the following R code, but I can't
+    # make it work...
+    #
+    # setwd('c:/workspace')
+    # data <- read.csv('cpunish.csv', sep=",")
+    #
+    # library(tweedie)
+    #
+    # y <- c(1.00113835e+05, 6.89668315e+03, 6.15726842e+03,
+    #        1.41718806e+03, 5.11776456e+02, 2.55369154e+02,
+    #        1.07147443e+01, 3.56874698e+00, 4.06797842e-02,
+    #        7.06996731e-05, 2.10165106e-07, 4.34276938e-08,
+    #        1.56354040e-09, 0.00000000e+00, 0.00000000e+00,
+    #        0.00000000e+00, 0.00000000e+00)
+    #
+    # data$NewY <- y
+    #
+    # out <- tweedie.profile( NewY ~ INCOME + SOUTH - 1,
+    #                         p.vec=c(1.1, 1.2, 1.3, 1.4, 1.5, 1.6, 1.7, 1.8,
+    #                                 1.9), link.power=0,
+    #                         data=data, do.plot = TRUE)
+    data = sm.datasets.cpunish.load_pandas()
+    y = [1.00113835e+05, 6.89668315e+03, 6.15726842e+03,
+         1.41718806e+03, 5.11776456e+02, 2.55369154e+02,
+         1.07147443e+01, 3.56874698e+00, 4.06797842e-02,
+         7.06996731e-05, 2.10165106e-07, 4.34276938e-08,
+         1.56354040e-09, 0.00000000e+00, 0.00000000e+00,
+         0.00000000e+00, 0.00000000e+00]
+    model1 = sm.GLM(y, data.exog[['INCOME', 'SOUTH']],
+                    family=sm.families.Tweedie(link=links.log(),
+                                               var_power=1.5))
+    res1 = model1.fit()
+    model2 = sm.GLM((y - res1.mu) ** 2,
+                    np.column_stack((np.ones(len(res1.mu)), np.log(res1.mu))),
+                    family=sm.families.Gamma(links.log()))
+    res2 = model2.fit()
+    # Sample may be too small for this...
+    # assert_allclose(res1.scale, np.exp(res2.params[0]), rtol=0.25)
+    p = model1.estimate_tweedie_power(res1.mu)
+    assert_allclose(p, res2.params[1], rtol=0.25)
+
+
+@pytest.mark.not_vetted
+def test_glm_start_params():
+    # see GH#1604
+    y2 = np.array('0 1 0 0 0 1'.split(), int)
+    wt = np.array([50, 1, 50, 1, 5, 10])
+    y2 = np.repeat(y2, wt)
+    x2 = np.repeat([0, 0, 0.001, 100, -1, -1], wt)
+    mod = sm.GLM(y2, sm.add_constant(x2), family=sm.families.Binomial())
+    res = mod.fit(start_params=[-4, -5])
+    np.testing.assert_almost_equal(res.params,
+                                   [-4.60305022, -5.29634545],
+                                   6)
+
+
+@pytest.mark.not_vetted
+def test_loglike_no_opt():
+    # see GH#1728
+    y = np.asarray([0, 1, 0, 0, 1, 1, 0, 1, 1, 1])
+    x = np.arange(10, dtype=np.float64)
+
+    def llf(params):
+        lin_pred = params[0] + params[1] * x
+        pr = 1 / (1 + np.exp(-lin_pred))
+        return np.sum(y * np.log(pr) + (1 - y) * np.log(1 - pr))
+
+    for params in [[0, 0], [0, 1], [0.5, 0.5]]:
+        mod = sm.GLM(y, sm.add_constant(x), family=sm.families.Binomial())
+        res = mod.fit(start_params=params, maxiter=0)
+        like = llf(params)
+        assert_almost_equal(like, res.llf)
+
+
+@pytest.mark.not_vetted
+def test_formula_missing_exposure():
+    # see GH#2083
+    d = {'Foo': [1, 2, 10, 149], 'Bar': [1, 2, 3, np.nan],
+         'constant': [1] * 4, 'exposure': np.random.uniform(size=4),
+         'x': [1, 3, 2, 1.5]}
+    df = pd.DataFrame(d)
+
+    family = sm.families.Gaussian(link=links.log())
+
+    mod = GLM.from_formula("Foo ~ Bar", data=df, exposure=df.exposure,
+                           family=family)
+    assert type(mod.exposure) is np.ndarray
+
+    exposure = pd.Series(np.random.uniform(size=5))
+    df.loc[3, 'Bar'] = 4   # nan not relevant for ValueError for shape mismatch
+
+    with pytest.raises(ValueError):
+        GLM.from_formula("Foo ~ Bar", data=df,
+                         exposure=exposure, family=family)
+    with pytest.raises(ValueError):
+        GLM(df.Foo, df[['constant', 'Bar']],
+            exposure=exposure, family=family)
+
+
 @pytest.mark.not_vetted
 def test_poisson_deviance():
     # see GH#3355 missing term in deviance if resid_response.sum() != 0
@@ -1733,6 +1709,57 @@ def test_wtd_patsy_missing():
     assert mod_misisng.freq_weights.shape[0] == 12
     keep_weights = np.array([2, 4, 6, 8, 10, 11, 12, 13, 14, 15, 16, 17])
     assert_equal(mod_misisng.freq_weights, keep_weights)
+
+
+@pytest.mark.not_vetted
+def test_glm_irls_method():
+    nobs, k_vars = 50, 4
+    np.random.seed(987126)
+    x = np.random.randn(nobs, k_vars - 1)
+    exog = add_constant(x, has_constant='add')
+    y = exog.sum(1) + np.random.randn(nobs)
+
+    mod = GLM(y, exog)
+    res1 = mod.fit()
+    res2 = mod.fit(wls_method='pinv', attach_wls=True)
+    res3 = mod.fit(wls_method='qr', attach_wls=True)
+    # fit_gradient does not attach mle_settings
+    res_g1 = mod.fit(start_params=res1.params, method='bfgs')
+
+    for r in [res1, res2, res3]:
+        assert r.mle_settings['optimizer'] == 'IRLS'
+        assert r.method == 'IRLS'
+
+    assert res1.mle_settings['wls_method'] == 'lstsq'
+    assert res2.mle_settings['wls_method'] == 'pinv'
+    assert res3.mle_settings['wls_method'] == 'qr'
+
+    assert hasattr(res2.results_wls.model, 'pinv_wexog')
+    assert hasattr(res3.results_wls.model, 'exog_Q')
+
+    # fit_gradient currently does not attach mle_settings
+    assert res_g1.method == 'bfgs'
+
+
+@pytest.mark.not_vetted
+def test_score_test_OLS():
+    # nicer example than Longley
+    np.random.seed(5)
+    nobs = 100
+    sige = 0.5
+    x = np.random.uniform(0, 1, size=(nobs, 5))
+    x[:, 0] = 1
+    beta = 1. / np.arange(1., x.shape[1] + 1)
+    y = x.dot(beta) + sige * np.random.randn(nobs)
+
+    res_ols = sm.OLS(y, x).fit()
+    res_olsc = sm.OLS(y, x[:, :-2]).fit()
+    co = res_ols.compare_lm_test(res_olsc, demean=False)
+
+    res_glm = GLM(y, x[:, :-2], family=sm.families.Gaussian()).fit()
+    co2 = res_glm.model.score_test(res_glm.params, exog_extra=x[:, -2:])
+    # difference in df_resid versus nobs in scale see GH#1786
+    assert_allclose(co[0] * 97 / 100., co2[0], rtol=1e-13)
 
 
 # ------------------------------------------------------------
