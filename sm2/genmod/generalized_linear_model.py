@@ -1619,7 +1619,6 @@ class GLMResults(base.LikelihoodModelResults):
                                       pred_kwds=pred_kwds)
         return res
 
-    # TODO: not hit in tests.  Is that because I made SaveLoadMixin?
     @copy_doc(base.LikelihoodModelResults.remove_data.__doc__)
     def remove_data(self):
         # GLM has alias/reference in result instance
