@@ -172,7 +172,8 @@ class RLM(base.LikelihoodModel):
         """
         Returns the (unnormalized) log-likelihood from the M estimator.
         """
-        return self.M((self.endog - tmp_results.fittedvalues) / tmp_results.scale).sum()
+        return self.M(
+            (self.endog - tmp_results.fittedvalues) / tmp_results.scale).sum()
 
     def _update_history(self, tmp_results, history, conv):
         history['params'].append(tmp_results.params)
@@ -294,11 +295,11 @@ class RLM(base.LikelihoodModel):
         results.fit_history = history
         results.fit_options = dict(cov=cov.upper(), scale_est=scale_est,
                                    norm=self.M.__class__.__name__, conv=conv)
-        #norm is not changed in fit, no old state
+        # norm is not changed in fit, no old state
 
-        #doing the next causes exception
-        #self.cov = self.scale_est = None #reset for additional fits
-        #iteration and history could contain wrong state with repeated fit
+        # doing the next causes exception
+        #self.cov = self.scale_est = None  # reset for additional fits
+        # iteration and history could contain wrong state with repeated fit
         return wrap_cls(results)
 
 
@@ -481,16 +482,6 @@ class RLMResults(base.LikelihoodModelResults):
         """
         # TODO: is the docstring here accurate?  isnt that summary2?
 
-        #left = [(i, None) for i in (
-        #                'Dependent Variable:',
-        #                'Model type:',
-        #                'Method:',
-        #'Date:',
-        #                'Time:',
-        #                'Number of Obs:',
-        #                'df resid',
-        #      'df model',
-        #                 )]
         top_left = [('Dep. Variable:', None),
                     ('Model:', None),
                     ('Method:', ['IRLS']),
@@ -517,7 +508,7 @@ class RLMResults(base.LikelihoodModelResults):
         smry.add_table_params(self, yname=yname, xname=xname, alpha=alpha,
                               use_t=self.use_t)
 
-        #diagnostic table is not used yet
+        # diagnostic table is not used yet
         #smry.add_table_2cols(self, gleft=diagn_left, gright=diagn_right,
         #                  yname=yname, xname=xname,
         #                  title="")

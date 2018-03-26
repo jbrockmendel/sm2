@@ -158,11 +158,15 @@ class TestConcat(object):
         (((1, 2, 3), (4,)), (1, 2, 3, 4)),
         (((1, 2, 3), [4]), (1, 2, 3, 4)),
         (([1, 2, 3], np.r_[4]), (1, 2, 3, 4)),
-        ((np.r_[1, 2, 3], pd.Series([4])), 0, True, (1, 2, 3, 4)),
-        ((pd.Series([1, 2, 3]), pd.Series([4])), 0, True, (1, 2, 3, 4)),
+        ((np.r_[1, 2, 3], pd.Series([4])),
+         0, True, (1, 2, 3, 4)),
+        ((pd.Series([1, 2, 3]), pd.Series([4])),
+         0, True, (1, 2, 3, 4)),
         ((np.c_[x[:2], x[:2]], np.c_[x[2:3], x[2:3]]), np.c_[x[:3], x[:3]]),
-        ((np.c_[x[:2], x[:2]].T, np.c_[x[2:3], x[2:3]].T), 1, np.c_[x[:3], x[:3]].T),
-        ((pd.DataFrame(np.c_[x[:2], x[:2]]), np.c_[x[2:3], x[2:3]]), 0, True, np.c_[x[:3], x[:3]]),
+        ((np.c_[x[:2], x[:2]].T, np.c_[x[2:3], x[2:3]].T),
+         1, np.c_[x[:3], x[:3]].T),
+        ((pd.DataFrame(np.c_[x[:2], x[:2]]), np.c_[x[2:3], x[2:3]]),
+         0, True, np.c_[x[:3], x[:3]]),
     ]
 
     invalid = [
@@ -427,11 +431,15 @@ class TestStationaryMultivariate(object):
     # Test that the constraint and unconstraint functions are inverses
 
     constrained_cases = [
-        np.array([[0]]), np.array([[0.1]]), np.array([[-0.5]]), np.array([[0.999]]),
+        np.array([[0]]),
+        np.array([[0.1]]),
+        np.array([[-0.5]]),
+        np.array([[0.999]]),
         [np.array([[0]])],
         np.array([[0.8, -0.2]]),
         [np.array([[0.8]]), np.array([[-0.2]])],
-        [np.array([[0.3, 0.01], [-0.23, 0.15]]), np.array([[0.1, 0.03], [0.05, -0.3]])],
+        [np.array([[0.3, 0.01], [-0.23, 0.15]]),
+         np.array([[0.1, 0.03], [0.05, -0.3]])],
         np.array([[0.3, 0.01, 0.1, 0.03], [-0.23, 0.15, 0.05, -0.3]])
     ]
     unconstrained_cases = [
@@ -464,8 +472,8 @@ class TestStationaryMultivariate(object):
                 unconstrained, cov)
             reunconstrained, _ = tools.unconstrain_stationary_multivariate(
                 constrained, cov)
-            # Note: low tolerance comes from last example in unconstrained_cases,
-            # but is not a real problem
+            # Note: low tolerance comes from last example in
+            # unconstrained_cases, but is not a real problem
             assert_allclose(reunconstrained, unconstrained, atol=1e-4)
 
 

@@ -73,7 +73,6 @@ class CheckOLSRobust(object):
         res1 = self.res1
         res2 = self.res2
         rtol = getattr(self, 'rtol', 1e-10)
-        rtolh = getattr(self, 'rtolh', 1e-12)  # TODO: use this??
         mat = np.eye(len(res1.params))
 
         ft = res1.f_test(mat[:-1], cov_p=self.cov_robust)
@@ -370,7 +369,7 @@ class CheckOLSRobustCluster(CheckOLSRobust):
         firm_names, firm_id = np.unique(np.asarray(dtapa_exog[['firm']], 'S20'),
                                         return_inverse=True)
         cls.groups = firm_id
-        #time indicator in range(max Ti)
+        # time indicator in range(max Ti)
         time = np.asarray(dtapa_exog[['year']])
         time -= time.min()
         cls.time = np.squeeze(time).astype(int)
@@ -525,7 +524,6 @@ class TestOLSRobustCluster2LargeFit(CheckOLSRobustCluster,
 
     def setup(self):
         model = OLS(self.res1.model.endog, self.res1.model.exog)
-        #res_ols = self.res1.model.fit(cov_type='cluster',
         res_ols = model.fit(cov_type='cluster',
                             cov_kwds=dict(groups=self.groups,
                                           use_correction=False,
@@ -750,7 +748,7 @@ class CheckWLSRobustCluster(CheckOLSRobust):
         firm_names, firm_id = np.unique(np.asarray(dtapa_exog[['firm']], 'S20'),
                                         return_inverse=True)
         cls.groups = firm_id
-        #time indicator in range(max Ti)
+        # time indicator in range(max Ti)
         time = np.asarray(dtapa_exog[['year']])
         time -= time.min()
         cls.time = np.squeeze(time).astype(int)

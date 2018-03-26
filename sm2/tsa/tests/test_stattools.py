@@ -144,8 +144,7 @@ class TestADFNoConstant2(CheckADF):
                                         maxlag=1, store=True)
 
     def test_store_str(self):
-        assert_equal(self.store.__str__(),
-                     'Augmented Dickey-Fuller Test Results')
+        assert self.store.__str__() == 'Augmented Dickey-Fuller Test Results'
 
 
 @pytest.mark.not_vetted
@@ -156,8 +155,6 @@ class CheckCorrGram(object):
     data = macrodata.load_pandas()
     x = data.data['realgdp']
     results = results_corrgram
-    # not needed: add 1. for lag zero
-    #self.results['acvar'] = np.concatenate(([1.], self.results['acvar']))
 
 
 @pytest.mark.not_vetted
@@ -168,7 +165,6 @@ class TestACF(CheckCorrGram):
     @classmethod
     def setup_class(cls):
         cls.acf = cls.results['acvar']
-        #cls.acf = np.concatenate(([1.], cls.acf))
         cls.qstat = cls.results['Q1']
         cls.res1 = acf(cls.x, nlags=40, qstat=True, alpha=.05)
         cls.confint_res = cls.results[['acvar_lb', 'acvar_ub']].as_matrix()
@@ -247,8 +243,9 @@ class TestACFMissing(CheckCorrGram):
                             self.qstat_none,
                             DECIMAL_3)
 
-    # how to do this test? the correct q_stat depends on whether nobs=len(x) is
-    # used when x contains NaNs or whether nobs<len(x) when x contains NaNs
+    # TODO: how to do this test? the correct q_stat depends on
+    # whether nobs=len(x) is used when x contains NaNs or whether
+    # nobs<len(x) when x contains NaNs
     #def test_qstat_drop(self):
     #    assert_almost_equal(self.res_drop[2][:40], self.qstat, DECIMAL_3)
 
@@ -270,7 +267,7 @@ class TestPACF(CheckCorrGram):
         # check lag 0
         assert_equal(centered[0], [0., 0.])
         assert_equal(confint[0], [1, 1])
-        assert_equal(pacfols[0], 1)
+        assert pacfols[0] == 1
 
     def test_yw(self):
         pacfyw = pacf_yw(self.x, nlags=40, method="mle")
@@ -402,8 +399,8 @@ def test_coint_identical_series():
     warnings.simplefilter('always', ColinearityWarning)
     with warnings.catch_warnings(record=True) as w:
         c = coint(y, y, trend="c", maxlag=0, autolag=None)
-    assert_equal(len(w), 1)
-    assert_equal(c[0], 0.0)
+    assert len(w) == 1
+    assert c[0] == 0.0
     # Limit of table
     assert c[1] > .98
 
@@ -418,7 +415,7 @@ def test_coint_perfect_collinearity():
     warnings.simplefilter('always', ColinearityWarning)
     with warnings.catch_warnings(record=True):
         c = coint(y, x, trend="c", maxlag=0, autolag=None)
-    assert_equal(c[0], 0.0)
+    assert c[0] == 0.0
     # Limit of table
     assert c[1] > .98
 
@@ -452,13 +449,7 @@ class TestGrangerCausality(object):
 
 
 @pytest.mark.not_vetted
-class SetupKPSS(object):
-    data = macrodata.load()
-    x = data.data['realgdp']
-
-
-@pytest.mark.not_vetted
-class TestKPSS(SetupKPSS):
+class TestKPSS(object):
     """
     R-code
     ------
@@ -469,6 +460,8 @@ class TestKPSS(SetupKPSS):
     In this context, x is the vector containing the
     macrodata['realgdp'] series.
     """
+    data = macrodata.load()
+    x = data.data['realgdp']
 
     def test_fail_nonvector_input(self):
         with warnings.catch_warnings(record=True):
@@ -501,19 +494,19 @@ class TestKPSS(SetupKPSS):
     def test_pval(self):
         with warnings.catch_warnings(record=True):
             kpss_stat, pval, lags, crits = kpss(self.x, 'c', 3)
-        assert_equal(pval, 0.01)
+        assert pval == 0.01
 
         with warnings.catch_warnings(record=True):
             kpss_stat, pval, lags, crits = kpss(self.x, 'ct', 3)
-        assert_equal(pval, 0.01)
+        assert pval == 0.01
 
     def test_store(self):
         with warnings.catch_warnings(record=True):
             kpss_stat, pval, crit, store = kpss(self.x, 'c', 3, True)
 
         # assert attributes, and make sure they're correct
-        assert_equal(store.nobs, len(self.x))
-        assert_equal(store.lags, 3)
+        assert store.nobs == len(self.x)
+        assert store.lags == 3
 
     def test_lags(self):
         with warnings.catch_warnings(record=True):
@@ -563,7 +556,6 @@ def test_arma_order_select_ic():
     arparams = np.array([.75, -.25])
     maparams = np.array([.65, .35])
     arparams = np.r_[1, -arparams]
-    maparam = np.r_[1, maparams]
     nobs = 250
     np.random.seed(2014)
     y = arma_generate_sample(arparams, maparams, nobs)
@@ -619,7 +611,7 @@ def test_arma_order_select_ic_failure():
     with warnings.catch_warnings():
         # catch a hessian inversion and convergence failure warning
         warnings.simplefilter("ignore")
-        res = arma_order_select_ic(y)
+        arma_order_select_ic(y)
 
 
 @pytest.mark.not_vetted

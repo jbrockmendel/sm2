@@ -84,7 +84,7 @@ def test_ic():
                             ic_sig(2, 10, 2),
                             decimal=14)
 
-        assert_almost_equal(ic_sig(np.log(2.),10,2, islog=True),
+        assert_almost_equal(ic_sig(np.log(2.), 10, 2, islog=True),
                             ic_sig(2, 10, 2),
                             decimal=14)
 
