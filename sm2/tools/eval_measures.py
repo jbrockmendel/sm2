@@ -31,7 +31,6 @@ def mse(x1, x2, axis=0):
     This uses ``numpy.asanyarray`` to convert the input. Whether this is the
     desired result or not depends on the array subclass, for example
     numpy matrices will silently produce an incorrect result.
-
     """
     x1 = np.asanyarray(x1)
     x2 = np.asanyarray(x2)

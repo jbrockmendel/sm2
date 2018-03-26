@@ -1111,7 +1111,8 @@ cdef int _ccopy_index_cols(
     n is the number of rows of A
     m is the number of columns of A
     """
-    cdef int i, j, k, nobs, inc = 1
+    cdef:
+        int i, j, k, nobs, inc = 1
 
     # Perform replacement
     for i in range(m):
@@ -2237,7 +2238,8 @@ cdef int _scopy_index_cols(
     n is the number of rows of A
     m is the number of columns of A
     """
-    cdef int i, j, k, nobs, inc = 1
+    cdef:
+        int i, j, k, nobs, inc = 1
 
     # Perform replacement
     for i in range(m):
@@ -3367,7 +3369,8 @@ cdef int _zcopy_index_cols(
     n is the number of rows of A
     m is the number of columns of A
     """
-    cdef int i, j, k, nobs, inc = 1
+    cdef:
+        int i, j, k, nobs, inc = 1
 
     # Perform replacement
     for i in range(m):
@@ -4493,7 +4496,8 @@ cdef int _dcopy_index_cols(
     n is the number of rows of A
     m is the number of columns of A
     """
-    cdef int i, j, k, nobs, inc = 1
+    cdef:
+        int i, j, k, nobs, inc = 1
 
     # Perform replacement
     for i in range(m):
