@@ -900,6 +900,15 @@ class LikelihoodModelResults(wrap.SaveLoadMixin, Results):
     # can be overwritten by instances or subclasses
     use_t = False
 
+    # TODO: WTF Why does this method exist if its going to be overwritten
+    # in __init__?
+    def normalized_cov_params(self):
+        raise NotImplementedError
+
+    @cache_readonly
+    def llf(self):
+        return self.model.loglike(self.params)
+
     def __init__(self, model, params, normalized_cov_params=None, scale=1.,
                  **kwargs):
         super(LikelihoodModelResults, self).__init__(model, params)
@@ -922,11 +931,6 @@ class LikelihoodModelResults(wrap.SaveLoadMixin, Results):
                                         use_self=True, use_t=self.use_t,
                                         **cov_kwds)
 
-    # TODO: WTF Why does this method exist if its going to be overwritten
-    # in __init__?
-    def normalized_cov_params(self):
-        raise NotImplementedError
-
     def _get_robustcov_results(self, cov_type='nonrobust', use_self=True,
                                use_t=None, **cov_kwds):
         from sm2.base.covtype import get_robustcov_results
@@ -934,9 +938,6 @@ class LikelihoodModelResults(wrap.SaveLoadMixin, Results):
         get_robustcov_results(self, cov_type=cov_type, use_self=use_self,
                               use_t=use_t, **cov_kwds)
 
-    @cache_readonly
-    def llf(self):
-        return self.model.loglike(self.params)
 
     @cache_readonly
     def bse(self):

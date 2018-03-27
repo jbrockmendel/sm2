@@ -1409,6 +1409,7 @@ class GLMResults(base.LikelihoodModelResults):
     """
     def __init__(self, model, params, normalized_cov_params, scale,
                  cov_type='nonrobust', cov_kwds=None, use_t=None, k_constr=0):
+
         super(GLMResults, self).__init__(
             model,
             params,
@@ -1471,8 +1472,8 @@ class GLMResults(base.LikelihoodModelResults):
         else:
             if cov_kwds is None:
                 cov_kwds = {}
-            get_robustcov_results(self, cov_type=cov_type, use_self=True,
-                                  use_t=use_t, **cov_kwds)
+            self._get_robustcov_results(cov_type=cov_type, use_self=True,
+                                        use_t=use_t, **cov_kwds)
             # TODO: Cant we just call the method?  maybe even do this upstream?
 
     @cache_readonly
