@@ -168,8 +168,8 @@ class DiscreteModel(base.LikelihoodModel):
         """
         # assumes constant
         rank = np.linalg.matrix_rank(self.exog)
-        self.df_model = float(rank - 1)
-        self.df_resid = float(self.nobs - rank)
+        self.df_model = float(rank) - 1
+        self.df_resid = float(self.nobs) - (self.df_model + 1)
 
     def cdf(self, X):  # pragma: no cover
         """
@@ -3122,6 +3122,7 @@ class DiscreteResults(base.LikelihoodModelResults):
             # In some subclasses, df_model and df_resid are properties
             # TODO: standardize this behavior
             pass
+
         self._cache = resettable_cache()
         self.nobs = model.exog.shape[0]  # i.e. model.nobs
         self.__dict__.update(mlefit.__dict__)
@@ -3782,6 +3783,18 @@ class L1ResultsMixin(object):
         J = getattr(self, 'J', 2)
         return float(self.nobs) - (self.df_model + (J - 1))
 
+    @property
+    def df_model(self):
+        # J is really only relevant for MultinomialResults, where
+        # there are J-1 constants
+        J = getattr(self, 'J', 2)
+
+        # adjust for extra parameter in NegativeBinomial nb1 and nb2
+        # extra parameter is not included in df_model
+        k_extra = getattr(self, 'k_extra', 0)
+
+        return self.nnz_params - k_extra - (J - 1)
+
 
 class L1CountResults(DiscreteResults, L1ResultsMixin):
     __doc__ = _discrete_results_docs % {
@@ -3803,9 +3816,7 @@ class L1CountResults(DiscreteResults, L1ResultsMixin):
         # Set degrees of freedom.  In doing so,
         # adjust for extra parameter in NegativeBinomial nb1 and nb2
         # extra parameter is not included in df_model
-        k_extra = getattr(self.model, 'k_extra', 0)
-
-        self.df_model = self.nnz_params - k_extra - 1
+        self.k_extra = getattr(self.model, 'k_extra', 0)
 
 
 class L1PoissonResults(L1CountResults, PoissonResults):
@@ -3834,8 +3845,6 @@ class L1BinaryResults(BinaryResults, L1ResultsMixin):
         # entry in params has been set zero'd out.
         self.trimmed = bnryfit.mle_retvals['trimmed']
 
-        self.df_model = self.nnz_params - 1
-
 
 class L1MultinomialResults(MultinomialResults, L1ResultsMixin):
     __doc__ = _discrete_results_docs % {
@@ -3850,10 +3859,6 @@ class L1MultinomialResults(MultinomialResults, L1ResultsMixin):
         # self.trimmed is a boolean array with T/F telling whether or not that
         # entry in params has been set zero'd out.
         self.trimmed = mlefit.mle_retvals['trimmed']
-
-        # Note: J-1 constants
-        J = self.J
-        self.df_model = self.nnz_params - (J - 1)
 
 
 # --------------------------------------------------------------------

@@ -1979,6 +1979,8 @@ class RegressionResults(base.LikelihoodModelResults):
         adjust_df = covtype.set_df_adjustment(kwds, cov_type)
         res.cov_kwds['adjust_df'] = adjust_df
 
+        n_groups = None  # this isn't set upstream
+
         # verify and set kwds, and calculate cov
         # TODO: this should be outsourced in a function so we can reuse it in
         #       other models
@@ -1990,16 +1992,7 @@ class RegressionResults(base.LikelihoodModelResults):
             res.cov_kwds['scale'] = scale = kwds.get('scale', 1.)
             res.cov_params_default = scale * res.normalized_cov_params
         elif cov_type.upper() in ('HC0', 'HC1', 'HC2', 'HC3'):
-            if kwds:  # pragma: no cover
-                raise ValueError('heteroscedasticity robust covarians '
-                                 'does not use keywords')
-            res.cov_kwds['description'] = (
-                'Standard Errors are heteroscedasticity ' +
-                'robust ' + '(' + cov_type + ')')
-            # TODO cannot access cov without calling se first
-            getattr(self, cov_type.upper() + '_se')
-            res.cov_params_default = getattr(self, 'cov_' + cov_type.upper())
-
+            covtype.robust_stderrs(self, res, kwds, cov_type)
         elif cov_type.lower() == 'hac':
             n_groups = covtype.hac_stderrs(self, res, kwds)
         elif cov_type.lower() == 'cluster':

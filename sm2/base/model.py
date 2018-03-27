@@ -633,15 +633,20 @@ class Results(object):
         the previously specified model instance
     params : array
         parameter estimates from the fit model
+    k_constr : int
+        number of constraints the model was fit with (default 0)
     """
-    def __init__(self, model, params, **kwd):
-        self.__dict__.update(kwd)
-        self.initialize(model, params, **kwd)
+    def __init__(self, model, params, k_constr=0, **kwargs):
+        self.model = model
+        self.params = params
+
+        self.k_constr = k_constr
+
+        self.__dict__.update(kwargs)
+        self.initialize(model, params, **kwargs)
         self._data_attr = []
 
-    def initialize(self, model, params, **kwd):
-        self.params = params
-        self.model = model
+    def initialize(self, model, params, **kwargs):
         if hasattr(model, 'k_constant'):
             # TODO: This attribute should _always_ exist
             self.k_constant = model.k_constant
@@ -917,6 +922,8 @@ class LikelihoodModelResults(wrap.SaveLoadMixin, Results):
                                         use_self=True, use_t=self.use_t,
                                         **cov_kwds)
 
+    # TODO: WTF Why does this method exist if its going to be overwritten
+    # in __init__?
     def normalized_cov_params(self):
         raise NotImplementedError
 

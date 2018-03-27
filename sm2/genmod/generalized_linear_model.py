@@ -1407,14 +1407,13 @@ class GLMResults(base.LikelihoodModelResults):
     --------
     sm2.base.model.LikelihoodModelResults
     """
-
     def __init__(self, model, params, normalized_cov_params, scale,
-                 cov_type='nonrobust', cov_kwds=None, use_t=None):
+                 cov_type='nonrobust', cov_kwds=None, use_t=None, k_constr=0):
         super(GLMResults, self).__init__(
             model,
             params,
             normalized_cov_params=normalized_cov_params,
-            scale=scale)
+            scale=scale, k_constr=k_constr)
 
         self.family = model.family
         self._endog = model.endog
@@ -1429,8 +1428,8 @@ class GLMResults(base.LikelihoodModelResults):
         else:
             self._n_trials = 1
 
-        self.df_resid = model.df_resid
-        self.df_model = model.df_model
+        self.df_resid = model.df_resid - k_constr
+        self.df_model = model.df_model + k_constr
 
         self.pinv_wexog = model.pinv_wexog
         self._cache = resettable_cache()
