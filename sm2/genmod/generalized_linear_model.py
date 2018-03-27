@@ -122,7 +122,6 @@ class GLM(base.LikelihoodModel):
     weights : array
         The value of the weights after the last iteration of fit.
 
-
     Examples
     --------
     >>> import sm2.api as sm
@@ -226,7 +225,6 @@ class GLM(base.LikelihoodModel):
 
     Attributes
     ----------
-
     df_model : float
         Model degrees of freedom is equal to p - 1, where p is the number
         of regressors.  Note that the intercept is not reported as a
@@ -1446,7 +1444,6 @@ class GLMResults(base.LikelihoodModelResults):
         self._data_attr_model.append('mu')
 
         # robust covariance
-        from sm2.base.covtype import get_robustcov_results
         if use_t is None:
             self.use_t = False    # TODO: class default
         else:

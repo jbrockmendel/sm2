@@ -2912,7 +2912,6 @@ class NegativeBinomialP(CountModel):
         resid = self.endog - mu
         a = self._estimate_dispersion(mu, resid, df_resid=resid.shape[0] - 1)
         params.append(a)
-
         return np.array(params)
 
     def _estimate_dispersion(self, mu, resid, df_resid=None):
@@ -3134,10 +3133,9 @@ class DiscreteResults(base.LikelihoodModelResults):
                 self.use_t = use_t
 
             cov_kwds = cov_kwds or {}
-            from sm2.base.covtype import get_robustcov_results
-            get_robustcov_results(self, cov_type=cov_type, use_self=True,
-                                  **cov_kwds)
-            # TODO: Can we just call self._get_robustcov_results ?
+            self._get_robustcov_results(cov_type=cov_type, use_self=True,
+                                        **cov_kwds)
+            # TODO: can we avoid calling this both here and in fit?
 
     def __getstate__(self):
         # remove unpicklable methods

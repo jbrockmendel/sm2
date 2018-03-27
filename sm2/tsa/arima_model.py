@@ -675,7 +675,6 @@ class ARMA(tsa_model.TimeSeriesModel):
                              "MLE or dynamic forecast. Got %s" % start)
         # Other validation
         _check_arima_start(start, k_ar, k_diff, method, dynamic)
-
         return start, end, out_of_sample, prediction_index
 
     def geterrors(self, params):
@@ -690,7 +689,6 @@ class ARMA(tsa_model.TimeSeriesModel):
             3 item iterable, with the number of AR, MA, and exogenous
             parameters, including the trend
         """
-
         # start, end, out_of_sample, prediction_index = (
         #     self._get_prediction_index(start, end, index))
         params = np.asarray(params)
@@ -1401,25 +1399,25 @@ class ARMAResults(tsa_model.TimeSeriesModelResults):
     # TODO: Make this actually return instead of raising?
     _ic_df_model = deprecated_alias("_ic_df_model", "df_model + 1")
 
+    @property
+    def df_model(self):
+        return self.k_exog + self.k_trend + self.k_ar + self.k_ma
+
+    @property
+    def df_resid(self):
+        return self.nobs - self.df_model
+
     def __init__(self, model, params, normalized_cov_params=None, scale=1.):
         super(ARMAResults, self).__init__(model, params, normalized_cov_params,
                                           scale)
         self.sigma2 = model.sigma2
         # TODO: make sigma2 a kwarg, dont set it in model
-        nobs = model.nobs
-        self.nobs = nobs
-        k_exog = model.k_exog
-        self.k_exog = k_exog
-        k_trend = model.k_trend
-        self.k_trend = k_trend
-        k_ar = model.k_ar
-        self.k_ar = k_ar
+        self.nobs = model.nobs
+        self.k_exog = model.k_exog
+        self.k_trend = model.k_trend
+        self.k_ar = model.k_ar
         self.n_totobs = len(model.endog)
-        k_ma = model.k_ma
-        self.k_ma = k_ma
-        df_model = k_exog + k_trend + k_ar + k_ma
-        self.df_model = df_model
-        self.df_resid = self.nobs - df_model
+        self.k_ma = model.k_ma
         self._cache = resettable_cache()  # TODO: Is this necessary?
 
     @cache_readonly
