@@ -577,7 +577,7 @@ class ARMA(tsa_model.TimeSeriesModel):
             start_params = self._fit_start_params_hr(order, start_ar_lags)
         else:
             # use CSS to get start params
-            func = lambda params: -self.loglike_css(params)  # noqa:E731
+            func = lambda params: -self.loglike_css(params)
             start_params = self._fit_start_params_hr(order, start_ar_lags)
             if self.transparams:
                 start_params = self._invtransparams(start_params)

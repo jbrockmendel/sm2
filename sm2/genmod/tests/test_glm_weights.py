@@ -316,7 +316,7 @@ class TestGlmPoissonFwClu(CheckWeight):
         n_groups = len(np.unique(gid))
 
         # no wnobs yet in sandwich covariance calcualtion
-        cls.corr_fact = 1 / np.sqrt(n_groups / (n_groups - 1))  #np.sqrt((wsum - 1.) / wsum)
+        cls.corr_fact = 1 / np.sqrt(n_groups / (n_groups - 1))
         cov_kwds = {'groups': gid, 'use_correction': False}
         model = GLM(cpunish_data.endog, cpunish_data.exog,
                     family=sm.families.Poisson(), freq_weights=fweights)

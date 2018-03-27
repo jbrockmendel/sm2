@@ -1205,9 +1205,9 @@ def yule_walker(X, order=1, method="unbiased", df=None, inv=False,
 
     if method == "unbiased":
         # this is df_resid ie., n - p
-        denom = lambda k: n - k  # noqa:E731
+        denom = lambda k: n - k
     else:
-        denom = lambda k: n  # noqa:E731
+        denom = lambda k: n
     if X.ndim > 1 and X.shape[1] != 1:  # pragma: no cover
         raise ValueError("expecting a vector to estimate AR parameters")
 

@@ -43,10 +43,10 @@ class Huber(object):
             23.91752986])
         self.tvalues = np.array([7.45971657, 3.0523516,
                                  -0.99221261, -4.18324448])
-        # from R this is equivalent to
-        #self.res1.params/np.sqrt(np.diag(self.res1.bcov_scaled))
+        # from R; this is equivalent to:
+        # self.res1.params / np.sqrt(np.diag(self.res1.bcov_scaled))
 
-    #def conf_int(self): # method to be consistent with sm
+    #def conf_int(self):  # method to be consistent with sm
     #    return
 
     # The below are taken from SAS

@@ -1174,12 +1174,13 @@ def test_small_data():
     with pytest.raises(ValueError):
         mod.fit(trend="c")
 
+    # TODO: mark these as smoke?
     # try to estimate these...leave it up to the user to check for garbage
     # and be clear, these are garbage parameters.
     # X-12 arima will estimate, gretl refuses to estimate likely a problem
     # in start params regression.
-    res = mod.fit(trend="nc", disp=0, start_params=[.1, .1, .1, .1])
-    # TODO: mark these last two as smoke?
+    mod.fit(trend="nc", disp=0, start_params=[.1, .1, .1, .1])
+
     mod = ARIMA(y, (1, 0, 2))
     with warnings.catch_warnings():
         warnings.simplefilter("ignore")

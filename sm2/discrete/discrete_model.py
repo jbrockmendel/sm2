@@ -1335,7 +1335,7 @@ class GeneralizedPoisson(CountModel):
 
         if callback is None:
             # work around perfect separation callback GH#3895
-            callback = lambda *x: x  # noqa: E731
+            callback = lambda *x: x
 
         # TODO: skip CountModel and go straight to DiscreteModel?
         mlefit = CountModel.fit(self, start_params=start_params,
@@ -2590,7 +2590,7 @@ class NegativeBinomial(CountModel):
 
         if callback is None:
             # work around perfect separation callback GH#3895
-            callback = lambda *x: x  # noqa: E731
+            callback = lambda *x: x
 
         # TODO: can we skip CountModel and go straight to DiscreteModel?
         mlefit = CountModel.fit(self, start_params=start_params,
@@ -2960,7 +2960,7 @@ class NegativeBinomialP(CountModel):
 
         if callback is None:
             # work around perfect separation callback GH#3895
-            callback = lambda *x: x  # noqa: E731
+            callback = lambda *x: x
 
         # TODO: can we skip CountModel and go straight to DiscreteModel?
         mlefit = CountModel.fit(self, start_params=start_params,

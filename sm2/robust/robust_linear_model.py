@@ -141,6 +141,7 @@ class RLM(base.LikelihoodModel):
     def information(self, params):
         raise NotImplementedError
 
+    # TODO: Redundant with version in linear_model?
     def predict(self, params, exog=None):
         """
         Return linear predicted values from a design matrix.
@@ -426,17 +427,18 @@ class RLMResults(base.LikelihoodModelResults):
     @cache_readonly
     def bcov_scaled(self):
         model = self.model
-        m = np.mean(model.M.psi_deriv(self.sresid))
-        var_psiprime = np.var(model.M.psi_deriv(self.sresid))
+        psi_derivs = model.M.psi_deriv(self.sresid)
+        m = np.mean(psi_derivs)
+        var_psiprime = np.var(psi_derivs)
         k = 1 + (self.df_model + 1) / self.nobs * var_psiprime / m**2
 
         if model.cov == "H1":
             return (k**2 * (1 / self.df_resid *
                             np.sum(model.M.psi(self.sresid)**2) *
-                            self.scale**2) / ((1 / self.nobs * np.sum(model.M.psi_deriv(self.sresid)))**2) *
+                            self.scale**2) / (m**2) *
                     model.normalized_cov_params)
         else:
-            W = np.dot(model.M.psi_deriv(self.sresid) * model.exog.T,
+            W = np.dot(psi_derivs * model.exog.T,
                        model.exog)
             W_inv = np.linalg.inv(W)
             # [W_jk]^-1 = [SUM(psi_deriv(Sr_i)*x_ij*x_jk)]^-1
@@ -445,7 +447,7 @@ class RLMResults(base.LikelihoodModelResults):
                 # These are correct, based on Huber (1973) 8.13
                 return (k * (1 / self.df_resid) *
                         np.sum(model.M.psi(self.sresid)**2) *
-                        self.scale**2 / ((1 / self.nobs) * np.sum(model.M.psi_deriv(self.sresid))) *
+                        self.scale**2 / m *
                         W_inv)
             elif model.cov == "H3":
                 return (k**-1 *

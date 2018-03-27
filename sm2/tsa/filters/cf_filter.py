@@ -67,7 +67,7 @@ def cffilter(X, low=6, high=32, drift=True):
     # TODO: cythonize/vectorize loop?, add ability for symmetric filter,
     #      and estimates of theta other than random walk.
     if low < 2:
-        raise ValueError("low must be >= 2")
+        raise ValueError("low must be >= 2")  # pragama: no cover
 
     _pandas_wrapper = _maybe_get_pandas_wrapper(X)
     X = np.asanyarray(X)
