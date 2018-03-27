@@ -40,6 +40,7 @@ def _pad_nans(x, head=None, tail=None):
         elif head is None:
             return np.r_[x, [[np.nan] * x.shape[1]] * tail]
     else:
+        # TODO: Should this be NotImplementedError?
         raise ValueError("Nan-padding for ndim > 2 not implemented")
 
 
@@ -173,7 +174,7 @@ def convolution_filter(x, filt, nsides=2):
     elif nsides == 2:
         trim_head = int(np.ceil(len(filt) / 2.) - 1) or None
         trim_tail = int(np.ceil(len(filt) / 2.) - len(filt) % 2) or None
-    else:  # pragma : no cover
+    else:  # pragma: no cover
         raise ValueError("nsides must be 1 or 2")
 
     _pandas_wrapper = _maybe_get_pandas_wrapper(x)

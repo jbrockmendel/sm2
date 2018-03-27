@@ -5,8 +5,7 @@ import warnings
 
 import pytest
 import numpy as np
-from numpy.testing import (assert_almost_equal, assert_equal,
-                           assert_allclose)
+from numpy.testing import assert_almost_equal, assert_equal, assert_allclose
 import pandas as pd
 
 from sm2.tools.sm_exceptions import ColinearityWarning, MissingDataError
@@ -28,7 +27,6 @@ DECIMAL_5 = 5
 DECIMAL_4 = 4
 DECIMAL_3 = 3
 DECIMAL_2 = 2
-DECIMAL_1 = 1
 
 
 @pytest.mark.not_vetted
@@ -60,6 +58,11 @@ class CheckADF(object):
                             DECIMAL_2)
 
 
+# class TestADFConstantTrendSquared(CheckADF):
+#    pass
+# TODO: get test values from R?
+
+
 @pytest.mark.not_vetted
 class TestADFConstant(CheckADF):
     """
@@ -75,8 +78,6 @@ class TestADFConstant(CheckADF):
 
 @pytest.mark.not_vetted
 class TestADFConstantTrend(CheckADF):
-    """
-    """
     @classmethod
     def setup_class(cls):
         cls.res1 = adfuller(cls.x, regression="ct", autolag=None, maxlag=4)
@@ -85,17 +86,8 @@ class TestADFConstantTrend(CheckADF):
         cls.critvalues = [-4.007, -3.437, -3.137]
 
 
-# class TestADFConstantTrendSquared(CheckADF):
-#    """
-#    """
-#    pass
-# TODO: get test values from R?
-
-
 @pytest.mark.not_vetted
 class TestADFNoConstant(CheckADF):
-    """
-    """
     @classmethod
     def setup_class(cls):
         cls.res1 = adfuller(cls.x, regression="nc", autolag=None, maxlag=4)
@@ -144,8 +136,7 @@ class TestADFNoConstant2(CheckADF):
                                         maxlag=1, store=True)
 
     def test_store_str(self):
-        assert_equal(self.store.__str__(),
-                     'Augmented Dickey-Fuller Test Results')
+        assert self.store.__str__() == 'Augmented Dickey-Fuller Test Results'
 
 
 @pytest.mark.not_vetted
@@ -156,8 +147,6 @@ class CheckCorrGram(object):
     data = macrodata.load_pandas()
     x = data.data['realgdp']
     results = results_corrgram
-    # not needed: add 1. for lag zero
-    #self.results['acvar'] = np.concatenate(([1.], self.results['acvar']))
 
 
 @pytest.mark.not_vetted
@@ -168,7 +157,6 @@ class TestACF(CheckCorrGram):
     @classmethod
     def setup_class(cls):
         cls.acf = cls.results['acvar']
-        #cls.acf = np.concatenate(([1.], cls.acf))
         cls.qstat = cls.results['Q1']
         cls.res1 = acf(cls.x, nlags=40, qstat=True, alpha=.05)
         cls.confint_res = cls.results[['acvar_lb', 'acvar_ub']].as_matrix()
@@ -247,8 +235,9 @@ class TestACFMissing(CheckCorrGram):
                             self.qstat_none,
                             DECIMAL_3)
 
-    # how to do this test? the correct q_stat depends on whether nobs=len(x) is
-    # used when x contains NaNs or whether nobs<len(x) when x contains NaNs
+    # TODO: how to do this test? the correct q_stat depends on
+    # whether nobs=len(x) is used when x contains NaNs or whether
+    # nobs<len(x) when x contains NaNs
     #def test_qstat_drop(self):
     #    assert_almost_equal(self.res_drop[2][:40], self.qstat, DECIMAL_3)
 
@@ -270,7 +259,7 @@ class TestPACF(CheckCorrGram):
         # check lag 0
         assert_equal(centered[0], [0., 0.])
         assert_equal(confint[0], [1, 1])
-        assert_equal(pacfols[0], 1)
+        assert pacfols[0] == 1
 
     def test_yw(self):
         pacfyw = pacf_yw(self.x, nlags=40, method="mle")
@@ -286,9 +275,12 @@ class TestPACF(CheckCorrGram):
         assert_almost_equal(pacfyw, pacfld, DECIMAL_8)
 
 
+# TODO: this doesn't produce the old results anymore
 @pytest.mark.not_vetted
-class CheckCoint(object):
+class TestCoint_t(object):
     """
+    Get AR(1) parameter on residuals
+
     Test Cointegration Test Results for 2-variable system
 
     Test values taken from Stata
@@ -298,16 +290,6 @@ class CheckCoint(object):
     y1 = data.data['realcons']
     y2 = data.data['realgdp']
 
-    def test_tstat(self):
-        assert_almost_equal(self.coint_t, self.teststat, DECIMAL_4)
-
-
-# TODO: this doesn't produce the old results anymore
-@pytest.mark.not_vetted
-class TestCoint_t(CheckCoint):
-    """
-    Get AR(1) parameter on residuals
-    """
     @classmethod
     def setup_class(cls):
         cls.coint_t = coint(cls.y1, cls.y2, trend="c",
@@ -315,6 +297,80 @@ class TestCoint_t(CheckCoint):
         cls.teststat = -1.8208817
         cls.teststat = -1.830170986148
 
+    def test_tstat(self):
+        assert_almost_equal(self.coint_t, self.teststat, DECIMAL_4)
+
+
+@pytest.mark.not_vetted
+class TestKPSS(object):
+    """
+    R-code
+    ------
+    library(tseries)
+    kpss.stat(x, "Level")
+    kpss.stat(x, "Trend")
+
+    In this context, x is the vector containing the
+    macrodata['realgdp'] series.
+    """
+    data = macrodata.load()
+    x = data.data['realgdp']
+
+    def test_fail_nonvector_input(self):
+        with warnings.catch_warnings(record=True):
+            kpss(self.x)  # should be fine
+
+        x = np.random.rand(20, 2)
+        with pytest.raises(ValueError):
+            kpss(x)
+
+    def test_fail_unclear_hypothesis(self):
+        # these should be fine,
+        with warnings.catch_warnings(record=True):
+            kpss(self.x, 'c')
+            kpss(self.x, 'C')
+            kpss(self.x, 'ct')
+            kpss(self.x, 'CT')
+
+        with pytest.raises(ValueError):
+            kpss(self.x, "unclear hypothesis")
+
+    def test_teststat(self):
+        with warnings.catch_warnings(record=True):
+            kpss_stat, pval, lags, crits = kpss(self.x, 'c', 3)
+        assert_almost_equal(kpss_stat, 5.0169, DECIMAL_3)
+
+        with warnings.catch_warnings(record=True):
+            kpss_stat, pval, lags, crits = kpss(self.x, 'ct', 3)
+        assert_almost_equal(kpss_stat, 1.1828, DECIMAL_3)
+
+    def test_pval(self):
+        with warnings.catch_warnings(record=True):
+            kpss_stat, pval, lags, crits = kpss(self.x, 'c', 3)
+        assert pval == 0.01
+
+        with warnings.catch_warnings(record=True):
+            kpss_stat, pval, lags, crits = kpss(self.x, 'ct', 3)
+        assert pval == 0.01
+
+    def test_store(self):
+        with warnings.catch_warnings(record=True):
+            kpss_stat, pval, crit, store = kpss(self.x, 'c', 3, True)
+
+        # assert attributes, and make sure they're correct
+        assert store.nobs == len(self.x)
+        assert store.lags == 3
+
+    def test_lags(self):
+        with warnings.catch_warnings(record=True):
+            kpss_stat, pval, lags, crits = kpss(self.x, 'c')
+
+        assert_equal(lags,
+                     int(np.ceil(12. * np.power(len(self.x) / 100., 1 / 4.))))
+        # assert_warns(UserWarning, kpss, self.x)
+
+
+# -----------------------------------------------------------------
 
 @pytest.mark.not_vetted
 def test_coint():
@@ -402,126 +458,10 @@ def test_coint_identical_series():
     warnings.simplefilter('always', ColinearityWarning)
     with warnings.catch_warnings(record=True) as w:
         c = coint(y, y, trend="c", maxlag=0, autolag=None)
-    assert_equal(len(w), 1)
-    assert_equal(c[0], 0.0)
+    assert len(w) == 1
+    assert c[0] == 0.0
     # Limit of table
     assert c[1] > .98
-
-
-@pytest.mark.not_vetted
-def test_coint_perfect_collinearity():
-    nobs = 200
-    scale_e = 1
-    np.random.seed(123)
-    x = scale_e * np.random.randn(nobs, 2)
-    y = 1 + x.sum(axis=1)
-    warnings.simplefilter('always', ColinearityWarning)
-    with warnings.catch_warnings(record=True):
-        c = coint(y, x, trend="c", maxlag=0, autolag=None)
-    assert_equal(c[0], 0.0)
-    # Limit of table
-    assert c[1] > .98
-
-
-@pytest.mark.not_vetted
-class TestGrangerCausality(object):
-
-    def test_grangercausality(self):
-        # some example data
-        mdata = macrodata.load().data
-        mdata = recarray_select(mdata, ['realgdp', 'realcons'])
-        data = mdata.view((float, 2))
-        data = np.diff(np.log(data), axis=0)
-
-        # R: lmtest:grangertest
-        r_result = [0.243097, 0.7844328, 195, 2]  # f_test
-        gr = grangercausalitytests(data[:, 1::-1], 2, verbose=False)
-        assert_almost_equal(r_result,
-                            gr[2][0]['ssr_ftest'],
-                            decimal=7)
-        assert_almost_equal(gr[2][0]['params_ftest'],
-                            gr[2][0]['ssr_ftest'],
-                            decimal=7)
-
-    def test_granger_fails_on_nobs_check(self):
-        # Test that if maxlag is too large, Granger Test raises a clear error.
-        X = np.random.rand(10, 2)
-        grangercausalitytests(X, 2, verbose=False)  # This should pass.
-        with pytest.raises(ValueError):
-            grangercausalitytests(X, 3, verbose=False)
-
-
-@pytest.mark.not_vetted
-class SetupKPSS(object):
-    data = macrodata.load()
-    x = data.data['realgdp']
-
-
-@pytest.mark.not_vetted
-class TestKPSS(SetupKPSS):
-    """
-    R-code
-    ------
-    library(tseries)
-    kpss.stat(x, "Level")
-    kpss.stat(x, "Trend")
-
-    In this context, x is the vector containing the
-    macrodata['realgdp'] series.
-    """
-
-    def test_fail_nonvector_input(self):
-        with warnings.catch_warnings(record=True):
-            kpss(self.x)  # should be fine
-
-        x = np.random.rand(20, 2)
-        with pytest.raises(ValueError):
-            kpss(x)
-
-    def test_fail_unclear_hypothesis(self):
-        # these should be fine,
-        with warnings.catch_warnings(record=True):
-            kpss(self.x, 'c')
-            kpss(self.x, 'C')
-            kpss(self.x, 'ct')
-            kpss(self.x, 'CT')
-
-        with pytest.raises(ValueError):
-            kpss(self.x, "unclear hypothesis")
-
-    def test_teststat(self):
-        with warnings.catch_warnings(record=True):
-            kpss_stat, pval, lags, crits = kpss(self.x, 'c', 3)
-        assert_almost_equal(kpss_stat, 5.0169, DECIMAL_3)
-
-        with warnings.catch_warnings(record=True):
-            kpss_stat, pval, lags, crits = kpss(self.x, 'ct', 3)
-        assert_almost_equal(kpss_stat, 1.1828, DECIMAL_3)
-
-    def test_pval(self):
-        with warnings.catch_warnings(record=True):
-            kpss_stat, pval, lags, crits = kpss(self.x, 'c', 3)
-        assert_equal(pval, 0.01)
-
-        with warnings.catch_warnings(record=True):
-            kpss_stat, pval, lags, crits = kpss(self.x, 'ct', 3)
-        assert_equal(pval, 0.01)
-
-    def test_store(self):
-        with warnings.catch_warnings(record=True):
-            kpss_stat, pval, crit, store = kpss(self.x, 'c', 3, True)
-
-        # assert attributes, and make sure they're correct
-        assert_equal(store.nobs, len(self.x))
-        assert_equal(store.lags, 3)
-
-    def test_lags(self):
-        with warnings.catch_warnings(record=True):
-            kpss_stat, pval, lags, crits = kpss(self.x, 'c')
-
-        assert_equal(lags,
-                     int(np.ceil(12. * np.power(len(self.x) / 100., 1 / 4.))))
-        # assert_warns(UserWarning, kpss, self.x)
 
 
 @pytest.mark.not_vetted
@@ -563,7 +503,6 @@ def test_arma_order_select_ic():
     arparams = np.array([.75, -.25])
     maparams = np.array([.65, .35])
     arparams = np.r_[1, -arparams]
-    maparam = np.r_[1, maparams]
     nobs = 250
     np.random.seed(2014)
     y = arma_generate_sample(arparams, maparams, nobs)
@@ -619,7 +558,7 @@ def test_arma_order_select_ic_failure():
     with warnings.catch_warnings():
         # catch a hessian inversion and convergence failure warning
         warnings.simplefilter("ignore")
-        res = arma_order_select_ic(y)
+        arma_order_select_ic(y)
 
 
 @pytest.mark.not_vetted
@@ -627,3 +566,46 @@ def test_acf_fft_dataframe():
     # GH#322
     result = acf(sunspots.load_pandas().data[['SUNACTIVITY']], fft=True)
     assert result.ndim == 1
+
+
+@pytest.mark.not_vetted
+def test_coint_perfect_collinearity():
+    nobs = 200
+    scale_e = 1
+    np.random.seed(123)
+    x = scale_e * np.random.randn(nobs, 2)
+    y = 1 + x.sum(axis=1)
+    warnings.simplefilter('always', ColinearityWarning)
+    with warnings.catch_warnings(record=True):
+        c = coint(y, x, trend="c", maxlag=0, autolag=None)
+    assert c[0] == 0.0
+    # Limit of table
+    assert c[1] > .98
+
+
+@pytest.mark.not_vetted
+def test_grangercausality():
+    # some example data
+    mdata = macrodata.load().data
+    mdata = recarray_select(mdata, ['realgdp', 'realcons'])
+    data = mdata.view((float, 2))
+    data = np.diff(np.log(data), axis=0)
+
+    # R: lmtest:grangertest
+    r_result = [0.243097, 0.7844328, 195, 2]  # f_test
+    gr = grangercausalitytests(data[:, 1::-1], 2, verbose=False)
+    assert_almost_equal(r_result,
+                        gr[2][0]['ssr_ftest'],
+                        decimal=7)
+    assert_almost_equal(gr[2][0]['params_ftest'],
+                        gr[2][0]['ssr_ftest'],
+                        decimal=7)
+
+
+def test_granger_fails_on_nobs_check():
+    # Test that if maxlag is too large, Granger Test raises a clear error.
+    # TODO: GH reference?
+    X = np.random.rand(10, 2)
+    grangercausalitytests(X, 2, verbose=False)  # This should pass.
+    with pytest.raises(ValueError):
+        grangercausalitytests(X, 3, verbose=False)

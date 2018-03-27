@@ -19,6 +19,7 @@ import pandas as pd
 import pandas.util.testing as tm
 
 import sm2.api as sm
+import sm2.formula.api as smf
 from sm2.discrete.discrete_model import DiscreteResults
 
 
@@ -286,7 +287,6 @@ class TestGenericLogit(CheckGenericMixin):
         model = self.model_cls(y_bin, x)
         # , exposure=np.ones(nobs), offset=np.zeros(nobs)) # bug with default
         self.results = model.fit(**self.fit_kwargs)
-
 
 
 @pytest.mark.not_vetted
@@ -624,10 +624,10 @@ def compare_waldres(res, wa, constrasts):
 @pytest.mark.not_vetted
 @pytest.mark.xfail
 class TestWaldAnovaOLSNoFormula(object):
-    model_cls = sm.OLS
+    form_cls = smf.ols
 
     @classmethod
     def initialize(cls):  # FIXME: This should subclass something right?
         formula = "np.log(Days+1) ~ C(Duration, Sum)*C(Weight, Sum)"
-        mod = cls.model_cls.from_formula(formula, cls.data)
+        mod = cls.form_cls(formula, cls.data)
         cls.res = mod.fit()  # default use_t=True

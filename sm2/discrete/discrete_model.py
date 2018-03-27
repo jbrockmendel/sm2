@@ -168,8 +168,8 @@ class DiscreteModel(base.LikelihoodModel):
         """
         # assumes constant
         rank = np.linalg.matrix_rank(self.exog)
-        self.df_model = float(rank - 1)
-        self.df_resid = float(self.nobs - rank)
+        self.df_model = float(rank) - 1
+        self.df_resid = float(self.nobs) - (self.df_model + 1)
 
     def cdf(self, X):  # pragma: no cover
         """
@@ -1335,7 +1335,7 @@ class GeneralizedPoisson(CountModel):
 
         if callback is None:
             # work around perfect separation callback GH#3895
-            callback = lambda *x: x  # noqa: E731
+            callback = lambda *x: x
 
         # TODO: skip CountModel and go straight to DiscreteModel?
         mlefit = CountModel.fit(self, start_params=start_params,
@@ -2590,7 +2590,7 @@ class NegativeBinomial(CountModel):
 
         if callback is None:
             # work around perfect separation callback GH#3895
-            callback = lambda *x: x  # noqa: E731
+            callback = lambda *x: x
 
         # TODO: can we skip CountModel and go straight to DiscreteModel?
         mlefit = CountModel.fit(self, start_params=start_params,
@@ -2912,7 +2912,6 @@ class NegativeBinomialP(CountModel):
         resid = self.endog - mu
         a = self._estimate_dispersion(mu, resid, df_resid=resid.shape[0] - 1)
         params.append(a)
-
         return np.array(params)
 
     def _estimate_dispersion(self, mu, resid, df_resid=None):
@@ -2960,7 +2959,7 @@ class NegativeBinomialP(CountModel):
 
         if callback is None:
             # work around perfect separation callback GH#3895
-            callback = lambda *x: x  # noqa: E731
+            callback = lambda *x: x
 
         # TODO: can we skip CountModel and go straight to DiscreteModel?
         mlefit = CountModel.fit(self, start_params=start_params,
@@ -3122,6 +3121,7 @@ class DiscreteResults(base.LikelihoodModelResults):
             # In some subclasses, df_model and df_resid are properties
             # TODO: standardize this behavior
             pass
+
         self._cache = resettable_cache()
         self.nobs = model.exog.shape[0]  # i.e. model.nobs
         self.__dict__.update(mlefit.__dict__)
@@ -3133,10 +3133,9 @@ class DiscreteResults(base.LikelihoodModelResults):
                 self.use_t = use_t
 
             cov_kwds = cov_kwds or {}
-            from sm2.base.covtype import get_robustcov_results
-            get_robustcov_results(self, cov_type=cov_type, use_self=True,
-                                  **cov_kwds)
-            # TODO: Can we just call self._get_robustcov_results ?
+            self._get_robustcov_results(cov_type=cov_type, use_self=True,
+                                        **cov_kwds)
+            # TODO: can we avoid calling this both here and in fit?
 
     def __getstate__(self):
         # remove unpicklable methods
@@ -3782,6 +3781,18 @@ class L1ResultsMixin(object):
         J = getattr(self, 'J', 2)
         return float(self.nobs) - (self.df_model + (J - 1))
 
+    @property
+    def df_model(self):
+        # J is really only relevant for MultinomialResults, where
+        # there are J-1 constants
+        J = getattr(self, 'J', 2)
+
+        # adjust for extra parameter in NegativeBinomial nb1 and nb2
+        # extra parameter is not included in df_model
+        k_extra = getattr(self, 'k_extra', 0)
+
+        return self.nnz_params - k_extra - (J - 1)
+
 
 class L1CountResults(DiscreteResults, L1ResultsMixin):
     __doc__ = _discrete_results_docs % {
@@ -3803,9 +3814,7 @@ class L1CountResults(DiscreteResults, L1ResultsMixin):
         # Set degrees of freedom.  In doing so,
         # adjust for extra parameter in NegativeBinomial nb1 and nb2
         # extra parameter is not included in df_model
-        k_extra = getattr(self.model, 'k_extra', 0)
-
-        self.df_model = self.nnz_params - k_extra - 1
+        self.k_extra = getattr(self.model, 'k_extra', 0)
 
 
 class L1PoissonResults(L1CountResults, PoissonResults):
@@ -3834,8 +3843,6 @@ class L1BinaryResults(BinaryResults, L1ResultsMixin):
         # entry in params has been set zero'd out.
         self.trimmed = bnryfit.mle_retvals['trimmed']
 
-        self.df_model = self.nnz_params - 1
-
 
 class L1MultinomialResults(MultinomialResults, L1ResultsMixin):
     __doc__ = _discrete_results_docs % {
@@ -3850,10 +3857,6 @@ class L1MultinomialResults(MultinomialResults, L1ResultsMixin):
         # self.trimmed is a boolean array with T/F telling whether or not that
         # entry in params has been set zero'd out.
         self.trimmed = mlefit.mle_retvals['trimmed']
-
-        # Note: J-1 constants
-        J = self.J
-        self.df_model = self.nnz_params - (J - 1)
 
 
 # --------------------------------------------------------------------

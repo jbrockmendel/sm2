@@ -198,18 +198,7 @@ def get_robustcov_results(self, cov_type='HC1', use_t=None, **kwds):
         # FIXME: n_groups is not defined in this branch.  This behavior
         # is consistent with upstream
     elif cov_type.upper() in ['HC0', 'HC1', 'HC2', 'HC3']:
-        if kwds:
-            raise ValueError('heteroscedasticity robust covariance '
-                             'does not use keywords')
-        res.cov_kwds['description'] = ('Standard Errors are '
-                                       'heteroscedasticity robust '
-                                       '(' + cov_type + ')')
-
-        res.cov_params_default = getattr(self, 'cov_' + cov_type.upper(), None)
-        if res.cov_params_default is None:
-            # results classes that don't have cov_HCx attribute
-            res.cov_params_default = sw.cov_white_simple(self,
-                                                         use_correction=False)
+        robust_stderrs(self, res, kwds, cov_type)
     elif cov_type.lower() == 'hac':
         n_groups = hac_stderrs(self, res, kwds)
     elif cov_type.lower() == 'cluster':
@@ -237,6 +226,21 @@ def get_robustcov_results(self, cov_type='HC1', use_t=None, **kwds):
         res.df_resid_inference = n_groups - 1
 
     return res
+
+
+def robust_stderrs(self, res, kwds, cov_type):
+    if kwds:
+        raise ValueError('heteroscedasticity robust covariance '
+                         'does not use keywords')
+    res.cov_kwds['description'] = ('Standard Errors are '
+                                   'heteroscedasticity robust '
+                                   '(' + cov_type + ')')
+
+    res.cov_params_default = getattr(self, 'cov_' + cov_type.upper(), None)
+    if res.cov_params_default is None:
+        # results classes that don't have cov_HCx attribute
+        res.cov_params_default = sw.cov_white_simple(self,
+                                                     use_correction=False)
 
 
 def hac_stderrs(self, res, kwds):

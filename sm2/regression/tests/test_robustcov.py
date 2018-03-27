@@ -19,8 +19,8 @@ from sm2.tools.tools import add_constant
 from sm2.datasets import macrodata, grunfeld
 from sm2.tools.sm_exceptions import InvalidTestWarning
 
-from .results import results_macro_ols_robust as res
-from .results import results_grunfeld_ols_robust_cluster as res2
+from .results import (results_macro_ols_robust,
+                      results_grunfeld_ols_robust_cluster)
 #test_hac_simple():
 
 
@@ -73,12 +73,11 @@ class CheckOLSRobust(object):
         res1 = self.res1
         res2 = self.res2
         rtol = getattr(self, 'rtol', 1e-10)
-        rtolh = getattr(self, 'rtolh', 1e-12)  # TODO: use this??
         mat = np.eye(len(res1.params))
 
         ft = res1.f_test(mat[:-1], cov_p=self.cov_robust)
         if self.small:
-            #'df_denom', 'df_num', 'fvalue', 'pvalue'
+            # 'df_denom', 'df_num', 'fvalue', 'pvalue'
             assert_allclose(ft.fvalue, res2.F, rtol=rtol)
             # f-pvalue is not directly available in Stata results,
             # but is in ivreg2
@@ -104,13 +103,13 @@ class CheckOLSRobust(object):
 @pytest.mark.not_vetted
 class TestOLSRobust1(CheckOLSRobust):
     # compare with regress robust
+    res2 = results_macro_ols_robust.results_hc0
+    small = True
 
     def setup(self):
         res_ols = self.res1
         self.bse_robust = res_ols.HC1_se
         self.cov_robust = res_ols.cov_HC1
-        self.small = True
-        self.res2 = res.results_hc0
 
     @classmethod
     def setup_class(cls):
@@ -125,31 +124,32 @@ class TestOLSRobust1(CheckOLSRobust):
 @pytest.mark.not_vetted
 class TestOLSRobust2(TestOLSRobust1):
     # compare with ivreg robust small
+    res2 = results_macro_ols_robust.results_ivhc0_small
+    small = True
+
     def setup(self):
         res_ols = self.res1
         self.bse_robust = res_ols.HC1_se
         self.cov_robust = res_ols.cov_HC1
-        self.small = True
-
-        self.res2 = res.results_ivhc0_small
 
 
 @pytest.mark.not_vetted
 class TestOLSRobust3(TestOLSRobust1):
     # compare with ivreg robust   (not small)
+    res2 = results_macro_ols_robust.results_ivhc0_large
+    small = False
 
     def setup(self):
         res_ols = self.res1
         self.bse_robust = res_ols.HC0_se
         self.cov_robust = res_ols.cov_HC0
-        self.small = False
-
-        self.res2 = res.results_ivhc0_large
 
 
 @pytest.mark.not_vetted
 class TestOLSRobustHacSmall(TestOLSRobust1):
     # compare with ivreg robust small
+    res2 = results_macro_ols_robust.results_ivhac4_small
+    small = True
 
     def setup(self):
         res_ols = self.res1
@@ -157,14 +157,13 @@ class TestOLSRobustHacSmall(TestOLSRobust1):
         se1 = sw.se_cov(cov1)
         self.bse_robust = se1
         self.cov_robust = cov1
-        self.small = True
-
-        self.res2 = res.results_ivhac4_small
 
 
 @pytest.mark.not_vetted
 class TestOLSRobustHacLarge(TestOLSRobust1):
     # compare with ivreg robust (not small)
+    res2 = results_macro_ols_robust.results_ivhac4_large
+    small = False
 
     def setup(self):
         res_ols = self.res1
@@ -172,9 +171,6 @@ class TestOLSRobustHacLarge(TestOLSRobust1):
         se1 = sw.se_cov(cov1)
         self.bse_robust = se1
         self.cov_robust = cov1
-        self.small = False
-
-        self.res2 = res.results_ivhac4_large
 
 
 @pytest.mark.not_vetted
@@ -270,6 +266,8 @@ class CheckOLSRobustNewMixin(object):
 @pytest.mark.not_vetted
 class TestOLSRobust2SmallNew(TestOLSRobust1, CheckOLSRobustNewMixin):
     # compare with ivreg robust small
+    res2 = results_macro_ols_robust.results_ivhc0_small
+    small = True
 
     def setup(self):
         res_ols = self.res1.get_robustcov_results('HC1', use_t=True)
@@ -279,8 +277,6 @@ class TestOLSRobust2SmallNew(TestOLSRobust1, CheckOLSRobustNewMixin):
         self.cov_robust = res_ols.cov_params()
         self.bse_robust2 = res_ols.HC1_se
         self.cov_robust2 = res_ols.cov_HC1
-        self.small = True
-        self.res2 = res.results_ivhc0_small
 
     def test_compare(self):
         # check that we get a warning using the nested compare methods
@@ -309,6 +305,8 @@ class TestOLSRobust2SmallNew(TestOLSRobust1, CheckOLSRobustNewMixin):
 @pytest.mark.not_vetted
 class TestOLSRobustHACSmallNew(TestOLSRobust1, CheckOLSRobustNewMixin):
     # compare with ivreg robust small
+    res2 = results_macro_ols_robust.results_ivhac4_small
+    small = True
 
     def setup(self):
         res_ols = self.res1.get_robustcov_results('HAC', maxlags=4,
@@ -322,13 +320,13 @@ class TestOLSRobustHACSmallNew(TestOLSRobust1, CheckOLSRobustNewMixin):
         se1 = sw.se_cov(cov1)
         self.bse_robust2 = se1
         self.cov_robust2 = cov1
-        self.small = True
-        self.res2 = res.results_ivhac4_small
 
 
 @pytest.mark.not_vetted
 class TestOLSRobust2LargeNew(TestOLSRobust1, CheckOLSRobustNewMixin):
     # compare with ivreg robust small
+    res2 = results_macro_ols_robust.results_ivhc0_large
+    small = False
 
     def setup(self):
         res_ols = self.res1.get_robustcov_results('HC0')
@@ -339,8 +337,6 @@ class TestOLSRobust2LargeNew(TestOLSRobust1, CheckOLSRobustNewMixin):
         self.cov_robust = res_ols.cov_params()
         self.bse_robust2 = res_ols.HC0_se
         self.cov_robust2 = res_ols.cov_HC0
-        self.small = False
-        self.res2 = res.results_ivhc0_large
 
     # TODO: skipping next two for now, not refactored yet for `large`
     def test_fvalue(self):
@@ -370,7 +366,7 @@ class CheckOLSRobustCluster(CheckOLSRobust):
         firm_names, firm_id = np.unique(np.asarray(dtapa_exog[['firm']], 'S20'),
                                         return_inverse=True)
         cls.groups = firm_id
-        #time indicator in range(max Ti)
+        # time indicator in range(max Ti)
         time = np.asarray(dtapa_exog[['year']])
         time -= time.min()
         cls.time = np.squeeze(time).astype(int)
@@ -381,6 +377,10 @@ class CheckOLSRobustCluster(CheckOLSRobust):
 @pytest.mark.not_vetted
 class TestOLSRobustCluster2(CheckOLSRobustCluster, CheckOLSRobustNewMixin):
     # compare with `reg cluster`
+    res2 = results_grunfeld_ols_robust_cluster.results_cluster
+    small = True
+    rtol = 1e-6
+    rtolh = 1e-10
 
     def setup(self):
         res_ols = self.res1.get_robustcov_results('cluster',
@@ -395,17 +395,16 @@ class TestOLSRobustCluster2(CheckOLSRobustCluster, CheckOLSRobustNewMixin):
         se1 = sw.se_cov(cov1)
         self.bse_robust2 = se1
         self.cov_robust2 = cov1
-        self.small = True
-        self.res2 = res2.results_cluster
-
-        self.rtol = 1e-6
-        self.rtolh = 1e-10
 
 
 @pytest.mark.not_vetted
 class TestOLSRobustCluster2Input(CheckOLSRobustCluster,
                                  CheckOLSRobustNewMixin):
     # compare with `reg cluster`
+    res2 = results_grunfeld_ols_robust_cluster.results_cluster
+    small = True
+    rtol = 1e-6
+    rtolh = 1e-10
 
     def setup(self):
         fat_array = self.groups.reshape(-1, 1)
@@ -423,11 +422,6 @@ class TestOLSRobustCluster2Input(CheckOLSRobustCluster,
         se1 = sw.se_cov(cov1)
         self.bse_robust2 = se1
         self.cov_robust2 = cov1
-        self.small = True
-        self.res2 = res2.results_cluster
-
-        self.rtol = 1e-6
-        self.rtolh = 1e-10
 
     def test_too_many_groups(self):
         long_groups = self.groups.reshape(-1, 1)
@@ -452,6 +446,10 @@ class TestOLSRobustCluster2Input(CheckOLSRobustCluster,
 class TestOLSRobustCluster2Fit(CheckOLSRobustCluster, CheckOLSRobustNewMixin):
     # copy, past uses fit method
     # compare with `reg cluster`
+    res2 = results_grunfeld_ols_robust_cluster.results_cluster
+    small = True
+    rtol = 1e-6
+    rtolh = 1e-10
 
     def setup(self):
         res_ols = self.res1.model.fit(cov_type='cluster',
@@ -466,11 +464,6 @@ class TestOLSRobustCluster2Fit(CheckOLSRobustCluster, CheckOLSRobustNewMixin):
         se1 = sw.se_cov(cov1)
         self.bse_robust2 = se1
         self.cov_robust2 = cov1
-        self.small = True
-        self.res2 = res2.results_cluster
-
-        self.rtol = 1e-6
-        self.rtolh = 1e-10
 
     # TODO: Split this into reasonably-scoped tests
     def test_basic_inference(self):
@@ -491,6 +484,12 @@ class TestOLSRobustCluster2Fit(CheckOLSRobustCluster, CheckOLSRobustNewMixin):
 class TestOLSRobustCluster2Large(CheckOLSRobustCluster,
                                  CheckOLSRobustNewMixin):
     # compare with `reg cluster`
+    res2 = results_grunfeld_ols_robust_cluster.results_cluster_large
+
+    small = False
+    skip_f = True
+    rtol = 1e-6
+    rtolh = 1e-10
 
     def setup(self):
         res_ols = self.res1.get_robustcov_results('cluster',
@@ -506,12 +505,6 @@ class TestOLSRobustCluster2Large(CheckOLSRobustCluster,
         se1 = sw.se_cov(cov1)
         self.bse_robust2 = se1
         self.cov_robust2 = cov1
-        self.small = False
-        self.res2 = res2.results_cluster_large
-
-        self.skip_f = True
-        self.rtol = 1e-6
-        self.rtolh = 1e-10
 
     # skipping see GH#1189
     def test_f_value(self):
@@ -522,10 +515,14 @@ class TestOLSRobustCluster2Large(CheckOLSRobustCluster,
 class TestOLSRobustCluster2LargeFit(CheckOLSRobustCluster,
                                     CheckOLSRobustNewMixin):
     # compare with `reg cluster`
+    res2 = results_grunfeld_ols_robust_cluster.results_cluster_large
+    small = False
+    skip_f = True
+    rtol = 1e-6
+    rtolh = 1e-10
 
     def setup(self):
         model = OLS(self.res1.model.endog, self.res1.model.exog)
-        #res_ols = self.res1.model.fit(cov_type='cluster',
         res_ols = model.fit(cov_type='cluster',
                             cov_kwds=dict(groups=self.groups,
                                           use_correction=False,
@@ -539,12 +536,6 @@ class TestOLSRobustCluster2LargeFit(CheckOLSRobustCluster,
         se1 = sw.se_cov(cov1)
         self.bse_robust2 = se1
         self.cov_robust2 = cov1
-        self.small = False
-        self.res2 = res2.results_cluster_large
-
-        self.skip_f = True
-        self.rtol = 1e-6
-        self.rtolh = 1e-10
 
     # skipping see GH#1189
     def test_fvalue(self):
@@ -555,6 +546,11 @@ class TestOLSRobustCluster2LargeFit(CheckOLSRobustCluster,
 @pytest.mark.not_vetted
 class TestOLSRobustClusterGS(CheckOLSRobustCluster, CheckOLSRobustNewMixin):
     # compare with `reg cluster`
+    res2 = results_grunfeld_ols_robust_cluster.results_nw_groupsum4
+    small = True
+    skip_f = True
+    rtol = 1e-6
+    rtolh = 1e-10
 
     def setup(self):
         res_ols = self.res1.get_robustcov_results('nw-groupsum',
@@ -571,17 +567,16 @@ class TestOLSRobustClusterGS(CheckOLSRobustCluster, CheckOLSRobustNewMixin):
         se1 = sw.se_cov(cov1)
         self.bse_robust2 = se1
         self.cov_robust2 = cov1
-        self.small = True
-        self.res2 = res2.results_nw_groupsum4
-
-        self.skip_f = True
-        self.rtol = 1e-6
-        self.rtolh = 1e-10
 
 
 @pytest.mark.not_vetted
 class TestOLSRobustClusterGSFit(CheckOLSRobustCluster, CheckOLSRobustNewMixin):
     # compare with `reg cluster`
+    res2 = results_grunfeld_ols_robust_cluster.results_nw_groupsum4
+    small = True
+    skip_f = True
+    rtol = 1e-6
+    rtolh = 1e-10
 
     def setup(self):
         res_ols = self.res1.model.fit(cov_type='nw-groupsum',
@@ -598,17 +593,16 @@ class TestOLSRobustClusterGSFit(CheckOLSRobustCluster, CheckOLSRobustNewMixin):
         se1 = sw.se_cov(cov1)
         self.bse_robust2 = se1
         self.cov_robust2 = cov1
-        self.small = True
-        self.res2 = res2.results_nw_groupsum4
-
-        self.skip_f = True
-        self.rtol = 1e-6
-        self.rtolh = 1e-10
 
 
 @pytest.mark.not_vetted
 class TestOLSRobustClusterNWP(CheckOLSRobustCluster, CheckOLSRobustNewMixin):
     # compare with `reg cluster`
+    res2 = results_grunfeld_ols_robust_cluster.results_nw_panel4
+    small = True
+    skip_f = True
+    rtol = 1e-6
+    rtolh = 1e-10
 
     def setup(self):
         res_ols = self.res1.get_robustcov_results('nw-panel',
@@ -625,12 +619,6 @@ class TestOLSRobustClusterNWP(CheckOLSRobustCluster, CheckOLSRobustNewMixin):
         se1 = sw.se_cov(cov1)
         self.bse_robust2 = se1
         self.cov_robust2 = cov1
-        self.small = True
-        self.res2 = res2.results_nw_panel4
-
-        self.skip_f = True
-        self.rtol = 1e-6
-        self.rtolh = 1e-10
 
     def test_keyword(self):
         # check corrected keyword
@@ -647,6 +635,11 @@ class TestOLSRobustClusterNWP(CheckOLSRobustCluster, CheckOLSRobustNewMixin):
 class TestOLSRobustClusterNWPGroupsFit(CheckOLSRobustCluster,
                                        CheckOLSRobustNewMixin):
     # compare with `reg cluster`
+    res2 = results_grunfeld_ols_robust_cluster.results_nw_panel4
+    small = True
+    skip_f = True
+    rtol = 1e-6
+    rtolh = 1e-10
 
     def setup(self):
         res_ols = self.res1.model.fit(cov_type='nw-panel',
@@ -663,18 +656,17 @@ class TestOLSRobustClusterNWPGroupsFit(CheckOLSRobustCluster,
         se1 = sw.se_cov(cov1)
         self.bse_robust2 = se1
         self.cov_robust2 = cov1
-        self.small = True
-        self.res2 = res2.results_nw_panel4
-
-        self.skip_f = True
-        self.rtol = 1e-6
-        self.rtolh = 1e-10
 
 
 # TODO: low precision/agreement
 @pytest.mark.not_vetted
 class TestOLSRobustCluster2G(CheckOLSRobustCluster, CheckOLSRobustNewMixin):
     # compare with `reg cluster`
+    res2 = results_grunfeld_ols_robust_cluster.results_cluster_2groups_small
+    small = True
+    # only f_pvalue and confint for constant differ >rtol=0.05
+    rtol = 0.35
+    rtolh = 1e-10
 
     def setup(self):
         res_ols = self.res1.get_robustcov_results('cluster',
@@ -692,18 +684,17 @@ class TestOLSRobustCluster2G(CheckOLSRobustCluster, CheckOLSRobustNewMixin):
         se1 = sw.se_cov(cov1)
         self.bse_robust2 = se1
         self.cov_robust2 = cov1
-        self.small = True
-        self.res2 = res2.results_cluster_2groups_small
-
-        # only f_pvalue and confint for constant differ >rtol=0.05
-        self.rtol = 0.35
-        self.rtolh = 1e-10
 
 
 @pytest.mark.not_vetted
 class TestOLSRobustCluster2GLarge(CheckOLSRobustCluster,
                                   CheckOLSRobustNewMixin):
     # compare with `reg cluster`
+    res2 = results_grunfeld_ols_robust_cluster.results_cluster_2groups_large
+    small = False
+    skip_f = True
+    rtol = 1e-7
+    rtolh = 1e-10
 
     def setup(self):
         res_ols = self.res1.get_robustcov_results('cluster',
@@ -720,12 +711,6 @@ class TestOLSRobustCluster2GLarge(CheckOLSRobustCluster,
         se1 = sw.se_cov(cov1)
         self.bse_robust2 = se1
         self.cov_robust2 = cov1
-        self.small = False
-        self.res2 = res2.results_cluster_2groups_large
-
-        self.skip_f = True
-        self.rtol = 1e-7
-        self.rtolh = 1e-10
 
 
 # -----------------------------------------------------------------
@@ -750,7 +735,7 @@ class CheckWLSRobustCluster(CheckOLSRobust):
         firm_names, firm_id = np.unique(np.asarray(dtapa_exog[['firm']], 'S20'),
                                         return_inverse=True)
         cls.groups = firm_id
-        #time indicator in range(max Ti)
+        # time indicator in range(max Ti)
         time = np.asarray(dtapa_exog[['year']])
         time -= time.min()
         cls.time = np.squeeze(time).astype(int)
@@ -762,6 +747,10 @@ class CheckWLSRobustCluster(CheckOLSRobust):
 @pytest.mark.not_vetted
 class TestWLSRobustCluster2(CheckWLSRobustCluster, CheckOLSRobustNewMixin):
     # compare with `reg cluster`
+    res2 = results_grunfeld_ols_robust_cluster.results_cluster_wls_small
+    small = True
+    rtol = 1e-6
+    rtolh = 1e-10
 
     def setup(self):
         res_ols = self.res1.get_robustcov_results('cluster',
@@ -776,11 +765,6 @@ class TestWLSRobustCluster2(CheckWLSRobustCluster, CheckOLSRobustNewMixin):
         se1 = sw.se_cov(cov1)
         self.bse_robust2 = se1
         self.cov_robust2 = cov1
-        self.small = True
-        self.res2 = res2.results_cluster_wls_small
-
-        self.rtol = 1e-6
-        self.rtolh = 1e-10
 
 
 # not available yet for WLS
@@ -788,6 +772,11 @@ class TestWLSRobustCluster2(CheckWLSRobustCluster, CheckOLSRobustNewMixin):
 class TestWLSRobustCluster2Large(CheckWLSRobustCluster,
                                  CheckOLSRobustNewMixin):
     # compare with `reg cluster`
+    res2 = results_grunfeld_ols_robust_cluster.results_cluster_wls_large
+    small = False
+    skip_f = True
+    rtol = 1e-6
+    rtolh = 1e-10
 
     def setup(self):
         res_ols = self.res1.get_robustcov_results('cluster',
@@ -803,17 +792,16 @@ class TestWLSRobustCluster2Large(CheckWLSRobustCluster,
         se1 = sw.se_cov(cov1)
         self.bse_robust2 = se1
         self.cov_robust2 = cov1
-        self.small = False
-        self.res2 = res2.results_cluster_wls_large
-
-        self.skip_f = True
-        self.rtol = 1e-6
-        self.rtolh = 1e-10
 
 
 @pytest.mark.not_vetted
 class TestWLSRobustSmall(CheckWLSRobustCluster, CheckOLSRobustNewMixin):
     # compare with `reg cluster`
+    res2 = results_grunfeld_ols_robust_cluster.results_hc1_wls_small
+    small = True
+    skip_f = True
+    rtol = 1e-6
+    rtolh = 1e-10
 
     def setup(self):
         res_ols = self.res1.get_robustcov_results('HC1',
@@ -828,12 +816,6 @@ class TestWLSRobustSmall(CheckWLSRobustCluster, CheckOLSRobustNewMixin):
         se1 = sw.se_cov(cov1)
         self.bse_robust2 = se1
         self.cov_robust2 = cov1
-        self.small = True
-        self.res2 = res2.results_hc1_wls_small
-
-        self.skip_f = True
-        self.rtol = 1e-6
-        self.rtolh = 1e-10
 
 
 @pytest.mark.not_vetted
@@ -851,12 +833,12 @@ class TestWLSOLSRobustSmall(object):
                           weights=1 / dtapa_exog['value']).fit()
         w_sqrt = 1 / np.sqrt(np.asarray(dtapa_exog['value']))
         cls.res_ols = OLS(dtapa_endog * w_sqrt,
-                          np.asarray(exog) * w_sqrt[:, None]).fit() # hasconst=True ?
+                          np.asarray(exog) * w_sqrt[:, None]).fit()  # hasconst=True ?
 
         firm_names, firm_id = np.unique(np.asarray(dtapa_exog[['firm']], 'S20'),
                                         return_inverse=True)
         cls.groups = firm_id
-        #time indicator in range(max Ti)
+        # time indicator in range(max Ti)
         time = np.asarray(dtapa_exog[['year']])
         time -= time.min()
         cls.time = np.squeeze(time).astype(int)

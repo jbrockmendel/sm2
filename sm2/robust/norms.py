@@ -688,8 +688,11 @@ class Hampel(RobustNorm):
 
     def psi_deriv(self, z):
         t1, t2, t3 = self._subset(z)
-        return t1 + t3 * (self.a * np.sign(z) * z) / (np.fabs(z) * (self.c - self.b))
-        # TODO: Isnt np.sign(z) * z just abs(z)?
+        absz = np.abs(z)
+        assert (absz == np.sign(z) * z).all()
+        # TODO: Remove this assertion, remove dumb usage of the
+        # longer version upstream.
+        return t1 + t3 * (self.a * np.abs(z)) / (np.fabs(z) * (self.c - self.b))
 
 
 class TukeyBiweight(RobustNorm):

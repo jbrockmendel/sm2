@@ -16,7 +16,7 @@ import numpy as np
 from scipy import stats
 import scipy.linalg
 
-from sm2.tools.decorators import cache_readonly
+from sm2.tools.decorators import cache_readonly, deprecated_alias
 from sm2.tools.tools import chain_dot
 from sm2.tools.linalg import logdet_symm
 
@@ -519,13 +519,13 @@ class VAR(tsa_model.TimeSeriesModel):
     ----------
     Lütkepohl (2005) New Introduction to Multiple Time Series Analysis
     """
-    def __init__(self, endog, exog=None, dates=None, freq=None,
-                 missing='none'):
+
+    y = deprecated_alias('y', 'endog')
+
+    def __init__(self, endog, exog=None, dates=None, freq=None, missing='none'):
         super(VAR, self).__init__(endog, exog, dates, freq, missing=missing)
         if self.endog.ndim == 1:  # pragma: no cover
             raise ValueError("Only gave one variable to VAR")
-        self.y = self.endog  # keep alias for now
-        # TODO: get rid of this alias
         self.neqs = self.endog.shape[1]
         self.n_totobs = len(endog)
 
@@ -575,7 +575,7 @@ class VAR(tsa_model.TimeSeriesModel):
 
     def fit(self, maxlags=None, method='ols', ic=None, trend='c',
             verbose=False):
-        # todo: this code is only supporting deterministic terms as exog.
+        # TODO: this code is only supporting deterministic terms as exog.
         # This means that all exog-variables have lag 0. If dealing with
         # different exogs is necessary, a `lags_exog`-parameter might make
         # sense (e.g. a sequence of ints specifying lags).
@@ -755,7 +755,6 @@ class VAR(tsa_model.TimeSeriesModel):
 
         selected_orders = dict((k, np.array(v).argmin() + p_min)
                                for k, v in ics.items())
-
         return LagOrderResults(ics, selected_orders, vecm=False)
 
 
@@ -864,7 +863,6 @@ class VARProcess(object):
         .. math::
 
             \Psi_\infty = \sum_{i=0}^\infty \Phi_i
-
         """
         return scipy.linalg.inv(self._char_mat)
 
@@ -1041,7 +1039,6 @@ class VARResults(VARProcess):
     dates
     exog : array
 
-
     Returns
     -------
     **Attributes**
@@ -1091,27 +1088,39 @@ class VARResults(VARProcess):
     trenorder
     tvalues
     y :
-    ys_lagged
+    endog_lagged
     """
-    _model_type = 'VAR'
+
+    @property
+    def df_model(self):
+        """Number of estimated parameters, including the intercept / trends
+        """
+        return self.neqs * self.k_ar + self.k_trend
+
+    @property
+    def df_resid(self):
+        """Number of observations minus number of estimated parameters"""
+        return self.nobs - self.df_model
+
+    _model_type = 'VAR'  # TODO: remove?
+
+    y = deprecated_alias('y', 'endog')
+    ys_lagged = deprecated_alias('ys_lagged', 'endog_lagged')
 
     def __init__(self, endog, endog_lagged, params, sigma_u, lag_order,
                  model=None, trend='c', names=None, dates=None, exog=None):
 
         self.model = model
-        self.y = self.endog = endog   # keep alias for now
-        self.ys_lagged = self.endog_lagged = endog_lagged  # keep alias for now
-        # TODO: Let's finally remove these aliases
+        self.endog = endog
+        self.endog_lagged = endog_lagged
         self.dates = dates
 
-        self.n_totobs, neqs = self.y.shape
+        self.n_totobs, neqs = self.endog.shape
         self.nobs = self.n_totobs - lag_order
         self.trend = trend
         k_trend = util.get_trendorder(trend)
         self.exog_names = util.make_lag_names(names, lag_order, k_trend, exog)
         self.params = params
-        # print(params.shape)
-        # print(params.round(3))
 
         # Initialize VARProcess parent class
         # construct coefficient matrices
@@ -1127,37 +1136,56 @@ class VARResults(VARProcess):
         self.coefs_exog = params[:endog_start].T
         self.k_trend = self.coefs_exog.shape[1]
 
-        # print(coefs.round(3))
         super(VARResults, self).__init__(coefs, exog, sigma_u, names=names)
-
-    def plot(self):
-        """Plot input time series
-        """
-        plotting.plot_mts(self.y, names=self.names, index=self.dates)
-
-    @property
-    def df_model(self):
-        """Number of estimated parameters, including the intercept / trends
-        """
-        return self.neqs * self.k_ar + self.k_trend
-
-    @property
-    def df_resid(self):
-        """Number of observations minus number of estimated parameters"""
-        return self.nobs - self.df_model
 
     @cache_readonly
     def fittedvalues(self):
         """The predicted insample values of the response variables of
         the model.
         """
-        return np.dot(self.ys_lagged, self.params)
+        return np.dot(self.endog_lagged, self.params)
 
     @cache_readonly
     def resid(self):
         """Residuals of response variable resulting from estimated coefficients
         """
         return self.y[self.k_ar:] - self.fittedvalues
+
+    @cache_readonly
+    def llf(self):
+        "Compute VAR(p) loglikelihood"
+        return var_loglike(self.resid, self.sigma_u_mle, self.nobs)
+
+    @cache_readonly
+    def stderr(self):
+        """Standard errors of coefficients, reshaped to match in size
+        """
+        stderr = np.sqrt(np.diag(self.cov_params))
+        return stderr.reshape((self.df_model, self.neqs), order='C')
+
+    bse = stderr  # sm2 interface?
+
+    @cache_readonly
+    def tvalues(self):
+        """Compute t-statistics. Use Student-t(T - Kp - 1) = t(df_resid)
+        to test significance.
+        """
+        return self.params / self.stderr
+
+    @cache_readonly
+    def pvalues(self):
+        """Two-sided p-values for model coefficients from
+        Student t-distribution
+        """
+        # return stats.t.sf(np.abs(self.tvalues), self.df_resid)*2
+        return 2 * stats.norm.sf(np.abs(self.tvalues))
+
+    # ------------------------------------------------------------
+
+    def plot(self):
+        """Plot input time series
+        """
+        plotting.plot_mts(self.y, names=self.names, index=self.dates)
 
     def sample_acov(self, nlags=1):
         return _compute_acov(self.y[self.k_ar:], nlags=nlags)
@@ -1221,7 +1249,7 @@ class VARResults(VARProcess):
         Adjusted to be an unbiased estimator
         Ref: Lütkepohl p.74-75
         """
-        z = self.ys_lagged
+        z = self.endog_lagged
         return np.kron(scipy.linalg.inv(np.dot(z.T, z)), self.sigma_u)
 
     def cov_ybar(self):
@@ -1249,7 +1277,7 @@ class VARResults(VARProcess):
     @cache_readonly
     def _zz(self):
         # Z'Z
-        return np.dot(self.ys_lagged.T, self.ys_lagged)
+        return np.dot(self.endog_lagged.T, self.endog_lagged)
 
     @property
     def _cov_alpha(self):
@@ -1272,20 +1300,6 @@ class VARResults(VARProcess):
         return 2 * chain_dot(D_Kinv, sigxsig, D_Kinv.T)
 
     @cache_readonly
-    def llf(self):
-        "Compute VAR(p) loglikelihood"
-        return var_loglike(self.resid, self.sigma_u_mle, self.nobs)
-
-    @cache_readonly
-    def stderr(self):
-        """Standard errors of coefficients, reshaped to match in size
-        """
-        stderr = np.sqrt(np.diag(self.cov_params))
-        return stderr.reshape((self.df_model, self.neqs), order='C')
-
-    bse = stderr  # sm2 interface?
-
-    @cache_readonly
     def stderr_endog_lagged(self):
         start = self.k_trend
         return self.stderr[start:]
@@ -1296,13 +1310,6 @@ class VARResults(VARProcess):
         return self.stderr[:end]
 
     @cache_readonly
-    def tvalues(self):
-        """Compute t-statistics. Use Student-t(T - Kp - 1) = t(df_resid)
-        to test significance.
-        """
-        return self.params / self.stderr
-
-    @cache_readonly
     def tvalues_endog_lagged(self):
         start = self.k_trend
         return self.tvalues[start:]
@@ -1311,14 +1318,6 @@ class VARResults(VARProcess):
     def tvalues_dt(self):
         end = self.k_trend
         return self.tvalues[:end]
-
-    @cache_readonly
-    def pvalues(self):
-        """Two-sided p-values for model coefficients from
-        Student t-distribution
-        """
-        # return stats.t.sf(np.abs(self.tvalues), self.df_resid)*2
-        return 2 * stats.norm.sf(np.abs(self.tvalues))
 
     @cache_readonly
     def pvalues_endog_lagged(self):
@@ -1333,9 +1332,6 @@ class VARResults(VARProcess):
     # TODO: -------------------------------------------------------------
 
     def plot_forecast(self, steps, alpha=0.05, plot_stderr=True):
-        """
-        Plot forecast
-        """
         mid, lower, upper = self.forecast_interval(self.y[-self.k_ar:], steps,
                                                    alpha=alpha)
         plotting.plot_var_forc(self.y, mid, lower, upper, names=self.names,
@@ -1398,12 +1394,10 @@ class VARResults(VARProcess):
         Tuple of lower and upper arrays of ma_rep monte carlo standard errors
         """
         neqs = self.neqs
-        # mean = self.mean()
         k_ar = self.k_ar
         coefs = self.coefs
         sigma_u = self.sigma_u
         intercept = self.intercept
-        # df_model = self.df_model
         nobs = self.nobs
 
         ma_coll = np.zeros((repl, T + 1, neqs, neqs))
@@ -1460,12 +1454,10 @@ class VARResults(VARProcess):
         Array of simulated impulse response functions
         """
         neqs = self.neqs
-        # mean = self.mean()
         k_ar = self.k_ar
         coefs = self.coefs
         sigma_u = self.sigma_u
         intercept = self.intercept
-        # df_model = self.df_model
         nobs = self.nobs
 
         ma_coll = np.zeros((repl, T + 1, neqs, neqs))
@@ -1576,8 +1568,7 @@ class VARResults(VARProcess):
         return FEVD(self, P=var_decomp, periods=periods)
 
     def reorder(self, order):
-        """Reorder variables for structural specification
-        """
+        """Reorder variables for structural specification"""
         if len(order) != len(self.params[0, :]):  # pragma: no cover
             raise ValueError("Reorder specification length should match "
                              "number of endogenous variables")

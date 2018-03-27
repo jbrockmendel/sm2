@@ -226,7 +226,8 @@ class HuberScale(object):
             self.d / (np.sqrt(2 * np.pi)) * np.exp(-.5 * self.d**2))
         s = mad(resid)
         subset = lambda x: np.less(np.fabs(resid / x), self.d)
-        chi = lambda s: subset(s) * (resid / s)**2 / 2 + (1 - subset(s)) * (self.d**2 / 2)
+        chi = lambda s: (subset(s) * (resid / s)**2 / 2 +
+                         (1 - subset(s)) * (self.d**2 / 2))
         scalehist = [np.inf, s]
         niter = 1
         while (np.abs(scalehist[niter - 1] - scalehist[niter]) > self.tol

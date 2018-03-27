@@ -20,8 +20,8 @@ from sm2.tools.data import _is_using_pandas
 compatibility_mode = False
 has_trmm = True
 prefix_dtype_map = {
-    's': np.float32, 'd': np.float64, 'c': np.complex64, 'z': np.complex128
-}
+    's': np.float32, 'd': np.float64,
+    'c': np.complex64, 'z': np.complex128}
 prefix_statespace_map = {}
 prefix_kalman_filter_map = {}
 prefix_kalman_smoother_map = {}
@@ -35,16 +35,14 @@ prefix_copy_missing_vector_map = {}
 prefix_copy_index_matrix_map = {}
 prefix_copy_index_vector_map = {}
 
-# Most of statespace is not yet ported from upstream; for the moment
-# there is only what is needed by regime_switching
-'''
+
 def set_mode(compatibility=None):
     global compatibility_mode, has_trmm
 
     # Determine mode automatically if none given
     if compatibility is None:
         try:
-            from scipy.linalg import cython_blas
+            from scipy.linalg import cython_blas  # noqa:F401,F811
             compatibility = False
         except ImportError:
             compatibility = True
@@ -52,7 +50,7 @@ def set_mode(compatibility=None):
     # If compatibility was False, make sure that is possible
     if not compatibility:
         try:
-            from scipy.linalg import cython_blas
+            from scipy.linalg import cython_blas  # noqa:F401,F811
         except ImportError:
             warnings.warn('Minimum dependencies not met. Compatibility mode'
                           ' enabled.')
@@ -60,11 +58,12 @@ def set_mode(compatibility=None):
 
     # Initialize the appropriate mode
     if not compatibility:
-        from scipy.linalg import cython_blas
-        from . import (_representation, _kalman_filter, _kalman_smoother,
-                       _simulation_smoother, _tools)
+        from scipy.linalg import cython_blas  # noqa:F401,F811
+        from . import _tools
+        #from . import (_representation, _kalman_filter, _kalman_smoother,
+        #               _simulation_smoother)
         compatibility_mode = False
-
+        '''
         prefix_statespace_map.update({
             's': _representation.sStatespace, 'd': _representation.dStatespace,
             'c': _representation.cStatespace, 'z': _representation.zStatespace
@@ -87,6 +86,7 @@ def set_mode(compatibility=None):
             'c': _simulation_smoother.cSimulationSmoother,
             'z': _simulation_smoother.zSimulationSmoother
         })
+        '''
         prefix_pacf_map.update({
             's': _tools._scompute_coefficients_from_multivariate_pacf,
             'd': _tools._dcompute_coefficients_from_multivariate_pacf,
@@ -136,15 +136,15 @@ def set_mode(compatibility=None):
             'z': _tools.zcopy_index_vector
         })
     else:
-        from . import _statespace
-        from ._pykalman_smoother import _KalmanSmoother
+        # from . import _statespace
+        # from ._pykalman_smoother import _KalmanSmoother
         compatibility_mode = True
 
         try:
-            from scipy.linalg.blas import dtrmm
+            from scipy.linalg.blas import dtrmm  # noqa:F401
         except ImportError:
             has_trmm = False
-
+        '''
         prefix_statespace_map.update({
             's': _statespace.sStatespace, 'd': _statespace.dStatespace,
             'c': _statespace.cStatespace, 'z': _statespace.zStatespace
@@ -209,8 +209,10 @@ def set_mode(compatibility=None):
             'c': _statespace.ccopy_index_vector,
             'z': _statespace.zcopy_index_vector
         })
+        '''
+
+
 set_mode(compatibility=None)
-'''
 
 
 def companion_matrix(polynomial):
@@ -378,7 +380,8 @@ def diff(series, k_diff=1, k_seasonal_diff=None, seasonal_periods=1):
                     differenced[:-seasonal_periods]
                 )
             else:
-                differenced = differenced.diff(seasonal_periods)[seasonal_periods:]
+                diffed = differenced.diff(seasonal_periods)
+                differenced = diffed[seasonal_periods:]
             k_seasonal_diff -= 1
 
     # Simple differencing

@@ -12,7 +12,7 @@ import sm2.robust.scale as scale
 DECIMAL = 4
 
 
-#TODO: Can replicate these tests using stackloss data and R if this
+# TODO: Can replicate these tests using stackloss data and R if this
 # data is a problem
 class TestChem(object):
     @classmethod

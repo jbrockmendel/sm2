@@ -1,10 +1,5 @@
-from functools import wraps
-
-import pandas as pd
-import numpy as np
 
 from sm2.tools.data import _is_using_pandas
-from sm2.tsa.tsatools import freq_to_period
 
 
 def _get_pandas_wrapper(X, trim_head=None, trim_tail=None, names=None):

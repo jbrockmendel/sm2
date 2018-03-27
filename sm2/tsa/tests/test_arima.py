@@ -25,7 +25,7 @@ scipy_old = scipy.__version__ < '0.16'
 try:
     import matplotlib.pyplot as plt
     have_matplotlib = True
-except:
+except ImportError:
     have_matplotlib = False
 
 DECIMAL_4 = 4
@@ -61,14 +61,7 @@ def test_compare_arma():
     famod = fa.ArmaFft([1, -0.5], [1., 0.4], 40)
     x = famod.generate_sample(nsample=200, burnin=1000)
 
-    # this used kalman filter through descriptive
-    #d = ARMA(x)
-    #d.fit((1, 1), trend='nc')
-    #dres = d.res
-
     modkf = ARMA(x, (1, 1))
-    #rkf = mkf.fit((1, 1))
-    #rkf.params
     reskf = modkf.fit(trend='nc', disp=-1)
     dres = reskf
 
@@ -77,14 +70,14 @@ def test_compare_arma():
     rescm = modc.fit_mle(order=(1, 1), start_params=[0.4, 0.4, 1.], disp=0)
 
     # decimal 1 corresponds to threshold of 5% difference
-    # still different sign  corrcted
+    # still different sign corrected
     #assert_almost_equal(np.abs(resls[0] / d.params),
     #                    np.ones(d.params.shape), decimal=1)
     assert_almost_equal(resls[0] / dres.params,
                         np.ones(dres.params.shape),
                         decimal=1)
-    # rescm also contains variance estimate as last element of params
 
+    # rescm also contains variance estimate as last element of params
     #assert_almost_equal(np.abs(rescm.params[:-1] / d.params),
     #                    np.ones(d.params.shape), decimal=1)
     assert_almost_equal(rescm.params[:-1] / dres.params,
@@ -591,9 +584,6 @@ class Test_ARIMA111(CheckArimaResultsMixin, CheckForecastMixin,
         (cls.res1.forecast_res,
          cls.res1.forecast_err,
          conf_int) = cls.res1.forecast(25)
-        #cls.res1.forecast_res_dyn = cls.res1.predict(start=164, end=226,
-        #                                              typ='levels',
-        #                                              dynamic=True)
         # TODO: fix the indexing for the end here, I don't think this is right
         # if we're going to treat it like indexing
         # the forecast from 2005Q1 through 2009Q4 is indices
@@ -663,7 +653,7 @@ class Test_ARIMA112CSS(CheckArimaResultsMixin):
         # make sure endog names changes to D.cpi
         #(cls.res1.forecast_res,
         # cls.res1.forecast_err,
-        # conf_int)              = cls.res1.forecast(25)
+        # conf_int) = cls.res1.forecast(25)
         #cls.res1.forecast_res_dyn = cls.res1.predict(start=164, end=226,
         #                                              typ='levels',
         #                                              dynamic=True)
@@ -696,7 +686,7 @@ class Test_ARIMA112CSS(CheckArimaResultsMixin):
 #        cls.decimal_bic = 3
 #        (cls.res1.forecast_res,
 #         cls.res1.forecast_err,
-#         conf_int)              = cls.res1.forecast(25)
+#         conf_int) = cls.res1.forecast(25)
 
 
 @pytest.mark.not_vetted
@@ -1076,8 +1066,8 @@ def test_arimax():
     res = ARIMA(y, (2, 1, 1), X).fit(disp=False, solver="nm", maxiter=1000,
                                      ftol=1e-12, xtol=1e-12)
 
-    # from gretl
-    #params = [13.113976653926638, -0.003792125069387, 0.004123504809217,
+    # from gretl; we use the versions from stata below instead
+    # params = [13.113976653926638, -0.003792125069387, 0.004123504809217,
     #          -0.199213760940898, 0.151563643588008, -0.033088661096699]
     # from stata using double
     stata_llf = -1076.108614859121
@@ -1127,7 +1117,8 @@ def test_bad_start_params():
     inv = datasets.macrodata.load().data['realinv']
     arima_mod = ARIMA(np.log(inv), (1, 1, 2))
     with pytest.raises(ValueError):
-        mod.fit()  # WTF is this supposed to be arima_mod.fit()?
+        # TODO: Upstream this incorrectly re-tries `mod.fit()`
+        arima_mod.fit()
 
 
 @pytest.mark.not_vetted
@@ -1183,16 +1174,17 @@ def test_small_data():
     with pytest.raises(ValueError):
         mod.fit(trend="c")
 
+    # TODO: mark these as smoke?
     # try to estimate these...leave it up to the user to check for garbage
     # and be clear, these are garbage parameters.
     # X-12 arima will estimate, gretl refuses to estimate likely a problem
     # in start params regression.
-    res = mod.fit(trend="nc", disp=0, start_params=[.1, .1, .1, .1])
-    # TODO: mark these last two as smoke?
+    mod.fit(trend="nc", disp=0, start_params=[.1, .1, .1, .1])
+
     mod = ARIMA(y, (1, 0, 2))
     with warnings.catch_warnings():
         warnings.simplefilter("ignore")
-        res = mod.fit(disp=0, start_params=[np.mean(y), .1, .1, .1])
+        mod.fit(disp=0, start_params=[np.mean(y), .1, .1, .1])
 
 
 @pytest.mark.not_vetted
@@ -2255,7 +2247,6 @@ def test_arima_predict_css_diffs():
     start, end = None, None
     fv = res1.model.predict(params, start, end, dynamic=True)
     assert_almost_equal(fv, fcdyn[5:203], DECIMAL_4)
-
 
 
 def _check_start(model, given, expected, dynamic):

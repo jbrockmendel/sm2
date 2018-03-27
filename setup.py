@@ -78,7 +78,8 @@ setuptools_kwargs = {
 # Cython Preparation & Specification
 
 _pxifiles = ['sm2/tsa/regime_switching/_kim_smoother.pyx.in',
-             'sm2/tsa/regime_switching/_hamilton_filter.pyx.in']
+             'sm2/tsa/regime_switching/_hamilton_filter.pyx.in',
+             'sm2/tsa/statespace/_tools.pyx.in']
 
 # TODO: Can we just put this with the next (only) use of CYTHON_INSTALLED?
 min_cython_ver = '0.24'
