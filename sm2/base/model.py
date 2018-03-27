@@ -927,12 +927,11 @@ class LikelihoodModelResults(wrap.SaveLoadMixin, Results):
     def normalized_cov_params(self):
         raise NotImplementedError
 
-    # FIXME: use_self kwarg ignored?
     def _get_robustcov_results(self, cov_type='nonrobust', use_self=True,
                                use_t=None, **cov_kwds):
         from sm2.base.covtype import get_robustcov_results
         # TODO: we shouldn't need use_t in get_robustcov_results
-        get_robustcov_results(self, cov_type=cov_type, use_self=True,
+        get_robustcov_results(self, cov_type=cov_type, use_self=use_self,
                               use_t=use_t, **cov_kwds)
 
     @cache_readonly

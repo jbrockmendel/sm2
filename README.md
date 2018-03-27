@@ -32,6 +32,8 @@ and `model.df_model`.  That has been fixed here.
 - `GeneralizedLinearModel.fit` incorrect sets `self.mu` and `self.scale`.
 This has been fixed here.  (:issue:`4032`)
 
+- `LikelihoodModelResults._get_robustcov_results` incorrectly ignores
+`use_self` argument.  This has been fixed here.  (:issue:`4401`)
 
 Contributing
 ------------

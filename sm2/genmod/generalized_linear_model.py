@@ -1473,6 +1473,7 @@ class GLMResults(base.LikelihoodModelResults):
                 cov_kwds = {}
             get_robustcov_results(self, cov_type=cov_type, use_self=True,
                                   use_t=use_t, **cov_kwds)
+            # TODO: Cant we just call the method?  maybe even do this upstream?
 
     @cache_readonly
     def resid_response(self):

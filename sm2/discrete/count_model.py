@@ -158,18 +158,12 @@ class GenericZeroInflated(CountModel):
             disp=disp, method=method,
             full_output=full_output,
             callback=callback,
+            cov_type=cov_type, cov_kwds=cov_kwds, use_t=use_t,
             **kwargs)
 
         res_cls, wrap_cls = self._res_classes["fit"]
         zipfit = res_cls(self, mlefit._results)
-        result = wrap_cls(zipfit)
-
-        if cov_kwds is None:
-            cov_kwds = {}
-
-        result._get_robustcov_results(cov_type=cov_type,
-                                      use_self=True, use_t=use_t, **cov_kwds)
-        return result
+        return wrap_cls(zipfit)
 
     @copy_doc(DiscreteModel.fit_regularized.__doc__)
     def fit_regularized(self, start_params=None, method='l1',
