@@ -289,7 +289,6 @@ class TestGenericLogit(CheckGenericMixin):
         self.results = model.fit(**self.fit_kwargs)
 
 
-
 @pytest.mark.not_vetted
 class TestGenericRLM(CheckGenericMixin):
     model_cls = sm.RLM
