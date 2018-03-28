@@ -1303,7 +1303,7 @@ def test_missing():
     mod = KalmanFilter(endog_post_na, k_states=1,
                        initialization='approximate_diffuse')
     mod['design', :, :] = 1
-    mod['obs_cov', :, :] = np.eye(mod.k_endog)*0.5
+    mod['obs_cov', :, :] = np.eye(mod.k_endog) * 0.5
     mod['transition', :, :] = 0.5
     mod['selection', :, :] = 1
     mod['state_cov', :, :] = 0.5
