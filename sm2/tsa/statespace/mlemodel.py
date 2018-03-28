@@ -2584,10 +2584,10 @@ class MLEResults(tsbase.TimeSeriesModelResults):
 
         See Also
         --------
-        statsmodels.graphics.gofplots.qqplot
-        statsmodels.graphics.tsaplots.plot_acf
+        sm2.graphics.gofplots.qqplot
+        sm2.graphics.tsaplots.plot_acf
         """
-        from statsmodels.graphics.utils import _import_mpl, create_mpl_fig
+        from sm2.graphics.utils import _import_mpl, create_mpl_fig
         _import_mpl()
         fig = create_mpl_fig(fig, figsize)
         # Eliminate residuals associated with burned likelihoods

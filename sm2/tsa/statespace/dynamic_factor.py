@@ -5,7 +5,7 @@ Dynamic factor model
 Author: Chad Fulton
 License: Simplified-BSD
 """
-from __future__ import division, absolute_import, print_function
+from __future__ import division, absolute_import
 
 from warnings import warn
 from collections import OrderedDict
@@ -19,16 +19,18 @@ from .tools import (
     constrain_stationary_multivariate, unconstrain_stationary_multivariate
 )
 
-from sm2.regression.linear_model import OLS
-from sm2.tsa.vector_ar.var_model import VAR
 from sm2.tools.tools import Bunch
 from sm2.tools.data import _is_using_pandas
-from sm2.tsa.tsatools import lagmat
 from sm2.tools.decorators import cache_readonly
 from sm2.tools.sm_exceptions import ValueWarning
-import sm2.base.wrapper as wrap
 
-# from statsmodels.multivariate.pca import PCA
+import sm2.base.wrapper as wrap
+from sm2.regression.linear_model import OLS
+from sm2.multivariate.pca import PCA
+
+from sm2.tsa.vector_ar.var_model import VAR
+from sm2.tsa.tsatools import lagmat
+
 
 
 class DynamicFactor(MLEModel):
@@ -442,8 +444,6 @@ class DynamicFactor(MLEModel):
         # 1. Factor loadings (estimated via PCA)
         if self.k_factors > 0:
             # Use principal components + OLS as starting values
-            import pytest
-            raise pytest.skip("PCA not ported from upstream")
             res_pca = PCA(endog, ncomp=self.k_factors)
             mod_ols = OLS(endog, res_pca.factors)
             res_ols = mod_ols.fit()
@@ -1082,9 +1082,8 @@ class DynamicFactorResults(MLEResults):
         See Also
         --------
         coefficients_of_determination
-
         """
-        from statsmodels.graphics.utils import _import_mpl, create_mpl_fig
+        from sm2.graphics.utils import _import_mpl, create_mpl_fig
         _import_mpl()
         fig = create_mpl_fig(fig, figsize)
 
