@@ -14,9 +14,9 @@ dist
 # pyx files for which there are template files
 _kim_smoother.pyx
 _hamilton_filter.pyx
-statespace/*.pyx
-statespace/_filters/*.pyx
-statespace/_smoothers/*.pyx
+sm2/tsa/statespace/*.pyx
+sm2/tsa/statespace/_filters/*.pyx
+sm2/tsa/statespace/_smoothers/*.pyx
 
 .git
 
