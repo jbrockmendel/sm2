@@ -21,7 +21,7 @@ from .tools import (
 
 from sm2.tools.tools import Bunch
 from sm2.tools.data import _is_using_pandas
-from sm2.tools.decorators import cache_readonly
+from sm2.tools.decorators import cache_readonly, copy_doc
 from sm2.tools.sm_exceptions import ValueWarning
 
 import sm2.base.wrapper as wrap
@@ -1215,6 +1215,7 @@ class DynamicFactorResults(MLEResults):
             start=start, end=end, dynamic=dynamic, index=index, exog=exog,
             **kwargs)
 
+    @copy_doc(MLEResults.summary.__doc__)
     def summary(self, alpha=.05, start=None, separate_params=True):
         from sm2.iolib.summary import summary_params
         spec = self.specification
@@ -1349,7 +1350,6 @@ class DynamicFactorResults(MLEResults):
                 summary.tables.append(table)
 
         return summary
-    summary.__doc__ = MLEResults.summary.__doc__
 
 
 class DynamicFactorResultsWrapper(MLEResultsWrapper):

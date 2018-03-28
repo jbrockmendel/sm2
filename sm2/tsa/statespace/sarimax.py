@@ -22,7 +22,7 @@ from .tools import (
 from sm2.tools.tools import Bunch
 from sm2.tools.data import _is_using_pandas
 from sm2.tsa.tsatools import lagmat
-from sm2.tools.decorators import cache_readonly
+from sm2.tools.decorators import cache_readonly, copy_doc
 from sm2.tools.sm_exceptions import ValueWarning
 import sm2.base.wrapper as wrap
 
@@ -647,24 +647,20 @@ class SARIMAX(MLEModel):
             self._exog_variance_idx = ('state_cov', idx[0][-self.k_exog:],
                                        idx[1][-self.k_exog:])
 
+    @copy_doc(KalmanFilter.initialize_known.__doc__)
     def initialize_known(self, initial_state, initial_state_cov):
         self._manual_initialization = True
         self.ssm.initialize_known(initial_state, initial_state_cov)
-    initialize_known.__doc__ = KalmanFilter.initialize_known.__doc__
 
+    @copy_doc(KalmanFilter.initialize_approximate_diffuse.__doc__)
     def initialize_approximate_diffuse(self, variance=None):
         self._manual_initialization = True
         self.ssm.initialize_approximate_diffuse(variance)
-    initialize_approximate_diffuse.__doc__ = (
-        KalmanFilter.initialize_approximate_diffuse.__doc__
-    )
 
+    @copy_doc(KalmanFilter.initialize_stationary.__doc__)
     def initialize_stationary(self):
         self._manual_initialization = True
         self.ssm.initialize_stationary()
-    initialize_stationary.__doc__ = (
-        KalmanFilter.initialize_stationary.__doc__
-    )
 
     def initialize_state(self, variance=None, complex_step=False):
         """
@@ -1975,6 +1971,7 @@ class SARIMAXResults(MLEResults):
             start=start, end=end, dynamic=dynamic, index=index, exog=exog,
             **kwargs)
 
+    @copy_doc(MLEResults.summary.__doc__)
     def summary(self, alpha=.05, start=None):
         # Create the model name
 
@@ -2033,7 +2030,6 @@ class SARIMAXResults(MLEResults):
         return super(SARIMAXResults, self).summary(
             alpha=alpha, start=start, model_name=model_name
         )
-    summary.__doc__ = MLEResults.summary.__doc__
 
 
 class SARIMAXResultsWrapper(MLEResultsWrapper):

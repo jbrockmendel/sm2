@@ -19,6 +19,7 @@ from .tools import (
     is_invertible, prepare_exog,
     constrain_stationary_multivariate, unconstrain_stationary_multivariate)
 
+from sm2.tools.decorators import copy_doc
 from sm2.tools.tools import Bunch
 from sm2.tools.data import _is_using_pandas
 from sm2.tsa.vector_ar import var_model
@@ -816,6 +817,7 @@ class VARMAXResults(MLEResults):
             start=start, end=end, dynamic=dynamic, index=index, exog=exog,
             **kwargs)
 
+    @copy_doc(MLEResults.summary.__doc__)
     def summary(self, alpha=.05, start=None, separate_params=True):
         from sm2.iolib.summary import summary_params
 
@@ -933,7 +935,6 @@ class VARMAXResults(MLEResults):
                 summary.tables.append(table)
 
         return summary
-    summary.__doc__ = MLEResults.summary.__doc__
 
 
 class VARMAXResultsWrapper(MLEResultsWrapper):
