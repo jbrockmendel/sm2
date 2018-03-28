@@ -52,7 +52,7 @@ class TestPCA(object):
         cls.x_wide = f.dot(b) + e
 
     @pytest.mark.smoke
-    @pytest.mark.skipif(missing_matplotlib, 'matplotlib not available')
+    @pytest.mark.skipif(missing_matplotlib, reason='matplotlib not available')
     def test_smoke_plot_and_repr(self):
         pc = PCA(self.x)
         pc.plot_scree()
@@ -193,7 +193,7 @@ class TestPCA(object):
             PCA(np.nan * np.ones((200, 100)), tol=2.0)
 
     @pytest.mark.smoke
-    @pytest.mark.skipif(missing_matplotlib, 'matplotlib not available')
+    @pytest.mark.skipif(missing_matplotlib, reason='matplotlib not available')
     def test_pandas(self):
         pc = PCA(pd.DataFrame(self.x))
         pc1 = PCA(self.x)
@@ -282,7 +282,7 @@ class TestPCA(object):
         with pytest.raises(ValueError):
             project(6)
 
-    @pytest.mark.skipif(WIN32, 'Windows 32-bit')
+    @pytest.mark.skipif(WIN32, reason='Windows 32-bit')
     def test_replace_missing(self):
         x = self.x.copy()
         x[::5, ::7] = np.nan
