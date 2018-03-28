@@ -22,6 +22,7 @@ DECIMAL_5 = .00001
 WIN32 = os.name == 'nt' and sys.maxsize < 2**33
 
 
+@pytest.mark.not_vetted
 class TestPCA(object):
     @classmethod
     def setup_class(cls):
