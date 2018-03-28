@@ -21,6 +21,7 @@ from .results import results_sarimax
 current_path = os.path.dirname(os.path.abspath(__file__))
 
 
+@pytest.mark.skip(reason="troubleshooting CI timeouts")
 @pytest.mark.not_vetted
 class Intercepts(mlemodel.MLEModel):
     """
@@ -54,6 +55,7 @@ class Intercepts(mlemodel.MLEModel):
         self['state_intercept'] = params[3:]
 
 
+@pytest.mark.skip(reason="troubleshooting CI timeouts")
 @pytest.mark.not_vetted
 class TestIntercepts(object):
     @classmethod
@@ -198,6 +200,7 @@ class TestIntercepts(object):
         )
 
 
+@pytest.mark.skip(reason="troubleshooting CI timeouts")
 @pytest.mark.not_vetted
 class LargeStateCovAR1(mlemodel.MLEModel):
     """
@@ -231,12 +234,14 @@ class LargeStateCovAR1(mlemodel.MLEModel):
         self['state_cov', 0, 0] = params[1]
 
 
+@pytest.mark.skip(reason="troubleshooting CI timeouts")
 @pytest.mark.not_vetted
 def test_large_kposdef():
     with pytest.raises(ValueError):
         LargeStateCovAR1(np.arange(10))
 
 
+@pytest.mark.skip(reason="troubleshooting CI timeouts")
 @pytest.mark.not_vetted
 class TestLargeStateCovAR1(object):
     @classmethod

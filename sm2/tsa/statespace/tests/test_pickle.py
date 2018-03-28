@@ -42,6 +42,7 @@ data = pd.DataFrame(
 data['lgdp'] = np.log(data['GDP'])
 
 
+@pytest.mark.skip(reason="troubleshooting CI timeouts")
 @pytest.mark.not_vetted
 def test_pickle_fit_sarimax():
     # Fit an ARIMA(1,1,0) to log GDP
@@ -58,6 +59,7 @@ def test_pickle_fit_sarimax():
     assert_allclose(res.impulse_responses(10), res.impulse_responses(10))
 
 
+@pytest.mark.skip(reason="troubleshooting CI timeouts")
 @pytest.mark.not_vetted
 def test_unobserved_components_pickle():
     # Tests for missing data
@@ -91,6 +93,7 @@ def test_unobserved_components_pickle():
         assert_allclose(res.impulse_responses(10), res.impulse_responses(10))
 
 
+@pytest.mark.skip(reason="troubleshooting CI timeouts")
 @pytest.mark.not_vetted
 def test_kalman_filter_pickle():
     # Construct the statespace representation
@@ -139,6 +142,7 @@ def test_kalman_filter_pickle():
                     pkl_results.filtered_state[3][true['start']:])
 
 
+@pytest.mark.skip(reason="troubleshooting CI timeouts")
 @pytest.mark.not_vetted
 def test_representation_pickle():
     nobs = 10
