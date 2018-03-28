@@ -8,6 +8,7 @@ from __future__ import division, absolute_import, print_function
 import os
 import warnings
 
+import pytest
 import numpy as np
 from numpy.testing import assert_allclose
 import pandas as pd
@@ -405,6 +406,7 @@ mumpspc = [0.29791319, 0.41467956, 1.13061404, 1.23267496,
            0.05628902, 0.00924054]
 
 
+@pytest.mark.not_vetted
 class MarkovRegression(object):
     @classmethod
     def setup_class(cls, true, endog, atol=1e-5, rtol=1e-7, **kwargs):
@@ -744,6 +746,7 @@ fedfunds_const_filtered_joint_probabilities = np.array([
       7.56083358e-10]]])
 
 
+@pytest.mark.not_vetted
 class TestFedFundsConst(MarkovRegression):
     # Results from Stata, see http://www.stata.com/manuals14/tsmswitch.pdf
     @classmethod
@@ -892,6 +895,7 @@ fedfunds_const_short_smoothed_joint_probabilities = np.array([
       7.56083358e-10]]])
 
 
+@pytest.mark.not_vetted
 class TestFedFundsConstShort(MarkovRegression):
     # This is just a set of regression tests
     @classmethod
@@ -976,6 +980,7 @@ class TestFedFundsConstShort(MarkovRegression):
             assert_allclose(actual[i], desired[i])
 
 
+@pytest.mark.not_vetted
 class TestFedFundsConstL1(MarkovRegression):
     # Results from Stata, see http://www.stata.com/manuals14/tsmswitch.pdf
     @classmethod
@@ -999,6 +1004,7 @@ class TestFedFundsConstL1(MarkovRegression):
         assert_allclose(bse[:-1], self.true['bse_oim'][:-1], atol=1e-6)
 
 
+@pytest.mark.not_vetted
 class TestFedFundsConstL1Exog(MarkovRegression):
     # Results from Stata, see http://www.stata.com/manuals14/tsmswitch.pdf
     @classmethod
@@ -1061,6 +1067,7 @@ class TestFedFundsConstL1Exog(MarkovRegression):
         assert_allclose(bse[:-1], self.true['bse_oim'][:-1], atol=1e-7)
 
 
+@pytest.mark.not_vetted
 class TestFedFundsConstL1Exog3(MarkovRegression):
     # Results from Stata, see http://www.stata.com/manuals14/tsmswitch.pdf
     @classmethod
@@ -1087,6 +1094,7 @@ class TestFedFundsConstL1Exog3(MarkovRegression):
         super(TestFedFundsConstL1Exog3, self).test_fit(**kwargs)
 
 
+@pytest.mark.not_vetted
 class TestAreturnsConstL1Variance(MarkovRegression):
     # Results from Stata, see http://www.stata.com/manuals14/tsmswitch.pdf
     @classmethod
@@ -1116,6 +1124,7 @@ class TestAreturnsConstL1Variance(MarkovRegression):
         assert_allclose(bse[:-2], self.true['bse_oim'][:-2], atol=1e-7)
 
 
+@pytest.mark.not_vetted
 class TestMumpspcNoconstL1Variance(MarkovRegression):
     # Results from Stata, see http://www.stata.com/manuals14/tsmswitch.pdf
     @classmethod
