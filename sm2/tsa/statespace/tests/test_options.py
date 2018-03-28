@@ -58,6 +58,7 @@ from sm2.tsa.statespace.simulation_smoother import (
 from sm2.tsa.statespace.tools import compatibility_mode
 
 
+@pytest.mark.skip(reason="troubleshooting CI timeouts")
 @pytest.mark.not_vetted
 class Options(object):
     @classmethod
@@ -72,6 +73,7 @@ class Options(object):
         cls.model.bind(endog)
 
 
+@pytest.mark.skip(reason="troubleshooting CI timeouts")
 @pytest.mark.not_vetted
 class TestOptions(Options):
     def test_filter_methods(self):

@@ -21,6 +21,7 @@ if NP_LT_18:
     raise pytest.skip("NumPy <= 1.8 doesn't preserve matrix order when copying")
 
 
+@pytest.mark.skip(reason="troubleshooting CI timeouts")
 @pytest.mark.not_vetted
 def test_sarimax():
     mod = sarimax.SARIMAX(macrodata['realgdp'].values, order=(4, 1, 0))
@@ -34,6 +35,7 @@ def test_sarimax():
     os.unlink('test_save_sarimax.p')
 
 
+@pytest.mark.skip(reason="troubleshooting CI timeouts")
 @pytest.mark.not_vetted
 def test_sarimax_pickle():
     mod = sarimax.SARIMAX(macrodata['realgdp'].values, order=(4, 1, 0))
@@ -47,6 +49,7 @@ def test_sarimax_pickle():
     assert_allclose(res.llf, pkl_res.llf)
 
 
+@pytest.mark.skip(reason="troubleshooting CI timeouts")
 @pytest.mark.not_vetted
 def test_structural():
     mod = structural.UnobservedComponents(
@@ -62,6 +65,7 @@ def test_structural():
     os.unlink('test_save_structural.p')
 
 
+@pytest.mark.skip(reason="troubleshooting CI timeouts")
 @pytest.mark.not_vetted
 def test_structural_pickle():
     mod = structural.UnobservedComponents(
@@ -76,6 +80,7 @@ def test_structural_pickle():
     assert_allclose(res.llf, pkl_res.llf)
 
 
+@pytest.mark.skip(reason="troubleshooting CI timeouts")
 @pytest.mark.not_vetted
 def test_dynamic_factor():
     mod = dynamic_factor.DynamicFactor(
@@ -92,6 +97,7 @@ def test_dynamic_factor():
     os.unlink('test_save_dynamic_factor.p')
 
 
+@pytest.mark.skip(reason="troubleshooting CI timeouts")
 @pytest.mark.not_vetted
 def test_dynamic_factor_pickle():
     mod = varmax.VARMAX(
@@ -116,6 +122,7 @@ def test_dynamic_factor_pickle():
     os.unlink('test_save_varmax.p')
 
 
+@pytest.mark.skip(reason="troubleshooting CI timeouts")
 @pytest.mark.not_vetted
 def test_varmax():
     mod = varmax.VARMAX(
@@ -132,6 +139,7 @@ def test_varmax():
     os.unlink('test_save_varmax.p')
 
 
+@pytest.mark.skip(reason="troubleshooting CI timeouts")
 @pytest.mark.not_vetted
 def test_varmax_pickle():
     mod = varmax.VARMAX(
