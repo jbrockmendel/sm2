@@ -26,7 +26,7 @@ from .tools import (
     unconstrain_stationary_univariate,
     prepare_exog)
 
-from statsmodels.tsa.filters.hp_filter import hpfilter
+from sm2.tsa.filters.hp_filter import hpfilter
 
 _mask_map = {
     1: 'irregular',
