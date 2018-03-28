@@ -80,7 +80,9 @@ setuptools_kwargs = {
 def add_pxifiles(dname):
     flist = os.listdir(dname)
     flist = [x for x in flist if x.endswith(('.pxi.in', '.pyx.in'))]
-    flist = [os.path.join(dname, x) for x in flist]
+    flist = [os.path.join(dname, x).replace('\\', '/') for x in flist]
+    # Specifically use posix path separator to avoid mixing and matching;
+    # otherwise build fails on appveyor
     return flist
 
 _pxifiles = (add_pxifiles('sm2/tsa/regime_switching') +
