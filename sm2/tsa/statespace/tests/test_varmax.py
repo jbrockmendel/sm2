@@ -28,7 +28,6 @@ varmax_path = 'results' + os.sep + 'results_varmax_stata.csv'
 varmax_results = pd.read_csv(current_path + os.sep + varmax_path)
 
 
-@pytest.mark.skip(reason="troubleshooting CI timeouts")
 @pytest.mark.not_vetted
 class CheckVARMAX(object):
     """
@@ -77,7 +76,7 @@ class CheckVARMAX(object):
         if self.model.k_ar > 0:
             coefficients = np.array(self.results.params[self.model._params_ar]).reshape(self.model.k_endog, self.model.k_endog * self.model.k_ar)
             coefficient_matrices = np.array([
-                coefficients[:self.model.k_endog, i*self.model.k_endog:(i+1)*self.model.k_endog]
+                coefficients[:self.model.k_endog, i * self.model.k_endog:(i + 1) * self.model.k_endog]
                 for i in range(self.model.k_ar)
             ])
             assert_equal(self.results.coefficient_matrices_var, coefficient_matrices)
@@ -86,7 +85,7 @@ class CheckVARMAX(object):
         if self.model.k_ma > 0:
             coefficients = np.array(self.results.params[self.model._params_ma]).reshape(self.model.k_endog, self.model.k_endog * self.model.k_ma)
             coefficient_matrices = np.array([
-                coefficients[:self.model.k_endog, i*self.model.k_endog:(i+1)*self.model.k_endog]
+                coefficients[:self.model.k_endog, i * self.model.k_endog:(i + 1) * self.model.k_endog]
                 for i in range(self.model.k_ma)
             ])
             assert_equal(self.results.coefficient_matrices_vma, coefficient_matrices)
@@ -125,7 +124,6 @@ class CheckVARMAX(object):
         assert_allclose(cython_sfe, python_sfe)
 
 
-@pytest.mark.skip(reason="troubleshooting CI timeouts")
 @pytest.mark.not_vetted
 class CheckLutkepohl(CheckVARMAX):
     @classmethod
@@ -145,7 +143,7 @@ class CheckLutkepohl(CheckVARMAX):
         endog = dta.loc['1960-04-01':'1978-10-01', included_vars]
 
         cls.model = varmax.VARMAX(endog, order=order, trend=trend,
-                                   error_cov_type=error_cov_type, **kwargs)
+                                  error_cov_type=error_cov_type, **kwargs)
 
         cls.results = cls.model.smooth(true['params'], cov_type=cov_type)
 
@@ -156,7 +154,6 @@ class CheckLutkepohl(CheckVARMAX):
         super(CheckLutkepohl, self).test_dynamic_predict(end='1982-10-01', dynamic='1961-01-01', **kwargs)
 
 
-@pytest.mark.skip(reason="troubleshooting CI timeouts")
 @pytest.mark.not_vetted
 class TestVAR(CheckLutkepohl):
     @classmethod
@@ -165,7 +162,7 @@ class TestVAR(CheckLutkepohl):
         true['predict'] = var_results.iloc[1:][['predict_1', 'predict_2', 'predict_3']]
         true['dynamic_predict'] = var_results.iloc[1:][['dyn_predict_1', 'dyn_predict_2', 'dyn_predict_3']]
         super(TestVAR, cls).setup_class(
-            true,  order=(1,0), trend='nc',
+            true,  order=(1, 0), trend='nc',
             error_cov_type="unstructured")
 
     def test_bse_approx(self):
@@ -187,7 +184,7 @@ class TestVAR(CheckLutkepohl):
         # For each endogenous variable, check the output
         for i in range(self.model.k_endog):
             offset = i * self.model.k_endog
-            table = tables[i+2]
+            table = tables[i + 2]
 
             # -> Make sure we have the right table / table name
             name = self.model.endog_names[i]
@@ -212,7 +209,6 @@ class TestVAR(CheckLutkepohl):
             assert_equal(re.search('%s +%.4f' % (names[i], params[i]), table) is None, False)
 
 
-@pytest.mark.skip(reason="troubleshooting CI timeouts")
 @pytest.mark.not_vetted
 class TestVAR_diagonal(CheckLutkepohl):
     @classmethod
@@ -221,7 +217,7 @@ class TestVAR_diagonal(CheckLutkepohl):
         true['predict'] = var_results.iloc[1:][['predict_diag1', 'predict_diag2', 'predict_diag3']]
         true['dynamic_predict'] = var_results.iloc[1:][['dyn_predict_diag1', 'dyn_predict_diag2', 'dyn_predict_diag3']]
         super(TestVAR_diagonal, cls).setup_class(
-            true,  order=(1,0), trend='nc',
+            true,  order=(1, 0), trend='nc',
             error_cov_type="diagonal")
 
     def test_bse_approx(self):
@@ -243,7 +239,7 @@ class TestVAR_diagonal(CheckLutkepohl):
         # For each endogenous variable, check the output
         for i in range(self.model.k_endog):
             offset = i * self.model.k_endog
-            table = tables[i+2]
+            table = tables[i + 2]
 
             # -> Make sure we have the right table / table name
             name = self.model.endog_names[i]
@@ -268,7 +264,6 @@ class TestVAR_diagonal(CheckLutkepohl):
             assert_equal(re.search('%s +%.4f' % (names[i], params[i]), table) is None, False)
 
 
-@pytest.mark.skip(reason="troubleshooting CI timeouts")
 @pytest.mark.not_vetted
 class TestVAR_measurement_error(CheckLutkepohl):
     """
@@ -289,7 +284,7 @@ class TestVAR_measurement_error(CheckLutkepohl):
         true['predict'] = var_results.iloc[1:][['predict_diag1', 'predict_diag2', 'predict_diag3']]
         true['dynamic_predict'] = var_results.iloc[1:][['dyn_predict_diag1', 'dyn_predict_diag2', 'dyn_predict_diag3']]
         super(TestVAR_measurement_error, cls).setup_class(
-            true,  order=(1,0), trend='nc',
+            true,  order=(1, 0), trend='nc',
             error_cov_type="diagonal", measurement_error=True)
 
         # Create another filter results with positive measurement errors
@@ -328,7 +323,7 @@ class TestVAR_measurement_error(CheckLutkepohl):
                 pass
             elif name == 'obs_cov':
                 actual = self.results2.filter_results.obs_cov
-                desired = np.diag(self.true_measurement_error_variances)[:,:,np.newaxis]
+                desired = np.diag(self.true_measurement_error_variances)[:, :, np.newaxis]
                 assert_equal(actual, desired)
             else:
                 assert_equal(getattr(self.results2.filter_results, name),
@@ -401,7 +396,6 @@ class TestVAR_obs_intercept(CheckLutkepohl):
         pass
 
 
-@pytest.mark.skip(reason="troubleshooting CI timeouts")
 @pytest.mark.not_vetted
 class TestVAR_exog(CheckLutkepohl):
     # Note: unlike the other tests in this file, this is against the Stata
@@ -447,7 +441,7 @@ class TestVAR_exog(CheckLutkepohl):
 
     def test_forecast(self):
         # Tests forecast
-        exog = (np.arange(75, 75+16) + 3)[:, np.newaxis]
+        exog = (np.arange(75, 75 + 16) + 3)[:, np.newaxis]
 
         # Test it through the results class wrapper
         desired = self.results.forecast(steps=16, exog=exog)
@@ -457,9 +451,9 @@ class TestVAR_exog(CheckLutkepohl):
         # VARMAXResults.get_prediction which converts exog to state_intercept)
         beta = self.results.params[-9:-6]
         state_intercept = np.concatenate([
-            exog*beta[0], exog*beta[1], exog*beta[2]], axis=1).T
+            exog * beta[0], exog * beta[1], exog * beta[2]], axis=1).T
         desired = mlemodel.MLEResults.get_prediction(
-            self.results._results, start=75, end=75+15,
+            self.results._results, start=75, end=75 + 15,
             state_intercept=state_intercept).predicted_mean
         assert_allclose(desired, self.true['fcast'], atol=1e-6)
 
@@ -474,7 +468,7 @@ class TestVAR_exog(CheckLutkepohl):
         # For each endogenous variable, check the output
         for i in range(self.model.k_endog):
             offset = i * self.model.k_endog
-            table = tables[i+2]
+            table = tables[i + 2]
 
             # -> Make sure we have the right table / table name
             name = self.model.endog_names[i]
@@ -500,7 +494,6 @@ class TestVAR_exog(CheckLutkepohl):
             assert_equal(re.search('%s +%.4f' % (names[i], params[i]), table) is None, False)
 
 
-@pytest.mark.skip(reason="troubleshooting CI timeouts")
 @pytest.mark.not_vetted
 class TestVAR_exog2(CheckLutkepohl):
     # This is a regression test, to make sure that the setup with multiple exog
@@ -542,13 +535,12 @@ class TestVAR_exog2(CheckLutkepohl):
 
     def test_forecast(self):
         # Tests forecast
-        exog = np.c_[np.ones((16, 1)), (np.arange(75, 75+16) + 3)[:, np.newaxis]]
+        exog = np.c_[np.ones((16, 1)), (np.arange(75, 75 + 16) + 3)[:, np.newaxis]]
 
         desired = self.results.forecast(steps=16, exog=exog)
         assert_allclose(desired, self.true['fcast'], atol=1e-6)
 
 
-@pytest.mark.skip(reason="troubleshooting CI timeouts")
 @pytest.mark.not_vetted
 class TestVAR2(CheckLutkepohl):
     @classmethod
@@ -557,7 +549,7 @@ class TestVAR2(CheckLutkepohl):
         true['predict'] = var_results.iloc[1:][['predict_var2_1', 'predict_var2_2']]
         true['dynamic_predict'] = var_results.iloc[1:][['dyn_predict_var2_1', 'dyn_predict_var2_2']]
         super(TestVAR2, cls).setup_class(
-            true, order=(2,0), trend='nc', error_cov_type='unstructured',
+            true, order=(2, 0), trend='nc', error_cov_type='unstructured',
             included_vars=['dln_inv', 'dln_inc'])
 
     def test_bse_approx(self):
@@ -604,10 +596,10 @@ class TestVAR2(CheckLutkepohl):
         params = params[self.model._params_state_cov]
         names = self.model.param_names[self.model._params_state_cov]
         for i in range(len(names)):
-            assert_equal(re.search('%s +%.4f' % (names[i], params[i]), table) is None, False)
+            pattern = '%s +%.4f' % (names[i], params[i])
+            assert_equal(re.search(pattern, table) is None, False)
 
 
-@pytest.mark.skip(reason="troubleshooting CI timeouts")
 @pytest.mark.not_vetted
 class CheckFREDManufacturing(CheckVARMAX):
     @classmethod
@@ -631,7 +623,6 @@ class CheckFREDManufacturing(CheckVARMAX):
         cls.results = cls.model.smooth(true['params'], cov_type=cov_type)
 
 
-@pytest.mark.skip(reason="troubleshooting CI timeouts")
 @pytest.mark.not_vetted
 class TestVARMA(CheckFREDManufacturing):
     """
@@ -680,7 +671,8 @@ class TestVARMA(CheckFREDManufacturing):
         super(TestVARMA, self).test_predict(end='2009-05-01', atol=1e-4)
 
     def test_dynamic_predict(self):
-        super(TestVARMA, self).test_dynamic_predict(end='2009-05-01', dynamic='2000-01-01')
+        super(TestVARMA, self).test_dynamic_predict(end='2009-05-01',
+                                                    dynamic='2000-01-01')
 
     def test_summary(self):
         summary = self.results.summary()
@@ -717,10 +709,10 @@ class TestVARMA(CheckFREDManufacturing):
         params = params[self.model._params_state_cov]
         names = self.model.param_names[self.model._params_state_cov]
         for i in range(len(names)):
-            assert_equal(re.search('%s +%s' % (names[i], forg(params[i], prec=4)), table) is None, False)
+            pattern = '%s +%s' % (names[i], forg(params[i], prec=4))
+            assert re.search(pattern, table)
 
 
-@pytest.mark.skip(reason="troubleshooting CI timeouts")
 @pytest.mark.not_vetted
 class TestVMA1(CheckFREDManufacturing):
     """
@@ -730,8 +722,10 @@ class TestVMA1(CheckFREDManufacturing):
     @classmethod
     def setup_class(cls):
         true = results_varmax.fred_vma1.copy()
-        true['predict'] = varmax_results.iloc[1:][['predict_vma1_1', 'predict_vma1_2']]
-        true['dynamic_predict'] = varmax_results.iloc[1:][['dyn_predict_vma1_1', 'dyn_predict_vma1_2']]
+        true['predict'] = varmax_results.iloc[1:][['predict_vma1_1',
+                                                   'predict_vma1_2']]
+        true['dynamic_predict'] = varmax_results.iloc[1:][['dyn_predict_vma1_1',
+                                                           'dyn_predict_vma1_2']]
         super(TestVMA1, cls).setup_class(
               true, order=(0,1), trend='nc', error_cov_type='diagonal')
 
@@ -769,16 +763,17 @@ class TestVMA1(CheckFREDManufacturing):
         super(TestVMA1, self).test_predict(end='2009-05-01', atol=1e-4)
 
     def test_dynamic_predict(self):
-        super(TestVMA1, self).test_dynamic_predict(end='2009-05-01', dynamic='2000-01-01')
+        super(TestVMA1, self).test_dynamic_predict(end='2009-05-01',
+                                                   dynamic='2000-01-01')
 
 
-@pytest.mark.skip(reason="troubleshooting CI timeouts")
 @pytest.mark.not_vetted
 def test_specifications():
     # Tests for model specification and state space creation
     endog = np.arange(20).reshape(10,2)
     exog = np.arange(10)
-    exog2 = pd.Series(exog, index=pd.date_range('2000-01-01', '2009-01-01', freq='AS'))
+    exog2 = pd.Series(exog, index=pd.date_range('2000-01-01', '2009-01-01',
+                                                freq='AS'))
 
     # Test successful model creation
     mod = varmax.VARMAX(endog, exog=exog, order=(1,0))
@@ -787,7 +782,6 @@ def test_specifications():
     mod = varmax.VARMAX(endog, exog=exog2, order=(1,0))
 
 
-@pytest.mark.skip(reason="troubleshooting CI timeouts")
 @pytest.mark.not_vetted
 def test_misspecifications():
     varmax.__warningregistry__ = {}
@@ -823,7 +817,6 @@ def test_misspecifications():
     warnings.resetwarnings()
 
 
-@pytest.mark.skip(reason="troubleshooting CI timeouts")
 @pytest.mark.not_vetted
 def test_misc_exog():
     # Tests for missing data
@@ -879,7 +872,6 @@ def test_misc_exog():
         varmax.VARMAX(endog, exog=np.zeros((10, 4)), order=(1, 0))
 
 
-@pytest.mark.skip(reason="troubleshooting CI timeouts")
 @pytest.mark.not_vetted
 def test_predict_custom_index():
     np.random.seed(328423)
