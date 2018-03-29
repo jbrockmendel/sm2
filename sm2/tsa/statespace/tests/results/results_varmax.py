@@ -42,15 +42,15 @@ lutkepohl_data = [
 
 lutkepohl_var1 = {
     'params': [
-        -0.25034303, 0.28759168, 0.81626475, # Phi, row 1
-        0.023383, 0.19048278, 0.66502259, # Phi, row 2
-        -0.01492992, 0.53796097, 0.28114733, # Phi, row 3
+        -0.25034303, 0.28759168, 0.81626475,  # Phi, row 1
+        0.023383, 0.19048278, 0.66502259,  # Phi, row 2
+        -0.01492992, 0.53796097, 0.28114733,  # Phi, row 3
         # .00199294, # Covariance, lower triangle
         # .00006096, .00012986,
         # .00018523, .00011695, .00016188,
         # Note: the following are the Cholesky of the covariance
         # matrix defined just above
-        0.04464236, # Cholesky, lower triangle
+        0.04464236,  # Cholesky, lower triangle
         0.00136552, 0.01354125,
         0.0029089 , 0.00834324, 0.00915471
     ],
@@ -68,9 +68,9 @@ lutkepohl_var1 = {
 
 lutkepohl_var1_diag = {
     'params': [
-        -0.24817904, 0.29283012, 0.80794938, # Phi, row 1
-        0.02282985, 0.19672157, 0.66329776, # Phi, row 2
-        -0.01522531, 0.53500874, 0.28859213, # Phi, row 3
+        -0.24817904, 0.29283012, 0.80794938,  # Phi, row 1
+        0.02282985, 0.19672157, 0.66329776,  # Phi, row 2
+        -0.01522531, 0.53500874, 0.28859213,  # Phi, row 3
         0.00199106, 0.00018529, 0.00016179    # Variances, diagonal
     ],
     'var_oim': [
@@ -86,10 +86,10 @@ lutkepohl_var1_diag = {
 
 lutkepohl_var1_diag_meas = {
     'params': [
-        -0.24817904, 0.29283012, 0.80794938, # Phi, row 1
-        0.02282985, 0.19672157, 0.66329776, # Phi, row 2
-        -0.01522531, 0.53500874, 0.28859213, # Phi, row 3
-        0.00199106, 0.00018529, 0.00016179, # Variances, diagonal
+        -0.24817904, 0.29283012, 0.80794938,  # Phi, row 1
+        0.02282985, 0.19672157, 0.66329776,  # Phi, row 2
+        -0.01522531, 0.53500874, 0.28859213,  # Phi, row 3
+        0.00199106, 0.00018529, 0.00016179,  # Variances, diagonal
         0, 0, 0            # Measurement error variances
     ],
     'var_oim': [
@@ -106,9 +106,9 @@ lutkepohl_var1_diag_meas = {
 
 lutkepohl_var1_obs_intercept = {
     'params': [
-        -.24762, .25961003, .75992623, # Phi, row 1
-        .03186854, -.07271862, .23697765, # Phi, row 2
-        -.0053055, .2362571, -.19438311, # Phi, row 3
+        -.24762, .25961003, .75992623,  # Phi, row 1
+        .03186854, -.07271862, .23697765,  # Phi, row 2
+        -.0053055, .2362571, -.19438311,  # Phi, row 3
         .00199116, .00013515, .00009937    # Variances, diagonal
     ],
     'obs_intercept': [.01799302, .02065458, .01987525], # Intercepts
@@ -116,7 +116,7 @@ lutkepohl_var1_obs_intercept = {
         .01317874, .2311403, .33481866,
         .00090084, .0157839, .0229119,
         .00065737, .01149729, .01661236,
-        # .00001802, 1.818e-06, 1.086e-06, # Intercept parameters
+        # .00001802, 1.818e-06, 1.086e-06,  # Intercept parameters
         1.057e-07, 4.869e-10, 2.630e-10],
     'loglike': 593.5252693885262,
     'aic': -1101.634,
@@ -125,24 +125,24 @@ lutkepohl_var1_obs_intercept = {
 
 lutkepohl_var1_exog = {
     'params': [
-        -.25549409, .31149462, .92674046, # Phi, row 1
-        .02935715, .13699757, .5059042, # Phi, row 2
-        -.00540021, .4598014, .06065565, # Phi, row 3
-        -.00007533, .00012771, .00018224, # exog
-        # .00200617, # Covariance, lower triangle
+        -.25549409, .31149462, .92674046,  # Phi, row 1
+        .02935715, .13699757, .5059042,  # Phi, row 2
+        -.00540021, .4598014, .06065565,  # Phi, row 3
+        -.00007533, .00012771, .00018224,  # exog
+        # .00200617,  # Covariance, lower triangle
         # .00007053, .00017216,
         # .00013934, .00010021, .00013833
         # Note: the following are the Cholesky of the covariance
         # matrix defined just above
-        .04479029, # Cholesky, lower triangle
+        .04479029,  # Cholesky, lower triangle
         .00157467, .01302614,
         .00311094, .00731692, .00866687
     ],
     'var_oim': [
-        .01350243, .20429977, .29684366, # Phi, row 1
-        .00115871, .01753203, .02547371, # Phi, row 2
-        .000931, .01408662, .02046759, # Phi, row 3
-        3.720e-08, 3.192e-09, 2.565e-09 # exog
+        .01350243, .20429977, .29684366,  # Phi, row 1
+        .00115871, .01753203, .02547371,  # Phi, row 2
+        .000931, .01408662, .02046759,  # Phi, row 3
+        3.720e-08, 3.192e-09, 2.565e-09  # exog
     ],
     'loglike': 587.4157014188437,
     'aic': None,
@@ -151,37 +151,37 @@ lutkepohl_var1_exog = {
 
 lutkepohl_var1_exog2 = {
     'params': [
-        -.2552236, .21722691, .81525457, # Phi, row 1
-        .02998355, -.08130972, .24772266, # Phi, row 2
-        -.00476998, .24016112, -.19910237, # Phi, row 3
-        .00811096, -.00015244, # exog, y1
-        .01878355, -.00005086, # exog, y2
-        .01889825, 2.577e-06, # exog, y3
+        -.2552236, .21722691, .81525457,  # Phi, row 1
+        .02998355, -.08130972, .24772266,  # Phi, row 2
+        -.00476998, .24016112, -.19910237,  # Phi, row 3
+        .00811096, -.00015244,  # exog, y1
+        .01878355, -.00005086,  # exog, y2
+        .01889825, 2.577e-06,  # exog, y3
         # .00199918, # Covariance, lower triangle
         # .00005435, .00013469,
         # .00012306, .00006251, .00010039
         # Note: the following are the Cholesky of the covariance
         # matrix defined just above
-        .04471219, # Cholesky, lower triangle
+        .04471219,  # Cholesky, lower triangle
         .00121555, .01102644,
         .00275227, .00536569, .00800152
     ],
     'var_oim': None,
-    # 'loglike': 600.9801664685759, # From Stata
-    'loglike': 600.65449034396283, # From VARMAX (regression test)
+    # 'loglike': 600.9801664685759,  # From Stata
+    'loglike': 600.65449034396283,  # From VARMAX (regression test)
     'aic': None,
     'bic': None
 }
 
 lutkepohl_var2 = {
     'params': [
-        -.25244981, .62528114, # Phi_1, row 1
-        -.13011679, .58173748, # Phi_1, row 2
-        .05369178, .35716349, # Phi_2, row 1
-        .03861472, .43812606, # Phi_2, row 2
+        -.25244981, .62528114,  # Phi_1, row 1
+        -.13011679, .58173748,  # Phi_1, row 2
+        .05369178, .35716349,  # Phi_2, row 1
+        .03861472, .43812606,  # Phi_2, row 2
         # .00197786, # Covariance, lower triangle
         # .00008091, .00018269
-        0.04447314, # Covariance cholesky, lower triangle
+        0.04447314,  # Covariance cholesky, lower triangle
         0.0018193, 0.01339329
     ],
     'var_oim': [
@@ -199,18 +199,18 @@ lutkepohl_var2 = {
 
 fred_varma11 = {
     'params': [
-        .80580312, 0, # Phi_1, row 1
-        .17348681, -.48093755, # Phi_1, row 2
-        -.51890703, 0, # Theta_1, row 1
-        0, 0, # Theta_1, row 2
-        .0000582, .00003815, # Variances
+        .80580312, 0,  # Phi_1, row 1
+        .17348681, -.48093755,  # Phi_1, row 2
+        -.51890703, 0,  # Theta_1, row 1
+        0, 0,  # Theta_1, row 2
+        .0000582, .00003815,  # Variances
     ],
     'var_oim': [
-        .00272999, 0, # Phi_1, row 1
-        .00164152, .00248576, # Phi_1, row 2
-        .0049259, 0, # Theta_1, row 1
-        0, 0, # Theta_1, row 2
-        1.529e-11, 6.572e-12, # Variances
+        .00272999, 0,  # Phi_1, row 1
+        .00164152, .00248576,  # Phi_1, row 2
+        .0049259, 0,  # Theta_1, row 1
+        0, 0,  # Theta_1, row 2
+        1.529e-11, 6.572e-12,  # Variances
     ],
     'loglike': 3156.056423235071,
     'aic': -6300.113,
@@ -219,14 +219,14 @@ fred_varma11 = {
 
 fred_vma1 = {
     'params': [
-        .24803941, 0, # Theta_1, row 1
-        0, 0, # Theta_1, row 2
-        .00006514, .00004621, # Variances
+        .24803941, 0,  # Theta_1, row 1
+        0, 0,  # Theta_1, row 2
+        .00006514, .00004621,  # Variances
     ],
     'var_oim': [
-        .00154773, 0, # Theta_1, row 1
-        0, 0, # Theta_1, row 2
-        1.916e-11, 9.639e-12, # Variances
+        .00154773, 0,  # Theta_1, row 1
+        0, 0,  # Theta_1, row 2
+        1.916e-11, 9.639e-12,  # Variances
     ],
     'loglike': 3088.909619417645,
     'aic': -6171.819,

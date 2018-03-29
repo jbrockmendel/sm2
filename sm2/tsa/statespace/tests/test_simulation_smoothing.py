@@ -67,16 +67,18 @@ class MultivariateVARKnown(object):
         # Create the model
         mod = mlemodel.MLEModel(obs, k_states=3, k_posdef=3, **kwargs)
         mod['design'] = np.eye(3)
-        mod['obs_cov'] = np.array([[ 0.0000640649, 0., 0.          ],
-                                   [ 0., 0.0000572802, 0.          ],
-                                   [ 0., 0., 0.0017088585]])
-        mod['transition'] = np.array([[-0.1119908792, 0.8441841604, 0.0238725303],
-                                      [ 0.2629347724, 0.4996718412, -0.0173023305],
-                                      [-3.2192369082, 4.1536028244, 0.4514379215]])
+        mod['obs_cov'] = np.array([[0.0000640649, 0., 0.],
+                                   [0., 0.0000572802, 0.],
+                                   [0., 0., 0.0017088585]])
+        mod['transition'] = np.array([
+            [-0.1119908792, 0.8441841604, 0.0238725303],
+            [0.2629347724, 0.4996718412, -0.0173023305],
+            [-3.2192369082, 4.1536028244, 0.4514379215]])
         mod['selection'] = np.eye(3)
-        mod['state_cov'] = np.array([[ 0.0000640649, 0.0000388496, 0.0002148769],
-                                     [ 0.0000388496, 0.0000572802, 0.000001555 ],
-                                     [ 0.0002148769, 0.000001555, 0.0017088585]])
+        mod['state_cov'] = np.array([
+            [0.0000640649, 0.0000388496, 0.0002148769],
+            [0.0000388496, 0.0000572802, 0.000001555],
+            [0.0002148769, 0.000001555, 0.0017088585]])
         mod.initialize_approximate_diffuse(1e6)
         mod.ssm.filter_univariate = True
         cls.model = mod
@@ -329,7 +331,7 @@ class MultivariateVARKnown(object):
         generated_state[:, 0] = (
             self.results.initial_state + np.dot(chol, initial_state_variates))
         for t in range(self.model.nobs):
-            generated_state[:, t+1] = (np.dot(T, generated_state[:, t]) +
+            generated_state[:, t + 1] = (np.dot(T, generated_state[:, t]) +
                                        generated_state_disturbance.T[:, t])
             generated_obs[:, t] = (np.dot(Z, generated_state[:, t]) +
                                    generated_measurement_disturbance.T[:, t])
@@ -451,7 +453,8 @@ class TestDFM(TestMultivariateVARKnown):
     def setup_class(cls, which='none', *args, **kwargs):
         # Data
         dta = datasets.macrodata.load_pandas().data
-        dta.index = pd.date_range(start='1959-01-01', end='2009-7-01', freq='QS')
+        dta.index = pd.date_range(start='1959-01-01', end='2009-7-01',
+                                  freq='QS')
         obs = np.log(dta[['realgdp', 'realcons', 'realinv']]).diff().iloc[1:] * 400
 
         if which == 'all':
@@ -524,13 +527,15 @@ class MultivariateVAR(object):
         mod['obs_cov'] = np.array([[0.0000640649, 0., 0.],
                                    [0., 0.0000572802, 0.],
                                    [0., 0., 0.0017088585]])
-        mod['transition'] = np.array([[-0.1119908792, 0.8441841604, 0.0238725303],
-                                      [0.2629347724, 0.4996718412, -0.0173023305],
-                                      [-3.2192369082, 4.1536028244, 0.4514379215]])
+        mod['transition'] = np.array([
+            [-0.1119908792, 0.8441841604, 0.0238725303],
+            [0.2629347724, 0.4996718412, -0.0173023305],
+            [-3.2192369082, 4.1536028244, 0.4514379215]])
         mod['selection'] = np.eye(3)
-        mod['state_cov'] = np.array([[0.0000640649, 0.0000388496, 0.0002148769],
-                                     [0.0000388496, 0.0000572802, 0.000001555 ],
-                                     [0.0002148769, 0.000001555, 0.0017088585]])
+        mod['state_cov'] = np.array([
+            [0.0000640649, 0.0000388496, 0.0002148769],
+            [0.0000388496, 0.0000572802, 0.000001555 ],
+            [0.0002148769, 0.000001555, 0.0017088585]])
         mod.initialize_approximate_diffuse(1e6)
         mod.ssm.filter_univariate = True
         cls.model = mod

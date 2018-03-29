@@ -1041,12 +1041,12 @@ cdef class {{prefix}}KalmanFilter(object):
             {{cython_type}} alpha = 1.0
             {{cython_type}} beta = 0.0
             {{cython_type}} gamma = -1.0
-        # Indices for arrays that may or may not be stored completely
-        cdef:
+            # Indices for arrays that may or may not be stored completely
             int forecast_t = self.t
             int filtered_t = self.t
             int predicted_t = self.t
             int gain_t = self.t
+
         if self.conserve_memory & MEMORY_NO_FORECAST > 0:
             forecast_t = 1
         if self.conserve_memory & MEMORY_NO_FILTERED > 0:
@@ -1069,12 +1069,16 @@ cdef class {{prefix}}KalmanFilter(object):
                 blas.{{prefix}}copy(
                     &self.k_states2, self._input_state_cov, &inc,
                     self._tmp0, &inc)
-                blas.{{prefix}}axpy(&self.k_states2, &gamma, self._predicted_state_cov, &inc, self._tmp0, &inc)
+                blas.{{prefix}}axpy(
+                    &self.k_states2, &gamma, self._predicted_state_cov, &inc,
+                    self._tmp0, &inc)
             elif self.t > 0:
                 blas.{{prefix}}copy(
-                    &self.k_states2, &self.predicted_state_cov[0,0,predicted_t], &inc,
+                    &self.k_states2, &self.predicted_state_cov[0, 0, predicted_t], &inc,
                     self._tmp0, &inc)
-                blas.{{prefix}}axpy(&self.k_states2, &gamma, &self.predicted_state_cov[0,0,predicted_t-1], &inc, self._tmp0, &inc)
+                blas.{{prefix}}axpy(
+                    &self.k_states2, &gamma, &self.predicted_state_cov[0, 0, predicted_t - 1], &inc,
+                    self._tmp0, &inc)
             else:
                 return
 
@@ -1124,23 +1128,41 @@ cdef class {{prefix}}KalmanFilter(object):
 
         # Forecast: 1 -> 0
         if self.conserve_memory & MEMORY_NO_FORECAST > 0:
-            blas.{{prefix}}copy(&self.k_endog, &self.forecast[0, 1], &inc, &self.forecast[0, 0], &inc)
-            blas.{{prefix}}copy(&self.k_endog, &self.forecast_error[0, 1], &inc, &self.forecast_error[0, 0], &inc)
-            blas.{{prefix}}copy(&self.k_endog2, &self.forecast_error_cov[0, 0, 1], &inc, &self.forecast_error_cov[0, 0, 0], &inc)
+            blas.{{prefix}}copy(
+                &self.k_endog, &self.forecast[0, 1], &inc,
+                &self.forecast[0, 0], &inc)
+            blas.{{prefix}}copy(
+                &self.k_endog, &self.forecast_error[0, 1], &inc,
+                &self.forecast_error[0, 0], &inc)
+            blas.{{prefix}}copy(
+                &self.k_endog2, &self.forecast_error_cov[0, 0, 1], &inc,
+                &self.forecast_error_cov[0, 0, 0], &inc)
 
         # Filtered: 1 -> 0
         if self.conserve_memory & MEMORY_NO_FILTERED > 0:
-            blas.{{prefix}}copy(&self.k_states, &self.filtered_state[0, 1], &inc, &self.filtered_state[0, 0], &inc)
-            blas.{{prefix}}copy(&self.k_states2, &self.filtered_state_cov[0, 0, 1], &inc, &self.filtered_state_cov[0, 0, 0], &inc)
+            blas.{{prefix}}copy(
+                &self.k_states, &self.filtered_state[0, 1], &inc,
+                &self.filtered_state[0, 0], &inc)
+            blas.{{prefix}}copy(
+                &self.k_states2, &self.filtered_state_cov[0, 0, 1], &inc,
+                &self.filtered_state_cov[0, 0, 0], &inc)
 
         # Predicted: 1 -> 0
         if self.conserve_memory & MEMORY_NO_PREDICTED > 0:
-            blas.{{prefix}}copy(&self.k_states, &self.predicted_state[0, 1], &inc, &self.predicted_state[0, 0], &inc)
-            blas.{{prefix}}copy(&self.k_states2, &self.predicted_state_cov[0, 0, 1], &inc, &self.predicted_state_cov[0, 0, 0], &inc)
+            blas.{{prefix}}copy(
+                &self.k_states, &self.predicted_state[0, 1], &inc,
+                &self.predicted_state[0, 0], &inc)
+            blas.{{prefix}}copy(
+                &self.k_states2, &self.predicted_state_cov[0, 0, 1], &inc,
+                &self.predicted_state_cov[0, 0, 0], &inc)
 
             # Predicted: 2 -> 1
             if self.filter_timing == TIMING_INIT_PREDICTED:
-                blas.{{prefix}}copy(&self.k_states, &self.predicted_state[0, 2], &inc, &self.predicted_state[0, 1], &inc)
-                blas.{{prefix}}copy(&self.k_states2, &self.predicted_state_cov[0, 0, 2], &inc, &self.predicted_state_cov[0, 0, 1], &inc)
+                blas.{{prefix}}copy(
+                    &self.k_states, &self.predicted_state[0, 2], &inc,
+                    &self.predicted_state[0, 1], &inc)
+                blas.{{prefix}}copy(
+                    &self.k_states2, &self.predicted_state_cov[0, 0, 2], &inc,
+                    &self.predicted_state_cov[0, 0, 1], &inc)
 
 {{endfor}}

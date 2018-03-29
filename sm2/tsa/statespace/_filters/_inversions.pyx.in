@@ -193,8 +193,6 @@ cdef {{cython_type}} {{prefix}}inverse_cholesky(
         {{prefix}}KalmanFilter kfilter, {{prefix}}Statespace model,
         {{cython_type}} determinant) except *:
     """
-    inverse_cholesky(self, determinant)
-
     If the model has converged to a steady-state, this is a NOOP and simply
     returns the determinant that was passed in.
     """
@@ -274,6 +272,7 @@ cdef {{cython_type}} {{prefix}}inverse_cholesky(
 
     return determinant
 
+
 cdef {{cython_type}} {{prefix}}inverse_lu(
         {{prefix}}KalmanFilter kfilter, {{prefix}}Statespace model,
         {{cython_type}} determinant) except *:
@@ -327,12 +326,11 @@ cdef {{cython_type}} {{prefix}}inverse_lu(
 
     return determinant
 
-cdef {{cython_type}} {{prefix}}solve_cholesky(
-    {{prefix}}KalmanFilter kfilter, {{prefix}}Statespace model,
-    {{cython_type}} determinant) except *:
-    """
-    solve_cholesky(self, determinant)
 
+cdef {{cython_type}} {{prefix}}solve_cholesky(
+        {{prefix}}KalmanFilter kfilter, {{prefix}}Statespace model,
+        {{cython_type}} determinant) except *:
+    """
     If the model has converged to a steady-state, this is a NOOP and simply
     returns the determinant that was passed in.
     """
@@ -396,6 +394,7 @@ cdef {{cython_type}} {{prefix}}solve_cholesky(
             &kfilter.k_endog, kfilter._tmp4, &kfilter.k_endog, &info)
 
     return determinant
+
 
 cdef {{cython_type}} {{prefix}}solve_lu(
         {{prefix}}KalmanFilter kfilter, {{prefix}}Statespace model,

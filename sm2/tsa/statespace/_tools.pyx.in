@@ -142,7 +142,7 @@ cdef int _{{prefix}}solve_discrete_lyapunov(
         int lwork = 3 * n
         bint bwork
         cnp.npy_intp dim1[1]
-        {{cython_type}}[::1,:] work
+        {{cython_type}}[::1, :] work
         {{cython_type}}[:] wr
         {{if prefix == 's' or prefix == 'c'}}
         cnp.float32_t[:] wi
@@ -158,7 +158,7 @@ cdef int _{{prefix}}solve_discrete_lyapunov(
     v = cnp.PyArray_ZEROS(2, dim, {{typenum}}, FORTRAN)
     ipiv = cnp.PyArray_ZEROS(2, dim, cnp.NPY_INT32, FORTRAN)
 
-    dim1[0] = n;
+    dim1[0] = n
     wr = cnp.PyArray_ZEROS(1, dim1, {{typenum}}, FORTRAN)
     {{if prefix == 's'}}
     wi = cnp.PyArray_ZEROS(1, dim1, {{typenum}}, FORTRAN)
@@ -166,7 +166,8 @@ cdef int _{{prefix}}solve_discrete_lyapunov(
     wi = cnp.PyArray_ZEROS(1, dim1, cnp.NPY_FLOAT64, FORTRAN)
     {{endif}}
     #vs = cnp.PyArray_ZEROS(2, dim, {{typenum}}, FORTRAN)
-    dim[0] = lwork; dim[1] = lwork;
+    dim[0] = lwork
+    dim[1] = lwork
     work = cnp.PyArray_ZEROS(2, dim, {{typenum}}, FORTRAN)
 
     # - Solve for b.conj().transpose() --------
@@ -427,7 +428,8 @@ cpdef _{{prefix}}compute_coefficients_from_multivariate_pacf(
         error_variance = np.asfortranarray(np.eye(k_endog, dtype={{dtype}}) * (order + k_endog)**10)
 
     # Initialize matrices
-    dim2[0] = k_endog; dim2[1] = k_endog;
+    dim2[0] = k_endog
+    dim2[1] = k_endog
     forward_variance = cnp.PyArray_ZEROS(2, dim2, {{typenum}}, FORTRAN)
     backward_variance = cnp.PyArray_ZEROS(2, dim2, {{typenum}}, FORTRAN)
     forward_factors = cnp.PyArray_ZEROS(2, dim2, {{typenum}}, FORTRAN)
@@ -435,7 +437,8 @@ cpdef _{{prefix}}compute_coefficients_from_multivariate_pacf(
     tmp = cnp.PyArray_ZEROS(2, dim2, {{typenum}}, FORTRAN)
     tmp2 = cnp.PyArray_ZEROS(2, dim2, {{typenum}}, FORTRAN)
 
-    dim2[0] = k_endog; dim2[1] = k_endog_order;
+    dim2[0] = k_endog
+    dim2[1] = k_endog_order
     # \phi_{s,k}, s = 1, ..., p
     #             k = 1, ..., s+1
     forwards1 = cnp.PyArray_ZEROS(2, dim2, {{typenum}}, FORTRAN)
@@ -444,7 +447,8 @@ cpdef _{{prefix}}compute_coefficients_from_multivariate_pacf(
     backwards1 = cnp.PyArray_ZEROS(2, dim2, {{typenum}}, FORTRAN)
     backwards2 = cnp.PyArray_ZEROS(2, dim2, {{typenum}}, FORTRAN)
 
-    dim2[0] = k_endog; dim2[1] = k_endog_order1;
+    dim2[0] = k_endog
+    dim2[1] = k_endog_order1
     autocovariances = cnp.PyArray_ZEROS(2, dim2, {{typenum}}, FORTRAN)
 
     blas.{{prefix}}copy(

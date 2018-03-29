@@ -177,41 +177,41 @@ cdef class {{prefix}}KalmanSmoother(object):
     # ### Pointers to current-iteration arrays
 
     # Statespace
-    # cdef {{cython_type}} * _design
-    # cdef {{cython_type}} * _obs_cov
-    # cdef {{cython_type}} * _transition
-    # cdef {{cython_type}} * _selection
-    # cdef {{cython_type}} * _state_cov
+    # cdef {{cython_type}}* _design
+    # cdef {{cython_type}}* _obs_cov
+    # cdef {{cython_type}}* _transition
+    # cdef {{cython_type}}* _selection
+    # cdef {{cython_type}}* _state_cov
 
     # Kalman filter
-    # cdef {{cython_type}} * _predicted_state
-    # cdef {{cython_type}} * _predicted_state_cov
-    # cdef {{cython_type}} * _kalman_gain
+    # cdef {{cython_type}}* _predicted_state
+    # cdef {{cython_type}}* _predicted_state_cov
+    # cdef {{cython_type}}* _kalman_gain
 
-    # cdef {{cython_type}} * _tmp1
-    # cdef {{cython_type}} * _tmp2
-    # cdef {{cython_type}} * _tmp3
-    # cdef {{cython_type}} * _tmp4
+    # cdef {{cython_type}}* _tmp1
+    # cdef {{cython_type}}* _tmp2
+    # cdef {{cython_type}}* _tmp3
+    # cdef {{cython_type}}* _tmp4
 
     # Kalman smoother
-    # cdef {{cython_type}} * _input_scaled_smoothed_estimator
-    # cdef {{cython_type}} * _input_scaled_smoothed_estimator_cov
+    # cdef {{cython_type}}* _input_scaled_smoothed_estimator
+    # cdef {{cython_type}}* _input_scaled_smoothed_estimator_cov
 
-    # cdef {{cython_type}} * _scaled_smoothed_estimator
-    # cdef {{cython_type}} * _scaled_smoothed_estimator_cov
-    # cdef {{cython_type}} * _smoothing_error
-    # cdef {{cython_type}} * _smoothed_state
-    # cdef {{cython_type}} * _smoothed_state_cov
-    # cdef {{cython_type}} * _smoothed_measurement_disturbance
-    # cdef {{cython_type}} * _smoothed_state_disturbance
-    # cdef {{cython_type}} * _smoothed_measurement_disturbance_cov
-    # cdef {{cython_type}} * _smoothed_state_disturbance_cov
+    # cdef {{cython_type}}* _scaled_smoothed_estimator
+    # cdef {{cython_type}}* _scaled_smoothed_estimator_cov
+    # cdef {{cython_type}}* _smoothing_error
+    # cdef {{cython_type}}* _smoothed_state
+    # cdef {{cython_type}}* _smoothed_state_cov
+    # cdef {{cython_type}}* _smoothed_measurement_disturbance
+    # cdef {{cython_type}}* _smoothed_state_disturbance
+    # cdef {{cython_type}}* _smoothed_measurement_disturbance_cov
+    # cdef {{cython_type}}* _smoothed_state_disturbance_cov
 
-    # cdef {{cython_type}} * _tmpL
-    # cdef {{cython_type}} * _tmpL2
-    # cdef {{cython_type}} * _tmp0
-    # cdef {{cython_type}} * _tmp00
-    # cdef {{cython_type}} * _tmp000
+    # cdef {{cython_type}}* _tmpL
+    # cdef {{cython_type}}* _tmpL2
+    # cdef {{cython_type}}* _tmp0
+    # cdef {{cython_type}}* _tmp00
+    # cdef {{cython_type}}* _tmp000
 
     # ### Pointers to current-iteration Kalman smoothing functions
     # cdef int (*smooth_estimators)(
@@ -242,13 +242,16 @@ cdef class {{prefix}}KalmanSmoother(object):
 
         # Make sure the appropriate output has been stored in the filter
         if self.kfilter.conserve_memory & MEMORY_NO_PREDICTED:
-            raise ValueError('Cannot perform smoothing without all prediced states')
+            raise ValueError('Cannot perform smoothing without all '
+                             'prediced states')
 
         if self.kfilter.conserve_memory & MEMORY_NO_GAIN:
-            raise ValueError('Cannot perform smoothing without all Kalman gains')
+            raise ValueError('Cannot perform smoothing without all '
+                             'Kalman gains')
 
         if self.kfilter.conserve_memory & MEMORY_NO_SMOOTHING:
-            raise ValueError('Cannot perform smoothing without all smoothing variables')
+            raise ValueError('Cannot perform smoothing without all '
+                             'smoothing variables')
 
         # Set smoothing output and initialize output arrays
         self.set_smoother_output(smoother_output)
@@ -266,23 +269,36 @@ cdef class {{prefix}}KalmanSmoother(object):
         #       that is related to the states.
 
         # Arrays for Kalman smoother output
-        dim2[0] = self.kfilter.k_states; dim2[1] = self.model.nobs + 1
+        dim2[0] = self.kfilter.k_states
+        dim2[1] = self.model.nobs + 1
         self.scaled_smoothed_estimator = cnp.PyArray_ZEROS(2, dim2, {{typenum}}, FORTRAN)
-        dim3[0] = self.kfilter.k_states; dim3[1] = self.kfilter.k_states; dim3[2] = self.model.nobs + 1
+        dim3[0] = self.kfilter.k_states
+        dim3[1] = self.kfilter.k_states
+        dim3[2] = self.model.nobs + 1
         self.scaled_smoothed_estimator_cov = cnp.PyArray_ZEROS(3, dim3, {{typenum}}, FORTRAN)
-        dim2[0] = self.kfilter.k_endog; dim2[1] = self.model.nobs
+        dim2[0] = self.kfilter.k_endog
+        dim2[1] = self.model.nobs
         self.smoothing_error = cnp.PyArray_ZEROS(2, dim2, {{typenum}}, FORTRAN)
-        dim2[0] = self.kfilter.k_states; dim2[1] = self.model.nobs
+        dim2[0] = self.kfilter.k_states
+        dim2[1] = self.model.nobs
         self.smoothed_state = cnp.PyArray_ZEROS(2, dim2, {{typenum}}, FORTRAN)
-        dim3[0] = self.kfilter.k_states; dim3[1] = self.kfilter.k_states; dim3[2] = self.model.nobs
+        dim3[0] = self.kfilter.k_states
+        dim3[1] = self.kfilter.k_states
+        dim3[2] = self.model.nobs
         self.smoothed_state_cov = cnp.PyArray_ZEROS(3, dim3, {{typenum}}, FORTRAN)
-        dim2[0] = self.kfilter.k_endog; dim2[1] = self.model.nobs;
+        dim2[0] = self.kfilter.k_endog
+        dim2[1] = self.model.nobs;
         self.smoothed_measurement_disturbance = cnp.PyArray_ZEROS(2, dim2, {{typenum}}, FORTRAN)
-        dim2[0] = self.kfilter.k_posdef; dim2[1] = self.model.nobs;
+        dim2[0] = self.kfilter.k_posdef
+        dim2[1] = self.model.nobs;
         self.smoothed_state_disturbance = cnp.PyArray_ZEROS(2, dim2, {{typenum}}, FORTRAN)
-        dim3[0] = self.kfilter.k_endog; dim3[1] = self.kfilter.k_endog; dim3[2] = self.model.nobs
+        dim3[0] = self.kfilter.k_endog
+        dim3[1] = self.kfilter.k_endog
+        dim3[2] = self.model.nobs
         self.smoothed_measurement_disturbance_cov = cnp.PyArray_ZEROS(3, dim3, {{typenum}}, FORTRAN)
-        dim3[0] = self.kfilter.k_posdef; dim3[1] = self.kfilter.k_posdef; dim3[2] = self.model.nobs
+        dim3[0] = self.kfilter.k_posdef
+        dim3[1] = self.kfilter.k_posdef
+        dim3[2] = self.model.nobs
         self.smoothed_state_disturbance_cov = cnp.PyArray_ZEROS(3, dim3, {{typenum}}, FORTRAN)
 
         # #### Arrays for temporary calculations
@@ -426,8 +442,10 @@ cdef class {{prefix}}KalmanSmoother(object):
 
         # Make sure we don't have an invalid smooth method for our filter
         # method
-        if((_smooth_method & SMOOTH_UNIVARIATE) and not (self.filter_method & FILTER_UNIVARIATE) or 
-                (self.filter_method & FILTER_UNIVARIATE) and not (_smooth_method & SMOOTH_UNIVARIATE)):
+        if ((_smooth_method & SMOOTH_UNIVARIATE) and
+                not (self.filter_method & FILTER_UNIVARIATE) or 
+                (self.filter_method & FILTER_UNIVARIATE) and
+                not (_smooth_method & SMOOTH_UNIVARIATE)):
             raise ValueError('Invalid smoothing method: can only use'
                              ' univariate smoothing when univariate filtering'
                              ' has been used previously.')
