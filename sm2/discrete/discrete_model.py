@@ -2321,8 +2321,8 @@ class NegativeBinomial(CountModel):
         mu = self.predict(params)
         size = 1 / alpha * mu**Q
         prob = size / (size + mu)
-        coeff = (gamma_ln(size + endog) - gamma_ln(endog + 1) -
-                 gamma_ln(size))
+        coeff = gamma_ln(size + endog) - gamma_ln(endog + 1) - gamma_ln(size)
+        # TODO: cache gamma_ln(endog+1)
         llf = coeff + size * np.log(prob) + endog * np.log(1 - prob)
         return llf
 
