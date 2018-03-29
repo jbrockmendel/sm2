@@ -122,7 +122,6 @@ class GLM(base.LikelihoodModel):
     weights : array
         The value of the weights after the last iteration of fit.
 
-
     Examples
     --------
     >>> import sm2.api as sm
@@ -226,7 +225,6 @@ class GLM(base.LikelihoodModel):
 
     Attributes
     ----------
-
     df_model : float
         Model degrees of freedom is equal to p - 1, where p is the number
         of regressors.  Note that the intercept is not reported as a
@@ -304,6 +302,14 @@ class GLM(base.LikelihoodModel):
         # TODO: Do this further up the inheritance hierarchy
         return self.endog.shape[0]
 
+    @cache_readonly
+    def wnobs(self):
+        if ((self.freq_weights is not None) and
+                (self.freq_weights.shape[0] == self.endog.shape[0])):
+            return self.freq_weights.sum()
+        else:
+            return self.exog.shape[0]
+
     @property
     def _res_classes(self):
         return {"fit": (GLMResults, GLMResultsWrapper)}
@@ -380,12 +386,6 @@ class GLM(base.LikelihoodModel):
                                             np.transpose(self.pinv_wexog))
 
         self.df_model = np.linalg.matrix_rank(self.exog) - 1
-
-        if ((self.freq_weights is not None) and
-                (self.freq_weights.shape[0] == self.endog.shape[0])):
-            self.wnobs = self.freq_weights.sum()
-        else:
-            self.wnobs = self.exog.shape[0]
 
     def _check_inputs(self, family, offset, exposure, endog, freq_weights,
                       var_weights):
@@ -703,7 +703,7 @@ class GLM(base.LikelihoodModel):
         # return a stats results instance instead?  Contrast?
         return chi2stat, pval, k_constraints
 
-    def _update_history(self, tmp_result, mu, history):
+    def _update_history(self, tmp_result, mu, history, scale):
         """
         Helper method to update history during iterative fit.
         """
@@ -711,7 +711,7 @@ class GLM(base.LikelihoodModel):
         history['deviance'].append(self.family.deviance(self.endog, mu,
                                                         self.var_weights,
                                                         self.freq_weights,
-                                                        self.scale))
+                                                        scale))
         return history
 
     def estimate_scale(self, mu):
@@ -1110,9 +1110,9 @@ class GLM(base.LikelihoodModel):
         else:
             lin_pred = np.dot(wlsexog, start_params) + self._offset_exposure
             mu = self.family.fitted(lin_pred)
-        self.scale = self.estimate_scale(mu)
+        scale = self.estimate_scale(mu)
         dev = self.family.deviance(self.endog, mu, self.var_weights,
-                                   self.freq_weights, self.scale)
+                                   self.freq_weights, scale)
         if np.isnan(dev):
             raise ValueError("The first guess on the deviance function "
                              "returned a nan.  This could be a boundary "
@@ -1127,7 +1127,7 @@ class GLM(base.LikelihoodModel):
         # params vector.
         if maxiter == 0:
             mu = self.family.fitted(lin_pred)
-            self.scale = self.estimate_scale(mu)
+            scale = self.estimate_scale(mu)
             wls_results = lm.RegressionResults(self, start_params, None)
             iteration = 0
         for iteration in range(maxiter):
@@ -1143,8 +1143,8 @@ class GLM(base.LikelihoodModel):
             lin_pred = np.dot(self.exog, wls_results.params)
             lin_pred += self._offset_exposure
             mu = self.family.fitted(lin_pred)
-            history = self._update_history(wls_results, mu, history)
-            self.scale = self.estimate_scale(mu)
+            history = self._update_history(wls_results, mu, history, scale)
+            scale = self.estimate_scale(mu)
             if endog.squeeze().ndim == 1 and np.allclose(mu - endog, 0):
                 raise PerfectSeparationError("Perfect separation detected, "
                                              "results not available")
@@ -1152,7 +1152,6 @@ class GLM(base.LikelihoodModel):
                                            atol, rtol)
             if converged:
                 break
-        self.mu = mu
 
         if maxiter > 0:  # Only if iterative used
             wls_method2 = 'pinv' if wls_method == 'lstsq' else wls_method
@@ -1163,7 +1162,7 @@ class GLM(base.LikelihoodModel):
 
         glm_results = res_cls(self, wls_results.params,
                               wls_results.normalized_cov_params,
-                              self.scale,
+                              scale,
                               cov_type=cov_type, cov_kwds=cov_kwds,
                               use_t=use_t)
 
@@ -1245,10 +1244,6 @@ class GLM(base.LikelihoodModel):
                                 start_params=start_params,
                                 refit=refit,
                                 **defaults)
-
-        self.mu = self.predict(result.params)
-        self.scale = self.estimate_scale(self.mu)
-        # TODO: Don't set these attributes on the model instance
 
         return result
 
@@ -1410,14 +1405,14 @@ class GLMResults(base.LikelihoodModelResults):
     --------
     sm2.base.model.LikelihoodModelResults
     """
-
     def __init__(self, model, params, normalized_cov_params, scale,
-                 cov_type='nonrobust', cov_kwds=None, use_t=None):
+                 cov_type='nonrobust', cov_kwds=None, use_t=None, k_constr=0):
+
         super(GLMResults, self).__init__(
             model,
             params,
             normalized_cov_params=normalized_cov_params,
-            scale=scale)
+            scale=scale, k_constr=k_constr)
 
         self.family = model.family
         self._endog = model.endog
@@ -1432,8 +1427,8 @@ class GLMResults(base.LikelihoodModelResults):
         else:
             self._n_trials = 1
 
-        self.df_resid = model.df_resid
-        self.df_model = model.df_model
+        self.df_resid = model.df_resid - k_constr
+        self.df_model = model.df_model + k_constr
 
         self.pinv_wexog = model.pinv_wexog
         self._cache = resettable_cache()
@@ -1449,7 +1444,6 @@ class GLMResults(base.LikelihoodModelResults):
         self._data_attr_model.append('mu')
 
         # robust covariance
-        from sm2.base.covtype import get_robustcov_results
         if use_t is None:
             self.use_t = False    # TODO: class default
         else:
@@ -1475,8 +1469,9 @@ class GLMResults(base.LikelihoodModelResults):
         else:
             if cov_kwds is None:
                 cov_kwds = {}
-            get_robustcov_results(self, cov_type=cov_type, use_self=True,
-                                  use_t=use_t, **cov_kwds)
+            self._get_robustcov_results(cov_type=cov_type, use_self=True,
+                                        use_t=use_t, **cov_kwds)
+            # TODO: Cant we just call the method?  maybe even do this upstream?
 
     @cache_readonly
     def resid_response(self):
@@ -1619,7 +1614,6 @@ class GLMResults(base.LikelihoodModelResults):
                                       pred_kwds=pred_kwds)
         return res
 
-    # TODO: not hit in tests.  Is that because I made SaveLoadMixin?
     @copy_doc(base.LikelihoodModelResults.remove_data.__doc__)
     def remove_data(self):
         # GLM has alias/reference in result instance

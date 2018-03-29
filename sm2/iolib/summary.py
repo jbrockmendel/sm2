@@ -21,7 +21,7 @@ def forg(x, prec=3):
             return '%10.4g' % x
         else:
             return '%10.4f' % x
-    else:
+    else:  # pragma: no cover
         raise NotImplementedError  # TODO: Should this be ValueError?
 
 

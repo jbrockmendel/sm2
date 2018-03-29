@@ -150,7 +150,7 @@ class GenericZeroInflated(CountModel):
 
         if callback is None:
             # work around perfect separation callback GH#3895
-            callback = lambda *x: x  # noqa:E731
+            callback = lambda *x: x
 
         mlefit = super(GenericZeroInflated, self).fit(
             start_params=start_params,
@@ -158,18 +158,12 @@ class GenericZeroInflated(CountModel):
             disp=disp, method=method,
             full_output=full_output,
             callback=callback,
+            cov_type=cov_type, cov_kwds=cov_kwds, use_t=use_t,
             **kwargs)
 
         res_cls, wrap_cls = self._res_classes["fit"]
         zipfit = res_cls(self, mlefit._results)
-        result = wrap_cls(zipfit)
-
-        if cov_kwds is None:
-            cov_kwds = {}
-
-        result._get_robustcov_results(cov_type=cov_type,
-                                      use_self=True, use_t=use_t, **cov_kwds)
-        return result
+        return wrap_cls(zipfit)
 
     @copy_doc(DiscreteModel.fit_regularized.__doc__)
     def fit_regularized(self, start_params=None, method='l1',
@@ -309,6 +303,7 @@ class GenericZeroInflated(CountModel):
 
     def _hessian_probit(self, params):
         pass
+        # TODO: Should this maybe raise?
 
     def hessian(self, params):
         """

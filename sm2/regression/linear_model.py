@@ -1045,7 +1045,7 @@ class GLSAR(GLS):
                 self.rho.shape = (1,)
             self.order = self.rho.shape[0]
         if exog is None:
-            # JP this looks wrong, should be a regression on constant
+            # TODO: JP this looks wrong, should be a regression on constant
             # results for rho estimate now identical to yule-walker on y
             # super(AR, self).__init__(endog, add_constant(endog))
             super(GLSAR, self).__init__(endog, np.ones((endog.shape[0], 1)),
@@ -1205,9 +1205,9 @@ def yule_walker(X, order=1, method="unbiased", df=None, inv=False,
 
     if method == "unbiased":
         # this is df_resid ie., n - p
-        denom = lambda k: n - k  # noqa:E731
+        denom = lambda k: n - k
     else:
-        denom = lambda k: n  # noqa:E731
+        denom = lambda k: n
     if X.ndim > 1 and X.shape[1] != 1:  # pragma: no cover
         raise ValueError("expecting a vector to estimate AR parameters")
 
@@ -1926,6 +1926,7 @@ class RegressionResults(base.LikelihoodModelResults):
         """
 
         # See mailing list discussion October 17,
+        # TODO: link?  or at least year?
 
         if large_sample:
             return self.compare_lm_test(restricted, use_lr=True)
@@ -1978,6 +1979,8 @@ class RegressionResults(base.LikelihoodModelResults):
         adjust_df = covtype.set_df_adjustment(kwds, cov_type)
         res.cov_kwds['adjust_df'] = adjust_df
 
+        n_groups = None  # this isn't set upstream
+
         # verify and set kwds, and calculate cov
         # TODO: this should be outsourced in a function so we can reuse it in
         #       other models
@@ -1989,16 +1992,7 @@ class RegressionResults(base.LikelihoodModelResults):
             res.cov_kwds['scale'] = scale = kwds.get('scale', 1.)
             res.cov_params_default = scale * res.normalized_cov_params
         elif cov_type.upper() in ('HC0', 'HC1', 'HC2', 'HC3'):
-            if kwds:  # pragma: no cover
-                raise ValueError('heteroscedasticity robust covarians '
-                                 'does not use keywords')
-            res.cov_kwds['description'] = (
-                'Standard Errors are heteroscedasticity ' +
-                'robust ' + '(' + cov_type + ')')
-            # TODO cannot access cov without calling se first
-            getattr(self, cov_type.upper() + '_se')
-            res.cov_params_default = getattr(self, 'cov_' + cov_type.upper())
-
+            covtype.robust_stderrs(self, res, kwds, cov_type)
         elif cov_type.lower() == 'hac':
             n_groups = covtype.hac_stderrs(self, res, kwds)
         elif cov_type.lower() == 'cluster':

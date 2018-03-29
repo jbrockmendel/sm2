@@ -8,6 +8,7 @@ Author: Chad Fulton
 License: Simplified-BSD
 """
 cimport cython
+from cython cimport Py_ssize_t
 
 import numpy as np
 cimport numpy as cnp
@@ -32,8 +33,10 @@ def {{prefix}}hamilton_filter(int nobs, int k_regimes, int order,
                               {{cython_type}}[:] joint_likelihoods,
                               {{cython_type}}[:, :] predicted_joint_probabilities,
                               {{cython_type}}[:, :] filtered_joint_probabilities):
-    cdef int t, i, j, k, ix, regime_transition_t = 0, time_varying_regime_transition
     cdef:
+        Py_ssize_t t, i, j, ix
+        bint time_varying_regime_transition
+        int regime_transition_t = 0
         int k_regimes_order_m1 = k_regimes**(order - 1)
         int k_regimes_order = k_regimes**order
         int k_regimes_order_p1 = k_regimes**(order + 1)
@@ -41,6 +44,7 @@ def {{prefix}}hamilton_filter(int nobs, int k_regimes, int order,
 
     time_varying_regime_transition = regime_transition.shape[2] > 1
     weighted_likelihoods = np.zeros(k_regimes_order_p1, dtype={{dtype}})
+    # TODO: Use PyArrayZeros?
     tmp_filtered_marginalized_probabilities = np.zeros(k_regimes_order, dtype={{dtype}})
 
     for t in range(nobs):
@@ -78,8 +82,8 @@ cdef {{prefix}}hamilton_filter_iteration(int t, int k_regimes, int order,
                               {{cython_type}}[:] curr_predicted_joint_probabilities,
                               {{cython_type}}[:] prev_filtered_joint_probabilities,
                               {{cython_type}}[:] curr_filtered_joint_probabilities):
-    cdef int i, j, k, ix
     cdef:
+        Py_ssize_t i, j, k, ix
         int k_regimes_order_m1 = k_regimes**(order - 1)
         int k_regimes_order = k_regimes**order
         int k_regimes_order_p1 = k_regimes**(order + 1)
@@ -98,9 +102,8 @@ cdef {{prefix}}hamilton_filter_iteration(int t, int k_regimes, int order,
     # Compute weighted likelihoods f(y_t | S_t, S_{t-1}, ..., S_{t-r}, t-1) * Pr[S_t, S_{t-1}, ..., S_{t-r} | t-1]
     # and the joint likelihood f(y_t | t-1)
     for i in range(k_regimes_order_p1):
-        weighted_likelihoods[i] = (
-            curr_predicted_joint_probabilities[i] *
-            conditional_likelihoods[i])
+        weighted_likelihoods[i] = (curr_predicted_joint_probabilities[i] *
+                                   conditional_likelihoods[i])
         joint_likelihoods[t] = joint_likelihoods[t] + weighted_likelihoods[i]
 
     # Compute filtered joint probabilities

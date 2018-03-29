@@ -91,7 +91,8 @@ class TestAROLSConstant(CheckARMixin):
                             self.res2.FVOLSn200start200,
                             DECIMAL_4)
         #assert_almost_equal(model.predict(params, n=200, start=-109),
-        #        self.res2.FVOLSn200startneg109, DECIMAL_4)
+        #                    self.res2.FVOLSn200startneg109,
+        #                    DECIMAL_4)
         assert_almost_equal(model.predict(params, start=308, end=424),
                             self.res2.FVOLSn100start325,
                             DECIMAL_4)
@@ -111,7 +112,7 @@ class TestAROLSConstant(CheckARMixin):
 
 @pytest.mark.not_vetted
 class TestAROLSNoConstant(CheckARMixin):
-    """f
+    """
     Test AR fit by OLS without a constant.
     """
     @classmethod
@@ -281,7 +282,7 @@ class TestAutolagAR(object):
         for lag in range(1, 16 + 1):
             endog_tmp = endog[16 - lag:]
             r = AR(endog_tmp).fit(maxlag=lag)
-            # See issue #324 for why we're doing these corrections vs. R
+            # See issue GH#324 for why we're doing these corrections vs. R
             # results
             k_ar = r.k_ar
             k_trend = r.k_trend
@@ -306,10 +307,13 @@ class TestAutolagAR(object):
         cls.res2 = results_ar.ARLagResults("const").ic
 
     def test_ic(self):
-        assert_almost_equal(self.res1, self.res2, DECIMAL_6)
+        assert_almost_equal(self.res1,
+                            self.res2,
+                            DECIMAL_6)
 
 
 @pytest.mark.not_vetted
+@pytest.mark.smoke
 def test_ar_dates():
     # just make sure they work
     data = datasets.sunspots.load()
@@ -325,6 +329,7 @@ def test_ar_dates():
 
 @pytest.mark.not_vetted
 def test_ar_named_series():
+    # TODO: GH reference?
     dates = pd.PeriodIndex(start="2011-1", periods=72, freq='M')
     y = pd.Series(np.random.randn(72), name="foobar", index=dates)
     results = AR(y).fit(2)
@@ -353,31 +358,6 @@ def test_ar_series():
     ar.bse
 
 
-def test_ar_select_order():
-    # GH#2118
-    np.random.seed(12345)
-    y = arma_generate_sample([1, -.75, .3], [1], 100)
-    ts = pd.Series(y, index=pd.DatetimeIndex(start='1/1/1990', periods=100,
-                                             freq='M'))
-    ar = AR(ts)
-    res = ar.select_order(maxlag=12, ic='aic')
-    assert res == 2
-
-
-@pytest.mark.not_vetted
-def test_ar_select_order_tstat():
-    # GH#2658
-    rs = np.random.RandomState(123)
-    tau = 25
-    y = rs.randn(tau)
-    ts = pd.Series(y, index=pd.DatetimeIndex(start='1/1/1990', periods=tau,
-                                             freq='M'))
-
-    ar = AR(ts)
-    res = ar.select_order(maxlag=5, ic='t-stat')
-    assert res == 0
-
-
 # class TestARMLEConstant(CheckAR):
 
 # TODO: likelihood for ARX model?
@@ -396,3 +376,26 @@ def test_ar_select_order_tstat():
 
 # --------------------------------------------------------------------
 # Issue-Specific Regression Tests
+
+def test_ar_select_order():
+    # GH#2118
+    np.random.seed(12345)
+    y = arma_generate_sample([1, -.75, .3], [1], 100)
+    ts = pd.Series(y, index=pd.DatetimeIndex(start='1/1/1990', periods=100,
+                                             freq='M'))
+    ar = AR(ts)
+    res = ar.select_order(maxlag=12, ic='aic')
+    assert res == 2
+
+
+def test_ar_select_order_tstat():
+    # GH#2658
+    rs = np.random.RandomState(123)
+    tau = 25
+    y = rs.randn(tau)
+    ts = pd.Series(y, index=pd.DatetimeIndex(start='1/1/1990', periods=tau,
+                                             freq='M'))
+
+    ar = AR(ts)
+    res = ar.select_order(maxlag=5, ic='t-stat')
+    assert res == 0

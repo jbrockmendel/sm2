@@ -59,7 +59,7 @@ class Family(object):
         #  <sm2.family.links.Power object at 0x9a4236c>]
         # for Poisson...
         self._link = link
-        if not isinstance(link, _links.Link):
+        if not isinstance(link, _links.Link):  # pragma: no cover
             raise TypeError("The input should be a valid Link object.")
         if hasattr(self, "links"):
             validlink = max([isinstance(link, _) for _ in self.links])
@@ -279,7 +279,7 @@ class Family(object):
         both ``loglike(endog, endog)`` and ``loglike(endog, mu)`` to get the
         log-likelihood ratio.
         """
-        raise NotImplementedError
+        raise NotImplementedError  # pragma: no cover
 
     def loglike(self, endog, mu, var_weights=1., freq_weights=1., scale=1.):
         r"""
@@ -353,11 +353,11 @@ class Family(object):
         The transformation :math:`A(y)` makes the residuals more normal
         distributed.
         """
-        raise NotImplementedError
+        raise NotImplementedError  # pragma: no cover
 
     def _clean(self, x):
         """
-        Helper function to trim the data so that it is in (0,inf)
+        Helper function to trim the data so that it is in (0, inf)
 
         Notes
         -----
@@ -366,6 +366,7 @@ class Family(object):
         domain.
         """
         return np.clip(x, FLOAT_EPS, np.inf)
+        # TODO: Does this need to be a method?
 
 
 class Poisson(Family):
@@ -395,7 +396,7 @@ class Poisson(Family):
     links = [_links.log, _links.identity, _links.sqrt]
     variance = varfuncs.mu
     valid = [0, np.inf]
-    safe_links = [_links.Log, ]
+    safe_links = [_links.Log]
 
     def __init__(self, link=None):
         if link is None:
@@ -663,7 +664,7 @@ class Gamma(Family):
     """
     links = [_links.log, _links.identity, _links.inverse_power]
     variance = varfuncs.mu_squared
-    safe_links = [_links.Log, ]
+    safe_links = [_links.Log]
 
     def __init__(self, link=None):
         if link is None:
@@ -1031,7 +1032,7 @@ class InverseGaussian(Family):
     links = [_links.inverse_squared, _links.inverse_power,
              _links.identity, _links.log]
     variance = varfuncs.mu_cubed
-    safe_links = [_links.inverse_squared, _links.Log, ]
+    safe_links = [_links.inverse_squared, _links.Log]
 
     def __init__(self, link=None):
         if link is None:
@@ -1178,7 +1179,7 @@ class NegativeBinomial(Family):
     # TODO: add the ability to use the power links with an if test
     # similar to below
     variance = varfuncs.nbinom
-    safe_links = [_links.Log, ]
+    safe_links = [_links.Log]
 
     def __init__(self, link=None, alpha=1.):
         self.alpha = 1. * alpha  # make it at least float

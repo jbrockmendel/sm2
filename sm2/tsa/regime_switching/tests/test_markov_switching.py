@@ -15,6 +15,7 @@ from sm2.tools.numdiff import approx_fprime_cs
 from sm2.tsa.regime_switching import markov_switching
 
 
+@pytest.mark.not_vetted
 def test_params():
     def check_transtion_2(params):
         assert_equal(params['regime_transition'], np.s_[0:2])
@@ -73,6 +74,7 @@ def test_params():
         params[('exog', 0, 1)]
 
 
+@pytest.mark.not_vetted
 def test_init_endog():
     index = pd.date_range(start='1950-01-01', periods=10, freq='D')
     endog = [
@@ -99,6 +101,7 @@ def test_init_endog():
         markov_switching.MarkovSwitching(endog, k_regimes=2)
 
 
+@pytest.mark.not_vetted
 def test_init_exog_tvtp():
     endog = np.ones(10)
     exog_tvtp = np.c_[np.ones((10, 1)), (np.arange(10) + 1)[:, np.newaxis]]
@@ -115,6 +118,7 @@ def test_init_exog_tvtp():
                                          exog_tvtp=exog_tvtp)
 
 
+@pytest.mark.not_vetted
 def test_transition_matrix():
     # k_regimes = 2
     endog = np.ones(10)
@@ -188,6 +192,7 @@ def test_transition_matrix():
                     transition_matrix[:, 0, :], atol=1e-10)
 
 
+@pytest.mark.not_vetted
 def test_initial_probabilities():
     endog = np.ones(10)
     mod = markov_switching.MarkovSwitching(endog, k_regimes=2)
@@ -216,6 +221,7 @@ def test_initial_probabilities():
         mod.initialize_steady_state()
 
 
+@pytest.mark.not_vetted
 def test_logistic():
     logistic = markov_switching._logistic
 
@@ -264,6 +270,7 @@ def test_logistic():
         assert_allclose(actual[:, j, :], logistic(case[:, j, :]))
 
 
+@pytest.mark.not_vetted
 def test_partials_logistic():
     # Here we compare to analytic derivatives and to finite-difference
     # approximations

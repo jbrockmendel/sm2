@@ -144,7 +144,7 @@ def categorical(data, col=None, dictnames=False, drop=False, ):
         if col is None:
             try:
                 col = data.dtype.names[0]
-            except:
+            except (AttributeError, TypeError, IndexError):
                 col = 'var'
         # TODO: the above needs to be made robust because there could be many
         # var_yes, var_no varaibles for instance.

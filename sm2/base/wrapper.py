@@ -5,6 +5,7 @@ import functools
 from six.moves import reduce
 
 
+# TODO: Does this need to be part of ResultsWrapper at all?
 class SaveLoadMixin(object):
     """Mixin defining save and load methods"""
 
@@ -76,6 +77,9 @@ class SaveLoadMixin(object):
         result._data_attr_model : arrays attached to the model
             instance but not to the results instance
         """
+        if hasattr(self, '_results'):
+            return self._results.remove_data()
+
         def wipe(obj, att):
             # get to last element in attribute path
             p = att.split('.')

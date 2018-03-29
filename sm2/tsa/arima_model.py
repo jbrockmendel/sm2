@@ -24,9 +24,9 @@ from sm2.tools.numdiff import approx_hess_cs, approx_fprime_cs
 import sm2.base.wrapper as wrap
 
 from sm2.regression.linear_model import yule_walker, GLS
+from sm2.graphics.utils import create_mpl_ax
 
 from sm2.tsa.base import tsa_model
-
 from sm2.tsa.tsatools import (lagmat, add_trend,
                               _ar_transparams, _ar_invtransparams,
                               _ma_transparams, _ma_invtransparams,
@@ -35,18 +35,6 @@ from sm2.tsa.vector_ar import util
 from sm2.tsa.arima_process import arma2ma
 from sm2.tsa.ar_model import AR
 from sm2.tsa.kalmanf import KalmanFilter
-
-
-def _create_mpl_ax(ax):
-    # kludge to avoid needing import from upstream graphics.util;
-    # this does not belong here long-term
-    if ax is None:
-        import matplotlib.pyplot as plt
-        fig = plt.figure()
-        ax = fig.add_subplot(111)
-    else:
-        fig = ax.figure
-    return fig, ax
 
 
 _armax_notes = """
@@ -577,7 +565,7 @@ class ARMA(tsa_model.TimeSeriesModel):
             start_params = self._fit_start_params_hr(order, start_ar_lags)
         else:
             # use CSS to get start params
-            func = lambda params: -self.loglike_css(params)  # noqa:E731
+            func = lambda params: -self.loglike_css(params)
             start_params = self._fit_start_params_hr(order, start_ar_lags)
             if self.transparams:
                 start_params = self._invtransparams(start_params)
@@ -675,7 +663,6 @@ class ARMA(tsa_model.TimeSeriesModel):
                              "MLE or dynamic forecast. Got %s" % start)
         # Other validation
         _check_arima_start(start, k_ar, k_diff, method, dynamic)
-
         return start, end, out_of_sample, prediction_index
 
     def geterrors(self, params):
@@ -690,7 +677,6 @@ class ARMA(tsa_model.TimeSeriesModel):
             3 item iterable, with the number of AR, MA, and exogenous
             parameters, including the trend
         """
-
         # start, end, out_of_sample, prediction_index = (
         #     self._get_prediction_index(start, end, index))
         params = np.asarray(params)
@@ -1401,25 +1387,25 @@ class ARMAResults(tsa_model.TimeSeriesModelResults):
     # TODO: Make this actually return instead of raising?
     _ic_df_model = deprecated_alias("_ic_df_model", "df_model + 1")
 
+    @property
+    def df_model(self):
+        return self.k_exog + self.k_trend + self.k_ar + self.k_ma
+
+    @property
+    def df_resid(self):
+        return self.nobs - self.df_model
+
     def __init__(self, model, params, normalized_cov_params=None, scale=1.):
         super(ARMAResults, self).__init__(model, params, normalized_cov_params,
                                           scale)
         self.sigma2 = model.sigma2
         # TODO: make sigma2 a kwarg, dont set it in model
-        nobs = model.nobs
-        self.nobs = nobs
-        k_exog = model.k_exog
-        self.k_exog = k_exog
-        k_trend = model.k_trend
-        self.k_trend = k_trend
-        k_ar = model.k_ar
-        self.k_ar = k_ar
+        self.nobs = model.nobs
+        self.k_exog = model.k_exog
+        self.k_trend = model.k_trend
+        self.k_ar = model.k_ar
         self.n_totobs = len(model.endog)
-        k_ma = model.k_ma
-        self.k_ma = k_ma
-        df_model = k_exog + k_trend + k_ar + k_ma
-        self.df_model = df_model
-        self.df_resid = self.nobs - df_model
+        self.k_ma = model.k_ma
         self._cache = resettable_cache()  # TODO: Is this necessary?
 
     @cache_readonly
@@ -1479,7 +1465,7 @@ class ARMAResults(tsa_model.TimeSeriesModelResults):
             return np.sqrt(-1. / hess[0])
         return np.sqrt(np.diag(-np.linalg.inv(hess)))
 
-    def cov_params(self):  # add scale argument?
+    def cov_params(self):  # TODO: add scale argument?
         params = self.params
         hess = self.model.hessian(params)
         return -np.linalg.inv(hess)
@@ -1703,7 +1689,7 @@ class ARMAResults(tsa_model.TimeSeriesModelResults):
     @copy_doc(_plot_predict)
     def plot_predict(self, start=None, end=None, exog=None, dynamic=False,
                      alpha=.05, plot_insample=True, ax=None):
-        fig, ax = _create_mpl_ax(ax)
+        fig, ax = create_mpl_ax(ax)
 
         # use predict so you set dates
         forecast = self.predict(start, end, exog, dynamic)
@@ -1824,7 +1810,7 @@ class ARIMAResults(ARMAResults):
     @copy_doc(_arima_plot_predict)
     def plot_predict(self, start=None, end=None, exog=None, dynamic=False,
                      alpha=.05, plot_insample=True, ax=None):
-        fig, ax = _create_mpl_ax(ax)
+        fig, ax = create_mpl_ax(ax)
 
         # use predict so you set dates
         forecast = self.predict(start, end, exog, 'levels', dynamic)

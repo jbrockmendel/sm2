@@ -69,9 +69,9 @@ def hpfilter(X, lamb=1600):
 
     See Also
     --------
-    statsmodels.tsa.filters.bk_filter.bkfilter
-    statsmodels.tsa.filters.cf_filter.cffilter
-    statsmodels.tsa.seasonal.seasonal_decompose
+    sm2.tsa.filters.bk_filter.bkfilter
+    sm2.tsa.filters.cf_filter.cffilter
+    sm2.tsa.seasonal.seasonal_decompose
 
     References
     ----------

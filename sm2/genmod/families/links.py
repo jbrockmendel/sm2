@@ -27,7 +27,7 @@ class Link(object):
         g(p) : array-like
             The value of the link function g(p) = z
         """
-        return NotImplementedError
+        return NotImplementedError  # pragma: no cover
 
     def inverse(self, z):
         """
@@ -44,7 +44,7 @@ class Link(object):
         g^(-1)(z) : array
             The value of the inverse of the link function g^(-1)(z) = p
         """
-        return NotImplementedError
+        return NotImplementedError  # pragma: no cover
 
     def deriv(self, p):
         """
@@ -59,7 +59,7 @@ class Link(object):
         g'(p) : array
             The value of the derivative of the link function g'(p)
         """
-        return NotImplementedError
+        return NotImplementedError  # pragma: no cover
 
     def deriv2(self, p):
         """Second derivative of the link function g''(p)
@@ -223,7 +223,7 @@ class Logit(Link):
         return (2 * p - 1) / v**2
 
 
-class logit(Logit):
+class logit(Logit):  # TODO: Is this really necessary?  Why not just alias?
     pass
 
 

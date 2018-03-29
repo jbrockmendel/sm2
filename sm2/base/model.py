@@ -592,8 +592,7 @@ class GenericLikelihoodModel(LikelihoodModel):
         """
         Fit the model using maximum likelihood.
 
-        The rest of the docstring is from
-        sm2.LikelihoodModel.fit
+        The rest of the docstring is from sm2.LikelihoodModel.fit
         """
         if start_params is None:
             if hasattr(self, 'start_params'):
@@ -634,15 +633,20 @@ class Results(object):
         the previously specified model instance
     params : array
         parameter estimates from the fit model
+    k_constr : int
+        number of constraints the model was fit with (default 0)
     """
-    def __init__(self, model, params, **kwd):
-        self.__dict__.update(kwd)
-        self.initialize(model, params, **kwd)
+    def __init__(self, model, params, k_constr=0, **kwargs):
+        self.model = model
+        self.params = params
+
+        self.k_constr = k_constr
+
+        self.__dict__.update(kwargs)
+        self.initialize(model, params, **kwargs)
         self._data_attr = []
 
-    def initialize(self, model, params, **kwd):
-        self.params = params
-        self.model = model
+    def initialize(self, model, params, **kwargs):
         if hasattr(model, 'k_constant'):
             # TODO: This attribute should _always_ exist
             self.k_constant = model.k_constant
@@ -774,7 +778,6 @@ class LikelihoodModelResults(wrap.SaveLoadMixin, Results):
     tvalues : array
         The t-values of the standard errors.
 
-
     Notes
     -----
     The covariance of params is given by scale times normalized_cov_params.
@@ -897,6 +900,15 @@ class LikelihoodModelResults(wrap.SaveLoadMixin, Results):
     # can be overwritten by instances or subclasses
     use_t = False
 
+    # TODO: WTF Why does this method exist if its going to be overwritten
+    # in __init__?
+    def normalized_cov_params(self):
+        raise NotImplementedError
+
+    @cache_readonly
+    def llf(self):
+        return self.model.loglike(self.params)
+
     def __init__(self, model, params, normalized_cov_params=None, scale=1.,
                  **kwargs):
         super(LikelihoodModelResults, self).__init__(model, params)
@@ -919,20 +931,13 @@ class LikelihoodModelResults(wrap.SaveLoadMixin, Results):
                                         use_self=True, use_t=self.use_t,
                                         **cov_kwds)
 
-    def normalized_cov_params(self):
-        raise NotImplementedError
-
-    # FIXME: use_self kwarg ignored?
     def _get_robustcov_results(self, cov_type='nonrobust', use_self=True,
                                use_t=None, **cov_kwds):
         from sm2.base.covtype import get_robustcov_results
         # TODO: we shouldn't need use_t in get_robustcov_results
-        get_robustcov_results(self, cov_type=cov_type, use_self=True,
+        get_robustcov_results(self, cov_type=cov_type, use_self=use_self,
                               use_t=use_t, **cov_kwds)
 
-    @cache_readonly
-    def llf(self):
-        return self.model.loglike(self.params)
 
     @cache_readonly
     def bse(self):
@@ -1746,7 +1751,7 @@ class ResultMixin(object):
                                   "Also all it does is `pass`.")
 
 
-# TODO: _none_ of this is covered in any tests (summary.__doc__ is copied)
+# TODO: _none_ of this is covered in any tests
 class GenericLikelihoodModelResults(LikelihoodModelResults, ResultMixin):
     """
     A results class for the discrete dependent variable models.
@@ -1808,16 +1813,13 @@ class GenericLikelihoodModelResults(LikelihoodModelResults, ResultMixin):
             self.df_model = model.df_model
         else:
             self.df_model = len(mlefit.params)
-            # retrofitting the model, used in t_test TODO: check design
-            self.model.df_model = self.df_model
+            # Unlike upstream, we do NOT set model.df_model
 
         if hasattr(model, 'df_resid'):
             self.df_resid = model.df_resid
         else:
             self.df_resid = self.nobs - self.df_model
-            # retrofitting the model, used in t_test TODO: check design
-            self.model.df_resid = self.df_resid
-            # FIXME: dont alter model in-place
+            # Unlike upstream, we do NOT set model.df_model
 
         self._cache = resettable_cache()
         self.__dict__.update(mlefit.__dict__)

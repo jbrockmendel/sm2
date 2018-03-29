@@ -280,7 +280,7 @@ class SimpleTable(list):
             else:
                 try:
                     row.insert_stub(loc, next(stubs))
-                except StopIteration:
+                except StopIteration:  # pragma: no cover
                     raise ValueError('length of stubs must match table length')
 
     def _data2rows(self, raw_data):
@@ -352,7 +352,7 @@ class SimpleTable(list):
         # first get the default formatting
         try:
             fmt = self.output_formats[output_format].copy()
-        except KeyError:
+        except KeyError:  # pragma: no cover
             raise ValueError('Unknown format: %s' % output_format)
         # then, add formatting specific to this call
         fmt.update(fmt_dict)
@@ -554,7 +554,7 @@ class Row(list):
         # first get the default formatting
         try:
             fmt = default_fmts[output_format].copy()
-        except KeyError:
+        except KeyError:  # pragma: no cover
             raise ValueError('Unknown format: %s' % output_format)
         # second get table specific formatting (if possible)
         try:
@@ -621,7 +621,7 @@ class Row(list):
                                                  dec_below[:addon])
             elif output_format == 'latex':
                 result = row_as_string + "\n" + dec_below
-            else:
+            else:  # pragma: no cover
                 raise ValueError("I can't decorate a %s header." %
                                  output_format)
         return result
@@ -659,7 +659,7 @@ class Cell(object):
         # first get the default formatting
         try:
             fmt = default_fmts[output_format].copy()
-        except KeyError:
+        except KeyError:  # pragma: no cover
             raise ValueError('Unknown format: %s' % output_format)
         # then get any table specific formtting
         try:
@@ -688,7 +688,7 @@ class Cell(object):
         elif datatype in fmt:
             label_align = '%s_align' % datatype
             align = fmt.get(label_align, 'c')
-        else:
+        else:  # pragma: no cover
             raise ValueError('Unknown cell datatype: %s' % datatype)
         return align
 
@@ -727,7 +727,7 @@ class Cell(object):
                 content = dfmt % (data,)
             except TypeError:  # dfmt is not a substitution string
                 content = dfmt
-        else:
+        else:  # pragma: no cover
             raise ValueError('Unknown cell datatype: %s' % datatype)
         align = self.alignment(output_format, **fmt)
         return pad(content, width, align)
@@ -902,6 +902,6 @@ def get_output_format(output_format):
     if output_format not in ('html', 'txt', 'latex', 'csv'):
         try:
             output_format = output_format_translations[output_format]
-        except KeyError:
+        except KeyError:  # pragma: no cover
             raise ValueError('unknown output format %s' % output_format)
     return output_format

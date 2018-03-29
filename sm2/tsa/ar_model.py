@@ -685,6 +685,15 @@ class ARResults(tsa_model.TimeSeriesModelResults):
     """
     _cache = {}  # for scale setter
 
+    @property
+    def df_model(self):
+        # TODO: cmle vs mle?
+        return self.k_ar + self.k_trend
+
+    @property
+    def df_resid(self):
+        return self.n_totobs - self.df_model
+
     def __init__(self, model, params, normalized_cov_params=None, scale=1.):
         super(ARResults, self).__init__(model, params, normalized_cov_params,
                                         scale)
@@ -702,9 +711,6 @@ class ARResults(tsa_model.TimeSeriesModelResults):
         if k_trend > 0:
             trendorder = k_trend - 1
         self.trendorder = trendorder
-        # TODO: cmle vs mle?
-        self.df_model = k_ar + k_trend
-        self.df_resid = n_totobs - self.df_model
 
     @cache_writable()
     def sigma2(self):
@@ -737,11 +743,11 @@ class ARResults(tsa_model.TimeSeriesModelResults):
     def aic(self):
         # JP: this is based on loglike with dropped constant terms ?
         # Lutkepohl
-        #return np.log(self.sigma2) + 1./self.model.nobs * self.k_ar
+        # return np.log(self.sigma2) + 1./self.model.nobs * self.k_ar
         # Include constant as estimated free parameter and double the loss
         return np.log(self.sigma2) + 2 * (1 + self.df_model) / self.nobs
         # Stata defintion
-        #return -2 * self.llf/self.nobs + 2 * (self.k_ar+self.k_trend)/self.nobs
+        # return -2 * self.llf/nobs + 2 * (self.k_ar+self.k_trend)/nobs
 
     @cache_readonly
     def hqic(self):
@@ -752,7 +758,7 @@ class ARResults(tsa_model.TimeSeriesModelResults):
         return (np.log(self.sigma2) + 2 * np.log(np.log(nobs)) / nobs *
                 (1 + self.df_model))
         # Stata
-        #return -2 * self.llf/nobs + 2 * np.log(np.log(nobs))/nobs * \
+        # return -2 * self.llf/nobs + 2 * np.log(np.log(nobs))/nobs * \
         #        (self.k_ar + self.k_trend)
 
     @cache_readonly

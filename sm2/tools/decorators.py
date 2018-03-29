@@ -1,5 +1,4 @@
 from __future__ import print_function
-
 import warnings
 
 from sm2.tools.sm_exceptions import CacheWriteWarning
@@ -70,7 +69,7 @@ def copy_doc(docstring):
 
 class ResettableCache(dict):
     """
-    Dictionary whose elements mey depend one from another.
+    Dictionary whose elements may depend one from another.
 
     If entry `B` depends on entry `A`, changing the values of entry `A` will
     reset the value of entry `B` to a default (None); deleteing entry `A` will

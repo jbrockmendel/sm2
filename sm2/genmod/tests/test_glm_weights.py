@@ -127,13 +127,17 @@ class CheckWeight(object):
             return None  # use SkipError instead
         resid_all = dict(zip(res2.resids_colnames, res2.resids.T))
 
-        assert_allclose(res1.resid_response, resid_all['resid_response'],
+        assert_allclose(res1.resid_response,
+                        resid_all['resid_response'],
                         atol=1e-6, rtol=2e-6)
-        assert_allclose(res1.resid_pearson, resid_all['resid_pearson'],
+        assert_allclose(res1.resid_pearson,
+                        resid_all['resid_pearson'],
                         atol=1e-6, rtol=2e-6)
-        assert_allclose(res1.resid_deviance, resid_all['resid_deviance'],
+        assert_allclose(res1.resid_deviance,
+                        resid_all['resid_deviance'],
                         atol=1e-6, rtol=2e-6)
-        assert_allclose(res1.resid_working, resid_all['resid_working'],
+        assert_allclose(res1.resid_working,
+                        resid_all['resid_working'],
                         atol=1e-6, rtol=2e-6)
         if resid_all.get('resid_anscombe') is None:
             return None
@@ -178,26 +182,28 @@ class CheckWeight(object):
 @pytest.mark.not_vetted
 class TestGlmPoissonPlain(CheckWeight):
     res2 = res_stata.results_poisson_none_nonrobust
+    mod_kwargs = {"family": sm.families.Poisson()}
 
     @classmethod
     def setup_class(cls):
         model = GLM(cpunish_data.endog, cpunish_data.exog,
-                    family=sm.families.Poisson())
+                    **cls.mod_kwargs)
         cls.res1 = model.fit()
 
 
 @pytest.mark.not_vetted
 class TestGlmPoissonFwNr(CheckWeight):
     res2 = res_stata.results_poisson_fweight_nonrobust
+    mod_kwargs = {
+        "family": sm.families.Poisson(),
+        "freq_weights": np.array([1, 1, 1, 2, 2, 2, 3, 3,
+                                  3, 1, 1, 1, 2, 2, 2, 3, 3])
+    }
 
     @classmethod
     def setup_class(cls):
-        fweights = [1, 1, 1, 2, 2, 2, 3, 3, 3, 1, 1, 1, 2, 2, 2, 3, 3]
-        fweights = np.array(fweights)
-
         model = GLM(cpunish_data.endog, cpunish_data.exog,
-                    family=sm.families.Poisson(),
-                    freq_weights=fweights)
+                    **cls.mod_kwargs)
         cls.res1 = model.fit()
 
 
@@ -242,11 +248,11 @@ class TestGlmPoissonPwNr(CheckWeight):
                        family=sm.families.Poisson(),
                        freq_weights=fweights).fit(cov_type='HC1')
 
-    @pytest.mark.xfail(reason='Known to fail')  # TODO: Find a reason...
+    @pytest.mark.xfail(reason='prob_weights not yet implemented GH#4397')
     def test_bse(self):
         super(TestGlmPoissonPwNr, self).test_bse(self)
 
-    @pytest.mark.xfail(reason='Known to fail')  # TODO: find a reason
+    @pytest.mark.xfail(reason='prob_weights not yet implemented GH#4397')
     def test_compare_optimizers(self):
         super(TestGlmPoissonPwNr, self).test_compare_optimizers(self)
 
@@ -266,7 +272,7 @@ class TestGlmPoissonFwHC(CheckWeight):
         cls.corr_fact = np.sqrt((wsum - 1.) / wsum)
         model = GLM(cpunish_data.endog, cpunish_data.exog,
                     family=sm.families.Poisson(), freq_weights=fweights)
-        cls.res1 = model.fit(cov_type='HC0')  #,cov_kwds={'use_correction':False})
+        cls.res1 = model.fit(cov_type='HC0')
 
 
 # var_weights (aweights fail with HC, not properly implemented yet
@@ -290,7 +296,7 @@ class TestGlmPoissonAwHC(CheckWeight):
         cls.corr_fact = np.sqrt((wsum - 1.) / wsum) * 0.98518473599905609
         model = GLM(cpunish_data.endog, cpunish_data.exog,
                     family=sm.families.Poisson(), var_weights=aweights)
-        cls.res1 = model.fit(cov_type='HC0')  #, cov_kwds={'use_correction':False})
+        cls.res1 = model.fit(cov_type='HC0')
 
 
 @pytest.mark.not_vetted
@@ -310,7 +316,7 @@ class TestGlmPoissonFwClu(CheckWeight):
         n_groups = len(np.unique(gid))
 
         # no wnobs yet in sandwich covariance calcualtion
-        cls.corr_fact = 1 / np.sqrt(n_groups / (n_groups - 1))  #np.sqrt((wsum - 1.) / wsum)
+        cls.corr_fact = 1 / np.sqrt(n_groups / (n_groups - 1))
         cov_kwds = {'groups': gid, 'use_correction': False}
         model = GLM(cpunish_data.endog, cpunish_data.exog,
                     family=sm.families.Poisson(), freq_weights=fweights)
@@ -657,6 +663,46 @@ class TestBinomial0RepeatedvsDuplicated(CheckWeight):
 
 
 @pytest.mark.not_vetted
+class TestBinomialVsVarWeights(CheckWeight):
+    @classmethod
+    def setup_class(cls):
+        data = sm.datasets.star98.load()
+        data.exog = add_constant(data.exog, prepend=False)
+        cls.res1 = GLM(data.endog, data.exog,
+                       family=sm.families.Binomial()).fit()
+        weights = data.endog.sum(axis=1)
+        endog2 = data.endog[:, 0] / weights
+        cls.res2 = GLM(endog2, data.exog,
+                       family=sm.families.Binomial(),
+                       var_weights=weights).fit()
+
+
+@pytest.mark.not_vetted
+class TestGlmGaussianWLS(CheckWeight):
+    @classmethod
+    def setup_class(cls):
+        data = sm.datasets.cpunish.load_pandas()
+        endog = data.endog
+        data = data.exog
+        data['EXECUTIONS'] = endog
+        data['INCOME'] /= 1000
+        aweights = np.array([1, 2, 3, 4, 5, 4, 3, 2, 1, 2, 3, 4, 5, 4, 3, 2, 1])
+        model = GLM.from_formula(
+            'EXECUTIONS ~ INCOME + SOUTH - 1',
+            data=data,
+            family=sm.families.Gaussian(link=sm.families.links.identity()),
+            var_weights=aweights)
+        wlsmodel = sm.WLS.from_formula(
+            'EXECUTIONS ~ INCOME + SOUTH - 1',
+            data=data,
+            weights=aweights)
+        cls.res1 = model.fit(rtol=1e-25, atol=1e-25)
+        cls.res2 = wlsmodel.fit()
+
+
+# --------------------------------------------------------------
+
+@pytest.mark.not_vetted
 @pytest.mark.skipif(sys.version_info < (3, 4), reason='old python')
 def test_warnings_raised():
     weights = [1, 1, 1, 2, 2, 2, 3, 3, 3, 1, 1, 1, 2, 2, 2, 3, 3]
@@ -711,44 +757,6 @@ def check_weights_as_formats(weights):
     assert isinstance(res._freq_weights, np.ndarray)
     assert isinstance(res._var_weights, np.ndarray)
     assert isinstance(res._iweights, np.ndarray)
-
-
-@pytest.mark.not_vetted
-class TestBinomialVsVarWeights(CheckWeight):
-    @classmethod
-    def setup_class(cls):
-        data = sm.datasets.star98.load()
-        data.exog = add_constant(data.exog, prepend=False)
-        cls.res1 = GLM(data.endog, data.exog,
-                       family=sm.families.Binomial()).fit()
-        weights = data.endog.sum(axis=1)
-        endog2 = data.endog[:, 0] / weights
-        cls.res2 = GLM(endog2, data.exog,
-                       family=sm.families.Binomial(),
-                       var_weights=weights).fit()
-
-
-@pytest.mark.not_vetted
-class TestGlmGaussianWLS(CheckWeight):
-    @classmethod
-    def setup_class(cls):
-        data = sm.datasets.cpunish.load_pandas()
-        endog = data.endog
-        data = data.exog
-        data['EXECUTIONS'] = endog
-        data['INCOME'] /= 1000
-        aweights = np.array([1, 2, 3, 4, 5, 4, 3, 2, 1, 2, 3, 4, 5, 4, 3, 2, 1])
-        model = GLM.from_formula(
-            'EXECUTIONS ~ INCOME + SOUTH - 1',
-            data=data,
-            family=sm.families.Gaussian(link=sm.families.links.identity()),
-            var_weights=aweights)
-        wlsmodel = sm.WLS.from_formula(
-            'EXECUTIONS ~ INCOME + SOUTH - 1',
-            data=data,
-            weights=aweights)
-        cls.res1 = model.fit(rtol=1e-25, atol=1e-25)
-        cls.res2 = wlsmodel.fit()
 
 
 @pytest.mark.not_vetted

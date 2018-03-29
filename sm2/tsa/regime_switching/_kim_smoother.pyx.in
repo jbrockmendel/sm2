@@ -8,6 +8,7 @@ Author: Chad Fulton
 License: Simplified-BSD
 """
 cimport cython
+from cython cimport Py_ssize_t
 
 import numpy as np
 cimport numpy as cnp
@@ -26,13 +27,15 @@ TYPES = {
 {{for prefix, types in TYPES.items()}}
 {{py:cython_type, dtype, typenum = types}}
 
-cpdef {{prefix}}kim_smoother(int nobs, int k_regimes, int order,
+cpdef {{prefix}}kim_smoother(Py_ssize_t nobs, int k_regimes, int order,
                              {{cython_type}}[:, :, :] regime_transition,
                              {{cython_type}}[:, :] predicted_joint_probabilities,
                              {{cython_type}}[:, :] filtered_joint_probabilities,
                              {{cython_type}}[:, :] smoothed_joint_probabilities):
-    cdef int t, i, j, k, ix, regime_transition_t = 0, time_varying_regime_transition
     cdef:
+        Py_ssize_t t
+        bint time_varying_regime_transition
+        int i, j, k, ix, regime_transition_t = 0
         int k_regimes_order_m1 = k_regimes**(order - 1)
         int k_regimes_order = k_regimes**order
         int k_regimes_order_p1 = k_regimes**(order + 1)
@@ -42,9 +45,10 @@ cpdef {{prefix}}kim_smoother(int nobs, int k_regimes, int order,
     time_varying_regime_transition = regime_transition.shape[2] > 1
     tmp_joint_probabilities = np.zeros(k_regimes_order_p2, dtype={{dtype}})
     tmp_probabilities_fraction = np.zeros(k_regimes_order_p1, dtype={{dtype}})
+    # TODO: use PyArrayZeros?
 
     # S_T, S_{T-1}, ..., S_{T-r} | T
-    smoothed_joint_probabilities[:, nobs-1] = filtered_joint_probabilities[:, nobs - 1]
+    smoothed_joint_probabilities[:, nobs - 1] = filtered_joint_probabilities[:, nobs - 1]
 
     for t in range(nobs - 2, -1, -1):
         if time_varying_regime_transition:
@@ -68,8 +72,8 @@ cdef {{prefix}}kim_smoother_iteration(int k_regimes, int order,
                              {{cython_type}}[:] filtered_joint_probabilities,
                              {{cython_type}}[:] prev_smoothed_joint_probabilities,
                              {{cython_type}}[:] next_smoothed_joint_probabilities):
-    cdef int t, i, j, k, ix
     cdef:
+        Py_ssize_t i, j, k, ix
         int k_regimes_order_m1 = k_regimes**(order - 1)
         int k_regimes_order = k_regimes**order
         int k_regimes_order_p1 = k_regimes**(order + 1)
@@ -98,9 +102,8 @@ cdef {{prefix}}kim_smoother_iteration(int k_regimes, int order,
     ix = 0
     for i in range(k_regimes_order_p1):
         for j in range(k_regimes):
-            tmp_joint_probabilities[ix] = (
-                tmp_probabilities_fraction[i] *
-                tmp_joint_probabilities[ix])
+            tmp_joint_probabilities[ix] = (tmp_probabilities_fraction[i] *
+                                           tmp_joint_probabilities[ix])
             ix = ix + 1
 
     for i in range(k_regimes_order_p1):
