@@ -10,7 +10,6 @@ from sm2.tsa.filters.api import (bkfilter, hpfilter, cffilter,
                                  convolution_filter, recursive_filter)
 
 
-@pytest.mark.not_vetted
 def test_bking1d():
     # Test Baxter King band-pass filter. Results are taken from Stata
     bking_results = np.array([
@@ -55,7 +54,6 @@ def test_bking1d():
     assert_almost_equal(Y, bking_results, 4)
 
 
-@pytest.mark.not_vetted
 def test_bking2d():
     # Test Baxter-King band-pass filter with 2d input
     bking_results = np.array([
@@ -125,7 +123,6 @@ def test_bking2d():
     assert_almost_equal(Y, bking_results, 4)
 
 
-@pytest.mark.not_vetted
 def test_hpfilter():
     # Test Hodrick-Prescott Filter. Results taken from Stata.
     hpfilt_res = np.array([
@@ -337,7 +334,6 @@ def test_hpfilter():
     assert_almost_equal(res, hpfilt_res, 6)
 
 
-@pytest.mark.not_vetted
 def test_cfitz_filter():
     # Test Christiano-Fitzgerald Filter. Results taken from R.
     # NOTE: The Stata mata code and the matlab code it's based on are wrong.
@@ -551,7 +547,6 @@ def test_cfitz_filter():
     assert_almost_equal(cyc, cfilt_res[:, 1], 8)
 
 
-@pytest.mark.not_vetted
 def test_bking_pandas():
     # 1d
     dta = macrodata.load_pandas().data
@@ -573,7 +568,6 @@ def test_bking_pandas():
     assert_equal(filtered.columns.values, ["infl", "unemp"])
 
 
-@pytest.mark.not_vetted
 def test_cfitz_pandas():
     # 1d
     dta = macrodata.load_pandas().data
@@ -595,7 +589,6 @@ def test_cfitz_pandas():
     assert_equal(cycle.columns.values, ["infl", "unemp"])
 
 
-@pytest.mark.not_vetted
 def test_hpfilter_pandas():
     dta = macrodata.load_pandas().data
     index = pd.DatetimeIndex(start='1959-01-01', end='2009-10-01', freq='Q')
@@ -608,7 +601,6 @@ def test_hpfilter_pandas():
     assert cycle.name == "realgdp"
 
 
-@pytest.mark.not_vetted
 class TestFilters(object):
     @classmethod
     def setup_class(cls):
