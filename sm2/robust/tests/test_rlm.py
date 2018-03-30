@@ -121,6 +121,7 @@ class CheckRlmResultsMixin(object):
 class TestRlm(CheckRlmResultsMixin):
     decimal_standarderrors = DECIMAL_1
     decimal_scale = DECIMAL_3
+    res2 = results_rlm.Huber()
 
     @classmethod
     def setup_class(cls):
@@ -137,9 +138,6 @@ class TestRlm(CheckRlmResultsMixin):
         cls.res1 = results
         cls.res1.h2 = h2
         cls.res1.h3 = h3
-
-    def setup(self):
-        self.res2 = results_rlm.Huber()
 
     @pytest.mark.smoke
     def test_summary(self):
