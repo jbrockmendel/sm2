@@ -14,6 +14,7 @@ DECIMAL = 4
 
 # TODO: Can replicate these tests using stackloss data and R if this
 # data is a problem
+@pytest.mark.not_vetted
 class TestChem(object):
     @classmethod
     def setup_class(cls):
@@ -54,6 +55,7 @@ class TestChem(object):
         assert_almost_equal(hh(self.chem)[1], 0.66782, DECIMAL)
 
 
+@pytest.mark.not_vetted
 class TestMad(object):
     @classmethod
     def setup_class(cls):
@@ -69,6 +71,7 @@ class TestMad(object):
         assert_equal(n.shape, (10,))
 
 
+@pytest.mark.not_vetted
 class TestMadAxes(object):
     @classmethod
     def setup_class(cls):
@@ -92,6 +95,7 @@ class TestMadAxes(object):
         assert_equal(m.shape, (40, 10))
 
 
+@pytest.mark.not_vetted
 class TestHuber(object):
     @classmethod
     def setup_class(cls):
@@ -104,6 +108,7 @@ class TestHuber(object):
         assert_equal(m.shape, (10,))
 
 
+@pytest.mark.not_vetted
 class TestHuberAxes(object):
     @classmethod
     def setup_class(cls):
