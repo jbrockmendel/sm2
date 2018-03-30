@@ -357,6 +357,7 @@ class AR(tsa_model.TimeSeriesModel):
         else:
             return self._loglike_mle(params)
 
+    # TODO: use default implementation?
     def score(self, params):
         """
         Return the gradient of the loglikelihood at params.
@@ -380,6 +381,7 @@ class AR(tsa_model.TimeSeriesModel):
         # TODO: This just passes upstream; fix it there
         raise NotImplementedError
 
+    # TODO: use default implementation?
     def hessian(self, params):
         """
         Returns numerical hessian for now.
@@ -735,6 +737,7 @@ class ARResults(tsa_model.TimeSeriesModelResults):
             hess = approx_hess(self.params, self.model.loglike)
             return np.sqrt(np.diag(-np.linalg.inv(hess)))
 
+    # TODO: use default implementation?
     @cache_readonly
     def pvalues(self):
         return stats.norm.sf(np.abs(self.tvalues)) * 2
@@ -797,10 +800,6 @@ class ARResults(tsa_model.TimeSeriesModelResults):
     def roots(self):
         k = self.k_trend
         return np.roots(np.r_[1, -self.params[k:]]) ** -1
-
-    @cache_readonly
-    def fittedvalues(self):
-        return self.model.predict(self.params)
 
     def predict(self, start=None, end=None, dynamic=False):
         params = self.params

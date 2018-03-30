@@ -579,6 +579,7 @@ class ARMA(tsa_model.TimeSeriesModel):
                 start_params = self._transparams(start_params)
         return start_params
 
+    # TODO: Can we use a base-class version?
     def score(self, params):
         """
         Compute the score function at params.
@@ -589,6 +590,7 @@ class ARMA(tsa_model.TimeSeriesModel):
         """
         return approx_fprime_cs(params, self.loglike, args=(False,))
 
+    # TODO: Can we use a base-class version?
     def hessian(self, params):
         """
         Compute the Hessian at params,
@@ -1039,6 +1041,7 @@ class ARIMA(ARMA):
             self.data._cache['row_labels'] = (
                 self.data.row_labels[orig_length - new_length:])
         if self._index is not None:
+            # TODO: This is also done in markov_autoregression, de-duplicate
             if self._index_generated:
                 self._index = self._index[:-(orig_length - new_length)]
             else:
@@ -1452,10 +1455,6 @@ class ARMAResults(tsa_model.TimeSeriesModelResults):
         k = self.k_exog + self.k_trend
         k_ar = self.k_ar
         return self.params[k + k_ar:]
-
-    @cache_readonly
-    def llf(self):
-        return self.model.loglike(self.params)
 
     @cache_readonly
     def bse(self):

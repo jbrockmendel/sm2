@@ -1534,6 +1534,7 @@ class RegressionResults(base.LikelihoodModelResults):
     def f_pvalue(self):
         return stats.f.sf(self.fvalue, self.df_model, self.df_resid)
 
+    # TODO: default implementation?
     @cache_readonly
     def bse(self):
         return np.sqrt(np.diag(self.cov_params()))

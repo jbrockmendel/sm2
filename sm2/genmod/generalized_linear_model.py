@@ -1473,6 +1473,20 @@ class GLMResults(base.LikelihoodModelResults):
                                         use_t=use_t, **cov_kwds)
             # TODO: Cant we just call the method?  maybe even do this upstream?
 
+    @copy_doc(base.LikelihoodModelResults.remove_data.__doc__)
+    def remove_data(self):
+        # GLM has alias/reference in result instance
+        self._data_attr.extend([i for i in self.model._data_attr
+                                if '_data.' not in i])
+        super(self.__class__, self).remove_data()
+
+        # TODO: what are these in results?
+        self._endog = None
+        self._freq_weights = None
+        self._var_weights = None
+        self._iweights = None
+        self._n_trials = None
+
     @cache_readonly
     def resid_response(self):
         return self._n_trials * (self._endog - self.mu)
@@ -1526,12 +1540,8 @@ class GLMResults(base.LikelihoodModelResults):
         return chisqsum
 
     @cache_readonly
-    def fittedvalues(self):
-        return self.mu
-
-    @cache_readonly
     def mu(self):
-        return self.model.predict(self.params)
+        return self.fittedvalues
 
     @cache_readonly
     def null(self):
@@ -1613,20 +1623,6 @@ class GLMResults(base.LikelihoodModelResults):
                                       link=self.model.family.link,
                                       pred_kwds=pred_kwds)
         return res
-
-    @copy_doc(base.LikelihoodModelResults.remove_data.__doc__)
-    def remove_data(self):
-        # GLM has alias/reference in result instance
-        self._data_attr.extend([i for i in self.model._data_attr
-                                if '_data.' not in i])
-        super(self.__class__, self).remove_data()
-
-        # TODO: what are these in results?
-        self._endog = None
-        self._freq_weights = None
-        self._var_weights = None
-        self._iweights = None
-        self._n_trials = None
 
     @copy_doc(_plot_added_variable_doc % {'extra_params_doc': ''})
     def plot_added_variable(self, focus_exog, resid_type=None,
