@@ -142,21 +142,20 @@ likelihood function, so that calculation is not implemented here.
 Therefore, optimization methods requiring the Hessian matrix such as
 the Newton-Raphson algorithm cannot be used for model fitting.
 """
-import warnings
 from collections import OrderedDict
+import warnings
 
 from six import string_types
 from six.moves import range
 import numpy as np
 import pandas as pd
 import patsy
-from scipy import sparse
 from scipy.stats.distributions import norm
+from scipy import sparse
 
 from sm2.tools.decorators import cache_readonly
 from sm2.tools import data as data_tools
 from sm2.tools.sm_exceptions import ConvergenceWarning
-
 import sm2.base.model as base
 from sm2.base._penalties import Penalty
 
@@ -248,6 +247,7 @@ class MixedLMParams(object):
     """
 
     def __init__(self, k_fe, k_re, k_vc):
+
         self.k_fe = k_fe
         self.k_re = k_re
         self.k_re2 = k_re * (k_re + 1) // 2
@@ -491,6 +491,7 @@ def _smw_logdet(s, A, AtA, BI, di, B_logdet):
     -------
     The log determinant of s*I + A*B*A'.
     """
+
     p = A.shape[0]
     ld = p * np.log(s)
     qmat = AtA / s
@@ -849,8 +850,8 @@ class MixedLM(base.LikelihoodModel):
                                   data=data)
         """
 
-        if "groups" not in kwargs:
-            raise AttributeError("'groups' is a required keyword argument "
+        if "groups" not in kwargs.keys():
+            raise AttributeError("'groups' is a required keyword argument " +
                                  "in MixedLM.from_formula")
         groups = kwargs["groups"]
 
@@ -936,6 +937,7 @@ class MixedLM(base.LikelihoodModel):
         mod.data.exog_re_names = exog_re_names
         mod.data.exog_re_names_full = exog_re_names_full
         mod.data.vcomp_names = mod._vc_names
+
         return mod
 
     def predict(self, params, exog=None):
@@ -1039,6 +1041,7 @@ class MixedLM(base.LikelihoodModel):
 
         http://statweb.stanford.edu/~tibs/stat315a/Supplements/fuse.pdf
         """
+
         if isinstance(method, string_types) and (method.lower() != 'l1'):
             raise ValueError("Invalid regularization method")
 
@@ -1153,6 +1156,7 @@ class MixedLM(base.LikelihoodModel):
         -------
         The GLS estimates of the fixed effects parameters.
         """
+
         if self.k_fe == 0:
             return np.array([])
 
@@ -1202,6 +1206,7 @@ class MixedLM(base.LikelihoodModel):
         covariance and square root transformed variance components),
         then P[i] = lin[i] * R + R' * quad[i] * R
         """
+
         k_fe, k_re, k_re2, k_vc = self.k_fe, self.k_re, self.k_re2, self.k_vc
         k_tot = k_fe + k_re2 + k_vc
         ix = np.tril_indices(self.k_re)
@@ -1231,9 +1236,9 @@ class MixedLM(base.LikelihoodModel):
                 if (ix1[1] == ix2[1]) and (ix1[0] <= ix2[0]):
                     ii = (ix2[0], ix1[0])
                     k = ix.index(ii)
-                    quad[k_fe + k][k_fe + i2, k_fe + i1] += 1
+                    quad[k_fe+k][k_fe+i2, k_fe+i1] += 1
         for k in range(k_tot):
-            quad[k] = 0.5 * (quad[k] + quad[k].T)
+            quad[k] = 0.5*(quad[k] + quad[k].T)
 
         # Quadratic terms for variance components.
         km = k_fe + k_re2
@@ -1323,6 +1328,7 @@ class MixedLM(base.LikelihoodModel):
         log-likelihood.  In addition, if `profile_fe` is true the
         fixed effects parameters are also profiled out.
         """
+
         if type(params) is not MixedLMParams:
             params = MixedLMParams.from_packed(params, self.k_fe,
                                                self.k_re, self.use_sqrt,
@@ -1363,6 +1369,7 @@ class MixedLM(base.LikelihoodModel):
 
         xvx, qf = 0., 0.
         for k, group in enumerate(self.group_labels):
+
             vc_var = self._expand_vcomp(vcomp, group)
             cov_aug_logdet = cov_re_logdet + np.sum(np.log(vc_var))
 
@@ -1419,6 +1426,7 @@ class MixedLM(base.LikelihoodModel):
             If not None, the generator ends when this index
             is reached.
         """
+
         axr = solver(ex_r)
 
         # Regular random effects
@@ -1428,8 +1436,8 @@ class MixedLM(base.LikelihoodModel):
                 if max_ix is not None and jj > max_ix:
                     return
                 # Need 2d
-                mat_l, mat_r = ex_r[:, j1:j1 + 1], ex_r[:, j2:j2 + 1]
-                vsl, vsr = axr[:, j1:j1 + 1], axr[:, j2:j2 + 1]
+                mat_l, mat_r = ex_r[:, j1:j1+1], ex_r[:, j2:j2+1]
+                vsl, vsr = axr[:, j1:j1+1], axr[:, j2:j2+1]
                 yield jj, mat_l, mat_r, vsl, vsr, j1 == j2
                 jj += 1
 
@@ -1453,6 +1461,7 @@ class MixedLM(base.LikelihoodModel):
         the parameterization defined by this model instance's
         `use_sqrt` attribute.
         """
+
         if type(params) is not MixedLMParams:
             params = MixedLMParams.from_packed(
                 params, self.k_fe, self.k_re, self.use_sqrt,
@@ -1516,6 +1525,7 @@ class MixedLM(base.LikelihoodModel):
         which `cov_re` is represented through its lower triangle
         (without taking the Cholesky square root).
         """
+
         fe_params = params.fe_params
         cov_re = params.cov_re
         vcomp = params.vcomp
@@ -1662,6 +1672,7 @@ class MixedLM(base.LikelihoodModel):
             The score vector with respect to variance components
             parameters.
         """
+
         score_fe, score_re, score_vc = self.score_full(params, calc_fe=calc_fe)
         params_vec = params.get_packed(use_sqrt=True, has_fe=True)
 
@@ -1697,6 +1708,7 @@ class MixedLM(base.LikelihoodModel):
         hess : 2d ndarray
             The Hessian matrix, evaluated at `params`.
         """
+
         if type(params) is not MixedLMParams:
             params = MixedLMParams.from_packed(params, self.k_fe, self.k_re,
                                                use_sqrt=self.use_sqrt,
@@ -1721,7 +1733,7 @@ class MixedLM(base.LikelihoodModel):
 
         rvir = 0.
         xtvix = 0.
-        xtax = [0.] * (self.k_re2 + self.k_vc)
+        xtax = [0., ] * (self.k_re2 + self.k_vc)
         m = self.k_re2 + self.k_vc
         B = np.zeros(m)
         D = np.zeros((m, m))
@@ -2069,7 +2081,7 @@ class MixedLM(base.LikelihoodModel):
 
 
 class MixedLMResults(base.LikelihoodModelResults, base.ResultMixin):
-    """
+    '''
     Class to contain results of fitting a linear mixed effects model.
 
     MixedLMResults inherits from sm2.LikelihoodModelResults
@@ -2102,7 +2114,7 @@ class MixedLMResults(base.LikelihoodModelResults, base.ResultMixin):
     See Also
     --------
     sm2.LikelihoodModelResults
-    """
+    '''
 
     def __init__(self, model, params, cov_params):
 
@@ -2197,7 +2209,7 @@ class MixedLMResults(base.LikelihoodModelResults, base.ResultMixin):
         try:
             cov_re_inv = np.linalg.inv(self.cov_re)
         except np.linalg.LinAlgError:
-            raise ValueError("Cannot predict random effects from "
+            raise ValueError("Cannot predict random effects from " +
                              "singular covariance structure.")
 
         vcomp = self.vcomp
@@ -2310,6 +2322,7 @@ class MixedLMResults(base.LikelihoodModelResults, base.ResultMixin):
             The available results have the same elements as the parameter table
             in `summary()`.
         """
+
         if r_matrix.shape[1] != self.k_fe:
             raise ValueError("r_matrix for t-test should have %d columns"
                              % self.k_fe)
@@ -2323,9 +2336,9 @@ class MixedLMResults(base.LikelihoodModelResults, base.ResultMixin):
 
     def summary(self, yname=None, xname_fe=None, xname_re=None,
                 title=None, alpha=.05):
-        # TODO: Possibly misnamed, should be summary2?
         raise NotImplementedError("summary not ported from upstream, "
-                                  "as it uses summary2")
+                                  "as it is a misnomer for summary2, "
+                                  "which is not supported")
 
     @cache_readonly
     def llf(self):
@@ -2520,7 +2533,7 @@ def _handle_missing(data, groups, formula, re_formula, vc_formula):
         def rlu():
             line = rl.readline()
             if isinstance(line, bytes):
-                return line.decode('ascii')
+                line = line.decode('ascii')
             return line
         g = tokenize.generate_tokens(rlu)
         for tok in g:

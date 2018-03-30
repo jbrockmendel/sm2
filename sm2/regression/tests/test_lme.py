@@ -1,19 +1,17 @@
-
+import os
 import csv
 import warnings
-import os
 
 import numpy as np
+import pandas as pd
 from numpy.testing import (assert_almost_equal, assert_equal, assert_allclose,
                            assert_)
-import pandas as pd
 import pytest
 import scipy
 
+from sm2.regression.mixed_linear_model import MixedLM, MixedLMParams
 import sm2.tools.numdiff as nd
 from sm2.base import _penalties as penalties
-from sm2.regression.mixed_linear_model import MixedLM, MixedLMParams
-
 from .results import lme_r_results
 
 # TODO: add tests with unequal group sizes
@@ -49,8 +47,10 @@ class R_Results(object):
         self.loglike = getattr(lme_r_results, "loglike" + bname)
 
         if hasattr(lme_r_results, "ranef_mean" + bname):
-            self.ranef_postmean = getattr(lme_r_results, "ranef_mean" + bname)
-            self.ranef_condvar = getattr(lme_r_results, "ranef_condvar" + bname)
+            self.ranef_postmean = getattr(lme_r_results, "ranef_mean"
+                                          + bname)
+            self.ranef_condvar = getattr(lme_r_results,
+                                         "ranef_condvar" + bname)
             self.ranef_condvar = np.atleast_2d(self.ranef_condvar)
 
         # Load the data file
@@ -88,18 +88,18 @@ def loglike_function(model, profile_fe, has_fe):
 
 class TestMixedLM(object):
 
-    # FIXME: flaky test
     # Test analytic scores and Hessian using numeric differentiation
     @pytest.mark.slow
     def test_compare_numdiff(self):
+
         n_grp = 20
         grpsize = 5
         k_fe = 3
         k_re = 2
 
-        for use_sqrt in [False, True]:
-            for reml in [False, True]:
-                for profile_fe in [False, True]:
+        for use_sqrt in False, True:
+            for reml in False, True:
+                for profile_fe in False, True:
 
                     np.random.seed(3558)
                     exog_fe = np.random.normal(size=(n_grp * grpsize, k_fe))
@@ -161,6 +161,7 @@ class TestMixedLM(object):
                         assert_allclose(hess, nhess, rtol=1e-3)
 
     def test_default_re(self):
+
         np.random.seed(3235)
         exog = np.random.normal(size=(300, 4))
         groups = np.kron(np.arange(100), [1, 1, 1])
@@ -171,6 +172,7 @@ class TestMixedLM(object):
         assert_almost_equal(mdf1.params, mdf2.params, decimal=8)
 
     def test_history(self):
+
         np.random.seed(3235)
         exog = np.random.normal(size=(300, 4))
         groups = np.kron(np.arange(100), [1, 1, 1])
@@ -180,7 +182,6 @@ class TestMixedLM(object):
         rslt = mod.fit(full_output=True)
         assert_equal(hasattr(rslt, "hist"), True)
 
-    @pytest.mark.smoke
     def test_profile_inference(self):
         # Smoke test
         np.random.seed(9814)
@@ -245,7 +246,7 @@ class TestMixedLM(object):
             exog_vc["b"][group] = exog_re[ix, 1:2]
         model2 = MixedLM(endog, exog, groups, exog_vc=exog_vc)
         result2 = model2.fit()
-        # result2.summary()  # test disabled because it is really summary2
+        # result2.summary()  # summary disabled b/c it is really summary2
 
         assert_allclose(result1.fe_params, result2.fe_params, atol=1e-4)
         assert_allclose(np.diag(result1.cov_re),
@@ -305,22 +306,18 @@ class TestMixedLM(object):
         result1 = model1.fit()
 
         # Compare to R
-        assert_allclose(result1.fe_params,
-                        [0.16527, 0.99911, 0.96217],
-                        rtol=1e-4)
-        assert_allclose(result1.cov_re,
-                        [[1.244,  0.146], [0.146, 1.371]],
-                        rtol=1e-3)
-        assert_allclose(result1.vcomp,
-                        [4.024, 3.997],
-                        rtol=1e-3)
-        assert_allclose(result1.bse.iloc[0:3],
-                        [0.12610, 0.03938, 0.03848],
-                        rtol=1e-3)
+        assert_allclose(result1.fe_params, [
+                        0.16527, 0.99911, 0.96217], rtol=1e-4)
+        assert_allclose(result1.cov_re, [
+                        [1.244,  0.146], [0.146, 1.371]], rtol=1e-3)
+        assert_allclose(result1.vcomp, [4.024, 3.997], rtol=1e-3)
+        assert_allclose(result1.bse.iloc[0:3], [
+                        0.12610, 0.03938, 0.03848], rtol=1e-3)
 
     @pytest.mark.skipif(old_scipy, reason='SciPy too old')
     def test_vcomp_3(self):
         # Test a model with vcomp but no other random effects, using formulas.
+
         np.random.seed(4279)
         x1 = np.random.normal(size=400)
         groups = np.kron(np.arange(100), np.ones(4))
@@ -334,7 +331,7 @@ class TestMixedLM(object):
                                      vc_formula=vc_fml,
                                      data=df)
         result = model.fit()
-        # result.summary()  # disabled becasue it is really summary2
+        # result.summary()  # summary disabled b/c it is really summary2
 
         assert_allclose(result.resid.iloc[0:4],
                         np.r_[-1.180753, 0.279966, 0.578576, -0.667916],
@@ -345,6 +342,7 @@ class TestMixedLM(object):
 
     @pytest.mark.skipif(old_scipy, reason='SciPy too old')
     def test_sparse(self):
+
         cur_dir = os.path.dirname(os.path.abspath(__file__))
         rdir = os.path.join(cur_dir, 'results')
         fname = os.path.join(rdir, 'pastes.csv')
@@ -386,14 +384,10 @@ class TestMixedLM(object):
         result = model.fit()
 
         # fixef(rm)
-        assert_allclose(result.fe_params,
-                        np.r_[15.723523, 6.942505],
-                        rtol=1e-5)
+        assert_allclose(result.fe_params, np.r_[15.723523, 6.942505], rtol=1e-5)
 
         # sqrt(diag(vcov(rm)))
-        assert_allclose(result.bse[0:2],
-                        np.r_[0.78805374, 0.03338727],
-                        rtol=1e-5)
+        assert_allclose(result.bse[0:2], np.r_[0.78805374, 0.03338727], rtol=1e-5)
 
         # attr(VarCorr(rm), "sc")^2
         assert_allclose(result.scale, 11.36692, rtol=1e-5)
@@ -402,9 +396,7 @@ class TestMixedLM(object):
         assert_allclose(result.cov_re, 40.39395, rtol=1e-5)
 
         # logLik(rm)
-        assert_allclose(model.loglike(result.params_object),
-                        -2404.775,
-                        rtol=1e-5)
+        assert_allclose(model.loglike(result.params_object), -2404.775, rtol=1e-5)
 
         # ML
         data = pd.read_csv(fname)
@@ -413,14 +405,10 @@ class TestMixedLM(object):
         result = model.fit(reml=False)
 
         # fixef(rm)
-        assert_allclose(result.fe_params,
-                        np.r_[15.723517, 6.942506],
-                        rtol=1e-5)
+        assert_allclose(result.fe_params, np.r_[15.723517, 6.942506], rtol=1e-5)
 
         # sqrt(diag(vcov(rm)))
-        assert_allclose(result.bse[0:2],
-                        np.r_[0.7829397, 0.0333661],
-                        rtol=1e-5)
+        assert_allclose(result.bse[0:2], np.r_[0.7829397, 0.0333661], rtol=1e-5)
 
         # attr(VarCorr(rm), "sc")^2
         assert_allclose(result.scale, 11.35251, rtol=1e-5)
@@ -429,9 +417,8 @@ class TestMixedLM(object):
         assert_allclose(result.cov_re, 39.82097, rtol=1e-5)
 
         # logLik(rm)
-        assert_allclose(model.loglike(result.params_object),
-                        -2402.932,
-                        rtol=1e-5)
+        assert_allclose(model.loglike(result.params_object), -2402.932, rtol=1e-5)
+
 
     def test_dietox_slopes(self):
         # dietox data from geepack using random intercepts
@@ -453,14 +440,10 @@ class TestMixedLM(object):
         result = model.fit(method='powell')
 
         # fixef(r)
-        assert_allclose(result.fe_params,
-                        np.r_[15.738650, 6.939014],
-                        rtol=1e-5)
+        assert_allclose(result.fe_params, np.r_[15.738650, 6.939014], rtol=1e-5)
 
         # sqrt(diag(vcov(r)))
-        assert_allclose(result.bse[0:2],
-                        np.r_[0.5501253, 0.0798254],
-                        rtol=1e-3)
+        assert_allclose(result.bse[0:2], np.r_[0.5501253, 0.0798254], rtol=1e-3)
 
         # attr(VarCorr(r), "sc")^2
         assert_allclose(result.scale, 6.03745, rtol=1e-3)
@@ -471,9 +454,7 @@ class TestMixedLM(object):
                         rtol=1e-1)
 
         # logLik(r)
-        assert_allclose(model.loglike(result.params_object),
-                        -2217.047,
-                        rtol=1e-5)
+        assert_allclose(model.loglike(result.params_object), -2217.047, rtol=1e-5)
 
         # ML
         data = pd.read_csv(fname)
@@ -482,27 +463,21 @@ class TestMixedLM(object):
         result = model.fit(method='powell', reml=False)
 
         # fixef(r)
-        assert_allclose(result.fe_params,
-                        np.r_[15.73863, 6.93902],
-                        rtol=1e-5)
+        assert_allclose(result.fe_params, np.r_[15.73863, 6.93902], rtol=1e-5)
 
         # sqrt(diag(vcov(r)))
-        assert_allclose(result.bse[0:2],
-                        np.r_[0.54629282, 0.07926954],
-                        rtol=1e-3)
+        assert_allclose(result.bse[0:2], np.r_[0.54629282, 0.07926954], rtol=1e-3)
 
         # attr(VarCorr(r), "sc")^2
         assert_allclose(result.scale, 6.037441, rtol=1e-3)
 
         #  as.numeric(VarCorr(r)[[1]])
         assert_allclose(result.cov_re.values.ravel(),
-                        np.r_[19.190922, 0.293568, 0.293568, 0.409695],
-                        rtol=1e-2)
+                        np.r_[19.190922, 0.293568, 0.293568, 0.409695], rtol=1e-2)
 
         # logLik(r)
-        assert_allclose(model.loglike(result.params_object),
-                        -2215.753,
-                        rtol=1e-5)
+        assert_allclose(model.loglike(result.params_object), -2215.753, rtol=1e-5)
+
 
     def test_pastes_vcomp(self):
         # pastes data from lme4
@@ -580,6 +555,7 @@ class TestMixedLM(object):
         assert_allclose(result.bic, 264.3718, rtol=1e-3)
 
     def test_vcomp_formula(self):
+
         np.random.seed(6241)
         n = 800
         exog = np.random.normal(size=(n, 2))
@@ -679,7 +655,7 @@ class TestMixedLM(object):
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
             rslt4 = mod4.fit()
-        from statsmodels.formula.api import mixedlm
+        from sm2.formula.api import mixedlm
         mod5 = mixedlm(fml, df, groups="groups")
         assert_(mod5.data.exog_re_names == ["groups"])
         assert_(mod5.data.exog_re_names_full == ["groups Var"])
@@ -690,6 +666,7 @@ class TestMixedLM(object):
 
     @pytest.mark.skipif(old_scipy, reason='SciPy too old')
     def test_regularized(self):
+
         np.random.seed(3453)
         exog = np.random.normal(size=(400, 5))
         groups = np.kron(np.arange(100), np.ones(4))
@@ -701,35 +678,36 @@ class TestMixedLM(object):
         # L1 regularization
         md = MixedLM(endog, exog, groups)
         mdf1 = md.fit_regularized(alpha=1.)
-        # mdf1.summary()  # disabled because it is really summary2
+        # mdf1.summary()  # summary disabled b/c it is really summary2
 
         # L1 regularization
         md = MixedLM(endog, exog, groups)
         mdf2 = md.fit_regularized(alpha=10 * np.ones(5))
-        # mdf2.summary()  # disabled because it is really summary2
+        # mdf2.summary()  # summary disabled b/c it is really summary2
 
         # L2 regularization
         pen = penalties.L2()
         mdf3 = md.fit_regularized(method=pen, alpha=0.)
-        # mdf3.summary()  # disabled because it is really summary2
+        # mdf3.summary()  # summary disabled b/c it is really summary2
 
         # L2 regularization
         pen = penalties.L2()
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
             mdf4 = md.fit_regularized(method=pen, alpha=100.)
-        # mdf4.summary()  # disabled because it is really summary2
+        # mdf4.summary()  # summary disabled b/c it is really summary2
 
         # Pseudo-Huber regularization
         pen = penalties.PseudoHuber(0.3)
         mdf5 = md.fit_regularized(method=pen, alpha=1.)
-        # mdf5.summary()  # disabled because it is really summary2
+        # mdf5.summary()  # summary disabled b/c it is really summary2
 
 
 # ------------------------------------------------------------------
 
 # TODO: better name
 def do1(reml, irf, ds_ix):
+
     # No need to check independent random effects when there is
     # only one of them.
     if irf and ds_ix < 6:
@@ -823,7 +801,7 @@ def test_mixed_lm_wrapper():
     mod2 = MixedLM.from_formula(fml, df, re_formula=re_fml,
                                 groups=groups)
     result = mod2.fit()
-    # result.summary()  # disabled because it is really summary2
+    # result.summary()  # summary disabled b/c it is really summary2
 
     xnames = ["exog0", "exog1", "exog2", "exog3"]
     re_names = ["Group", "exog_re"]
@@ -856,8 +834,8 @@ def test_mixed_lm_wrapper():
     bse_re = result.bse_re
     assert_(bse_re.index.tolist() == re_names_full)
 
-
 def test_random_effects():
+
     np.random.seed(23429)
 
     # Default model (random effects only)
