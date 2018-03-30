@@ -67,9 +67,9 @@ def bkfilter(X, low=6, high=32, K=12):
 
     See Also
     --------
-    statsmodels.tsa.filters.cf_filter.cffilter
-    statsmodels.tsa.filters.hp_filter.hpfilter
-    statsmodels.tsa.seasonal.seasonal_decompose
+    sm2.tsa.filters.cf_filter.cffilter
+    sm2.tsa.filters.hp_filter.hpfilter
+    sm2.tsa.seasonal.seasonal_decompose
     """
     # TODO: change the docstring to ..math::?
     # TODO: allow windowing functions to correct for Gibb's Phenomenon?
