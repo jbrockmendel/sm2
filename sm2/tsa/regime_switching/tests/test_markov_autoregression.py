@@ -62,6 +62,7 @@ rec = [0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
        1, 1, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0]
 
 
+@pytest.mark.not_vetted
 def test_predict():
     # AR(1) without mean, k_regimes=2
     endog = np.ones(10)
@@ -167,6 +168,7 @@ def test_predict():
     assert_allclose(mod_resid[1, 1, :], resids[1, 1, :])
 
 
+@pytest.mark.not_vetted
 def test_conditional_likelihoods():
     # AR(1) without mean, k_regimes=2, non-switching variance
     endog = np.ones(10)
@@ -364,6 +366,7 @@ hamilton_ar2_short_smoothed_joint_probabilities = np.array([
        8.99315113e-01, 7.51241236e-01]]]])
 
 
+@pytest.mark.not_vetted
 class TestHamiltonAR2Short(MarkovAutoregression):
     # This is just a set of regression tests
     @classmethod
@@ -473,6 +476,7 @@ hamilton_ar4_smoothed = [
     0.998324, 0.999939, 0.996858, 0.969209, 0.927714]
 
 
+@pytest.mark.not_vetted
 class TestHamiltonAR4(MarkovAutoregression):
     @classmethod
     def setup_class(cls):
@@ -523,6 +527,7 @@ class TestHamiltonAR4(MarkovAutoregression):
         assert_allclose(bse[6:], self.true['bse_oim'][6:], atol=1e-6)
 
 
+@pytest.mark.not_vetted
 class TestHamiltonAR2Switch(MarkovAutoregression):
     # Results from Stata, see http://www.stata.com/manuals14/tsmswitch.pdf
     @classmethod
@@ -630,6 +635,7 @@ hamilton_ar1_switch_smoothed = [
     0.812080, 0.780157]
 
 
+@pytest.mark.not_vetted
 class TestHamiltonAR1Switch(MarkovAutoregression):
     @classmethod
     def setup_class(cls):
@@ -766,6 +772,7 @@ expected_durations = [
     [710.7573, 1.000391], [710.7573, 1.000391]]
 
 
+@pytest.mark.not_vetted
 class TestHamiltonAR1SwitchTVTP(MarkovAutoregression):
     @classmethod
     def setup_class(cls):
@@ -809,6 +816,7 @@ class TestHamiltonAR1SwitchTVTP(MarkovAutoregression):
                         rtol=1e-5, atol=1e-7)
 
 
+@pytest.mark.not_vetted
 class TestFilardo(MarkovAutoregression):
     @classmethod
     def setup_class(cls):
@@ -852,6 +860,7 @@ class TestFilardo(MarkovAutoregression):
                         rtol=1e-5, atol=1e-7)
 
 
+@pytest.mark.not_vetted
 class TestFilardoPandas(MarkovAutoregression):
     @classmethod
     def setup_class(cls):

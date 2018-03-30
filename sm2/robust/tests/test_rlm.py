@@ -19,6 +19,7 @@ DECIMAL_2 = 2
 DECIMAL_1 = 1
 
 
+@pytest.mark.not_vetted
 class CheckRlmResultsMixin(object):
     """
     res2 contains  results from Rmodelwrap or were obtained from a statistical
@@ -116,15 +117,17 @@ class CheckRlmResultsMixin(object):
         assert_almost_equal(self.res1.conf_int(), conf_int)
 
 
+@pytest.mark.not_vetted
 class TestRlm(CheckRlmResultsMixin):
+    decimal_standarderrors = DECIMAL_1
+    decimal_scale = DECIMAL_3
+    res2 = results_rlm.Huber()
+
     @classmethod
     def setup_class(cls):
         from sm2.datasets.stackloss import load
         cls.data = load()  # class attributes for subclasses
         cls.data.exog = sm.add_constant(cls.data.exog, prepend=False)
-        # Test precisions
-        cls.decimal_standarderrors = DECIMAL_1
-        cls.decimal_scale = DECIMAL_3
 
         results = RLM(cls.data.endog, cls.data.exog,
                       M=norms.HuberT()).fit()   # default M
@@ -136,23 +139,22 @@ class TestRlm(CheckRlmResultsMixin):
         cls.res1.h2 = h2
         cls.res1.h3 = h3
 
-    def setup(self):
-        self.res2 = results_rlm.Huber()
-
     @pytest.mark.smoke
     def test_summary(self):
         # smoke test that summary at least returns something
         self.res1.summary()
 
 
+@pytest.mark.not_vetted
 class TestHampel(TestRlm):
+    decimal_standarderrors = DECIMAL_2
+    decimal_scale = DECIMAL_3
+    decimal_bcov_scaled = DECIMAL_3
+    res2 = results_rlm.Hampel()
+
     @classmethod
     def setup_class(cls):
         super(TestHampel, cls).setup_class()
-        # Test precisions
-        cls.decimal_standarderrors = DECIMAL_2
-        cls.decimal_scale = DECIMAL_3
-        cls.decimal_bcov_scaled = DECIMAL_3
 
         results = RLM(cls.data.endog, cls.data.exog,
                       M=norms.Hampel()).fit()
@@ -164,16 +166,16 @@ class TestHampel(TestRlm):
         cls.res1.h2 = h2
         cls.res1.h3 = h3
 
-    def setup(self):
-        self.res2 = results_rlm.Hampel()
 
 
+@pytest.mark.not_vetted
 class TestRlmBisquare(TestRlm):
+    decimal_standarderrors = DECIMAL_1
+    res2 = results_rlm.BiSquare()
+
     @classmethod
     def setup_class(cls):
         super(TestRlmBisquare, cls).setup_class()
-        # Test precisions
-        cls.decimal_standarderrors = DECIMAL_1
 
         results = RLM(cls.data.endog, cls.data.exog,
                       M=norms.TukeyBiweight()).fit()
@@ -185,12 +187,11 @@ class TestRlmBisquare(TestRlm):
         cls.res1.h2 = h2
         cls.res1.h3 = h3
 
-    def setup(self):
-        from .results.results_rlm import BiSquare
-        self.res2 = BiSquare()
 
-
+@pytest.mark.not_vetted
 class TestRlmAndrews(TestRlm):
+    res2 = results_rlm.Andrews()
+
     @classmethod
     def setup_class(cls):
         super(TestRlmAndrews, cls).setup_class()
@@ -204,13 +205,13 @@ class TestRlmAndrews(TestRlm):
         cls.res1.h2 = h2
         cls.res1.h3 = h3
 
-    def setup(self):
-        self.res2 = results_rlm.Andrews()
-
 
 # tests with Huber scaling
 
+@pytest.mark.not_vetted
 class TestRlmHuber(CheckRlmResultsMixin):
+    res2 = results_rlm.HuberHuber()
+
     @classmethod
     def setup_class(cls):
         from sm2.datasets.stackloss import load
@@ -230,11 +231,11 @@ class TestRlmHuber(CheckRlmResultsMixin):
         cls.res1.h2 = h2
         cls.res1.h3 = h3
 
-    def setup(self):
-        self.res2 = results_rlm.HuberHuber()
 
-
+@pytest.mark.not_vetted
 class TestHampelHuber(TestRlm):
+    res2 = results_rlm.HampelHuber()
+
     @classmethod
     def setup_class(cls):
         super(TestHampelHuber, cls).setup_class()
@@ -255,11 +256,11 @@ class TestHampelHuber(TestRlm):
         cls.res1.h2 = h2
         cls.res1.h3 = h3
 
-    def setup(self):
-        self.res2 = results_rlm.HampelHuber()
 
-
+@pytest.mark.not_vetted
 class TestRlmBisquareHuber(TestRlm):
+    res2 = results_rlm.BisquareHuber()
+
     @classmethod
     def setup_class(cls):
         super(TestRlmBisquareHuber, cls).setup_class()
@@ -280,11 +281,11 @@ class TestRlmBisquareHuber(TestRlm):
         cls.res1.h2 = h2
         cls.res1.h3 = h3
 
-    def setup(self):
-        self.res2 = results_rlm.BisquareHuber()
 
-
+@pytest.mark.not_vetted
 class TestRlmAndrewsHuber(TestRlm):
+    res2 = results_rlm.AndrewsHuber()
+
     @classmethod
     def setup_class(cls):
         super(TestRlmAndrewsHuber, cls).setup_class()
@@ -305,20 +306,19 @@ class TestRlmAndrewsHuber(TestRlm):
         cls.res1.h2 = h2
         cls.res1.h3 = h3
 
-    def setup(self):
-        self.res2 = results_rlm.AndrewsHuber()
 
-
+@pytest.mark.not_vetted
 class TestRlmSresid(CheckRlmResultsMixin):
     # Check GH#187
+    res2 = results_rlm.Huber()
+    decimal_standarderrors = DECIMAL_1
+    decimal_scale = DECIMAL_3
+
     @classmethod
     def setup_class(cls):
         from sm2.datasets.stackloss import load
         cls.data = load()  # class attributes for subclasses
         cls.data.exog = sm.add_constant(cls.data.exog, prepend=False)
-        # Test precisions
-        cls.decimal_standarderrors = DECIMAL_1
-        cls.decimal_scale = DECIMAL_3
 
         results = RLM(cls.data.endog, cls.data.exog,
                       M=norms.HuberT()).fit(conv='sresid')  # default M
@@ -333,10 +333,8 @@ class TestRlmSresid(CheckRlmResultsMixin):
         cls.res1.h2 = h2
         cls.res1.h3 = h3
 
-    def setup(self):
-        self.res2 = results_rlm.Huber()
 
-
+@pytest.mark.not_vetted
 def test_missing():
     # see GH#2083
     d = {'Foo': [1, 2, 10, 149], 'Bar': [1, 2, 3, np.nan]}
