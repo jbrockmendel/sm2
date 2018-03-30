@@ -18,7 +18,6 @@ from numpy.testing import (
     assert_allclose, assert_equal, assert_array_equal, assert_almost_equal)
 
 
-@pytest.mark.not_vetted
 class TestCompanionMatrix(object):
 
     cases = [
@@ -41,7 +40,6 @@ class TestCompanionMatrix(object):
         assert_equal(tools.companion_matrix(polynomial), result)
 
 
-@pytest.mark.not_vetted
 class TestDiff(object):
 
     x = np.arange(10)
@@ -85,7 +83,6 @@ class TestDiff(object):
             assert_almost_equal(x, result)
 
 
-@pytest.mark.not_vetted
 class TestSolveDiscreteLyapunov(object):
 
     def solve_dicrete_lyapunov_direct(self, a, q, complex_step=False):
@@ -153,7 +150,6 @@ class TestSolveDiscreteLyapunov(object):
         assert_allclose(actual, desired)
 
 
-@pytest.mark.not_vetted
 class TestConcat(object):
 
     x = np.arange(10)
@@ -188,7 +184,6 @@ class TestConcat(object):
             tools.concat(*args[:-1])
 
 
-@pytest.mark.not_vetted
 class TestIsInvertible(object):
 
     cases = [
@@ -206,7 +201,6 @@ class TestIsInvertible(object):
         assert_equal(tools.is_invertible(polynomial), invertible)
 
 
-@pytest.mark.not_vetted
 class TestConstrainStationaryUnivariate(object):
 
     cases = [
@@ -220,7 +214,6 @@ class TestConstrainStationaryUnivariate(object):
         assert_equal(result, constrained)
 
 
-@pytest.mark.not_vetted
 class TestUnconstrainStationaryUnivariate(object):
 
     cases = [
@@ -234,7 +227,6 @@ class TestUnconstrainStationaryUnivariate(object):
         assert_allclose(result, unconstrained)
 
 
-@pytest.mark.not_vetted
 class TestStationaryUnivariate(object):
     # Test that the constraint and unconstraint functions are inverses
 
@@ -256,7 +248,6 @@ class TestStationaryUnivariate(object):
         assert_allclose(reunconstrained, unconstrained)
 
 
-@pytest.mark.not_vetted
 class TestValidateMatrixShape(object):
     # name, shape, nrows, ncols, nobs
     valid = [
@@ -284,7 +275,6 @@ class TestValidateMatrixShape(object):
                 tools.validate_matrix_shape(*args)
 
 
-@pytest.mark.not_vetted
 class TestValidateVectorShape(object):
     # name, shape, nrows, ncols, nobs
     valid = [
@@ -310,7 +300,6 @@ class TestValidateVectorShape(object):
                 tools.validate_vector_shape(*args)
 
 
-@pytest.mark.not_vetted
 def test_multivariate_acovf():
     _acovf = tools._compute_multivariate_acovf_from_coefficients
 
@@ -371,7 +360,6 @@ def test_multivariate_acovf():
         acovf(x)[:5])
 
 
-@pytest.mark.not_vetted
 def test_multivariate_pacf():
     # Test sample acovf in the univariate case against sm.tsa.acovf
     np.random.seed(1234)
@@ -384,7 +372,6 @@ def test_multivariate_pacf():
         atol=1e-2)
 
 
-@pytest.mark.not_vetted
 class TestConstrainStationaryMultivariate(object):
 
     cases = [
@@ -423,7 +410,6 @@ class TestConstrainStationaryMultivariate(object):
             assert_equal(np.max(np.abs(np.linalg.eigvals(companion))) < 1, True)
 
 
-@pytest.mark.not_vetted
 class TestUnconstrainStationaryMultivariate(object):
 
     cases = [
@@ -441,7 +427,6 @@ class TestUnconstrainStationaryMultivariate(object):
             assert_allclose(result[0], unconstrained)
 
 
-@pytest.mark.not_vetted
 class TestStationaryMultivariate(object):
     # Test that the constraint and unconstraint functions are inverses
 
@@ -492,7 +477,6 @@ class TestStationaryMultivariate(object):
             assert_allclose(reunconstrained, unconstrained, atol=1e-4)
 
 
-@pytest.mark.not_vetted
 def test_reorder_matrix_rows():
     nobs = 5
     k_endog = 3
@@ -545,7 +529,6 @@ def test_reorder_matrix_rows():
     assert_equal(actual, desired)
 
 
-@pytest.mark.not_vetted
 def test_reorder_matrix_cols():
     nobs = 5
     k_endog = 3
@@ -598,7 +581,6 @@ def test_reorder_matrix_cols():
     assert_equal(actual[:, :, 4], desired[:, :, 4])
 
 
-@pytest.mark.not_vetted
 def test_reorder_submatrix():
     nobs = 5
     k_endog = 3
@@ -657,7 +639,6 @@ def test_reorder_submatrix():
     assert_equal(actual, desired)
 
 
-@pytest.mark.not_vetted
 def test_reorder_diagonal_submatrix():
     nobs = 5
     k_endog = 3
@@ -720,7 +701,6 @@ def test_reorder_diagonal_submatrix():
     assert_equal(actual, desired)
 
 
-@pytest.mark.not_vetted
 def test_reorder_vector():
     nobs = 5
     k_endog = 3
@@ -754,7 +734,6 @@ def test_reorder_vector():
     assert_equal(actual, desired)
 
 
-@pytest.mark.not_vetted
 def test_copy_missing_matrix_rows():
     nobs = 5
     k_endog = 3
@@ -780,7 +759,6 @@ def test_copy_missing_matrix_rows():
     assert_equal(B, A)
 
 
-@pytest.mark.not_vetted
 def test_copy_missing_matrix_cols():
     nobs = 5
     k_endog = 3
@@ -806,7 +784,6 @@ def test_copy_missing_matrix_cols():
     assert_equal(B, A)
 
 
-@pytest.mark.not_vetted
 def test_copy_missing_submatrix():
     nobs = 5
     k_endog = 3
@@ -831,7 +808,6 @@ def test_copy_missing_submatrix():
     assert_equal(B, A)
 
 
-@pytest.mark.not_vetted
 def test_copy_missing_diagonal_submatrix():
     nobs = 5
     k_endog = 3
@@ -861,7 +837,6 @@ def test_copy_missing_diagonal_submatrix():
     assert_equal(B, A)
 
 
-@pytest.mark.not_vetted
 def test_copy_missing_vector():
     nobs = 5
     k_endog = 3
@@ -885,7 +860,6 @@ def test_copy_missing_vector():
     assert_equal(B, A)
 
 
-@pytest.mark.not_vetted
 def test_copy_index_matrix_rows():
     nobs = 5
     k_endog = 3
@@ -912,7 +886,6 @@ def test_copy_index_matrix_rows():
     assert_equal(B, A)
 
 
-@pytest.mark.not_vetted
 def test_copy_index_matrix_cols():
     nobs = 5
     k_endog = 3
@@ -939,7 +912,6 @@ def test_copy_index_matrix_cols():
     assert_equal(B, A)
 
 
-@pytest.mark.not_vetted
 def test_copy_index_submatrix():
     nobs = 5
     k_endog = 3
@@ -966,7 +938,6 @@ def test_copy_index_submatrix():
     assert_equal(B, A)
 
 
-@pytest.mark.not_vetted
 def test_copy_index_diagonal_submatrix():
     nobs = 5
     k_endog = 3
@@ -997,7 +968,6 @@ def test_copy_index_diagonal_submatrix():
     assert_equal(B, A)
 
 
-@pytest.mark.not_vetted
 def test_copy_index_vector():
     nobs = 5
     k_endog = 3

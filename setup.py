@@ -77,18 +77,9 @@ setuptools_kwargs = {
 # ------------------------------------------------------------------
 # Cython Preparation & Specification
 
-def add_pxifiles(dname):
-    flist = os.listdir(dname)
-    flist = [x for x in flist if x.endswith(('.pxi.in', '.pyx.in'))]
-    flist = [os.path.join(dname, x).replace('\\', '/') for x in flist]
-    # Specifically use posix path separator to avoid mixing and matching;
-    # otherwise build fails on appveyor
-    return flist
-
-_pxifiles = (add_pxifiles('sm2/tsa/regime_switching') +
-             add_pxifiles('sm2/tsa/statespace') +
-             add_pxifiles('sm2/tsa/statespace/_filters') +
-             add_pxifiles('sm2/tsa/statespace/_smoothers'))
+_pxifiles = ['sm2/tsa/regime_switching/_kim_smoother.pyx.in',
+             'sm2/tsa/regime_switching/_hamilton_filter.pyx.in',
+             'sm2/tsa/statespace/_tools.pyx.in']
 
 # TODO: Can we just put this with the next (only) use of CYTHON_INSTALLED?
 min_cython_ver = '0.24'

@@ -62,7 +62,6 @@ rec = [0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
        1, 1, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0]
 
 
-@pytest.mark.not_vetted
 def test_predict():
     # AR(1) without mean, k_regimes=2
     endog = np.ones(10)
@@ -168,7 +167,6 @@ def test_predict():
     assert_allclose(mod_resid[1, 1, :], resids[1, 1, :])
 
 
-@pytest.mark.not_vetted
 def test_conditional_likelihoods():
     # AR(1) without mean, k_regimes=2, non-switching variance
     endog = np.ones(10)
@@ -214,7 +212,6 @@ def test_conditional_likelihoods():
                     conditional_likelihoods[2, :, :])
 
 
-@pytest.mark.not_vetted
 class MarkovAutoregression(object):
     @classmethod
     def setup_class(cls, true, endog, atol=1e-5, rtol=1e-7, **kwargs):
@@ -225,8 +222,7 @@ class MarkovAutoregression(object):
         cls.rtol = rtol
 
     def test_llf(self):
-        assert_allclose(self.result.llf,
-                        self.true['llf'],
+        assert_allclose(self.result.llf, self.true['llf'],
                         atol=self.atol, rtol=self.rtol)
 
     def test_fit(self, **kwargs):
@@ -234,15 +230,13 @@ class MarkovAutoregression(object):
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
             res = self.model.fit(disp=False, **kwargs)
-        assert_allclose(res.llf,
-                        self.true['llf_fit'],
+        assert_allclose(res.llf, self.true['llf_fit'],
                         atol=self.atol, rtol=self.rtol)
 
     def test_fit_em(self, **kwargs):
         # Test EM fitting (smoke test)
         res_em = self.model._fit_em(**kwargs)
-        assert_allclose(res_em.llf,
-                        self.true['llf_fit_em'],
+        assert_allclose(res_em.llf, self.true['llf_fit_em'],
                         atol=self.atol, rtol=self.rtol)
 
 
@@ -370,7 +364,6 @@ hamilton_ar2_short_smoothed_joint_probabilities = np.array([
        8.99315113e-01, 7.51241236e-01]]]])
 
 
-@pytest.mark.not_vetted
 class TestHamiltonAR2Short(MarkovAutoregression):
     # This is just a set of regression tests
     @classmethod
@@ -480,7 +473,6 @@ hamilton_ar4_smoothed = [
     0.998324, 0.999939, 0.996858, 0.969209, 0.927714]
 
 
-@pytest.mark.not_vetted
 class TestHamiltonAR4(MarkovAutoregression):
     @classmethod
     def setup_class(cls):
@@ -511,18 +503,17 @@ class TestHamiltonAR4(MarkovAutoregression):
 
     def test_filtered_regimes(self):
         res = self.result
-        assert len(res.filtered_marginal_probabilities[:, 1]) == self.model.nobs
+        assert_equal(len(res.filtered_marginal_probabilities[:, 1]),
+                     self.model.nobs)
         assert_allclose(res.filtered_marginal_probabilities[:, 1],
-                        hamilton_ar4_filtered,
-                        atol=1e-5)
+                        hamilton_ar4_filtered, atol=1e-5)
 
     def test_smoothed_regimes(self):
         res = self.result
         assert_equal(len(res.smoothed_marginal_probabilities[:, 1]),
                      self.model.nobs)
         assert_allclose(res.smoothed_marginal_probabilities[:, 1],
-                        hamilton_ar4_smoothed,
-                        atol=1e-5)
+                        hamilton_ar4_smoothed, atol=1e-5)
 
     def test_bse(self):
         # Can't compare middle element of bse because we estimate sigma^2
@@ -532,7 +523,6 @@ class TestHamiltonAR4(MarkovAutoregression):
         assert_allclose(bse[6:], self.true['bse_oim'][6:], atol=1e-6)
 
 
-@pytest.mark.not_vetted
 class TestHamiltonAR2Switch(MarkovAutoregression):
     # Results from Stata, see http://www.stata.com/manuals14/tsmswitch.pdf
     @classmethod
@@ -563,44 +553,30 @@ class TestHamiltonAR2Switch(MarkovAutoregression):
 
     def test_smoothed_marginal_probabilities(self):
         assert_allclose(self.result.smoothed_marginal_probabilities[:, 0],
-                        self.true['smoothed0'],
-                        atol=1e-6)
+                        self.true['smoothed0'], atol=1e-6)
         assert_allclose(self.result.smoothed_marginal_probabilities[:, 1],
-                        self.true['smoothed1'],
-                        atol=1e-6)
+                        self.true['smoothed1'], atol=1e-6)
 
     def test_predict(self):
         # Smoothed
         actual = self.model.predict(
             self.true['params'], probabilities='smoothed')
-        assert_allclose(actual,
-                        self.true['predict_smoothed'],
-                        atol=1e-6)
+        assert_allclose(actual, self.true['predict_smoothed'], atol=1e-6)
         actual = self.model.predict(
             self.true['params'], probabilities=None)
-        assert_allclose(actual,
-                        self.true['predict_smoothed'],
-                        atol=1e-6)
+        assert_allclose(actual, self.true['predict_smoothed'], atol=1e-6)
 
         actual = self.result.predict(probabilities='smoothed')
-        assert_allclose(actual,
-                        self.true['predict_smoothed'],
-                        atol=1e-6)
+        assert_allclose(actual, self.true['predict_smoothed'], atol=1e-6)
         actual = self.result.predict(probabilities=None)
-        assert_allclose(actual,
-                        self.true['predict_smoothed'],
-                        atol=1e-6)
+        assert_allclose(actual, self.true['predict_smoothed'], atol=1e-6)
 
     def test_bse(self):
         # Can't compare middle element of bse because we estimate sigma^2
         # rather than sigma
         bse = self.result.cov_params_approx.diagonal()**0.5
-        assert_allclose(bse[:4],
-                        self.true['bse_oim'][:4],
-                        atol=1e-7)
-        assert_allclose(bse[6:],
-                        self.true['bse_oim'][6:],
-                        atol=1e-7)
+        assert_allclose(bse[:4], self.true['bse_oim'][:4], atol=1e-7)
+        assert_allclose(bse[6:], self.true['bse_oim'][6:], atol=1e-7)
 
 
 hamilton_ar1_switch_filtered = [
@@ -654,7 +630,6 @@ hamilton_ar1_switch_smoothed = [
     0.812080, 0.780157]
 
 
-@pytest.mark.not_vetted
 class TestHamiltonAR1Switch(MarkovAutoregression):
     @classmethod
     def setup_class(cls):
@@ -681,18 +656,15 @@ class TestHamiltonAR1Switch(MarkovAutoregression):
 
     def test_filtered_regimes(self):
         assert_allclose(self.result.filtered_marginal_probabilities[:, 0],
-                        hamilton_ar1_switch_filtered,
-                        atol=1e-5)
+                        hamilton_ar1_switch_filtered, atol=1e-5)
 
     def test_smoothed_regimes(self):
         assert_allclose(self.result.smoothed_marginal_probabilities[:, 0],
-                        hamilton_ar1_switch_smoothed,
-                        atol=1e-5)
+                        hamilton_ar1_switch_smoothed, atol=1e-5)
 
     def test_expected_durations(self):
         expected_durations = [6.883477, 1.863513]
-        assert_allclose(self.result.expected_durations,
-                        expected_durations,
+        assert_allclose(self.result.expected_durations, expected_durations,
                         atol=1e-5)
 
 
@@ -794,7 +766,6 @@ expected_durations = [
     [710.7573, 1.000391], [710.7573, 1.000391]]
 
 
-@pytest.mark.not_vetted
 class TestHamiltonAR1SwitchTVTP(MarkovAutoregression):
     @classmethod
     def setup_class(cls):
@@ -827,21 +798,17 @@ class TestHamiltonAR1SwitchTVTP(MarkovAutoregression):
 
     def test_filtered_regimes(self):
         assert_allclose(self.result.filtered_marginal_probabilities[:, 0],
-                        hamilton_ar1_switch_tvtp_filtered,
-                        atol=1e-5)
+                        hamilton_ar1_switch_tvtp_filtered, atol=1e-5)
 
     def test_smoothed_regimes(self):
         assert_allclose(self.result.smoothed_marginal_probabilities[:, 0],
-                        hamilton_ar1_switch_tvtp_smoothed,
-                        atol=1e-5)
+                        hamilton_ar1_switch_tvtp_smoothed, atol=1e-5)
 
     def test_expected_durations(self):
-        assert_allclose(self.result.expected_durations,
-                        expected_durations,
+        assert_allclose(self.result.expected_durations, expected_durations,
                         rtol=1e-5, atol=1e-7)
 
 
-@pytest.mark.not_vetted
 class TestFilardo(MarkovAutoregression):
     @classmethod
     def setup_class(cls):
@@ -873,13 +840,11 @@ class TestFilardo(MarkovAutoregression):
 
     def test_filtered_regimes(self):
         assert_allclose(self.result.filtered_marginal_probabilities[:, 0],
-                        self.mar_filardo['filtered_0'].iloc[5:],
-                        atol=1e-5)
+                        self.mar_filardo['filtered_0'].iloc[5:], atol=1e-5)
 
     def test_smoothed_regimes(self):
         assert_allclose(self.result.smoothed_marginal_probabilities[:, 0],
-                        self.mar_filardo['smoothed_0'].iloc[5:],
-                        atol=1e-5)
+                        self.mar_filardo['smoothed_0'].iloc[5:], atol=1e-5)
 
     def test_expected_durations(self):
         assert_allclose(self.result.expected_durations,
@@ -887,7 +852,6 @@ class TestFilardo(MarkovAutoregression):
                         rtol=1e-5, atol=1e-7)
 
 
-@pytest.mark.not_vetted
 class TestFilardoPandas(MarkovAutoregression):
     @classmethod
     def setup_class(cls):
@@ -921,13 +885,11 @@ class TestFilardoPandas(MarkovAutoregression):
 
     def test_filtered_regimes(self):
         assert_allclose(self.result.filtered_marginal_probabilities[0],
-                        self.mar_filardo['filtered_0'].iloc[5:],
-                        atol=1e-5)
+                        self.mar_filardo['filtered_0'].iloc[5:], atol=1e-5)
 
     def test_smoothed_regimes(self):
         assert_allclose(self.result.smoothed_marginal_probabilities[0],
-                        self.mar_filardo['smoothed_0'].iloc[5:],
-                        atol=1e-5)
+                        self.mar_filardo['smoothed_0'].iloc[5:], atol=1e-5)
 
     def test_expected_durations(self):
         assert_allclose(self.result.expected_durations,

@@ -60,10 +60,10 @@ def set_mode(compatibility=None):
     if not compatibility:
         from scipy.linalg import cython_blas  # noqa:F401,F811
         from . import _tools
-        from . import (_representation, _kalman_filter, _kalman_smoother,
-                       _simulation_smoother)
+        #from . import (_representation, _kalman_filter, _kalman_smoother,
+        #               _simulation_smoother)
         compatibility_mode = False
-
+        '''
         prefix_statespace_map.update({
             's': _representation.sStatespace, 'd': _representation.dStatespace,
             'c': _representation.cStatespace, 'z': _representation.zStatespace
@@ -86,7 +86,7 @@ def set_mode(compatibility=None):
             'c': _simulation_smoother.cSimulationSmoother,
             'z': _simulation_smoother.zSimulationSmoother
         })
-
+        '''
         prefix_pacf_map.update({
             's': _tools._scompute_coefficients_from_multivariate_pacf,
             'd': _tools._dcompute_coefficients_from_multivariate_pacf,
@@ -144,7 +144,7 @@ def set_mode(compatibility=None):
             from scipy.linalg.blas import dtrmm  # noqa:F401
         except ImportError:
             has_trmm = False
-
+        '''
         prefix_statespace_map.update({
             's': _statespace.sStatespace, 'd': _statespace.dStatespace,
             'c': _statespace.cStatespace, 'z': _statespace.zStatespace
@@ -209,6 +209,7 @@ def set_mode(compatibility=None):
             'c': _statespace.ccopy_index_vector,
             'z': _statespace.zcopy_index_vector
         })
+        '''
 
 
 set_mode(compatibility=None)
