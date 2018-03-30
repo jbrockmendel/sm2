@@ -24,9 +24,9 @@ from sm2.tools.numdiff import approx_hess_cs, approx_fprime_cs
 import sm2.base.wrapper as wrap
 
 from sm2.regression.linear_model import yule_walker, GLS
-from sm2.graphics.utils import create_mpl_ax
 
 from sm2.tsa.base import tsa_model
+
 from sm2.tsa.tsatools import (lagmat, add_trend,
                               _ar_transparams, _ar_invtransparams,
                               _ma_transparams, _ma_invtransparams,
@@ -35,6 +35,18 @@ from sm2.tsa.vector_ar import util
 from sm2.tsa.arima_process import arma2ma
 from sm2.tsa.ar_model import AR
 from sm2.tsa.kalmanf import KalmanFilter
+
+
+def _create_mpl_ax(ax):
+    # kludge to avoid needing import from upstream graphics.util;
+    # this does not belong here long-term
+    if ax is None:
+        import matplotlib.pyplot as plt
+        fig = plt.figure()
+        ax = fig.add_subplot(111)
+    else:
+        fig = ax.figure
+    return fig, ax
 
 
 _armax_notes = """
@@ -1689,7 +1701,7 @@ class ARMAResults(tsa_model.TimeSeriesModelResults):
     @copy_doc(_plot_predict)
     def plot_predict(self, start=None, end=None, exog=None, dynamic=False,
                      alpha=.05, plot_insample=True, ax=None):
-        fig, ax = create_mpl_ax(ax)
+        fig, ax = _create_mpl_ax(ax)
 
         # use predict so you set dates
         forecast = self.predict(start, end, exog, dynamic)
@@ -1810,7 +1822,7 @@ class ARIMAResults(ARMAResults):
     @copy_doc(_arima_plot_predict)
     def plot_predict(self, start=None, end=None, exog=None, dynamic=False,
                      alpha=.05, plot_insample=True, ax=None):
-        fig, ax = create_mpl_ax(ax)
+        fig, ax = _create_mpl_ax(ax)
 
         # use predict so you set dates
         forecast = self.predict(start, end, exog, 'levels', dynamic)
