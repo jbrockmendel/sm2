@@ -651,6 +651,20 @@ class Results(object):
             # TODO: This attribute should _always_ exist
             self.k_constant = model.k_constant
 
+    @cache_readonly
+    def fittedvalues(self):
+        """
+        (array) The predicted values of the model. An (nobs x k_endog) array.
+        """
+        return self.model.predict(self.params)
+
+    @cache_readonly
+    def resid(self):
+        """
+        (array) The model residuals. An (nobs x k_endog) array.
+        """
+        return self.model.endog - self.fittedvalues
+
     def predict(self, exog=None, transform=True, *args, **kwargs):
         """
         Call self.model.predict with self.params as the first argument.
@@ -701,6 +715,7 @@ class Results(object):
         predict_results = self.model.predict(self.params, exog,
                                              *args, **kwargs)
 
+        # TODO: Shouldnt this be done by wrapping?
         if exog_index is not None and not hasattr(predict_results,
                                                   'predicted_values'):
             if predict_results.ndim == 1:
@@ -907,7 +922,32 @@ class LikelihoodModelResults(wrap.SaveLoadMixin, Results):
 
     @cache_readonly
     def llf(self):
+        """
+        (float) The value of the log-likelihood function evaluated at `params`.
+        """
         return self.model.loglike(self.params)
+
+    @cache_readonly
+    def llf_obs(self):
+        """
+        (float) The value of the log-likelihood function evaluated at `params`.
+        """
+        return self.model.loglikeobs(self.params)
+
+    @cache_readonly
+    def tvalues(self):
+        """
+        Return the t-statistic for a given parameter estimate.
+        """
+        return self.params / self.bse
+
+    @cache_readonly
+    def pvalues(self):
+        if self.use_t:
+            df_resid = getattr(self, 'df_resid_inference', self.df_resid)
+            return stats.t.sf(np.abs(self.tvalues), df_resid) * 2
+        else:
+            return stats.norm.sf(np.abs(self.tvalues)) * 2
 
     def __init__(self, model, params, normalized_cov_params=None, scale=1.,
                  **kwargs):
@@ -938,7 +978,6 @@ class LikelihoodModelResults(wrap.SaveLoadMixin, Results):
         get_robustcov_results(self, cov_type=cov_type, use_self=use_self,
                               use_t=use_t, **cov_kwds)
 
-
     @cache_readonly
     def bse(self):
         # GH#3299
@@ -949,21 +988,6 @@ class LikelihoodModelResults(wrap.SaveLoadMixin, Results):
         else:
             bse_ = np.sqrt(np.diag(self.cov_params()))
         return bse_
-
-    @cache_readonly
-    def tvalues(self):
-        """
-        Return the t-statistic for a given parameter estimate.
-        """
-        return self.params / self.bse
-
-    @cache_readonly
-    def pvalues(self):
-        if self.use_t:
-            df_resid = getattr(self, 'df_resid_inference', self.df_resid)
-            return stats.t.sf(np.abs(self.tvalues), df_resid) * 2
-        else:
-            return stats.norm.sf(np.abs(self.tvalues)) * 2
 
     def cov_params(self, r_matrix=None, column=None, scale=None, cov_p=None,
                    other=None):

@@ -732,8 +732,8 @@ class TestGLMGaussHACGroupsum(CheckDiscreteGLM):
     def setup_class(cls):
         mod1 = cls.model_cls(endog, exog, family=families.Gaussian())
         cls.res1 = mod1.fit(cov_type=cls.cov_type, cov_kwds=cls.cov_kwds)
-
         cls.res1b = mod1.fit(cov_type=cls.cov_type, cov_kwds=cls.cov_kwds)
+
         mod2 = OLS(endog, exog)
         cls.res2 = mod2.fit(cov_type=cls.cov_type, cov_kwds=cls.cov_kwds)
 

@@ -1888,6 +1888,30 @@ class MarkovSwitchingResults(tsbase.TimeSeriesModelResults):
                 self.smoothed_marginal_probabilities = pd.DataFrame(
                     self.smoothed_marginal_probabilities, index=index)
 
+    @cache_readonly
+    def aic(self):
+        """
+        (float) Akaike Information Criterion
+        """
+        # return -2*self.llf + 2*self.params.shape[0]
+        return aic(self.llf, self.nobs, self.params.shape[0])
+
+    @cache_readonly
+    def bic(self):
+        """
+        (float) Bayes Information Criterion
+        """
+        # return -2*self.llf + self.params.shape[0]*np.log(self.nobs)
+        return bic(self.llf, self.nobs, self.params.shape[0])
+
+    @cache_readonly
+    def hqic(self):
+        """
+        (float) Hannan-Quinn Information Criterion
+        """
+        # return -2*self.llf + 2*np.log(np.log(self.nobs))*self.params.shape[0]
+        return hqic(self.llf, self.nobs, self.params.shape[0])
+
     def _get_robustcov_results(self, cov_type='opg', **kwargs):
         use_self = kwargs.pop('use_self', False)
         if use_self:
@@ -1944,22 +1968,6 @@ class MarkovSwitchingResults(tsbase.TimeSeriesModelResults):
         return res
 
     @cache_readonly
-    def aic(self):
-        """
-        (float) Akaike Information Criterion
-        """
-        # return -2*self.llf + 2*self.params.shape[0]
-        return aic(self.llf, self.nobs, self.params.shape[0])
-
-    @cache_readonly
-    def bic(self):
-        """
-        (float) Bayes Information Criterion
-        """
-        # return -2*self.llf + self.params.shape[0]*np.log(self.nobs)
-        return bic(self.llf, self.nobs, self.params.shape[0])
-
-    @cache_readonly
     def cov_params_approx(self):
         """
         (array) The variance / covariance matrix. Computed using the numerical
@@ -2004,42 +2012,6 @@ class MarkovSwitchingResults(tsbase.TimeSeriesModelResults):
             self._rank = np.linalg.matrix_rank(np.diag(singular_values))
 
         return cov_params
-
-    @cache_readonly
-    def fittedvalues(self):
-        """
-        (array) The predicted values of the model. An (nobs x k_endog) array.
-        """
-        return self.model.predict(self.params)
-
-    @cache_readonly
-    def hqic(self):
-        """
-        (float) Hannan-Quinn Information Criterion
-        """
-        # return -2*self.llf + 2*np.log(np.log(self.nobs))*self.params.shape[0]
-        return hqic(self.llf, self.nobs, self.params.shape[0])
-
-    @cache_readonly
-    def llf_obs(self):
-        """
-        (float) The value of the log-likelihood function evaluated at `params`.
-        """
-        return self.model.loglikeobs(self.params)
-
-    @cache_readonly
-    def llf(self):
-        """
-        (float) The value of the log-likelihood function evaluated at `params`.
-        """
-        return self.model.loglike(self.params)
-
-    @cache_readonly
-    def resid(self):
-        """
-        (array) The model residuals. An (nobs x k_endog) array.
-        """
-        return self.model.endog - self.fittedvalues
 
     def predict(self, start=None, end=None, probabilities=None,
                 conditional=False):

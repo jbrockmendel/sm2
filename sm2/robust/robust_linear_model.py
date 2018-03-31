@@ -405,14 +405,6 @@ class RLMResults(base.LikelihoodModelResults):
         # TODO: "pvals" should come from chisq on bse?
 
     @cache_readonly
-    def fittedvalues(self):
-        return np.dot(self.model.exog, self.params)
-
-    @cache_readonly
-    def resid(self):
-        return self.model.endog - self.fittedvalues   # before bcov
-
-    @cache_readonly
     def sresid(self):
         return self.resid / self.scale
 
@@ -458,6 +450,7 @@ class RLMResults(base.LikelihoodModelResults):
                                       np.dot(model.exog.T, model.exog)),
                                W_inv))
 
+    # TODO: Use default implementation from base class?
     @cache_readonly
     def pvalues(self):
         return stats.norm.sf(np.abs(self.tvalues)) * 2

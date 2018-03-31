@@ -1436,18 +1436,9 @@ class RegressionResults(base.LikelihoodModelResults):
         return ci
 
     @cache_readonly
-    def fittedvalues(self):
-        return self.model.predict(self.params, self.model.exog)
-
-    @cache_readonly
     def wresid(self):
         return self.model.wendog - self.model.predict(self.params,
                                                       self.model.wexog)
-
-    @cache_readonly
-    def resid(self):
-        return self.model.endog - self.model.predict(self.params,
-                                                     self.model.exog)
 
     # TODO: fix writable example
     @cache_writable()
@@ -1543,6 +1534,7 @@ class RegressionResults(base.LikelihoodModelResults):
     def f_pvalue(self):
         return stats.f.sf(self.fvalue, self.df_model, self.df_resid)
 
+    # TODO: default implementation?
     @cache_readonly
     def bse(self):
         return np.sqrt(np.diag(self.cov_params()))

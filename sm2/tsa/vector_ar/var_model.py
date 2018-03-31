@@ -266,10 +266,6 @@ def _forecast_vars(steps, ma_coefs, sig_u):
     steps
     ma_coefs
     sig_u
-
-    Returns
-    -------
-
     """
     covs = mse(ma_coefs, sig_u, steps)
     # Take diagonal for each cov
@@ -555,7 +551,7 @@ class VAR(tsa_model.TimeSeriesModel):
             intercept = params[:k_trend]
             predictedvalues += intercept
 
-        y = self.y
+        y = self.endog
         X = util.get_var_endog(y, lags, trend=trend, has_constant='raise')
         fittedvalues = np.dot(X, params)
 
@@ -983,9 +979,6 @@ class VARProcess(object):
     def forecast_interval(self, y, steps, alpha=0.05, exog_future=None):
         """Construct forecast interval estimates assuming the y are Gaussian
 
-        Parameters
-        ----------
-
         Notes
         -----
         Lütkepohl pp. 39-40
@@ -1119,6 +1112,7 @@ class VARResults(VARProcess):
         self.nobs = self.n_totobs - lag_order
         self.trend = trend
         k_trend = util.get_trendorder(trend)
+        # TODO: Does this necessarily match self.k_trend below?
         self.exog_names = util.make_lag_names(names, lag_order, k_trend, exog)
         self.params = params
 
@@ -1149,7 +1143,7 @@ class VARResults(VARProcess):
     def resid(self):
         """Residuals of response variable resulting from estimated coefficients
         """
-        return self.y[self.k_ar:] - self.fittedvalues
+        return self.endog[self.k_ar:] - self.fittedvalues
 
     @cache_readonly
     def llf(self):
@@ -1165,6 +1159,8 @@ class VARResults(VARProcess):
 
     bse = stderr  # sm2 interface?
 
+    # TODO: Just use default version form LikelihodoodModelResults?
+    # Only docstring different
     @cache_readonly
     def tvalues(self):
         """Compute t-statistics. Use Student-t(T - Kp - 1) = t(df_resid)
@@ -1172,6 +1168,8 @@ class VARResults(VARProcess):
         """
         return self.params / self.stderr
 
+    # TODO: Just use default version form LikelihodoodModelResults?
+    # Only docstring different
     @cache_readonly
     def pvalues(self):
         """Two-sided p-values for model coefficients from
@@ -1183,12 +1181,11 @@ class VARResults(VARProcess):
     # ------------------------------------------------------------
 
     def plot(self):
-        """Plot input time series
-        """
-        plotting.plot_mts(self.y, names=self.names, index=self.dates)
+        """Plot input time series"""
+        plotting.plot_mts(self.endog, names=self.names, index=self.dates)
 
     def sample_acov(self, nlags=1):
-        return _compute_acov(self.y[self.k_ar:], nlags=nlags)
+        return _compute_acov(self.endog[self.k_ar:], nlags=nlags)
 
     def sample_acorr(self, nlags=1):
         acovs = self.sample_acov(nlags=nlags)
@@ -1332,9 +1329,10 @@ class VARResults(VARProcess):
     # TODO: -------------------------------------------------------------
 
     def plot_forecast(self, steps, alpha=0.05, plot_stderr=True):
-        mid, lower, upper = self.forecast_interval(self.y[-self.k_ar:], steps,
+        mid, lower, upper = self.forecast_interval(self.endog[-self.k_ar:],
+                                                   steps,
                                                    alpha=alpha)
-        plotting.plot_var_forc(self.y, mid, lower, upper, names=self.names,
+        plotting.plot_var_forc(self.endog, mid, lower, upper, names=self.names,
                                plot_stderr=plot_stderr)
 
     # Forecast error covariance functions

@@ -96,6 +96,10 @@ class GenericZeroInflated(CountModel):
         self._init_keys.extend(['exog_infl', 'inflation'])
         self._null_drop_keys = ['exog_infl']
 
+        # TODO: This should be in a fit-cache or something
+        self._zidx = np.nonzero(self.endog == 0)[0]
+        self._nzidx = np.nonzero(self.endog)[0]
+
     def loglikeobs(self, params):
         r"""
         Loglikelihood for observations of Generic Zero Inflated model
@@ -127,8 +131,8 @@ class GenericZeroInflated(CountModel):
 
         w = np.clip(w, np.finfo(float).eps, 1 - np.finfo(float).eps)
         llf_main = self.model_main.loglikeobs(params_main)
-        zero_idx = np.nonzero(y == 0)[0]  # TODO: Cache some of these?
-        nonzero_idx = np.nonzero(y)[0]
+        zero_idx = self._zidx#np.nonzero(y == 0)[0]  # TODO: Cache some of these?
+        nonzero_idx = self._nzidx#np.nonzero(y)[0]
 
         llf = np.zeros_like(y, dtype=np.float64)
         llf[zero_idx] = (np.log(w[zero_idx] +
