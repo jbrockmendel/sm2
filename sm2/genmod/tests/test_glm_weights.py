@@ -240,8 +240,6 @@ class TestGlmPoissonPwNr(CheckWeight):
         fweights = [1, 1, 1, 2, 2, 2, 3, 3, 3, 1, 1, 1, 2, 2, 2, 3, 3]
         # faking aweights by using normalized freq_weights
         fweights = np.array(fweights)
-        wsum = fweights.sum()
-        nobs = len(cpunish_data.endog)
 
         cls.res1 = GLM(cpunish_data.endog, cpunish_data.exog,
                        family=sm.families.Poisson(),
@@ -266,7 +264,6 @@ class TestGlmPoissonFwHC(CheckWeight):
         # faking aweights by using normalized freq_weights
         fweights = np.array(fweights)
         wsum = fweights.sum()
-        nobs = len(cpunish_data.endog)
         cls.corr_fact = np.sqrt((wsum - 1.) / wsum)
         model = GLM(cpunish_data.endog, cpunish_data.exog,
                     family=sm.families.Poisson(), freq_weights=fweights)
@@ -306,8 +303,6 @@ class TestGlmPoissonFwClu(CheckWeight):
         fweights = [1, 1, 1, 2, 2, 2, 3, 3, 3, 1, 1, 1, 2, 2, 2, 3, 3]
         # faking aweights by using normalized freq_weights
         fweights = np.array(fweights)
-        wsum = fweights.sum()
-        nobs = len(cpunish_data.endog)
 
         gid = np.arange(1, 17 + 1) // 2
         n_groups = len(np.unique(gid))

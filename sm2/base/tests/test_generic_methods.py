@@ -619,15 +619,3 @@ def compare_waldres(res, wa, constrasts):
     # SMOKETEST
     wa.summary_frame()
     '''
-
-
-@pytest.mark.not_vetted
-@pytest.mark.xfail
-class TestWaldAnovaOLSNoFormula(object):
-    form_cls = smf.ols
-
-    @classmethod
-    def initialize(cls):  # FIXME: This should subclass something right?
-        formula = "np.log(Days+1) ~ C(Duration, Sum)*C(Weight, Sum)"
-        mod = cls.form_cls(formula, cls.data)
-        cls.res = mod.fit()  # default use_t=True

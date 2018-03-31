@@ -700,7 +700,7 @@ class TestOLSRobustCluster2GLarge(CheckOLSRobustCluster,
         res_ols = self.res1.get_robustcov_results('cluster',
                                                   groups=(self.groups,
                                                           self.time),
-                                                  use_correction=False, #True,
+                                                  use_correction=False,
                                                   use_t=False)
         self.res3 = self.res1
         self.res1 = res_ols
@@ -811,7 +811,9 @@ class TestWLSRobustSmall(CheckWLSRobustCluster, CheckOLSRobustNewMixin):
         self.bse_robust = res_ols.bse
         self.cov_robust = res_ols.cov_params()
         # TODO: check standalone function
-        #cov1 = sw.cov_cluster(self.res1, self.groups, use_correction=False)
+        # Note: the above comment is from upstream, where it is not maintained;
+        # it isn't clear if the "todo" is really valid.
+        # cov1 = sw.cov_cluster(self.res1, self.groups, use_correction=False)
         cov1 = res_ols.cov_HC1
         se1 = sw.se_cov(cov1)
         self.bse_robust2 = se1
@@ -833,7 +835,7 @@ class TestWLSOLSRobustSmall(object):
                           weights=1 / dtapa_exog['value']).fit()
         w_sqrt = 1 / np.sqrt(np.asarray(dtapa_exog['value']))
         cls.res_ols = OLS(dtapa_endog * w_sqrt,
-                          np.asarray(exog) * w_sqrt[:, None]).fit()  # hasconst=True ?
+                          np.asarray(exog) * w_sqrt[:, None]).fit()
 
         firm_names, firm_id = np.unique(np.asarray(dtapa_exog[['firm']], 'S20'),
                                         return_inverse=True)
@@ -853,10 +855,9 @@ class TestWLSOLSRobustSmall(object):
                    ('HC3', dict(use_t=True))]
 
         # fvalue are not the same, see GH#1212
-        #res_ols = self.res_ols
-        #res_wls = self.res_wls
-        #assert_allclose(res_ols.fvalue, res_wls.fvalue, rtol=1e-13)
-        #assert_allclose(res_ols.f_pvalue, res_wls.f_pvalue, rtol=1e-13)
+        # TODO: See if these can be fixed
+        # assert_allclose(self.res_ols.fvalue, res_wls.fvalue, rtol=1e-13)
+        # assert_allclose(self.res_ols.f_pvalue, res_wls.f_pvalue, rtol=1e-13)
 
         for cov_type, kwds in all_cov:
             res1 = self.res_ols.get_robustcov_results(cov_type, **kwds)
@@ -867,8 +868,9 @@ class TestWLSOLSRobustSmall(object):
             assert_allclose(res1.pvalues, res2.pvalues, rtol=1e-13)
             # Note: Fvalue doesn't match up, difference in calculation ?
             #      The only difference should be in the constant detection
-            #assert_allclose(res1.fvalue, res2.fvalue, rtol=1e-13)
-            #assert_allclose(res1.f_pvalue, res2.f_pvalue, rtol=1e-13)
+            # TODO: See if these can be fixed
+            # assert_allclose(res1.fvalue, res2.fvalue, rtol=1e-13)
+            # assert_allclose(res1.f_pvalue, res2.f_pvalue, rtol=1e-13)
             mat = np.eye(len(res1.params))
             ft1 = res1.f_test(mat)
             ft2 = res2.f_test(mat)

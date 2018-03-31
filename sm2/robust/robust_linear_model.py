@@ -16,7 +16,7 @@ R Venables, B Ripley. 'Modern Applied Statistics in S'  Springer, New York,
 import numpy as np
 from scipy import stats
 
-from sm2.tools.decorators import cache_readonly, resettable_cache, copy_doc
+from sm2.tools.decorators import cache_readonly, resettable_cache
 import sm2.base.model as base
 import sm2.base.wrapper as wrap
 
@@ -471,13 +471,6 @@ class RLMResults(base.LikelihoodModelResults):
     def chisq(self):
         return (self.params / self.bse)**2
 
-    @copy_doc(base.LikelihoodModelResults.remove_data.__doc__)
-    def remove_data(self):
-        # TODO: Is this at all necessary?
-        super(self.__class__, self).remove_data()
-        #self.model.history['sresid'] = None
-        #self.model.history['weights'] = None
-
     def summary(self, yname=None, xname=None, title=0, alpha=.05,
                 return_fmt='text'):
         """
@@ -506,15 +499,10 @@ class RLMResults(base.LikelihoodModelResults):
 
         from sm2.iolib.summary import Summary
         smry = Summary()
-        smry.add_table_2cols(self, gleft=top_left, gright=top_right, #[],
+        smry.add_table_2cols(self, gleft=top_left, gright=top_right,
                              yname=yname, xname=xname, title=title)
         smry.add_table_params(self, yname=yname, xname=xname, alpha=alpha,
                               use_t=self.use_t)
-
-        # diagnostic table is not used yet
-        #smry.add_table_2cols(self, gleft=diagn_left, gright=diagn_right,
-        #                  yname=yname, xname=xname,
-        #                  title="")
 
         # add warnings/notes, added to text format only
         etext = []

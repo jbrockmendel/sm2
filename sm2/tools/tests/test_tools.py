@@ -326,26 +326,26 @@ class TestCategoricalNumerical(object):
 
     # TODO: xfail instead of commenting these out.  GH#4324
     # TODO: Are these also commented out "until we have type coercion"?
-    #def test_arraylike2d(self):
+    # def test_arraylike2d(self):
     #    des = tools.categorical(self.structdes.tolist(), col=2)
     #    test_des = des[:, -5:]
     #    assert_array_equal(test_des, self.dummy)
     #    assert_equal(des.shape[1], 9)
-
-    #def test_arraylike1d(self):
+    #
+    # def test_arraylike1d(self):
     #    instr = self.structdes['instrument'].tolist()
     #    dum = tools.categorical(instr)
     #    test_dum = dum[:, -5:]
     #    assert_array_equal(test_dum, self.dummy)
     #    assert_equal(dum.shape[1], 6)
-
-    #def test_arraylike2d_drop(self):
+    #
+    # def test_arraylike2d_drop(self):
     #    des = tools.categorical(self.structdes.tolist(), col=2, drop=True)
     #    test_des = des[:, -5:]
     #    assert_array_equal(test__des, self.dummy)
     #    assert_equal(des.shape[1], 8)
-
-    #def test_arraylike1d_drop(self):
+    #
+    # def test_arraylike1d_drop(self):
     #    instr = self.structdes['instrument'].tolist()
     #    dum = tools.categorical(instr, drop=True)
     #    assert_array_equal(dum, self.dummy)

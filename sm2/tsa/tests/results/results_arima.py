@@ -84,7 +84,7 @@ class ARIMA111(object):
             #                       [0, 0, 0.00342769]])
             #self.cov_params = (cov_params + cov_params.T -
             #                   np.diag(np.diag(cov_params)))
-            #self.bse = np.diag(np.sqrt(self.cov_params))
+            # self.bse = np.diag(np.sqrt(self.cov_params))
             self.resid = [-0.015830, -0.236884, -0.093946, -0.281152,
                           -0.089983, -0.226336, -0.351666, -0.198703,
                           -0.258418, -0.259026, -0.149513, -0.325703,
@@ -267,6 +267,11 @@ class ARIMA112(object):
         self.k_exog = 1
         self.k_diff = 1
         if method == "mle":
+            # FIXME: a) this file isn't ported
+            #        b) if it were, the fc112 etc keys below don't exist
+            #        c) setting self.__dict__ below that would overwrite
+            #           everything to that point, bc upstream couldn't care
+            #           less about code quality
             from .arima112_results import results
             # from gretl
             self.arroots = [1.0324 + 0j]
@@ -292,6 +297,7 @@ class ARIMA112(object):
 
             # unpack stata results
             self.__dict__ = results
+            # TODO: Wait, WTF, is this going to over-write everything above?
             self.resid = self.resid[1:]
             self.params = self.params[:-1]
             self.sigma2 = self.sigma**2
@@ -299,8 +305,6 @@ class ARIMA112(object):
             self.bic = self.icstats[5]
             self.fittedvalues = self.xb[1:]  # no idea why this initial value
             self.linear = self.y[1:]
-            # their bse are OPG
-            #self.bse = np.diag(self.cov_params) ** .5
         else:
             # NOTE: this looks like a "hard" problem
             # unable to replicate stata's results even with their starting
@@ -427,9 +431,9 @@ class ARIMA112(object):
             #         [0, 9.69682e-04, -9.70767e-04, -8.99814e-04],
             #         [0, 0, 0.00698068, -0.00443871],
             #         [0, 0, 0, 0.00713662]])
-            #self.cov_params = (cov_params + cov_params.T -
+            # self.cov_params = (cov_params + cov_params.T -
             #                   np.diag(np.diag(cov_params)))
-            #self.bse = np.diag(np.sqrt(self.cov_params))
+            # self.bse = np.diag(np.sqrt(self.cov_params))
             self.forecast = forecast_results['fc112c_css'][-25:]
             self.forecasterr = forecast_results['fc112cse_css'][-25:]
             self.forecast_dyn = forecast_results['fc112cdyn_css']
