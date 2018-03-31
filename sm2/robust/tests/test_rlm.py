@@ -167,7 +167,6 @@ class TestHampel(TestRlm):
         cls.res1.h3 = h3
 
 
-
 @pytest.mark.not_vetted
 class TestRlmBisquare(TestRlm):
     decimal_standarderrors = DECIMAL_1

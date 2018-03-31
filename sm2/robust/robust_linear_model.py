@@ -14,17 +14,16 @@ R Venables, B Ripley. 'Modern Applied Statistics in S'  Springer, New York,
     2002.
 """
 import numpy as np
-import scipy.stats as stats
+from scipy import stats
 
 from sm2.tools.decorators import cache_readonly, resettable_cache, copy_doc
+import sm2.base.model as base
+import sm2.base.wrapper as wrap
+
 import sm2.regression.linear_model as lm
 import sm2.regression._tools as reg_tools
 
-import sm2.robust.norms as norms
-import sm2.robust.scale as scale
-
-import sm2.base.model as base
-import sm2.base.wrapper as wrap
+from sm2.robust import norms, scale
 
 __all__ = ['RLM']
 
@@ -108,6 +107,15 @@ class RLM(base.LikelihoodModel):
     """ % {'params': base._model_params_doc,
            'extra_params': base._missing_param_doc}
 
+    @cache_readonly
+    def df_resid(self):
+        return self.nobs - (self.df_model + 1)
+
+    @cache_readonly
+    def df_model(self):
+        rank = np.linalg.matrix_rank(self.exog)
+        return rank - 1.0
+
     @property
     def _res_classes(self):
         return {"fit": (RLMResults, RLMResultsWrapper)}
@@ -121,6 +129,7 @@ class RLM(base.LikelihoodModel):
         # things to remove_data
         self._data_attr.extend(['weights', 'pinv_wexog'])
 
+    # TODO: Get rid of this dumb method, or at least make it `initialize`
     def _initialize(self):
         """
         Initializes the model for the IRLS fit.
@@ -130,9 +139,6 @@ class RLM(base.LikelihoodModel):
         self.pinv_wexog = np.linalg.pinv(self.exog)
         self.normalized_cov_params = np.dot(self.pinv_wexog,
                                             np.transpose(self.pinv_wexog))
-        self.df_resid = (np.float(self.exog.shape[0] -
-                         np.linalg.matrix_rank(self.exog)))
-        self.df_model = np.float(np.linalg.matrix_rank(self.exog) - 1)
         self.nobs = float(self.endog.shape[0])
 
     def score(self, params):
@@ -254,6 +260,7 @@ class RLM(base.LikelihoodModel):
         conv = conv.lower()
         if conv not in ["weights", "coefs", "dev", "sresid"]:
             raise ValueError("Convergence argument %s not understood" % conv)
+        # TODO: Should scale_est attribute be set?
         self.scale_est = scale_est
 
         wls_results = lm.WLS(self.endog, self.exog).fit()
@@ -278,6 +285,7 @@ class RLM(base.LikelihoodModel):
         iteration = 1
         converged = 0
         while not converged:
+            # TODO: Sure we want to set this as a model attribute?
             self.weights = self.M.weights(wls_results.resid / self.scale)
             wls_results = reg_tools._MinimalWLS(self.endog, self.exog,
                                                 weights=self.weights).fit()

@@ -178,7 +178,6 @@ class TestPoissonConstrained1b(CheckPoissonConstrainedMixin):
 
     @classmethod
     def setup_class(cls):
-        #cls.idx = [3, 4, 5, 6, 0, 1]  # 2 is dropped baseline for categorical
         cls.idx = [6, 2, 3, 4, 5, 0]  # 2 is dropped baseline for categorical
 
         # example without offset
@@ -204,7 +203,6 @@ class TestPoissonConstrained1c(CheckPoissonConstrainedMixin):
 
     @classmethod
     def setup_class(cls):
-        #cls.idx = [3, 4, 5, 6, 0, 1]  # 2 is dropped baseline for categorical
         cls.idx = [6, 2, 3, 4, 5, 0]  # 2 is dropped baseline for categorical
 
         # example without offset
@@ -278,7 +276,6 @@ class TestPoissonConstrained2b(CheckPoissonConstrainedMixin):
 
     @classmethod
     def setup_class(cls):
-        #cls.idx = [3, 4, 5, 6, 0, 1]  # 2 is dropped baseline for categorical
         cls.idx = [6, 2, 3, 4, 5, 0]  # 2 is dropped baseline for categorical
 
         # example without offset
@@ -305,7 +302,6 @@ class TestPoissonConstrained2c(CheckPoissonConstrainedMixin):
 
     @classmethod
     def setup_class(cls):
-        #cls.idx = [3, 4, 5, 6, 0, 1]  # 2 is dropped baseline for categorical
         cls.idx = [6, 2, 3, 4, 5, 0]  # 2 is dropped baseline for categorical
 
         # example without offset
@@ -448,10 +444,10 @@ class TestGLMLogitConstrained1(CheckGLMConstrainedMixin):
 class TestGLMLogitConstrained2(CheckGLMConstrainedMixin):
     idx = slice(None)  # params sequence same as Stata
     model_cls = GLM
+    res2 = reslogit.results_constraint2
 
     @classmethod
     def setup_class(cls):
-        cls.res2 = reslogit.results_constraint2
         mod1 = cls.model_cls(spector_data.endog, spector_data.exog,
                              family=families.Binomial())
 
@@ -497,10 +493,10 @@ class TestGLMLogitConstrained2(CheckGLMConstrainedMixin):
 class TestGLMLogitConstrained2HC(CheckGLMConstrainedMixin):
     idx = slice(None)  # params sequence same as Stata
     model_cls = GLM
+    res2 = reslogit.results_constraint2_robust
 
     @classmethod
     def setup_class(cls):
-        cls.res2 = reslogit.results_constraint2_robust
         mod1 = cls.model_cls(spector_data.endog, spector_data.exog,
                              family=families.Binomial())
 

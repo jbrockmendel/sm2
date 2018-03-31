@@ -409,16 +409,9 @@ class TestNegbinCluExposure(CheckCountRobustMixin):
         mod = cls.model_cls(endog, exog, exposure=exposure)
         cls.res1 = mod.fit(disp=False)
         cls.get_robust_clu()
-        #mod_nbe = smd.NegativeBinomial(endog, exog,
-        #                                exposure=ships_data['service'])
-        #res_nbe = mod_nbe.fit()
-        #mod_nb = smd.NegativeBinomial(endog, exog)
-        #res_nb = mod_nb.fit()
-        #
-        #cov_clu_nb = sw.cov_cluster(res_nb, group)
-        #k_params = k_vars + 1
-        #cov_p = cov_clu_nb / ((nobs - 1.) / float(nobs - k_params))
-        #wt = res_nb.wald_test(np.eye(len(res_nb.params))[1:3], cov_p=cov_p)
+        # Upstream has a bunch of commented-out code after this point;
+        # never got a helpful explanation for it.  Might be worth
+        # revisiting at some point.
 
 
 @pytest.mark.not_vetted

@@ -71,15 +71,13 @@ def test_compare_arma():
 
     # decimal 1 corresponds to threshold of 5% difference
     # still different sign corrected
-    #assert_almost_equal(np.abs(resls[0] / d.params),
-    #                    np.ones(d.params.shape), decimal=1)
     assert_almost_equal(resls[0] / dres.params,
                         np.ones(dres.params.shape),
                         decimal=1)
 
+    # TODO: Is the next comment still accurate.  It is retained from upstream
+    # where there was a commented-out assertion after the comment
     # rescm also contains variance estimate as last element of params
-    #assert_almost_equal(np.abs(rescm.params[:-1] / d.params),
-    #                    np.ones(d.params.shape), decimal=1)
     assert_almost_equal(rescm.params[:-1] / dres.params,
                         np.ones(dres.params.shape),
                         decimal=1)

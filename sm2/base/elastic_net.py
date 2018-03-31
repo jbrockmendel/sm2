@@ -20,7 +20,6 @@ loglike, score, and hess.
 """
 import numpy as np
 
-from sm2.tools.decorators import cache_readonly
 from sm2.base.model import Results
 import sm2.base.wrapper as wrap
 
