@@ -142,6 +142,7 @@ likelihood function, so that calculation is not implemented here.
 Therefore, optimization methods requiring the Hessian matrix such as
 the Newton-Raphson algorithm cannot be used for model fitting.
 """
+from __future__ import division
 from collections import OrderedDict
 import warnings
 
@@ -247,7 +248,6 @@ class MixedLMParams(object):
     """
 
     def __init__(self, k_fe, k_re, k_vc):
-
         self.k_fe = k_fe
         self.k_re = k_re
         self.k_re2 = k_re * (k_re + 1) // 2
@@ -445,14 +445,17 @@ def _smw_solver(s, A, AtA, BI, di):
     qmat[0:m, 0:m] += BI
     ix = np.arange(m, A.shape[1])
     qmat[ix, ix] += di
-    if sparse.issparse(A):
+
+    is_sparse = sparse.issparse(A)
+
+    if is_sparse:
         qi = sparse.linalg.inv(qmat)
         qmati = A.dot(qi.T).T
     else:
         qmati = np.linalg.solve(qmat, A.T)
 
     def solver(rhs):
-        if sparse.issparse(A):
+        if is_sparse:
             ql = qmati.dot(rhs)
             ql = A.dot(ql)
         else:
@@ -491,7 +494,6 @@ def _smw_logdet(s, A, AtA, BI, di, B_logdet):
     -------
     The log determinant of s*I + A*B*A'.
     """
-
     p = A.shape[0]
     ld = p * np.log(s)
     qmat = AtA / s
@@ -596,10 +598,11 @@ class MixedLM(base.LikelihoodModel):
                  **kwargs):
 
         _allowed_kwargs = ["missing_idx", "design_info", "formula"]
-        for x in kwargs.keys():
+        for x in kwargs:
+            # TODO: WTF just make **kwargs explicit!
             if x not in _allowed_kwargs:
-                raise ValueError(
-                    "argument %s not permitted for MixedLM initialization" % x)
+                raise ValueError("argument %s not permitted for MixedLM "
+                                 "initialization" % x)
 
         self.use_sqrt = use_sqrt
 
@@ -673,6 +676,7 @@ class MixedLM(base.LikelihoodModel):
             self.data.param_names = param_names
             self.data.exog_re_names = exog_re_names
             self.data.exog_re_names_full = exog_re_names_full
+            # TODO: Avoid editing self.data in-place
 
         self.k_params = self.k_fe + self.k_re2
 
@@ -850,7 +854,8 @@ class MixedLM(base.LikelihoodModel):
                                   data=data)
         """
 
-        if "groups" not in kwargs.keys():
+        if "groups" not in kwargs:
+            # TODO: WTF Just make kwargs explicit!
             raise AttributeError("'groups' is a required keyword argument " +
                                  "in MixedLM.from_formula")
         groups = kwargs["groups"]
@@ -1128,6 +1133,7 @@ class MixedLM(base.LikelihoodModel):
         params_object = MixedLMParams.from_components(fe_params, cov_re=cov_re)
 
         results = MixedLMResults(self, params_prof, pcov / scale)
+        # TODO: this is not the right place to set all the following junk
         results.params_object = params_object
         results.fe_params = fe_params
         results.cov_re = cov_re
@@ -1140,7 +1146,6 @@ class MixedLM(base.LikelihoodModel):
         results.k_re = self.k_re
         results.k_re2 = self.k_re2
         results.k_vc = self.k_vc
-
         return MixedLMResultsWrapper(results)
 
     def get_fe_params(self, cov_re, vcomp):
@@ -1206,7 +1211,6 @@ class MixedLM(base.LikelihoodModel):
         covariance and square root transformed variance components),
         then P[i] = lin[i] * R + R' * quad[i] * R
         """
-
         k_fe, k_re, k_re2, k_vc = self.k_fe, self.k_re, self.k_re2, self.k_vc
         k_tot = k_fe + k_re2 + k_vc
         ix = np.tril_indices(self.k_re)
@@ -1236,13 +1240,13 @@ class MixedLM(base.LikelihoodModel):
                 if (ix1[1] == ix2[1]) and (ix1[0] <= ix2[0]):
                     ii = (ix2[0], ix1[0])
                     k = ix.index(ii)
-                    quad[k_fe+k][k_fe+i2, k_fe+i1] += 1
+                    quad[k_fe + k][k_fe + i2, k_fe + i1] += 1
         for k in range(k_tot):
-            quad[k] = 0.5*(quad[k] + quad[k].T)
+            quad[k] = 0.5 * (quad[k] + quad[k].T)
 
         # Quadratic terms for variance components.
         km = k_fe + k_re2
-        for k in range(km, km+k_vc):
+        for k in range(km, km + k_vc):
             quad[k][k, k] = 1
 
         return lin, quad
@@ -1328,7 +1332,6 @@ class MixedLM(base.LikelihoodModel):
         log-likelihood.  In addition, if `profile_fe` is true the
         fixed effects parameters are also profiled out.
         """
-
         if type(params) is not MixedLMParams:
             params = MixedLMParams.from_packed(params, self.k_fe,
                                                self.k_re, self.use_sqrt,
@@ -1461,13 +1464,12 @@ class MixedLM(base.LikelihoodModel):
         the parameterization defined by this model instance's
         `use_sqrt` attribute.
         """
-
         if type(params) is not MixedLMParams:
             params = MixedLMParams.from_packed(
                 params, self.k_fe, self.k_re, self.use_sqrt,
                 has_fe=False)
 
-        if profile_fe:
+        if profile_fe:  # TODO: If params.fe_params already set?
             params.fe_params = self.get_fe_params(params.cov_re, params.vcomp)
 
         if self.use_sqrt:
@@ -1525,7 +1527,6 @@ class MixedLM(base.LikelihoodModel):
         which `cov_re` is represented through its lower triangle
         (without taking the Cholesky square root).
         """
-
         fe_params = params.fe_params
         cov_re = params.cov_re
         vcomp = params.vcomp
@@ -1588,8 +1589,9 @@ class MixedLM(base.LikelihoodModel):
 
             # Contributions to the covariance parameter gradient
             vir = solver(resid)
-            for (jj, matl, matr, vsl, vsr, sym) in\
-                    self._gen_dV_dPar(ex_r, solver, group):
+            for (jj, matl, matr, vsl, vsr, sym) in self._gen_dV_dPar(ex_r,
+                                                                     solver,
+                                                                     group):
                 dlv[jj] = _dotsum(matr, vsl)
                 if not sym:
                     dlv[jj] += _dotsum(matl, vsr)
@@ -1672,7 +1674,6 @@ class MixedLM(base.LikelihoodModel):
             The score vector with respect to variance components
             parameters.
         """
-
         score_fe, score_re, score_vc = self.score_full(params, calc_fe=calc_fe)
         params_vec = params.get_packed(use_sqrt=True, has_fe=True)
 
@@ -1681,10 +1682,10 @@ class MixedLM(base.LikelihoodModel):
         for i in range(len(params_vec)):
             v = self._lin[i] + 2 * np.dot(self._quad[i], params_vec)
             scr += score_full[i] * v
+
         score_fe = scr[0:self.k_fe]
         score_re = scr[self.k_fe:self.k_fe + self.k_re2]
         score_vc = scr[self.k_fe + self.k_re2:]
-
         return score_fe, score_re, score_vc
 
     def hessian(self, params):
@@ -1708,11 +1709,11 @@ class MixedLM(base.LikelihoodModel):
         hess : 2d ndarray
             The Hessian matrix, evaluated at `params`.
         """
-
         if type(params) is not MixedLMParams:
             params = MixedLMParams.from_packed(params, self.k_fe, self.k_re,
                                                use_sqrt=self.use_sqrt,
                                                has_fe=True)
+            # TODO: Why is has_fe hard-coded?
 
         fe_params = params.fe_params
         vcomp = params.vcomp
@@ -1757,8 +1758,8 @@ class MixedLM(base.LikelihoodModel):
             vir = solver(resid)
             rvir += np.dot(resid, vir)
 
-            for (jj1, matl1, matr1, vsl1, vsr1, sym1) in\
-                    self._gen_dV_dPar(ex_r, solver, group):
+            for tup in self._gen_dV_dPar(ex_r, solver, group):
+                (jj1, matl1, matr1, vsl1, vsr1, sym1) = tup
 
                 ul = _dot(viexog.T, matl1)
                 ur = _dot(matr1.T, vir)
@@ -1785,8 +1786,8 @@ class MixedLM(base.LikelihoodModel):
                 if not sym1:
                     E.append((vsr1, matl1))
 
-                for (jj2, matl2, matr2, vsl2, vsr2, sym2) in\
-                        self._gen_dV_dPar(ex_r, solver, group, jj1):
+                for tup2 in self._gen_dV_dPar(ex_r, solver, group, jj1):
+                    (jj2, matl2, matr2, vsl2, vsr2, sym2) = tup2
 
                     re = sum([_multi_dot_three(matr2.T, x[0], x[1].T)
                               for x in E])
@@ -1947,13 +1948,15 @@ class MixedLM(base.LikelihoodModel):
         """
 
         _allowed_kwargs = ['gtol', 'maxiter']
-        for x in kwargs.keys():
+        for x in kwargs:
             if x not in _allowed_kwargs:
+                # TODO: WTF just make kwargs explicit
                 raise ValueError("Argument %s not allowed for MixedLM.fit" % x)
 
         if method.lower() in ["newton", "ncg"]:
             raise ValueError("method %s not available for MixedLM" % method)
 
+        # TODO: These shouldn't be attributes of `self`
         self.reml = reml
         self.cov_pen = cov_pen
         self.fe_pen = fe_pen
@@ -2076,12 +2079,13 @@ class MixedLM(base.LikelihoodModel):
         results.k_vc = self.k_vc
         results.use_sqrt = self.use_sqrt
         results.freepat = self._freepat
+        # TODO: This is _not_ the right place to set all these attributes
 
         return MixedLMResultsWrapper(results)
 
 
 class MixedLMResults(base.LikelihoodModelResults, base.ResultMixin):
-    '''
+    """
     Class to contain results of fitting a linear mixed effects model.
 
     MixedLMResults inherits from sm2.LikelihoodModelResults
@@ -2114,14 +2118,16 @@ class MixedLMResults(base.LikelihoodModelResults, base.ResultMixin):
     See Also
     --------
     sm2.LikelihoodModelResults
-    '''
+    """
+
+    @cache_readonly
+    def df_resid(self):
+        return self.nobs - np.linalg.matrix_rank(self.model.exog)
 
     def __init__(self, model, params, cov_params):
-
         super(MixedLMResults, self).__init__(model, params,
                                              normalized_cov_params=cov_params)
         self.nobs = self.model.nobs
-        self.df_resid = self.nobs - np.linalg.matrix_rank(self.model.exog)
 
     @cache_readonly
     def fittedvalues(self):
@@ -2149,7 +2155,7 @@ class MixedLMResults(base.LikelihoodModelResults, base.ResultMixin):
         return fit
 
     @cache_readonly
-    def resid(self):
+    def resid(self):  # TODO: Use base class method?
         """
         Returns the residuals for the model.
 
@@ -2157,6 +2163,30 @@ class MixedLMResults(base.LikelihoodModelResults, base.ResultMixin):
         fixed effects and the predicted random effects.
         """
         return self.model.endog - self.fittedvalues
+
+    @cache_readonly
+    def llf(self):
+        return self.model.loglike(self.params_object, profile_fe=False)
+
+    @cache_readonly
+    def aic(self):
+        if self.reml:
+            return np.nan
+        if self.freepat is not None:
+            df = self.freepat.get_packed(use_sqrt=False, has_fe=True).sum() + 1
+        else:
+            df = self.params.size + 1
+        return -2 * (self.llf - df)
+
+    @cache_readonly
+    def bic(self):
+        if self.reml:
+            return np.nan
+        if self.freepat is not None:
+            df = self.freepat.get_packed(use_sqrt=False, has_fe=True).sum() + 1
+        else:
+            df = self.params.size + 1
+        return -2 * self.llf + np.log(self.nobs) * df
 
     @cache_readonly
     def bse_fe(self):
@@ -2340,30 +2370,6 @@ class MixedLMResults(base.LikelihoodModelResults, base.ResultMixin):
                                   "as it is a misnomer for summary2, "
                                   "which is not supported")
 
-    @cache_readonly
-    def llf(self):
-        return self.model.loglike(self.params_object, profile_fe=False)
-
-    @cache_readonly
-    def aic(self):
-        if self.reml:
-            return np.nan
-        if self.freepat is not None:
-            df = self.freepat.get_packed(use_sqrt=False, has_fe=True).sum() + 1
-        else:
-            df = self.params.size + 1
-        return -2 * (self.llf - df)
-
-    @cache_readonly
-    def bic(self):
-        if self.reml:
-            return np.nan
-        if self.freepat is not None:
-            df = self.freepat.get_packed(use_sqrt=False, has_fe=True).sum() + 1
-        else:
-            df = self.params.size + 1
-        return -2 * self.llf + np.log(self.nobs) * df
-
     def profile_re(self, re_ix, vtype, num_low=5, dist_low=1., num_high=5,
                    dist_high=1.):
         """
@@ -2402,7 +2408,6 @@ class MixedLMResults(base.LikelihoodModelResults, base.ResultMixin):
         -----
         Only variance parameters can be profiled.
         """
-
         pmodel = self.model
         k_fe = pmodel.k_fe
         k_re = pmodel.k_re
@@ -2512,7 +2517,6 @@ class MixedLMResultsWrapper(base.LikelihoodResultsWrapper):
 
 
 def _handle_missing(data, groups, formula, re_formula, vc_formula):
-
     tokens = set([])
 
     forms = [formula]
