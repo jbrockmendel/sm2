@@ -288,62 +288,44 @@ class CheckComparisonMixin(object):
 # TODO:
 # Non-Canonical Links for the Binomial family require the algorithm to be
 # slightly changed
-#class TestGlmBinomialLog(CheckModelResultsMixin):
+# class TestGlmBinomialLog(CheckModelResultsMixin):
 #    pass
-
-#class TestGlmBinomialLogit(CheckModelResultsMixin):
+# class TestGlmBinomialLogit(CheckModelResultsMixin):
 #    pass
-
-#class TestGlmBinomialProbit(CheckModelResultsMixin):
+# class TestGlmBinomialProbit(CheckModelResultsMixin):
 #    pass
-
-#class TestGlmBinomialCloglog(CheckModelResultsMixin):
+# class TestGlmBinomialCloglog(CheckModelResultsMixin):
 #    pass
-
-#class TestGlmBinomialPower(CheckModelResultsMixin):
+# class TestGlmBinomialPower(CheckModelResultsMixin):
 #    pass
-
-#class TestGlmBinomialLoglog(CheckModelResultsMixin):
+# class TestGlmBinomialLoglog(CheckModelResultsMixin):
 #    pass
-
-#class TestGlmBinomialLogc(CheckModelResultsMixin):
-# TODO: need include logc link
+# class TestGlmBinomialLogc(CheckModelResultsMixin):
+#    TODO: need include logc link
 #    pass
-
-#class TestGlmBernoulliIdentity(CheckModelResultsMixin):
+# class TestGlmBernoulliIdentity(CheckModelResultsMixin):
 #    pass
-
-#class TestGlmBernoulliLog(CheckModelResultsMixin):
+# class TestGlmBernoulliLog(CheckModelResultsMixin):
 #    pass
-
-#class TestGlmBernoulliProbit(CheckModelResultsMixin):
+# class TestGlmBernoulliProbit(CheckModelResultsMixin):
 #    pass
-
-#class TestGlmBernoulliCloglog(CheckModelResultsMixin):
+# class TestGlmBernoulliCloglog(CheckModelResultsMixin):
 #    pass
-
-#class TestGlmBernoulliPower(CheckModelResultsMixin):
+# class TestGlmBernoulliPower(CheckModelResultsMixin):
 #    pass
-
-#class TestGlmBernoulliLoglog(CheckModelResultsMixin):
+# class TestGlmBernoulliLoglog(CheckModelResultsMixin):
 #    pass
-
-#class test_glm_bernoulli_logc(CheckModelResultsMixin):
+# class test_glm_bernoulli_logc(CheckModelResultsMixin):
 #    pass
-
-#class TestGlmPoissonIdentity(CheckModelResultsMixin):
+# class TestGlmPoissonIdentity(CheckModelResultsMixin):
 #    pass
-
-#class TestGlmPoissonPower(CheckModelResultsMixin):
+# class TestGlmPoissonPower(CheckModelResultsMixin):
 #    pass
-
-#class TestGlmNegbinomial_log(CheckModelResultsMixin):
+# class TestGlmNegbinomial_log(CheckModelResultsMixin):
 #    pass
-
-#class TestGlmNegbinomial_power(CheckModelResultsMixin):
+# class TestGlmNegbinomial_power(CheckModelResultsMixin):
 #    pass
-
-#class TestGlmNegbinomial_nbinom(CheckModelResultsMixin):
+# class TestGlmNegbinomial_nbinom(CheckModelResultsMixin):
 #    pass
 
 
@@ -399,11 +381,9 @@ class TestGaussianLog(CheckModelResultsMixin):
 
     @classmethod
     def setup_class(cls):
-
         nobs = 100
         x = np.arange(nobs)
         np.random.seed(54321)
-        #y = 1.0 - .02*x - .001*x**2 + 0.001 * np.random.randn(nobs)
         cls.X = np.c_[np.ones((nobs, 1)), x, x**2]
         cls.lny = (np.exp(-(-1.0 + 0.02 * x + 0.0001 * x**2)) +
                    0.001 * np.random.randn(nobs))
@@ -506,7 +486,7 @@ class TestGlmBernoulli(CheckModelResultsMixin, CheckComparisonMixin):
         s**2
         s = glm.scoretest(mod, data["lwt"]**2)
         s**2
-        """  # noqa:E501
+        """  # noqa:E501,F841
 
 
 @pytest.mark.not_vetted

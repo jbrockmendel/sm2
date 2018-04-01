@@ -7,9 +7,23 @@ License: BSD-3
 from __future__ import division, absolute_import, print_function
 
 import numpy as np
-import sm2.base.wrapper as wrap
 
+from sm2.tools.decorators import cache_readonly
+import sm2.base.wrapper as wrap
 from sm2.tsa.regime_switching import markov_switching
+
+
+def _get_trend_exog(trend, nobs):
+    # TODO: Does this belong in e.g vector_ar.utils?
+    trend_exog = None
+    if trend == 'c':
+        trend_exog = np.ones((nobs, 1))
+    elif trend == 't':
+        trend_exog = (np.arange(nobs) + 1)[:, np.newaxis]
+    elif trend == 'ct':
+        trend_exog = np.c_[np.ones((nobs, 1)),
+                           (np.arange(nobs) + 1)[:, np.newaxis]]
+    return trend_exog
 
 
 class MarkovRegression(markov_switching.MarkovSwitching):
@@ -82,11 +96,27 @@ class MarkovRegression(markov_switching.MarkovSwitching):
     """
 
     @property
+    def _res_classes(self):
+        return {'fit': (MarkovRegressionResults,
+                        MarkovRegressionResultsWrapper)}
+
+    @cache_readonly
     def k_exog(self):
         if self.data.orig_exog is None:
             return 0
         return self.data.orig_exog.shape[1] - self.k_trend
         # TODO: Does this make sense at all?
+
+    @cache_readonly
+    def k_trend(self):
+        trend = self.trend
+        if trend == 'c':
+            return 1
+        elif trend == 't':
+            return 1
+        elif trend == 'ct':
+            return 2
+        return 0
 
     def __init__(self, endog, k_regimes, trend='c', exog=None, order=0,
                  exog_tvtp=None, switching_trend=True, switching_exog=True,
@@ -104,22 +134,10 @@ class MarkovRegression(markov_switching.MarkovSwitching):
 
         # Trend
         nobs = len(endog)
-        self.k_trend = 0
-        self._k_exog = k_exog
-        trend_exog = None
-        if trend == 'c':
-            trend_exog = np.ones((nobs, 1))
-            self.k_trend = 1
-        elif trend == 't':
-            trend_exog = (np.arange(nobs) + 1)[:, np.newaxis]
-            self.k_trend = 1
-        elif trend == 'ct':
-            trend_exog = np.c_[np.ones((nobs, 1)),
-                               (np.arange(nobs) + 1)[:, np.newaxis]]
-            self.k_trend = 2
+        trend_exog = _get_trend_exog(trend, nobs)
+        self._k_exog = k_exog + self.k_trend
         if trend_exog is not None:
             exog = trend_exog if exog is None else np.c_[trend_exog, exog]
-            self._k_exog += self.k_trend
 
         # Initialize the base model
         super(MarkovRegression, self).__init__(
@@ -132,6 +150,7 @@ class MarkovRegression(markov_switching.MarkovSwitching):
             self.switching_trend = [self.switching_trend] * self.k_trend
         elif len(self.switching_trend) != self.k_trend:
             raise ValueError('Invalid iterable passed to `switching_trend`.')
+
         if self.switching_exog is True or self.switching_exog is False:
             self.switching_exog = [self.switching_exog] * self.k_exog
         elif len(self.switching_exog) != self.k_exog:
@@ -196,11 +215,6 @@ class MarkovRegression(markov_switching.MarkovSwitching):
             np.exp(-0.5 * resid**2 / variance) / np.sqrt(2 * np.pi * variance))
 
         return conditional_likelihoods
-
-    @property
-    def _res_classes(self):
-        return {'fit': (MarkovRegressionResults,
-                        MarkovRegressionResultsWrapper)}
 
     def _em_iteration(self, params0):
         """

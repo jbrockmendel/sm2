@@ -3345,7 +3345,6 @@ class DiscreteResults(base.LikelihoodModelResults):
                     ('Method:', ['MLE']),
                     ('Date:', None),
                     ('Time:', None),
-                    # ('No. iterations:', ["%d" % self.mle_retvals['iterations']]),
                     ('converged:', ["%s" % self.mle_retvals['converged']])]
 
         top_right = [('No. Observations:', None),

@@ -180,6 +180,10 @@ class RegressionModel(base.LikelihoodModel):
                                     RegularizedResultsWrapper)}
 
     def __init__(self, endog, exog, **kwargs):
+        self._df_model = None
+        self._df_resid = None
+        self.rank = None
+
         super(RegressionModel, self).__init__(endog, exog, **kwargs)
         self._data_attr.extend(['pinv_wexog', 'wendog', 'wexog', 'weights'])
 
@@ -188,10 +192,6 @@ class RegressionModel(base.LikelihoodModel):
         self.wendog = self.whiten(self.endog)
         # overwrite nobs from class Model:
         self.nobs = float(self.wexog.shape[0])
-
-        self._df_model = None
-        self._df_resid = None
-        self.rank = None
 
     @property
     def df_model(self):
@@ -352,44 +352,9 @@ class RegressionModel(base.LikelihoodModel):
         return np.dot(exog, params)
 
     def get_distribution(self, params, scale, exog=None, dist_class=None):
-        """
-        Returns a random number generator for the predictive distribution.
-
-        Parameters
-        ----------
-        params : array-like
-            The model parameters (regression coefficients).
-        scale : scalar
-            The variance parameter.
-        exog : array-like
-            The predictor variable matrix.
-        dist_class : class
-            A random number generator class.  Must take 'loc' and 'scale'
-            as arguments and return a random number generator implementing
-            an ``rvs`` method for simulating random values. Defaults to
-            Gaussian.
-
-        Returns
-        -------
-        gen
-            Frozen random number generator object with mean and variance
-            determined by the fitted linear model.  Use the ``rvs`` method
-            to generate random values.
-
-        Notes
-        -----
-        Due to the behavior of ``scipy.stats.distributions objects``,
-        the returned random number generator must be called with
-        ``gen.rvs(n)`` where ``n`` is the number of observations in
-        the data set used to fit the model.  If any other value is
-        used for ``n``, misleading results will be produced.
-        """
-        fit = self.predict(params, exog)
-        if dist_class is None:
-            dist_class = stats.distributions.norm
-        gen = dist_class(loc=fit, scale=np.sqrt(scale))
-        return gen
-        # TODO: not hit in tests.  needed?
+        raise NotImplementedError("get_distribution is not ported from "
+                                  "upstream, since it is neither used nor "
+                                  "tested there.")  # pragma: no cover
 
 
 class GLS(RegressionModel):
@@ -1190,6 +1155,9 @@ def yule_walker(X, order=1, method="unbiased", df=None, inv=False,
     >>> sigma
     16.808022730464351
     """
+    if inv:  # pragma: no cover
+        raise NotImplementedError("option `inv` not ported from upstream, "
+                                  "since it is not used or tested there.")
     # TODO: define R better, look back at notes and technical notes on YW.
     # First link here is useful
     # http://www-stat.wharton.upenn.edu/~steele/Courses/956/ResourceDetails/YuleWalkerAndMore.htm
@@ -1219,11 +1187,7 @@ def yule_walker(X, order=1, method="unbiased", df=None, inv=False,
 
     rho = np.linalg.solve(R, r[1:])
     sigmasq = r[0] - (r[1:] * rho).sum()
-    if inv:
-        # TODO: Not hit in tests; remove multiple-return?
-        return rho, np.sqrt(sigmasq), np.linalg.inv(R)
-    else:
-        return rho, np.sqrt(sigmasq)
+    return rho, np.sqrt(sigmasq)
 
 
 class RegressionResults(base.LikelihoodModelResults):
@@ -2046,8 +2010,8 @@ class RegressionResults(base.LikelihoodModelResults):
                     ('Date:', None),
                     ('Time:', None),
                     ('No. Observations:', None),
-                    ('Df Residuals:', None),  # [self.df_resid]) TODO: spelling
-                    ('Df Model:', None),  # [self.df_model])
+                    ('Df Residuals:', None),
+                    ('Df Model:', None),
                     ]
 
         if hasattr(self, 'cov_type'):

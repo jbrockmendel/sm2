@@ -822,25 +822,16 @@ class InvGauss(object):
     Note only the first 5000 observations are used because
     the models code currently uses np.eye.
     """
-    #np.random.seed(54321)
-    #x1 = np.abs(stats.norm.ppf((np.random.random(5000))))
-    #x2 = np.abs(stats.norm.ppf((np.random.random(5000))))
-    #X = np.column_stack((x1, x2))
-    #X = add_constant(X)
-    #params = np.array([.5, -.25, 1])
-    #eta = np.dot(X, params)
-    #mu = 1/np.sqrt(eta)
-    #sigma = .5
-    # This isn't correct.  Errors need to be normally distributed
-    # But Y needs to be Inverse Gaussian, so we could build it up
-    # by throwing out data?
+    # Note: Upstream has a bunch of commented-out crap at this point;
+    # never got a good explanation for why it was still there.
+    # TODO: At some point go revisit that Issue and see if it has been
+    # addressed.
+
     # Refs: Lai (2009) Generating inverse Gaussian random variates by
-    #  approximation
+    #                  approximation
     # Atkinson (1982) The simulation of generalized inverse gaussian and
-    # hyperbolic random variables seems to be the canonical ref
-    #Y = np.dot(X, params) + np.random.wald(mu, sigma, 1000)
-    #model = GLM(Y, X, family=models.family.InverseGaussian(link=\
-    #    models.family.links.identity))
+    #                 hyperbolic random variables
+    # Atkinson seems to be the canonical ref
 
     def __init__(self):
         # set up data

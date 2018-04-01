@@ -45,7 +45,7 @@ class RobustNorm(object):
 
         -2 loglike used in M-estimator
         """
-        raise NotImplementedError
+        raise NotImplementedError  # pragma: no cover
 
     def psi(self, z):
         """
@@ -55,7 +55,7 @@ class RobustNorm(object):
 
         psi = rho'
         """
-        raise NotImplementedError
+        raise NotImplementedError  # pragma: no cover
 
     def weights(self, z):
         """
@@ -65,10 +65,10 @@ class RobustNorm(object):
 
         psi(z) / z
         """
-        raise NotImplementedError
+        raise NotImplementedError  # pragma: no cover
 
     def psi_deriv(self, z):
-        '''
+        """
         Deriative of psi.  Used to obtain robust covariance matrix.
 
         See statsmodels.rlm for more information.
@@ -76,8 +76,8 @@ class RobustNorm(object):
         Abstract method:
 
         psi_derive = psi'
-        '''
-        raise NotImplementedError
+        """
+        raise NotImplementedError  # pragma: no cover
 
     def __call__(self, z):
         """
@@ -265,90 +265,9 @@ class HuberT(RobustNorm):
         return np.less_equal(np.fabs(z), self.t)
 
 
-# TODO: untested, but looks right.  RamsayE not available in R or SAS?
-class RamsayE(RobustNorm):
-    """
-    Ramsay's Ea for M estimation.
-
-    Parameters
-    ----------
-    a : float, optional
-        The tuning constant for Ramsay's Ea function.  The default value is
-        0.3.
-
-    See also
-    --------
-    sm2.robust.norms.RobustNorm
-    """
-    def __init__(self, a=.3):
-        self.a = a
-
-    def rho(self, z):
-        r"""
-        The robust criterion function for Ramsay's Ea.
-
-        Parameters
-        ----------
-        z : array-like
-            1d array
-
-        Returns
-        -------
-        rho : array
-            rho(z) = a**-2 * (1 - exp(-a*\|z\|)*(1 + a*\|z\|))
-        """
-        z = np.asarray(z)
-        weights = np.exp(-self.a * np.fabs(z))
-        return (1 - weights * (1 + self.a * np.fabs(z))) / self.a**2
-
-    def psi(self, z):
-        """
-        The psi function for Ramsay's Ea estimator
-
-        The analytic derivative of rho
-
-        Parameters
-        ----------
-        z : array-like
-            1d array
-
-        Returns
-        -------
-        psi : array
-            psi(z) = z*exp(-a*\|z\|)
-        """
-        z = np.asarray(z)
-        return z * np.exp(-self.a * np.fabs(z))
-
-    def weights(self, z):
-        """
-        Ramsay's Ea weighting function for the IRLS algorithm
-
-        The psi function scaled by z
-
-        Parameters
-        ----------
-        z : array-like
-            1d array
-
-        Returns
-        -------
-        weights : array
-            weights(z) = exp(-a*\|z\|)
-        """
-        z = np.asarray(z)
-        return np.exp(-self.a * np.fabs(z))
-
-    def psi_deriv(self, z):
-        """
-        The derivative of Ramsay's Ea psi function.
-
-        Notes
-        -----
-        Used to estimate the robust covariance matrix.
-        """
-        weights = np.exp(-self.a * np.fabs(z))
-        return (weights + z**2 * weights * -self.a / np.fabs(z))
+def RamsayE(*args, **kwargs):
+    raise NotImplementedError("RamsayE not ported form upstream, "
+                              "as it is neither used nor tested there.")
 
 
 class AndrewWave(RobustNorm):
@@ -455,106 +374,9 @@ class AndrewWave(RobustNorm):
         return test * np.cos(z / self.a) / self.a
 
 
-# TODO: this is untested
-class TrimmedMean(RobustNorm):
-    """
-    Trimmed mean function for M-estimation.
-
-    Parameters
-    ----------
-    c : float, optional
-        The tuning constant for Ramsay's Ea function.  The default value is
-        2.0.
-
-    See also
-    --------
-    sm2.robust.norms.RobustNorm
-    """
-    def __init__(self, c=2.):
-        self.c = c
-
-    def _subset(self, z):
-        """
-        Least trimmed mean is defined piecewise over the range of z.
-        """
-        z = np.asarray(z)
-        return np.less_equal(np.fabs(z), self.c)
-
-    def rho(self, z):
-        r"""
-        The robust criterion function for least trimmed mean.
-
-        Parameters
-        ----------
-        z : array-like
-            1d array
-
-        Returns
-        -------
-        rho : array
-            rho(z) = (1/2.)*z**2    for \|z\| <= c
-
-            rho(z) = 0              for \|z\| > c
-        """
-        z = np.asarray(z)
-        test = self._subset(z)
-        return test * z**2 * 0.5
-
-    def psi(self, z):
-        """
-        The psi function for least trimmed mean
-
-        The analytic derivative of rho
-
-        Parameters
-        ----------
-        z : array-like
-            1d array
-
-        Returns
-        -------
-        psi : array
-            psi(z) = z              for \|z\| <= c
-
-            psi(z) = 0              for \|z\| > c
-
-        """
-        z = np.asarray(z)
-        test = self._subset(z)
-        return test * z
-
-    def weights(self, z):
-        """
-        Least trimmed mean weighting function for the IRLS algorithm
-
-        The psi function scaled by z
-
-        Parameters
-        ----------
-        z : array-like
-            1d array
-
-        Returns
-        -------
-        weights : array
-            weights(z) = 1             for \|z\| <= c
-
-            weights(z) = 0             for \|z\| > c
-        """
-        z = np.asarray(z)
-        test = self._subset(z)
-        return test
-
-    def psi_deriv(self, z):
-        """
-        The derivative of least trimmed mean psi function
-
-        Notes
-        -----
-        Used to estimate the robust covariance matrix.
-        """
-        test = self._subset(z)
-        return test
+def TrimmedMean(*args, **kwargs):
+    raise NotImplementedError("TrimmedMean not ported from upstream, "
+                              "as it is neither used nor tested there.")
 
 
 class Hampel(RobustNorm):

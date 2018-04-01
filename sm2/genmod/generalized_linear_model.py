@@ -483,27 +483,6 @@ class GLM(base.LikelihoodModel):
         score_factor = self.score_factor(params, scale=scale)
         return score_factor[:, None] * self.exog
 
-    # TODO: Defer to default implementation?
-    def score(self, params, scale=None):
-        """score, first derivative of the loglikelihood function
-
-        Parameters
-        ----------
-        params : ndarray
-            parameter at which score is evaluated
-        scale : None or float
-            If scale is None, then the default scale will be calculated.
-            Default scale is defined by `self.scaletype` and set in fit.
-            If scale is not None, then it is used as a fixed scale.
-
-        Returns
-        -------
-        score : ndarray_1d
-            The first derivative of the loglikelihood function calculated as
-            the sum of `score_obs`
-        """
-        return self.score_obs(params, scale=scale).sum(0)
-
     def score_factor(self, params, scale=None):
         """weights for score for each observation
 
@@ -801,7 +780,7 @@ class GLM(base.LikelihoodModel):
                                (scale * (mu ** power)) - 1) *
                                np.log(mu)) / self.freq_weights.sum())
             power = brentq(psi_p, low, high, args=(mu))
-        else:
+        else:  # pragma: no cover
             # TODO: Should this be ValueError?
             raise NotImplementedError('Only brentq can currently be used')
         return power
@@ -870,55 +849,10 @@ class GLM(base.LikelihoodModel):
         else:
             return self.family.fitted(linpred)
 
-    # TODO: Not hit in tests; is this needed?
     def get_distribution(self, params, scale=1, exog=None, exposure=None,
                          offset=None):
-        """
-        Returns a random number generator for the predictive distribution.
-
-        Parameters
-        ----------
-        params : array-like
-            The model parameters.
-        scale : scalar
-            The scale parameter.
-        exog : array-like
-            The predictor variable matrix.
-
-        Returns
-        -------
-        gen
-            Frozen random number generator object.  Use the ``rvs`` method to
-            generate random values.
-
-        Notes
-        -----
-        Due to the behavior of ``scipy.stats.distributions objects``, the
-        returned random number generator must be called with ``gen.rvs(n)``
-        where ``n`` is the number of observations in the data set used
-        to fit the model.  If any other value is used for ``n``, misleading
-        results will be produced.
-        """
-        fit = self.predict(params, exog, exposure, offset, linear=False)
-
-        import scipy.stats.distributions as dist
-
-        if isinstance(self.family, families.Gaussian):
-            return dist.norm(loc=fit, scale=np.sqrt(scale))
-
-        elif isinstance(self.family, families.Binomial):
-            return dist.binom(n=1, p=fit)
-
-        elif isinstance(self.family, families.Poisson):
-            return dist.poisson(mu=fit)
-
-        elif isinstance(self.family, families.Gamma):
-            alpha = fit / float(scale)
-            return dist.gamma(alpha, scale=scale)
-
-        else:
-            raise ValueError("get_distribution not implemented for %s" %
-                             self.family.name)
+        raise NotImplementedError("get_distribution not ported from upstream, "
+                                  "as it is neither used nor tested there.")
 
     def _setup_binomial(self):
         # this checks what kind of data is given for Binomial.
@@ -1580,7 +1514,6 @@ class GLMResults(base.LikelihoodModelResults):
 
     @cache_readonly
     def llf(self):
-        _modelfamily = self.family
         if (isinstance(self.family, families.Gaussian) and
                 isinstance(self.family.link, families.links.Power) and
                 (self.family.link.power == 1.)):
@@ -1588,10 +1521,10 @@ class GLMResults(base.LikelihoodModelResults):
             scale /= self.model.wnobs
         else:
             scale = self.scale
-        val = _modelfamily.loglike(self._endog, self.mu,
-                                   var_weights=self._var_weights,
-                                   freq_weights=self._freq_weights,
-                                   scale=scale)
+        val = self.family.loglike(self._endog, self.mu,
+                                  var_weights=self._var_weights,
+                                  freq_weights=self._freq_weights,
+                                  scale=scale)
         return val
 
     @cache_readonly
@@ -1702,7 +1635,7 @@ class GLMResults(base.LikelihoodModelResults):
         # create summary tables
         from sm2.iolib.summary import Summary
         smry = Summary()
-        smry.add_table_2cols(self, gleft=top_left, gright=top_right,  # [],
+        smry.add_table_2cols(self, gleft=top_left, gright=top_right,
                              yname=yname, xname=xname, title=title)
         smry.add_table_params(self, yname=yname, xname=xname, alpha=alpha,
                               use_t=self.use_t)
@@ -1710,11 +1643,6 @@ class GLMResults(base.LikelihoodModelResults):
         if hasattr(self, 'constraints'):
             smry.add_extra_txt(['Model has been estimated subject to linear '
                                 'equality constraints.'])
-
-        # diagnostic table is not used yet:
-        # smry.add_table_2cols(self, gleft=diagn_left, gright=diagn_right,
-        #                   yname=yname, xname=xname,
-        #                   title="")
         return smry
 
     def summary2(self, yname=None, xname=None, title=None, alpha=.05,

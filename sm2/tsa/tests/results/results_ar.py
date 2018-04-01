@@ -127,7 +127,7 @@ class ARResultsOLS(object):
             self.rmse = 15.29712618677774
             self.sigma = 226.9820074869752
             self.llf = -1239.41217278661
-            # See note above
+            # See note above; TODO: What note does this refer to?
             #self.bic =  8.433861292817106
             #self.hqic =  8.367215591385756
             #self.aic =  8.322747818577421

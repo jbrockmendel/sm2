@@ -252,7 +252,7 @@ class LikelihoodModel(Model):
         """
         Score vector of model.  Default implementation sums score_obs.
 
-        The gradient of logL with respect to each parameter.
+        The gradient of loglike with respect to each parameter.
         """
         return self.score_obs(params, **kwargs).sum(axis=0)
 

@@ -14,17 +14,16 @@ R Venables, B Ripley. 'Modern Applied Statistics in S'  Springer, New York,
     2002.
 """
 import numpy as np
-import scipy.stats as stats
+from scipy import stats
 
-from sm2.tools.decorators import cache_readonly, resettable_cache, copy_doc
+from sm2.tools.decorators import cache_readonly, resettable_cache
+import sm2.base.model as base
+import sm2.base.wrapper as wrap
+
 import sm2.regression.linear_model as lm
 import sm2.regression._tools as reg_tools
 
-import sm2.robust.norms as norms
-import sm2.robust.scale as scale
-
-import sm2.base.model as base
-import sm2.base.wrapper as wrap
+from sm2.robust import norms, scale
 
 __all__ = ['RLM']
 
@@ -108,6 +107,19 @@ class RLM(base.LikelihoodModel):
     """ % {'params': base._model_params_doc,
            'extra_params': base._missing_param_doc}
 
+    @cache_readonly
+    def nobs(self):
+        return float(self.endog.shape[0])
+
+    @cache_readonly
+    def df_resid(self):
+        return self.nobs - (self.df_model + 1)
+
+    @cache_readonly
+    def df_model(self):
+        rank = np.linalg.matrix_rank(self.exog)
+        return rank - 1.0
+
     @property
     def _res_classes(self):
         return {"fit": (RLMResults, RLMResultsWrapper)}
@@ -121,6 +133,7 @@ class RLM(base.LikelihoodModel):
         # things to remove_data
         self._data_attr.extend(['weights', 'pinv_wexog'])
 
+    # TODO: Get rid of this dumb method, or at least make it `initialize`
     def _initialize(self):
         """
         Initializes the model for the IRLS fit.
@@ -130,10 +143,6 @@ class RLM(base.LikelihoodModel):
         self.pinv_wexog = np.linalg.pinv(self.exog)
         self.normalized_cov_params = np.dot(self.pinv_wexog,
                                             np.transpose(self.pinv_wexog))
-        self.df_resid = (np.float(self.exog.shape[0] -
-                         np.linalg.matrix_rank(self.exog)))
-        self.df_model = np.float(np.linalg.matrix_rank(self.exog) - 1)
-        self.nobs = float(self.endog.shape[0])
 
     def score(self, params):
         raise NotImplementedError
@@ -254,6 +263,7 @@ class RLM(base.LikelihoodModel):
         conv = conv.lower()
         if conv not in ["weights", "coefs", "dev", "sresid"]:
             raise ValueError("Convergence argument %s not understood" % conv)
+        # TODO: Should scale_est attribute be set?
         self.scale_est = scale_est
 
         wls_results = lm.WLS(self.endog, self.exog).fit()
@@ -278,6 +288,7 @@ class RLM(base.LikelihoodModel):
         iteration = 1
         converged = 0
         while not converged:
+            # TODO: Sure we want to set this as a model attribute?
             self.weights = self.M.weights(wls_results.resid / self.scale)
             wls_results = reg_tools._MinimalWLS(self.endog, self.exog,
                                                 weights=self.weights).fit()
@@ -390,13 +401,24 @@ class RLMResults(base.LikelihoodModelResults):
     --------
     sm2.base.model.LikelihoodModelResults
     """
+
+    @cache_readonly
+    def nobs(self):
+        return float(self.model.endog.shape[0])
+
+    @cache_readonly
+    def df_resid(self):
+        return self.nobs - (self.df_model + 1)
+
+    @cache_readonly
+    def df_model(self):
+        rank = np.linalg.matrix_rank(self.model.exog)
+        return rank - 1.0
+
     def __init__(self, model, params, normalized_cov_params, scale):
         super(RLMResults, self).__init__(model, params,
                                          normalized_cov_params, scale)
         self.model = model
-        self.df_model = model.df_model
-        self.df_resid = model.df_resid
-        self.nobs = model.nobs
         self._cache = resettable_cache()
         # for remove_data
         self.data_in_cache = ['sresid']
@@ -463,13 +485,6 @@ class RLMResults(base.LikelihoodModelResults):
     def chisq(self):
         return (self.params / self.bse)**2
 
-    @copy_doc(base.LikelihoodModelResults.remove_data.__doc__)
-    def remove_data(self):
-        # TODO: Is this at all necessary?
-        super(self.__class__, self).remove_data()
-        #self.model.history['sresid'] = None
-        #self.model.history['weights'] = None
-
     def summary(self, yname=None, xname=None, title=0, alpha=.05,
                 return_fmt='text'):
         """
@@ -498,15 +513,10 @@ class RLMResults(base.LikelihoodModelResults):
 
         from sm2.iolib.summary import Summary
         smry = Summary()
-        smry.add_table_2cols(self, gleft=top_left, gright=top_right, #[],
+        smry.add_table_2cols(self, gleft=top_left, gright=top_right,
                              yname=yname, xname=xname, title=title)
         smry.add_table_params(self, yname=yname, xname=xname, alpha=alpha,
                               use_t=self.use_t)
-
-        # diagnostic table is not used yet
-        #smry.add_table_2cols(self, gleft=diagn_left, gright=diagn_right,
-        #                  yname=yname, xname=xname,
-        #                  title="")
 
         # add warnings/notes, added to text format only
         etext = []

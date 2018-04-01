@@ -82,9 +82,9 @@ def wls_prediction_std(res, exog=None, weights=None, alpha=0.05):
             if weights.size > 1 and len(weights) != exog.shape[0]:
                 raise ValueError('weights and exog do not have matching shape')
 
-    # full covariance:
-    #predvar = res3.mse_resid + np.diag(np.dot(X2,np.dot(covb,X2.T)))
-    # prediction variance only
+    # full covariance would be:
+    # predvar = res3.mse_resid + np.diag(np.dot(X2,np.dot(covb,X2.T)))
+    # prediction variance only:
     predvar = res.mse_resid / weights + (exog * np.dot(covb, exog.T).T).sum(1)
     predstd = np.sqrt(predvar)
     tppf = stats.t.isf(alpha / 2., res.df_resid)
@@ -102,7 +102,9 @@ def test_predict_se():
     nsample = 50
     x1 = np.linspace(0, 20, nsample)
     x = np.c_[x1, (x1 - 5)**2, np.ones(nsample)]
-    np.random.seed(0)#9876789) #9876543)
+    np.random.seed(0)
+    # TODO: Upstream had commented-out seeds 9876789, 9876543;
+    # figure out why 0 is used instead of those
     beta = [0.5, -0.01, 5.]
     y_true2 = np.dot(x, beta)
     w = np.ones(nsample)
@@ -156,8 +158,7 @@ def test_predict_se():
                                    predstd,
                                    15)
 
-    #stats.t.isf(0.05/2., 50 - 2)
-    q = 2.0106347546964458
+    q = 2.0106347546964458  # i.e. stats.t.isf(0.05/2., 50 - 2)
     ci_half = q * predstd
     assert_allclose(iv_u, res3.fittedvalues + ci_half, rtol=1e-12)
     assert_allclose(iv_l, res3.fittedvalues - ci_half, rtol=1e-12)

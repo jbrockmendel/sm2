@@ -71,15 +71,13 @@ def test_compare_arma():
 
     # decimal 1 corresponds to threshold of 5% difference
     # still different sign corrected
-    #assert_almost_equal(np.abs(resls[0] / d.params),
-    #                    np.ones(d.params.shape), decimal=1)
     assert_almost_equal(resls[0] / dres.params,
                         np.ones(dres.params.shape),
                         decimal=1)
 
+    # TODO: Is the next comment still accurate.  It is retained from upstream
+    # where there was a commented-out assertion after the comment
     # rescm also contains variance estimate as last element of params
-    #assert_almost_equal(np.abs(rescm.params[:-1] / d.params),
-    #                    np.ones(d.params.shape), decimal=1)
     assert_almost_equal(rescm.params[:-1] / dres.params,
                         np.ones(dres.params.shape),
                         decimal=1)
@@ -991,18 +989,10 @@ def test_arima_predict_pandas_nofreq():
 @pytest.mark.not_vetted
 def test_arima_predict_exog():
     # check GH#625 and GH#626
-    #from sm2.tsa.arima_process import arma_generate_sample
-    #arparams = np.array([1, -.45, .25])
-    #maparams = np.array([1, .15])
-    #nobs = 100
-    #np.random.seed(123)
-    #y = arma_generate_sample(arparams, maparams, nobs, burnin=100)
-
-    # make an exogenous trend
-    #X = np.array(range(nobs)) / 20.0
-    # add a constant
-    #y += 2.5
-
+    # Note: upstream there is a bunch of commented-out code after this point;
+    # I have not been able to get an explanation as to if/why it is worth
+    # keeping.
+    # TODO: At some point check back to see if it has been addressed.
     path = os.path.join(current_path, 'results',
                         'results_arima_exog_forecasts_mle.csv')
     arima_forecasts = pd.read_csv(path)
