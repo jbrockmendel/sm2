@@ -103,6 +103,7 @@ class MarkovAutoregression(markov_regression.MarkovRegression):
                  dates=None, freq=None, missing='none'):
 
         # Properties
+        self.order = order  # this also gets set in MarkovSwitching.__init__
         self.switching_ar = switching_ar
 
         # Switching options
@@ -110,6 +111,12 @@ class MarkovAutoregression(markov_regression.MarkovRegression):
             self.switching_ar = [self.switching_ar] * order
         elif len(self.switching_ar) != order:
             raise ValueError('Invalid iterable passed to `switching_ar`.')
+
+        # Cache an array for holding slices
+        self._predict_slices = [slice(None, None, None)] * (self.order + 1)
+
+        # Autoregressive exog
+        self.exog_ar = lagmat(endog, self.order)[self.order:]
 
         # Initialize the base model
         super(MarkovAutoregression, self).__init__(
@@ -119,15 +126,13 @@ class MarkovAutoregression(markov_regression.MarkovRegression):
             switching_variance=switching_variance, dates=dates, freq=freq,
             missing=missing)
 
+        # TODO: It looks like all existing tests have zero nulls in endog
         # Sanity checks
         if self.nobs <= self.order:
             # in tests (as of 2018-03-31) self.nobs always matches len(endog)
             # at this point, but it isn't obvious if this MUST hold
             raise ValueError('Must have more observations than the order of'
                              ' the autoregression.')
-
-        # Autoregressive exog
-        self.exog_ar = lagmat(endog, self.order)[self.order:]
 
         # Reshape other datasets
         self.nobs -= self.order
@@ -143,13 +148,14 @@ class MarkovAutoregression(markov_regression.MarkovRegression):
             self.exog = self.exog[self.order:]
 
         # Reset the ModelData datasets
+        # TODO: I'm not wild about altering self.data in-place...
         self.data.endog, self.data.exog = (
             self.data._convert_endog_exog(self.endog, self.exog))
 
         # Reset indexes, if provided
         if self.data.row_labels is not None:
-            self.data._cache['row_labels'] = (
-                self.data.row_labels[self.order:])
+            self.data._cache['row_labels'] = self.data.row_labels[self.order:]
+
         if self._index is not None:
             if self._index_generated:
                 self._index = self._index[:-self.order]
@@ -158,9 +164,6 @@ class MarkovAutoregression(markov_regression.MarkovRegression):
 
         # Parameters
         self.parameters['autoregressive'] = self.switching_ar
-
-        # Cache an array for holding slices
-        self._predict_slices = [slice(None, None, None)] * (self.order + 1)
 
     def predict_conditional(self, params):
         """
@@ -416,7 +419,7 @@ class MarkovAutoregression(markov_regression.MarkovRegression):
             unconstrained)
 
         # Autoregressive
-        # TODO may provide unexpected results when some coefficients are not
+        # TODO: may provide unexpected results when some coefficients are not
         # switching
         for i in range(self.k_regimes):
             s = self.parameters[i, 'autoregressive']
@@ -446,7 +449,7 @@ class MarkovAutoregression(markov_regression.MarkovRegression):
             constrained)
 
         # Autoregressive
-        # TODO may provide unexpected results when some coefficients are not
+        # TODO: may provide unexpected results when some coefficients are not
         # switching
         for i in range(self.k_regimes):
             s = self.parameters[i, 'autoregressive']

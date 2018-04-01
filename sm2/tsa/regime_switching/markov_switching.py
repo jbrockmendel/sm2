@@ -699,6 +699,45 @@ class MarkovSwitching(tsbase.TimeSeriesModel):
         self._initialization = 'steady-state'
         self._initial_probabilities = None
 
+    @property
+    def start_params(self):
+        """
+        (array) Starting parameters for maximum likelihood estimation.
+        """
+        params = np.zeros(self.k_params, dtype=np.float64)
+
+        # Transition probabilities
+        if self.tvtp:
+            params[self.parameters['regime_transition']] = 0.
+        else:
+            params[self.parameters['regime_transition']] = 1. / self.k_regimes
+
+        return params
+
+    @property
+    def param_names(self):
+        """
+        (list of str) List of human readable parameter names (for parameters
+        actually included in the model).
+        """
+        param_names = np.zeros(self.k_params, dtype=object)
+
+        # Transition probabilities
+        if self.tvtp:
+            # TODO add support for exog_tvtp_names
+            param_names[self.parameters['regime_transition']] = [
+                'p[%d->%d].tvtp%d' % (j, i, k)
+                for i in range(self.k_regimes - 1)
+                for k in range(self.k_tvtp)
+                for j in range(self.k_regimes)]
+        else:
+            param_names[self.parameters['regime_transition']] = [
+                'p[%d->%d]' % (j, i)
+                for i in range(self.k_regimes - 1)
+                for j in range(self.k_regimes)]
+
+        return param_names.tolist()
+
     def initialize_steady_state(self):
         """
         Set initialization of regime probabilities to be steady-state values
@@ -1510,45 +1549,6 @@ class MarkovSwitching(tsbase.TimeSeriesModel):
 
         # Return transformed parameters
         return self.transform_params(params)
-
-    @property
-    def start_params(self):
-        """
-        (array) Starting parameters for maximum likelihood estimation.
-        """
-        params = np.zeros(self.k_params, dtype=np.float64)
-
-        # Transition probabilities
-        if self.tvtp:
-            params[self.parameters['regime_transition']] = 0.
-        else:
-            params[self.parameters['regime_transition']] = 1. / self.k_regimes
-
-        return params
-
-    @property
-    def param_names(self):
-        """
-        (list of str) List of human readable parameter names (for parameters
-        actually included in the model).
-        """
-        param_names = np.zeros(self.k_params, dtype=object)
-
-        # Transition probabilities
-        if self.tvtp:
-            # TODO add support for exog_tvtp_names
-            param_names[self.parameters['regime_transition']] = [
-                'p[%d->%d].tvtp%d' % (j, i, k)
-                for i in range(self.k_regimes - 1)
-                for k in range(self.k_tvtp)
-                for j in range(self.k_regimes)]
-        else:
-            param_names[self.parameters['regime_transition']] = [
-                'p[%d->%d]' % (j, i)
-                for i in range(self.k_regimes - 1)
-                for j in range(self.k_regimes)]
-
-        return param_names.tolist()
 
     def transform_params(self, unconstrained):
         """

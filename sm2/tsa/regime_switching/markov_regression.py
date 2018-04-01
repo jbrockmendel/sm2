@@ -156,13 +156,80 @@ class MarkovRegression(markov_switching.MarkovSwitching):
         elif len(self.switching_exog) != self.k_exog:
             raise ValueError('Invalid iterable passed to `switching_exog`.')
 
-        self.switching_coeffs = (
-            np.r_[self.switching_trend,
-                  self.switching_exog].astype(bool).tolist())
+        self.switching_coeffs = np.r_[self.switching_trend,
+                                      self.switching_exog].astype(bool).tolist()
 
         # Parameters
         self.parameters['exog'] = self.switching_coeffs
         self.parameters['variance'] = [1] if self.switching_variance else [0]
+
+    @property
+    def start_params(self):
+        """
+        (array) Starting parameters for maximum likelihood estimation.
+
+        Notes
+        -----
+        These are not very sophisticated and / or good. We set equal transition
+        probabilities and interpolate regression coefficients between zero and
+        the OLS estimates, where the interpolation is based on the regime
+        number. We rely heavily on the EM algorithm to quickly find much better
+        starting parameters, which are then used by the typical scoring
+        approach.
+        """
+        # Inherited parameters
+        params = markov_switching.MarkovSwitching.start_params.fget(self)
+
+        # Regression coefficients
+        if self._k_exog > 0:
+            beta = np.dot(np.linalg.pinv(self.exog), self.endog)
+            variance = np.var(self.endog - np.dot(self.exog, beta))
+
+            if np.any(self.switching_coeffs):
+                for i in range(self.k_regimes):
+                    params[self.parameters[i, 'exog']] = (
+                        beta * (i / self.k_regimes))
+            else:
+                params[self.parameters['exog']] = beta
+        else:
+            variance = np.var(self.endog)
+
+        # Variances
+        if self.switching_variance:
+            params[self.parameters['variance']] = (
+                np.linspace(variance / 10., variance, num=self.k_regimes))
+        else:
+            params[self.parameters['variance']] = variance
+
+        return params
+
+    @property
+    def param_names(self):
+        """
+        (list of str) List of human readable parameter names (for parameters
+        actually included in the model).
+        """
+        # Inherited parameters
+        param_names = np.array(
+            markov_switching.MarkovSwitching.param_names.fget(self),
+            dtype=object)
+
+        # Regression coefficients
+        if np.any(self.switching_coeffs):
+            for i in range(self.k_regimes):
+                param_names[self.parameters[i, 'exog']] = [
+                    '%s[%d]' % (exog_name, i) for exog_name in self.exog_names]
+        else:
+            param_names[self.parameters['exog']] = self.exog_names
+
+        # Variances
+        if self.switching_variance:
+            for i in range(self.k_regimes):
+                param_names[self.parameters[i, 'variance']] = 'sigma2[%d]' % i
+        else:
+            param_names[self.parameters['variance']] = 'sigma2'
+
+        return param_names.tolist()
 
     def predict_conditional(self, params):
         """
@@ -305,74 +372,6 @@ class MarkovRegression(markov_switching.MarkovSwitching):
                 variance += np.sum(resid**2)
             variance /= self.nobs
         return variance
-
-    @property
-    def start_params(self):
-        """
-        (array) Starting parameters for maximum likelihood estimation.
-
-        Notes
-        -----
-        These are not very sophisticated and / or good. We set equal transition
-        probabilities and interpolate regression coefficients between zero and
-        the OLS estimates, where the interpolation is based on the regime
-        number. We rely heavily on the EM algorithm to quickly find much better
-        starting parameters, which are then used by the typical scoring
-        approach.
-        """
-        # Inherited parameters
-        params = markov_switching.MarkovSwitching.start_params.fget(self)
-
-        # Regression coefficients
-        if self._k_exog > 0:
-            beta = np.dot(np.linalg.pinv(self.exog), self.endog)
-            variance = np.var(self.endog - np.dot(self.exog, beta))
-
-            if np.any(self.switching_coeffs):
-                for i in range(self.k_regimes):
-                    params[self.parameters[i, 'exog']] = (
-                        beta * (i / self.k_regimes))
-            else:
-                params[self.parameters['exog']] = beta
-        else:
-            variance = np.var(self.endog)
-
-        # Variances
-        if self.switching_variance:
-            params[self.parameters['variance']] = (
-                np.linspace(variance / 10., variance, num=self.k_regimes))
-        else:
-            params[self.parameters['variance']] = variance
-
-        return params
-
-    @property
-    def param_names(self):
-        """
-        (list of str) List of human readable parameter names (for parameters
-        actually included in the model).
-        """
-        # Inherited parameters
-        param_names = np.array(
-            markov_switching.MarkovSwitching.param_names.fget(self),
-            dtype=object)
-
-        # Regression coefficients
-        if np.any(self.switching_coeffs):
-            for i in range(self.k_regimes):
-                param_names[self.parameters[i, 'exog']] = [
-                    '%s[%d]' % (exog_name, i) for exog_name in self.exog_names]
-        else:
-            param_names[self.parameters['exog']] = self.exog_names
-
-        # Variances
-        if self.switching_variance:
-            for i in range(self.k_regimes):
-                param_names[self.parameters[i, 'variance']] = 'sigma2[%d]' % i
-        else:
-            param_names[self.parameters['variance']] = 'sigma2'
-
-        return param_names.tolist()
 
     def transform_params(self, unconstrained):
         """
