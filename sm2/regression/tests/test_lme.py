@@ -16,7 +16,7 @@ from .results import lme_r_results
 # TODO: add tests with unequal group sizes
 
 v = scipy.__version__.split(".")[1]
-old_scipy = int(v) < 16
+old_scipy = (int(v) < 16) and scipy.__version__.split('.')[0] == 0
 
 
 class R_Results(object):
@@ -130,19 +130,20 @@ class TestMixedLM(object):
                         exog_re, exog_vc=vc, use_sqrt=use_sqrt)
         rslt = model.fit(reml=reml)
 
-        loglike = loglike_function(
-            model, profile_fe=profile_fe, has_fe=not profile_fe)
+        loglike = loglike_function(model, profile_fe=profile_fe,
+                                   has_fe=not profile_fe)
 
         # Test the score at several points.
-        for kr in range(5):
+        for kr in range(3):
+            # Cut down from 5 upstream to troubleshoot Travis timeouts
             fe_params = np.random.normal(size=k_fe)
             cov_re = np.random.normal(size=(k_re, k_re))
             cov_re = np.dot(cov_re.T, cov_re)
             vcomp = np.random.normal(size=2) ** 2
-            params = MixedLMParams.from_components(
-                fe_params, cov_re=cov_re, vcomp=vcomp)
-            params_vec = params.get_packed(
-                has_fe=not profile_fe, use_sqrt=use_sqrt)
+            params = MixedLMParams.from_components(fe_params,
+                                                   cov_re=cov_re, vcomp=vcomp)
+            params_vec = params.get_packed(has_fe=not profile_fe,
+                                           use_sqrt=use_sqrt)
 
             # Check scores
             gr = -model.score(params, profile_fe=profile_fe)
@@ -153,12 +154,11 @@ class TestMixedLM(object):
         # the profile Hessian matrix and we don't care
         # about the Hessian for the square root
         # transformed parameter).
-        if (profile_fe is False) and (use_sqrt is False):
+        if not profile_fe and not use_sqrt:
             hess = -model.hessian(rslt.params_object)
-            params_vec = rslt.params_object.get_packed(
-                use_sqrt=False, has_fe=True)
-            loglike_h = loglike_function(
-                model, profile_fe=False, has_fe=True)
+            params_vec = rslt.params_object.get_packed(use_sqrt=False,
+                                                       has_fe=True)
+            loglike_h = loglike_function(model, profile_fe=False, has_fe=True)
             nhess = nd.approx_hess(params_vec, loglike_h)
             assert_allclose(hess, nhess, rtol=1e-3)
 
