@@ -95,7 +95,7 @@ class TestMixedLM(object):
     @pytest.mark.parametrize('reml', [False, True])
     @pytest.mark.parametrize('profile_fe', [False, True])
     def test_compare_numdiff(self, use_sqrt, reml, profile_fe):
-        n_grp = 20
+        n_grp = 10
         # Note: upstream this uses n_grp=200, which suppresses failures
         # that appear to relate to numerical instability+incorrect round-trips
         # for MixedLMParams
