@@ -313,7 +313,7 @@ class TestGenericGLM(CheckGenericMixin):
         y = x.sum(1) + np.random.randn(x.shape[0])
         self.results = self.model_cls(y, self.exog).fit(**self.fit_kwargs)
 
-
+'''
 @pytest.mark.skip(reason="GEE not ported from upstream")
 @pytest.mark.not_vetted
 class TestGenericGEEPoisson(CheckGenericMixin):
@@ -377,7 +377,7 @@ class TestGenericGEEPoissonBC(CheckGenericMixin):
         family = sm.families.Poisson()
         mod = sm.GEE(y_count, self.exog, groups, family=family, cov_struct=vi)
         self.results = mod.fit(**self.fit_kwargs)
-
+'''
 
 # ------------------------------------------------------------------
 # Other test classes
