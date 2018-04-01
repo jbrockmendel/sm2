@@ -1,6 +1,7 @@
 __all__ = ["GLS", "WLS", "OLS", "GLSAR",
            "GLM",
            "MNLogit", "Logit", "Probit", "Poisson", "NegativeBinomial"]
+# TODO: Is this __all__ totally wrong?
 from sm2.regression.linear_model import GLS
 gls = GLS.from_formula
 from sm2.regression.linear_model import WLS
@@ -9,12 +10,12 @@ from sm2.regression.linear_model import OLS
 ols = OLS.from_formula
 from sm2.regression.linear_model import GLSAR
 glsar = GLSAR.from_formula
-# from statsmodels.regression.mixed_linear_model import MixedLM
-# mixedlm = MixedLM.from_formula
+from sm2.regression.mixed_linear_model import MixedLM
+mixedlm = MixedLM.from_formula
 from sm2.genmod.generalized_linear_model import GLM
 glm = GLM.from_formula
-# from statsmodels.robust.robust_linear_model import RLM
-# rlm = RLM.from_formula
+from sm2.robust.robust_linear_model import RLM
+rlm = RLM.from_formula
 from sm2.discrete.discrete_model import MNLogit
 mnlogit = MNLogit.from_formula
 from sm2.discrete.discrete_model import Logit
