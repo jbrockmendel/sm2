@@ -43,6 +43,7 @@ data = pd.DataFrame([[1, 1, 32, 52407],
                      [4, 0, 28, 2585],
                      [5, 0, 31, 1462]],
                     columns=['agecat', 'smokes', 'deaths', 'pyears'])
+data = data.astype(int)  # adding this back to see if it fixes patsy...
 data['logpyears'] = np.log(data['pyears'])
 
 
