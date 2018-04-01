@@ -19,7 +19,6 @@ import pandas as pd
 import pandas.util.testing as tm
 
 import sm2.api as sm
-import sm2.formula.api as smf
 from sm2.discrete.discrete_model import DiscreteResults
 
 
