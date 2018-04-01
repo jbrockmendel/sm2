@@ -90,8 +90,12 @@ class MarkovAutoregression(markov_regression.MarkovRegression):
     "State-Space Models with Regime Switching:
     Classical and Gibbs-Sampling Approaches with Applications".
     MIT Press Books. The MIT Press.
-
     """
+
+    @property
+    def _res_classes(self):
+        return {'fit': (MarkovAutoregressionResults,
+                        MarkovAutoregressionResultsWrapper)}
 
     def __init__(self, endog, k_regimes, order, trend='c', exog=None,
                  exog_tvtp=None, switching_ar=True, switching_trend=True,
@@ -234,11 +238,6 @@ class MarkovAutoregression(markov_regression.MarkovRegression):
             np.exp(-0.5 * resid**2 / variance) / np.sqrt(2 * np.pi * variance))
 
         return conditional_likelihoods
-
-    @property
-    def _res_classes(self):
-        return {'fit': (MarkovAutoregressionResults,
-                        MarkovAutoregressionResultsWrapper)}
 
     def _em_iteration(self, params0):
         """

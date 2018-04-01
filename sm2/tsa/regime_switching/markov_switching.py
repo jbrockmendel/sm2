@@ -6,6 +6,7 @@ License: BSD-3
 """
 from __future__ import division, absolute_import, print_function
 
+import re
 import warnings
 from collections import OrderedDict
 
@@ -645,6 +646,10 @@ class MarkovSwitching(tsbase.TimeSeriesModel):
     MIT Press Books. The MIT Press.
     """
 
+    @property
+    def _res_classes(self):
+        return {'fit': (MarkovSwitchingResults, MarkovSwitchingResultsWrapper)}
+
     def __init__(self, endog, k_regimes, order=0, exog_tvtp=None, exog=None,
                  dates=None, freq=None, missing='none'):
 
@@ -995,10 +1000,6 @@ class MarkovSwitching(tsbase.TimeSeriesModel):
                                predicted_joint_probabilities,
                                filtered_joint_probabilities)
 
-    @property
-    def _res_classes(self):
-        return {'fit': (MarkovSwitchingResults, MarkovSwitchingResultsWrapper)}
-
     def _wrap_results(self, params, result, return_raw, cov_type=None,
                       cov_kwds=None, results_class=None, wrapper_class=None):
         if not return_raw:
@@ -1101,6 +1102,7 @@ class MarkovSwitching(tsbase.TimeSeriesModel):
 
         return np.log(results[5])
 
+    # TODO: Use default implementation from base class?
     def loglike(self, params, transformed=True):
         """
         Loglikelihood evaluation
@@ -1591,6 +1593,7 @@ class MarkovSwitching(tsbase.TimeSeriesModel):
 
         return constrained
 
+    # TODO: Does this need to be a method?
     def _untransform_logistic(self, unconstrained, constrained):
         """
         Function to allow using a numerical root-finder to reverse the
@@ -1912,6 +1915,7 @@ class MarkovSwitchingResults(tsbase.TimeSeriesModelResults):
         # return -2*self.llf + 2*np.log(np.log(self.nobs))*self.params.shape[0]
         return hqic(self.llf, self.nobs, self.params.shape[0])
 
+    # TODO: merge this into covtype.get_robustcov_results?
     def _get_robustcov_results(self, cov_type='opg', **kwargs):
         use_self = kwargs.pop('use_self', False)
         if use_self:
@@ -2104,7 +2108,7 @@ class MarkovSwitchingResults(tsbase.TimeSeriesModelResults):
         --------
         sm2.iolib.summary.Summary
         """
-        from sm2.iolib.summary import Summary
+        from sm2.iolib.summary import Summary, summary_params
 
         # Model specification results
         model = self.model
@@ -2157,8 +2161,6 @@ class MarkovSwitchingResults(tsbase.TimeSeriesModelResults):
                                 title=title)
 
         # Make parameters tables for each regime
-        from sm2.iolib.summary import summary_params
-        import re
 
         def make_table(self, mask, title, strip_end=True):
             res = (self, self.params[mask], self.bse[mask],

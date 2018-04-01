@@ -108,6 +108,10 @@ class RLM(base.LikelihoodModel):
            'extra_params': base._missing_param_doc}
 
     @cache_readonly
+    def nobs(self):
+        return float(self.endog.shape[0])
+
+    @cache_readonly
     def df_resid(self):
         return self.nobs - (self.df_model + 1)
 
@@ -139,7 +143,6 @@ class RLM(base.LikelihoodModel):
         self.pinv_wexog = np.linalg.pinv(self.exog)
         self.normalized_cov_params = np.dot(self.pinv_wexog,
                                             np.transpose(self.pinv_wexog))
-        self.nobs = float(self.endog.shape[0])
 
     def score(self, params):
         raise NotImplementedError
@@ -398,13 +401,24 @@ class RLMResults(base.LikelihoodModelResults):
     --------
     sm2.base.model.LikelihoodModelResults
     """
+
+    @cache_readonly
+    def nobs(self):
+        return float(self.model.endog.shape[0])
+
+    @cache_readonly
+    def df_resid(self):
+        return self.nobs - (self.df_model + 1)
+
+    @cache_readonly
+    def df_model(self):
+        rank = np.linalg.matrix_rank(self.model.exog)
+        return rank - 1.0
+
     def __init__(self, model, params, normalized_cov_params, scale):
         super(RLMResults, self).__init__(model, params,
                                          normalized_cov_params, scale)
         self.model = model
-        self.df_model = model.df_model
-        self.df_resid = model.df_resid
-        self.nobs = model.nobs
         self._cache = resettable_cache()
         # for remove_data
         self.data_in_cache = ['sresid']

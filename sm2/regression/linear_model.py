@@ -180,6 +180,10 @@ class RegressionModel(base.LikelihoodModel):
                                     RegularizedResultsWrapper)}
 
     def __init__(self, endog, exog, **kwargs):
+        self._df_model = None
+        self._df_resid = None
+        self.rank = None
+
         super(RegressionModel, self).__init__(endog, exog, **kwargs)
         self._data_attr.extend(['pinv_wexog', 'wendog', 'wexog', 'weights'])
 
@@ -188,10 +192,6 @@ class RegressionModel(base.LikelihoodModel):
         self.wendog = self.whiten(self.endog)
         # overwrite nobs from class Model:
         self.nobs = float(self.wexog.shape[0])
-
-        self._df_model = None
-        self._df_resid = None
-        self.rank = None
 
     @property
     def df_model(self):
@@ -354,7 +354,7 @@ class RegressionModel(base.LikelihoodModel):
     def get_distribution(self, params, scale, exog=None, dist_class=None):
         raise NotImplementedError("get_distribution is not ported from "
                                   "upstream, since it is neither used nor "
-                                  "tested there.")
+                                  "tested there.")  # pragma: no cover
 
 
 class GLS(RegressionModel):
@@ -1155,6 +1155,9 @@ def yule_walker(X, order=1, method="unbiased", df=None, inv=False,
     >>> sigma
     16.808022730464351
     """
+    if inv:  # pragma: no cover
+        raise NotImplementedError("option `inv` not ported from upstream, "
+                                  "since it is not used or tested there.")
     # TODO: define R better, look back at notes and technical notes on YW.
     # First link here is useful
     # http://www-stat.wharton.upenn.edu/~steele/Courses/956/ResourceDetails/YuleWalkerAndMore.htm
@@ -1184,11 +1187,7 @@ def yule_walker(X, order=1, method="unbiased", df=None, inv=False,
 
     rho = np.linalg.solve(R, r[1:])
     sigmasq = r[0] - (r[1:] * rho).sum()
-    if inv:
-        # TODO: Not hit in tests; remove multiple-return?
-        return rho, np.sqrt(sigmasq), np.linalg.inv(R)
-    else:
-        return rho, np.sqrt(sigmasq)
+    return rho, np.sqrt(sigmasq)
 
 
 class RegressionResults(base.LikelihoodModelResults):
