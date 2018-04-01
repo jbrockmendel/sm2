@@ -650,6 +650,13 @@ class MarkovSwitching(tsbase.TimeSeriesModel):
     def _res_classes(self):
         return {'fit': (MarkovSwitchingResults, MarkovSwitchingResultsWrapper)}
 
+    @property
+    def k_params(self):
+        """
+        (int) Number of parameters in the model
+        """
+        return self.parameters.k_params
+
     def __init__(self, endog, k_regimes, order=0, exog_tvtp=None, exog=None,
                  dates=None, freq=None, missing='none'):
 
@@ -691,13 +698,6 @@ class MarkovSwitching(tsbase.TimeSeriesModel):
         # Internal model properties: default is steady-state initialization
         self._initialization = 'steady-state'
         self._initial_probabilities = None
-
-    @property
-    def k_params(self):
-        """
-        (int) Number of parameters in the model
-        """
-        return self.parameters.k_params
 
     def initialize_steady_state(self):
         """
@@ -1695,7 +1695,6 @@ class HamiltonFilterResults(object):
         The loglikelihood values at each time period.
     """
     def __init__(self, model, result):
-
         self.model = model
 
         self.nobs = model.nobs

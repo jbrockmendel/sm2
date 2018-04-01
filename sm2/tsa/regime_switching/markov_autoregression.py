@@ -121,6 +121,8 @@ class MarkovAutoregression(markov_regression.MarkovRegression):
 
         # Sanity checks
         if self.nobs <= self.order:
+            # in tests (as of 2018-03-31) self.nobs always matches len(endog)
+            # at this point, but it isn't obvious if this MUST hold
             raise ValueError('Must have more observations than the order of'
                              ' the autoregression.')
 
@@ -129,7 +131,12 @@ class MarkovAutoregression(markov_regression.MarkovRegression):
 
         # Reshape other datasets
         self.nobs -= self.order
+        # TODO: Do we have test cases where nulls have been dropped
+        #       from self.endog by this point?  can we write this in
+        #       terms of anything fixed?
         self.orig_endog = self.endog
+        # TODO: Does this necessarily match self.data.orig_endog?
+
         self.endog = self.endog[self.order:]
         if self._k_exog > 0:
             self.orig_exog = self.exog
