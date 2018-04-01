@@ -26,15 +26,20 @@ import sm2.base.wrapper as wrap
 from sm2.regression.linear_model import yule_walker, GLS
 
 from sm2.tsa.base import tsa_model
-
+from sm2.tsa import wold
 from sm2.tsa.tsatools import (lagmat, add_trend,
-                              _ar_transparams, _ar_invtransparams,
-                              _ma_transparams, _ma_invtransparams,
                               unintegrate, unintegrate_levels)
 from sm2.tsa.vector_ar import util
 from sm2.tsa.arima_process import arma2ma
 from sm2.tsa.ar_model import AR
 from sm2.tsa.kalmanf import KalmanFilter
+
+_unpack_params = wold.ARMAParams._unpack_params  # staticmethod
+
+
+def _unpack_order(order):  # pragma: no cover
+    raise NotImplementedError("_unpack_order not ported from upstream, "
+                              "as it is neither used nor tested there.")
 
 
 def _create_mpl_ax(ax):
@@ -375,24 +380,6 @@ def _arma_predict_in_sample(start, end, endog, resid, k_ar, method):
     return fittedvalues[fv_start:fv_end]
 
 
-def _unpack_params(params, order, k_trend, k_exog, reverse=False):
-    p, q = order
-    k = k_trend + k_exog
-    maparams = params[k + p:]
-    arparams = params[k:k + p]
-    trend = params[:k_trend]
-    exparams = params[k_trend:k]
-    if reverse:
-        return trend, exparams, arparams[::-1], maparams[::-1]
-    return trend, exparams, arparams, maparams
-
-
-def _unpack_order(order):
-    k_ar, k_ma, k = order
-    k_lags = max(k_ar, k_ma + 1)
-    return k_ar, k_ma, order, k_lags
-
-
 def _make_arma_names(data, k_trend, order, exog_names):
     k_ar, k_ma = order
     exog_names = exog_names or []
@@ -417,6 +404,7 @@ def _make_arma_names(data, k_trend, order, exog_names):
     return exog_names
 
 
+# TODO: Does this belong somewhere else?
 def _make_arma_exog(endog, exog, trend):
     k_trend = 1  # overwritten if no constant
     if exog is None and trend == 'c':   # constant only
@@ -438,7 +426,7 @@ def _check_estimable(nobs, n_params):
         raise ValueError("Insufficient degrees of freedom to estimate")
 
 
-class ARMA(tsa_model.TimeSeriesModel):
+class ARMA(wold.ARMAParams, tsa_model.TimeSeriesModel):
     __doc__ = tsa_model._tsa_doc % {
         "model": _arma_model,
         "params": _arma_params,
@@ -612,49 +600,6 @@ class ARMA(tsa_model.TimeSeriesModel):
         This is a numerical approximation.
         """
         return approx_hess_cs(params, self.loglike, args=(False,))
-
-    def _transparams(self, params):
-        """
-        Transforms params to induce stationarity/invertability.
-
-        Reference
-        ---------
-        Jones(1980)
-        """
-        k_ar, k_ma = self.k_ar, self.k_ma
-        k = self.k_exog + self.k_trend
-        newparams = np.zeros_like(params)
-
-        # just copy exogenous parameters
-        if k != 0:
-            newparams[:k] = params[:k]
-
-        # AR Coeffs
-        if k_ar != 0:
-            newparams[k:k + k_ar] = _ar_transparams(params[k:k + k_ar].copy())
-
-        # MA Coeffs
-        if k_ma != 0:
-            newparams[k + k_ar:] = _ma_transparams(params[k + k_ar:].copy())
-        return newparams
-
-    def _invtransparams(self, start_params):
-        """
-        Inverse of the Jones reparameterization
-        """
-        k_ar, k_ma = self.k_ar, self.k_ma
-        k = self.k_exog + self.k_trend
-        newparams = start_params.copy()
-        arcoefs = newparams[k:k + k_ar]
-        macoefs = newparams[k + k_ar:]
-        # AR coeffs
-        if k_ar != 0:
-            newparams[k:k + k_ar] = _ar_invtransparams(arcoefs)
-
-        # MA coeffs
-        if k_ma != 0:
-            newparams[k + k_ar:k + k_ar + k_ma] = _ma_invtransparams(macoefs)
-        return newparams
 
     def _get_prediction_index(self, start, end, dynamic, index=None):
         method = getattr(self, 'method', 'mle')
