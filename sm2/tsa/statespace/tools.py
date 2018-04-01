@@ -214,7 +214,7 @@ def set_mode(compatibility=None):
 
 set_mode(compatibility=None)
 
-
+'''
 def companion_matrix(polynomial):
     r"""
     Create a companion matrix
@@ -524,6 +524,7 @@ def solve_discrete_lyapunov(a, q, complex_step=False):
         b = np.dot(aH - eye, aHI_inv)
         c = 2 * np.dot(np.dot(np.linalg.inv(a + eye), q), aHI_inv)
         return solve_sylvester(b.transpose(), b, -c)
+'''
 
 
 def constrain_stationary_univariate(unconstrained):
@@ -600,6 +601,7 @@ def unconstrain_stationary_univariate(constrained):
     return x
 
 
+'''
 def _constrain_sv_less_than_one_python(unconstrained, order=None,
                                        k_endog=None):
     """
@@ -1864,7 +1866,7 @@ def copy_index_vector(a, b, index, inplace=False, prefix=None):
     copy(a, b, np.asfortranarray(index))
 
     return b
-
+'''
 
 def prepare_exog(exog):
     k_exog = 0
