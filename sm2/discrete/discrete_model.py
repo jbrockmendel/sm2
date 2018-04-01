@@ -153,23 +153,23 @@ class DiscreteModel(base.LikelihoodModel):
     sm2.model.LikelihoodModel.
     """
 
-    def __init__(self, endog, exog, **kwargs):
-        self.nobs = exog.shape[0]  # TODO: Do this at a higher level
-        super(DiscreteModel, self).__init__(endog, exog, **kwargs)
-        self.raise_on_perfect_prediction = True
+    @cache_readonly
+    def nobs(self):
+        return self.exog.shape[0]
 
-        assert self.nobs == self.exog.shape[0]  # i.e. not messed up in super
-
-    def initialize(self):
-        """
-        Initialize is called by
-        sm2.model.LikelihoodModel.__init__
-        and should contain any preprocessing that needs to be done for a model.
-        """
+    @cache_readonly
+    def df_model(self):
         # assumes constant
         rank = np.linalg.matrix_rank(self.exog)
-        self.df_model = float(rank) - 1
-        self.df_resid = float(self.nobs) - (self.df_model + 1)
+        return float(rank) - 1
+
+    @cache_readonly
+    def df_resid(self):
+        return float(self.nobs) - (self.df_model + 1)
+
+    def __init__(self, endog, exog, **kwargs):
+        super(DiscreteModel, self).__init__(endog, exog, **kwargs)
+        self.raise_on_perfect_prediction = True
 
     def cdf(self, X):  # pragma: no cover
         """
@@ -485,6 +485,7 @@ class BinaryModel(FitBase):
         if (not issubclass(self.__class__, MultinomialModel) and
                 not np.all((self.endog >= 0) & (self.endog <= 1))):
             raise ValueError("endog must be in the unit interval.")
+            # TODO: Just do this check in MultinomialModel.__init__?
 
     def predict(self, params, exog=None, linear=False):
         """
@@ -563,6 +564,24 @@ class BinaryModel(FitBase):
 class MultinomialModel(BinaryModel):
     _check_perfect_pred = None  # placeholder until implemented
 
+    @cache_readonly
+    def J(self):
+        return self.wendog.shape[1]
+
+    @cache_readonly
+    def K(self):
+        return self.exog.shape[1]
+
+    @cache_readonly
+    def df_model(self):
+        rank = np.linalg.matrix_rank(self.exog)
+        return (rank - 1) * (self.J - 1)  # for each J - 1 equation.
+        # TODO: Does "assumes constant" apply here?
+
+    @cache_readonly
+    def df_resid(self):
+        return self.nobs - self.df_model - (self.J - 1)
+
     @property
     def _res_classes(self):
         return {"fit": (MultinomialResults, MultinomialResultsWrapper),
@@ -606,12 +625,6 @@ class MultinomialModel(BinaryModel):
         super(MultinomialModel, self).initialize()
         # This is also a "whiten" method in other models (eg regression)
         self.endog = self.endog.argmax(1)  # turn it into an array of col idx
-        self.J = self.wendog.shape[1]
-        self.K = self.exog.shape[1]
-
-        rank = np.linalg.matrix_rank(self.exog)
-        self.df_model = (rank - 1) * (self.J - 1)  # for each J - 1 equation.
-        self.df_resid = self.nobs - self.df_model - (self.J - 1)
 
     def predict(self, params, exog=None, linear=False):
         """

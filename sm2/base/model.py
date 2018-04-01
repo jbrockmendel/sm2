@@ -641,15 +641,15 @@ class Results(object):
         self.params = params
 
         self.k_constr = k_constr
+        self.k_constant = model.k_constant
 
         self.__dict__.update(kwargs)
         self.initialize(model, params, **kwargs)
         self._data_attr = []
 
     def initialize(self, model, params, **kwargs):
-        if hasattr(model, 'k_constant'):
-            # TODO: This attribute should _always_ exist
-            self.k_constant = model.k_constant
+        # TODO: Get rid of this redundant method
+        pass
 
     @cache_readonly
     def fittedvalues(self):
@@ -664,6 +664,8 @@ class Results(object):
         (array) The model residuals. An (nobs x k_endog) array.
         """
         return self.model.endog - self.fittedvalues
+        # TODO: Is this only accurate for linear models?
+        # is there a more generally correct version?
 
     def predict(self, exog=None, transform=True, *args, **kwargs):
         """
