@@ -308,11 +308,10 @@ class TestMixedLM(object):
 
         # To avoid time-outs on Travis, let it start close to the end
         # of the optimization loop (though these don't appear to line up)
-        # with `res.params` too nicely.  This takes the number of steps
-        # from 22 down to 4 (at least in local testing)
+        # with `res.params` too nicely.
         start_params = np.array([
-            1.078 , 0.1265, 1.1256, 1.9401, 1.9338])
-        result1 = model1.fit(start_params=start_params, full_output=True)
+            1.0 , 0.12, 1.12, 1.94, 1.93])
+        result1 = model1.fit(start_params=start_params)
 
         # Compare to R
         assert_allclose(result1.fe_params,
