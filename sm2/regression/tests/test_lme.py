@@ -95,7 +95,7 @@ class TestMixedLM(object):
     @pytest.mark.parametrize('reml', [False, True])
     @pytest.mark.parametrize('profile_fe', [False, True])
     def test_compare_numdiff(self, use_sqrt, reml, profile_fe):
-        n_grp = 10
+        n_grp = 20
         # Note: upstream this uses n_grp=200, which suppresses failures
         # that appear to relate to numerical instability+incorrect round-trips
         # for MixedLMParams
@@ -134,8 +134,7 @@ class TestMixedLM(object):
                                    has_fe=not profile_fe)
 
         # Test the score at several points.
-        for kr in range(3):
-            # Cut down from 5 upstream to troubleshoot Travis timeouts
+        for kr in range(5):
             fe_params = np.random.normal(size=k_fe)
             cov_re = np.random.normal(size=(k_re, k_re))
             cov_re = np.dot(cov_re.T, cov_re)
@@ -688,42 +687,47 @@ class TestMixedLM(object):
         assert_almost_equal(rslt4.params, rslt5.params)
 
     @pytest.mark.skipif(old_scipy, reason='SciPy too old')
-    def test_regularized(self):
-        np.random.seed(3453)
-        exog = np.random.normal(size=(400, 5))
-        groups = np.kron(np.arange(100), np.ones(4))
-        expected_endog = exog[:, 0] - exog[:, 2]
-        endog = expected_endog +\
-            np.kron(np.random.normal(size=100), np.ones(4)) +\
-            np.random.normal(size=400)
-
+    @pytest.mark.smoke
+    @pytest.mark.parametrize('alpha', [1., 10 * np.ones(5)])
+    def test_regularized_L1(self, alpha):
+        md = self.model
         # L1 regularization
-        md = MixedLM(endog, exog, groups)
         mdf1 = md.fit_regularized(alpha=1.)
         # mdf1.summary()  # summary tests disabled b/c it is not ported
 
-        # L1 regularization
-        md = MixedLM(endog, exog, groups)
-        mdf2 = md.fit_regularized(alpha=10 * np.ones(5))
-        # mdf2.summary()  # summary tests disabled b/c it is not ported
-
-        # L2 regularization
-        pen = penalties.L2()
-        mdf3 = md.fit_regularized(method=pen, alpha=0.)
-        # mdf3.summary()  # summary tests disabled b/c it is not ported
-
+    @pytest.mark.skipif(old_scipy, reason='SciPy too old')
+    @pytest.mark.smoke
+    @pytest.mark.parametrize('alpha', [0, 100])
+    def test_regularized_L2(self, alpha):
+        md = self.model
         # L2 regularization
         pen = penalties.L2()
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
-            mdf4 = md.fit_regularized(method=pen, alpha=100.)
+            mdf4 = md.fit_regularized(method=pen, alpha=alpha)
         # mdf4.summary()  # summary tests disabled b/c it is not ported
 
+    @pytest.mark.skipif(old_scipy, reason='SciPy too old')
+    @pytest.mark.smoke
+    def test_regularized_pseudo_huber(self):
+        md = self.model
         # Pseudo-Huber regularization
         pen = penalties.PseudoHuber(0.3)
         mdf5 = md.fit_regularized(method=pen, alpha=1.)
         # mdf5.summary()  # summary tests disabled b/c it is not ported
 
+    @classmethod
+    def setup_class(cls):
+        np.random.seed(3453)
+        exog = np.random.normal(size=(400, 5))
+        groups = np.kron(np.arange(100), np.ones(4))
+        expected_endog = exog[:, 0] - exog[:, 2]
+        endog = (expected_endog +
+                 np.kron(np.random.normal(size=100), np.ones(4)) +
+                 np.random.normal(size=400))
+
+        md = MixedLM(endog, exog, groups)
+        cls.model = md
 
 # ------------------------------------------------------------------
 
@@ -769,14 +773,18 @@ def do1(reml, irf, ds_ix):
     assert_almost_equal(mdf.scale, rslt.scale_r, decimal=4)
 
     k_fe = md.k_fe
-    assert_almost_equal(rslt.vcov_r, mdf.cov_params()[0:k_fe, 0:k_fe],
+    assert_almost_equal(rslt.vcov_r,
+                        mdf.cov_params()[0:k_fe, 0:k_fe],
                         decimal=3)
 
-    assert_almost_equal(mdf.llf, rslt.loglike[0], decimal=2)
+    assert_almost_equal(mdf.llf,
+                        rslt.loglike[0],
+                        decimal=2)
 
     # Not supported in R except for independent random effects
     if not irf:
-        assert_almost_equal(mdf.random_effects[0], rslt.ranef_postmean,
+        assert_almost_equal(mdf.random_effects[0],
+                            rslt.ranef_postmean,
                             decimal=3)
         assert_almost_equal(mdf.random_effects_cov[0],
                             rslt.ranef_condvar,
@@ -943,13 +951,12 @@ def test_handle_missing(include_re, include_vc):
         warnings.simplefilter("ignore")
 
         # Drop missing externally
-        model1 = MixedLM.from_formula(
-            fml, groups="g", data=dx, **kwargs)
+        model1 = MixedLM.from_formula(fml, groups="g", data=dx, **kwargs)
         result1 = model1.fit()
 
         # MixeLM handles missing
-        model2 = MixedLM.from_formula(
-            fml, groups="g", data=df, missing='drop', **kwargs)
+        model2 = MixedLM.from_formula(fml, groups="g", data=df,
+                                      missing='drop', **kwargs)
         result2 = model2.fit()
 
         assert_allclose(result1.params, result2.params)
