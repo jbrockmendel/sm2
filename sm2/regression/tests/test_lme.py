@@ -187,14 +187,15 @@ class TestMixedLM(object):
         np.random.seed(9814)
         k_fe = 2
         gsize = 3
-        n_grp = 100
+        n_grp = 20
+        # upstream n_grp is 100, reducing it to troubleshoot Travis timeout
         exog = np.random.normal(size=(n_grp * gsize, k_fe))
         exog_re = np.ones((n_grp * gsize, 1))
         groups = np.kron(np.arange(n_grp), np.ones(gsize))
         vca = np.random.normal(size=n_grp * gsize)
         vcb = np.random.normal(size=n_grp * gsize)
         errors = 0
-        g_errors = np.kron(np.random.normal(size=100), np.ones(gsize))
+        g_errors = np.kron(np.random.normal(size=n_grp), np.ones(gsize))
         errors += g_errors + exog_re[:, 0]
         rc = np.random.normal(size=n_grp)
         errors += np.kron(rc, np.ones(gsize)) * vca
@@ -248,11 +249,15 @@ class TestMixedLM(object):
         result2 = model2.fit()
         # result2.summary()  # summary tests disabled b/c it is not ported
 
-        assert_allclose(result1.fe_params, result2.fe_params, atol=1e-4)
+        assert_allclose(result1.fe_params,
+                        result2.fe_params,
+                        atol=1e-4)
         assert_allclose(np.diag(result1.cov_re),
-                        result2.vcomp, atol=1e-2, rtol=1e-4)
+                        result2.vcomp,
+                        atol=1e-2, rtol=1e-4)
         assert_allclose(result1.bse[[0, 1, 3]],
-                        result2.bse, atol=1e-2, rtol=1e-2)
+                        result2.bse,
+                        atol=1e-2, rtol=1e-2)
 
     def test_vcomp_2(self):
         # Simulated data comparison to R
@@ -306,13 +311,18 @@ class TestMixedLM(object):
         result1 = model1.fit()
 
         # Compare to R
-        assert_allclose(result1.fe_params, [
-                        0.16527, 0.99911, 0.96217], rtol=1e-4)
-        assert_allclose(result1.cov_re, [
-                        [1.244, 0.146], [0.146, 1.371]], rtol=1e-3)
-        assert_allclose(result1.vcomp, [4.024, 3.997], rtol=1e-3)
-        assert_allclose(result1.bse.iloc[0:3], [
-                        0.12610, 0.03938, 0.03848], rtol=1e-3)
+        assert_allclose(result1.fe_params,
+                        [0.16527, 0.99911, 0.96217],
+                        rtol=1e-4)
+        assert_allclose(result1.cov_re,
+                        [[1.244, 0.146], [0.146, 1.371]],
+                        rtol=1e-3)
+        assert_allclose(result1.vcomp,
+                        [4.024, 3.997],
+                        rtol=1e-3)
+        assert_allclose(result1.bse.iloc[0:3],
+                        [0.12610, 0.03938, 0.03848],
+                        rtol=1e-3)
 
     @pytest.mark.skipif(old_scipy, reason='SciPy too old')
     def test_vcomp_3(self):
