@@ -165,6 +165,78 @@ class MarkovAutoregression(markov_regression.MarkovRegression):
         # Parameters
         self.parameters['autoregressive'] = self.switching_ar
 
+    @property
+    def start_params(self):
+        """
+        (array) Starting parameters for maximum likelihood estimation.
+        """
+        # Inherited parameters
+        params = markov_switching.MarkovSwitching.start_params.fget(self)
+
+        # OLS for starting parameters
+        endog = self.endog.copy()
+        if self._k_exog > 0 and self.order > 0:
+            exog = np.c_[self.exog, self.exog_ar]
+        elif self._k_exog > 0:
+            exog = self.exog
+        elif self.order > 0:
+            exog = self.exog_ar
+
+        if self._k_exog > 0 or self.order > 0:
+            beta = np.dot(np.linalg.pinv(exog), endog)
+            variance = np.var(endog - np.dot(exog, beta))
+        else:
+            variance = np.var(endog)
+
+        # Regression coefficients
+        if self._k_exog > 0:
+            if np.any(self.switching_coeffs):
+                for i in range(self.k_regimes):
+                    params[self.parameters[i, 'exog']] = (
+                        beta[:self._k_exog] * (i / self.k_regimes))
+            else:
+                params[self.parameters['exog']] = beta[:self._k_exog]
+
+        # Autoregressive
+        if self.order > 0:
+            if np.any(self.switching_ar):
+                for i in range(self.k_regimes):
+                    params[self.parameters[i, 'autoregressive']] = (
+                        beta[self._k_exog:] * (i / self.k_regimes))
+            else:
+                params[self.parameters['autoregressive']] = beta[self._k_exog:]
+
+        # Variance
+        if self.switching_variance:
+            params[self.parameters['variance']] = (
+                np.linspace(variance / 10., variance, num=self.k_regimes))
+        else:
+            params[self.parameters['variance']] = variance
+
+        return params
+
+    @property
+    def param_names(self):
+        """
+        (list of str) List of human readable parameter names (for parameters
+        actually included in the model).
+        """
+        # Inherited parameters
+        param_names = np.array(
+            markov_regression.MarkovRegression.param_names.fget(self),
+            dtype=object)
+
+        # Autoregressive
+        if np.any(self.switching_ar):
+            for i in range(self.k_regimes):
+                param_names[self.parameters[i, 'autoregressive']] = [
+                    'ar.L%d[%d]' % (j + 1, i) for j in range(self.order)]
+        else:
+            param_names[self.parameters['autoregressive']] = [
+                'ar.L%d' % (j + 1) for j in range(self.order)]
+
+        return param_names.tolist()
+
     def predict_conditional(self, params):
         """
         In-sample prediction, conditional on the current and previous regime
@@ -324,78 +396,6 @@ class MarkovAutoregression(markov_regression.MarkovRegression):
             variance = variance.sum() / self.nobs
 
         return coeffs, variance
-
-    @property
-    def start_params(self):
-        """
-        (array) Starting parameters for maximum likelihood estimation.
-        """
-        # Inherited parameters
-        params = markov_switching.MarkovSwitching.start_params.fget(self)
-
-        # OLS for starting parameters
-        endog = self.endog.copy()
-        if self._k_exog > 0 and self.order > 0:
-            exog = np.c_[self.exog, self.exog_ar]
-        elif self._k_exog > 0:
-            exog = self.exog
-        elif self.order > 0:
-            exog = self.exog_ar
-
-        if self._k_exog > 0 or self.order > 0:
-            beta = np.dot(np.linalg.pinv(exog), endog)
-            variance = np.var(endog - np.dot(exog, beta))
-        else:
-            variance = np.var(endog)
-
-        # Regression coefficients
-        if self._k_exog > 0:
-            if np.any(self.switching_coeffs):
-                for i in range(self.k_regimes):
-                    params[self.parameters[i, 'exog']] = (
-                        beta[:self._k_exog] * (i / self.k_regimes))
-            else:
-                params[self.parameters['exog']] = beta[:self._k_exog]
-
-        # Autoregressive
-        if self.order > 0:
-            if np.any(self.switching_ar):
-                for i in range(self.k_regimes):
-                    params[self.parameters[i, 'autoregressive']] = (
-                        beta[self._k_exog:] * (i / self.k_regimes))
-            else:
-                params[self.parameters['autoregressive']] = beta[self._k_exog:]
-
-        # Variance
-        if self.switching_variance:
-            params[self.parameters['variance']] = (
-                np.linspace(variance / 10., variance, num=self.k_regimes))
-        else:
-            params[self.parameters['variance']] = variance
-
-        return params
-
-    @property
-    def param_names(self):
-        """
-        (list of str) List of human readable parameter names (for parameters
-        actually included in the model).
-        """
-        # Inherited parameters
-        param_names = np.array(
-            markov_regression.MarkovRegression.param_names.fget(self),
-            dtype=object)
-
-        # Autoregressive
-        if np.any(self.switching_ar):
-            for i in range(self.k_regimes):
-                param_names[self.parameters[i, 'autoregressive']] = [
-                    'ar.L%d[%d]' % (j + 1, i) for j in range(self.order)]
-        else:
-            param_names[self.parameters['autoregressive']] = [
-                'ar.L%d' % (j + 1) for j in range(self.order)]
-
-        return param_names.tolist()
 
     def transform_params(self, unconstrained):
         """
