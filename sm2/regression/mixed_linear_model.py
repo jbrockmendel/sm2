@@ -2080,14 +2080,14 @@ class MixedLM(base.LikelihoodModel):
 
 
 class MixedLMResults(base.LikelihoodModelResults, base.ResultMixin):
-    '''
+    """
     Class to contain results of fitting a linear mixed effects model.
 
-    MixedLMResults inherits from statsmodels.LikelihoodModelResults
+    MixedLMResults inherits from sm2.LikelihoodModelResults
 
     Parameters
     ----------
-    See statsmodels.LikelihoodModelResults
+    See sm2.LikelihoodModelResults
 
     Returns
     -------
@@ -2112,8 +2112,8 @@ class MixedLMResults(base.LikelihoodModelResults, base.ResultMixin):
 
     See Also
     --------
-    statsmodels.LikelihoodModelResults
-    '''
+    sm2.LikelihoodModelResults
+    """
 
     def __init__(self, model, params, cov_params):
 

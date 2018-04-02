@@ -1644,6 +1644,8 @@ wrap.populate_wrapper(LikelihoodResultsWrapper,  # noqa:E305
 
 
 # TODO: _none_ of this is covered in tests
+# UPDATE: ResultMixin is mixed into MixedLMResults, so some of this _might_
+# be used
 class ResultMixin(object):
 
     @cache_readonly
