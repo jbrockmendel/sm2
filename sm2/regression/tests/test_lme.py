@@ -261,7 +261,6 @@ class TestMixedLM(object):
 
     def test_vcomp_2(self):
         # Simulated data comparison to R
-
         np.random.seed(6241)
         n = 1600
         exog = np.random.normal(size=(n, 2))
