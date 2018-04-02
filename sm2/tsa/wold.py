@@ -5,13 +5,8 @@ Decompositions of (difference) stationary time series according
 to Wold's Theorem.
 """
 from __future__ import division
-import warnings
 
 import numpy as np
-from pandas.util.decorators import deprecate_kwarg
-from scipy import linalg, signal
-
-from sm2.tools.decorators import cache_readonly
 
 
 class ARMAParams(object):

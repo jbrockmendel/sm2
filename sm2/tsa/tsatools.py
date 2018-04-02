@@ -450,6 +450,7 @@ def lagmat(x, maxlag, trim='forward', original='ex', use_pandas=False):
         if original == 'sep':
             leads = lm[startobs:stopobs, :dropidx]
 
+    # TODO: Avoid multiple-return
     if original == 'sep':
         return lags, leads
     else:

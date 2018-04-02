@@ -290,38 +290,8 @@ def forecast_interval(y, coefs, trend_coefs, sig_u, steps=5, alpha=0.05,
 
 
 def var_loglike(resid, omega, nobs):
-    r"""
-    Returns the value of the VAR(p) log-likelihood.
-
-    Parameters
-    ----------
-    resid : ndarray (T x K)
-    omega : ndarray
-        Sigma hat matrix.  Each element i,j is the average product of the
-        OLS residual for variable i and the OLS residual for variable j or
-        np.dot(resid.T,resid)/nobs.  There should be no correction for the
-        degrees of freedom.
-    nobs : int
-
-    Returns
-    -------
-    llf : float
-        The value of the loglikelihood function for a VAR(p) model
-
-    Notes
-    -----
-    The loglikelihood function for the VAR(p) is
-
-    .. math::
-
-        -\left(\frac{T}{2}\right)
-        \left(\ln\left|\Omega\right|-K\ln\left(2\pi\right)-K\right)
-    """
-    logdet = logdet_symm(np.asarray(omega))
-    neqs = len(omega)
-    part1 = - (nobs * neqs / 2) * np.log(2 * np.pi)
-    part2 = - (nobs / 2) * (logdet + neqs)
-    return part1 + part2
+    raise NotImplementedError("var_loglike not ported from upstream, "
+                              "implemented directly in VARResults.llf")
 
 
 def _reordered(self, order):
@@ -678,6 +648,7 @@ class VAR(tsa_model.TimeSeriesModel):
             z[:, self.k_trend:self.k_trend + x.shape[1]] = x
             z[:, self.k_trend + x.shape[1]:] = temp_z[:, self.k_trend:]
             del temp_z, x  # free memory
+
         # the following modification of z is necessary to get the same results
         # as JMulTi for the constant-term-parameter...
         for i in range(self.k_trend):
@@ -764,14 +735,16 @@ class VARProcess(object):
     intercept : ndarray (length k)
     sigma_u : ndarray (k x k)
     names : sequence (length k)
-
-    Returns
-    -------
-    **Attributes**:
     """
+    @cache_readonly
+    def k_ar(self):
+        return len(self.coefs)
+
+    @cache_readonly
+    def neqs(self):
+        return self.coefs.shape[1]
+
     def __init__(self, coefs, exog, sigma_u, names=None):
-        self.k_ar = len(coefs)
-        self.neqs = coefs.shape[1]
         self.coefs = coefs
         self.exog = exog
         self.sigma_u = sigma_u
@@ -916,6 +889,8 @@ class VARProcess(object):
             raise ValueError("Please provide an exog_future argument to "
                              "the forecast method.")  # pragma: no cover
         trend_coefs = None if self.coefs_exog.size == 0 else self.coefs_exog.T
+        # TODO: upstream is really, really dumb sometimes.  coefs_exog doesn't
+        # exist at this level!
 
         exogs = []
         if self.trend.startswith("c"):  # constant term
@@ -1014,6 +989,7 @@ class VARProcess(object):
 # VARResults class
 
 
+# TODO: Make this subclass Results?
 class VARResults(VARProcess):
     """Estimate VAR(p) process with fixed number of lags
 
@@ -1083,6 +1059,7 @@ class VARResults(VARProcess):
     y :
     endog_lagged
     """
+    _model_type = 'VAR'  # TODO: remove?
 
     @property
     def df_model(self):
@@ -1095,7 +1072,9 @@ class VARResults(VARProcess):
         """Number of observations minus number of estimated parameters"""
         return self.nobs - self.df_model
 
-    _model_type = 'VAR'  # TODO: remove?
+    @cache_readonly
+    def nobs(self):
+        return self.n_totobs - self.k_ar
 
     y = deprecated_alias('y', 'endog')
     ys_lagged = deprecated_alias('ys_lagged', 'endog_lagged')
@@ -1104,17 +1083,16 @@ class VARResults(VARProcess):
                  model=None, trend='c', names=None, dates=None, exog=None):
 
         self.model = model
+        self.params = params
         self.endog = endog
+        # TODO: Most results classes dont have endog; should this?
         self.endog_lagged = endog_lagged
         self.dates = dates
+        self.trend = trend
 
         self.n_totobs, neqs = self.endog.shape
-        self.nobs = self.n_totobs - lag_order
-        self.trend = trend
         k_trend = util.get_trendorder(trend)
-        # TODO: Does this necessarily match self.k_trend below?
         self.exog_names = util.make_lag_names(names, lag_order, k_trend, exog)
-        self.params = params
 
         # Initialize VARProcess parent class
         # construct coefficient matrices
@@ -1129,6 +1107,8 @@ class VARResults(VARProcess):
 
         self.coefs_exog = params[:endog_start].T
         self.k_trend = self.coefs_exog.shape[1]
+        # assert k_trend == self.k_trend, (k_trend, self.k_trend, trend)
+        # TODO: The assertion above fails in a bunch of tests
 
         super(VARResults, self).__init__(coefs, exog, sigma_u, names=names)
 
@@ -1147,13 +1127,34 @@ class VARResults(VARProcess):
 
     @cache_readonly
     def llf(self):
-        "Compute VAR(p) loglikelihood"
-        return var_loglike(self.resid, self.sigma_u_mle, self.nobs)
+        r"""Compute VAR(p) loglikelihood
+
+        Returns
+        -------
+        llf : float
+            The value of the loglikelihood function for a VAR(p) model
+
+        Notes
+        -----
+        The loglikelihood function for the VAR(p) is
+
+        .. math::
+
+            -\left(\frac{T}{2}\right)
+            \left(\ln\left|\Omega\right|-K\ln\left(2\pi\right)-K\right)
+        """
+        omega = self.sigma_u_mle
+        nobs = self.nobs
+
+        logdet = logdet_symm(np.asarray(omega))
+        neqs = len(omega)
+        part1 = - (nobs * neqs / 2) * np.log(2 * np.pi)
+        part2 = - (nobs / 2) * (logdet + neqs)
+        return part1 + part2
 
     @cache_readonly
     def stderr(self):
-        """Standard errors of coefficients, reshaped to match in size
-        """
+        """Standard errors of coefficients, reshaped to match in size"""
         stderr = np.sqrt(np.diag(self.cov_params))
         return stderr.reshape((self.df_model, self.neqs), order='C')
 
@@ -1264,7 +1265,6 @@ class VARResults(VARProcess):
         -----
         Lütkepohl Proposition 3.3
         """
-
         Ainv = scipy.linalg.inv(np.eye(self.neqs) - self.coefs.sum(0))
         return chain_dot(Ainv, self.sigma_u, Ainv.T)
 
@@ -1327,14 +1327,6 @@ class VARResults(VARProcess):
         return self.pvalues[:end]
 
     # TODO: -------------------------------------------------------------
-
-    def plot_forecast(self, steps, alpha=0.05, plot_stderr=True):
-        mid, lower, upper = self.forecast_interval(self.endog[-self.k_ar:],
-                                                   steps,
-                                                   alpha=alpha)
-        plotting.plot_var_forc(self.endog, mid, lower, upper, names=self.names,
-                               plot_stderr=plot_stderr)
-
     # Forecast error covariance functions
 
     def forecast_cov(self, steps=1):
@@ -1524,6 +1516,91 @@ class VARResults(VARProcess):
 
         return np.vstack((upper, self.params.T, lower))
 
+    def reorder(self, order):
+        """Reorder variables for structural specification"""
+        if len(order) != len(self.params[0, :]):  # pragma: no cover
+            raise ValueError("Reorder specification length should match "
+                             "number of endogenous variables")
+        # This converts order to list of integers if given as strings
+        if isinstance(order[0], string_types):
+            order_new = []
+            for i, nam in enumerate(order):
+                order_new.append(self.names.index(order[i]))
+            order = order_new
+        return _reordered(self, order)
+
+    @cache_readonly
+    def detomega(self):
+        r"""
+        Return determinant of white noise covariance with degrees of freedom
+        correction:
+
+        .. math::
+
+            \hat \Omega = \frac{T}{T - Kp - 1} \hat \Omega_{\mathrm{MLE}}
+        """
+        return scipy.linalg.det(self.sigma_u)
+
+    @cache_readonly
+    def info_criteria(self):
+        "information criteria for lagorder selection"
+        nobs = self.nobs
+        neqs = self.neqs
+        lag_order = self.k_ar
+        free_params = lag_order * neqs ** 2 + neqs * self.k_trend
+
+        ld = logdet_symm(self.sigma_u_mle)
+
+        # See Lutkepohl pp. 146-150
+
+        aic = ld + (2. / nobs) * free_params
+        bic = ld + (np.log(nobs) / nobs) * free_params
+        hqic = ld + (2. * np.log(np.log(nobs)) / nobs) * free_params
+        fpe = ((nobs + self.df_model) / self.df_resid) ** neqs * np.exp(ld)
+
+        return {'aic': aic,
+                'bic': bic,
+                'hqic': hqic,
+                'fpe': fpe}
+
+    @property
+    def aic(self):
+        """Akaike information criterion"""
+        return self.info_criteria['aic']
+
+    @property
+    def fpe(self):
+        """Final Prediction Error (FPE)
+
+        Lütkepohl p. 147, see info_criteria
+        """
+        return self.info_criteria['fpe']
+
+    @property
+    def hqic(self):
+        """Hannan-Quinn criterion"""
+        return self.info_criteria['hqic']
+
+    @property
+    def bic(self):
+        """Bayesian a.k.a. Schwarz info criterion"""
+        return self.info_criteria['bic']
+
+    @cache_readonly
+    def roots(self):
+        neqs = self.neqs
+        k_ar = self.k_ar
+        p = neqs * k_ar
+        arr = np.zeros((p, p))
+        arr[:neqs, :] = np.column_stack(self.coefs)
+        arr[neqs:, :-neqs] = np.eye(p - neqs)
+        roots = np.linalg.eig(arr)[0]**-1
+        idx = np.argsort(np.abs(roots))[::-1]  # sort by reverse modulus
+        return roots[idx]
+
+    # -----------------------------------------------------------------
+    # Summary, Plotting, IRF, FEVD, ... methods
+
     def summary(self):
         """Compute console output summary of estimates
 
@@ -1565,18 +1642,12 @@ class VARResults(VARProcess):
         """
         return FEVD(self, P=var_decomp, periods=periods)
 
-    def reorder(self, order):
-        """Reorder variables for structural specification"""
-        if len(order) != len(self.params[0, :]):  # pragma: no cover
-            raise ValueError("Reorder specification length should match "
-                             "number of endogenous variables")
-        # This converts order to list of integers if given as strings
-        if isinstance(order[0], string_types):
-            order_new = []
-            for i, nam in enumerate(order):
-                order_new.append(self.names.index(order[i]))
-            order = order_new
-        return _reordered(self, order)
+    def plot_forecast(self, steps, alpha=0.05, plot_stderr=True):
+        mid, lower, upper = self.forecast_interval(self.endog[-self.k_ar:],
+                                                   steps,
+                                                   alpha=alpha)
+        plotting.plot_var_forc(self.endog, mid, lower, upper, names=self.names,
+                               plot_stderr=plot_stderr)
 
     # -----------------------------------------------------------------
     # VAR Diagnostics: Granger-causality, whiteness of
@@ -1909,75 +1980,6 @@ class VARResults(VARProcess):
         H0 (null) : data are generated by a Gaussian-distributed process
         """
         return test_normality(self, signif=signif)
-
-    @cache_readonly
-    def detomega(self):
-        r"""
-        Return determinant of white noise covariance with degrees of freedom
-        correction:
-
-        .. math::
-
-            \hat \Omega = \frac{T}{T - Kp - 1} \hat \Omega_{\mathrm{MLE}}
-        """
-        return scipy.linalg.det(self.sigma_u)
-
-    @cache_readonly
-    def info_criteria(self):
-        "information criteria for lagorder selection"
-        nobs = self.nobs
-        neqs = self.neqs
-        lag_order = self.k_ar
-        free_params = lag_order * neqs ** 2 + neqs * self.k_trend
-
-        ld = logdet_symm(self.sigma_u_mle)
-
-        # See Lutkepohl pp. 146-150
-
-        aic = ld + (2. / nobs) * free_params
-        bic = ld + (np.log(nobs) / nobs) * free_params
-        hqic = ld + (2. * np.log(np.log(nobs)) / nobs) * free_params
-        fpe = ((nobs + self.df_model) / self.df_resid) ** neqs * np.exp(ld)
-
-        return {'aic': aic,
-                'bic': bic,
-                'hqic': hqic,
-                'fpe': fpe}
-
-    @property
-    def aic(self):
-        """Akaike information criterion"""
-        return self.info_criteria['aic']
-
-    @property
-    def fpe(self):
-        """Final Prediction Error (FPE)
-
-        Lütkepohl p. 147, see info_criteria
-        """
-        return self.info_criteria['fpe']
-
-    @property
-    def hqic(self):
-        """Hannan-Quinn criterion"""
-        return self.info_criteria['hqic']
-
-    @property
-    def bic(self):
-        """Bayesian a.k.a. Schwarz info criterion"""
-        return self.info_criteria['bic']
-
-    @cache_readonly
-    def roots(self):
-        neqs = self.neqs
-        k_ar = self.k_ar
-        p = neqs * k_ar
-        arr = np.zeros((p, p))
-        arr[:neqs, :] = np.column_stack(self.coefs)
-        arr[neqs:, :-neqs] = np.eye(p - neqs)
-        roots = np.linalg.eig(arr)[0]**-1
-        idx = np.argsort(np.abs(roots))[::-1]  # sort by reverse modulus
-        return roots[idx]
 
 
 class VARResultsWrapper(wrap.ResultsWrapper):

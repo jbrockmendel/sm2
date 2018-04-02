@@ -644,6 +644,7 @@ class Results(object):
         self.k_constant = model.k_constant
 
         self.__dict__.update(kwargs)
+        # TODO: Avoid self.__dict__.update
         self.initialize(model, params, **kwargs)
         self._data_attr = []
 

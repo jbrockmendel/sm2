@@ -25,8 +25,9 @@ from sm2.tools.tools import pinv_extended
 from sm2.tools.sm_exceptions import EstimationWarning
 import sm2.base.wrapper as wrap
 
+from scipy.linalg.blas import find_best_blas_type
 
-from sm2.tsa.statespace.tools import find_best_blas_type, prepare_exog
+from sm2.tsa.statespace.tools import prepare_exog
 
 from sm2.tsa.regime_switching._hamilton_filter import (
     shamilton_filter, dhamilton_filter, chamilton_filter, zhamilton_filter)
