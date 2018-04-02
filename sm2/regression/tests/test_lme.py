@@ -260,6 +260,8 @@ class TestMixedLM(object):
                         atol=1e-2, rtol=1e-2)
 
     def test_vcomp_2(self):
+        import time
+        tic = time.time()
         # Simulated data comparison to R
         np.random.seed(6241)
         n = 1600
@@ -268,12 +270,13 @@ class TestMixedLM(object):
 
         # Build up the random error vector
         errors = 0
-
+        warnings.warn("test_vcomp_2 checkpoint 1 dt={dt}".format(dt=time.time()-tic))
         # The random effects
         exog_re = np.random.normal(size=(n, 2))
         slopes = np.random.normal(size=(n // 16, 2))
         slopes = np.kron(slopes, np.ones((16, 1))) * exog_re
         errors += slopes.sum(1)
+        warnings.warn("test_vcomp_2 checkpoint 2 dt={dt}".format(dt=time.time()-tic))
 
         # First variance component
         subgroups1 = np.kron(np.arange(n / 4), np.ones(4))
@@ -285,6 +288,7 @@ class TestMixedLM(object):
 
         # iid errors
         errors += np.random.normal(size=n)
+        warnings.warn("test_vcomp_2 checkpoint 3 dt={dt}".format(dt=time.time()-tic))
 
         endog = exog.sum(1) + errors
 
@@ -302,12 +306,15 @@ class TestMixedLM(object):
         # df.to_csv("tst.csv")
         # model = lmer(y ~ x1 + x2 + (0 + z1 + z2 | groups) + (1 | v1) + (1 |
         # v2), df)
+        warnings.warn("test_vcomp_2 checkpoint 4 dt={dt}".format(dt=time.time()-tic))
 
         vcf = {"a": "0 + C(v1)", "b": "0 + C(v2)"}
         model1 = MixedLM.from_formula("y ~ x1 + x2", groups=groups,
                                       re_formula="0+z1+z2",
                                       vc_formula=vcf, data=df)
+        warnings.warn("test_vcomp_2 checkpoint 5 dt={dt}".format(dt=time.time()-tic))
         result1 = model1.fit()
+        warnings.warn("test_vcomp_2 checkpoint 6 dt={dt}".format(dt=time.time()-tic))
 
         # Compare to R
         assert_allclose(result1.fe_params,
