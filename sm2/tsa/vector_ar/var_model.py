@@ -78,27 +78,9 @@ def ma_rep(coefs, maxn=10):
 
 
 def is_stable(coefs, verbose=False):
-    """
-    Determine stability of VAR(p) system by examining the eigenvalues of the
-    VAR(1) representation
-
-    Parameters
-    ----------
-    coefs : ndarray (p x k x k)
-
-    Returns
-    -------
-    is_stable : bool
-    """
-    A_var1 = util.comp_matrix(coefs)
-    eigs = np.linalg.eigvals(A_var1)
-
-    if verbose:
-        print('Eigenvalues of VAR(1) rep')
-        for val in np.abs(eigs):
-            print(val)
-
-    return (np.abs(eigs) <= 1).all()
+    raise NotImplementedError("is_stable is not ported from upstream, "
+                              "is instead implemented directly in "
+                              "VARProcess.is_stable.")
 
 
 def var_acf(coefs, sig_u, nlags=None):
@@ -725,7 +707,80 @@ class VAR(tsa_model.TimeSeriesModel):
         return LagOrderResults(ics, selected_orders, vecm=False)
 
 
-class VARProcess(object):
+class VARRepresentation(object):
+    """
+    Class representing a deterministic VAR process.
+    """
+    @cache_readonly
+    def k_ar(self):
+        return len(self.coefs)
+
+    @cache_readonly
+    def neqs(self):
+        return self.coefs.shape[1]
+
+    def __init__(self, coefs):
+        self.coefs = coefs
+
+    @cache_readonly
+    def _char_mat(self):
+        return np.eye(self.neqs) - self.coefs.sum(0)
+
+    def long_run_effects(self):
+        """Compute long-run effect of unit impulse
+
+        .. math::
+
+            \Psi_\infty = \sum_{i=0}^\infty \Phi_i
+        """
+        return scipy.linalg.inv(self._char_mat)
+
+    def is_stable(self, verbose=False):
+        """
+        Determine stability of VAR(p) system by examining the eigenvalues
+        of the VAR(1) representation
+
+        Parameters
+        ----------
+        verbose : bool
+            Print eigenvalues of the VAR(1) companion
+
+        Returns
+        -------
+        is_stable : bool
+
+        Notes
+        -----
+        Checks if det(I - Az) = 0 for any mod(z) <= 1, so all the
+        eigenvalues of the companion matrix must lie outside the unit circle
+        """
+        A_var1 = util.comp_matrix(self.coefs)
+        eigs = np.linalg.eigvals(A_var1)
+
+        if verbose:
+            # TODO: get rid of verbose
+            print('Eigenvalues of VAR(1) rep')
+            for val in np.abs(eigs):
+                print(val)
+
+        return (np.abs(eigs) <= 1).all()
+
+    def ma_rep(self, maxn=10):
+        r"""Compute MA(:math:`\infty`) coefficient matrices
+
+        Parameters
+        ----------
+        maxn : int
+            Number of coefficient matrices to compute
+
+        Returns
+        -------
+        coefs : ndarray (maxn x k x k)
+        """
+        return ma_rep(self.coefs, maxn=maxn)
+
+
+class VARProcess(VARRepresentation):
     """
     Class represents a known VAR(p) process
 
@@ -736,16 +791,9 @@ class VARProcess(object):
     sigma_u : ndarray (k x k)
     names : sequence (length k)
     """
-    @cache_readonly
-    def k_ar(self):
-        return len(self.coefs)
-
-    @cache_readonly
-    def neqs(self):
-        return self.coefs.shape[1]
 
     def __init__(self, coefs, exog, sigma_u, names=None):
-        self.coefs = coefs
+        VARRepresentation.__init__(self, coefs)
         self.exog = exog
         self.sigma_u = sigma_u
         self.names = names
@@ -761,21 +809,6 @@ class VARProcess(object):
         out += '\nmean: %s' % self.mean()
 
         return out
-
-    def is_stable(self, verbose=False):
-        """Determine stability based on model coefficients
-
-        Parameters
-        ----------
-        verbose : bool
-            Print eigenvalues of the VAR(1) companion
-
-        Notes
-        -----
-        Checks if det(I - Az) = 0 for any mod(z) <= 1, so all the
-        eigenvalues of the companion matrix must lie outside the unit circle
-        """
-        return is_stable(self.coefs, verbose=verbose)
 
     def plotsim(self, steps=1000):
         """
@@ -793,20 +826,6 @@ class VARProcess(object):
         .. math:: \mu = (I - A_1 - \dots - A_p)^{-1} \alpha
         """
         return np.linalg.solve(self._char_mat, self.exog)
-
-    def ma_rep(self, maxn=10):
-        r"""Compute MA(:math:`\infty`) coefficient matrices
-
-        Parameters
-        ----------
-        maxn : int
-            Number of coefficient matrices to compute
-
-        Returns
-        -------
-        coefs : ndarray (maxn x k x k)
-        """
-        return ma_rep(self.coefs, maxn=maxn)
 
     def orth_ma_rep(self, maxn=10, P=None):
         r"""Compute orthogonalized MA coefficient matrices using P matrix such
@@ -826,22 +845,9 @@ class VARProcess(object):
         """
         return orth_ma_rep(self, maxn, P)
 
-    def long_run_effects(self):
-        """Compute long-run effect of unit impulse
-
-        .. math::
-
-            \Psi_\infty = \sum_{i=0}^\infty \Phi_i
-        """
-        return scipy.linalg.inv(self._char_mat)
-
     @cache_readonly
     def _chol_sigma_u(self):
         return np.linalg.cholesky(self.sigma_u)
-
-    @cache_readonly
-    def _char_mat(self):
-        return np.eye(self.neqs) - self.coefs.sum(0)
 
     def acf(self, nlags=None):
         """Compute theoretical autocovariance function

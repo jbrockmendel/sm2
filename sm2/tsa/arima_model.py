@@ -894,16 +894,17 @@ class ARMA(wold.ARMAParams, tsa_model.TimeSeriesModel):
         if k_ma == 0 and k_ar == 0:
             method = "css"  # Always CSS when no AR or MA terms
 
+        # TODO: Dont set these attributes!
         self.method = method = method.lower()
-
-        # adjust nobs for css
         if method == 'css':
+            # adjust nobs for css
             self.nobs = len(self.endog) - k_ar
 
+        # TODO: Make this "_get_start_params"?
         if start_params is not None:
             start_params = np.asarray(start_params)
-
-        else:  # estimate starting parameters
+        else:
+            # estimate starting parameters
             start_params = self._fit_start_params((k_ar, k_ma, k), method,
                                                   start_ar_lags)
 
@@ -1238,7 +1239,43 @@ class ARIMA(ARMA):
         return fv
 
 
-class ARMAResults(tsa_model.TimeSeriesModelResults):
+class ARMARoots(object):
+    @cache_readonly
+    def arroots(self):
+        return np.roots(np.r_[1, -self.arparams])**-1
+
+    @cache_readonly
+    def maroots(self):
+        return np.roots(np.r_[1, self.maparams])**-1
+
+    @cache_readonly
+    def arfreq(self):
+        r"""
+        Returns the frequency of the AR roots.
+
+        This is the solution, x, to z = abs(z)*exp(2j*np.pi*x) where z are the
+        roots.
+        """
+        z = self.arroots
+        if not z.size:
+            return  # TODO: return empty array?
+        return np.arctan2(z.imag, z.real) / (2 * np.pi)
+
+    @cache_readonly
+    def mafreq(self):
+        r"""
+        Returns the frequency of the MA roots.
+
+        This is the solution, x, to z = abs(z)*exp(2j*np.pi*x) where z are the
+        roots.
+        """
+        z = self.maroots
+        if not z.size:
+            return  # TODO: return empty array?
+        return np.arctan2(z.imag, z.real) / (2 * np.pi)
+
+
+class ARMAResults(ARMARoots, tsa_model.TimeSeriesModelResults):
     """
     Class to hold results from fitting an ARMA model.
 
@@ -1369,40 +1406,6 @@ class ARMAResults(tsa_model.TimeSeriesModelResults):
         self._cache = resettable_cache()  # TODO: Is this necessary?
 
     @cache_readonly
-    def arroots(self):
-        return np.roots(np.r_[1, -self.arparams])**-1
-
-    @cache_readonly
-    def maroots(self):
-        return np.roots(np.r_[1, self.maparams])**-1
-
-    @cache_readonly
-    def arfreq(self):
-        r"""
-        Returns the frequency of the AR roots.
-
-        This is the solution, x, to z = abs(z)*exp(2j*np.pi*x) where z are the
-        roots.
-        """
-        z = self.arroots
-        if not z.size:
-            return  # TODO: return empty array?
-        return np.arctan2(z.imag, z.real) / (2 * np.pi)
-
-    @cache_readonly
-    def mafreq(self):
-        r"""
-        Returns the frequency of the MA roots.
-
-        This is the solution, x, to z = abs(z)*exp(2j*np.pi*x) where z are the
-        roots.
-        """
-        z = self.maroots
-        if not z.size:
-            return  # TODO: return empty array?
-        return np.arctan2(z.imag, z.real) / (2 * np.pi)
-
-    @cache_readonly
     def arparams(self):
         k = self.k_exog + self.k_trend
         return self.params[k:k + self.k_ar]
@@ -1421,6 +1424,7 @@ class ARMAResults(tsa_model.TimeSeriesModelResults):
             return np.sqrt(-1. / hess[0])
         return np.sqrt(np.diag(-np.linalg.inv(hess)))
 
+    # TODO: Can we use base class implementation for this?
     def cov_params(self):  # TODO: add scale argument?
         params = self.params
         hess = self.model.hessian(params)

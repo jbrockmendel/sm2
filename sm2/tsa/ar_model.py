@@ -506,6 +506,7 @@ class AR(wold.ARMAParams, tsa_model.TimeSeriesModel):
         if method not in ['cmle', 'yw', 'mle']:  # pragma: no cover
             raise ValueError("Method %s not recognized" % method)
 
+        # TODO: Don't set these attributes!
         self.method = method
         self.trend = trend
         self.transparams = transparams
@@ -677,7 +678,7 @@ class ARResults(tsa_model.TimeSeriesModelResults):
         n_totobs = len(model.endog)
         self.n_totobs = n_totobs
         self.X = model.X  # copy?
-        self.Y = model.Y
+        self.Y = model.Y  # TODO: Get rid of alias
         k_ar = model.k_ar
         self.k_ar = k_ar
         k_trend = model.k_trend
@@ -693,6 +694,7 @@ class ARResults(tsa_model.TimeSeriesModelResults):
         if model.method == "cmle":  # do DOF correction
             return 1. / self.nobs * sumofsq(self.resid)
         else:
+            # TODO: sigma2 shouldnt be a model attribute at all
             return self.model.sigma2
 
     @cache_writable()   # for compatability with RegressionResults
