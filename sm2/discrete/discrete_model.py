@@ -3267,6 +3267,7 @@ class DiscreteResults(base.LikelihoodModelResults):
 
     @cache_readonly
     def fittedvalues(self):
+        # TODO: Can we merge this into the base class case?
         return np.dot(self.model.exog, self.params[:self.model.exog.shape[1]])
 
     @cache_readonly
@@ -3734,6 +3735,8 @@ class MultinomialResults(DiscreteResults):
     def bse(self):
         bse = np.sqrt(np.diag(self.cov_params()))
         return bse.reshape(self.params.shape, order='F')
+        # TODO: Is the order='F') part necessary?  Can we just add the
+        # reshape to the general case?
 
     @cache_readonly
     def aic(self):
