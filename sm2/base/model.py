@@ -501,9 +501,9 @@ class GenericLikelihoodModel(LikelihoodModel):
         # for a model
         if self.exog is not None:
             # assume constant
-            er = np.linalg.matrix_rank(self.exog)
-            self.df_model = float(er - 1)
-            self.df_resid = float(self.exog.shape[0] - er)
+            rank = np.linalg.matrix_rank(self.exog)
+            self.df_model = float(rank) - 1
+            self.df_resid = float(self.exog.shape[0]) - (self.df_model + 1)
         else:
             self.df_model = np.nan
             self.df_resid = np.nan
@@ -1673,50 +1673,33 @@ class ResultMixin(object):
 
     @cache_readonly
     def score_obsv(self):
-        """cached Jacobian of log-likelihood"""
-        return self.model.score_obs(self.params)
+        raise NotImplementedError("score_obsv not ported from upstream, "
+                                  "as it is neither used nor tested")
 
     @cache_readonly
     def hessv(self):
-        """cached Hessian of log-likelihood"""
-        return self.model.hessian(self.params)
+        raise NotImplementedError("hessv not ported from upstream, "
+                                  "as it is neither used nor tested")
 
     @cache_readonly
     def covjac(self):
-        """
-        covariance of parameters based on outer product of jacobian of
-        log-likelihood
-        """
-        #  if not hasattr(self, '_results'):
-        #      raise ValueError('need to call fit first')
-        #      #self.fit()
-        #  self.jacv = jacv = self.jac(self._results.params)
-        jacv = self.score_obsv
-        return np.linalg.inv(np.dot(jacv.T, jacv))
+        raise NotImplementedError("covjac not ported from upstream, "
+                                  "as it is neither used nor tested")
 
     @cache_readonly
     def covjhj(self):
-        """covariance of parameters based on HJJH
-
-        dot product of Hessian, Jacobian, Jacobian, Hessian of likelihood
-
-        name should be covhjh
-        """
-        jacv = self.score_obsv
-        hessv = self.hessv
-        hessinv = np.linalg.inv(hessv)
-        #  self.hessinv = hessin = self.cov_params()
-        return np.dot(hessinv, np.dot(np.dot(jacv.T, jacv), hessinv))
+        raise NotImplementedError("covjhj not ported from upstream, "
+                                  "as it is neither used nor tested")
 
     @cache_readonly
     def bsejhj(self):
-        """standard deviation of parameter estimates based on covHJH"""
-        return np.sqrt(np.diag(self.covjhj))
+        raise NotImplementedError("bsejhj not ported from upstream, "
+                                  "as it is neither used nor tested")
 
     @cache_readonly
     def bsejac(self):
-        """standard deviation of parameter estimates based on covjac"""
-        return np.sqrt(np.diag(self.covjac))
+        raise NotImplementedError("bsejac not ported from upstream, "
+                                  "as it is neither used nor tested")
 
     def bootstrap(self, nrep=100, method='nm', disp=0, store=1):
         """simple bootstrap to get mean and variance of estimator

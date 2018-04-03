@@ -2345,6 +2345,7 @@ class TestNegativeBinomialPPredictProb(object):
 @pytest.mark.not_vetted
 def test_optim_kwds_prelim():
     # test that fit options for preliminary fit is correctly transmitted
+    # TODO: GH reference?
     features = ['pp']
     X = (sm3533[features] - sm3533[features].mean()) / sm3533[features].std()
     y = sm3533['num'].values
