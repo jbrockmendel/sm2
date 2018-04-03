@@ -140,7 +140,7 @@ class TestAROLSNoConstant(CheckARMixin):
                             self.res2.FVOLSn200start200,
                             DECIMAL_4)
         #assert_almost_equal(model.predict(params, n=200, start=-109),
-        #                   self.res2.FVOLSn200startneg109, DECIMAL_4)
+        #                    self.res2.FVOLSn200startneg109, DECIMAL_4)
         assert_almost_equal(model.predict(params, start=308, end=424),
                             self.res2.FVOLSn100start325,
                             DECIMAL_4)

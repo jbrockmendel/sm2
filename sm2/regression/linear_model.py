@@ -179,6 +179,10 @@ class RegressionModel(base.LikelihoodModel):
                 "fit_regularized": (RegularizedResults,
                                     RegularizedResultsWrapper)}
 
+    @cache_readonly
+    def nobs(self):
+        return float(self.wexog.shape[0])
+
     def __init__(self, endog, exog, **kwargs):
         self._df_model = None
         self._df_resid = None
@@ -187,11 +191,10 @@ class RegressionModel(base.LikelihoodModel):
         super(RegressionModel, self).__init__(endog, exog, **kwargs)
         self._data_attr.extend(['pinv_wexog', 'wendog', 'wexog', 'weights'])
 
+    # TODO: merge this into __init__
     def initialize(self):
         self.wexog = self.whiten(self.exog)
         self.wendog = self.whiten(self.endog)
-        # overwrite nobs from class Model:
-        self.nobs = float(self.wexog.shape[0])
 
     @property
     def df_model(self):

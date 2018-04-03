@@ -26,15 +26,20 @@ import sm2.base.wrapper as wrap
 from sm2.regression.linear_model import yule_walker, GLS
 
 from sm2.tsa.base import tsa_model
-
+from sm2.tsa import wold
 from sm2.tsa.tsatools import (lagmat, add_trend,
-                              _ar_transparams, _ar_invtransparams,
-                              _ma_transparams, _ma_invtransparams,
                               unintegrate, unintegrate_levels)
 from sm2.tsa.vector_ar import util
 from sm2.tsa.arima_process import arma2ma
 from sm2.tsa.ar_model import AR
 from sm2.tsa.kalmanf import KalmanFilter
+
+_unpack_params = wold.ARMAParams._unpack_params  # staticmethod
+
+
+def _unpack_order(order):  # pragma: no cover
+    raise NotImplementedError("_unpack_order not ported from upstream, "
+                              "as it is neither used nor tested there.")
 
 
 def _create_mpl_ax(ax):
@@ -375,24 +380,6 @@ def _arma_predict_in_sample(start, end, endog, resid, k_ar, method):
     return fittedvalues[fv_start:fv_end]
 
 
-def _unpack_params(params, order, k_trend, k_exog, reverse=False):
-    p, q = order
-    k = k_trend + k_exog
-    maparams = params[k + p:]
-    arparams = params[k:k + p]
-    trend = params[:k_trend]
-    exparams = params[k_trend:k]
-    if reverse:
-        return trend, exparams, arparams[::-1], maparams[::-1]
-    return trend, exparams, arparams, maparams
-
-
-def _unpack_order(order):
-    k_ar, k_ma, k = order
-    k_lags = max(k_ar, k_ma + 1)
-    return k_ar, k_ma, order, k_lags
-
-
 def _make_arma_names(data, k_trend, order, exog_names):
     k_ar, k_ma = order
     exog_names = exog_names or []
@@ -417,6 +404,7 @@ def _make_arma_names(data, k_trend, order, exog_names):
     return exog_names
 
 
+# TODO: Does this belong somewhere else?
 def _make_arma_exog(endog, exog, trend):
     k_trend = 1  # overwritten if no constant
     if exog is None and trend == 'c':   # constant only
@@ -438,7 +426,7 @@ def _check_estimable(nobs, n_params):
         raise ValueError("Insufficient degrees of freedom to estimate")
 
 
-class ARMA(tsa_model.TimeSeriesModel):
+class ARMA(wold.ARMAParams, tsa_model.TimeSeriesModel):
     __doc__ = tsa_model._tsa_doc % {
         "model": _arma_model,
         "params": _arma_params,
@@ -612,49 +600,6 @@ class ARMA(tsa_model.TimeSeriesModel):
         This is a numerical approximation.
         """
         return approx_hess_cs(params, self.loglike, args=(False,))
-
-    def _transparams(self, params):
-        """
-        Transforms params to induce stationarity/invertability.
-
-        Reference
-        ---------
-        Jones(1980)
-        """
-        k_ar, k_ma = self.k_ar, self.k_ma
-        k = self.k_exog + self.k_trend
-        newparams = np.zeros_like(params)
-
-        # just copy exogenous parameters
-        if k != 0:
-            newparams[:k] = params[:k]
-
-        # AR Coeffs
-        if k_ar != 0:
-            newparams[k:k + k_ar] = _ar_transparams(params[k:k + k_ar].copy())
-
-        # MA Coeffs
-        if k_ma != 0:
-            newparams[k + k_ar:] = _ma_transparams(params[k + k_ar:].copy())
-        return newparams
-
-    def _invtransparams(self, start_params):
-        """
-        Inverse of the Jones reparameterization
-        """
-        k_ar, k_ma = self.k_ar, self.k_ma
-        k = self.k_exog + self.k_trend
-        newparams = start_params.copy()
-        arcoefs = newparams[k:k + k_ar]
-        macoefs = newparams[k + k_ar:]
-        # AR coeffs
-        if k_ar != 0:
-            newparams[k:k + k_ar] = _ar_invtransparams(arcoefs)
-
-        # MA coeffs
-        if k_ma != 0:
-            newparams[k + k_ar:k + k_ar + k_ma] = _ma_invtransparams(macoefs)
-        return newparams
 
     def _get_prediction_index(self, start, end, dynamic, index=None):
         method = getattr(self, 'method', 'mle')
@@ -949,16 +894,17 @@ class ARMA(tsa_model.TimeSeriesModel):
         if k_ma == 0 and k_ar == 0:
             method = "css"  # Always CSS when no AR or MA terms
 
+        # TODO: Dont set these attributes!
         self.method = method = method.lower()
-
-        # adjust nobs for css
         if method == 'css':
+            # adjust nobs for css
             self.nobs = len(self.endog) - k_ar
 
+        # TODO: Make this "_get_start_params"?
         if start_params is not None:
             start_params = np.asarray(start_params)
-
-        else:  # estimate starting parameters
+        else:
+            # estimate starting parameters
             start_params = self._fit_start_params((k_ar, k_ma, k), method,
                                                   start_ar_lags)
 
@@ -1293,7 +1239,43 @@ class ARIMA(ARMA):
         return fv
 
 
-class ARMAResults(tsa_model.TimeSeriesModelResults):
+class ARMARoots(object):
+    @cache_readonly
+    def arroots(self):
+        return np.roots(np.r_[1, -self.arparams])**-1
+
+    @cache_readonly
+    def maroots(self):
+        return np.roots(np.r_[1, self.maparams])**-1
+
+    @cache_readonly
+    def arfreq(self):
+        r"""
+        Returns the frequency of the AR roots.
+
+        This is the solution, x, to z = abs(z)*exp(2j*np.pi*x) where z are the
+        roots.
+        """
+        z = self.arroots
+        if not z.size:
+            return  # TODO: return empty array?
+        return np.arctan2(z.imag, z.real) / (2 * np.pi)
+
+    @cache_readonly
+    def mafreq(self):
+        r"""
+        Returns the frequency of the MA roots.
+
+        This is the solution, x, to z = abs(z)*exp(2j*np.pi*x) where z are the
+        roots.
+        """
+        z = self.maroots
+        if not z.size:
+            return  # TODO: return empty array?
+        return np.arctan2(z.imag, z.real) / (2 * np.pi)
+
+
+class ARMAResults(ARMARoots, tsa_model.TimeSeriesModelResults):
     """
     Class to hold results from fitting an ARMA model.
 
@@ -1424,40 +1406,6 @@ class ARMAResults(tsa_model.TimeSeriesModelResults):
         self._cache = resettable_cache()  # TODO: Is this necessary?
 
     @cache_readonly
-    def arroots(self):
-        return np.roots(np.r_[1, -self.arparams])**-1
-
-    @cache_readonly
-    def maroots(self):
-        return np.roots(np.r_[1, self.maparams])**-1
-
-    @cache_readonly
-    def arfreq(self):
-        r"""
-        Returns the frequency of the AR roots.
-
-        This is the solution, x, to z = abs(z)*exp(2j*np.pi*x) where z are the
-        roots.
-        """
-        z = self.arroots
-        if not z.size:
-            return  # TODO: return empty array?
-        return np.arctan2(z.imag, z.real) / (2 * np.pi)
-
-    @cache_readonly
-    def mafreq(self):
-        r"""
-        Returns the frequency of the MA roots.
-
-        This is the solution, x, to z = abs(z)*exp(2j*np.pi*x) where z are the
-        roots.
-        """
-        z = self.maroots
-        if not z.size:
-            return  # TODO: return empty array?
-        return np.arctan2(z.imag, z.real) / (2 * np.pi)
-
-    @cache_readonly
     def arparams(self):
         k = self.k_exog + self.k_trend
         return self.params[k:k + self.k_ar]
@@ -1476,6 +1424,7 @@ class ARMAResults(tsa_model.TimeSeriesModelResults):
             return np.sqrt(-1. / hess[0])
         return np.sqrt(np.diag(-np.linalg.inv(hess)))
 
+    # TODO: Can we use base class implementation for this?
     def cov_params(self):  # TODO: add scale argument?
         params = self.params
         hess = self.model.hessian(params)

@@ -8,9 +8,9 @@ from __future__ import division, absolute_import, print_function
 import warnings
 
 import numpy as np
-from scipy import linalg
-from scipy.linalg import solve_sylvester
-from scipy.linalg.blas import find_best_blas_type
+# from scipy import linalg
+# from scipy.linalg import solve_sylvester
+# from scipy.linalg.blas import find_best_blas_type
 
 import pandas as pd
 
@@ -60,7 +60,7 @@ def set_mode(compatibility=None):
     if not compatibility:
         from scipy.linalg import cython_blas  # noqa:F401,F811
         from . import _tools
-        #from . import (_representation, _kalman_filter, _kalman_smoother,
+        # from . import (_representation, _kalman_filter, _kalman_smoother,
         #               _simulation_smoother)
         compatibility_mode = False
         '''
@@ -1867,6 +1867,7 @@ def copy_index_vector(a, b, index, inplace=False, prefix=None):
 
     return b
 '''
+
 
 def prepare_exog(exog):
     k_exog = 0

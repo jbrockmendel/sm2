@@ -134,6 +134,7 @@ class RLM(base.LikelihoodModel):
         self._data_attr.extend(['weights', 'pinv_wexog'])
 
     # TODO: Get rid of this dumb method, or at least make it `initialize`
+    # TODO: Is the docstring also inaccurate?
     def _initialize(self):
         """
         Initializes the model for the IRLS fit.
@@ -481,6 +482,7 @@ class RLMResults(base.LikelihoodModelResults):
     def bse(self):
         return np.sqrt(np.diag(self.bcov_scaled))
 
+    # TODO: Use default implementation from base class?
     @cache_readonly
     def chisq(self):
         return (self.params / self.bse)**2

@@ -2,6 +2,7 @@
 Base tools for handling various kinds of data structures, attaching metadata to
 results, and doing data cleaning
 """
+import copy
 
 from six.moves import range, reduce, zip
 import numpy as np
@@ -84,8 +85,7 @@ class ModelData(object):
         self._cache = resettable_cache()
 
     def __getstate__(self):
-        from copy import copy
-        d = copy(self.__dict__)
+        d = copy.copy(self.__dict__)
         if "design_info" in d:  # TOOD: not hit in tests
             del d["design_info"]
             d["restore_design_info"] = True
@@ -108,7 +108,6 @@ class ModelData(object):
                                           return_type='dataframe')
                     break
                 except (NameError, PatsyError) as e:
-                    print('not in depth %d' % depth)
                     exc.append(e)
                     # why do I need a reference from outside except block
                     pass
@@ -311,7 +310,6 @@ class ModelData(object):
             raise ValueError("missing option %s not understood" % missing)
 
     def _convert_endog_exog(self, endog, exog):
-
         # for consistent outputs if endog is (n,1)
         yarr = self._get_yarr(endog)
         xarr = None
@@ -327,7 +325,7 @@ class ModelData(object):
     @cache_writable()
     def ynames(self):
         endog = self.orig_endog
-        ynames = self._get_names(endog)
+        ynames = _get_names(endog)
         if not ynames:
             ynames = _make_endog_names(self.endog)
 
@@ -340,7 +338,7 @@ class ModelData(object):
     def xnames(self):
         exog = self.orig_exog
         if exog is not None:
-            xnames = self._get_names(exog)
+            xnames = _get_names(exog)
             if not xnames:
                 xnames = _make_exog_names(self.exog)
             return list(xnames)
@@ -369,20 +367,8 @@ class ModelData(object):
         return None
 
     def _get_names(self, arr):
-        if isinstance(arr, DataFrame):
-            return list(arr.columns)
-        elif isinstance(arr, Series):
-            if arr.name:
-                return [arr.name]
-            else:
-                return
-        else:
-            try:
-                return arr.dtype.names
-            except AttributeError:
-                pass
-
-        return None
+        # TODO: Can we just get rid of this method?
+        return _get_names(arr)
 
     def _get_yarr(self, endog):
         if data_util._is_structured_ndarray(endog):
@@ -457,8 +443,7 @@ class ModelData(object):
 
 
 class PatsyData(ModelData):
-    def _get_names(self, arr):
-        return arr.design_info.column_names
+    pass
 
 
 class PandasData(ModelData):
@@ -570,6 +555,26 @@ class PandasData(ModelData):
             return Series(squeezed, name=self.ynames)
         else:
             return DataFrame(result, columns=self.ynames)
+
+
+def _get_names(arr):
+    if hasattr(arr, 'design_info'):
+        # PatsyData
+        return arr.design_info.column_names
+    elif isinstance(arr, DataFrame):
+        return list(arr.columns)
+    elif isinstance(arr, Series):
+        if arr.name:  # TODO: What if arr.name is `False`??
+            return [arr.name]
+        else:
+            return None
+    else:
+        try:
+            return arr.dtype.names
+        except AttributeError:
+            pass
+
+    return None
 
 
 def _make_endog_names(endog):

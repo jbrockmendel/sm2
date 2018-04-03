@@ -15,9 +15,8 @@ import sm2.base.wrapper as wrap
 
 from sm2.regression.linear_model import OLS
 
-from sm2.tsa.tsatools import (lagmat, add_trend,
-                              _ar_transparams, _ar_invtransparams)
-
+from sm2.tsa.tsatools import lagmat, add_trend
+from sm2.tsa import wold
 from sm2.tsa.base import tsa_model
 from sm2.tsa.vector_ar import util
 from sm2.tsa.kalmanf.kalmanfilter import KalmanFilter
@@ -57,7 +56,7 @@ def _ar_predict_out_of_sample(y, params, p, k_trend, steps, start=0):
     return forecast
 
 
-class AR(tsa_model.TimeSeriesModel):
+class AR(wold.ARMAParams, tsa_model.TimeSeriesModel):
     __doc__ = tsa_model._tsa_doc % {
         "model": "Autoregressive AR(p) model",
         "params": """endog : array-like
@@ -73,33 +72,6 @@ class AR(tsa_model.TimeSeriesModel):
             self.endog = endog  # to get shapes right
         elif endog.ndim > 1 and endog.shape[1] != 1:  # pragma: no cover
             raise ValueError("Only the univariate case is implemented")
-
-    def initialize(self):
-        pass
-
-    def _transparams(self, params):
-        """
-        Transforms params to induce stationarity/invertability.
-
-        Reference
-        ---------
-        Jones(1980)
-        """
-        p = self.k_ar
-        k = self.k_trend
-        newparams = params.copy()
-        newparams[k:k + p] = _ar_transparams(params[k:k + p].copy())
-        return newparams
-
-    def _invtransparams(self, start_params):
-        """
-        Inverse of the Jones reparameterization
-        """
-        p = self.k_ar
-        k = self.k_trend
-        newparams = start_params.copy()
-        newparams[k:k + p] = _ar_invtransparams(start_params[k:k + p].copy())
-        return newparams
 
     def _presample_fit(self, params, start, p, end, y, predictedvalues):
         """
@@ -276,6 +248,7 @@ class AR(tsa_model.TimeSeriesModel):
         return (-nobs / 2 * (np.log(2 * np.pi) + np.log(sigma2)) -
                 ssr / (2 * sigma2))
 
+    # TODO: Can we get this from KalmanFilter like we do in arima_model?
     def _loglike_mle(self, params):
         """
         Loglikelihood of AR(p) process using exact maximum likelihood
@@ -533,6 +506,7 @@ class AR(tsa_model.TimeSeriesModel):
         if method not in ['cmle', 'yw', 'mle']:  # pragma: no cover
             raise ValueError("Method %s not recognized" % method)
 
+        # TODO: Don't set these attributes!
         self.method = method
         self.trend = trend
         self.transparams = transparams
@@ -704,7 +678,7 @@ class ARResults(tsa_model.TimeSeriesModelResults):
         n_totobs = len(model.endog)
         self.n_totobs = n_totobs
         self.X = model.X  # copy?
-        self.Y = model.Y
+        self.Y = model.Y  # TODO: Get rid of alias
         k_ar = model.k_ar
         self.k_ar = k_ar
         k_trend = model.k_trend
@@ -720,6 +694,7 @@ class ARResults(tsa_model.TimeSeriesModelResults):
         if model.method == "cmle":  # do DOF correction
             return 1. / self.nobs * sumofsq(self.resid)
         else:
+            # TODO: sigma2 shouldnt be a model attribute at all
             return self.model.sigma2
 
     @cache_writable()   # for compatability with RegressionResults
