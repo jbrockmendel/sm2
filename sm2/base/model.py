@@ -1672,32 +1672,32 @@ class ResultMixin(object):
         return -2 * self.llf + np.log(self.nobs) * (self.df_modelwc)
 
     @cache_readonly
-    def score_obsv(self):
+    def score_obsv(self):  # pragma: no cover
         raise NotImplementedError("score_obsv not ported from upstream, "
                                   "as it is neither used nor tested")
 
     @cache_readonly
-    def hessv(self):
+    def hessv(self):  # pragma: no cover
         raise NotImplementedError("hessv not ported from upstream, "
                                   "as it is neither used nor tested")
 
     @cache_readonly
-    def covjac(self):
+    def covjac(self):  # pragma: no cover
         raise NotImplementedError("covjac not ported from upstream, "
                                   "as it is neither used nor tested")
 
     @cache_readonly
-    def covjhj(self):
+    def covjhj(self):  # pragma: no cover
         raise NotImplementedError("covjhj not ported from upstream, "
                                   "as it is neither used nor tested")
 
     @cache_readonly
-    def bsejhj(self):
+    def bsejhj(self):  # pragma: no cover
         raise NotImplementedError("bsejhj not ported from upstream, "
                                   "as it is neither used nor tested")
 
     @cache_readonly
-    def bsejac(self):
+    def bsejac(self):  # pragma: no cover
         raise NotImplementedError("bsejac not ported from upstream, "
                                   "as it is neither used nor tested")
 

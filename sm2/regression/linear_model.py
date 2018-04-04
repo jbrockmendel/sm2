@@ -193,6 +193,8 @@ class RegressionModel(base.LikelihoodModel):
 
     # TODO: merge this into __init__
     def initialize(self):
+        # Note: in GLSAR these get re-evaluated repeatedly,
+        # makes merging this into __init__ troublesome
         self.wexog = self.whiten(self.exog)
         self.wendog = self.whiten(self.endog)
 
@@ -504,7 +506,8 @@ class GLS(RegressionModel):
         """
         # TODO: combine this with OLS/WLS loglike and add _det_sigma argument
         nobs2 = self.nobs / 2.0
-        SSR = np.sum((self.wendog - np.dot(self.wexog, params))**2, axis=0)
+        wresid = self.wendog - np.dot(self.wexog, params)
+        SSR = np.sum(wresid**2, axis=0)
         llf = -np.log(SSR) * nobs2      # concentrated likelihood
         llf -= (1 + np.log(np.pi / nobs2)) * nobs2  # with likelihood constant
         if np.any(self.sigma):
@@ -666,7 +669,8 @@ class WLS(RegressionModel):
         where :math:`W` is a diagonal matrix
         """
         nobs2 = self.nobs / 2.0
-        SSR = np.sum((self.wendog - np.dot(self.wexog, params))**2, axis=0)
+        wresid = self.wendog - np.dot(self.wexog, params)
+        SSR = np.sum(wresid**2, axis=0)
         llf = -np.log(SSR) * nobs2      # concentrated likelihood
         llf -= (1 + np.log(np.pi / nobs2)) * nobs2  # with constant
         llf += 0.5 * np.sum(np.log(self.weights))
@@ -1046,6 +1050,7 @@ class GLSAR(GLS):
         for i in range(maxiter - 1):
             if hasattr(self, 'pinv_wexog'):
                 del self.pinv_wexog
+                # TODO: What does this accomplish?
             self.initialize()
             results = self.fit()
             history['params'].append(results.params)
@@ -1079,7 +1084,6 @@ class GLSAR(GLS):
             results.iter += 1
 
         results.converged = converged
-
         return results
 
     def whiten(self, X):
