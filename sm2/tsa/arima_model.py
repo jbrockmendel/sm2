@@ -1239,43 +1239,7 @@ class ARIMA(ARMA):
         return fv
 
 
-class ARMARoots(object):
-    @cache_readonly
-    def arroots(self):
-        return np.roots(np.r_[1, -self.arparams])**-1
-
-    @cache_readonly
-    def maroots(self):
-        return np.roots(np.r_[1, self.maparams])**-1
-
-    @cache_readonly
-    def arfreq(self):
-        r"""
-        Returns the frequency of the AR roots.
-
-        This is the solution, x, to z = abs(z)*exp(2j*np.pi*x) where z are the
-        roots.
-        """
-        z = self.arroots
-        if not z.size:
-            return  # TODO: return empty array?
-        return np.arctan2(z.imag, z.real) / (2 * np.pi)
-
-    @cache_readonly
-    def mafreq(self):
-        r"""
-        Returns the frequency of the MA roots.
-
-        This is the solution, x, to z = abs(z)*exp(2j*np.pi*x) where z are the
-        roots.
-        """
-        z = self.maroots
-        if not z.size:
-            return  # TODO: return empty array?
-        return np.arctan2(z.imag, z.real) / (2 * np.pi)
-
-
-class ARMAResults(ARMARoots, tsa_model.TimeSeriesModelResults):
+class ARMAResults(wold.ARMARoots, tsa_model.TimeSeriesModelResults):
     """
     Class to hold results from fitting an ARMA model.
 
@@ -1412,6 +1376,25 @@ class ARMAResults(ARMARoots, tsa_model.TimeSeriesModelResults):
 
     @cache_readonly
     def maparams(self):
+        k = self.k_exog + self.k_trend
+        k_ar = self.k_ar
+        return self.params[k + k_ar:]
+
+    @cache_readonly
+    def arcoefs(self):
+        """Alias for arparams used for naming convention compatibility.
+        In the future, `arparams` may be changed to correspond
+        to np.r_[1, -arcoefs]
+        """
+        k = self.k_exog + self.k_trend
+        return self.params[k:k + self.k_ar]
+
+    @cache_readonly
+    def macoefs(self):
+        """Alias for maparams used for naming convention compatibility.
+        In the future, `maparams` may be changed to correspond
+        to np.r_[1, macoefs]
+        """
         k = self.k_exog + self.k_trend
         k_ar = self.k_ar
         return self.params[k + k_ar:]

@@ -23,6 +23,7 @@ import numpy as np
 from scipy import signal, optimize, linalg
 
 from sm2.tools.decorators import copy_doc
+from sm2.tsa import wold
 
 __all__ = ['arma_acf', 'arma_acovf', 'arma_generate_sample',
            'arma_impulse_response', 'arma2ar', 'arma2ma', 'deconvolve',
@@ -552,7 +553,7 @@ def deconvolve(num, den, n=None):  # pragma: no cover
                               "scipy.signal.signaltools.")
 
 
-class ArmaProcess(object):
+class ArmaProcess(wold.ARMARoots):
     r"""
     Theoretical properties of an ARMA process for specified lag-polynomials
 
