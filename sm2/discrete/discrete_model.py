@@ -1466,38 +1466,9 @@ class GeneralizedPoisson(CountModel):
         else:
             return score
 
-    # TODO: Not hit in tests
-    def _score_p(self, params):
-        """
-        Generalized Poisson model derivative of the log-likelihood
-        by p-parameter
-
-        Parameters
-        ----------
-        params : array-like
-            The parameters of the model
-
-        Returns
-        -------
-        dldp : float
-            dldp is first derivative of the loglikelihood function,
-        evaluated at `p-parameter`.
-        """
-        if self._transparams:
-            alpha = np.exp(params[-1])
-        else:
-            alpha = params[-1]
-        params = params[:-1]
-        p = self.parameterization
-        y = self.endog[:, None]
-        mu = self.predict(params)[:, None]
-        mu_p = np.power(mu, p)
-        a1 = 1 + alpha * mu_p
-        a2 = mu + alpha * mu_p * y
-
-        dp = np.sum((np.log(mu) * ((a2 - mu) * ((y - 1) / a2 - 2 / a1) +
-                                   (a1 - 1) * a2 / a1 ** 2)))
-        return dp
+    def _score_p(self, params):  # pragma: no cover
+        raise NotImplementedError("_score_p not ported from upstream, "
+                                  "as it is neither used nor tested.")
 
     def hessian(self, params):
         """
@@ -2308,6 +2279,7 @@ class NegativeBinomial(CountModel):
             raise NotImplementedError("Likelihood type must nb1, nb2 or "
                                       "geometric")
 
+    # TODO: Can we move this to the base class?
     def __getstate__(self):
         odict = self.__dict__.copy()  # copy the dict since we change it
         # Workaround to pickle instance methods; see GH#4083
