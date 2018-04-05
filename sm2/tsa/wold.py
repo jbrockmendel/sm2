@@ -133,7 +133,9 @@ class ARMARoots(object):
         isstationary : boolean
             True if autoregressive roots are outside unit circle
         """
-        return np.all(np.abs(self.arroots) > 1.0)
+        # explicitly cast to bool otherwise "is False" is incorrect
+        # because it returns a np._bool object
+        return bool((np.abs(self.arroots) > 1.0).all())
 
     @property
     def isinvertible(self):
@@ -161,6 +163,8 @@ class ARMARoots(object):
         isinvertible : boolean
             True if moving average roots are outside unit circle
         """
+        # explicitly cast to bool otherwise "is False" is incorrect
+        # because it returns a np._bool object
         return bool(np.all(np.abs(self.maroots) > 1))
 
     def invertroots(self, retnew=False):
