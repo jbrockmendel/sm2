@@ -10,7 +10,9 @@ from scipy import stats
 
 from sm2.tools.data import _is_using_pandas
 from sm2.tools.tools import recipr, nan_dot
-from sm2.tools.decorators import resettable_cache, cache_readonly, copy_doc
+from sm2.tools.decorators import (resettable_cache,
+                                  cache_readonly, cached_value, cached_data,
+                                  copy_doc)
 from sm2.tools.numdiff import approx_fprime, approx_hess
 from sm2.tools.sm_exceptions import (ValueWarning, HessianInversionWarning,
                                      ConvergenceWarning)
@@ -72,7 +74,7 @@ class Model(object):
         """Names of exogenous variables"""
         return self.data.xnames
 
-    @property
+    @cached_value
     def k_exog(self):
         if self.exog is None:
             return 0
@@ -652,14 +654,14 @@ class Results(object):
         # TODO: Get rid of this redundant method
         pass
 
-    @cache_readonly
+    @cached_data
     def fittedvalues(self):
         """
         (array) The predicted values of the model. An (nobs x k_endog) array.
         """
         return self.model.predict(self.params)
 
-    @cache_readonly
+    @cached_data
     def resid(self):
         """
         (array) The model residuals. An (nobs x k_endog) array.
@@ -923,28 +925,28 @@ class LikelihoodModelResults(wrap.SaveLoadMixin, Results):
     def normalized_cov_params(self):
         raise NotImplementedError
 
-    @cache_readonly
+    @cached_value
     def llf(self):
         """
         (float) The value of the log-likelihood function evaluated at `params`.
         """
         return self.model.loglike(self.params)
 
-    @cache_readonly
+    @cached_data
     def llf_obs(self):
         """
         (float) The value of the log-likelihood function evaluated at `params`.
         """
         return self.model.loglikeobs(self.params)
 
-    @cache_readonly
+    @cached_value
     def tvalues(self):
         """
         Return the t-statistic for a given parameter estimate.
         """
         return self.params / self.bse
 
-    @cache_readonly
+    @cached_value
     def pvalues(self):
         if self.use_t:
             df_resid = getattr(self, 'df_resid_inference', self.df_resid)
@@ -1649,7 +1651,7 @@ wrap.populate_wrapper(LikelihoodResultsWrapper,  # noqa:E305
 # TODO: _none_ of this is covered in tests
 class ResultMixin(object):
 
-    @cache_readonly
+    @cached_value
     def df_modelwc(self):
         # collect different ways of defining the number of parameters, used for
         # aic, bic
@@ -1663,11 +1665,11 @@ class ResultMixin(object):
         else:
             return self.params.size
 
-    @cache_readonly
+    @cached_value
     def aic(self):
         return -2 * self.llf + 2 * (self.df_modelwc)
 
-    @cache_readonly
+    @cached_value
     def bic(self):
         return -2 * self.llf + np.log(self.nobs) * (self.df_modelwc)
 

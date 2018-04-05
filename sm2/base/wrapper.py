@@ -4,6 +4,8 @@ import functools
 
 from six.moves import reduce
 
+from sm2.tools.decorators import cached_data, cached_value
+
 
 # TODO: Does this need to be part of ResultsWrapper at all?
 class SaveLoadMixin(object):
@@ -77,6 +79,28 @@ class SaveLoadMixin(object):
         result._data_attr_model : arrays attached to the model
             instance but not to the results instance
         """
+        cls = self.__class__
+        # Note: we cannot just use `getattr(cls, x)` or `getattr(self, x)`
+        # because of redirection involved with property-like accessors
+        cls_attrs = {}
+        for name in dir(cls):
+            try:
+                attr = object.__getattribute__(cls, name)
+            except AttributeError:
+                pass
+            else:
+                cls_attrs[name] = attr
+        data_attrs = [x for x in cls_attrs
+                      if isinstance(cls_attrs[x], cached_data)]
+        value_attrs = [x for x in cls_attrs
+                       if isinstance(cls_attrs[x], cached_value)]
+        # make sure the cached for value_attrs are evaluated; this needs to
+        # occur _before_ any other attributes are removed.
+        for name in value_attrs:
+            getattr(self, name)
+        for name in data_attrs:
+            self._cache[name] = None
+
         if hasattr(self, '_results'):
             return self._results.remove_data()
 

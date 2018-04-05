@@ -28,7 +28,9 @@ from pandas.util._decorators import deprecate_kwarg
 from scipy.special import gammaln
 from scipy import stats, special
 
-from sm2.tools.decorators import resettable_cache, cache_readonly, copy_doc
+from sm2.tools.decorators import (resettable_cache,
+                                  cache_readonly, cached_data, cached_value,
+                                  copy_doc)
 from sm2.tools.sm_exceptions import PerfectSeparationError
 from sm2.tools.numdiff import approx_fprime_cs
 from sm2.tools import tools, data as data_tools
@@ -153,17 +155,17 @@ class DiscreteModel(base.LikelihoodModel):
     sm2.model.LikelihoodModel.
     """
 
-    @cache_readonly
+    @cached_value
     def nobs(self):
         return self.exog.shape[0]
 
-    @cache_readonly
+    @cached_value
     def df_model(self):
         # assumes constant
         rank = np.linalg.matrix_rank(self.exog)
         return float(rank) - 1
 
-    @cache_readonly
+    @cached_value
     def df_resid(self):
         return float(self.nobs) - (self.df_model + 1)
 
@@ -565,21 +567,21 @@ class BinaryModel(FitBase):
 class MultinomialModel(BinaryModel):
     _check_perfect_pred = None  # placeholder until implemented
 
-    @cache_readonly
+    @cached_value
     def J(self):
         return self.wendog.shape[1]
 
-    @cache_readonly
+    @cached_value
     def K(self):
         return self.exog.shape[1]
 
-    @cache_readonly
+    @cached_value
     def df_model(self):
         rank = np.linalg.matrix_rank(self.exog)
         return (rank - 1) * (self.J - 1)  # for each J - 1 equation.
         # TODO: Does "assumes constant" apply here?
 
-    @cache_readonly
+    @cached_value
     def df_resid(self):
         return self.nobs - self.df_model - (self.J - 1)
 
@@ -3135,15 +3137,15 @@ class DiscreteResults(base.LikelihoodModelResults):
             # TODO: move this higher up the class hierarchy?
         return self.__dict__
 
-    @cache_readonly
+    @cached_value
     def prsquared(self):
         return 1 - self.llf / self.llnull
 
-    @cache_readonly
+    @cached_value
     def llr(self):
         return -2 * (self.llnull - self.llf)
 
-    @cache_readonly
+    @cached_value
     def llr_pvalue(self):
         return stats.distributions.chi2.sf(self.llr, self.df_model)
 
@@ -3187,7 +3189,7 @@ class DiscreteResults(base.LikelihoodModelResults):
         self._attach_nullmodel = attach_results
         self._optim_kwds_null = kwds
 
-    @cache_readonly
+    @cached_value
     def llnull(self):
         # TODO: slow, 1.086 seconds per call in tests
         model = self.model
@@ -3237,16 +3239,16 @@ class DiscreteResults(base.LikelihoodModelResults):
 
         return res_null.llf
 
-    @cache_readonly
+    @cached_data
     def fittedvalues(self):
         # TODO: Can we merge this into the base class case?
         return np.dot(self.model.exog, self.params[:self.model.exog.shape[1]])
 
-    @cache_readonly
+    @cached_value
     def aic(self):
         return -2 * (self.llf - (self.df_model + 1))
 
-    @cache_readonly
+    @cached_value
     def bic(self):
         return -2 * self.llf + np.log(self.nobs) * (self.df_model + 1)
 
@@ -3371,7 +3373,7 @@ class CountResults(DiscreteResults):
         "extra_attr": ""}
 
     # TODO: Make this the base class default?
-    @cache_readonly
+    @cached_data
     def resid(self):
         """
         Residuals
@@ -3393,21 +3395,21 @@ class NegativeBinomialResults(CountResults):
         "one_line_description": "A results class for NegativeBinomial 1 and 2",
         "extra_attr": ""}
 
-    @cache_readonly
+    @cached_value
     def lnalpha(self):
         return np.log(self.params[-1])
 
-    @cache_readonly
+    @cached_value
     def lnalpha_std_err(self):
         return self.bse[-1] / self.params[-1]
 
-    @cache_readonly
+    @cached_value
     def aic(self):
         # + 1 because we estimate alpha
         k_extra = getattr(self.model, 'k_extra', 0)
         return -2 * (self.llf - (self.df_model + self.k_constant + k_extra))
 
-    @cache_readonly
+    @cached_value
     def bic(self):
         # + 1 because we estimate alpha
         k_extra = getattr(self.model, 'k_extra', 0)
@@ -3520,7 +3522,7 @@ class BinaryResults(DiscreteResults):
             smry.add_extra_txt(etext)
         return smry
 
-    @cache_readonly
+    @cached_data
     def resid_dev(self):
         r"""
         Deviance residuals
@@ -3553,7 +3555,7 @@ class BinaryResults(DiscreteResults):
                endog * np.sqrt(2 * M * np.abs(np.log(p))))
         return res
 
-    @cache_readonly
+    @cached_data
     def resid_pearson(self):
         """
         Pearson residuals
@@ -3578,7 +3580,7 @@ class BinaryResults(DiscreteResults):
         p = self.predict()
         return (endog - M * p) / np.sqrt(M * p * (1 - p))
 
-    @cache_readonly
+    @cached_data
     def resid_response(self):
         """
         The response residuals
@@ -3599,7 +3601,7 @@ class LogitResults(BinaryResults):
         "one_line_description": "A results class for Logit Model",
         "extra_attr": ""}
 
-    @cache_readonly
+    @cached_data
     def resid_generalized(self):
         """
         Generalized residuals
@@ -3622,7 +3624,7 @@ class ProbitResults(BinaryResults):
         "one_line_description": "A results class for Probit Model",
         "extra_attr": ""}
 
-    @cache_readonly
+    @cached_data
     def resid_generalized(self):
         r"""
         Generalized residuals
@@ -3704,18 +3706,18 @@ class MultinomialResults(DiscreteResults):
         return np.histogram2d(self.model.endog, self.predict().argmax(1),
                               bins=bins)[0]
 
-    @cache_readonly
+    @cached_value
     def bse(self):
         bse = np.sqrt(np.diag(self.cov_params()))
         return bse.reshape(self.params.shape, order='F')
         # TODO: Is the order='F') part necessary?  Can we just add the
         # reshape to the general case?
 
-    @cache_readonly
+    @cached_value
     def aic(self):
         return -2 * (self.llf - (self.df_model + self.J - 1))
 
-    @cache_readonly
+    @cached_value
     def bic(self):
         return -2 * self.llf + np.log(self.nobs) * (self.df_model +
                                                     self.J - 1)
@@ -3728,7 +3730,7 @@ class MultinomialResults(DiscreteResults):
     def margeff(self):  # pragma: no cover
         raise NotImplementedError("Use get_margeff instead")
 
-    @cache_readonly
+    @cached_data
     def resid_misclassified(self):
         """
         Residuals indicating which observations are misclassified.
