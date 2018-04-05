@@ -185,7 +185,8 @@ class DiscreteModel(base.LikelihoodModel):
 
     def _check_perfect_pred(self, params, *args):
         endog = self.endog
-        fittedvalues = self.cdf(np.dot(self.exog, params[:self.exog.shape[1]]))
+        Xb = np.dot(self.exog, params[:self.exog.shape[1]])
+        fittedvalues = self.cdf(Xb)
         if (self.raise_on_perfect_prediction and
                 np.allclose(fittedvalues - endog, 0)):
             raise PerfectSeparationError("Perfect separation detected, "
@@ -1002,7 +1003,6 @@ class Poisson(CountModel):
         -------
         params : ndarray
             parameter estimate based one one-step moment matching
-
         """
         offset = getattr(self, "offset", 0)
         exposure = getattr(self, "exposure", 0)
@@ -3370,6 +3370,7 @@ class CountResults(DiscreteResults):
         "one_line_description": "A results class for count data",
         "extra_attr": ""}
 
+    # TODO: Make this the base class default?
     @cache_readonly
     def resid(self):
         """

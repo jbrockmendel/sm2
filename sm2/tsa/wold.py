@@ -376,22 +376,35 @@ class VARParams(object):
         return len(self.arcoefs)
 
     @cache_readonly
+    def k_ma(self):
+        macoefs = self.macoefs
+        if macoefs is None:
+            return 0
+        return macoefs.shape[0]
+        # alternative: maparams.shape[0]-1?
+
+    @cache_readonly
     def neqs(self):
         return self.arcoefs.shape[1]
 
-    def __init__(self, arcoefs, intercept=None):
+    def __init__(self, arcoefs, macoefs=None, intercept=None):
         """
         Parameters
         ----------
         arcoefs : ndarray (p x k x k)
         intercept : ndarray (k x 1), optional
         """
+        # TODO: Add macoefs to docstring
         arcoefs = _shape_params(arcoefs)
-        self.arcoefs = arcoefs
+        macoefs = _shape_params(macoefs)
+        # TODO: We don't actually _do_ anything with macoefs
+
         self.coefs = arcoefs  # alias for VAR classes
+        self.arcoefs = arcoefs
+        self.macoefs = macoefs
 
         k_ar, k_ma, neqs, intercept = _unpack_lags_and_neqs(arcoefs,
-                                                            None,
+                                                            macoefs,
                                                             intercept)
         self.intercept = intercept
 
@@ -401,6 +414,21 @@ class VARParams(object):
         neqs = self.neqs
         return np.eye(neqs) - arcoefs.sum(axis=0)
 
+    def mean(self):
+        r"""Mean of stable process
+
+        Lütkepohl eq. 2.1.23
+
+        .. math:: \mu = (I - A_1 - \dots - A_p)^{-1} \alpha
+        """
+        try:
+            return np.linalg.solve(self._char_mat, self.intercept)
+        except np.linalg.LinAlgError:
+            # Note: upstream does not catch this error
+            return np.array([np.nan] * self.neqs)
+        # In VARProcess self.intercept is replaced by self.exog
+        # TODO: does that make sense?
+
     # TODO: catch np.linalg.LinAlgError?  Maybe return a vector of NaNs?
     def long_run_effects(self):
         r"""Compute long-run effect of unit impulse
@@ -409,17 +437,11 @@ class VARParams(object):
 
             \Psi_\infty = \sum_{i=0}^\infty \Phi_i
         """
-        return scipy.linalg.inv(self._char_mat)
-
-    # TODO: catch np.linalg.LinAlgError?  Maybe return a vector of NaNs?
-    def mean(self):
-        r"""Mean of stable process
-
-        Lütkepohl eq. 2.1.23
-
-        .. math:: \mu = (I - A_1 - \dots - A_p)^{-1} \alpha
-        """
-        return np.linalg.solve(self._char_mat, self.exog)
+        try:
+            return scipy.linalg.inv(self._char_mat)
+        except np.linalg.LinAlgError:
+            # Note: upstream does not catch this error
+            return np.array([np.nan] * self.neqs)
 
     def is_stable(self, verbose=False):
         """Determine stability of VAR(p) system by examining the eigenvalues

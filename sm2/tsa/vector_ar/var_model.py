@@ -696,6 +696,16 @@ class VARProcess(wold.VARParams):
         "Return integer position of requested equation name"
         return util.get_index(self.names, name)
 
+    # TODO: catch np.linalg.LinAlgError?  Maybe return a vector of NaNs?
+    def mean(self):
+        r"""Mean of stable process
+
+        Lütkepohl eq. 2.1.23
+
+        .. math:: \mu = (I - A_1 - \dots - A_p)^{-1} \alpha
+        """
+        return np.linalg.solve(self._char_mat, self.exog)
+
     def __str__(self):
         out = ('VAR(%d) process for %d-dimensional response y_t'
                % (self.k_ar, self.neqs))
@@ -957,6 +967,7 @@ class VARResults(VARProcess):
         """Number of estimated parameters, including the intercept / trends
         """
         return self.neqs * self.k_ar + self.k_trend
+        # TODO: Should neqs be multiplying k_trend?
 
     @property
     def df_resid(self):

@@ -446,7 +446,7 @@ class GenericLikelihoodModel(LikelihoodModel):
 
     See Also
     --------
-    subclasses in directory miscmodels
+    subclasses in directory miscmodels (upstream, not ported)
     """
     def __init__(self, endog, exog=None, loglike=None, score=None,
                  hessian=None, missing='none', extra_params_names=None,
