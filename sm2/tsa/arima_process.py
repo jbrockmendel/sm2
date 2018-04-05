@@ -23,6 +23,7 @@ import numpy as np
 from scipy import signal, optimize, linalg
 
 from sm2.tools.decorators import copy_doc
+from sm2.tsa import wold
 
 __all__ = ['arma_acf', 'arma_acovf', 'arma_generate_sample',
            'arma_impulse_response', 'arma2ar', 'arma2ma', 'deconvolve',
@@ -552,7 +553,7 @@ def deconvolve(num, den, n=None):  # pragma: no cover
                               "scipy.signal.signaltools.")
 
 
-class ArmaProcess(object):
+class ArmaProcess(wold.ARMARoots):
     r"""
     Theoretical properties of an ARMA process for specified lag-polynomials
 
@@ -735,81 +736,6 @@ class ArmaProcess(object):
     def arma2ar(self, lags=None):
         lags = lags or self.lags
         return arma2ar(self.ar, self.ma, lags=lags)
-
-    @property
-    def arroots(self):
-        """Roots of autoregressive lag-polynomial"""
-        return self.arpoly.roots()
-
-    @property
-    def maroots(self):
-        """Roots of moving average lag-polynomial"""
-        return self.mapoly.roots()
-
-    @property
-    def isstationary(self):
-        """
-        Arma process is stationary if AR roots are outside unit circle
-
-        Returns
-        -------
-        isstationary : boolean
-             True if autoregressive roots are outside unit circle
-        """
-        if np.all(np.abs(self.arroots) > 1.0):
-            return True
-        else:
-            return False
-
-    @property
-    def isinvertible(self):
-        """
-        Arma process is invertible if MA roots are outside unit circle
-
-        Returns
-        -------
-        isinvertible : boolean
-             True if moving average roots are outside unit circle
-        """
-        if np.all(np.abs(self.maroots) > 1):
-            return True
-        else:
-            return False
-
-    def invertroots(self, retnew=False):
-        """
-        Make MA polynomial invertible by inverting roots inside unit circle
-
-        Parameters
-        ----------
-        retnew : boolean
-            If False (default), then return the lag-polynomial as array.
-            If True, then return a new instance with invertible MA-polynomial
-
-        Returns
-        -------
-        manew : array
-           new invertible MA lag-polynomial, returned if retnew is false.
-        wasinvertible : boolean
-           True if the MA lag-polynomial was already invertible, returned if
-           retnew is false.
-        armaprocess : new instance of class
-           If retnew is true, then return a new instance with invertible
-           MA-polynomial
-        """
-        # TODO: variable returns like this?
-        pr = self.maroots
-        mainv = self.ma
-        invertible = self.isinvertible
-        if not invertible:
-            pr[np.abs(pr) < 1] = 1. / pr[np.abs(pr) < 1]
-            pnew = np.polynomial.Polynomial.fromroots(pr)
-            mainv = pnew.coef / pnew.coef[0]
-
-        if retnew:
-            return self.__class__(self.ar, mainv, nobs=self.nobs)
-        else:
-            return mainv, invertible
 
     def generate_sample(self, nsample=100, scale=1., distrvs=None, axis=0,
                         burnin=0):

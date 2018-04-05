@@ -25,9 +25,10 @@ from sm2.tsa.kalmanf.kalmanfilter import KalmanFilter
 __all__ = ['AR']
 
 
-def sumofsq(x, axis=0):
-    """Helper function to calculate sum of squares along first axis"""
-    return np.sum(x**2, axis=axis)
+def sumofsq(x, axis=0):  # pragma: no cover
+    raise NotImplementedError("sumofsq not ported from upstream, "
+                              "since it is a one-line function no simpler "
+                              "than what it replaces.")
 
 
 def _check_ar_start(start, k_ar, method, dynamic):
@@ -243,7 +244,8 @@ class AR(wold.ARMAParams, tsa_model.TimeSeriesModel):
         nobs = self.nobs
         Y = self.Y
         X = self.X
-        ssr = sumofsq(Y.squeeze() - np.dot(X, params))
+        resid = Y.squeeze() - np.dot(X, params)
+        ssr = (resid**2).sum()
         sigma2 = ssr / nobs
         return (-nobs / 2 * (np.log(2 * np.pi) + np.log(sigma2)) -
                 ssr / (2 * sigma2))
@@ -276,7 +278,8 @@ class AR(wold.ARMAParams, tsa_model.TimeSeriesModel):
         Vpinv = self._presample_varcov(params)
 
         diffpVpinv = np.dot(np.dot(diffp.T, Vpinv), diffp).item()
-        ssr = sumofsq(endog[k_ar:].squeeze() - np.dot(X, params))
+        resid = endog[k_ar:].squeeze() - np.dot(X, params)
+        ssr = (resid**2).sum()
 
         # concentrating the likelihood means that sigma2 is given by
         sigma2 = 1. / nobs * (diffpVpinv + ssr)
@@ -373,7 +376,7 @@ class AR(wold.ARMAParams, tsa_model.TimeSeriesModel):
         k_trend = util.get_trendorder(trend)
         if k_trend:
             X = add_trend(X, prepend=True, trend=trend)
-        self.k_trend = k_trend
+        self.k_trend = k_trend  # TODO: Don't set this here
         return X
 
     def select_order(self, maxlag, ic, trend='c', method='mle'):
@@ -414,7 +417,7 @@ class AR(wold.ARMAParams, tsa_model.TimeSeriesModel):
                 fit = AR(endog_tmp).fit(maxlag=lag, method=method,
                                         full_output=0, trend=trend,
                                         maxiter=100, disp=0)
-                results[lag] = eval('fit.' + ic)
+                results[lag] = getattr(fit, ic)
             bestic, bestlag = min((res, k) for k, res in results.items())
 
         else:  # choose by last t-stat.
@@ -692,7 +695,7 @@ class ARResults(tsa_model.TimeSeriesModelResults):
     def sigma2(self):
         model = self.model
         if model.method == "cmle":  # do DOF correction
-            return 1. / self.nobs * sumofsq(self.resid)
+            return 1. / self.nobs * (self.resid**2).sum()
         else:
             # TODO: sigma2 shouldnt be a model attribute at all
             return self.model.sigma2
@@ -707,6 +710,7 @@ class ARResults(tsa_model.TimeSeriesModelResults):
             resid = self.resid
             ssr = np.dot(resid, resid)
             ols_scale = ssr / (self.nobs - self.k_ar - self.k_trend)
+            # TODO: Can we use self.nobs - self.df_model for denom?
             return np.sqrt(np.diag(self.cov_params(scale=ols_scale)))
         else:
             hess = approx_hess(self.params, self.model.loglike)

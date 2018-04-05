@@ -26,6 +26,7 @@ from sm2.iolib.table import SimpleTable
 
 from sm2.tsa.tsatools import vec, unvec, duplication_matrix
 from sm2.tsa.base import tsa_model
+from sm2.tsa import wold
 
 from . import irf, output, plotting, util
 from .hypothesis_test_results import (CausalityTestResults,
@@ -37,44 +38,10 @@ from .hypothesis_test_results import (CausalityTestResults,
 # VAR process routines
 
 def ma_rep(coefs, maxn=10):
-    r"""
-    MA(\infty) representation of VAR(p) process
-
-    Parameters
-    ----------
-    coefs : ndarray (p x k x k)
-    maxn : int
-        Number of MA matrices to compute
-
-    Notes
-    -----
-    VAR(p) process as
-
-    .. math:: y_t = A_1 y_{t-1} + \ldots + A_p y_{t-p} + u_t
-
-    can be equivalently represented as
-
-    .. math:: y_t = \mu + \sum_{i=0}^\infty \Phi_i u_{t-i}
-
-    e.g. can recursively compute the \Phi_i matrices with \Phi_0 = I_k
-
-    Returns
-    -------
-    phis : ndarray (maxn + 1 x k x k)
-    """
-    p, k, k = coefs.shape
-    phis = np.zeros((maxn + 1, k, k))
-    phis[0] = np.eye(k)
-
-    # recursively compute Phi matrices
-    for i in range(1, maxn + 1):
-        for j in range(1, i + 1):
-            if j > p:
-                break
-
-            phis[i] += np.dot(phis[i - j], coefs[j - 1])
-
-    return phis
+    raise NotImplementedError("ma_rep is not ported from upstream, "
+                              "is instead implemented directly in VARProcess "
+                              "(or more specifically, VARParams, of which "
+                                "VARProcess is a subclass).")
 
 
 def is_stable(coefs, verbose=False):
@@ -707,80 +674,7 @@ class VAR(tsa_model.TimeSeriesModel):
         return LagOrderResults(ics, selected_orders, vecm=False)
 
 
-class VARRepresentation(object):
-    """
-    Class representing a deterministic VAR process.
-    """
-    @cache_readonly
-    def k_ar(self):
-        return len(self.coefs)
-
-    @cache_readonly
-    def neqs(self):
-        return self.coefs.shape[1]
-
-    def __init__(self, coefs):
-        self.coefs = coefs
-
-    @cache_readonly
-    def _char_mat(self):
-        return np.eye(self.neqs) - self.coefs.sum(0)
-
-    def long_run_effects(self):
-        """Compute long-run effect of unit impulse
-
-        .. math::
-
-            \Psi_\infty = \sum_{i=0}^\infty \Phi_i
-        """
-        return scipy.linalg.inv(self._char_mat)
-
-    def is_stable(self, verbose=False):
-        """
-        Determine stability of VAR(p) system by examining the eigenvalues
-        of the VAR(1) representation
-
-        Parameters
-        ----------
-        verbose : bool
-            Print eigenvalues of the VAR(1) companion
-
-        Returns
-        -------
-        is_stable : bool
-
-        Notes
-        -----
-        Checks if det(I - Az) = 0 for any mod(z) <= 1, so all the
-        eigenvalues of the companion matrix must lie outside the unit circle
-        """
-        A_var1 = util.comp_matrix(self.coefs)
-        eigs = np.linalg.eigvals(A_var1)
-
-        if verbose:
-            # TODO: get rid of verbose
-            print('Eigenvalues of VAR(1) rep')
-            for val in np.abs(eigs):
-                print(val)
-
-        return (np.abs(eigs) <= 1).all()
-
-    def ma_rep(self, maxn=10):
-        r"""Compute MA(:math:`\infty`) coefficient matrices
-
-        Parameters
-        ----------
-        maxn : int
-            Number of coefficient matrices to compute
-
-        Returns
-        -------
-        coefs : ndarray (maxn x k x k)
-        """
-        return ma_rep(self.coefs, maxn=maxn)
-
-
-class VARProcess(VARRepresentation):
+class VARProcess(wold.VARParams):
     """
     Class represents a known VAR(p) process
 
@@ -793,14 +687,24 @@ class VARProcess(VARRepresentation):
     """
 
     def __init__(self, coefs, exog, sigma_u, names=None):
-        VARRepresentation.__init__(self, coefs)
+        wold.VARParams.__init__(self, coefs)
         self.exog = exog
         self.sigma_u = sigma_u
         self.names = names
 
-    def get_eq_index(self, name):
+    def get_eq_index(self, name):  # TODO: unused; get rid of this
         "Return integer position of requested equation name"
         return util.get_index(self.names, name)
+
+    # TODO: catch np.linalg.LinAlgError?  Maybe return a vector of NaNs?
+    def mean(self):
+        r"""Mean of stable process
+
+        Lütkepohl eq. 2.1.23
+
+        .. math:: \mu = (I - A_1 - \dots - A_p)^{-1} \alpha
+        """
+        return np.linalg.solve(self._char_mat, self.exog)
 
     def __str__(self):
         out = ('VAR(%d) process for %d-dimensional response y_t'
@@ -817,15 +721,6 @@ class VARProcess(VARRepresentation):
         """
         Y = util.varsim(self.coefs, self.exog, self.sigma_u, steps=steps)
         plotting.plot_mts(Y)
-
-    def mean(self):
-        r"""Mean of stable process
-
-        Lütkepohl eq. 2.1.23
-
-        .. math:: \mu = (I - A_1 - \dots - A_p)^{-1} \alpha
-        """
-        return np.linalg.solve(self._char_mat, self.exog)
 
     def orth_ma_rep(self, maxn=10, P=None):
         r"""Compute orthogonalized MA coefficient matrices using P matrix such
@@ -1072,6 +967,7 @@ class VARResults(VARProcess):
         """Number of estimated parameters, including the intercept / trends
         """
         return self.neqs * self.k_ar + self.k_trend
+        # TODO: Should neqs be multiplying k_trend?
 
     @property
     def df_resid(self):
