@@ -10,7 +10,7 @@ from six.moves import range
 import numpy as np
 import scipy.linalg  # TODO: can we just use np.linalg.inv?
 
-from sm2.tools.decorators import cache_readonly, deprecated_alias
+from sm2.tools.decorators import cache_readonly
 from sm2.tools.tools import chain_dot
 
 import sm2.tsa.tsatools as tsa

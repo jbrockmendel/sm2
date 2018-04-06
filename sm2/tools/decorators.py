@@ -219,8 +219,10 @@ def nottest(fn):  # pragma: no cover
 #   b) make sure certain values are evaluated before caching (cached_value)
 from pandas._libs.properties import cache_readonly as CR
 
+
 class cached_data(CR):
     pass
+
 
 class cached_value(CR):
     pass

@@ -41,7 +41,7 @@ def ma_rep(coefs, maxn=10):
     raise NotImplementedError("ma_rep is not ported from upstream, "
                               "is instead implemented directly in VARProcess "
                               "(or more specifically, VARParams, of which "
-                                "VARProcess is a subclass).")
+                              "VARProcess is a subclass).")
 
 
 def is_stable(coefs, verbose=False):
@@ -54,6 +54,7 @@ def var_acf(coefs, sig_u, nlags=None):
     raise NotImplementedError("var_acf is not ported from upstream, "
                               "is instead implemented directly in "
                               "var_acf.is_stable.")
+
 
 def _var_acf(coefs, sig_u):
     """
