@@ -21,6 +21,7 @@ import warnings
 from six.moves import range
 import numpy as np
 from scipy import signal, optimize, linalg
+from pandas.util._decorators import deprecate_kwarg
 
 from sm2.tools.decorators import copy_doc
 from sm2.tsa import wold
@@ -138,7 +139,8 @@ def arma_acovf(ar, ma, nobs=10):
     return acovf[:nobs]
 
 
-def arma_acf(ar, ma, lags=10, **kwargs):
+@deprecate_kwarg('nobs', 'lags')
+def arma_acf(ar, ma, lags=10):
     """
     Theoretical autocorrelation function of an ARMA process
 
@@ -163,16 +165,12 @@ def arma_acf(ar, ma, lags=10, **kwargs):
     acf
     acovf
     """
-    if 'nobs' in kwargs:
-        lags = kwargs['nobs']
-        warnings.warn('nobs is deprecated in favor of lags',
-                      DeprecationWarning)
-
     acovf = arma_acovf(ar, ma, lags)
     return acovf / acovf[0]
 
 
-def arma_pacf(ar, ma, lags=10, **kwargs):
+@deprecate_kwarg('nobs', 'lags')
+def arma_pacf(ar, ma, lags=10):
     """
     Partial autocorrelation function of an ARMA process
 
@@ -196,10 +194,6 @@ def arma_pacf(ar, ma, lags=10, **kwargs):
 
     not tested/checked yet
     """
-    if 'nobs' in kwargs:
-        lags = kwargs['nobs']
-        warnings.warn('nobs is deprecated in favor of lags',
-                      DeprecationWarning)
     # TODO: Should use rank 1 inverse update
     apacf = np.zeros(lags)
     acov = arma_acf(ar, ma, lags=lags + 1)
@@ -254,7 +248,8 @@ def arma_periodogram(ar, ma, worN=None, whole=0):
     return w, sd
 
 
-def arma_impulse_response(ar, ma, leads=100, **kwargs):
+@deprecate_kwarg('nobs', 'leads')
+def arma_impulse_response(ar, ma, leads=100):
     """
     Get the impulse response function (MA representation) for ARMA process
 
@@ -308,16 +303,13 @@ def arma_impulse_response(ar, ma, leads=100, **kwargs):
     array([ 1.        ,  1.3       ,  1.24      ,  0.992     ,  0.7936    ,
             0.63488   ,  0.507904  ,  0.4063232 ,  0.32505856,  0.26004685])
     """
-    if 'nobs' in kwargs:
-        leads = kwargs['nobs']
-        warnings.warn('nobs is deprecated in favor of leads',
-                      DeprecationWarning)
     impulse = np.zeros(leads)
     impulse[0] = 1.
     return signal.lfilter(ma, ar, impulse)
 
 
-def arma2ma(ar, ma, lags=100, **kwargs):
+@deprecate_kwarg('nobs', 'lags')
+def arma2ma(ar, ma, lags=100):
     """
     Get the MA representation of an ARMA process
 
@@ -338,20 +330,12 @@ def arma2ma(ar, ma, lags=100, **kwargs):
     Notes
     -----
     Equivalent to ``arma_impulse_response(ma, ar, leads=100)``
-
-
-    Examples
-    --------
     """
-    if 'nobs' in kwargs:
-        lags = kwargs['nobs']
-        warnings.warn('nobs is deprecated in favor of lags',
-                      DeprecationWarning)
-
     return arma_impulse_response(ar, ma, leads=lags)
 
 
-def arma2ar(ar, ma, lags=100, **kwargs):
+@deprecate_kwarg('nobs', 'lags')
+def arma2ar(ar, ma, lags=100):
     """
     Get the AR representation of an ARMA process
 
@@ -372,15 +356,7 @@ def arma2ar(ar, ma, lags=100, **kwargs):
     Notes
     -----
     Equivalent to ``arma_impulse_response(ma, ar, leads=100)``
-
-
-    Examples
-    --------
     """
-    if 'nobs' in kwargs:
-        lags = kwargs['nobs']
-        warnings.warn('nobs is deprecated in favor of lags',
-                      DeprecationWarning)
     return arma_impulse_response(ma, ar, leads=lags)
 
 

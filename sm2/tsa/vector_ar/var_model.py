@@ -708,7 +708,6 @@ class VARProcess(wold.VARParams):
         "Plot theoretical autocorrelation function"
         plotting.plot_full_acorr(self.acorr(nlags=nlags), linewidth=linewidth)
 
-    # TODO: use `mse` module-level function?
     def mse(self, steps):
         """
         Compute theoretical forecast error variance matrices

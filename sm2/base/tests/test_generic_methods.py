@@ -20,7 +20,7 @@ import pandas.util.testing as tm
 
 import sm2.api as sm
 from sm2.discrete.discrete_model import DiscreteResults
-
+import sm2.formula.api as smf  # noqa:F841 # mostly just to get coverage
 
 @pytest.mark.not_vetted
 class CheckGenericMixin(object):
