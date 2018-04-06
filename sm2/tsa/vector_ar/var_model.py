@@ -51,45 +51,9 @@ def is_stable(coefs, verbose=False):
 
 
 def var_acf(coefs, sig_u, nlags=None):
-    """
-    Compute autocovariance function ACF_y(h) up to nlags of stable VAR(p)
-    process
-
-    Parameters
-    ----------
-    coefs : ndarray (p x k x k)
-        Coefficient matrices A_i
-    sig_u : ndarray (k x k)
-        Covariance of white noise process u_t
-    nlags : int, optional
-        Defaults to order p of system
-
-    Notes
-    -----
-    Ref: Lütkepohl p.28-29
-
-    Returns
-    -------
-    acf : ndarray, (p, k, k)
-    """
-    p, k, _ = coefs.shape
-    if nlags is None:
-        nlags = p
-
-    # p x k x k, ACF for lags 0, ..., p-1
-    result = np.zeros((nlags + 1, k, k))
-    result[:p] = _var_acf(coefs, sig_u)
-
-    # yule-walker equations
-    for h in range(p, nlags + 1):
-        # compute ACF for lag=h
-        # G(h) = A_1 G(h-1) + ... + A_p G(h-p)
-
-        for j in range(p):
-            result[h] += np.dot(coefs[j], result[h - j - 1])
-
-    return result
-
+    raise NotImplementedError("var_acf is not ported from upstream, "
+                              "is instead implemented directly in "
+                              "var_acf.is_stable.")
 
 def _var_acf(coefs, sig_u):
     """
@@ -288,27 +252,9 @@ def _reordered(self, order):
 
 
 def orth_ma_rep(results, maxn=10, P=None):
-    r"""Compute Orthogonalized MA coefficient matrices using P matrix such
-    that :math:`\Sigma_u = PP^\prime`. P defaults to the Cholesky
-    decomposition of :math:`\Sigma_u`
-
-    Parameters
-    ----------
-    results : VARResults or VECMResults
-    maxn : int
-        Number of coefficient matrices to compute
-    P : ndarray (neqs x neqs), optional
-        Matrix such that Sigma_u = PP', defaults to the Cholesky decomposition.
-
-    Returns
-    -------
-    coefs : ndarray (maxn x neqs x neqs)
-    """
-    if P is None:
-        P = results._chol_sigma_u
-
-    ma_mats = results.ma_rep(maxn=maxn)
-    return np.array([np.dot(coefs, P) for coefs in ma_mats])
+    raise NotImplementedError("orth_ma_rep not ported from upstream, "
+                              "is instead implemented directly as a "
+                              "VARResults method.")
 
 
 def test_normality(results, signif=0.05):
@@ -685,16 +631,8 @@ class VARProcess(wold.VARParams):
     sigma_u : ndarray (k x k)
     names : sequence (length k)
     """
-
-    def __init__(self, coefs, exog, sigma_u, names=None):
-        wold.VARParams.__init__(self, coefs)
-        self.exog = exog
-        self.sigma_u = sigma_u
-        self.names = names
-
-    def get_eq_index(self, name):  # TODO: unused; get rid of this
-        "Return integer position of requested equation name"
-        return util.get_index(self.names, name)
+    # -------------------------------------------------------------
+    # Methods requiring `coefs` and `sigma_u`, but not `exog`
 
     # TODO: catch np.linalg.LinAlgError?  Maybe return a vector of NaNs?
     def mean(self):
@@ -706,24 +644,8 @@ class VARProcess(wold.VARParams):
         """
         return np.linalg.solve(self._char_mat, self.exog)
 
-    def __str__(self):
-        out = ('VAR(%d) process for %d-dimensional response y_t'
-               % (self.k_ar, self.neqs))
-        out += '\nstable: %s' % self.is_stable()
-        out += '\nmean: %s' % self.mean()
-
-        return out
-
-    def plotsim(self, steps=1000):
-        """
-        Plot a simulation from the VAR(p) process for the desired number of
-        steps
-        """
-        Y = util.varsim(self.coefs, self.exog, self.sigma_u, steps=steps)
-        plotting.plot_mts(Y)
-
     def orth_ma_rep(self, maxn=10, P=None):
-        r"""Compute orthogonalized MA coefficient matrices using P matrix such
+        r"""Compute Orthogonalized MA coefficient matrices using P matrix such
         that :math:`\Sigma_u = PP^\prime`. P defaults to the Cholesky
         decomposition of :math:`\Sigma_u`
 
@@ -731,27 +653,59 @@ class VARProcess(wold.VARParams):
         ----------
         maxn : int
             Number of coefficient matrices to compute
-        P : ndarray (k x k), optional
-            Matrix such that Sigma_u = PP', defaults to Cholesky descomp
+        P : ndarray (neqs x neqs), optional
+            Matrix such that Sigma_u = PP', defaults to the
+            Cholesky decomposition.
 
         Returns
         -------
-        coefs : ndarray (maxn x k x k)
+        coefs : ndarray (maxn x neqs x neqs)
         """
-        return orth_ma_rep(self, maxn, P)
+        if P is None:
+            P = self._chol_sigma_u
+
+        ma_mats = self.ma_rep(maxn=maxn)
+        return np.array([np.dot(coefs, P) for coefs in ma_mats])
 
     @cache_readonly
     def _chol_sigma_u(self):
         return np.linalg.cholesky(self.sigma_u)
 
     def acf(self, nlags=None):
-        """Compute theoretical autocovariance function
+        """
+        Compute autocovariance function ACF_y(h) up to nlags of stable VAR(p)
+        process
+
+        Parameters
+        ----------
+        nlags : int, optional
+            Defaults to order p of system
 
         Returns
         -------
-        acf : ndarray (p x k x k)
+        acf : ndarray, (p, k, k)
+
+        Notes
+        -----
+        Ref: Lütkepohl p.28-29
         """
-        return var_acf(self.coefs, self.sigma_u, nlags=nlags)
+        coefs = self.coefs
+        p, k, _ = coefs.shape
+        if nlags is None:
+            nlags = p
+
+        # p x k x k, ACF for lags 0, ..., p-1
+        result = np.zeros((nlags + 1, k, k))
+        result[:p] = _var_acf(coefs, self.sigma_u)
+
+        # yule-walker equations
+        for h in range(p, nlags + 1):
+            # compute ACF for lag=h
+            # G(h) = A_1 G(h-1) + ... + A_p G(h-p)
+            for j in range(p):
+                result[h] += np.dot(coefs[j], result[h - j - 1])
+
+        return result
 
     def acorr(self, nlags=None):
         """Compute theoretical autocorrelation function
@@ -765,6 +719,74 @@ class VARProcess(wold.VARParams):
     def plot_acorr(self, nlags=10, linewidth=8):
         "Plot theoretical autocorrelation function"
         plotting.plot_full_acorr(self.acorr(nlags=nlags), linewidth=linewidth)
+
+    # TODO: use `mse` module-level function?
+    def mse(self, steps):
+        """
+        Compute theoretical forecast error variance matrices
+
+        Parameters
+        ----------
+        steps : int
+            Number of steps ahead
+
+        Notes
+        -----
+        .. math:: \mathrm{MSE}(h) = \sum_{i=0}^{h-1} \Phi \Sigma_u \Phi^T
+
+        Returns
+        -------
+        forc_covs : ndarray (steps x neqs x neqs)
+        """
+        ma_coefs = self.ma_rep(steps)
+
+        k = len(self.sigma_u)
+        forc_covs = np.zeros((steps, k, k))
+
+        prior = np.zeros((k, k))
+        for h in range(steps):
+            # Sigma(h) = Sigma(h-1) + Phi Sig_u Phi'
+            phi = ma_coefs[h]
+            var = chain_dot(phi, self.sigma_u, phi.T)
+            forc_covs[h] = prior = prior + var
+
+        return forc_covs
+
+    forecast_cov = mse
+
+    def _forecast_vars(self, steps):
+        covs = self.forecast_cov(steps)
+
+        # Take diagonal for each cov
+        inds = np.arange(self.neqs)
+        return covs[:, inds, inds]
+
+    # TODO: having this involve `exog` doesn't fit with the
+    # "known VAR(p) process" definition in the docstring
+    def __init__(self, coefs, exog, sigma_u, names=None):
+        wold.VARParams.__init__(self, coefs)
+        self.exog = exog
+        self.sigma_u = sigma_u
+        self.names = names
+
+    def get_eq_index(self, name):  # TODO: unused; get rid of this
+        "Return integer position of requested equation name"
+        return util.get_index(self.names, name)
+
+    def __str__(self):
+        out = ('VAR(%d) process for %d-dimensional response y_t'
+               % (self.k_ar, self.neqs))
+        out += '\nstable: %s' % self.is_stable()
+        out += '\nmean: %s' % self.mean()
+        return out
+
+    def plotsim(self, steps=1000):
+        """
+        Plot a simulation from the VAR(p) process for the desired number of
+        steps
+        """
+        Y = util.varsim(self.coefs, self.exog, self.sigma_u, steps=steps)
+        plotting.plot_mts(Y)
 
     def forecast(self, y, steps, exog_future=None):
         """Produce linear minimum MSE forecasts for desired number of steps
@@ -811,47 +833,6 @@ class VARProcess(wold.VARParams):
             exog_future = np.column_stack(exogs)
         return forecast(y, self.coefs, trend_coefs, steps, exog_future)
 
-    # TODO: use `mse` module-level function?
-    def mse(self, steps):
-        """
-        Compute theoretical forecast error variance matrices
-
-        Parameters
-        ----------
-        steps : int
-            Number of steps ahead
-
-        Notes
-        -----
-        .. math:: \mathrm{MSE}(h) = \sum_{i=0}^{h-1} \Phi \Sigma_u \Phi^T
-
-        Returns
-        -------
-        forc_covs : ndarray (steps x neqs x neqs)
-        """
-        ma_coefs = self.ma_rep(steps)
-
-        k = len(self.sigma_u)
-        forc_covs = np.zeros((steps, k, k))
-
-        prior = np.zeros((k, k))
-        for h in range(steps):
-            # Sigma(h) = Sigma(h-1) + Phi Sig_u Phi'
-            phi = ma_coefs[h]
-            var = chain_dot(phi, self.sigma_u, phi.T)
-            forc_covs[h] = prior = prior + var
-
-        return forc_covs
-
-    forecast_cov = mse
-
-    def _forecast_vars(self, steps):
-        covs = self.forecast_cov(steps)
-
-        # Take diagonal for each cov
-        inds = np.arange(self.neqs)
-        return covs[:, inds, inds]
-
     def forecast_interval(self, y, steps, alpha=0.05, exog_future=None):
         """Construct forecast interval estimates assuming the y are Gaussian
 
@@ -874,6 +855,7 @@ class VARProcess(wold.VARParams):
 
         return point_forecast, forc_lower, forc_upper
 
+    # TODO: move to VARParams?
     def to_vecm(self):
         k = self.coefs.shape[1]
         p = self.coefs.shape[0]
@@ -1106,9 +1088,6 @@ class VARResults(VARProcess):
         Parameters
         ----------
         nlags : int
-
-        Returns
-        -------
         """
         return _compute_acov(self.resid, nlags=nlags)
 
@@ -1119,9 +1098,6 @@ class VARResults(VARProcess):
         Parameters
         ----------
         nlags : int
-
-        Returns
-        -------
         """
         acovs = self.resid_acov(nlags=nlags)
         return _acovs_to_acorrs(acovs)
@@ -1431,6 +1407,7 @@ class VARResults(VARProcess):
             order = order_new
         return _reordered(self, order)
 
+    # TODO: Move up to VARProcess?
     @cache_readonly
     def detomega(self):
         r"""
