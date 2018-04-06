@@ -80,34 +80,10 @@ def _var_acf(coefs, sig_u):
     return acf
 
 
-def forecast_cov(ma_coefs, sigma_u, steps):
-    """
-    Compute theoretical forecast error variance matrices
-
-    Parameters
-    ----------
-    steps : int
-        Number of steps ahead
-
-    Notes
-    -----
-    .. math:: \mathrm{MSE}(h) = \sum_{i=0}^{h-1} \Phi \Sigma_u \Phi^T
-
-    Returns
-    -------
-    forc_covs : ndarray (steps x neqs x neqs)
-    """
-    neqs = len(sigma_u)
-    forc_covs = np.zeros((steps, neqs, neqs))
-
-    prior = np.zeros((neqs, neqs))
-    for h in range(steps):
-        # Sigma(h) = Sigma(h-1) + Phi Sig_u Phi'
-        phi = ma_coefs[h]
-        var = chain_dot(phi, sigma_u, phi.T)
-        forc_covs[h] = prior = prior + var
-
-    return forc_covs
+def forecast_cov(ma_coefs, sigma_u, steps):  # pragma: no cover
+    raise NotImplementedError("forecast_cov not ported from upstream, since "
+                              "it is effectively identical to "
+                              "VARProcess.forecast_cov (or VARResults.mse)")
 
 
 mse = forecast_cov
@@ -671,6 +647,18 @@ class VARProcess(wold.VARParams):
     def _chol_sigma_u(self):
         return np.linalg.cholesky(self.sigma_u)
 
+    @cache_readonly
+    def detomega(self):
+        r"""
+        Return determinant of white noise covariance with degrees of freedom
+        correction:
+
+        .. math::
+
+            \hat \Omega = \frac{T}{T - Kp - 1} \hat \Omega_{\mathrm{MLE}}
+        """
+        return scipy.linalg.det(self.sigma_u)
+
     def acf(self, nlags=None):
         """
         Compute autocovariance function ACF_y(h) up to nlags of stable VAR(p)
@@ -739,15 +727,16 @@ class VARProcess(wold.VARParams):
         forc_covs : ndarray (steps x neqs x neqs)
         """
         ma_coefs = self.ma_rep(steps)
+        sigma_u = self.sigma_u
 
-        k = len(self.sigma_u)
-        forc_covs = np.zeros((steps, k, k))
+        neqs = len(sigma_u)
+        forc_covs = np.zeros((steps, neqs, neqs))
 
-        prior = np.zeros((k, k))
+        prior = np.zeros((neqs, neqs))
         for h in range(steps):
             # Sigma(h) = Sigma(h-1) + Phi Sig_u Phi'
             phi = ma_coefs[h]
-            var = chain_dot(phi, self.sigma_u, phi.T)
+            var = chain_dot(phi, sigma_u, phi.T)
             forc_covs[h] = prior = prior + var
 
         return forc_covs
@@ -1344,55 +1333,17 @@ class VARResults(VARProcess):
 
         return ma_coll
 
-    def _omega_forc_cov(self, steps):
+    def _omega_forc_cov(self, steps):  # pragma: no cover
         # Approximate MSE matrix \Omega(h) as defined in Lut p97
-        G = self._zz
-        Ginv = scipy.linalg.inv(G)
+        raise NotImplementedError("_bmat_forc_cov not ported from upstream, "
+                                  "as it is neither used nor tested. "
+                                  "See GH#4433")
 
-        # memoize powers of B for speedup
-        # TODO: see if can memoize better
-        # TODO: much lower-hanging fruit in caching `np.trace` and
-        # `chain_dot` below.
-        B = self._bmat_forc_cov()
-        _B = {}
-
-        def bpow(i):
-            if i not in _B:
-                _B[i] = np.linalg.matrix_power(B, i)
-
-            return _B[i]
-
-        phis = self.ma_rep(steps)
-        sig_u = self.sigma_u
-
-        omegas = np.zeros((steps, self.neqs, self.neqs))
-        for h in range(1, steps + 1):
-            if h == 1:
-                omegas[h - 1] = self.df_model * self.sigma_u
-                continue
-
-            om = omegas[h - 1]
-            for i in range(h):
-                for j in range(h):
-                    Bi = bpow(h - 1 - i)
-                    Bj = bpow(h - 1 - j)
-                    mult = np.trace(chain_dot(Bi.T, Ginv, Bj, G))
-                    om += mult * chain_dot(phis[i], sig_u, phis[j].T)
-            omegas[h - 1] = om
-
-        return omegas
-
-    def _bmat_forc_cov(self):
+    def _bmat_forc_cov(self):  # pragma: no cover
         # B as defined on p. 96 of Lut
-        upper = np.zeros((self.k_trend, self.df_model))
-        upper[:, :self.k_trend] = np.eye(self.k_trend)
-
-        lower_dim = self.neqs * (self.k_ar - 1)
-        imat = np.eye(lower_dim)
-        lower = np.column_stack((np.zeros((lower_dim, self.k_trend)), imat,
-                                 np.zeros((lower_dim, self.neqs))))
-
-        return np.vstack((upper, self.params.T, lower))
+        raise NotImplementedError("_bmat_forc_cov not ported from upstream, "
+                                  "as it is neither used nor tested. "
+                                  "See GH#4433")
 
     def reorder(self, order):
         """Reorder variables for structural specification"""
@@ -1406,19 +1357,6 @@ class VARResults(VARProcess):
                 order_new.append(self.names.index(order[i]))
             order = order_new
         return _reordered(self, order)
-
-    # TODO: Move up to VARProcess?
-    @cache_readonly
-    def detomega(self):
-        r"""
-        Return determinant of white noise covariance with degrees of freedom
-        correction:
-
-        .. math::
-
-            \hat \Omega = \frac{T}{T - Kp - 1} \hat \Omega_{\mathrm{MLE}}
-        """
-        return scipy.linalg.det(self.sigma_u)
 
     @cache_readonly
     def info_criteria(self):
