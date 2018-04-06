@@ -592,13 +592,6 @@ def elimination_matrix(n):
     """
     Create the elimination matrix L_n which satisfies vech(M) = L_n vec(M) for
     any matrix M
-
-    Parameters
-    ----------
-
-    Returns
-    -------
-
     """
     vech_indices = vec(np.tril(np.ones((n, n))))
     return np.eye(n * n)[vech_indices != 0]

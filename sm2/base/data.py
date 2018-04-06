@@ -324,10 +324,10 @@ class ModelData(NullHandler):
 
     def _convert_endog_exog(self, endog, exog):
         # for consistent outputs if endog is (n,1)
-        yarr = self._get_yarr(endog)
+        yarr = _get_yarr(endog)
         xarr = None
         if exog is not None:
-            xarr = self._get_xarr(exog)
+            xarr = _get_xarr(exog)
             if xarr.ndim == 1:
                 xarr = xarr[:, None]
             if xarr.ndim != 2:  # pragma: no cover
@@ -380,26 +380,19 @@ class ModelData(NullHandler):
         return None
 
     def _get_names(self, arr):  # pragma: no cover
-        raise NotImplementedError("_get_names method not ported from upstream.  "
-                                  "Use the module-level _get_names function "
+        raise NotImplementedError("_get_names method not ported from upstream; "
+                                  "use the module-level _get_names function "
                                   "instead.")
 
-    def _get_yarr(self, endog):
-        if data_util._is_structured_ndarray(endog):
-            endog = data_util.struct_to_ndarray(endog)
-        endog = np.asarray(endog)
-        if len(endog) == 1:  # never squeeze to a scalar
-            if endog.ndim == 1:
-                return endog
-            elif endog.ndim > 1:
-                return np.asarray([endog.squeeze()])
+    def _get_yarr(self, endog):  # pragma: no cover
+        raise NotImplementedError("_get_yarr method not ported from upstream; "
+                                  "use the module-level _get_yarr function "
+                                  "instead.")
 
-        return endog.squeeze()
-
-    def _get_xarr(self, exog):
-        if data_util._is_structured_ndarray(exog):
-            exog = data_util.struct_to_ndarray(exog)
-        return np.asarray(exog)
+    def _get_xarr(self, exog):  # pragma: no cover
+        raise NotImplementedError("_get_xarr method not ported from upstream; "
+                                  "use the module-level _get_xarr function "
+                                  "instead.")
 
     def _check_integrity(self):
         if self.exog is not None:
@@ -575,6 +568,25 @@ def _get_names(arr):
             pass
 
     return None
+
+
+def _get_xarr(exog):
+    if data_util._is_structured_ndarray(exog):
+        exog = data_util.struct_to_ndarray(exog)
+    return np.asarray(exog)
+
+
+def _get_yarr(endog):
+    if data_util._is_structured_ndarray(endog):
+        endog = data_util.struct_to_ndarray(endog)
+    endog = np.asarray(endog)
+    if len(endog) == 1:  # never squeeze to a scalar
+        if endog.ndim == 1:
+            return endog
+        elif endog.ndim > 1:
+            return np.asarray([endog.squeeze()])
+
+    return endog.squeeze()
 
 
 def _make_endog_names(endog):

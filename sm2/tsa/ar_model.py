@@ -754,7 +754,7 @@ class ARResults(tsa_model.TimeSeriesModelResults):
     def bic(self):
         nobs = self.nobs
         # Lutkepohl
-        #return np.log(self.sigma2) + np.log(nobs)/nobs * self.k_ar
+        # return np.log(self.sigma2) + np.log(nobs)/nobs * self.k_ar
         # Include constant as est. free parameter
         return np.log(self.sigma2) + (1 + self.df_model) * np.log(nobs) / nobs
         # Stata

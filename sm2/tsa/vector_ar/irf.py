@@ -23,11 +23,13 @@ class BaseIRAnalysis(object):
     able to handle known and estimated processes
     """
 
+    # TODO: `model` is a misnomer; this is a Results object
     def __init__(self, model, P=None, periods=10, order=None, svar=False,
                  vecm=False):
         self.model = model
         self.periods = periods
         self.neqs, self.lags, self.T = model.neqs, model.k_ar, model.nobs
+        # TODO: Dont use non-standard `T`
 
         self.order = order
 
