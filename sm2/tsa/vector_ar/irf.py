@@ -686,8 +686,8 @@ class IRAnalysis(BaseIRAnalysis):
         Kkk = tsa.commutation_matrix(k, k)
         Ik = np.eye(k)
 
-        # B = chain_dot(Lk, np.eye(k**2) + commutation_matrix(k, k),
-        #               np.kron(self.P, np.eye(k)), Lk.T)
+        # B = chain_dot(Lk, np.eye(k**2) + Kkk,
+        #               np.kron(self.P, IK), Lk.T)
 
         # return np.dot(Lk.T, scipy.linalg.inv(B))
 

@@ -37,181 +37,93 @@ prefix_copy_index_vector_map = {}
 
 
 def set_mode(compatibility=None):
-    global compatibility_mode, has_trmm
-
     # Determine mode automatically if none given
-    if compatibility is None:
-        try:
-            from scipy.linalg import cython_blas  # noqa:F401,F811
-            compatibility = False
-        except ImportError:
-            compatibility = True
+    if compatibility is True:
+        raise NotImplementedError("compatibility_mode=True not ported from"
+                                  "upstream, since sm2 requires relatively "
+                                  "recent scipy.")
 
-    # If compatibility was False, make sure that is possible
-    if not compatibility:
-        try:
-            from scipy.linalg import cython_blas  # noqa:F401,F811
-        except ImportError:
-            warnings.warn('Minimum dependencies not met. Compatibility mode'
-                          ' enabled.')
-            compatibility = True
-
-    # Initialize the appropriate mode
-    if not compatibility:
-        from scipy.linalg import cython_blas  # noqa:F401,F811
-        from . import _tools
-        # from . import (_representation, _kalman_filter, _kalman_smoother,
-        #               _simulation_smoother)
-        compatibility_mode = False
-        '''
-        prefix_statespace_map.update({
-            's': _representation.sStatespace, 'd': _representation.dStatespace,
-            'c': _representation.cStatespace, 'z': _representation.zStatespace
-        })
-        prefix_kalman_filter_map.update({
-            's': _kalman_filter.sKalmanFilter,
-            'd': _kalman_filter.dKalmanFilter,
-            'c': _kalman_filter.cKalmanFilter,
-            'z': _kalman_filter.zKalmanFilter
-        })
-        prefix_kalman_smoother_map.update({
-            's': _kalman_smoother.sKalmanSmoother,
-            'd': _kalman_smoother.dKalmanSmoother,
-            'c': _kalman_smoother.cKalmanSmoother,
-            'z': _kalman_smoother.zKalmanSmoother
-        })
-        prefix_simulation_smoother_map.update({
-            's': _simulation_smoother.sSimulationSmoother,
-            'd': _simulation_smoother.dSimulationSmoother,
-            'c': _simulation_smoother.cSimulationSmoother,
-            'z': _simulation_smoother.zSimulationSmoother
-        })
-        '''
-        prefix_pacf_map.update({
-            's': _tools._scompute_coefficients_from_multivariate_pacf,
-            'd': _tools._dcompute_coefficients_from_multivariate_pacf,
-            'c': _tools._ccompute_coefficients_from_multivariate_pacf,
-            'z': _tools._zcompute_coefficients_from_multivariate_pacf
-        })
-        prefix_sv_map.update({
-            's': _tools._sconstrain_sv_less_than_one,
-            'd': _tools._dconstrain_sv_less_than_one,
-            'c': _tools._cconstrain_sv_less_than_one,
-            'z': _tools._zconstrain_sv_less_than_one
-        })
-        prefix_reorder_missing_matrix_map.update({
-            's': _tools.sreorder_missing_matrix,
-            'd': _tools.dreorder_missing_matrix,
-            'c': _tools.creorder_missing_matrix,
-            'z': _tools.zreorder_missing_matrix
-        })
-        prefix_reorder_missing_vector_map.update({
-            's': _tools.sreorder_missing_vector,
-            'd': _tools.dreorder_missing_vector,
-            'c': _tools.creorder_missing_vector,
-            'z': _tools.zreorder_missing_vector
-        })
-        prefix_copy_missing_matrix_map.update({
-            's': _tools.scopy_missing_matrix,
-            'd': _tools.dcopy_missing_matrix,
-            'c': _tools.ccopy_missing_matrix,
-            'z': _tools.zcopy_missing_matrix
-        })
-        prefix_copy_missing_vector_map.update({
-            's': _tools.scopy_missing_vector,
-            'd': _tools.dcopy_missing_vector,
-            'c': _tools.ccopy_missing_vector,
-            'z': _tools.zcopy_missing_vector
-        })
-        prefix_copy_index_matrix_map.update({
-            's': _tools.scopy_index_matrix,
-            'd': _tools.dcopy_index_matrix,
-            'c': _tools.ccopy_index_matrix,
-            'z': _tools.zcopy_index_matrix
-        })
-        prefix_copy_index_vector_map.update({
-            's': _tools.scopy_index_vector,
-            'd': _tools.dcopy_index_vector,
-            'c': _tools.ccopy_index_vector,
-            'z': _tools.zcopy_index_vector
-        })
-    else:
-        # from . import _statespace
-        # from ._pykalman_smoother import _KalmanSmoother
-        compatibility_mode = True
-
-        try:
-            from scipy.linalg.blas import dtrmm  # noqa:F401
-        except ImportError:
-            has_trmm = False
-        '''
-        prefix_statespace_map.update({
-            's': _statespace.sStatespace, 'd': _statespace.dStatespace,
-            'c': _statespace.cStatespace, 'z': _statespace.zStatespace
-        })
-        prefix_kalman_filter_map.update({
-            's': _statespace.sKalmanFilter, 'd': _statespace.dKalmanFilter,
-            'c': _statespace.cKalmanFilter, 'z': _statespace.zKalmanFilter
-        })
-        prefix_kalman_smoother_map.update({
-            's': _KalmanSmoother, 'd': _KalmanSmoother,
-            'c': _KalmanSmoother, 'z': _KalmanSmoother
-        })
-        prefix_simulation_smoother_map.update({
-            's': None, 'd': None, 'c': None, 'z': None
-        })
-        if has_trmm:
-            prefix_pacf_map.update({
-                's': _statespace._scompute_coefficients_from_multivariate_pacf,
-                'd': _statespace._dcompute_coefficients_from_multivariate_pacf,
-                'c': _statespace._ccompute_coefficients_from_multivariate_pacf,
-                'z': _statespace._zcompute_coefficients_from_multivariate_pacf
-            })
-            prefix_sv_map.update({
-                's': _statespace._sconstrain_sv_less_than_one,
-                'd': _statespace._dconstrain_sv_less_than_one,
-                'c': _statespace._cconstrain_sv_less_than_one,
-                'z': _statespace._zconstrain_sv_less_than_one
-            })
-        prefix_reorder_missing_matrix_map.update({
-            's': _statespace.sreorder_missing_matrix,
-            'd': _statespace.dreorder_missing_matrix,
-            'c': _statespace.creorder_missing_matrix,
-            'z': _statespace.zreorder_missing_matrix
-        })
-        prefix_reorder_missing_vector_map.update({
-            's': _statespace.sreorder_missing_vector,
-            'd': _statespace.dreorder_missing_vector,
-            'c': _statespace.creorder_missing_vector,
-            'z': _statespace.zreorder_missing_vector
-        })
-        prefix_copy_missing_matrix_map.update({
-            's': _statespace.scopy_missing_matrix,
-            'd': _statespace.dcopy_missing_matrix,
-            'c': _statespace.ccopy_missing_matrix,
-            'z': _statespace.zcopy_missing_matrix
-        })
-        prefix_copy_missing_vector_map.update({
-            's': _statespace.scopy_missing_vector,
-            'd': _statespace.dcopy_missing_vector,
-            'c': _statespace.ccopy_missing_vector,
-            'z': _statespace.zcopy_missing_vector
-        })
-        prefix_copy_index_matrix_map.update({
-            's': _statespace.scopy_index_matrix,
-            'd': _statespace.dcopy_index_matrix,
-            'c': _statespace.ccopy_index_matrix,
-            'z': _statespace.zcopy_index_matrix
-        })
-        prefix_copy_index_vector_map.update({
-            's': _statespace.scopy_index_vector,
-            'd': _statespace.dcopy_index_vector,
-            'c': _statespace.ccopy_index_vector,
-            'z': _statespace.zcopy_index_vector
-        })
-        '''
+    from scipy.linalg import cython_blas  # noqa:F401,F811
+    from . import _tools
+    # from . import (_representation, _kalman_filter, _kalman_smoother,
+    #               _simulation_smoother)
+    '''
+    prefix_statespace_map.update({
+        's': _representation.sStatespace, 'd': _representation.dStatespace,
+        'c': _representation.cStatespace, 'z': _representation.zStatespace
+    })
+    prefix_kalman_filter_map.update({
+        's': _kalman_filter.sKalmanFilter,
+        'd': _kalman_filter.dKalmanFilter,
+        'c': _kalman_filter.cKalmanFilter,
+        'z': _kalman_filter.zKalmanFilter
+    })
+    prefix_kalman_smoother_map.update({
+        's': _kalman_smoother.sKalmanSmoother,
+        'd': _kalman_smoother.dKalmanSmoother,
+        'c': _kalman_smoother.cKalmanSmoother,
+        'z': _kalman_smoother.zKalmanSmoother
+    })
+    prefix_simulation_smoother_map.update({
+        's': _simulation_smoother.sSimulationSmoother,
+        'd': _simulation_smoother.dSimulationSmoother,
+        'c': _simulation_smoother.cSimulationSmoother,
+        'z': _simulation_smoother.zSimulationSmoother
+    })
+    '''
+    prefix_pacf_map.update({
+        's': _tools._scompute_coefficients_from_multivariate_pacf,
+        'd': _tools._dcompute_coefficients_from_multivariate_pacf,
+        'c': _tools._ccompute_coefficients_from_multivariate_pacf,
+        'z': _tools._zcompute_coefficients_from_multivariate_pacf
+    })
+    prefix_sv_map.update({
+        's': _tools._sconstrain_sv_less_than_one,
+        'd': _tools._dconstrain_sv_less_than_one,
+        'c': _tools._cconstrain_sv_less_than_one,
+        'z': _tools._zconstrain_sv_less_than_one
+    })
+    prefix_reorder_missing_matrix_map.update({
+        's': _tools.sreorder_missing_matrix,
+        'd': _tools.dreorder_missing_matrix,
+        'c': _tools.creorder_missing_matrix,
+        'z': _tools.zreorder_missing_matrix
+    })
+    prefix_reorder_missing_vector_map.update({
+        's': _tools.sreorder_missing_vector,
+        'd': _tools.dreorder_missing_vector,
+        'c': _tools.creorder_missing_vector,
+        'z': _tools.zreorder_missing_vector
+    })
+    prefix_copy_missing_matrix_map.update({
+        's': _tools.scopy_missing_matrix,
+        'd': _tools.dcopy_missing_matrix,
+        'c': _tools.ccopy_missing_matrix,
+        'z': _tools.zcopy_missing_matrix
+    })
+    prefix_copy_missing_vector_map.update({
+        's': _tools.scopy_missing_vector,
+        'd': _tools.dcopy_missing_vector,
+        'c': _tools.ccopy_missing_vector,
+        'z': _tools.zcopy_missing_vector
+    })
+    prefix_copy_index_matrix_map.update({
+        's': _tools.scopy_index_matrix,
+        'd': _tools.dcopy_index_matrix,
+        'c': _tools.ccopy_index_matrix,
+        'z': _tools.zcopy_index_matrix
+    })
+    prefix_copy_index_vector_map.update({
+        's': _tools.scopy_index_vector,
+        'd': _tools.dcopy_index_vector,
+        'c': _tools.ccopy_index_vector,
+        'z': _tools.zcopy_index_vector
+    })
 
 
+# compatibility_mode is not ported from upstream, since we require
+# much more up-to-date scipy
+compatibility_mode = False
 set_mode(compatibility=None)
 
 '''
