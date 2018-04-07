@@ -13,6 +13,8 @@ from scipy.linalg import decomp
 
 import sm2.tsa.tsatools as tsa
 
+from sm2.tsa.autocov import acf_to_acorr  # noqa:F841
+
 
 # ---------------------------------------------------------------
 # Auxiliary functions for estimation
@@ -135,12 +137,6 @@ get_logdet = np.deprecate(get_logdet,
 
 def norm_signif_level(alpha=0.05):
     return stats.norm.ppf(1 - alpha / 2)
-
-
-def acf_to_acorr(acf):
-    diag = np.diag(acf[0])
-    # numpy broadcasting sufficient
-    return acf / np.sqrt(np.outer(diag, diag))
 
 
 def varsim(coefs, intercept, sig_u, steps=100, initvalues=None, seed=None):

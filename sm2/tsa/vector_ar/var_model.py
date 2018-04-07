@@ -26,13 +26,16 @@ from sm2.iolib.table import SimpleTable
 
 from sm2.tsa.tsatools import vec, unvec, duplication_matrix
 from sm2.tsa.base import tsa_model
-from sm2.tsa import wold
+from sm2.tsa import wold, autocov
 
 from . import irf, output, plotting, util
 from .hypothesis_test_results import (CausalityTestResults,
                                       NormalityTestResults,
                                       WhitenessTestResults)
 
+# aliases for upstream compat
+_compute_acov = autocov.compute_acov
+_acovs_to_acorrs = autocov.acf_to_acorr
 
 # --------------------------------------------------------------------
 # VAR process routines
@@ -1056,7 +1059,7 @@ class VARResults(VARProcess):
 
     def sample_acorr(self, nlags=1):
         acovs = self.sample_acov(nlags=nlags)
-        return _acovs_to_acorrs(acovs)
+        return autocov.acf_to_acorr(acovs)
 
     def plot_sample_acorr(self, nlags=10, linewidth=8):
         "Plot theoretical autocorrelation function"
@@ -1082,7 +1085,7 @@ class VARResults(VARProcess):
         nlags : int
         """
         acovs = self.resid_acov(nlags=nlags)
-        return _acovs_to_acorrs(acovs)
+        return autocov.acf_to_acorr(acovs)
 
     @cache_readonly
     def resid_corr(self):
@@ -1900,26 +1903,3 @@ class FEVD(object):
         handles, labels = ax.get_legend_handles_labels()
         fig.legend(handles, labels, loc='upper right')
         plotting.adjust_subplots(right=0.85)
-
-
-# ---------------------------------------------------------------
-
-
-def _compute_acov(x, nlags=1):
-    x = x - x.mean(0)
-
-    result = []
-    for lag in range(nlags + 1):
-        if lag > 0:
-            r = np.dot(x[lag:].T, x[:-lag])
-        else:
-            r = np.dot(x.T, x)
-
-        result.append(r)
-
-    return np.array(result) / len(x)
-
-
-def _acovs_to_acorrs(acovs):
-    sd = np.sqrt(np.diag(acovs[0]))
-    return acovs / np.outer(sd, sd)
