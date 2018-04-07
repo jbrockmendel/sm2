@@ -165,21 +165,14 @@ def _forecast_vars(steps, ma_coefs, sig_u):
 
 
 def forecast_interval(y, coefs, trend_coefs, sig_u, steps=5, alpha=0.05,
-                      exog=1):
-    assert 0 < alpha < 1
-    q = util.norm_signif_level(alpha)
-
-    point_forecast = forecast(y, coefs, trend_coefs, steps, exog)
-    ma_coefs = ma_rep(coefs, steps)
-    sigma = np.sqrt(_forecast_vars(steps, ma_coefs, sig_u))
-
-    forc_lower = point_forecast - q * sigma
-    forc_upper = point_forecast + q * sigma
-
-    return point_forecast, forc_lower, forc_upper
+                      exog=1):  # pragma: no cover
+    raise NotImplementedError("forecast_interval not ported from upstream "
+                              "since it is redundant with "
+                              "VARProcess.forecast_interval.  Use that method "
+                              "(or VARResults.forecast_interval) instead.")
 
 
-def var_loglike(resid, omega, nobs):
+def var_loglike(resid, omega, nobs):  # pragma: no cover
     raise NotImplementedError("var_loglike not ported from upstream, "
                               "implemented directly in VARResults.llf")
 
@@ -228,7 +221,7 @@ def _reordered(self, order):
                       trend='c', names=names_new, dates=self.dates)
 
 
-def orth_ma_rep(results, maxn=10, P=None):
+def orth_ma_rep(results, maxn=10, P=None):  # pragma: no cover
     raise NotImplementedError("orth_ma_rep not ported from upstream, "
                               "is instead implemented directly as a "
                               "VARResults method.")

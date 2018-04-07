@@ -718,7 +718,6 @@ def periodogram(X):
     pgram : array
         1./len(X) * np.abs(np.fft.fft(X))**2
 
-
     References
     ----------
     Brockwell and Davis.
