@@ -17,7 +17,8 @@ import pandas as pd
 from scipy import optimize, stats, signal
 
 
-from sm2.tools.decorators import (cache_readonly, resettable_cache,
+from sm2.tools.decorators import (resettable_cache,
+                                  cached_value, cached_data,
                                   deprecated_alias, copy_doc)
 from sm2.tools.numdiff import approx_hess_cs, approx_fprime_cs
 
@@ -1367,20 +1368,20 @@ class ARMAResults(wold.ARMARoots, tsa_model.TimeSeriesModelResults):
         self.k_ar = model.k_ar
         self.n_totobs = len(model.endog)
         self.k_ma = model.k_ma
-        self._cache = resettable_cache()  # TODO: Is this necessary?
+        self._cache = resettable_cache()  # TODO: Is this necessary? -- yep!
 
-    @cache_readonly
+    @cached_value
     def arparams(self):
         k = self.k_exog + self.k_trend
         return self.params[k:k + self.k_ar]
 
-    @cache_readonly
+    @cached_value
     def maparams(self):
         k = self.k_exog + self.k_trend
         k_ar = self.k_ar
         return self.params[k + k_ar:]
 
-    @cache_readonly
+    @cached_value
     def arcoefs(self):
         """Alias for arparams used for naming convention compatibility.
         In the future, `arparams` may be changed to correspond
@@ -1389,7 +1390,7 @@ class ARMAResults(wold.ARMARoots, tsa_model.TimeSeriesModelResults):
         k = self.k_exog + self.k_trend
         return self.params[k:k + self.k_ar]
 
-    @cache_readonly
+    @cached_value
     def macoefs(self):
         """Alias for maparams used for naming convention compatibility.
         In the future, `maparams` may be changed to correspond
@@ -1399,7 +1400,7 @@ class ARMAResults(wold.ARMARoots, tsa_model.TimeSeriesModelResults):
         k_ar = self.k_ar
         return self.params[k + k_ar:]
 
-    @cache_readonly
+    @cached_value
     def bse(self):
         params = self.params
         hess = self.model.hessian(params)
@@ -1413,21 +1414,21 @@ class ARMAResults(wold.ARMARoots, tsa_model.TimeSeriesModelResults):
         hess = self.model.hessian(params)
         return -np.linalg.inv(hess)
 
-    @cache_readonly
+    @cached_value
     def aic(self):
         return -2 * self.llf + 2 * (self.df_model + 1)
 
-    @cache_readonly
+    @cached_value
     def bic(self):
         nobs = self.nobs
         return -2 * self.llf + np.log(nobs) * (self.df_model + 1)
 
-    @cache_readonly
+    @cached_value
     def hqic(self):
         nobs = self.nobs
         return -2 * self.llf + 2 * np.log(np.log(nobs)) * (self.df_model + 1)
 
-    @cache_readonly
+    @cached_data
     def fittedvalues(self):
         model = self.model
         endog = model.endog.copy()
@@ -1446,11 +1447,11 @@ class ARMAResults(wold.ARMARoots, tsa_model.TimeSeriesModelResults):
         #    fv += np.dot(exog, self.params[:k])
         return fv
 
-    @cache_readonly
+    @cached_data
     def resid(self):
         return self.model.geterrors(self.params)
 
-    @cache_readonly
+    @cached_value
     def pvalues(self):
         # TODO: same for conditional and unconditional?
         df_resid = self.df_resid

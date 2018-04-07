@@ -1136,8 +1136,8 @@ class VARResults(VARProcess):
 
     @cache_readonly
     def _zz(self):
-        # Z'Z
-        return np.dot(self.endog_lagged.T, self.endog_lagged)
+        raise NotImplementedError("_zz not ported from upstream, "
+                                  "as it is neither used nor tested there.")
 
     @property
     def _cov_alpha(self):
