@@ -16,7 +16,8 @@ import numpy as np
 from scipy import stats
 import scipy.linalg
 
-from sm2.tools.decorators import cache_readonly, deprecated_alias
+from sm2.tools.decorators import (cache_readonly, cached_value, cached_data,
+                                  deprecated_alias)
 from sm2.tools.tools import chain_dot
 from sm2.tools.linalg import logdet_symm
 
@@ -981,14 +982,14 @@ class VARResults(VARProcess):
 
         super(VARResults, self).__init__(coefs, exog, sigma_u, names=names)
 
-    @cache_readonly
+    @cached_data
     def fittedvalues(self):
         """The predicted insample values of the response variables of
         the model.
         """
         return np.dot(self.endog_lagged, self.params)
 
-    @cache_readonly
+    @cached_data
     def resid(self):
         """Residuals of response variable resulting from estimated coefficients
         """
@@ -1087,7 +1088,7 @@ class VARResults(VARProcess):
         acovs = self.resid_acov(nlags=nlags)
         return autocov.acf_to_acorr(acovs)
 
-    @cache_readonly
+    @cached_value
     def resid_corr(self):
         "Centered residual correlation matrix"
         return self.resid_acorr(0)[0]
@@ -1098,7 +1099,7 @@ class VARResults(VARProcess):
         """
         return self.sigma_u * self.df_resid / self.nobs
 
-    @cache_readonly
+    @cached_value
     def cov_params(self):
         """Estimated variance-covariance of model coefficients
 
@@ -1135,7 +1136,7 @@ class VARResults(VARProcess):
     # Estimation-related things
 
     @cache_readonly
-    def _zz(self):
+    def _zz(self):  # pragma: no cover
         raise NotImplementedError("_zz not ported from upstream, "
                                   "as it is neither used nor tested there.")
 
@@ -1354,7 +1355,7 @@ class VARResults(VARProcess):
             order = order_new
         return _reordered(self, order)
 
-    @cache_readonly
+    @cached_value
     def info_criteria(self):
         "information criteria for lagorder selection"
         nobs = self.nobs
