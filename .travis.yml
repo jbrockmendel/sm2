@@ -9,6 +9,10 @@ matrix:
     - python: 3.6
       env: TOXENV=py36
 
+before_install:
+  # Fix for headless matplotlib
+  - export DISPLAY=":99.0"
+
 install: pip install tox codecov
 
 script: tox
