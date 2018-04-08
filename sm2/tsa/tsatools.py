@@ -533,6 +533,7 @@ def vec(mat):
     return mat.ravel('F')
 
 
+# TODO: is this related to vector_ar.util.vech?
 def vech(mat):
     # Gets Fortran-order
     return mat.T.take(_triu_indices(len(mat)))

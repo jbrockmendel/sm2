@@ -10,6 +10,7 @@ import numpy as np
 import scipy.linalg
 from pandas._libs.properties import cache_readonly
 
+from sm2.tsa import autocov
 
 # -----------------------------------------------------------------------
 # Input Validation
@@ -412,6 +413,18 @@ class VARParams(object):
                                                             intercept)
         self.intercept = intercept
 
+    @cache_readonly  # TODO: Should be called arroots?
+    def roots(self):
+        neqs = self.neqs
+        k_ar = self.k_ar
+        p = neqs * k_ar
+        arr = np.zeros((p, p))
+        arr[:neqs, :] = np.column_stack(self.coefs)
+        arr[neqs:, :-neqs] = np.eye(p - neqs)
+        roots = np.linalg.eig(arr)[0]**-1
+        idx = np.argsort(np.abs(roots))[::-1]  # sort by reverse modulus
+        return roots[idx]
+
     @cache_readonly
     def _char_mat(self):
         arcoefs = self.arcoefs
@@ -433,7 +446,6 @@ class VARParams(object):
         # In VARProcess self.intercept is replaced by self.exog
         # TODO: does that make sense?
 
-    # TODO: catch np.linalg.LinAlgError?  Maybe return a vector of NaNs?
     def long_run_effects(self):
         r"""Compute long-run effect of unit impulse
 
@@ -636,3 +648,39 @@ class VARProcess(VARParams):
 
         sigxsig = np.kron(self.sigma_u, self.sigma_u)
         return 2 * D_Kinv.dot(sigxsig).dot(D_Kinv.T)
+
+    def acf(self, nlags=None):
+        """
+        Compute autocovariance function ACF_y(h) up to nlags of stable VAR(p)
+        process
+
+        Parameters
+        ----------
+        nlags : int, optional
+            Defaults to order p of system
+
+        Returns
+        -------
+        acf : ndarray, (p, k, k)
+
+        Notes
+        -----
+        Ref: Lütkepohl p.28-29
+        """
+        coefs = self.coefs
+        p, k, _ = coefs.shape
+        if nlags is None:
+            nlags = p
+
+        # p x k x k, ACF for lags 0, ..., p-1
+        result = np.zeros((nlags + 1, k, k))
+        result[:p] = autocov.var_acf(coefs, self.sigma_u)
+
+        # yule-walker equations
+        for h in range(p, nlags + 1):
+            # compute ACF for lag=h
+            # G(h) = A_1 G(h-1) + ... + A_p G(h-p)
+            for j in range(p):
+                result[h] += np.dot(coefs[j], result[h - j - 1])
+
+        return result

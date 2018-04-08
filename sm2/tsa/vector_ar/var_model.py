@@ -37,7 +37,7 @@ from .hypothesis_test_results import (CausalityTestResults,
 # aliases for upstream compat
 _compute_acov = autocov.compute_acov
 _acovs_to_acorrs = autocov.acf_to_acorr
-
+_var_acf = autocov.var_acf
 
 # --------------------------------------------------------------------
 # VAR process routines
@@ -49,41 +49,16 @@ def ma_rep(coefs, maxn=10):
                               "VARProcess is a subclass).")
 
 
-def is_stable(coefs, verbose=False):
+def is_stable(coefs, verbose=False):  # pragma: no cover
     raise NotImplementedError("is_stable is not ported from upstream, "
                               "is instead implemented directly in "
                               "VARProcess.is_stable.")
 
 
-def var_acf(coefs, sig_u, nlags=None):
+def var_acf(coefs, sig_u, nlags=None):  # pragma: no cover
     raise NotImplementedError("var_acf is not ported from upstream, "
                               "is instead implemented directly in "
                               "var_acf.is_stable.")
-
-
-def _var_acf(coefs, sig_u):
-    """
-    Compute autocovariance function ACF_y(h) for h=1,...,p
-
-    Notes
-    -----
-    Lütkepohl (2005) p.29
-    """
-    p, k, k2 = coefs.shape
-    assert k == k2
-
-    A = util.comp_matrix(coefs)
-    # construct VAR(1) noise covariance
-    SigU = np.zeros((k * p, k * p))
-    SigU[:k, :k] = sig_u
-
-    # vec(ACF) = (I_(kp)^2 - kron(A, A))^-1 vec(Sigma_U)
-    vecACF = scipy.linalg.solve(np.eye((k * p)**2) - np.kron(A, A), vec(SigU))
-
-    acf = unvec(vecACF)
-    acf = acf[:k].T.reshape((p, k, k))
-
-    return acf
 
 
 def forecast_cov(ma_coefs, sigma_u, steps):  # pragma: no cover
@@ -568,42 +543,6 @@ class VARProcess(wold.VARProcess):
     """
     # -------------------------------------------------------------
     # Methods requiring `coefs` and `sigma_u`, but not `exog`
-
-    def acf(self, nlags=None):
-        """
-        Compute autocovariance function ACF_y(h) up to nlags of stable VAR(p)
-        process
-
-        Parameters
-        ----------
-        nlags : int, optional
-            Defaults to order p of system
-
-        Returns
-        -------
-        acf : ndarray, (p, k, k)
-
-        Notes
-        -----
-        Ref: Lütkepohl p.28-29
-        """
-        coefs = self.coefs
-        p, k, _ = coefs.shape
-        if nlags is None:
-            nlags = p
-
-        # p x k x k, ACF for lags 0, ..., p-1
-        result = np.zeros((nlags + 1, k, k))
-        result[:p] = _var_acf(coefs, self.sigma_u)
-
-        # yule-walker equations
-        for h in range(p, nlags + 1):
-            # compute ACF for lag=h
-            # G(h) = A_1 G(h-1) + ... + A_p G(h-p)
-            for j in range(p):
-                result[h] += np.dot(coefs[j], result[h - j - 1])
-
-        return result
 
     def acorr(self, nlags=None):
         """Compute theoretical autocorrelation function
@@ -1148,6 +1087,8 @@ class VARResults(VARProcess):
         lower = ma_sort[index[0], :, :, :]
         upper = ma_sort[index[1], :, :, :]
         return lower, upper
+        # TODO: If it weren't for self.exog, this could go higher in the
+        # inheritance hierarchy
 
     def irf_resim(self, orth=False, repl=1000, T=10,
                   seed=None, burn=100, cum=False):
@@ -1203,6 +1144,8 @@ class VARResults(VARProcess):
             ma_coll[i, :, :, :] = fill_coll(sim)
 
         return ma_coll
+        # TODO: If it weren't for self.exog, this could go higher in the
+        # inheritance hierarchy
 
     def _omega_forc_cov(self, steps):  # pragma: no cover
         # Approximate MSE matrix \Omega(h) as defined in Lut p97
@@ -1274,18 +1217,6 @@ class VARResults(VARProcess):
         """Bayesian a.k.a. Schwarz info criterion"""
         return self.info_criteria['bic']
 
-    @cache_readonly  # TODO: belongs in VARParams?
-    def roots(self):
-        neqs = self.neqs
-        k_ar = self.k_ar
-        p = neqs * k_ar
-        arr = np.zeros((p, p))
-        arr[:neqs, :] = np.column_stack(self.coefs)
-        arr[neqs:, :-neqs] = np.eye(p - neqs)
-        roots = np.linalg.eig(arr)[0]**-1
-        idx = np.argsort(np.abs(roots))[::-1]  # sort by reverse modulus
-        return roots[idx]
-
     # -----------------------------------------------------------------
     # Summary, Plotting, IRF, FEVD, ... methods
 
@@ -1319,6 +1250,7 @@ class VARResults(VARProcess):
                                       'implemented (yet)')
 
         return irf.IRAnalysis(self, P=var_decomp, periods=periods)
+        # TODO: Could this go higher up in the inheritance hierarchy?
 
     def fevd(self, periods=10, var_decomp=None):
         """

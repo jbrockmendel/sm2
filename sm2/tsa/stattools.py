@@ -37,6 +37,7 @@ __all__ = ['acovf', 'acf', 'pacf', 'pacf_yw', 'pacf_ols', 'ccovf', 'ccf',
 class ResultsStore(object):
     def __str__(self):
         return self._str  # pylint: disable=E1101
+        # TODO: fix the above, pylint disabling is from upstream
 
 
 def _autolag(mod, endog, exog, startlag, maxlag, method, modargs=(),

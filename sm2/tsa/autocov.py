@@ -3,6 +3,7 @@
 Functions relating to autocovariance
 """
 import numpy as np
+import scipy.linalg
 from scipy.linalg import toeplitz
 
 from sm2.tools.sm_exceptions import MissingDataError
@@ -99,6 +100,38 @@ def acovf(x, unbiased=False, demean=True, fft=False, missing='none'):
         x[~notmask_bool] = np.nan
 
     return acov
+
+
+# Upstream this is var_model._var_acf
+# TODO: update test location
+def var_acf(coefs, sig_u):
+    """
+    Compute autocovariance function ACF_y(h) for h=1,...,p
+
+    Notes
+    -----
+    Lütkepohl (2005) p.29
+    """
+    p, k, k2 = coefs.shape
+    assert k == k2
+
+    from sm2.tsa.vector_ar import util
+    from sm2.tsa import tsatools
+
+    A = util.comp_matrix(coefs)
+    # construct VAR(1) noise covariance
+    SigU = np.zeros((k * p, k * p))
+    SigU[:k, :k] = sig_u
+
+    # vec(ACF) = (I_(kp)^2 - kron(A, A))^-1 vec(Sigma_U)
+    vecACF = scipy.linalg.solve(np.eye((k * p)**2) - np.kron(A, A),
+                                SigU.ravel('F'))
+    # TODO: Does the 'F' matter?
+
+    acf = tsatools.unvec(vecACF)
+    acf = acf[:k].T.reshape((p, k, k))
+
+    return acf
 
 
 # Upstream this is var_model._compute_acov
