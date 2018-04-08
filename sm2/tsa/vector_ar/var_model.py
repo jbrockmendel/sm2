@@ -1824,6 +1824,8 @@ class FEVD(object):
     def __init__(self, model, P=None, periods=None):
         self.periods = periods
 
+        # TODO: Does self.model need to exist?
+        # TODO: model is a misnomer; this is a Results object
         self.model = model
         self.neqs = model.neqs
         self.names = model.model.endog_names
@@ -1835,7 +1837,7 @@ class FEVD(object):
         irfs = (self.orth_irfs[:periods]**2).cumsum(axis=0)
 
         rng = list(range(self.neqs))
-        mse = self.model.mse(periods)[:, rng, rng]
+        mse = model.mse(periods)[:, rng, rng]
 
         # lag x equation x component
         fevd = np.empty_like(irfs)

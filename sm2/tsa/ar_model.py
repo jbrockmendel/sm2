@@ -690,6 +690,7 @@ class ARResults(tsa_model.TimeSeriesModelResults):
         if k_trend > 0:
             trendorder = k_trend - 1
         self.trendorder = trendorder
+        # TODO: What purpose does trendorder serve?
 
     @cache_writable()
     def sigma2(self):
