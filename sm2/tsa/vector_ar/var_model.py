@@ -38,6 +38,7 @@ from .hypothesis_test_results import (CausalityTestResults,
 _compute_acov = autocov.compute_acov
 _acovs_to_acorrs = autocov.acf_to_acorr
 
+
 # --------------------------------------------------------------------
 # VAR process routines
 
