@@ -574,7 +574,7 @@ class VARProcess(VARParams):
         return np.array([np.dot(coefs, P) for coefs in ma_mats])
 
     def mse(self, steps):
-        """
+        r"""
         Compute theoretical forecast error variance matrices
 
         Parameters
