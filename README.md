@@ -30,7 +30,11 @@ With luck, fixes made here will eventually be ported upstream.
 </tr>
 <tr>
   <td>Coverage</td>
-  <td><img src="https://codecov.io/gh/jbrockmendel/sm2/branch/master/graph/badge.svg" alt="coverage" /></td>
+  <td>
+    <a href="https://codecov.io/gh/jbrockmendel/sm2">
+    <img src="https://codecov.io/gh/jbrockmendel/sm2/branch/master/graph/badge.svg" />
+    </a>
+</td>
 </tr>
 </table>
 

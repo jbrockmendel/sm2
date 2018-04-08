@@ -578,7 +578,6 @@ class IRAnalysis(BaseIRAnalysis):
         # Lutkepohl 3.7.8
         Ik = np.eye(self.neqs)
         PIk = np.kron(self.P.T, Ik)
-        H = self.H
 
         covs = self._empty_covm(self.periods + 1)
         for i in range(self.periods + 1):
@@ -588,7 +587,7 @@ class IRAnalysis(BaseIRAnalysis):
                 Ci = np.dot(PIk, self.G[i - 1])
                 apiece = chain_dot(Ci, self.cov_a, Ci.T)
 
-            Cibar = np.dot(np.kron(Ik, self.irfs[i]), H)
+            Cibar = np.dot(np.kron(Ik, self.irfs[i]), self.H)
             bpiece = chain_dot(Cibar, self.cov_sig, Cibar.T) / self.T
 
             # Lutkepohl typo, cov_sig correct
@@ -685,11 +684,6 @@ class IRAnalysis(BaseIRAnalysis):
         Lk = tsa.elimination_matrix(k)
         Kkk = tsa.commutation_matrix(k, k)
         Ik = np.eye(k)
-
-        # B = chain_dot(Lk, np.eye(k**2) + commutation_matrix(k, k),
-        #               np.kron(self.P, np.eye(k)), Lk.T)
-
-        # return np.dot(Lk.T, scipy.linalg.inv(B))
 
         B = chain_dot(Lk,
                       np.dot(np.kron(Ik, self.P), Kkk) + np.kron(self.P, Ik),

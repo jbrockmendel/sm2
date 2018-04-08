@@ -669,3 +669,42 @@ def test_var_constant():
     model = VAR(df)
     with pytest.raises(ValueError):
         model.fit(1)
+
+
+def test_var_process_mean():
+    # GH#4442, VARProcess.mean should be well-defined iff there is
+    # a constant term and no other trend/exog terms
+    data = get_macrodata().view((float, 3), type=np.ndarray)
+    data -= data.mean(axis=0)
+
+    np.random.seed(4719)
+    intercept = np.random.randn(data.shape[1])
+    data += intercept.reshape(1, -1)
+
+    model = VAR(data)
+
+    res = model.fit(trend="c")
+    assert res.k_trend == 1
+    assert not hasattr(model, "k_trend")
+
+    assert_allclose(intercept, res.mean(), rtol=1e-3)
+    # TODO: It would be nice to get higher precision than this
+
+    for trend in ["nc", "ct"]:
+        res = model.fit(trend=trend)
+        with pytest.raises(NotImplementedError):
+            res.mean()
+
+    exog = np.zeros((len(data), 3))
+    exog[::4, 0] = 1
+    exog[1::4, 1] = 1
+    exog[2::4, 2] = 1
+
+    model = VAR(endog=data, exog=exog)
+    res = model.fit(trend="c")
+    with pytest.raises(NotImplementedError):
+        res.mean()
+
+    res = model.fit(trend="nc")
+    with pytest.raises(NotImplementedError):
+        res.mean()
