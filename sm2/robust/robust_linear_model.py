@@ -16,7 +16,8 @@ R Venables, B Ripley. 'Modern Applied Statistics in S'  Springer, New York,
 import numpy as np
 from scipy import stats
 
-from sm2.tools.decorators import cache_readonly, resettable_cache
+from sm2.tools.decorators import (cached_value, cached_data, cache_readonly,
+                                  resettable_cache)
 import sm2.base.model as base
 import sm2.base.wrapper as wrap
 
@@ -134,12 +135,9 @@ class RLM(base.LikelihoodModel):
         self._data_attr.extend(['weights', 'pinv_wexog'])
 
     # TODO: Get rid of this dumb method, or at least make it `initialize`
-    # TODO: Is the docstring also inaccurate?
     def _initialize(self):
         """
         Initializes the model for the IRLS fit.
-
-        Resets the history and number of iterations.
         """
         self.pinv_wexog = np.linalg.pinv(self.exog)
         self.normalized_cov_params = np.dot(self.pinv_wexog,
@@ -403,15 +401,15 @@ class RLMResults(base.LikelihoodModelResults):
     sm2.base.model.LikelihoodModelResults
     """
 
-    @cache_readonly
+    @cached_value
     def nobs(self):
         return float(self.model.endog.shape[0])
 
-    @cache_readonly
+    @cached_value
     def df_resid(self):
         return self.nobs - (self.df_model + 1)
 
-    @cache_readonly
+    @cached_value
     def df_model(self):
         rank = np.linalg.matrix_rank(self.model.exog)
         return rank - 1.0
@@ -427,15 +425,15 @@ class RLMResults(base.LikelihoodModelResults):
         self.cov_params_default = self.bcov_scaled
         # TODO: "pvals" should come from chisq on bse?
 
-    @cache_readonly
+    @cached_data
     def sresid(self):
         return self.resid / self.scale
 
-    @cache_readonly
+    @cached_value
     def bcov_unscaled(self):
         return self.normalized_cov_params
 
-    @cache_readonly
+    @cached_data
     def weights(self):
         return self.model.weights
 
@@ -474,16 +472,16 @@ class RLMResults(base.LikelihoodModelResults):
                                W_inv))
 
     # TODO: Use default implementation from base class?
-    @cache_readonly
+    @cached_value
     def pvalues(self):
         return stats.norm.sf(np.abs(self.tvalues)) * 2
 
-    @cache_readonly
+    @cached_value
     def bse(self):
         return np.sqrt(np.diag(self.bcov_scaled))
 
     # TODO: Use default implementation from base class?
-    @cache_readonly
+    @cached_value
     def chisq(self):
         return (self.params / self.bse)**2
 

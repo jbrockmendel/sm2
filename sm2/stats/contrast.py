@@ -399,7 +399,7 @@ class WaldTestResults(object):
         # needs to be a method for consistency
         if hasattr(self, '_dframe'):
             return self._dframe
-        # rename the column nambes, but don't copy data
+        # rename the column names, but don't copy data
         renaming = dict(zip(self.table.columns, self.col_names))
         self.dframe = self.table.rename(columns=renaming)
         return self.dframe

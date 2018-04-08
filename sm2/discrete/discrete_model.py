@@ -378,6 +378,7 @@ class DiscreteModel(base.LikelihoodModel):
 
         return mlefit  # up to subclasses to wrap results
 
+    # TODO: Might this go higher up the hierarchy?
     def cov_params_func_l1(self, likelihood_model, xopt, retvals):
         """
         Computes cov_params on a reduced parameter space
@@ -403,6 +404,7 @@ class DiscreteModel(base.LikelihoodModel):
 
         return cov_params
 
+    # TODO: Might this go higher up the hierarchy?
     def predict(self, params, exog=None, linear=False):  # pragma: no cover
         """
         Predict response variable of a model given exogenous variables.
