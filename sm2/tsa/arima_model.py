@@ -83,10 +83,6 @@ _arma_params = """endog : array-like
         An optional array of exogenous variables. This should *not* include a
         constant or trend. You can specify this in the `fit` method."""
 
-_arma_model = "Autoregressive Moving Average ARMA(p,q) Model"
-
-_arima_model = "Autoregressive Integrated Moving Average ARIMA(p,d,q) Model"
-
 _arima_params = """endog : array-like
         The endogenous variable.
     order : iterable
@@ -429,7 +425,7 @@ def _check_estimable(nobs, n_params):
 
 class ARMA(wold.ARMAParams, tsa_model.TimeSeriesModel):
     __doc__ = tsa_model._tsa_doc % {
-        "model": _arma_model,
+        "model": "Autoregressive Moving Average ARMA(p,q) Model",
         "params": _arma_params,
         "extra_params": "",
         "extra_sections": _armax_notes % {"Model": "ARMA"}}
@@ -947,7 +943,7 @@ class ARMA(wold.ARMAParams, tsa_model.TimeSeriesModel):
 # starting to think that order of model should be put in instantiation...
 class ARIMA(ARMA):
     __doc__ = tsa_model._tsa_doc % {
-        "model": _arima_model,
+        "model": "Autoregressive Integrated Moving Average ARIMA(p,d,q) Model",
         "params": _arima_params,
         "extra_params": "",
         "extra_sections": _armax_notes % {"Model": "ARIMA"}}

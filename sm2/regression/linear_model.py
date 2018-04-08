@@ -41,7 +41,7 @@ from scipy import stats
 from sm2.tools.sm_exceptions import InvalidTestWarning
 from sm2.tools.tools import chain_dot, pinv_extended
 from sm2.tools.decorators import (resettable_cache,
-                                  cache_readonly,
+                                  cache_readonly, cached_data, cached_value,
                                   cache_writable, copy_doc)
 import sm2.base.model as base
 import sm2.base.wrapper as wrap
@@ -181,7 +181,7 @@ class RegressionModel(base.LikelihoodModel):
                 "fit_regularized": (RegularizedResults,
                                     RegularizedResultsWrapper)}
 
-    @cache_readonly
+    @cached_value
     def nobs(self):
         return float(self.wexog.shape[0])
 
@@ -1255,7 +1255,7 @@ class RegressionResults(base.LikelihoodModelResults):
 
     _cache = {}  # needs to be a class attribute for scale setter?
 
-    @cache_readonly
+    @cached_value
     def nobs(self):
         # TODO: make this not-depend on wexog in case data has been removed
         return float(self.model.wexog.shape[0])
@@ -1321,7 +1321,7 @@ class RegressionResults(base.LikelihoodModelResults):
         ci = super(RegressionResults, self).conf_int(alpha=alpha, cols=cols)
         return ci
 
-    @cache_readonly
+    @cached_data
     def wresid(self):
         return self.model.wendog - self.model.predict(self.params,
                                                       self.model.wexog)
@@ -1425,11 +1425,11 @@ class RegressionResults(base.LikelihoodModelResults):
     def bse(self):
         return np.sqrt(np.diag(self.cov_params()))
 
-    @cache_readonly
+    @cached_value
     def aic(self):
         return -2 * self.llf + 2 * (self.df_model + self.k_constant)
 
-    @cache_readonly
+    @cached_value
     def bic(self):
         return (-2 * self.llf + np.log(self.nobs) * (self.df_model +
                                                      self.k_constant))
