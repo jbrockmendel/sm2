@@ -138,7 +138,7 @@ class RLM(base.LikelihoodModel):
     def _initialize(self):
         """
         Initializes the model for the IRLS fit.
-        """
+        """  # NOTE: this is really similar to GLM.initialize
         self.pinv_wexog = np.linalg.pinv(self.exog)
         self.normalized_cov_params = np.dot(self.pinv_wexog,
                                             np.transpose(self.pinv_wexog))

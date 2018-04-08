@@ -555,7 +555,7 @@ class VAR(tsa_model.TimeSeriesModel):
         return LagOrderResults(ics, selected_orders, vecm=False)
 
 
-class VARProcess(wold.VARParams):
+class VARProcess(wold.VARProcess):
     """
     Class represents a known VAR(p) process
 
@@ -568,45 +568,6 @@ class VARProcess(wold.VARParams):
     """
     # -------------------------------------------------------------
     # Methods requiring `coefs` and `sigma_u`, but not `exog`
-
-    def orth_ma_rep(self, maxn=10, P=None):
-        r"""Compute Orthogonalized MA coefficient matrices using P matrix such
-        that :math:`\Sigma_u = PP^\prime`. P defaults to the Cholesky
-        decomposition of :math:`\Sigma_u`
-
-        Parameters
-        ----------
-        maxn : int
-            Number of coefficient matrices to compute
-        P : ndarray (neqs x neqs), optional
-            Matrix such that Sigma_u = PP', defaults to the
-            Cholesky decomposition.
-
-        Returns
-        -------
-        coefs : ndarray (maxn x neqs x neqs)
-        """
-        if P is None:
-            P = self._chol_sigma_u
-
-        ma_mats = self.ma_rep(maxn=maxn)
-        return np.array([np.dot(coefs, P) for coefs in ma_mats])
-
-    @cache_readonly
-    def _chol_sigma_u(self):
-        return np.linalg.cholesky(self.sigma_u)
-
-    @cache_readonly
-    def detomega(self):
-        r"""
-        Return determinant of white noise covariance with degrees of freedom
-        correction:
-
-        .. math::
-
-            \hat \Omega = \frac{T}{T - Kp - 1} \hat \Omega_{\mathrm{MLE}}
-        """
-        return scipy.linalg.det(self.sigma_u)
 
     def acf(self, nlags=None):
         """
@@ -657,40 +618,6 @@ class VARProcess(wold.VARParams):
         "Plot theoretical autocorrelation function"
         plotting.plot_full_acorr(self.acorr(nlags=nlags), linewidth=linewidth)
 
-    def mse(self, steps):
-        """
-        Compute theoretical forecast error variance matrices
-
-        Parameters
-        ----------
-        steps : int
-            Number of steps ahead
-
-        Notes
-        -----
-        .. math:: \mathrm{MSE}(h) = \sum_{i=0}^{h-1} \Phi \Sigma_u \Phi^T
-
-        Returns
-        -------
-        forc_covs : ndarray (steps x neqs x neqs)
-        """
-        ma_coefs = self.ma_rep(steps)
-        sigma_u = self.sigma_u
-
-        neqs = len(sigma_u)
-        forc_covs = np.zeros((steps, neqs, neqs))
-
-        prior = np.zeros((neqs, neqs))
-        for h in range(steps):
-            # Sigma(h) = Sigma(h-1) + Phi Sig_u Phi'
-            phi = ma_coefs[h]
-            var = chain_dot(phi, sigma_u, phi.T)
-            forc_covs[h] = prior = prior + var
-
-        return forc_covs
-
-    forecast_cov = mse
-
     def _forecast_vars(self, steps):
         covs = self.forecast_cov(steps)
 
@@ -701,9 +628,9 @@ class VARProcess(wold.VARParams):
     # TODO: having this involve `exog` doesn't fit with the
     # "known VAR(p) process" definition in the docstring
     def __init__(self, coefs, intercept, exog, sigma_u, trend, names=None):
-        wold.VARParams.__init__(self, coefs, intercept=intercept)
+        wold.VARProcess.__init__(self, coefs,
+                                 intercept=intercept, sigma_u=sigma_u)
         self.exog = exog
-        self.sigma_u = sigma_u
         self.trend = trend
         self.names = names
 
@@ -726,6 +653,7 @@ class VARProcess(wold.VARParams):
         # TODO: we might need to pass intercept along with /instead of exog?
         Y = util.varsim(self.coefs, self.exog, self.sigma_u, steps=steps)
         plotting.plot_mts(Y)
+        # FIXME: passing self.exog here is wrong
 
     def forecast(self, y, steps, exog_future=None):
         """Produce linear minimum MSE forecasts for desired number of steps
@@ -1071,8 +999,7 @@ class VARResults(VARProcess):
 
     @cache_readonly
     def sigma_u_mle(self):
-        """(Biased) maximum likelihood estimate of noise process covariance
-        """
+        """(Biased) maximum likelihood estimate of noise process covariance"""
         return self.sigma_u * self.df_resid / self.nobs
 
     @cached_value
@@ -1090,24 +1017,6 @@ class VARResults(VARProcess):
         z = self.endog_lagged
         return np.kron(scipy.linalg.inv(np.dot(z.T, z)), self.sigma_u)
 
-    def cov_ybar(self):
-        r"""Asymptotically consistent estimate of covariance of the sample mean
-
-        .. math::
-
-            \sqrt(T) (\bar{y} - \mu) \rightarrow {\cal N}(0,\Sigma_{\bar{y}})\\
-
-            \Sigma_{\bar{y}} = B \Sigma_u B^\prime,
-
-            \text{where } B = (I_K - A_1 - \cdots - A_p)^{-1}
-
-        Notes
-        -----
-        Lütkepohl Proposition 3.3
-        """
-        Ainv = scipy.linalg.inv(np.eye(self.neqs) - self.coefs.sum(0))
-        return chain_dot(Ainv, self.sigma_u, Ainv.T)
-
     # ------------------------------------------------------------
     # Estimation-related things
 
@@ -1124,17 +1033,6 @@ class VARResults(VARProcess):
         # drop exog
         return self.cov_params[self.k_trend * self.neqs:,
                                self.k_trend * self.neqs:]
-
-    @cache_readonly
-    def _cov_sigma(self):
-        """
-        Estimated covariance matrix of vech(sigma_u)
-        """
-        D_K = duplication_matrix(self.neqs)
-        D_Kinv = np.linalg.pinv(D_K)
-
-        sigxsig = np.kron(self.sigma_u, self.sigma_u)
-        return 2 * chain_dot(D_Kinv, sigxsig, D_Kinv.T)
 
     @cache_readonly
     def stderr_endog_lagged(self):
@@ -1376,7 +1274,7 @@ class VARResults(VARProcess):
         """Bayesian a.k.a. Schwarz info criterion"""
         return self.info_criteria['bic']
 
-    @cache_readonly
+    @cache_readonly  # TODO: belongs in VARParams?
     def roots(self):
         neqs = self.neqs
         k_ar = self.k_ar

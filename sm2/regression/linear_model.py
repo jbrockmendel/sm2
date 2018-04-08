@@ -283,7 +283,7 @@ class RegressionModel(base.LikelihoodModel):
                 self.pinv_wexog, singular_values = pinv_extended(self.wexog)
                 self.normalized_cov_params = np.dot(self.pinv_wexog,
                                                     self.pinv_wexog.T)
-
+                # TODO: above is similar to RLM._initialize and GLM.initialize
                 # Cache these singular values for use later.
                 self.wexog_singular_values = singular_values
                 self.rank = np.linalg.matrix_rank(np.diag(singular_values))

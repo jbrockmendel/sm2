@@ -518,3 +518,121 @@ class VARParams(object):
                 phis[i] += np.dot(phis[i - j], coefs[j - 1])
 
         return phis
+
+
+class VARProcess(VARParams):
+    """
+    Class represents a known VAR(p) process
+
+    Parameters
+    ----------
+    arcoefs : ndarray (p x k x k)
+    intercept : ndarray (length k)
+    sigma_u : ndarray (k x k)
+    """
+    def __init__(self, coefs, intercept, sigma_u):
+        VARParams.__init__(self, coefs, intercept=intercept)
+        self.sigma_u = sigma_u
+
+    @cache_readonly
+    def _chol_sigma_u(self):
+        return np.linalg.cholesky(self.sigma_u)
+
+    @cache_readonly
+    def detomega(self):
+        r"""
+        Return determinant of white noise covariance with degrees of freedom
+        correction:
+
+        .. math::
+
+            \hat \Omega = \frac{T}{T - Kp - 1} \hat \Omega_{\mathrm{MLE}}
+        """
+        return scipy.linalg.det(self.sigma_u)
+
+    def orth_ma_rep(self, maxn=10, P=None):
+        r"""Compute Orthogonalized MA coefficient matrices using P matrix such
+        that :math:`\Sigma_u = PP^\prime`. P defaults to the Cholesky
+        decomposition of :math:`\Sigma_u`
+
+        Parameters
+        ----------
+        maxn : int
+            Number of coefficient matrices to compute
+        P : ndarray (neqs x neqs), optional
+            Matrix such that Sigma_u = PP', defaults to the
+            Cholesky decomposition.
+
+        Returns
+        -------
+        coefs : ndarray (maxn x neqs x neqs)
+        """
+        if P is None:
+            P = self._chol_sigma_u
+
+        ma_mats = self.ma_rep(maxn=maxn)
+        return np.array([np.dot(coefs, P) for coefs in ma_mats])
+
+    def mse(self, steps):
+        """
+        Compute theoretical forecast error variance matrices
+
+        Parameters
+        ----------
+        steps : int
+            Number of steps ahead
+
+        Notes
+        -----
+        .. math:: \mathrm{MSE}(h) = \sum_{i=0}^{h-1} \Phi \Sigma_u \Phi^T
+
+        Returns
+        -------
+        forc_covs : ndarray (steps x neqs x neqs)
+        """
+        ma_coefs = self.ma_rep(steps)
+        sigma_u = self.sigma_u
+
+        neqs = len(sigma_u)
+        forc_covs = np.zeros((steps, neqs, neqs))
+
+        prior = np.zeros((neqs, neqs))
+        for h in range(steps):
+            # Sigma(h) = Sigma(h-1) + Phi Sig_u Phi'
+            phi = ma_coefs[h]
+            var = phi.dot(sigma_u).dot(phi.T)
+            forc_covs[h] = prior = prior + var
+
+        return forc_covs
+
+    forecast_cov = mse
+
+    def cov_ybar(self):
+        r"""Asymptotically consistent estimate of covariance of the sample mean
+
+        .. math::
+
+            \sqrt(T) (\bar{y} - \mu) \rightarrow {\cal N}(0,\Sigma_{\bar{y}})\\
+
+            \Sigma_{\bar{y}} = B \Sigma_u B^\prime,
+
+            \text{where } B = (I_K - A_1 - \cdots - A_p)^{-1}
+
+        Notes
+        -----
+        Lütkepohl Proposition 3.3
+        """
+        Ainv = scipy.linalg.inv(np.eye(self.neqs) - self.coefs.sum(0))
+        return Ainv.dot(self.sigma_u).dot(Ainv.T)
+
+    @cache_readonly
+    def _cov_sigma(self):
+        """
+        Estimated covariance matrix of vech(sigma_u)
+        """
+        from sm2.tsa.tsatools import duplication_matrix
+        D_K = duplication_matrix(self.neqs)
+        D_Kinv = np.linalg.pinv(D_K)
+
+        sigxsig = np.kron(self.sigma_u, self.sigma_u)
+        return 2 * D_Kinv.dot(sigxsig).dot(D_Kinv.T)
