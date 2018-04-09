@@ -9,9 +9,21 @@ matrix:
     - python: 3.6
       env: TOXENV=py36
 
+
+# Based on numpy's travis.yml
+addons:
+  apt:
+    packages: &common_packages
+      - gfortran
+      - libatlas-dev
+      - libatlas-base-dev
+      - libopenblas-dev
+
 install: pip install tox codecov
 
-script: tox
+script:
+    - python -c "import numpy as np; np.show_config()"
+    - tox
 
 notifications:
   email: false
