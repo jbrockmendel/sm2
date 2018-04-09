@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """
 Vector Autoregression (VAR) processes
@@ -25,7 +26,7 @@ import sm2.base.wrapper as wrap
 
 from sm2.iolib.table import SimpleTable
 
-from sm2.tsa.tsatools import vec, unvec, duplication_matrix
+from sm2.tsa.tsatools import vec, duplication_matrix
 from sm2.tsa.base import tsa_model
 from sm2.tsa import wold, autocov
 
@@ -38,6 +39,7 @@ from .hypothesis_test_results import (CausalityTestResults,
 _compute_acov = autocov.compute_acov
 _acovs_to_acorrs = autocov.acf_to_acorr
 _var_acf = autocov.var_acf
+
 
 # --------------------------------------------------------------------
 # VAR process routines
@@ -544,15 +546,6 @@ class VARProcess(wold.VARProcess):
     # -------------------------------------------------------------
     # Methods requiring `coefs` and `sigma_u`, but not `exog`
 
-    def acorr(self, nlags=None):
-        """Compute theoretical autocorrelation function
-
-        Returns
-        -------
-        acorr : ndarray (p x k x k)
-        """
-        return util.acf_to_acorr(self.acf(nlags=nlags))
-
     def plot_acorr(self, nlags=10, linewidth=8):
         "Plot theoretical autocorrelation function"
         plotting.plot_full_acorr(self.acorr(nlags=nlags), linewidth=linewidth)
@@ -831,6 +824,7 @@ class VARResults(VARProcess):
         the model.
         """
         return np.dot(self.endog_lagged, self.params)
+        # TODO: Can we use self.model.predict here?  then base class is OK
 
     @cached_data
     def resid(self):
@@ -870,6 +864,7 @@ class VARResults(VARProcess):
         """Standard errors of coefficients, reshaped to match in size"""
         stderr = np.sqrt(np.diag(self.cov_params))
         return stderr.reshape((self.df_model, self.neqs), order='C')
+        # TODO: why df_model?
 
     bse = stderr  # sm2 interface?
 

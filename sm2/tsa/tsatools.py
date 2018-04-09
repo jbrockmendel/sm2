@@ -559,6 +559,7 @@ def unvec(v):
     k = int(np.sqrt(len(v)))
     assert k * k == len(v)
     return v.reshape((k, k), order='F')
+    # TODO: Is the 'F' part relevant?
 
 
 def unvech(v):

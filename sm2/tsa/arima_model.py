@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
 # Note: The information criteria add 1 to the number of parameters
 #       whenever the model has an AR or MA term since, in principle,
 #       the variance could be treated as a free parameter and restricted
@@ -23,7 +25,7 @@ from sm2.tools.decorators import (resettable_cache,
 from sm2.tools.numdiff import approx_hess_cs, approx_fprime_cs
 
 import sm2.base.wrapper as wrap
-
+from sm2.base.naming import make_arma_names as _make_arma_names
 from sm2.regression.linear_model import yule_walker, GLS
 
 from sm2.tsa.base import tsa_model
@@ -375,30 +377,6 @@ def _arma_predict_in_sample(start, end, endog, resid, k_ar, method):
         fv_start -= k_ar  # start is in terms of endog index
     fv_end = min(len(fittedvalues), end + 1)
     return fittedvalues[fv_start:fv_end]
-
-
-def _make_arma_names(data, k_trend, order, exog_names):
-    k_ar, k_ma = order
-    exog_names = exog_names or []
-    ar_lag_names = util.make_lag_names([data.ynames], k_ar, 0)
-    ar_lag_names = [''.join(('ar.', i)) for i in ar_lag_names]
-    ma_lag_names = util.make_lag_names([data.ynames], k_ma, 0)
-    ma_lag_names = [''.join(('ma.', i)) for i in ma_lag_names]
-    trend_name = util.make_lag_names('', 0, k_trend)
-
-    # ensure exog_names stays unchanged when the `fit` method
-    # is called multiple times.
-    if k_ma == 0 and k_ar == 0:
-        if len(exog_names) != 0:
-            return exog_names
-    elif ((exog_names[-k_ma:] == ma_lag_names) and
-            exog_names[-(k_ar + k_ma):-k_ma] == ar_lag_names and
-            (not exog_names or not trend_name or
-             trend_name[0] == exog_names[0])):
-            return exog_names
-
-    exog_names = trend_name + exog_names + ar_lag_names + ma_lag_names
-    return exog_names
 
 
 # TODO: Does this belong somewhere else?
@@ -1470,6 +1448,7 @@ class ARMAResults(wold.ARMARoots, tsa_model.TimeSeriesModelResults):
         conf_int = np.c_[forecast - const * fcasterr,
                          forecast + const * fcasterr]
         return conf_int
+        # TODO: DOes this need to be a method?
 
     def forecast(self, steps=1, exog=None, alpha=.05):
         """
@@ -1692,6 +1671,7 @@ class ARIMAResults(ARMAResults):
         const = stats.norm.ppf(1 - alpha / 2.)
         conf_int = np.c_[forecast - const * fcerr, forecast + const * fcerr]
         return conf_int
+        # TODO: Does this need to be a method?
 
     def forecast(self, steps=1, exog=None, alpha=.05):
         """

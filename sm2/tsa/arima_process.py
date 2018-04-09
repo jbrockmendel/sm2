@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
 """ARMA process and estimation with scipy.signal.lfilter
 
 Notes

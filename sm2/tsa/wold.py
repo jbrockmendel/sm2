@@ -684,3 +684,12 @@ class VARProcess(VARParams):
                 result[h] += np.dot(coefs[j], result[h - j - 1])
 
         return result
+
+    def acorr(self, nlags=None):
+        """Compute theoretical autocorrelation function
+
+        Returns
+        -------
+        acorr : ndarray (p x k x k)
+        """
+        return autocov.acf_to_acorr(self.acf(nlags=nlags))

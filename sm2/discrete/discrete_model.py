@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
 """
 Limited dependent variable and qualitative variables.
 
@@ -35,6 +37,7 @@ from sm2.tools.sm_exceptions import PerfectSeparationError
 from sm2.tools.numdiff import approx_fprime_cs
 from sm2.tools import tools, data as data_tools
 
+from sm2.base import naming
 import sm2.base.model as base
 from sm2.base.data import handle_data  # for mnlogit
 import sm2.base.wrapper as wrap
@@ -3212,7 +3215,8 @@ class DiscreteResults(base.LikelihoodModelResults):
 
     @cached_data
     def fittedvalues(self):
-        # TODO: Can we merge this into the base class case?
+        # doesn't match self.model.predict(self.params), so we can't delegate
+        # to base class
         return np.dot(self.model.exog, self.params[:self.model.exog.shape[1]])
 
     @cached_value
@@ -3631,16 +3635,11 @@ class MultinomialResults(DiscreteResults):
         self.K = model.K
         self.nobs = model.nobs
 
-    # TODO: Doesn't need to be a method
-    def _maybe_convert_ynames_int(self, ynames):
-        # see if they're integers
-        try:
-            for i in ynames:
-                if ynames[i] % 1 == 0:
-                    ynames[i] = str(int(ynames[i]))
-        except TypeError:
-            pass
-        return ynames
+    def _maybe_convert_ynames_int(self, ynames):  # pragma: no cover
+        raise NotImplementedError("_maybe_convert_ynames_int not ported from "
+                                  "upstream, use "
+                                  "sm2.base.naming.maybe_convert_ynames_int "
+                                  "instead.")
 
     @deprecate_kwarg('all', 'use_all')
     def _get_endog_name(self, yname, yname_list, use_all=False):
@@ -3652,7 +3651,7 @@ class MultinomialResults(DiscreteResults):
             yname = model.endog_names
         if yname_list is None:
             ynames = model._ynames_map
-            ynames = self._maybe_convert_ynames_int(ynames)
+            ynames = naming.maybe_convert_ynames_int(ynames)
             # use range below to ensure sortedness
             ynames = [ynames[key] for key in range(int(model.J))]
             ynames = ['='.join([yname, name]) for name in ynames]

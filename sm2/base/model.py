@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
 from __future__ import print_function
 import warnings
 from collections import defaultdict
@@ -720,7 +722,7 @@ class Results(object):
         predict_results = self.model.predict(self.params, exog,
                                              *args, **kwargs)
 
-        # TODO: Shouldnt this be done by wrapping?
+        # TODO: Shouldn't this be done by wrapping?
         if exog_index is not None and not hasattr(predict_results,
                                                   'predicted_values'):
             if predict_results.ndim == 1:
@@ -988,11 +990,12 @@ class LikelihoodModelResults(wrap.SaveLoadMixin, Results):
         # GH#3299
         if ((not hasattr(self, 'cov_params_default')) and
                 (self.normalized_cov_params is None)):
-            bse_ = np.empty(len(self.params))
-            bse_[:] = np.nan
+            bse = np.empty(len(self.params))
+            bse[:] = np.nan
         else:
-            bse_ = np.sqrt(np.diag(self.cov_params()))
-        return bse_
+            bse = np.sqrt(np.diag(self.cov_params()))
+        # reshape is unnecessary in many cases, needed for e.g MNLogit
+        return bse.reshape(self.params.shape)
 
     def cov_params(self, r_matrix=None, column=None, scale=None, cov_p=None,
                    other=None):

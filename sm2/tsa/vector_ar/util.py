@@ -1,19 +1,20 @@
+#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """
 Miscellaneous utility code for VAR estimation
 """
 from __future__ import division
 
-from six import string_types, integer_types
+from six import integer_types
 from six.moves import range
 
 import numpy as np
 from scipy import stats
 from scipy.linalg import decomp
 
-import sm2.tsa.tsatools as tsa
-
+from sm2.tsa import tsatools
 from sm2.tsa.autocov import acf_to_acorr  # noqa:F841
+from sm2.base.naming import make_lag_names  # noqa:F841
 
 
 # ---------------------------------------------------------------
@@ -36,8 +37,8 @@ def get_var_endog(y, lags, trend='c', has_constant='skip'):
 
     # Add constant, trend, etc.
     if trend != 'nc':
-        Z = tsa.add_trend(Z, prepend=True, trend=trend,
-                          has_constant=has_constant)
+        Z = tsatools.add_trend(Z, prepend=True, trend=trend,
+                               has_constant=has_constant)
     return Z
 
 
@@ -52,42 +53,6 @@ def get_trendorder(trend='c'):
     elif trend == 'ctt':
         trendorder = 3
     return trendorder
-
-
-def make_lag_names(names, lag_order, trendorder=1, exog=None):
-    """
-    Produce list of lag-variable names. Constant / trends go at the beginning
-
-    Examples
-    --------
-    >>> make_lag_names(['foo', 'bar'], 2, 1)
-    ['const', 'L1.foo', 'L1.bar', 'L2.foo', 'L2.bar']
-
-    """
-    lag_names = []
-    if isinstance(names, string_types):
-        names = [names]
-
-    # take care of lagged endogenous names
-    for i in range(1, lag_order + 1):
-        for name in names:
-            if not isinstance(name, string_types):
-                name = str(name)  # will need consistent unicode handling
-            lag_names.append('L' + str(i) + '.' + name)
-
-    # handle the constant name
-    # Note: unicode literals are relevant for py2 tests,
-    # see test_arima.test_arima_wrapper
-    if trendorder != 0:
-        lag_names.insert(0, u'const')
-    if trendorder > 1:
-        lag_names.insert(1, u'trend')
-    if trendorder > 2:
-        lag_names.insert(2, u'trend**2')
-    if exog is not None:
-        for i in range(exog.shape[1]):
-            lag_names.insert(trendorder + i, u"exog" + str(i))
-    return lag_names
 
 
 def comp_matrix(coefs):
