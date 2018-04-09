@@ -69,7 +69,6 @@ def make_arma_names(data, k_trend, order, exog_names):
     return exog_names
 
 
-
 # upstream this is a method in MultinomialResults._maybe_convert_ynames
 def maybe_convert_ynames_int(ynames):
     # see if they're integers

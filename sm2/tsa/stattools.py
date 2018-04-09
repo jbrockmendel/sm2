@@ -319,7 +319,7 @@ def q_stat(x, nobs, method="ljungbox"):
         Number of observations in the entire sample (ie., not just the length
         of the autocorrelation function results.
 
-    TODO: The paramters section here is missing `method`
+    TODO: The parameters section here is missing `method`
 
     Returns
     -------
@@ -333,7 +333,7 @@ def q_stat(x, nobs, method="ljungbox"):
     Written to be used with acf.
     """
     x = np.asarray(x)
-    if method == "ljungbox":
+    if method == "ljungbox":  # TODO: Is this the only supported method?
         ret = (nobs * (nobs + 2) *
                np.cumsum((1. / (nobs - np.arange(1, len(x) + 1))) * x**2))
     chi2 = stats.chi2.sf(ret, np.arange(1, len(x) + 1))
@@ -365,7 +365,7 @@ def acf(x, unbiased=False, nlags=40, qstat=False, fft=False, alpha=None,
         If a number is given, the confidence intervals for the given level are
         returned. For instance if alpha=.05, 95 % confidence intervals are
         returned where the standard deviation is computed according to
-        Bartlett\'s formula.
+        Bartlett's formula.
     missing : str, optional
         A string in ['none', 'raise', 'conservative', 'drop'] specifying how
         any NaNs are to be treated.

@@ -121,23 +121,11 @@ class SaveLoadMixin(object):
         for name in data_attrs:
             self._cache[name] = None
 
-
-        def wipe(obj, att):
-            # get to last element in attribute path
-            p = att.split('.')
-            att_ = p.pop(-1)
-            try:
-                obj_ = reduce(getattr, [obj] + p)
-                if hasattr(obj_, att_):
-                    setattr(obj_, att_, None)
-            except AttributeError:
-                pass
-
         data_attr = getattr(self, "_data_attr_model", [])
         model_only = ['model.' + i for i in data_attr]
         model_attr = ['model.' + i for i in self.model._data_attr]
         for att in self._data_attr + model_attr + model_only:
-            wipe(self, att)
+            _wipe(self, att)
 
         data_in_cache = getattr(self, 'data_in_cache', [])
         data_in_cache += ['fittedvalues', 'resid', 'wresid']
@@ -146,6 +134,19 @@ class SaveLoadMixin(object):
                 self._cache[key] = None
             except (AttributeError, KeyError):
                 pass
+
+
+def _wipe(obj, att):
+    """Intended for use only in SaveLoadMixin.remove_data"""
+    # get to last element in attribute path
+    p = att.split('.')
+    att_ = p.pop(-1)
+    try:
+        obj_ = reduce(getattr, [obj] + p)
+        if hasattr(obj_, att_):
+            setattr(obj_, att_, None)
+    except AttributeError:
+        pass
 
 
 class ResultsWrapper(SaveLoadMixin):

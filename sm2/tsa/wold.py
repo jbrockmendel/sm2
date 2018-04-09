@@ -12,6 +12,7 @@ from pandas._libs.properties import cache_readonly
 
 from sm2.tsa import autocov
 
+
 # -----------------------------------------------------------------------
 # Input Validation
 

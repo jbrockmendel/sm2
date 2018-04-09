@@ -32,7 +32,6 @@ from sm2.tsa.base import tsa_model
 from sm2.tsa import wold
 from sm2.tsa.tsatools import (lagmat, add_trend,
                               unintegrate, unintegrate_levels)
-from sm2.tsa.vector_ar import util
 from sm2.tsa.arima_process import arma2ma
 from sm2.tsa.ar_model import AR
 from sm2.tsa.kalmanf import KalmanFilter
