@@ -55,19 +55,11 @@ def handle_formula_data(Y, X, formula, depth=0, missing='drop'):
     na_action = NAAction(on_NA=missing)
 
     if X is not None:
-        if data_util._is_using_pandas(Y, X):
-            result = dmatrices(formula, (Y, X), depth,
-                               return_type='dataframe', NA_action=na_action)
-        else:
-            result = dmatrices(formula, (Y, X), depth,
-                               return_type='dataframe', NA_action=na_action)
+        yxtup = (Y, X)
     else:
-        if data_util._is_using_pandas(Y, None):
-            result = dmatrices(formula, Y, depth, return_type='dataframe',
-                               NA_action=na_action)
-        else:
-            result = dmatrices(formula, Y, depth, return_type='dataframe',
-                               NA_action=na_action)
+        yxtup = Y
+    result = dmatrices(formula, yxtup, depth,
+                       return_type='dataframe', NA_action=na_action)
 
     # if missing == 'raise' there's not missing_mask
     missing_mask = getattr(na_action, 'missing_mask', None)

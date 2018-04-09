@@ -522,7 +522,7 @@ class GLS(RegressionModel):
             # with error covariance matrix
         return llf
 
-    @copy_doc(base.GenericLikelihoodModel.hessian_factor.__doc__)
+    @copy_doc(base.LikelihoodModel.hessian_factor.__doc__)
     def hessian_factor(self, params, scale=None, observed=True):
         if self.sigma is None or self.sigma.shape == ():
             return np.ones(self.exog.shape[0])
@@ -1466,27 +1466,21 @@ class RegressionResults(base.LikelihoodModelResults):
 
     @cache_readonly
     def cov_HC0(self):
-        """
-        See sm2.RegressionResults
-        """
+        """See sm2.RegressionResults"""
         self.het_scale = self.wresid**2
         cov_HC0 = self._HCCM(self.het_scale)
         return cov_HC0
 
     @cache_readonly
     def cov_HC1(self):
-        """
-        See sm2.RegressionResults
-        """
+        """See sm2.RegressionResults"""
         self.het_scale = self.nobs / (self.df_resid) * (self.wresid**2)
         cov_HC1 = self._HCCM(self.het_scale)
         return cov_HC1
 
     @cache_readonly
     def cov_HC2(self):
-        """
-        See sm2.RegressionResults
-        """
+        """See sm2.RegressionResults"""
         # probably could be optimized
         h = np.diag(chain_dot(self.model.wexog,
                               self.normalized_cov_params,
@@ -1497,9 +1491,7 @@ class RegressionResults(base.LikelihoodModelResults):
 
     @cache_readonly
     def cov_HC3(self):
-        """
-        See sm2.RegressionResults
-        """
+        """See sm2.RegressionResults"""
         h = np.diag(chain_dot(self.model.wexog,
                               self.normalized_cov_params,
                               self.model.wexog.T))
@@ -1509,30 +1501,22 @@ class RegressionResults(base.LikelihoodModelResults):
 
     @cache_readonly
     def HC0_se(self):
-        """
-        See sm2.RegressionResults
-        """
+        """See sm2.RegressionResults"""
         return np.sqrt(np.diag(self.cov_HC0))
 
     @cache_readonly
     def HC1_se(self):
-        """
-        See sm2.RegressionResults
-        """
+        """See sm2.RegressionResults"""
         return np.sqrt(np.diag(self.cov_HC1))
 
     @cache_readonly
     def HC2_se(self):
-        """
-        See sm2.RegressionResults
-        """
+        """See sm2.RegressionResults"""
         return np.sqrt(np.diag(self.cov_HC2))
 
     @cache_readonly
     def HC3_se(self):
-        """
-        See sm2.RegressionResults
-        """
+        """See sm2.RegressionResults"""
         return np.sqrt(np.diag(self.cov_HC3))
 
     @cache_readonly
@@ -1804,10 +1788,8 @@ class RegressionResults(base.LikelihoodModelResults):
 
         TODO: put into separate function, needs tests
         """
-
         # See mailing list discussion October 17,
         # TODO: link?  or at least year?
-
         if large_sample:
             return self.compare_lm_test(restricted, use_lr=True)
 
