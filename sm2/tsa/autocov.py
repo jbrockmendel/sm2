@@ -222,8 +222,7 @@ def ccf(x, y, unbiased=True):
 
 # TODO: move corresponding tests
 # Upstream this is in regression.linear_model
-def yule_walker(X, order=1, method="unbiased", df=None, inv=False,
-                demean=True):
+def yule_walker(X, order=1, method="unbiased", df=None, inv=False, demean=True):
     """
     Estimate AR(p) parameters from a sequence X using Yule-Walker equation.
 

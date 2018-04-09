@@ -138,9 +138,7 @@ def get_index(lst, name):
     return result
 
 
-# method used repeatedly in Sims-Zha error bands
-# TODO: Does the above comment refer to get_index or eigval_decomp?
-
+# used repeatedly in Sims-Zha error bands
 def eigval_decomp(sym_array):
     """
     Returns
@@ -175,4 +173,4 @@ def vech(A):
 
 def seasonal_dummies(n_seasons, len_endog, first_period=0, centered=False):
     raise NotImplementedError("seasonal_dummies not ported from upstream "
-                              "(until vecm is ported)")
+                              "(until vecm is ported)")  # pragma: no cover

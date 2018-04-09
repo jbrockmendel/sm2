@@ -415,6 +415,7 @@ class ARMA(wold.ARMAParams, tsa_model.TimeSeriesModel):
         if exog is not None:
             if exog.ndim == 1:
                 exog = exog[:, None]
+                # TODO: Not hit in tests; is this case really releevant?
             return exog.shape[1]  # number of exog. variables excl. const
         else:
             return 0
@@ -626,8 +627,8 @@ class ARMA(wold.ARMAParams, tsa_model.TimeSeriesModel):
             errors = KalmanFilter.geterrors(y, k, k_ar, k_ma, k_lags, nobs,
                                             Z_mat, m, R_mat, T_mat,
                                             paramsdtype)
-            if isinstance(errors, tuple):
-                errors = errors[0]  # non-cython version returns a tuple
+            assert not isinstance(errors, tuple)
+            # upstream checks for this saying non-cython version returns tuple
         else:
             # use scipy.signal.lfilter
             y = self.endog.copy()
@@ -1164,7 +1165,7 @@ class ARIMA(ARMA):
                                            levels)[d:]]
                 else:
                     fv = predict + endog[start:end + 1]
-                    if d == 2:
+                    if d == 2:  # TODO: No tests with d == 2
                         fv += np.diff(endog[start - 1:end + 1])
             else:
                 k_ar = self.k_ar

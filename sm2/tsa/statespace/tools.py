@@ -37,7 +37,7 @@ prefix_copy_index_vector_map = {}
 
 def set_mode(compatibility=None):
     # Determine mode automatically if none given
-    if compatibility is True:
+    if compatibility is True:  # pragma: no cover
         raise NotImplementedError("compatibility_mode=True not ported from"
                                   "upstream, since sm2 requires relatively "
                                   "recent scipy.")
