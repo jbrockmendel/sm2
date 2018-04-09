@@ -119,10 +119,11 @@ def test_instantiation_no_dates():
 
 @pytest.mark.not_vetted
 @pytest.mark.parametrize('endog', dta)
-def test_instantiation_no_index(endog):
+def test_instantiation_no_index_dti_or_pi(endog):
     # See long comment in test_instantiation valid
     # Test list, numpy endog, pandas w/o index; with dates / freq argument
-
+    # dti --> DatetimeIndex
+    # pi  --> PeriodIndex
     # Supported date indexes, should not raise warnings, do not need freq
     with warnings.catch_warnings():
         warnings.simplefilter('error')
@@ -141,6 +142,13 @@ def test_instantiation_no_index(endog):
             assert mod._index.freq == mod._index_freq
             assert mod.data.dates.equals(mod._index) is True
             assert mod.data.freq == freq
+
+
+@pytest.mark.not_vetted
+@pytest.mark.parametrize('endog', dta)
+def test_instantiation_no_index(endog):
+    # See long comment in test_instantiation valid
+    # Test list, numpy endog, pandas w/o index; with dates / freq argument
 
     # Supported date indexes, should not raise warnings, can use valid freq
     with warnings.catch_warnings():
@@ -187,6 +195,62 @@ def test_instantiation_no_index(endog):
     for ix, freq in supported_increment_indexes + unsupported_indexes:
         with pytest.raises(ValueError):
             tsa_model.TimeSeriesModel(endog, dates=ix)
+
+
+@pytest.mark.not_vetted
+def test_instantiation_valid_datetimeindex_periodindex():
+    # See long comment in test_instantiation valid
+    # Test pandas (Series, DataFrame); with index (no dates/freq argument)
+    for base_endog in dta[2:4]:
+        # DatetimeIndex and PeriodIndex, should not raise warnings
+        with warnings.catch_warnings():
+            warnings.simplefilter('error')
+
+            for ix, freq in date_indexes + period_indexes:
+                endog = base_endog.copy()
+                endog.index = ix
+
+                mod = tsa_model.TimeSeriesModel(endog)
+                if freq is None:
+                    freq = ix.freq
+                if not isinstance(freq, str):
+                    freq = freq.freqstr
+                assert_equal(
+                    isinstance(mod._index, (pd.DatetimeIndex, pd.PeriodIndex)),
+                    True)
+                assert_equal(mod._index_none, False)
+                assert_equal(mod._index_dates, True)
+                assert_equal(mod._index_generated, False)
+                assert_equal(mod._index.freq, mod._index_freq)
+                assert_equal(mod.data.dates.equals(mod._index), True)
+                assert_equal(mod.data.freq, freq)
+
+
+@pytest.mark.not_vetted
+def test_instantiation_valid_supported_with_freq():
+    # See long comment in test_instantiation valid
+    # Supported indexes *when a freq is given*, should not raise a warning
+    for base_endog in dta[2:4]:
+        with warnings.catch_warnings():
+            warnings.simplefilter('error')
+
+            for ix, freq in supported_date_indexes:
+                endog = base_endog.copy()
+                endog.index = ix
+
+                mod = tsa_model.TimeSeriesModel(endog, freq=freq)
+                if freq is None:
+                    freq = ix.freq
+                if not isinstance(freq, str):
+                    freq = freq.freqstr
+                assert isinstance(mod._index,
+                                  (pd.DatetimeIndex, pd.PeriodIndex))
+                assert mod._index_none is False
+                assert mod._index_dates is True
+                assert mod._index_generated is False
+                assert_equal(mod._index.freq, mod._index_freq)
+                assert mod.data.dates.equals(mod._index) is True
+                assert_equal(mod.data.freq, freq)
 
 
 @pytest.mark.not_vetted
@@ -260,29 +324,6 @@ def test_instantiation_valid():
 
     # Test pandas (Series, DataFrame); with index (no dates/freq argument)
     for base_endog in dta[2:4]:
-        # DatetimeIndex and PeriodIndex, should not raise warnings
-        with warnings.catch_warnings():
-            warnings.simplefilter('error')
-
-            for ix, freq in date_indexes + period_indexes:
-                endog = base_endog.copy()
-                endog.index = ix
-
-                mod = tsa_model.TimeSeriesModel(endog)
-                if freq is None:
-                    freq = ix.freq
-                if not isinstance(freq, str):
-                    freq = freq.freqstr
-                assert_equal(
-                    isinstance(mod._index, (pd.DatetimeIndex, pd.PeriodIndex)),
-                    True)
-                assert_equal(mod._index_none, False)
-                assert_equal(mod._index_dates, True)
-                assert_equal(mod._index_generated, False)
-                assert_equal(mod._index.freq, mod._index_freq)
-                assert_equal(mod.data.dates.equals(mod._index), True)
-                assert_equal(mod.data.freq, freq)
-
         # Increment index (this is a "supported" index in the sense that it
         # doesn't raise a warning, but obviously not a date index)
         endog = base_endog.copy()
@@ -296,29 +337,6 @@ def test_instantiation_valid():
         assert_equal(mod._index_freq, None)
         assert_equal(mod.data.dates, None)
         assert_equal(mod.data.freq, None)
-
-        # Supported indexes *when a freq is given*, should not raise a warning
-        with warnings.catch_warnings():
-            warnings.simplefilter('error')
-
-            for ix, freq in supported_date_indexes:
-                endog = base_endog.copy()
-                endog.index = ix
-
-                mod = tsa_model.TimeSeriesModel(endog, freq=freq)
-                if freq is None:
-                    freq = ix.freq
-                if not isinstance(freq, str):
-                    freq = freq.freqstr
-                assert_equal(
-                    isinstance(mod._index, (pd.DatetimeIndex, pd.PeriodIndex)),
-                    True)
-                assert_equal(mod._index_none, False)
-                assert_equal(mod._index_dates, True)
-                assert_equal(mod._index_generated, False)
-                assert_equal(mod._index.freq, mod._index_freq)
-                assert_equal(mod.data.dates.equals(mod._index), True)
-                assert_equal(mod.data.freq, freq)
 
         # Unsupported (or any) indexes to the given series, *when a supported
         # date and freq is given*, should not raise a warning
