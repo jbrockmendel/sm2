@@ -198,7 +198,6 @@ def _dotsum(x, y):
     Returns sum(x * y), where '*' is the pointwise product, computed
     efficiently for dense and sparse matrices.
     """
-
     if sparse.issparse(x):
         return x.multiply(y).sum()
     else:
@@ -444,14 +443,17 @@ def _smw_solver(s, A, AtA, BI, di):
     qmat[0:m, 0:m] += BI
     ix = np.arange(m, A.shape[1])
     qmat[ix, ix] += di
-    if sparse.issparse(A):
+
+    is_sparse = sparse.issparse(A)
+
+    if is_sparse:
         qi = sparse.linalg.inv(qmat)
         qmati = A.dot(qi.T).T
     else:
         qmati = np.linalg.solve(qmat, A.T)
 
     def solver(rhs):
-        if sparse.issparse(A):
+        if is_sparse:
             ql = qmati.dot(rhs)
             ql = A.dot(ql)
         else:
@@ -490,7 +492,6 @@ def _smw_logdet(s, A, AtA, BI, di, B_logdet):
     -------
     The log determinant of s*I + A*B*A'.
     """
-
     p = A.shape[0]
     ld = p * np.log(s)
     qmat = AtA / s
@@ -849,7 +850,8 @@ class MixedLM(base.LikelihoodModel):
                                   data=data)
         """
 
-        if "groups" not in kwargs.keys():
+        if "groups" not in kwargs:
+            # TODO: Just put it into frikkin args!
             raise AttributeError("'groups' is a required keyword argument " +
                                  "in MixedLM.from_formula")
         groups = kwargs["groups"]
@@ -1139,6 +1141,7 @@ class MixedLM(base.LikelihoodModel):
         results.k_re = self.k_re
         results.k_re2 = self.k_re2
         results.k_vc = self.k_vc
+        # TODO: Don't set these attributes here
 
         return MixedLMResultsWrapper(results)
 
