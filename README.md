@@ -11,6 +11,34 @@ this fails, feel free to open an issue.
 With luck, fixes made here will eventually be ported upstream.
 
 
+<table>
+<tr>
+  <td>Build Status</td>
+  <td>
+    <a href="https://travis-ci.org/jbrockmendel/sm2">
+    <img src="https://travis-ci.org/jbrockmendel/sm2.svg?branch=master" alt="travis build status" />
+    </a>
+  </td>
+</tr>
+<tr>
+  <td></td>
+  <td>
+    <a href="https://ci.appveyor.com/project/jbrockmendel/sm2">
+    <img src="https://ci.appveyor.com/api/projects/status/gw9cui82oc1lnyqi/branch/master?svg=true" alt="appveyor build status" />
+    </a>
+  </td>
+</tr>
+<tr>
+  <td>Coverage</td>
+  <td>
+    <a href="https://codecov.io/gh/jbrockmendel/sm2">
+    <img src="https://codecov.io/gh/jbrockmendel/sm2/branch/master/graph/badge.svg" />
+    </a>
+</td>
+</tr>
+</table>
+
+
 Changes vs Statsmodels
 ----------------------
 - sm2 contains a subset of the functionality of statsmodels.  The first big

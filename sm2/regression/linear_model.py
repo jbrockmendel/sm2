@@ -36,17 +36,19 @@ import warnings
 from six.moves import range
 
 import numpy as np
-from scipy.linalg import toeplitz
 from scipy import stats
 
 from sm2.tools.sm_exceptions import InvalidTestWarning
 from sm2.tools.tools import chain_dot, pinv_extended
 from sm2.tools.decorators import (resettable_cache,
-                                  cache_readonly,
+                                  cache_readonly, cached_data, cached_value,
                                   cache_writable, copy_doc)
 import sm2.base.model as base
 import sm2.base.wrapper as wrap
 from sm2.base import covtype
+
+# upstream yule_walker is implemented directly in linear_model
+from sm2.tsa.autocov import yule_walker
 
 # need import in module instead of lazily to copy `__doc__`
 from ._prediction import PredictionResults
@@ -179,6 +181,10 @@ class RegressionModel(base.LikelihoodModel):
                 "fit_regularized": (RegularizedResults,
                                     RegularizedResultsWrapper)}
 
+    @cached_value
+    def nobs(self):
+        return float(self.wexog.shape[0])
+
     def __init__(self, endog, exog, **kwargs):
         self._df_model = None
         self._df_resid = None
@@ -187,11 +193,12 @@ class RegressionModel(base.LikelihoodModel):
         super(RegressionModel, self).__init__(endog, exog, **kwargs)
         self._data_attr.extend(['pinv_wexog', 'wendog', 'wexog', 'weights'])
 
+    # TODO: merge this into __init__
     def initialize(self):
+        # Note: in GLSAR these get re-evaluated repeatedly,
+        # makes merging this into __init__ troublesome
         self.wexog = self.whiten(self.exog)
         self.wendog = self.whiten(self.endog)
-        # overwrite nobs from class Model:
-        self.nobs = float(self.wexog.shape[0])
 
     @property
     def df_model(self):
@@ -276,7 +283,7 @@ class RegressionModel(base.LikelihoodModel):
                 self.pinv_wexog, singular_values = pinv_extended(self.wexog)
                 self.normalized_cov_params = np.dot(self.pinv_wexog,
                                                     self.pinv_wexog.T)
-
+                # TODO: above is similar to RLM._initialize and GLM.initialize
                 # Cache these singular values for use later.
                 self.wexog_singular_values = singular_values
                 self.rank = np.linalg.matrix_rank(np.diag(singular_values))
@@ -501,7 +508,8 @@ class GLS(RegressionModel):
         """
         # TODO: combine this with OLS/WLS loglike and add _det_sigma argument
         nobs2 = self.nobs / 2.0
-        SSR = np.sum((self.wendog - np.dot(self.wexog, params))**2, axis=0)
+        wresid = self.wendog - np.dot(self.wexog, params)
+        SSR = np.sum(wresid**2, axis=0)
         llf = -np.log(SSR) * nobs2      # concentrated likelihood
         llf -= (1 + np.log(np.pi / nobs2)) * nobs2  # with likelihood constant
         if np.any(self.sigma):
@@ -663,7 +671,8 @@ class WLS(RegressionModel):
         where :math:`W` is a diagonal matrix
         """
         nobs2 = self.nobs / 2.0
-        SSR = np.sum((self.wendog - np.dot(self.wexog, params))**2, axis=0)
+        wresid = self.wendog - np.dot(self.wexog, params)
+        SSR = np.sum(wresid**2, axis=0)
         llf = -np.log(SSR) * nobs2      # concentrated likelihood
         llf -= (1 + np.log(np.pi / nobs2)) * nobs2  # with constant
         llf += 0.5 * np.sum(np.log(self.weights))
@@ -808,8 +817,7 @@ class OLS(WLS):
         -------
         The score vector.
         """
-        if not hasattr(self, "_wexog_xprod"):
-            self._setup_score_hess()
+        self._setup_score_hess()
 
         xtxb = np.dot(self._wexog_xprod, params)
         sdr = -self._wexog_x_wendog + xtxb
@@ -818,11 +826,15 @@ class OLS(WLS):
             ssr = self._wendog_xprod - 2 * np.dot(self._wexog_x_wendog.T,
                                                   params)
             ssr += np.dot(params, xtxb)
-            return -self.nobs * sdr / ssr
-        else:
-            return -sdr / scale
+            # scale-esque
+            scale = ssr / self.nobs
+        return -sdr / scale
 
     def _setup_score_hess(self):
+        if hasattr(self, "_wexog_xprod"):
+            # TODO: Don't do this with unpredictable attributes
+            return
+
         y = self.wendog
         if hasattr(self, 'offset'):
             y = y - self.offset
@@ -847,8 +859,7 @@ class OLS(WLS):
         -------
         The Hessian matrix.
         """
-        if not hasattr(self, "_wexog_xprod"):
-            self._setup_score_hess()
+        self._setup_score_hess()
 
         xtxb = np.dot(self._wexog_xprod, params)
 
@@ -1043,6 +1054,7 @@ class GLSAR(GLS):
         for i in range(maxiter - 1):
             if hasattr(self, 'pinv_wexog'):
                 del self.pinv_wexog
+                # TODO: What does this accomplish?
             self.initialize()
             results = self.fit()
             history['params'].append(results.params)
@@ -1076,7 +1088,6 @@ class GLSAR(GLS):
             results.iter += 1
 
         results.converged = converged
-
         return results
 
     def whiten(self, X):
@@ -1101,93 +1112,6 @@ class GLSAR(GLS):
         for i in range(self.order):
             _X[(i + 1):] = _X[(i + 1):] - self.rho[i] * X[0:-(i + 1)]
         return _X[self.order:]
-
-
-def yule_walker(X, order=1, method="unbiased", df=None, inv=False,
-                demean=True):
-    """
-    Estimate AR(p) parameters from a sequence X using Yule-Walker equation.
-
-    Unbiased or maximum-likelihood estimator (mle)
-
-    See, for example:
-
-    http://en.wikipedia.org/wiki/Autoregressive_moving_average_model
-
-    Parameters
-    ----------
-    X : array-like
-        1d array
-    order : integer, optional
-        The order of the autoregressive process.  Default is 1.
-    method : string, optional
-       Method can be 'unbiased' or 'mle' and this determines
-       denominator in estimate of autocorrelation function (ACF) at
-       lag k. If 'mle', the denominator is n=X.shape[0], if 'unbiased'
-       the denominator is n-k.  The default is unbiased.
-    df : integer, optional
-       Specifies the degrees of freedom. If `df` is supplied, then it
-       is assumed the X has `df` degrees of freedom rather than `n`.
-       Default is None.
-    inv : bool
-        If inv is True the inverse of R is also returned.  Default is
-        False.
-    demean : bool
-        True, the mean is subtracted from `X` before estimation.
-
-    Returns
-    -------
-    rho
-        The autoregressive coefficients
-    sigma
-        TODO
-
-    Examples
-    --------
-    >>> import sm2.api as sm
-    >>> from sm2.datasets.sunspots import load
-    >>> data = load()
-    >>> rho, sigma = sm.regression.yule_walker(data.endog,
-    ...                                        order=4, method="mle")
-
-    >>> rho
-    array([ 1.28310031, -0.45240924, -0.20770299,  0.04794365])
-    >>> sigma
-    16.808022730464351
-    """
-    if inv:  # pragma: no cover
-        raise NotImplementedError("option `inv` not ported from upstream, "
-                                  "since it is not used or tested there.")
-    # TODO: define R better, look back at notes and technical notes on YW.
-    # First link here is useful
-    # http://www-stat.wharton.upenn.edu/~steele/Courses/956/ResourceDetails/YuleWalkerAndMore.htm
-    method = str(method).lower()
-    if method not in ["unbiased", "mle"]:  # pragma: no cover
-        raise ValueError("ACF estimation method must be 'unbiased' or 'MLE'")
-
-    X = np.array(X, dtype=np.float64)
-    if demean:
-        # automatically demean's X
-        X -= X.mean()
-    n = df or X.shape[0]
-
-    if method == "unbiased":
-        # this is df_resid ie., n - p
-        denom = lambda k: n - k
-    else:
-        denom = lambda k: n
-    if X.ndim > 1 and X.shape[1] != 1:  # pragma: no cover
-        raise ValueError("expecting a vector to estimate AR parameters")
-
-    r = np.zeros(order + 1, np.float64)
-    r[0] = (X**2).sum() / denom(0)
-    for k in range(1, order + 1):
-        r[k] = (X[0:-k] * X[k:]).sum() / denom(k)
-    R = toeplitz(r[:-1])
-
-    rho = np.linalg.solve(R, r[1:])
-    sigmasq = r[0] - (r[1:] * rho).sum()
-    return rho, np.sqrt(sigmasq)
 
 
 class RegressionResults(base.LikelihoodModelResults):
@@ -1333,7 +1257,7 @@ class RegressionResults(base.LikelihoodModelResults):
 
     _cache = {}  # needs to be a class attribute for scale setter?
 
-    @cache_readonly
+    @cached_value
     def nobs(self):
         # TODO: make this not-depend on wexog in case data has been removed
         return float(self.model.wexog.shape[0])
@@ -1399,7 +1323,7 @@ class RegressionResults(base.LikelihoodModelResults):
         ci = super(RegressionResults, self).conf_int(alpha=alpha, cols=cols)
         return ci
 
-    @cache_readonly
+    @cached_data
     def wresid(self):
         return self.model.wendog - self.model.predict(self.params,
                                                       self.model.wexog)
@@ -1503,11 +1427,11 @@ class RegressionResults(base.LikelihoodModelResults):
     def bse(self):
         return np.sqrt(np.diag(self.cov_params()))
 
-    @cache_readonly
+    @cached_value
     def aic(self):
         return -2 * self.llf + 2 * (self.df_model + self.k_constant)
 
-    @cache_readonly
+    @cached_value
     def bic(self):
         return (-2 * self.llf + np.log(self.nobs) * (self.df_model +
                                                      self.k_constant))

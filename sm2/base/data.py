@@ -2,6 +2,7 @@
 Base tools for handling various kinds of data structures, attaching metadata to
 results, and doing data cleaning
 """
+import copy
 
 from six.moves import range, reduce, zip
 import numpy as np
@@ -50,145 +51,25 @@ def _nan_rows(*arrs):
     return reduce(_nan_row_maybe_two_inputs, arrs).squeeze()
 
 
-class ModelData(object):
-    """
-    Class responsible for handling input data and extracting metadata into the
-    appropriate form
-    """
-    _param_names = None
-
-    def __init__(self, endog, exog=None, missing='none', hasconst=None,
-                 **kwargs):
-        if 'design_info' in kwargs:
-            self.design_info = kwargs.pop('design_info')
-        if 'formula' in kwargs:
-            self.formula = kwargs.pop('formula')
-        if missing != 'none':
-            arrays, nan_idx = self.handle_missing(endog, exog, missing,
-                                                  **kwargs)
-            self.missing_row_idx = nan_idx
-            self.__dict__.update(arrays)  # attach all the data arrays
-            self.orig_endog = self.endog
-            self.orig_exog = self.exog
-            self.endog, self.exog = self._convert_endog_exog(self.endog,
-                                                             self.exog)
-        else:
-            self.__dict__.update(kwargs)  # attach the extra arrays anyway
-            self.orig_endog = endog
-            self.orig_exog = exog
-            self.endog, self.exog = self._convert_endog_exog(endog, exog)
-
-        # this has side-effects, attaches k_constant and const_idx
-        self._handle_constant(hasconst)
-        self._check_integrity()
-        self._cache = resettable_cache()
-
-    def __getstate__(self):
-        from copy import copy
-        d = copy(self.__dict__)
-        if "design_info" in d:  # TOOD: not hit in tests
-            del d["design_info"]
-            d["restore_design_info"] = True
-        return d
-
-    def __setstate__(self, d):
-        if "restore_design_info" in d:  # TODO: not hit in tests
-            # NOTE: there may be a more performant way to do this
-            from patsy import dmatrices, PatsyError
-            exc = []
-            try:
-                data = d['frame']
-            except KeyError:
-                data = d['orig_endog'].join(d['orig_exog'])
-
-            for depth in [2, 3, 1, 0, 4]:
-                # sequence is a guess where to likely find it
-                try:
-                    _, design = dmatrices(d['formula'], data, eval_env=depth,
-                                          return_type='dataframe')
-                    break
-                except (NameError, PatsyError) as e:
-                    print('not in depth %d' % depth)
-                    exc.append(e)
-                    # why do I need a reference from outside except block
-                    pass
-            else:
-                raise exc[-1]
-
-            self.design_info = design.design_info
-            del d["restore_design_info"]
-        self.__dict__.update(d)
-
-    def _handle_constant(self, hasconst):
-        if hasconst is not None:
-            if hasconst:
-                self.k_constant = 1
-                self.const_idx = None
-            else:
-                self.k_constant = 0
-                self.const_idx = None
-        elif self.exog is None:
-            self.const_idx = None
-            self.k_constant = 0
-        else:
-            # detect where the constant is
-            check_implicit = False
-            ptp_ = self.exog.ptp(axis=0)
-            if not np.isfinite(ptp_).all():
-                raise MissingDataError('exog contains inf or nans')
-            const_idx = np.where(ptp_ == 0)[0].squeeze()
-            self.k_constant = const_idx.size
-
-            if self.k_constant == 1:
-                if self.exog[:, const_idx].mean() != 0:
-                    self.const_idx = const_idx
-                else:
-                    # we only have a zero column and no other constant
-                    check_implicit = True
-            elif self.k_constant > 1:
-                # we have more than one constant column
-                # look for ones
-                values = []  # keep values if we need != 0
-                for idx in const_idx:
-                    value = self.exog[:, idx].mean()
-                    if value == 1:
-                        self.k_constant = 1
-                        self.const_idx = idx
-                        break
-                    values.append(value)
-                else:
-                    # we didn't break, no column of ones
-                    pos = (np.array(values) != 0)
-                    if pos.any():
-                        # take the first nonzero column
-                        self.k_constant = 1
-                        self.const_idx = const_idx[pos.argmax()]
-                    else:
-                        # only zero columns
-                        check_implicit = True
-            elif self.k_constant == 0:
-                check_implicit = True
-            else:
-                # shouldn't be here
-                pass
-
-            if check_implicit:
-                # look for implicit constant
-                # Compute rank of augmented matrix
-                augmented_exog = np.column_stack((np.ones(self.exog.shape[0]),
-                                                  self.exog))
-                rank_augm = np.linalg.matrix_rank(augmented_exog)
-                rank_orig = np.linalg.matrix_rank(self.exog)
-                self.k_constant = int(rank_orig == rank_augm)
-                self.const_idx = None
-
+class NullHandler(object):
+    """Class for handling Nans in input data"""
     @classmethod
-    def _drop_nans(cls, x, nan_mask):
-        return x[nan_mask]
+    def _drop_nans_1d(cls, x, nan_mask):
+        if hasattr(x, 'ix'):
+            # pandas object
+            return x.loc[nan_mask]
+        else:
+            return x[nan_mask]
 
     @classmethod
     def _drop_nans_2d(cls, x, nan_mask):
-        return x[nan_mask][:, nan_mask]
+        # TODO: Any reason to do this in two slicing steps instead of one?
+        if hasattr(x, 'ix'):
+            # pandas object
+            return x.loc[nan_mask].loc[:, nan_mask]
+        else:
+            # extra arguments could be plain ndarrays
+            return x[nan_mask][:, nan_mask]
 
     @classmethod
     def handle_missing(cls, endog, exog, missing, **kwargs):
@@ -286,16 +167,16 @@ class ModelData(object):
             nan_mask = ~nan_mask
             # TODO: Don't negate nan_mask with the same name; its confusing
             combined = dict(zip(combined_names,
-                                [cls._drop_nans(x, nan_mask)
+                                [cls._drop_nans_1d(x, nan_mask)
                                  for x in combined]))
 
             if missing_idx is not None:
                 if updated_row_mask is not None:
                     updated_row_mask = ~updated_row_mask
                     # update endog/exog with this new information
-                    endog = cls._drop_nans(endog, updated_row_mask)
+                    endog = cls._drop_nans_1d(endog, updated_row_mask)
                     if exog is not None:
-                        exog = cls._drop_nans(exog, updated_row_mask)
+                        exog = cls._drop_nans_1d(exog, updated_row_mask)
 
                 combined['endog'] = endog
                 if exog is not None:
@@ -310,13 +191,143 @@ class ModelData(object):
         else:  # pragma: no cover
             raise ValueError("missing option %s not understood" % missing)
 
-    def _convert_endog_exog(self, endog, exog):
 
+class ModelData(NullHandler):
+    """
+    Class responsible for handling input data and extracting metadata into the
+    appropriate form
+    """
+    _param_names = None
+
+    def __init__(self, endog, exog=None, missing='none', hasconst=None,
+                 **kwargs):
+        if 'design_info' in kwargs:
+            self.design_info = kwargs.pop('design_info')
+        if 'formula' in kwargs:
+            self.formula = kwargs.pop('formula')
+        if missing != 'none':
+            arrays, nan_idx = self.handle_missing(endog, exog, missing,
+                                                  **kwargs)
+            self.missing_row_idx = nan_idx
+            self.__dict__.update(arrays)  # attach all the data arrays
+            self.orig_endog = self.endog
+            self.orig_exog = self.exog
+            self.endog, self.exog = self._convert_endog_exog(self.endog,
+                                                             self.exog)
+        else:
+            self.__dict__.update(kwargs)  # attach the extra arrays anyway
+            self.orig_endog = endog
+            self.orig_exog = exog
+            self.endog, self.exog = self._convert_endog_exog(endog, exog)
+
+        # this has side-effects, attaches k_constant and const_idx
+        self._handle_constant(hasconst)
+        self._check_integrity()
+        self._cache = resettable_cache()
+
+    def __getstate__(self):
+        d = copy.copy(self.__dict__)
+        if "design_info" in d:  # TOOD: not hit in tests
+            del d["design_info"]
+            d["restore_design_info"] = True
+        return d
+
+    def __setstate__(self, d):
+        if "restore_design_info" in d:  # TODO: not hit in tests
+            # NOTE: there may be a more performant way to do this
+            from patsy import dmatrices, PatsyError
+            exc = []
+            try:
+                data = d['frame']
+            except KeyError:
+                data = d['orig_endog'].join(d['orig_exog'])
+
+            for depth in [2, 3, 1, 0, 4]:
+                # sequence is a guess where to likely find it
+                try:
+                    _, design = dmatrices(d['formula'], data, eval_env=depth,
+                                          return_type='dataframe')
+                    break
+                except (NameError, PatsyError) as e:
+                    exc.append(e)
+                    # why do I need a reference from outside except block
+                    pass
+            else:
+                raise exc[-1]
+
+            self.design_info = design.design_info
+            del d["restore_design_info"]
+        self.__dict__.update(d)
+
+    def _handle_constant(self, hasconst):
+        if hasconst is not None:
+            if hasconst:
+                self.k_constant = 1
+                self.const_idx = None
+            else:
+                self.k_constant = 0
+                self.const_idx = None
+        elif self.exog is None:
+            self.const_idx = None
+            self.k_constant = 0
+        else:
+            # detect where the constant is
+            check_implicit = False
+            ptp_ = self.exog.ptp(axis=0)
+            if not np.isfinite(ptp_).all():
+                raise MissingDataError('exog contains inf or nans')
+            const_idx = np.where(ptp_ == 0)[0].squeeze()
+            self.k_constant = const_idx.size
+
+            if self.k_constant == 1:
+                if self.exog[:, const_idx].mean() != 0:
+                    self.const_idx = const_idx
+                else:
+                    # we only have a zero column and no other constant
+                    check_implicit = True
+            elif self.k_constant > 1:
+                # we have more than one constant column
+                # look for ones
+                values = []  # keep values if we need != 0
+                for idx in const_idx:
+                    value = self.exog[:, idx].mean()
+                    if value == 1:
+                        self.k_constant = 1
+                        self.const_idx = idx
+                        break
+                    values.append(value)
+                else:
+                    # we didn't break, no column of ones
+                    pos = (np.array(values) != 0)
+                    if pos.any():
+                        # take the first nonzero column
+                        self.k_constant = 1
+                        self.const_idx = const_idx[pos.argmax()]
+                    else:
+                        # only zero columns
+                        check_implicit = True
+            elif self.k_constant == 0:
+                check_implicit = True
+            else:
+                # shouldn't be here
+                pass
+
+            if check_implicit:
+                # look for implicit constant
+                # Compute rank of augmented matrix
+                augmented_exog = np.column_stack((np.ones(self.exog.shape[0]),
+                                                  self.exog))
+                rank_augm = np.linalg.matrix_rank(augmented_exog)
+                rank_orig = np.linalg.matrix_rank(self.exog)
+                self.k_constant = int(rank_orig == rank_augm)
+                self.const_idx = None
+
+    def _convert_endog_exog(self, endog, exog):
         # for consistent outputs if endog is (n,1)
-        yarr = self._get_yarr(endog)
+        yarr = _get_yarr(endog)
         xarr = None
         if exog is not None:
-            xarr = self._get_xarr(exog)
+            xarr = _get_xarr(exog)
             if xarr.ndim == 1:
                 xarr = xarr[:, None]
             if xarr.ndim != 2:  # pragma: no cover
@@ -327,7 +338,7 @@ class ModelData(object):
     @cache_writable()
     def ynames(self):
         endog = self.orig_endog
-        ynames = self._get_names(endog)
+        ynames = _get_names(endog)
         if not ynames:
             ynames = _make_endog_names(self.endog)
 
@@ -340,7 +351,7 @@ class ModelData(object):
     def xnames(self):
         exog = self.orig_exog
         if exog is not None:
-            xnames = self._get_names(exog)
+            xnames = _get_names(exog)
             if not xnames:
                 xnames = _make_exog_names(self.exog)
             return list(xnames)
@@ -368,38 +379,20 @@ class ModelData(object):
     def _get_row_labels(self, arr):
         return None
 
-    def _get_names(self, arr):
-        if isinstance(arr, DataFrame):
-            return list(arr.columns)
-        elif isinstance(arr, Series):
-            if arr.name:
-                return [arr.name]
-            else:
-                return
-        else:
-            try:
-                return arr.dtype.names
-            except AttributeError:
-                pass
+    def _get_names(self, arr):  # pragma: no cover
+        raise NotImplementedError("_get_names method not ported from upstream; "
+                                  "use the module-level _get_names function "
+                                  "instead.")
 
-        return None
+    def _get_yarr(self, endog):  # pragma: no cover
+        raise NotImplementedError("_get_yarr method not ported from upstream; "
+                                  "use the module-level _get_yarr function "
+                                  "instead.")
 
-    def _get_yarr(self, endog):
-        if data_util._is_structured_ndarray(endog):
-            endog = data_util.struct_to_ndarray(endog)
-        endog = np.asarray(endog)
-        if len(endog) == 1:  # never squeeze to a scalar
-            if endog.ndim == 1:
-                return endog
-            elif endog.ndim > 1:
-                return np.asarray([endog.squeeze()])
-
-        return endog.squeeze()
-
-    def _get_xarr(self, exog):
-        if data_util._is_structured_ndarray(exog):
-            exog = data_util.struct_to_ndarray(exog)
-        return np.asarray(exog)
+    def _get_xarr(self, exog):  # pragma: no cover
+        raise NotImplementedError("_get_xarr method not ported from upstream; "
+                                  "use the module-level _get_xarr function "
+                                  "instead.")
 
     def _check_integrity(self):
         if self.exog is not None:
@@ -457,8 +450,7 @@ class ModelData(object):
 
 
 class PatsyData(ModelData):
-    def _get_names(self, arr):
-        return arr.design_info.column_names
+    pass
 
 
 class PandasData(ModelData):
@@ -475,20 +467,6 @@ class PandasData(ModelData):
             raise ValueError("Pandas data cast to numpy dtype of object. "
                              "Check input data with np.asarray(data).")
         return super(PandasData, self)._convert_endog_exog(endog, exog)
-
-    @classmethod
-    def _drop_nans(cls, x, nan_mask):
-        if hasattr(x, 'ix'):
-            return x.loc[nan_mask]
-        else:  # extra arguments could be plain ndarrays
-            return super(PandasData, cls)._drop_nans(x, nan_mask)
-
-    @classmethod
-    def _drop_nans_2d(cls, x, nan_mask):
-        if hasattr(x, 'ix'):
-            return x.loc[nan_mask].loc[:, nan_mask]
-        else:  # extra arguments could be plain ndarrays
-            return super(PandasData, cls)._drop_nans_2d(x, nan_mask)
 
     def _check_integrity(self):
         endog, exog = self.orig_endog, self.orig_exog
@@ -570,6 +548,45 @@ class PandasData(ModelData):
             return Series(squeezed, name=self.ynames)
         else:
             return DataFrame(result, columns=self.ynames)
+
+
+def _get_names(arr):
+    if hasattr(arr, 'design_info'):
+        # PatsyData
+        return arr.design_info.column_names
+    elif isinstance(arr, DataFrame):
+        return list(arr.columns)
+    elif isinstance(arr, Series):
+        if arr.name:  # TODO: What if arr.name is `False`??
+            return [arr.name]
+        else:
+            return None
+    else:
+        try:
+            return arr.dtype.names
+        except AttributeError:
+            pass
+
+    return None
+
+
+def _get_xarr(exog):
+    if data_util._is_structured_ndarray(exog):
+        exog = data_util.struct_to_ndarray(exog)
+    return np.asarray(exog)
+
+
+def _get_yarr(endog):
+    if data_util._is_structured_ndarray(endog):
+        endog = data_util.struct_to_ndarray(endog)
+    endog = np.asarray(endog)
+    if len(endog) == 1:  # never squeeze to a scalar
+        if endog.ndim == 1:
+            return endog
+        elif endog.ndim > 1:
+            return np.asarray([endog.squeeze()])
+
+    return endog.squeeze()
 
 
 def _make_endog_names(endog):

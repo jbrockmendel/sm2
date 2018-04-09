@@ -38,30 +38,26 @@ def _maybe_get_pandas_wrapper(X, trim_head=None, trim_tail=None):
 
 
 # only used in tsa.seasonal, which is not yet ported.  TODO: un-port?
-def _maybe_get_pandas_wrapper_freq(X, trim=None):
-    if _is_using_pandas(X, None):
-        index = X.index
-        func = _get_pandas_wrapper(X, trim)
-        freq = index.inferred_freq
-        return func, freq
-    else:
-        return lambda x: x, None
+def _maybe_get_pandas_wrapper_freq(X, trim=None):  # pragma: no cover
+    raise NotImplementedError("_maybe_get_pandas_wrapper not ported from "
+                              "upstream, as it is only used in tsa.seasonal, "
+                              "which is not (yet) ported.")
 
 
 def pandas_wrapper(func, trim_head=None, trim_tail=None, names=None, *args,
-                   **kwargs):
+                   **kwargs):  # pragma: no cover
     raise NotImplementedError("pandas_wrapper not ported from upstream "
                               "as it is neither used nor tested there.")
 
 
 def pandas_wrapper_bunch(func, trim_head=None, trim_tail=None,
-                         names=None, *args, **kwargs):
+                         names=None, *args, **kwargs):  # pragma: no cover
     raise NotImplementedError("pandas_wrapper_bunch not ported from upstream "
                               "as it is neither used nor tested there.")
 
 
 def pandas_wrapper_predict(func, trim_head=None, trim_tail=None,
-                           columns=None, *args, **kwargs):
+                           columns=None, *args, **kwargs):  # pragma: no cover
     raise NotImplementedError("pandas_wrapper_predict not ported from upstream "
                               "as it is neither used nor tested there.")
 

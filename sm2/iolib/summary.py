@@ -88,24 +88,14 @@ def summary_top(results, title=None, gleft=None, gright=None,
     if title is None:
         title = results.model.__class__.__name__ + 'Regression Results'
 
-    if gen_left is None:  # TODO: not hit in tests
-        # default: General part of the summary table, Applicable to all? models
-        gen_left = [('Dep. Variable:', None),
-                    ('Model type:', None),
-                    ('Date:', None),
-                    ('No. Observations:', None),
-                    ('Df model:', None),
-                    ('Df resid:', None)]
-
-        try:
-            results.llf
-        except (AttributeError, NotImplementedError):
-            # TODO: fix upstream bare exception
-            pass
-        else:
-            gen_left.append(('Log-Likelihood', None))
-
-        gen_right = []
+    if gen_left is None:  # pragma: no cover
+        raise NotImplementedError("Case with gen_left being None "
+                                  "is not ported from upstream, as it is not "
+                                  "used or tested.  "
+                                  "It is not clear what the intended use "
+                                  "case is.  If you have such a use case, "
+                                  "please file a bug report.  "
+                                  "See GH#4450 (upstream)")
 
     gen_title = title
     gen_header = None

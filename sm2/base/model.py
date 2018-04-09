@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
 from __future__ import print_function
 import warnings
 from collections import defaultdict
@@ -10,7 +12,9 @@ from scipy import stats
 
 from sm2.tools.data import _is_using_pandas
 from sm2.tools.tools import recipr, nan_dot
-from sm2.tools.decorators import resettable_cache, cache_readonly, copy_doc
+from sm2.tools.decorators import (resettable_cache,
+                                  cache_readonly, cached_value, cached_data,
+                                  copy_doc)
 from sm2.tools.numdiff import approx_fprime, approx_hess
 from sm2.tools.sm_exceptions import (ValueWarning, HessianInversionWarning,
                                      ConvergenceWarning)
@@ -72,7 +76,7 @@ class Model(object):
         """Names of exogenous variables"""
         return self.data.xnames
 
-    @property
+    @cached_value
     def k_exog(self):
         if self.exog is None:
             return 0
@@ -446,7 +450,7 @@ class GenericLikelihoodModel(LikelihoodModel):
 
     See Also
     --------
-    subclasses in directory miscmodels
+    subclasses in directory miscmodels (upstream, not ported)
     """
     def __init__(self, endog, exog=None, loglike=None, score=None,
                  hessian=None, missing='none', extra_params_names=None,
@@ -501,9 +505,9 @@ class GenericLikelihoodModel(LikelihoodModel):
         # for a model
         if self.exog is not None:
             # assume constant
-            er = np.linalg.matrix_rank(self.exog)
-            self.df_model = float(er - 1)
-            self.df_resid = float(self.exog.shape[0] - er)
+            rank = np.linalg.matrix_rank(self.exog)
+            self.df_model = float(rank) - 1
+            self.df_resid = float(self.exog.shape[0]) - (self.df_model + 1)
         else:
             self.df_model = np.nan
             self.df_resid = np.nan
@@ -641,29 +645,32 @@ class Results(object):
         self.params = params
 
         self.k_constr = k_constr
+        self.k_constant = model.k_constant
 
         self.__dict__.update(kwargs)
+        # TODO: Avoid self.__dict__.update
         self.initialize(model, params, **kwargs)
         self._data_attr = []
 
     def initialize(self, model, params, **kwargs):
-        if hasattr(model, 'k_constant'):
-            # TODO: This attribute should _always_ exist
-            self.k_constant = model.k_constant
+        # TODO: Get rid of this redundant method
+        pass
 
-    @cache_readonly
+    @cached_data
     def fittedvalues(self):
         """
         (array) The predicted values of the model. An (nobs x k_endog) array.
         """
         return self.model.predict(self.params)
 
-    @cache_readonly
+    @cached_data
     def resid(self):
         """
         (array) The model residuals. An (nobs x k_endog) array.
         """
         return self.model.endog - self.fittedvalues
+        # TODO: Is this only accurate for linear models?
+        # is there a more generally correct version?
 
     def predict(self, exog=None, transform=True, *args, **kwargs):
         """
@@ -715,7 +722,7 @@ class Results(object):
         predict_results = self.model.predict(self.params, exog,
                                              *args, **kwargs)
 
-        # TODO: Shouldnt this be done by wrapping?
+        # TODO: Shouldn't this be done by wrapping?
         if exog_index is not None and not hasattr(predict_results,
                                                   'predicted_values'):
             if predict_results.ndim == 1:
@@ -920,28 +927,28 @@ class LikelihoodModelResults(wrap.SaveLoadMixin, Results):
     def normalized_cov_params(self):
         raise NotImplementedError
 
-    @cache_readonly
+    @cached_value
     def llf(self):
         """
         (float) The value of the log-likelihood function evaluated at `params`.
         """
         return self.model.loglike(self.params)
 
-    @cache_readonly
+    @cached_data
     def llf_obs(self):
         """
         (float) The value of the log-likelihood function evaluated at `params`.
         """
         return self.model.loglikeobs(self.params)
 
-    @cache_readonly
+    @cached_value
     def tvalues(self):
         """
         Return the t-statistic for a given parameter estimate.
         """
         return self.params / self.bse
 
-    @cache_readonly
+    @cached_value
     def pvalues(self):
         if self.use_t:
             df_resid = getattr(self, 'df_resid_inference', self.df_resid)
@@ -983,11 +990,12 @@ class LikelihoodModelResults(wrap.SaveLoadMixin, Results):
         # GH#3299
         if ((not hasattr(self, 'cov_params_default')) and
                 (self.normalized_cov_params is None)):
-            bse_ = np.empty(len(self.params))
-            bse_[:] = np.nan
+            bse = np.empty(len(self.params))
+            bse[:] = np.nan
         else:
-            bse_ = np.sqrt(np.diag(self.cov_params()))
-        return bse_
+            bse = np.sqrt(np.diag(self.cov_params()))
+        # reshape is unnecessary in many cases, needed for e.g MNLogit
+        return bse.reshape(self.params.shape)
 
     def cov_params(self, r_matrix=None, column=None, scale=None, cov_p=None,
                    other=None):
@@ -1648,7 +1656,7 @@ wrap.populate_wrapper(LikelihoodResultsWrapper,  # noqa:E305
 # be used
 class ResultMixin(object):
 
-    @cache_readonly
+    @cached_value
     def df_modelwc(self):
         # collect different ways of defining the number of parameters, used for
         # aic, bic
@@ -1662,60 +1670,43 @@ class ResultMixin(object):
         else:
             return self.params.size
 
-    @cache_readonly
+    @cached_value
     def aic(self):
         return -2 * self.llf + 2 * (self.df_modelwc)
 
-    @cache_readonly
+    @cached_value
     def bic(self):
         return -2 * self.llf + np.log(self.nobs) * (self.df_modelwc)
 
     @cache_readonly
-    def score_obsv(self):
-        """cached Jacobian of log-likelihood"""
-        return self.model.score_obs(self.params)
+    def score_obsv(self):  # pragma: no cover
+        raise NotImplementedError("score_obsv not ported from upstream, "
+                                  "as it is neither used nor tested")
 
     @cache_readonly
-    def hessv(self):
-        """cached Hessian of log-likelihood"""
-        return self.model.hessian(self.params)
+    def hessv(self):  # pragma: no cover
+        raise NotImplementedError("hessv not ported from upstream, "
+                                  "as it is neither used nor tested")
 
     @cache_readonly
-    def covjac(self):
-        """
-        covariance of parameters based on outer product of jacobian of
-        log-likelihood
-        """
-        #  if not hasattr(self, '_results'):
-        #      raise ValueError('need to call fit first')
-        #      #self.fit()
-        #  self.jacv = jacv = self.jac(self._results.params)
-        jacv = self.score_obsv
-        return np.linalg.inv(np.dot(jacv.T, jacv))
+    def covjac(self):  # pragma: no cover
+        raise NotImplementedError("covjac not ported from upstream, "
+                                  "as it is neither used nor tested")
 
     @cache_readonly
-    def covjhj(self):
-        """covariance of parameters based on HJJH
-
-        dot product of Hessian, Jacobian, Jacobian, Hessian of likelihood
-
-        name should be covhjh
-        """
-        jacv = self.score_obsv
-        hessv = self.hessv
-        hessinv = np.linalg.inv(hessv)
-        #  self.hessinv = hessin = self.cov_params()
-        return np.dot(hessinv, np.dot(np.dot(jacv.T, jacv), hessinv))
+    def covjhj(self):  # pragma: no cover
+        raise NotImplementedError("covjhj not ported from upstream, "
+                                  "as it is neither used nor tested")
 
     @cache_readonly
-    def bsejhj(self):
-        """standard deviation of parameter estimates based on covHJH"""
-        return np.sqrt(np.diag(self.covjhj))
+    def bsejhj(self):  # pragma: no cover
+        raise NotImplementedError("bsejhj not ported from upstream, "
+                                  "as it is neither used nor tested")
 
     @cache_readonly
-    def bsejac(self):
-        """standard deviation of parameter estimates based on covjac"""
-        return np.sqrt(np.diag(self.covjac))
+    def bsejac(self):  # pragma: no cover
+        raise NotImplementedError("bsejac not ported from upstream, "
+                                  "as it is neither used nor tested")
 
     def bootstrap(self, nrep=100, method='nm', disp=0, store=1):
         """simple bootstrap to get mean and variance of estimator

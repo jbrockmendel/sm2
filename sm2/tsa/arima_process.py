@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
 """ARMA process and estimation with scipy.signal.lfilter
 
 Notes
@@ -21,8 +23,10 @@ import warnings
 from six.moves import range
 import numpy as np
 from scipy import signal, optimize, linalg
+from pandas.util._decorators import deprecate_kwarg
 
 from sm2.tools.decorators import copy_doc
+from sm2.tsa import wold
 
 __all__ = ['arma_acf', 'arma_acovf', 'arma_generate_sample',
            'arma_impulse_response', 'arma2ar', 'arma2ma', 'deconvolve',
@@ -137,7 +141,8 @@ def arma_acovf(ar, ma, nobs=10):
     return acovf[:nobs]
 
 
-def arma_acf(ar, ma, lags=10, **kwargs):
+@deprecate_kwarg('nobs', 'lags')
+def arma_acf(ar, ma, lags=10):
     """
     Theoretical autocorrelation function of an ARMA process
 
@@ -162,16 +167,12 @@ def arma_acf(ar, ma, lags=10, **kwargs):
     acf
     acovf
     """
-    if 'nobs' in kwargs:
-        lags = kwargs['nobs']
-        warnings.warn('nobs is deprecated in favor of lags',
-                      DeprecationWarning)
-
     acovf = arma_acovf(ar, ma, lags)
     return acovf / acovf[0]
 
 
-def arma_pacf(ar, ma, lags=10, **kwargs):
+@deprecate_kwarg('nobs', 'lags')
+def arma_pacf(ar, ma, lags=10):
     """
     Partial autocorrelation function of an ARMA process
 
@@ -195,10 +196,6 @@ def arma_pacf(ar, ma, lags=10, **kwargs):
 
     not tested/checked yet
     """
-    if 'nobs' in kwargs:
-        lags = kwargs['nobs']
-        warnings.warn('nobs is deprecated in favor of lags',
-                      DeprecationWarning)
     # TODO: Should use rank 1 inverse update
     apacf = np.zeros(lags)
     acov = arma_acf(ar, ma, lags=lags + 1)
@@ -253,7 +250,8 @@ def arma_periodogram(ar, ma, worN=None, whole=0):
     return w, sd
 
 
-def arma_impulse_response(ar, ma, leads=100, **kwargs):
+@deprecate_kwarg('nobs', 'leads')
+def arma_impulse_response(ar, ma, leads=100):
     """
     Get the impulse response function (MA representation) for ARMA process
 
@@ -307,16 +305,13 @@ def arma_impulse_response(ar, ma, leads=100, **kwargs):
     array([ 1.        ,  1.3       ,  1.24      ,  0.992     ,  0.7936    ,
             0.63488   ,  0.507904  ,  0.4063232 ,  0.32505856,  0.26004685])
     """
-    if 'nobs' in kwargs:
-        leads = kwargs['nobs']
-        warnings.warn('nobs is deprecated in favor of leads',
-                      DeprecationWarning)
     impulse = np.zeros(leads)
     impulse[0] = 1.
     return signal.lfilter(ma, ar, impulse)
 
 
-def arma2ma(ar, ma, lags=100, **kwargs):
+@deprecate_kwarg('nobs', 'lags')
+def arma2ma(ar, ma, lags=100):
     """
     Get the MA representation of an ARMA process
 
@@ -337,20 +332,12 @@ def arma2ma(ar, ma, lags=100, **kwargs):
     Notes
     -----
     Equivalent to ``arma_impulse_response(ma, ar, leads=100)``
-
-
-    Examples
-    --------
     """
-    if 'nobs' in kwargs:
-        lags = kwargs['nobs']
-        warnings.warn('nobs is deprecated in favor of lags',
-                      DeprecationWarning)
-
     return arma_impulse_response(ar, ma, leads=lags)
 
 
-def arma2ar(ar, ma, lags=100, **kwargs):
+@deprecate_kwarg('nobs', 'lags')
+def arma2ar(ar, ma, lags=100):
     """
     Get the AR representation of an ARMA process
 
@@ -371,15 +358,7 @@ def arma2ar(ar, ma, lags=100, **kwargs):
     Notes
     -----
     Equivalent to ``arma_impulse_response(ma, ar, leads=100)``
-
-
-    Examples
-    --------
     """
-    if 'nobs' in kwargs:
-        lags = kwargs['nobs']
-        warnings.warn('nobs is deprecated in favor of lags',
-                      DeprecationWarning)
     return arma_impulse_response(ma, ar, leads=lags)
 
 
@@ -552,7 +531,7 @@ def deconvolve(num, den, n=None):  # pragma: no cover
                               "scipy.signal.signaltools.")
 
 
-class ArmaProcess(object):
+class ArmaProcess(wold.ARMARoots):
     r"""
     Theoretical properties of an ARMA process for specified lag-polynomials
 
@@ -675,29 +654,33 @@ class ArmaProcess(object):
         nobs = nobs or model_results.nobs
         return cls(np.r_[1, -arcoefs], np.r_[1, macoefs], nobs=nobs)
 
-    def __mul__(self, oth):
-        if isinstance(oth, self.__class__):
-            ar = (self.arpoly * oth.arpoly).coef
-            ma = (self.mapoly * oth.mapoly).coef
+    def __mul__(self, other):
+        if isinstance(other, self.__class__):
+            ar = (self.arpoly * other.arpoly).coef
+            ma = (self.mapoly * other.mapoly).coef
         else:
             try:
-                aroth, maoth = oth
+                aroth, maoth = other
                 arpolyoth = np.polynomial.Polynomial(aroth)
                 mapolyoth = np.polynomial.Polynomial(maoth)
                 ar = (self.arpoly * arpolyoth).coef
                 ma = (self.mapoly * mapolyoth).coef
-            except:
-                raise TypeError('Other type is not a valid type')
+            except (ValueError, TypeError):
+                raise TypeError('Cannot multiply type {cls} with type {other}'
+                                .format(cls=type(self).__name__,
+                                        other=type(other).__name__))
         return self.__class__(ar, ma, nobs=self.nobs)
 
     def __repr__(self):
-        msg = 'ArmaProcess({0}, {1}, nobs={2}) at {3}'
-        return msg.format(self.ar.tolist(), self.ma.tolist(),
-                          self.nobs, hex(id(self)))
+        msg = '{cls}({ar}, {ma}, nobs={nobs})'
+        return msg.format(cls=self.__class__.__name__,
+                          ar=self.ar.tolist(), ma=self.ma.tolist(),
+                          nobs=self.nobs)
 
     def __str__(self):
-        return 'ArmaProcess\nAR: {0}\nMA: {1}'.format(self.ar.tolist(),
-                                                      self.ma.tolist())
+        return '{cls}\nAR: {ar}\nMA: {ma}'.format(cls=self.__class__.__name__,
+                                                  ar=self.ar.tolist(),
+                                                  ma=self.ma.tolist())
 
     @copy_doc(arma_acovf.__doc__)
     def acovf(self, nobs=None):
@@ -735,81 +718,6 @@ class ArmaProcess(object):
     def arma2ar(self, lags=None):
         lags = lags or self.lags
         return arma2ar(self.ar, self.ma, lags=lags)
-
-    @property
-    def arroots(self):
-        """Roots of autoregressive lag-polynomial"""
-        return self.arpoly.roots()
-
-    @property
-    def maroots(self):
-        """Roots of moving average lag-polynomial"""
-        return self.mapoly.roots()
-
-    @property
-    def isstationary(self):
-        """
-        Arma process is stationary if AR roots are outside unit circle
-
-        Returns
-        -------
-        isstationary : boolean
-             True if autoregressive roots are outside unit circle
-        """
-        if np.all(np.abs(self.arroots) > 1.0):
-            return True
-        else:
-            return False
-
-    @property
-    def isinvertible(self):
-        """
-        Arma process is invertible if MA roots are outside unit circle
-
-        Returns
-        -------
-        isinvertible : boolean
-             True if moving average roots are outside unit circle
-        """
-        if np.all(np.abs(self.maroots) > 1):
-            return True
-        else:
-            return False
-
-    def invertroots(self, retnew=False):
-        """
-        Make MA polynomial invertible by inverting roots inside unit circle
-
-        Parameters
-        ----------
-        retnew : boolean
-            If False (default), then return the lag-polynomial as array.
-            If True, then return a new instance with invertible MA-polynomial
-
-        Returns
-        -------
-        manew : array
-           new invertible MA lag-polynomial, returned if retnew is false.
-        wasinvertible : boolean
-           True if the MA lag-polynomial was already invertible, returned if
-           retnew is false.
-        armaprocess : new instance of class
-           If retnew is true, then return a new instance with invertible
-           MA-polynomial
-        """
-        # TODO: variable returns like this?
-        pr = self.maroots
-        mainv = self.ma
-        invertible = self.isinvertible
-        if not invertible:
-            pr[np.abs(pr) < 1] = 1. / pr[np.abs(pr) < 1]
-            pnew = np.polynomial.Polynomial.fromroots(pr)
-            mainv = pnew.coef / pnew.coef[0]
-
-        if retnew:
-            return self.__class__(self.ar, mainv, nobs=self.nobs)
-        else:
-            return mainv, invertible
 
     def generate_sample(self, nsample=100, scale=1., distrvs=None, axis=0,
                         burnin=0):

@@ -29,16 +29,166 @@ _tsa_doc = """
     %(extra_sections)s
 """
 
-_model_doc = "Timeseries model base class"
 
-_generic_params = base._model_params_doc
-_missing_param_doc = base._missing_param_doc
+def _get_int64_index_loc(index, key, base_index):
+    # Special handling for Int64Index
+    # assumes (isinstance(index, pd.Int64Index) and not date_index and
+    #            isinstance(key, (integer_types, np.integer))):
+    nobs = len(index)
+
+    if key < 0 and -key <= nobs:
+        # Negative indices (that lie in the Index)
+        key = nobs + key
+    elif key > base_index[-1]:
+        # Out-of-sample (note that we include key itself in the
+        # new index)
+        index = pd.Int64Index(np.arange(base_index[0], int(key + 1)))
+        # TODO: Use RangeIndex!
+    return key, index
+
+
+def _get_date_index_loc(index, key, base_index):
+    # Special handling for date indexes
+    index_class = type(base_index)
+    nobs = len(index)
+
+    if isinstance(key, (integer_types, np.integer)):
+        # Integer key (i.e. already given a location)
+        if key < 0 and -key < nobs:
+            # Negative indices (that lie in the Index)
+            key = index[nobs + key]
+        elif key > len(base_index) - 1:
+            # Out-of-sample (note that we include key itself in the new
+            # index)
+            index = index_class(start=base_index[0],
+                                periods=int(key + 1),
+                                freq=base_index.freq)
+            key = index[-1]
+        else:
+            key = index[key]
+
+    else:
+        # Other key types (ie string date or some datetime-like object)
+        if index_class is pd.PeriodIndex:
+            # Covert the key to the appropriate date-like object
+            date_key = pd.Period(key, freq=base_index.freq)
+        else:
+            date_key = pd.Timestamp(key)
+
+        if date_key > base_index[-1]:
+            # Out-of-sample
+            # First create an index that may not always include `key`
+            index = index_class(start=base_index[0], end=date_key,
+                                freq=base_index.freq)
+
+            # Now make sure we include `key`
+            if index[-1] != date_key:
+                index = index_class(start=base_index[0],
+                                    periods=len(index) + 1,
+                                    freq=base_index.freq)
+    return key, index
+
+
+def _coerce_index(index, dates):
+    # Try to coerce to date-based index
+
+    # assumes not isinstance(index, (pd.DatetimeIndex, pd.PeriodIndex))
+    try:
+        # Only try to coerce non-numeric index types (string,
+        # list of date-times, etc.)
+        # Note that np.asarray(Float64Index([...])) yields an
+        # object dtype array in earlier versions of Pandas (and so
+        # will not have is_numeric_dtype == True), so explicitly
+        # check for it here. But note also that in very early
+        # Pandas (~0.12), Float64Index doesn't exist (and so the
+        # Statsmodels compat makes it an empty tuple, so in that
+        # case also check if the first element is a float.
+        _index = np.asarray(index)
+        if is_numeric_dtype(_index) or isinstance(index, pd.Float64Index):
+            raise ValueError('Numeric index given')
+        # If a non-index Pandas series was given, only keep its
+        # values (because we must have a pd.Index type, below, and
+        # pd.to_datetime will return a Series when passed
+        # non-list-like objects)
+        if isinstance(index, pd.Series):
+            index = index.values
+        # All coercion is done via pd.to_datetime
+        # Note: date coercion via pd.to_datetime does not handle
+        # string versions of PeriodIndex objects most of the time.
+        _index = pd.to_datetime(index)
+        # Older versions of Pandas can sometimes fail here and
+        # return a numpy array - check to make sure it's an index
+        if not isinstance(_index, pd.Index):  # pragma: no cover
+            raise ValueError('Could not coerce to date index')
+        index = _index
+    except:
+        # Only want to actually raise an exception if `dates` was
+        # provided but can't be coerced. If we got the index from
+        # the row_labels, we'll just ignore it and use the integer
+        # index below
+        if dates is not None:
+            raise ValueError('Non-date index index provided to'
+                             ' `dates` argument.')
+    return index
+
+
+def _validate_pd_index_freq(index, freq, dates):
+    # Now, if we were given, or coerced, a date-based index, make sure
+    # it has an associated frequency
+
+    # assumes isinstance(index, (pd.DatetimeIndex, pd.PeriodIndex))
+    inferred_freq = False
+
+    # If no frequency, try to get an inferred frequency
+    if freq is None and index.freq is None:
+        freq = index.inferred_freq
+        # If we got an inferred frequncy, alert the user
+        if freq is not None:
+            inferred_freq = True
+            if freq is not None:
+                warnings.warn('No frequency information was'
+                              ' provided, so inferred frequency %s'
+                              ' will be used.'
+                              % freq, ValueWarning)
+
+    # Convert the passed freq to a pandas offset object
+    if freq is not None:
+        freq = to_offset(freq)
+
+    # Now, if no frequency information is available from the index
+    # itself or from the `freq` argument, raise an exception
+    if freq is None and index.freq is None:
+        # But again, only want to raise the exception if `dates`
+        # was provided.
+        if dates is not None:  # pragma: no cover
+            raise ValueError('No frequency information was'
+                             ' provided with date index and no'
+                             ' frequency could be inferred.')
+    # However, if the index itself has no frequency information but
+    # the `freq` argument is available (or was inferred), construct
+    # a new index with an associated frequency
+    elif freq is not None and index.freq is None:
+        resampled_index = type(index)(start=index[0],
+                                      end=index[-1], freq=freq)
+        if not inferred_freq and not resampled_index.equals(index):
+            raise ValueError('The given frequency argument could'
+                             ' not be matched to the given index.')
+        index = resampled_index
+    # Finally, if the index itself has a frequency and there was
+    # also a given frequency, raise an exception if they are not
+    # equal
+    elif (freq is not None and not inferred_freq and
+            not (index.freq == freq)):
+        raise ValueError('The given frequency argument is'
+                         ' incompatible with the given index.')
+
+    return index, freq, inferred_freq
 
 
 class TimeSeriesModel(base.LikelihoodModel):
-    __doc__ = _tsa_doc % {"model": _model_doc,
-                          "params": _generic_params,
-                          "extra_params": _missing_param_doc,
+    __doc__ = _tsa_doc % {"model": "Timeseries model base class",
+                          "params": base._model_params_doc,
+                          "extra_params": base._missing_param_doc,
                           "extra_sections": ""}
 
     def __init__(self, endog, exog=None, dates=None, freq=None,
@@ -87,7 +237,6 @@ class TimeSeriesModel(base.LikelihoodModel):
         it is possible to extend them in a reasonable way. Thus every model
         must have an underlying supported index, even if it is just a generated
         Int64Index.
-
         """
 
         # Get our index from `dates` if available, otherwise from whatever
@@ -106,93 +255,20 @@ class TimeSeriesModel(base.LikelihoodModel):
         # internal, 0, 1, ... nobs-1 integer index for modeling purposes)
         inferred_freq = False
         if index is not None:
-            # Try to coerce to date-based index
             if not isinstance(index, (pd.DatetimeIndex, pd.PeriodIndex)):
-                try:
-                    # Only try to coerce non-numeric index types (string,
-                    # list of date-times, etc.)
-                    # Note that np.asarray(Float64Index([...])) yields an
-                    # object dtype array in earlier versions of Pandas (and so
-                    # will not have is_numeric_dtype == True), so explicitly
-                    # check for it here. But note also that in very early
-                    # Pandas (~0.12), Float64Index doesn't exist (and so the
-                    # Statsmodels compat makes it an empty tuple, so in that
-                    # case also check if the first element is a float.
-                    _index = np.asarray(index)
-                    if (is_numeric_dtype(_index) or
-                            isinstance(index, pd.Float64Index)):
-                        raise ValueError('Numeric index given')
-                    # If a non-index Pandas series was given, only keep its
-                    # values (because we must have a pd.Index type, below, and
-                    # pd.to_datetime will return a Series when passed
-                    # non-list-like objects)
-                    if isinstance(index, pd.Series):
-                        index = index.values
-                    # All coercion is done via pd.to_datetime
-                    # Note: date coercion via pd.to_datetime does not handle
-                    # string versions of PeriodIndex objects most of the time.
-                    _index = pd.to_datetime(index)
-                    # Older versions of Pandas can sometimes fail here and
-                    # return a numpy array - check to make sure it's an index
-                    if not isinstance(_index, pd.Index):  # pragma: no cover
-                        raise ValueError('Could not coerce to date index')
-                    index = _index
-                except:
-                    # Only want to actually raise an exception if `dates` was
-                    # provided but can't be coerced. If we got the index from
-                    # the row_labels, we'll just ignore it and use the integer
-                    # index below
-                    if dates is not None:
-                        raise ValueError('Non-date index index provided to'
-                                         ' `dates` argument.')
-            # Now, if we were given, or coerced, a date-based index, make sure
-            # it has an associated frequency
+                # Try to coerce to date-based index
+                index = _coerce_index(index, dates)
+
             if isinstance(index, (pd.DatetimeIndex, pd.PeriodIndex)):
-                # If no frequency, try to get an inferred frequency
-                if freq is None and index.freq is None:
-                    freq = index.inferred_freq
-                    # If we got an inferred frequncy, alert the user
-                    if freq is not None:
-                        inferred_freq = True
-                        if freq is not None:
-                            warnings.warn('No frequency information was'
-                                          ' provided, so inferred frequency %s'
-                                          ' will be used.'
-                                          % freq, ValueWarning)
+                # Now, if we were given, or coerced, a date-based index, make
+                # sure it has an associated frequency
+                index, freq, inferred_freq = _validate_pd_index_freq(index,
+                                                                     freq,
+                                                                     dates)
 
-                # Convert the passed freq to a pandas offset object
-                if freq is not None:
-                    freq = to_offset(freq)
-
-                # Now, if no frequency information is available from the index
-                # itself or from the `freq` argument, raise an exception
-                if freq is None and index.freq is None:
-                    # But again, only want to raise the exception if `dates`
-                    # was provided.
-                    if dates is not None:  # pragma: no cover
-                        raise ValueError('No frequency information was'
-                                         ' provided with date index and no'
-                                         ' frequency could be inferred.')
-                # However, if the index itself has no frequency information but
-                # the `freq` argument is available (or was inferred), construct
-                # a new index with an associated frequency
-                elif freq is not None and index.freq is None:
-                    resampled_index = type(index)(start=index[0],
-                                                  end=index[-1], freq=freq)
-                    if not inferred_freq and not resampled_index.equals(index):
-                        raise ValueError('The given frequency argument could'
-                                         ' not be matched to the given index.')
-                    index = resampled_index
-                # Finally, if the index itself has a frequency and there was
-                # also a given frequency, raise an exception if they are not
-                # equal
-                elif (freq is not None and not inferred_freq and
-                        not (index.freq == freq)):
-                    raise ValueError('The given frequency argument is'
-                                     ' incompatible with the given index.')
-            # Finally, raise an exception if we could not coerce to date-based
-            # but we were given a frequency argument
             elif freq is not None:
+                # Finally, raise an exception if we could not coerce to
+                # date-based but we were given a frequency argument
                 raise ValueError('Given index could not be coerced to dates'
                                  ' but `freq` argument was provided.')
 
@@ -266,55 +342,15 @@ class TimeSeriesModel(base.LikelihoodModel):
 
         index = base_index
         date_index = isinstance(base_index, (pd.PeriodIndex, pd.DatetimeIndex))
-        index_class = type(base_index)
-        nobs = len(index)
 
-        # Special handling for Int64Index
         if (isinstance(index, pd.Int64Index) and not date_index and
                 isinstance(key, (integer_types, np.integer))):
-            # Negative indices (that lie in the Index)
-            if key < 0 and -key <= nobs:
-                key = nobs + key
-            # Out-of-sample (note that we include key itself in the new index)
-            elif key > base_index[-1]:
-                index = pd.Int64Index(np.arange(base_index[0], int(key + 1)))
-                # TODO: Use RangeIndex!
+            # Special handling for Int64Index
+            key, index = _get_int64_index_loc(index, key, base_index)
 
-        # Special handling for date indexes
-        if date_index:
-            # Integer key (i.e. already given a location)
-            if isinstance(key, (integer_types, np.integer)):
-                # Negative indices (that lie in the Index)
-                if key < 0 and -key < nobs:
-                    key = index[nobs + key]
-                # Out-of-sample (note that we include key itself in the new
-                # index)
-                elif key > len(base_index) - 1:
-                    index = index_class(start=base_index[0],
-                                        periods=int(key + 1),
-                                        freq=base_index.freq)
-                    key = index[-1]
-                else:
-                    key = index[key]
-            # Other key types (i.e. string date or some datetime-like object)
-            else:
-                # Covert the key to the appropriate date-like object
-                if index_class is pd.PeriodIndex:
-                    date_key = pd.Period(key, freq=base_index.freq)
-                else:
-                    date_key = pd.Timestamp(key)
-
-                # Out-of-sample
-                if date_key > base_index[-1]:
-                    # First create an index that may not always include `key`
-                    index = index_class(start=base_index[0], end=date_key,
-                                        freq=base_index.freq)
-
-                    # Now make sure we include `key`
-                    if not index[-1] == date_key:
-                        index = index_class(start=base_index[0],
-                                            periods=len(index) + 1,
-                                            freq=base_index.freq)
+        elif date_index:
+            # Special handling for date indexes
+            key, index = _get_date_index_loc(index, key, base_index)
 
         # Get the location (note that get_loc will throw a KeyError if key is
         # invalid)
@@ -324,6 +360,7 @@ class TimeSeriesModel(base.LikelihoodModel):
         index_was_expanded = index is not base_index
 
         # (Never return the actual index object)
+        # TODO: why not?  its immutable...
         if not index_was_expanded:
             index = index.copy()
 

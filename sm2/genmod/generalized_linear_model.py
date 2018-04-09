@@ -21,7 +21,8 @@ import warnings
 
 import numpy as np
 
-from sm2.tools.decorators import cache_readonly, resettable_cache, copy_doc
+from sm2.tools.decorators import (cache_readonly, resettable_cache,
+                                  copy_doc, deprecated_alias)
 from sm2.tools.sm_exceptions import (PerfectSeparationError, DomainWarning,
                                      SpecificationWarning)
 
@@ -223,6 +224,7 @@ class GLM(base.LikelihoodModel):
     and statistics based on it, such AIC or likelihood ratio tests, are not
     appropriate.
 
+    # FIXME: duplicate docstring section, see GH#4447
     Attributes
     ----------
     df_model : float
@@ -295,6 +297,11 @@ class GLM(base.LikelihoodModel):
     @property
     def df_resid(self):
         return self.wnobs - (self.df_model + 1)
+
+    @cache_readonly
+    def df_model(self):
+        return np.linalg.matrix_rank(self.exog) - 1
+        # TODO: Does "assumes constant" apply here?
 
     @cache_readonly
     def nobs(self):
@@ -372,6 +379,7 @@ class GLM(base.LikelihoodModel):
 
         self.scaletype = None
 
+    # TODO: Get rid of this method; merge it into __init__
     def initialize(self):
         """
         Initialize a generalized linear model.
@@ -384,8 +392,6 @@ class GLM(base.LikelihoodModel):
         self.pinv_wexog = np.linalg.pinv(self.exog)
         self.normalized_cov_params = np.dot(self.pinv_wexog,
                                             np.transpose(self.pinv_wexog))
-
-        self.df_model = np.linalg.matrix_rank(self.exog) - 1
 
     def _check_inputs(self, family, offset, exposure, endog, freq_weights,
                       var_weights):
@@ -1339,6 +1345,13 @@ class GLMResults(base.LikelihoodModelResults):
     --------
     sm2.base.model.LikelihoodModelResults
     """
+
+    @cache_readonly
+    def nobs(self):
+        return self.model.endog.shape[0]
+
+    _endog = deprecated_alias('_endog', 'model.endog')
+
     def __init__(self, model, params, normalized_cov_params, scale,
                  cov_type='nonrobust', cov_kwds=None, use_t=None, k_constr=0):
 
@@ -1349,9 +1362,6 @@ class GLMResults(base.LikelihoodModelResults):
             scale=scale, k_constr=k_constr)
 
         self.family = model.family
-        self._endog = model.endog
-
-        self.nobs = model.endog.shape[0]
 
         self._freq_weights = model.freq_weights
         self._var_weights = model.var_weights
@@ -1415,7 +1425,6 @@ class GLMResults(base.LikelihoodModelResults):
         super(self.__class__, self).remove_data()
 
         # TODO: what are these in results?
-        self._endog = None
         self._freq_weights = None
         self._var_weights = None
         self._iweights = None
@@ -1423,11 +1432,11 @@ class GLMResults(base.LikelihoodModelResults):
 
     @cache_readonly
     def resid_response(self):
-        return self._n_trials * (self._endog - self.mu)
+        return self._n_trials * (self.model.endog - self.mu)
 
     @cache_readonly
     def resid_pearson(self):
-        return (np.sqrt(self._n_trials) * (self._endog - self.mu) *
+        return (np.sqrt(self._n_trials) * (self.model.endog - self.mu) *
                 np.sqrt(self._var_weights) /
                 np.sqrt(self.family.variance(self.mu)))
 
@@ -1443,32 +1452,32 @@ class GLMResults(base.LikelihoodModelResults):
     def resid_anscombe(self):
         warnings.warn('Anscombe residuals currently unscaled. In a future '
                       'release, they will be scaled.')
-        return self.family.resid_anscombe(self._endog, self.fittedvalues,
+        return self.family.resid_anscombe(self.model.endog, self.fittedvalues,
                                           var_weights=self._var_weights,
                                           scale=1.)
 
     @cache_readonly
     def resid_anscombe_scaled(self):
-        return self.family.resid_anscombe(self._endog, self.fittedvalues,
+        return self.family.resid_anscombe(self.model.endog, self.fittedvalues,
                                           var_weights=self._var_weights,
                                           scale=self.scale)
 
     @cache_readonly
     def resid_anscombe_unscaled(self):
-        return self.family.resid_anscombe(self._endog, self.fittedvalues,
+        return self.family.resid_anscombe(self.model.endog, self.fittedvalues,
                                           var_weights=self._var_weights,
                                           scale=1.)
 
     @cache_readonly
     def resid_deviance(self):
-        dev = self.family.resid_dev(self._endog, self.fittedvalues,
+        dev = self.family.resid_dev(self.model.endog, self.fittedvalues,
                                     var_weights=self._var_weights,
                                     scale=1.)
         return dev
 
     @cache_readonly
     def pearson_chi2(self):
-        chisq = (self._endog - self.mu)**2 / self.family.variance(self.mu)
+        chisq = (self.model.endog - self.mu)**2 / self.family.variance(self.mu)
         chisq *= self._iweights * self._n_trials
         chisqsum = np.sum(chisq)
         return chisqsum
@@ -1479,7 +1488,7 @@ class GLMResults(base.LikelihoodModelResults):
 
     @cache_readonly
     def null(self):
-        endog = self._endog
+        endog = self.model.endog
         model = self.model
         exog = np.ones((len(endog), 1))
         kwargs = {}
@@ -1497,17 +1506,19 @@ class GLMResults(base.LikelihoodModelResults):
 
     @cache_readonly
     def deviance(self):
-        return self.family.deviance(self._endog, self.mu, self._var_weights,
+        return self.family.deviance(self.model.endog, self.mu,
+                                    self._var_weights,
                                     self._freq_weights)
 
     @cache_readonly
     def null_deviance(self):
-        return self.family.deviance(self._endog, self.null, self._var_weights,
+        return self.family.deviance(self.model.endog, self.null,
+                                    self._var_weights,
                                     self._freq_weights)
 
     @cache_readonly
     def llnull(self):
-        return self.family.loglike(self._endog, self.null,
+        return self.family.loglike(self.model.endog, self.null,
                                    var_weights=self._var_weights,
                                    freq_weights=self._freq_weights,
                                    scale=self.scale)
@@ -1517,11 +1528,11 @@ class GLMResults(base.LikelihoodModelResults):
         if (isinstance(self.family, families.Gaussian) and
                 isinstance(self.family.link, families.links.Power) and
                 (self.family.link.power == 1.)):
-            scale = (np.power(self._endog - self.mu, 2) * self._iweights).sum()
+            scale = (((self.model.endog - self.mu) ** 2) * self._iweights).sum()
             scale /= self.model.wnobs
         else:
             scale = self.scale
-        val = self.family.loglike(self._endog, self.mu,
+        val = self.family.loglike(self.model.endog, self.mu,
                                   var_weights=self._var_weights,
                                   freq_weights=self._freq_weights,
                                   scale=scale)

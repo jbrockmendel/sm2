@@ -472,7 +472,10 @@ class TestGlmBernoulli(CheckModelResultsMixin, CheckComparisonMixin):
         tres_r = (2.7864148487452, 0.0950667)
         assert_allclose(tres, tres_r, rtol=1e-4)
 
-        cmd_r = """\
+        # The next string is a variable "cmd_r" upstream; I think that
+        # means that it is the command used to produce comparison
+        # results in R
+        """
         data = read.csv("...statsmodels\\statsmodels\\genmod\\tests\\results\\stata_lbw_glm.csv")
 
         data["race_black"] = data["race"] == "black"
@@ -486,7 +489,7 @@ class TestGlmBernoulli(CheckModelResultsMixin, CheckComparisonMixin):
         s**2
         s = glm.scoretest(mod, data["lwt"]**2)
         s**2
-        """  # noqa:E501,F841
+        """  # noqa:E501
 
 
 @pytest.mark.not_vetted

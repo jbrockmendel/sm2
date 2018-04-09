@@ -25,8 +25,9 @@ from sm2.tools.tools import pinv_extended
 from sm2.tools.sm_exceptions import EstimationWarning
 import sm2.base.wrapper as wrap
 
+from scipy.linalg.blas import find_best_blas_type
 
-from sm2.tsa.statespace.tools import find_best_blas_type, prepare_exog
+from sm2.tsa.statespace.tools import prepare_exog
 
 from sm2.tsa.regime_switching._hamilton_filter import (
     shamilton_filter, dhamilton_filter, chamilton_filter, zhamilton_filter)
@@ -698,6 +699,45 @@ class MarkovSwitching(tsbase.TimeSeriesModel):
         # Internal model properties: default is steady-state initialization
         self._initialization = 'steady-state'
         self._initial_probabilities = None
+
+    @property
+    def start_params(self):
+        """
+        (array) Starting parameters for maximum likelihood estimation.
+        """
+        params = np.zeros(self.k_params, dtype=np.float64)
+
+        # Transition probabilities
+        if self.tvtp:
+            params[self.parameters['regime_transition']] = 0.
+        else:
+            params[self.parameters['regime_transition']] = 1. / self.k_regimes
+
+        return params
+
+    @property
+    def param_names(self):
+        """
+        (list of str) List of human readable parameter names (for parameters
+        actually included in the model).
+        """
+        param_names = np.zeros(self.k_params, dtype=object)
+
+        # Transition probabilities
+        if self.tvtp:
+            # TODO add support for exog_tvtp_names
+            param_names[self.parameters['regime_transition']] = [
+                'p[%d->%d].tvtp%d' % (j, i, k)
+                for i in range(self.k_regimes - 1)
+                for k in range(self.k_tvtp)
+                for j in range(self.k_regimes)]
+        else:
+            param_names[self.parameters['regime_transition']] = [
+                'p[%d->%d]' % (j, i)
+                for i in range(self.k_regimes - 1)
+                for j in range(self.k_regimes)]
+
+        return param_names.tolist()
 
     def initialize_steady_state(self):
         """
@@ -1510,45 +1550,6 @@ class MarkovSwitching(tsbase.TimeSeriesModel):
 
         # Return transformed parameters
         return self.transform_params(params)
-
-    @property
-    def start_params(self):
-        """
-        (array) Starting parameters for maximum likelihood estimation.
-        """
-        params = np.zeros(self.k_params, dtype=np.float64)
-
-        # Transition probabilities
-        if self.tvtp:
-            params[self.parameters['regime_transition']] = 0.
-        else:
-            params[self.parameters['regime_transition']] = 1. / self.k_regimes
-
-        return params
-
-    @property
-    def param_names(self):
-        """
-        (list of str) List of human readable parameter names (for parameters
-        actually included in the model).
-        """
-        param_names = np.zeros(self.k_params, dtype=object)
-
-        # Transition probabilities
-        if self.tvtp:
-            # TODO add support for exog_tvtp_names
-            param_names[self.parameters['regime_transition']] = [
-                'p[%d->%d].tvtp%d' % (j, i, k)
-                for i in range(self.k_regimes - 1)
-                for k in range(self.k_tvtp)
-                for j in range(self.k_regimes)]
-        else:
-            param_names[self.parameters['regime_transition']] = [
-                'p[%d->%d]' % (j, i)
-                for i in range(self.k_regimes - 1)
-                for j in range(self.k_regimes)]
-
-        return param_names.tolist()
 
     def transform_params(self, unconstrained):
         """

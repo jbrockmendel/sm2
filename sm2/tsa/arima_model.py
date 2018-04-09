@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
 # Note: The information criteria add 1 to the number of parameters
 #       whenever the model has an AR or MA term since, in principle,
 #       the variance could be treated as a free parameter and restricted
@@ -17,24 +19,29 @@ import pandas as pd
 from scipy import optimize, stats, signal
 
 
-from sm2.tools.decorators import (cache_readonly, resettable_cache,
+from sm2.tools.decorators import (resettable_cache,
+                                  cached_value, cached_data,
                                   deprecated_alias, copy_doc)
 from sm2.tools.numdiff import approx_hess_cs, approx_fprime_cs
 
 import sm2.base.wrapper as wrap
-
+from sm2.base.naming import make_arma_names as _make_arma_names
 from sm2.regression.linear_model import yule_walker, GLS
 
 from sm2.tsa.base import tsa_model
-
+from sm2.tsa import wold
 from sm2.tsa.tsatools import (lagmat, add_trend,
-                              _ar_transparams, _ar_invtransparams,
-                              _ma_transparams, _ma_invtransparams,
                               unintegrate, unintegrate_levels)
-from sm2.tsa.vector_ar import util
 from sm2.tsa.arima_process import arma2ma
 from sm2.tsa.ar_model import AR
 from sm2.tsa.kalmanf import KalmanFilter
+
+_unpack_params = wold.ARMAParams._unpack_params  # staticmethod
+
+
+def _unpack_order(order):  # pragma: no cover
+    raise NotImplementedError("_unpack_order not ported from upstream, "
+                              "as it is neither used nor tested there.")
 
 
 def _create_mpl_ax(ax):
@@ -76,10 +83,6 @@ _arma_params = """endog : array-like
     exog : array-like, optional
         An optional array of exogenous variables. This should *not* include a
         constant or trend. You can specify this in the `fit` method."""
-
-_arma_model = "Autoregressive Moving Average ARMA(p,q) Model"
-
-_arima_model = "Autoregressive Integrated Moving Average ARIMA(p,d,q) Model"
 
 _arima_params = """endog : array-like
         The endogenous variable.
@@ -375,48 +378,7 @@ def _arma_predict_in_sample(start, end, endog, resid, k_ar, method):
     return fittedvalues[fv_start:fv_end]
 
 
-def _unpack_params(params, order, k_trend, k_exog, reverse=False):
-    p, q = order
-    k = k_trend + k_exog
-    maparams = params[k + p:]
-    arparams = params[k:k + p]
-    trend = params[:k_trend]
-    exparams = params[k_trend:k]
-    if reverse:
-        return trend, exparams, arparams[::-1], maparams[::-1]
-    return trend, exparams, arparams, maparams
-
-
-def _unpack_order(order):
-    k_ar, k_ma, k = order
-    k_lags = max(k_ar, k_ma + 1)
-    return k_ar, k_ma, order, k_lags
-
-
-def _make_arma_names(data, k_trend, order, exog_names):
-    k_ar, k_ma = order
-    exog_names = exog_names or []
-    ar_lag_names = util.make_lag_names([data.ynames], k_ar, 0)
-    ar_lag_names = [''.join(('ar.', i)) for i in ar_lag_names]
-    ma_lag_names = util.make_lag_names([data.ynames], k_ma, 0)
-    ma_lag_names = [''.join(('ma.', i)) for i in ma_lag_names]
-    trend_name = util.make_lag_names('', 0, k_trend)
-
-    # ensure exog_names stays unchanged when the `fit` method
-    # is called multiple times.
-    if k_ma == 0 and k_ar == 0:
-        if len(exog_names) != 0:
-            return exog_names
-    elif ((exog_names[-k_ma:] == ma_lag_names) and
-            exog_names[-(k_ar + k_ma):-k_ma] == ar_lag_names and
-            (not exog_names or not trend_name or
-             trend_name[0] == exog_names[0])):
-            return exog_names
-
-    exog_names = trend_name + exog_names + ar_lag_names + ma_lag_names
-    return exog_names
-
-
+# TODO: Does this belong somewhere else?
 def _make_arma_exog(endog, exog, trend):
     k_trend = 1  # overwritten if no constant
     if exog is None and trend == 'c':   # constant only
@@ -438,9 +400,9 @@ def _check_estimable(nobs, n_params):
         raise ValueError("Insufficient degrees of freedom to estimate")
 
 
-class ARMA(tsa_model.TimeSeriesModel):
+class ARMA(wold.ARMAParams, tsa_model.TimeSeriesModel):
     __doc__ = tsa_model._tsa_doc % {
-        "model": _arma_model,
+        "model": "Autoregressive Moving Average ARMA(p,q) Model",
         "params": _arma_params,
         "extra_params": "",
         "extra_sections": _armax_notes % {"Model": "ARMA"}}
@@ -452,6 +414,7 @@ class ARMA(tsa_model.TimeSeriesModel):
         if exog is not None:
             if exog.ndim == 1:
                 exog = exog[:, None]
+                # TODO: Not hit in tests; is this case really releevant?
             return exog.shape[1]  # number of exog. variables excl. const
         else:
             return 0
@@ -613,49 +576,6 @@ class ARMA(tsa_model.TimeSeriesModel):
         """
         return approx_hess_cs(params, self.loglike, args=(False,))
 
-    def _transparams(self, params):
-        """
-        Transforms params to induce stationarity/invertability.
-
-        Reference
-        ---------
-        Jones(1980)
-        """
-        k_ar, k_ma = self.k_ar, self.k_ma
-        k = self.k_exog + self.k_trend
-        newparams = np.zeros_like(params)
-
-        # just copy exogenous parameters
-        if k != 0:
-            newparams[:k] = params[:k]
-
-        # AR Coeffs
-        if k_ar != 0:
-            newparams[k:k + k_ar] = _ar_transparams(params[k:k + k_ar].copy())
-
-        # MA Coeffs
-        if k_ma != 0:
-            newparams[k + k_ar:] = _ma_transparams(params[k + k_ar:].copy())
-        return newparams
-
-    def _invtransparams(self, start_params):
-        """
-        Inverse of the Jones reparameterization
-        """
-        k_ar, k_ma = self.k_ar, self.k_ma
-        k = self.k_exog + self.k_trend
-        newparams = start_params.copy()
-        arcoefs = newparams[k:k + k_ar]
-        macoefs = newparams[k + k_ar:]
-        # AR coeffs
-        if k_ar != 0:
-            newparams[k:k + k_ar] = _ar_invtransparams(arcoefs)
-
-        # MA coeffs
-        if k_ma != 0:
-            newparams[k + k_ar:k + k_ar + k_ma] = _ma_invtransparams(macoefs)
-        return newparams
-
     def _get_prediction_index(self, start, end, dynamic, index=None):
         method = getattr(self, 'method', 'mle')
         k_ar = getattr(self, 'k_ar', 0)
@@ -706,8 +626,8 @@ class ARMA(tsa_model.TimeSeriesModel):
             errors = KalmanFilter.geterrors(y, k, k_ar, k_ma, k_lags, nobs,
                                             Z_mat, m, R_mat, T_mat,
                                             paramsdtype)
-            if isinstance(errors, tuple):
-                errors = errors[0]  # non-cython version returns a tuple
+            assert not isinstance(errors, tuple)
+            # upstream checks for this saying non-cython version returns tuple
         else:
             # use scipy.signal.lfilter
             y = self.endog.copy()
@@ -949,16 +869,17 @@ class ARMA(tsa_model.TimeSeriesModel):
         if k_ma == 0 and k_ar == 0:
             method = "css"  # Always CSS when no AR or MA terms
 
+        # TODO: Dont set these attributes!
         self.method = method = method.lower()
-
-        # adjust nobs for css
         if method == 'css':
+            # adjust nobs for css
             self.nobs = len(self.endog) - k_ar
 
+        # TODO: Make this "_get_start_params"?
         if start_params is not None:
             start_params = np.asarray(start_params)
-
-        else:  # estimate starting parameters
+        else:
+            # estimate starting parameters
             start_params = self._fit_start_params((k_ar, k_ma, k), method,
                                                   start_ar_lags)
 
@@ -1000,7 +921,7 @@ class ARMA(tsa_model.TimeSeriesModel):
 # starting to think that order of model should be put in instantiation...
 class ARIMA(ARMA):
     __doc__ = tsa_model._tsa_doc % {
-        "model": _arima_model,
+        "model": "Autoregressive Integrated Moving Average ARIMA(p,d,q) Model",
         "params": _arima_params,
         "extra_params": "",
         "extra_sections": _armax_notes % {"Model": "ARIMA"}}
@@ -1243,7 +1164,7 @@ class ARIMA(ARMA):
                                            levels)[d:]]
                 else:
                     fv = predict + endog[start:end + 1]
-                    if d == 2:
+                    if d == 2:  # TODO: No tests with d == 2
                         fv += np.diff(endog[start - 1:end + 1])
             else:
                 k_ar = self.k_ar
@@ -1293,7 +1214,7 @@ class ARIMA(ARMA):
         return fv
 
 
-class ARMAResults(tsa_model.TimeSeriesModelResults):
+class ARMAResults(wold.ARMARoots, tsa_model.TimeSeriesModelResults):
     """
     Class to hold results from fitting an ARMA model.
 
@@ -1421,54 +1342,39 @@ class ARMAResults(tsa_model.TimeSeriesModelResults):
         self.k_ar = model.k_ar
         self.n_totobs = len(model.endog)
         self.k_ma = model.k_ma
-        self._cache = resettable_cache()  # TODO: Is this necessary?
+        self._cache = resettable_cache()  # TODO: Is this necessary? -- yep!
 
-    @cache_readonly
-    def arroots(self):
-        return np.roots(np.r_[1, -self.arparams])**-1
-
-    @cache_readonly
-    def maroots(self):
-        return np.roots(np.r_[1, self.maparams])**-1
-
-    @cache_readonly
-    def arfreq(self):
-        r"""
-        Returns the frequency of the AR roots.
-
-        This is the solution, x, to z = abs(z)*exp(2j*np.pi*x) where z are the
-        roots.
-        """
-        z = self.arroots
-        if not z.size:
-            return  # TODO: return empty array?
-        return np.arctan2(z.imag, z.real) / (2 * np.pi)
-
-    @cache_readonly
-    def mafreq(self):
-        r"""
-        Returns the frequency of the MA roots.
-
-        This is the solution, x, to z = abs(z)*exp(2j*np.pi*x) where z are the
-        roots.
-        """
-        z = self.maroots
-        if not z.size:
-            return  # TODO: return empty array?
-        return np.arctan2(z.imag, z.real) / (2 * np.pi)
-
-    @cache_readonly
+    @cached_value
     def arparams(self):
         k = self.k_exog + self.k_trend
         return self.params[k:k + self.k_ar]
 
-    @cache_readonly
+    @cached_value
     def maparams(self):
         k = self.k_exog + self.k_trend
         k_ar = self.k_ar
         return self.params[k + k_ar:]
 
-    @cache_readonly
+    @cached_value
+    def arcoefs(self):
+        """Alias for arparams used for naming convention compatibility.
+        In the future, `arparams` may be changed to correspond
+        to np.r_[1, -arcoefs]
+        """
+        k = self.k_exog + self.k_trend
+        return self.params[k:k + self.k_ar]
+
+    @cached_value
+    def macoefs(self):
+        """Alias for maparams used for naming convention compatibility.
+        In the future, `maparams` may be changed to correspond
+        to np.r_[1, macoefs]
+        """
+        k = self.k_exog + self.k_trend
+        k_ar = self.k_ar
+        return self.params[k + k_ar:]
+
+    @cached_value
     def bse(self):
         params = self.params
         hess = self.model.hessian(params)
@@ -1476,26 +1382,27 @@ class ARMAResults(tsa_model.TimeSeriesModelResults):
             return np.sqrt(-1. / hess[0])
         return np.sqrt(np.diag(-np.linalg.inv(hess)))
 
+    # TODO: Can we use base class implementation for this?
     def cov_params(self):  # TODO: add scale argument?
         params = self.params
         hess = self.model.hessian(params)
         return -np.linalg.inv(hess)
 
-    @cache_readonly
+    @cached_value
     def aic(self):
         return -2 * self.llf + 2 * (self.df_model + 1)
 
-    @cache_readonly
+    @cached_value
     def bic(self):
         nobs = self.nobs
         return -2 * self.llf + np.log(nobs) * (self.df_model + 1)
 
-    @cache_readonly
+    @cached_value
     def hqic(self):
         nobs = self.nobs
         return -2 * self.llf + 2 * np.log(np.log(nobs)) * (self.df_model + 1)
 
-    @cache_readonly
+    @cached_data
     def fittedvalues(self):
         model = self.model
         endog = model.endog.copy()
@@ -1514,11 +1421,11 @@ class ARMAResults(tsa_model.TimeSeriesModelResults):
         #    fv += np.dot(exog, self.params[:k])
         return fv
 
-    @cache_readonly
+    @cached_data
     def resid(self):
         return self.model.geterrors(self.params)
 
-    @cache_readonly
+    @cached_value
     def pvalues(self):
         # TODO: same for conditional and unconditional?
         df_resid = self.df_resid
@@ -1541,6 +1448,7 @@ class ARMAResults(tsa_model.TimeSeriesModelResults):
         conf_int = np.c_[forecast - const * fcasterr,
                          forecast + const * fcasterr]
         return conf_int
+        # TODO: DOes this need to be a method?
 
     def forecast(self, steps=1, exog=None, alpha=.05):
         """
@@ -1763,6 +1671,7 @@ class ARIMAResults(ARMAResults):
         const = stats.norm.ppf(1 - alpha / 2.)
         conf_int = np.c_[forecast - const * fcerr, forecast + const * fcerr]
         return conf_int
+        # TODO: Does this need to be a method?
 
     def forecast(self, steps=1, exog=None, alpha=.05):
         """

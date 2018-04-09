@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 from __future__ import division
 
@@ -15,9 +16,8 @@ import sm2.base.wrapper as wrap
 
 from sm2.regression.linear_model import OLS
 
-from sm2.tsa.tsatools import (lagmat, add_trend,
-                              _ar_transparams, _ar_invtransparams)
-
+from sm2.tsa.tsatools import lagmat, add_trend
+from sm2.tsa import wold
 from sm2.tsa.base import tsa_model
 from sm2.tsa.vector_ar import util
 from sm2.tsa.kalmanf.kalmanfilter import KalmanFilter
@@ -26,9 +26,10 @@ from sm2.tsa.kalmanf.kalmanfilter import KalmanFilter
 __all__ = ['AR']
 
 
-def sumofsq(x, axis=0):
-    """Helper function to calculate sum of squares along first axis"""
-    return np.sum(x**2, axis=axis)
+def sumofsq(x, axis=0):  # pragma: no cover
+    raise NotImplementedError("sumofsq not ported from upstream, "
+                              "since it is a one-line function no simpler "
+                              "than what it replaces.")
 
 
 def _check_ar_start(start, k_ar, method, dynamic):
@@ -57,7 +58,7 @@ def _ar_predict_out_of_sample(y, params, p, k_trend, steps, start=0):
     return forecast
 
 
-class AR(tsa_model.TimeSeriesModel):
+class AR(wold.ARMAParams, tsa_model.TimeSeriesModel):
     __doc__ = tsa_model._tsa_doc % {
         "model": "Autoregressive AR(p) model",
         "params": """endog : array-like
@@ -73,33 +74,6 @@ class AR(tsa_model.TimeSeriesModel):
             self.endog = endog  # to get shapes right
         elif endog.ndim > 1 and endog.shape[1] != 1:  # pragma: no cover
             raise ValueError("Only the univariate case is implemented")
-
-    def initialize(self):
-        pass
-
-    def _transparams(self, params):
-        """
-        Transforms params to induce stationarity/invertability.
-
-        Reference
-        ---------
-        Jones(1980)
-        """
-        p = self.k_ar
-        k = self.k_trend
-        newparams = params.copy()
-        newparams[k:k + p] = _ar_transparams(params[k:k + p].copy())
-        return newparams
-
-    def _invtransparams(self, start_params):
-        """
-        Inverse of the Jones reparameterization
-        """
-        p = self.k_ar
-        k = self.k_trend
-        newparams = start_params.copy()
-        newparams[k:k + p] = _ar_invtransparams(start_params[k:k + p].copy())
-        return newparams
 
     def _presample_fit(self, params, start, p, end, y, predictedvalues):
         """
@@ -271,11 +245,13 @@ class AR(tsa_model.TimeSeriesModel):
         nobs = self.nobs
         Y = self.Y
         X = self.X
-        ssr = sumofsq(Y.squeeze() - np.dot(X, params))
+        resid = Y.squeeze() - np.dot(X, params)
+        ssr = (resid**2).sum()
         sigma2 = ssr / nobs
         return (-nobs / 2 * (np.log(2 * np.pi) + np.log(sigma2)) -
                 ssr / (2 * sigma2))
 
+    # TODO: Can we get this from KalmanFilter like we do in arima_model?
     def _loglike_mle(self, params):
         """
         Loglikelihood of AR(p) process using exact maximum likelihood
@@ -303,7 +279,8 @@ class AR(tsa_model.TimeSeriesModel):
         Vpinv = self._presample_varcov(params)
 
         diffpVpinv = np.dot(np.dot(diffp.T, Vpinv), diffp).item()
-        ssr = sumofsq(endog[k_ar:].squeeze() - np.dot(X, params))
+        resid = endog[k_ar:].squeeze() - np.dot(X, params)
+        ssr = (resid**2).sum()
 
         # concentrating the likelihood means that sigma2 is given by
         sigma2 = 1. / nobs * (diffpVpinv + ssr)
@@ -400,7 +377,7 @@ class AR(tsa_model.TimeSeriesModel):
         k_trend = util.get_trendorder(trend)
         if k_trend:
             X = add_trend(X, prepend=True, trend=trend)
-        self.k_trend = k_trend
+        self.k_trend = k_trend  # TODO: Don't set this here
         return X
 
     def select_order(self, maxlag, ic, trend='c', method='mle'):
@@ -441,7 +418,7 @@ class AR(tsa_model.TimeSeriesModel):
                 fit = AR(endog_tmp).fit(maxlag=lag, method=method,
                                         full_output=0, trend=trend,
                                         maxiter=100, disp=0)
-                results[lag] = eval('fit.' + ic)
+                results[lag] = getattr(fit, ic)
             bestic, bestlag = min((res, k) for k, res in results.items())
 
         else:  # choose by last t-stat.
@@ -533,6 +510,7 @@ class AR(tsa_model.TimeSeriesModel):
         if method not in ['cmle', 'yw', 'mle']:  # pragma: no cover
             raise ValueError("Method %s not recognized" % method)
 
+        # TODO: Don't set these attributes!
         self.method = method
         self.trend = trend
         self.transparams = transparams
@@ -704,7 +682,7 @@ class ARResults(tsa_model.TimeSeriesModelResults):
         n_totobs = len(model.endog)
         self.n_totobs = n_totobs
         self.X = model.X  # copy?
-        self.Y = model.Y
+        self.Y = model.Y  # TODO: Get rid of alias
         k_ar = model.k_ar
         self.k_ar = k_ar
         k_trend = model.k_trend
@@ -713,13 +691,15 @@ class ARResults(tsa_model.TimeSeriesModelResults):
         if k_trend > 0:
             trendorder = k_trend - 1
         self.trendorder = trendorder
+        # TODO: What purpose does trendorder serve?
 
     @cache_writable()
     def sigma2(self):
         model = self.model
         if model.method == "cmle":  # do DOF correction
-            return 1. / self.nobs * sumofsq(self.resid)
+            return 1. / self.nobs * (self.resid**2).sum()
         else:
+            # TODO: sigma2 shouldnt be a model attribute at all
             return self.model.sigma2
 
     @cache_writable()   # for compatability with RegressionResults
@@ -732,6 +712,7 @@ class ARResults(tsa_model.TimeSeriesModelResults):
             resid = self.resid
             ssr = np.dot(resid, resid)
             ols_scale = ssr / (self.nobs - self.k_ar - self.k_trend)
+            # TODO: Can we use self.nobs - self.df_model for denom?
             return np.sqrt(np.diag(self.cov_params(scale=ols_scale)))
         else:
             hess = approx_hess(self.params, self.model.loglike)
@@ -775,7 +756,7 @@ class ARResults(tsa_model.TimeSeriesModelResults):
     def bic(self):
         nobs = self.nobs
         # Lutkepohl
-        #return np.log(self.sigma2) + np.log(nobs)/nobs * self.k_ar
+        # return np.log(self.sigma2) + np.log(nobs)/nobs * self.k_ar
         # Include constant as est. free parameter
         return np.log(self.sigma2) + (1 + self.df_model) * np.log(nobs) / nobs
         # Stata

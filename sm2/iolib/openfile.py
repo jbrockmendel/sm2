@@ -1,6 +1,8 @@
 """
 Handle file opening for read/write
 """
+import gzip
+
 from numpy.lib._iotools import _is_string_like
 from six import PY3
 
@@ -21,24 +23,17 @@ class EmptyContextManager(object):
         """Don't hide anything"""
         return False
 
-    def __getattr__(self, name):
-        return getattr(self._obj, name)  # TODO: not used; needed?
+    def __getattr__(self, name):  # pragma: no cover
+        raise NotImplementedError("__getattr__ not ported from upstream, "
+                                  "as it is neither used nor tested.")
 
 
-if PY3:
-    def _open(fname, mode, encoding):
-        if fname.endswith('.gz'):
-            import gzip
-            return gzip.open(fname, mode, encoding=encoding)
-        else:
-            return open(fname, mode, encoding=encoding)
-else:
-    def _open(fname, mode, encoding):
-        if fname.endswith('.gz'):
-            import gzip
-            return gzip.open(fname, mode)
-        else:
-            return open(fname, mode)
+def _open(fname, mode, encoding):
+    kwargs = {'encoding': encoding} if PY3 else {}
+    if fname.endswith('.gz'):
+        return gzip.open(fname, mode, **kwargs)
+    else:
+        return open(fname, mode, **kwargs)
 
 
 def get_file_obj(fname, mode='r', encoding=None):
