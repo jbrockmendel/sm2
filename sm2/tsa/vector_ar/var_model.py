@@ -864,7 +864,7 @@ class VARResults(VARProcess):
         """Standard errors of coefficients, reshaped to match in size"""
         stderr = np.sqrt(np.diag(self.cov_params))
         return stderr.reshape((self.df_model, self.neqs), order='C')
-        # TODO: why df_model?
+        # TODO: why df_model?  could we use self.params.shape?
 
     bse = stderr  # sm2 interface?
 

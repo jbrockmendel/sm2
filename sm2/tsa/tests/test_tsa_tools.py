@@ -14,11 +14,9 @@ import pandas.util.testing as tm
 
 from sm2 import datasets
 
-from sm2.regression.linear_model import yule_walker
-
 from sm2.tsa import stattools, tsatools
 from sm2.tsa.tests.results import savedrvs
-from sm2.tsa.tests.results.datamlw_tls import mlacf, mlccf, mlpacf, mlywar
+from sm2.tsa.tests.results.datamlw_tls import mlpacf, mlacf
 
 
 xo = savedrvs.rvsdata.xar2
@@ -30,27 +28,10 @@ x1000 = xo / 1000.
 def test_acf():
     acf_x = stattools.acf(x100, unbiased=False)[:21]
     assert_array_almost_equal(mlacf.acf100.ravel(), acf_x, 8)
-    # why only dec=8?
+    # TODO: why only dec=8?
     acf_x = stattools.acf(x1000, unbiased=False)[:21]
     assert_array_almost_equal(mlacf.acf1000.ravel(), acf_x, 8)
-    # why only dec=9? (comment out of date?)
-
-
-@pytest.mark.not_vetted
-def test_ccf():
-    ccf_x = stattools.ccf(x100[4:], x100[:-4], unbiased=False)[:21]
-    assert_array_almost_equal(mlccf.ccf100.ravel()[:21][::-1], ccf_x, 8)
-    ccf_x = stattools.ccf(x1000[4:], x1000[:-4], unbiased=False)[:21]
-    assert_array_almost_equal(mlccf.ccf1000.ravel()[:21][::-1], ccf_x, 8)
-
-
-@pytest.mark.not_vetted
-def test_pacf_yw():
-    pacfyw = stattools.pacf_yw(x100, 20, method='mle')
-    assert_array_almost_equal(mlpacf.pacf100.ravel(), pacfyw, 1)
-    pacfyw = stattools.pacf_yw(x1000, 20, method='mle')
-    assert_array_almost_equal(mlpacf.pacf1000.ravel(), pacfyw, 2)
-    # assert False
+    # TODO: why only dec=9? (comment out of date?)
 
 
 @pytest.mark.not_vetted
@@ -59,24 +40,6 @@ def test_pacf_ols():
     assert_array_almost_equal(mlpacf.pacf100.ravel(), pacfols, 8)
     pacfols = stattools.pacf_ols(x1000, 20)
     assert_array_almost_equal(mlpacf.pacf1000.ravel(), pacfols, 8)
-    # assert False
-
-
-@pytest.mark.not_vetted
-def test_ywcoef():
-    assert_array_almost_equal(mlywar.arcoef100[1:],
-                              -yule_walker(x100, 10, method='mle')[0], 8)
-    assert_array_almost_equal(mlywar.arcoef1000[1:],
-                              -yule_walker(x1000, 20, method='mle')[0], 8)
-
-
-@pytest.mark.smoke
-@pytest.mark.not_vetted
-def test_yule_walker_inter():
-    # see GH#1869
-    x = np.array([1, -1, 2, 2, 0, -2, 1, 0, -3, 0, 0])
-    # it works
-    yule_walker(x, 3)
 
 
 @pytest.mark.not_vetted

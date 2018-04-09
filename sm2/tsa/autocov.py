@@ -220,7 +220,6 @@ def ccf(x, y, unbiased=True):
     return cvf / (np.std(x) * np.std(y))
 
 
-# TODO: move corresponding tests
 # Upstream this is in regression.linear_model
 def yule_walker(X, order=1, method="unbiased", df=None, inv=False, demean=True):
     """

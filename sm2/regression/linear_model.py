@@ -817,8 +817,7 @@ class OLS(WLS):
         -------
         The score vector.
         """
-        if not hasattr(self, "_wexog_xprod"):
-            self._setup_score_hess()
+        self._setup_score_hess()
 
         xtxb = np.dot(self._wexog_xprod, params)
         sdr = -self._wexog_x_wendog + xtxb
@@ -827,11 +826,15 @@ class OLS(WLS):
             ssr = self._wendog_xprod - 2 * np.dot(self._wexog_x_wendog.T,
                                                   params)
             ssr += np.dot(params, xtxb)
-            return -self.nobs * sdr / ssr
-        else:
-            return -sdr / scale
+            # scale-esque
+            scale = ssr / self.nobs
+        return -sdr / scale
 
     def _setup_score_hess(self):
+        if hasattr(self, "_wexog_xprod"):
+            # TODO: Don't do this with unpredictable attributes
+            return
+
         y = self.wendog
         if hasattr(self, 'offset'):
             y = y - self.offset
@@ -856,8 +859,7 @@ class OLS(WLS):
         -------
         The Hessian matrix.
         """
-        if not hasattr(self, "_wexog_xprod"):
-            self._setup_score_hess()
+        self._setup_score_hess()
 
         xtxb = np.dot(self._wexog_xprod, params)
 
