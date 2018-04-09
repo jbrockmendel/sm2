@@ -41,7 +41,7 @@ class ResultsStore(object):
 
 
 def _autolag(mod, endog, exog, startlag, maxlag, method, modargs=(),
-             fitargs=(), regresults=False):
+             fitargs=(), regresults=True):
     """
     Returns the results for the lag length that maximizes the info criterion.
 
@@ -85,6 +85,12 @@ def _autolag(mod, endog, exog, startlag, maxlag, method, modargs=(),
     assumed to be in contiguous columns from low to high lag length with
     the highest lag in the last column.
     """
+    if not regresults:  # pragma: no cover
+        # TODO: update docstring
+        raise NotImplementedError("option `regresults=False` not ported "
+                                  "from upstream.  _autolag always returns "
+                                  "a tuple (icbest, bestlag, results)")
+
     # TODO: can tcol be replaced by maxlag + 2?
     # TODO: This could be changed to laggedRHS and exog keyword arguments if
     #    this will be more general.
@@ -111,11 +117,7 @@ def _autolag(mod, endog, exog, startlag, maxlag, method, modargs=(),
     else:  # pragma: no cover
         raise ValueError("Information Criterion %s not understood." % method)
 
-    # TODO: remove multiple-return
-    if not regresults:
-        return icbest, bestlag
-    else:
-        return icbest, bestlag, results
+    return icbest, bestlag, results
 
 
 # this needs to be converted to a class like HetGoldfeldQuandt,
@@ -247,13 +249,9 @@ def adfuller(x, maxlag=None, regression="c", autolag='AIC',
         # Note: use the same number of observations to have comparable IC
         # aic and bic: smaller is better
 
-        if not regresults:
-            icbest, bestlag = _autolag(OLS, xdshort, fullRHS, startlag,
-                                       maxlag, autolag)
-        else:
-            icbest, bestlag, alres = _autolag(OLS, xdshort, fullRHS, startlag,
-                                              maxlag, autolag,
-                                              regresults=regresults)
+        icbest, bestlag, alres = _autolag(OLS, xdshort, fullRHS, startlag,
+                                       maxlag, autolag, regresults=True)
+        if regresults:
             resstore.autolag_results = alres
 
         bestlag -= startlag  # convert to lag not column index

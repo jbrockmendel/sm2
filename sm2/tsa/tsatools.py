@@ -265,7 +265,7 @@ def add_lag(x, col=None, lags=1, drop=False, insert=True):
 
         contemp = x[:, col]
 
-        if insert is True:
+        if insert is True:  # TODO: This block is redundant with a block above
             ins_idx = col + 1
         elif insert is False:
             ins_idx = x.shape[1]
