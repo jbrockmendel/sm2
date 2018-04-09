@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """
 Vector Autoregression (VAR) processes
@@ -25,7 +26,7 @@ import sm2.base.wrapper as wrap
 
 from sm2.iolib.table import SimpleTable
 
-from sm2.tsa.tsatools import vec, unvec, duplication_matrix
+from sm2.tsa.tsatools import vec, duplication_matrix
 from sm2.tsa.base import tsa_model
 from sm2.tsa import wold, autocov
 
@@ -37,6 +38,7 @@ from .hypothesis_test_results import (CausalityTestResults,
 # aliases for upstream compat
 _compute_acov = autocov.compute_acov
 _acovs_to_acorrs = autocov.acf_to_acorr
+_var_acf = autocov.var_acf
 
 
 # --------------------------------------------------------------------
@@ -49,41 +51,16 @@ def ma_rep(coefs, maxn=10):
                               "VARProcess is a subclass).")
 
 
-def is_stable(coefs, verbose=False):
+def is_stable(coefs, verbose=False):  # pragma: no cover
     raise NotImplementedError("is_stable is not ported from upstream, "
                               "is instead implemented directly in "
                               "VARProcess.is_stable.")
 
 
-def var_acf(coefs, sig_u, nlags=None):
+def var_acf(coefs, sig_u, nlags=None):  # pragma: no cover
     raise NotImplementedError("var_acf is not ported from upstream, "
                               "is instead implemented directly in "
                               "var_acf.is_stable.")
-
-
-def _var_acf(coefs, sig_u):
-    """
-    Compute autocovariance function ACF_y(h) for h=1,...,p
-
-    Notes
-    -----
-    Lütkepohl (2005) p.29
-    """
-    p, k, k2 = coefs.shape
-    assert k == k2
-
-    A = util.comp_matrix(coefs)
-    # construct VAR(1) noise covariance
-    SigU = np.zeros((k * p, k * p))
-    SigU[:k, :k] = sig_u
-
-    # vec(ACF) = (I_(kp)^2 - kron(A, A))^-1 vec(Sigma_U)
-    vecACF = scipy.linalg.solve(np.eye((k * p)**2) - np.kron(A, A), vec(SigU))
-
-    acf = unvec(vecACF)
-    acf = acf[:k].T.reshape((p, k, k))
-
-    return acf
 
 
 def forecast_cov(ma_coefs, sigma_u, steps):  # pragma: no cover
@@ -555,7 +532,7 @@ class VAR(tsa_model.TimeSeriesModel):
         return LagOrderResults(ics, selected_orders, vecm=False)
 
 
-class VARProcess(wold.VARParams):
+class VARProcess(wold.VARProcess):
     """
     Class represents a known VAR(p) process
 
@@ -569,127 +546,9 @@ class VARProcess(wold.VARParams):
     # -------------------------------------------------------------
     # Methods requiring `coefs` and `sigma_u`, but not `exog`
 
-    def orth_ma_rep(self, maxn=10, P=None):
-        r"""Compute Orthogonalized MA coefficient matrices using P matrix such
-        that :math:`\Sigma_u = PP^\prime`. P defaults to the Cholesky
-        decomposition of :math:`\Sigma_u`
-
-        Parameters
-        ----------
-        maxn : int
-            Number of coefficient matrices to compute
-        P : ndarray (neqs x neqs), optional
-            Matrix such that Sigma_u = PP', defaults to the
-            Cholesky decomposition.
-
-        Returns
-        -------
-        coefs : ndarray (maxn x neqs x neqs)
-        """
-        if P is None:
-            P = self._chol_sigma_u
-
-        ma_mats = self.ma_rep(maxn=maxn)
-        return np.array([np.dot(coefs, P) for coefs in ma_mats])
-
-    @cache_readonly
-    def _chol_sigma_u(self):
-        return np.linalg.cholesky(self.sigma_u)
-
-    @cache_readonly
-    def detomega(self):
-        r"""
-        Return determinant of white noise covariance with degrees of freedom
-        correction:
-
-        .. math::
-
-            \hat \Omega = \frac{T}{T - Kp - 1} \hat \Omega_{\mathrm{MLE}}
-        """
-        return scipy.linalg.det(self.sigma_u)
-
-    def acf(self, nlags=None):
-        """
-        Compute autocovariance function ACF_y(h) up to nlags of stable VAR(p)
-        process
-
-        Parameters
-        ----------
-        nlags : int, optional
-            Defaults to order p of system
-
-        Returns
-        -------
-        acf : ndarray, (p, k, k)
-
-        Notes
-        -----
-        Ref: Lütkepohl p.28-29
-        """
-        coefs = self.coefs
-        p, k, _ = coefs.shape
-        if nlags is None:
-            nlags = p
-
-        # p x k x k, ACF for lags 0, ..., p-1
-        result = np.zeros((nlags + 1, k, k))
-        result[:p] = _var_acf(coefs, self.sigma_u)
-
-        # yule-walker equations
-        for h in range(p, nlags + 1):
-            # compute ACF for lag=h
-            # G(h) = A_1 G(h-1) + ... + A_p G(h-p)
-            for j in range(p):
-                result[h] += np.dot(coefs[j], result[h - j - 1])
-
-        return result
-
-    def acorr(self, nlags=None):
-        """Compute theoretical autocorrelation function
-
-        Returns
-        -------
-        acorr : ndarray (p x k x k)
-        """
-        return util.acf_to_acorr(self.acf(nlags=nlags))
-
     def plot_acorr(self, nlags=10, linewidth=8):
         "Plot theoretical autocorrelation function"
         plotting.plot_full_acorr(self.acorr(nlags=nlags), linewidth=linewidth)
-
-    def mse(self, steps):
-        """
-        Compute theoretical forecast error variance matrices
-
-        Parameters
-        ----------
-        steps : int
-            Number of steps ahead
-
-        Notes
-        -----
-        .. math:: \mathrm{MSE}(h) = \sum_{i=0}^{h-1} \Phi \Sigma_u \Phi^T
-
-        Returns
-        -------
-        forc_covs : ndarray (steps x neqs x neqs)
-        """
-        ma_coefs = self.ma_rep(steps)
-        sigma_u = self.sigma_u
-
-        neqs = len(sigma_u)
-        forc_covs = np.zeros((steps, neqs, neqs))
-
-        prior = np.zeros((neqs, neqs))
-        for h in range(steps):
-            # Sigma(h) = Sigma(h-1) + Phi Sig_u Phi'
-            phi = ma_coefs[h]
-            var = chain_dot(phi, sigma_u, phi.T)
-            forc_covs[h] = prior = prior + var
-
-        return forc_covs
-
-    forecast_cov = mse
 
     def _forecast_vars(self, steps):
         covs = self.forecast_cov(steps)
@@ -701,9 +560,9 @@ class VARProcess(wold.VARParams):
     # TODO: having this involve `exog` doesn't fit with the
     # "known VAR(p) process" definition in the docstring
     def __init__(self, coefs, intercept, exog, sigma_u, trend, names=None):
-        wold.VARParams.__init__(self, coefs, intercept=intercept)
+        wold.VARProcess.__init__(self, coefs,
+                                 intercept=intercept, sigma_u=sigma_u)
         self.exog = exog
-        self.sigma_u = sigma_u
         self.trend = trend
         self.names = names
 
@@ -726,6 +585,7 @@ class VARProcess(wold.VARParams):
         # TODO: we might need to pass intercept along with /instead of exog?
         Y = util.varsim(self.coefs, self.exog, self.sigma_u, steps=steps)
         plotting.plot_mts(Y)
+        # FIXME: passing self.exog here is wrong
 
     def forecast(self, y, steps, exog_future=None):
         """Produce linear minimum MSE forecasts for desired number of steps
@@ -964,6 +824,7 @@ class VARResults(VARProcess):
         the model.
         """
         return np.dot(self.endog_lagged, self.params)
+        # TODO: Can we use self.model.predict here?  then base class is OK
 
     @cached_data
     def resid(self):
@@ -1003,6 +864,7 @@ class VARResults(VARProcess):
         """Standard errors of coefficients, reshaped to match in size"""
         stderr = np.sqrt(np.diag(self.cov_params))
         return stderr.reshape((self.df_model, self.neqs), order='C')
+        # TODO: why df_model?  could we use self.params.shape?
 
     bse = stderr  # sm2 interface?
 
@@ -1071,8 +933,7 @@ class VARResults(VARProcess):
 
     @cache_readonly
     def sigma_u_mle(self):
-        """(Biased) maximum likelihood estimate of noise process covariance
-        """
+        """(Biased) maximum likelihood estimate of noise process covariance"""
         return self.sigma_u * self.df_resid / self.nobs
 
     @cached_value
@@ -1090,24 +951,6 @@ class VARResults(VARProcess):
         z = self.endog_lagged
         return np.kron(scipy.linalg.inv(np.dot(z.T, z)), self.sigma_u)
 
-    def cov_ybar(self):
-        r"""Asymptotically consistent estimate of covariance of the sample mean
-
-        .. math::
-
-            \sqrt(T) (\bar{y} - \mu) \rightarrow {\cal N}(0,\Sigma_{\bar{y}})\\
-
-            \Sigma_{\bar{y}} = B \Sigma_u B^\prime,
-
-            \text{where } B = (I_K - A_1 - \cdots - A_p)^{-1}
-
-        Notes
-        -----
-        Lütkepohl Proposition 3.3
-        """
-        Ainv = scipy.linalg.inv(np.eye(self.neqs) - self.coefs.sum(0))
-        return chain_dot(Ainv, self.sigma_u, Ainv.T)
-
     # ------------------------------------------------------------
     # Estimation-related things
 
@@ -1124,17 +967,6 @@ class VARResults(VARProcess):
         # drop exog
         return self.cov_params[self.k_trend * self.neqs:,
                                self.k_trend * self.neqs:]
-
-    @cache_readonly
-    def _cov_sigma(self):
-        """
-        Estimated covariance matrix of vech(sigma_u)
-        """
-        D_K = duplication_matrix(self.neqs)
-        D_Kinv = np.linalg.pinv(D_K)
-
-        sigxsig = np.kron(self.sigma_u, self.sigma_u)
-        return 2 * chain_dot(D_Kinv, sigxsig, D_Kinv.T)
 
     @cache_readonly
     def stderr_endog_lagged(self):
@@ -1250,6 +1082,8 @@ class VARResults(VARProcess):
         lower = ma_sort[index[0], :, :, :]
         upper = ma_sort[index[1], :, :, :]
         return lower, upper
+        # TODO: If it weren't for self.exog, this could go higher in the
+        # inheritance hierarchy
 
     def irf_resim(self, orth=False, repl=1000, T=10,
                   seed=None, burn=100, cum=False):
@@ -1305,6 +1139,8 @@ class VARResults(VARProcess):
             ma_coll[i, :, :, :] = fill_coll(sim)
 
         return ma_coll
+        # TODO: If it weren't for self.exog, this could go higher in the
+        # inheritance hierarchy
 
     def _omega_forc_cov(self, steps):  # pragma: no cover
         # Approximate MSE matrix \Omega(h) as defined in Lut p97
@@ -1376,18 +1212,6 @@ class VARResults(VARProcess):
         """Bayesian a.k.a. Schwarz info criterion"""
         return self.info_criteria['bic']
 
-    @cache_readonly
-    def roots(self):
-        neqs = self.neqs
-        k_ar = self.k_ar
-        p = neqs * k_ar
-        arr = np.zeros((p, p))
-        arr[:neqs, :] = np.column_stack(self.coefs)
-        arr[neqs:, :-neqs] = np.eye(p - neqs)
-        roots = np.linalg.eig(arr)[0]**-1
-        idx = np.argsort(np.abs(roots))[::-1]  # sort by reverse modulus
-        return roots[idx]
-
     # -----------------------------------------------------------------
     # Summary, Plotting, IRF, FEVD, ... methods
 
@@ -1421,6 +1245,7 @@ class VARResults(VARProcess):
                                       'implemented (yet)')
 
         return irf.IRAnalysis(self, P=var_decomp, periods=periods)
+        # TODO: Could this go higher up in the inheritance hierarchy?
 
     def fevd(self, periods=10, var_decomp=None):
         """
@@ -1824,6 +1649,8 @@ class FEVD(object):
     def __init__(self, model, P=None, periods=None):
         self.periods = periods
 
+        # TODO: Does self.model need to exist?
+        # TODO: model is a misnomer; this is a Results object
         self.model = model
         self.neqs = model.neqs
         self.names = model.model.endog_names
@@ -1835,7 +1662,7 @@ class FEVD(object):
         irfs = (self.orth_irfs[:periods]**2).cumsum(axis=0)
 
         rng = list(range(self.neqs))
-        mse = self.model.mse(periods)[:, rng, rng]
+        mse = model.mse(periods)[:, rng, rng]
 
         # lag x equation x component
         fevd = np.empty_like(irfs)

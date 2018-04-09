@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
 """
 Limited dependent variable and qualitative variables.
 
@@ -35,6 +37,7 @@ from sm2.tools.sm_exceptions import PerfectSeparationError
 from sm2.tools.numdiff import approx_fprime_cs
 from sm2.tools import tools, data as data_tools
 
+from sm2.base import naming
 import sm2.base.model as base
 from sm2.base.data import handle_data  # for mnlogit
 import sm2.base.wrapper as wrap
@@ -378,6 +381,7 @@ class DiscreteModel(base.LikelihoodModel):
 
         return mlefit  # up to subclasses to wrap results
 
+    # TODO: Might this go higher up the hierarchy?
     def cov_params_func_l1(self, likelihood_model, xopt, retvals):
         """
         Computes cov_params on a reduced parameter space
@@ -403,6 +407,7 @@ class DiscreteModel(base.LikelihoodModel):
 
         return cov_params
 
+    # TODO: Might this go higher up the hierarchy?
     def predict(self, params, exog=None, linear=False):  # pragma: no cover
         """
         Predict response variable of a model given exogenous variables.
@@ -993,6 +998,7 @@ class Poisson(CountModel):
         linpred = Xb + offset + exposure
         endog = self.endog
         # np.sum(stats.poisson.logpmf(endog, np.exp(XB)))
+        # TODO: cache gammaln(endog + 1)?
         return -np.exp(linpred) + endog * linpred - gammaln(endog + 1)
 
     def _get_start_params_null(self):
@@ -1021,6 +1027,7 @@ class Poisson(CountModel):
             # k_params or k_exog not available?
             start_params = 0.001 * np.ones(self.exog.shape[1])
             start_params[self.data.const_idx] = self._get_start_params_null()[0]
+            # TODO: make this into `_get_start_params?
 
         cntfit = DiscreteModel.fit(self, start_params=start_params,
                                    method=method, maxiter=maxiter,
@@ -1141,6 +1148,7 @@ class Poisson(CountModel):
         L = np.exp(linpred)
         return np.dot(self.endog - L, self.exog)
         # Note: this is non-trivially more performant than wrapping score_obs
+        # TODO: Make a score_factor?
 
     def score_obs(self, params):
         """
@@ -1289,6 +1297,7 @@ class GeneralizedPoisson(CountModel):
         mu_p = np.power(mu, p)
         a1 = 1 + alpha * mu_p
         a2 = mu + (a1 - 1) * endog
+        # TODO: cache gammaln(endog+1)?
         return (np.log(mu) + (endog - 1) * np.log(a2) -
                 endog * np.log(a1) - gammaln(endog + 1) - a2 / a1)
 
@@ -1335,6 +1344,7 @@ class GeneralizedPoisson(CountModel):
             self._transparams = False
 
         if start_params is None:
+            # TODO: Make all this into _get_start_params?
             offset = getattr(self, "offset", 0) + getattr(self, "exposure", 0)
             if np.size(offset) == 1 and offset == 0:
                 offset = None
@@ -1690,7 +1700,8 @@ class Logit(BinaryModel):
         """
         q = 2 * self.endog - 1
         Xb = np.dot(self.exog, params)
-        return np.log(self.cdf(q * Xb))
+        prob = self.cdf(q * Xb)
+        return np.log(prob)
 
     def score(self, params):
         """
@@ -1713,8 +1724,8 @@ class Logit(BinaryModel):
             =\\sum_{i=1}^{n}\\left(y_{i}-\\Lambda_{i}\\right)x_{i}
         """
         Xb = np.dot(self.exog, params)
-        L = self.cdf(Xb)
-        return np.dot(self.endog - L, self.exog)
+        prob = self.cdf(Xb)
+        return np.dot(self.endog - prob, self.exog)
         # Note: this is non-trivially more performant than wrapping score_obs
 
     def score_obs(self, params):
@@ -1740,8 +1751,8 @@ class Logit(BinaryModel):
         for observations :math:`i=1, ..., n`
         """
         Xb = np.dot(self.exog, params)
-        L = self.cdf(Xb)
-        return (self.endog - L)[:, None] * self.exog
+        prob = self.cdf(Xb)
+        return (self.endog - prob)[:, None] * self.exog
 
     def hessian(self, params):
         r"""
@@ -1764,9 +1775,8 @@ class Logit(BinaryModel):
             =-\sum_{i}\Lambda_{i}\left(1-\Lambda_{i}\right)x_{i}x_{i}^{\prime}
         """
         Xb = np.dot(self.exog, params)
-        X = self.exog
-        L = self.cdf(Xb)
-        return -np.dot(L * (1 - L) * X.T, X)
+        prob = self.cdf(Xb)
+        return -np.dot(prob * (1 - prob) * self.exog.T, self.exog)
 
 
 class Probit(BinaryModel):
@@ -1790,46 +1800,8 @@ class Probit(BinaryModel):
         return {"fit": (ProbitResults, BinaryResultsWrapper),
                 "fit_regularized": (L1BinaryResults, L1BinaryResultsWrapper)}
 
-    def cdf(self, X):
-        """
-        Probit (Normal) cumulative distribution function
-
-        Parameters
-        ----------
-        X : array-like
-            The linear predictor of the model (XB).
-
-        Returns
-        --------
-        cdf : ndarray
-            The cdf evaluated at `X`.
-
-        Notes
-        -----
-        This function is just an alias for scipy.stats.norm.cdf
-        """
-        return stats.norm._cdf(X)
-
-    def pdf(self, X):
-        """
-        Probit (Normal) probability density function
-
-        Parameters
-        ----------
-        X : array-like
-            The linear predictor of the model (XB).
-
-        Returns
-        --------
-        pdf : ndarray
-            The value of the normal density function for each point of X.
-
-        Notes
-        -----
-        This function is just an alias for scipy.stats.norm.pdf
-        """
-        X = np.asarray(X)
-        return stats.norm._pdf(X)
+    cdf = stats.norm._cdf
+    pdf = stats.norm._pdf
 
     def loglikeobs(self, params):
         r"""
@@ -1887,8 +1859,9 @@ class Probit(BinaryModel):
         """
         Xb = np.dot(self.exog, params)
         q = 2 * self.endog - 1
+        prob = self.cdf(q * Xb)
         # clip to get rid of invalid divide complaint
-        L = q * self.pdf(q * Xb) / np.clip(self.cdf(q * Xb),
+        L = q * self.pdf(q * Xb) / np.clip(prob,
                                            FLOAT_EPS, 1 - FLOAT_EPS)
         return np.dot(L, self.exog)
         # Note: this is non-trivially more performant than wrapping score_obs
@@ -1921,8 +1894,9 @@ class Probit(BinaryModel):
         """
         Xb = np.dot(self.exog, params)
         q = 2 * self.endog - 1
+        prob = self.cdf(q * Xb)
         # clip to get rid of invalid divide complaint
-        L = q * self.pdf(q * Xb) / np.clip(self.cdf(q * Xb),
+        L = q * self.pdf(q * Xb) / np.clip(prob,
                                            FLOAT_EPS, 1 - FLOAT_EPS)
         return L[:, None] * self.exog
 
@@ -1955,11 +1929,11 @@ class Probit(BinaryModel):
 
         and :math:`q=2y-1`
         """
-        X = self.exog
         Xb = np.dot(self.exog, params)
         q = 2 * self.endog - 1
-        L = q * self.pdf(q * Xb) / self.cdf(q * Xb)
-        return np.dot(-L * (L + Xb) * X.T, X)
+        prob = self.cdf(q * Xb)
+        L = q * self.pdf(q * Xb) / prob
+        return np.dot(-L * (L + Xb) * self.exog.T, self.exog)
 
 
 class MNLogit(MultinomialModel):
@@ -2091,9 +2065,9 @@ class MNLogit(MultinomialModel):
         """  # noqa:E501
         params = params.reshape(self.K, -1, order='F')
         Xb = np.dot(self.exog, params)
-        firstterm = self.wendog[:, 1:] - self.cdf(Xb)[:, 1:]
+        wresid = self.wendog[:, 1:] - self.cdf(Xb)[:, 1:]
         # NOTE: might need to switch terms if params is reshaped
-        return np.dot(firstterm.T, self.exog).flatten()
+        return np.dot(wresid.T, self.exog).flatten()
         # Note: this is non-trivially more performant than wrapping score_obs
 
     def loglike_and_score(self, params):
@@ -2107,8 +2081,8 @@ class MNLogit(MultinomialModel):
         Xb = np.dot(self.exog, params)
         cdf_dot_exog_params = self.cdf(Xb)
         loglike_value = np.sum(self.wendog * np.log(cdf_dot_exog_params))
-        firstterm = self.wendog[:, 1:] - cdf_dot_exog_params[:, 1:]
-        score_array = np.dot(firstterm.T, self.exog).flatten()
+        wresid = self.wendog[:, 1:] - cdf_dot_exog_params[:, 1:]
+        score_array = np.dot(wresid.T, self.exog).flatten()
         return loglike_value, score_array
 
     def score_obs(self, params):
@@ -2139,9 +2113,9 @@ class MNLogit(MultinomialModel):
         """  # noqa:E501
         params = params.reshape(self.K, -1, order='F')
         Xb = np.dot(self.exog, params)
-        firstterm = self.wendog[:, 1:] - self.cdf(Xb)[:, 1:]
+        wresid = self.wendog[:, 1:] - self.cdf(Xb)[:, 1:]
         # NOTE: might need to switch terms if params is reshaped
-        return (firstterm[:, :, None] *
+        return (wresid[:, :, None] *
                 self.exog[:, None, :]).reshape(self.nobs, -1)
 
     def hessian(self, params):
@@ -3241,7 +3215,8 @@ class DiscreteResults(base.LikelihoodModelResults):
 
     @cached_data
     def fittedvalues(self):
-        # TODO: Can we merge this into the base class case?
+        # doesn't match self.model.predict(self.params), so we can't delegate
+        # to base class
         return np.dot(self.model.exog, self.params[:self.model.exog.shape[1]])
 
     @cached_value
@@ -3660,16 +3635,11 @@ class MultinomialResults(DiscreteResults):
         self.K = model.K
         self.nobs = model.nobs
 
-    # TODO: Doesn't need to be a method
-    def _maybe_convert_ynames_int(self, ynames):
-        # see if they're integers
-        try:
-            for i in ynames:
-                if ynames[i] % 1 == 0:
-                    ynames[i] = str(int(ynames[i]))
-        except TypeError:
-            pass
-        return ynames
+    def _maybe_convert_ynames_int(self, ynames):  # pragma: no cover
+        raise NotImplementedError("_maybe_convert_ynames_int not ported from "
+                                  "upstream, use "
+                                  "sm2.base.naming.maybe_convert_ynames_int "
+                                  "instead.")
 
     @deprecate_kwarg('all', 'use_all')
     def _get_endog_name(self, yname, yname_list, use_all=False):
@@ -3681,7 +3651,7 @@ class MultinomialResults(DiscreteResults):
             yname = model.endog_names
         if yname_list is None:
             ynames = model._ynames_map
-            ynames = self._maybe_convert_ynames_int(ynames)
+            ynames = naming.maybe_convert_ynames_int(ynames)
             # use range below to ensure sortedness
             ynames = [ynames[key] for key in range(int(model.J))]
             ynames = ['='.join([yname, name]) for name in ynames]

@@ -13,7 +13,7 @@ from sm2.compat.python import asstr2
 from sm2.tools.data import _is_using_pandas, _is_recarray
 
 
-def _make_dictnames(tmp_arr, offset=0):
+def _make_dictnames(tmp_arr, offset=0):  # TODO: move to base.naming?
     """
     Helper function to create a dictionary mapping a column number
     to the name in tmp_arr.

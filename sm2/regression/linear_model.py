@@ -41,7 +41,7 @@ from scipy import stats
 from sm2.tools.sm_exceptions import InvalidTestWarning
 from sm2.tools.tools import chain_dot, pinv_extended
 from sm2.tools.decorators import (resettable_cache,
-                                  cache_readonly,
+                                  cache_readonly, cached_data, cached_value,
                                   cache_writable, copy_doc)
 import sm2.base.model as base
 import sm2.base.wrapper as wrap
@@ -181,7 +181,7 @@ class RegressionModel(base.LikelihoodModel):
                 "fit_regularized": (RegularizedResults,
                                     RegularizedResultsWrapper)}
 
-    @cache_readonly
+    @cached_value
     def nobs(self):
         return float(self.wexog.shape[0])
 
@@ -283,7 +283,7 @@ class RegressionModel(base.LikelihoodModel):
                 self.pinv_wexog, singular_values = pinv_extended(self.wexog)
                 self.normalized_cov_params = np.dot(self.pinv_wexog,
                                                     self.pinv_wexog.T)
-
+                # TODO: above is similar to RLM._initialize and GLM.initialize
                 # Cache these singular values for use later.
                 self.wexog_singular_values = singular_values
                 self.rank = np.linalg.matrix_rank(np.diag(singular_values))
@@ -817,8 +817,7 @@ class OLS(WLS):
         -------
         The score vector.
         """
-        if not hasattr(self, "_wexog_xprod"):
-            self._setup_score_hess()
+        self._setup_score_hess()
 
         xtxb = np.dot(self._wexog_xprod, params)
         sdr = -self._wexog_x_wendog + xtxb
@@ -827,11 +826,15 @@ class OLS(WLS):
             ssr = self._wendog_xprod - 2 * np.dot(self._wexog_x_wendog.T,
                                                   params)
             ssr += np.dot(params, xtxb)
-            return -self.nobs * sdr / ssr
-        else:
-            return -sdr / scale
+            # scale-esque
+            scale = ssr / self.nobs
+        return -sdr / scale
 
     def _setup_score_hess(self):
+        if hasattr(self, "_wexog_xprod"):
+            # TODO: Don't do this with unpredictable attributes
+            return
+
         y = self.wendog
         if hasattr(self, 'offset'):
             y = y - self.offset
@@ -856,8 +859,7 @@ class OLS(WLS):
         -------
         The Hessian matrix.
         """
-        if not hasattr(self, "_wexog_xprod"):
-            self._setup_score_hess()
+        self._setup_score_hess()
 
         xtxb = np.dot(self._wexog_xprod, params)
 
@@ -1255,7 +1257,7 @@ class RegressionResults(base.LikelihoodModelResults):
 
     _cache = {}  # needs to be a class attribute for scale setter?
 
-    @cache_readonly
+    @cached_value
     def nobs(self):
         # TODO: make this not-depend on wexog in case data has been removed
         return float(self.model.wexog.shape[0])
@@ -1321,7 +1323,7 @@ class RegressionResults(base.LikelihoodModelResults):
         ci = super(RegressionResults, self).conf_int(alpha=alpha, cols=cols)
         return ci
 
-    @cache_readonly
+    @cached_data
     def wresid(self):
         return self.model.wendog - self.model.predict(self.params,
                                                       self.model.wexog)
@@ -1425,11 +1427,11 @@ class RegressionResults(base.LikelihoodModelResults):
     def bse(self):
         return np.sqrt(np.diag(self.cov_params()))
 
-    @cache_readonly
+    @cached_value
     def aic(self):
         return -2 * self.llf + 2 * (self.df_model + self.k_constant)
 
-    @cache_readonly
+    @cached_value
     def bic(self):
         return (-2 * self.llf + np.log(self.nobs) * (self.df_model +
                                                      self.k_constant))

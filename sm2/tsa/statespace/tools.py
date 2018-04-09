@@ -5,7 +5,6 @@ Author: Chad Fulton
 License: Simplified-BSD
 """
 from __future__ import division, absolute_import, print_function
-import warnings
 
 import numpy as np
 # from scipy import linalg
@@ -38,7 +37,7 @@ prefix_copy_index_vector_map = {}
 
 def set_mode(compatibility=None):
     # Determine mode automatically if none given
-    if compatibility is True:
+    if compatibility is True:  # pragma: no cover
         raise NotImplementedError("compatibility_mode=True not ported from"
                                   "upstream, since sm2 requires relatively "
                                   "recent scipy.")

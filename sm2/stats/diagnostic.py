@@ -43,8 +43,8 @@ from ._adnorm import normal_ad  # noqa: F401
 # TODO: The comment below was from upstream.  I _dislike_ this pattern
 # TODO: I like the bunch pattern for this too.
 class ResultsStore(object):
-    def __str__(self):
-        return self._str
+    # Upstream ResultsStore.__str__ will raise, see GH#4446
+    pass
 
 
 def linear_lm(resid, exog, func=None):
@@ -277,6 +277,7 @@ def acorr_lm(x, maxlag=None, autolag='AIC', store=False, regresults=False):
         return lm, lmpval, fval, fpval, resstore
     else:
         return lm, lmpval, fval, fpval
+    # TODO: remove multiple-return
 
 
 def het_arch(resid, maxlag=None, autolag=None, store=False, regresults=False,

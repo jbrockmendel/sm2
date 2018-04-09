@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
 # Note: The information criteria add 1 to the number of parameters
 #       whenever the model has an AR or MA term since, in principle,
 #       the variance could be treated as a free parameter and restricted
@@ -23,14 +25,13 @@ from sm2.tools.decorators import (resettable_cache,
 from sm2.tools.numdiff import approx_hess_cs, approx_fprime_cs
 
 import sm2.base.wrapper as wrap
-
+from sm2.base.naming import make_arma_names as _make_arma_names
 from sm2.regression.linear_model import yule_walker, GLS
 
 from sm2.tsa.base import tsa_model
 from sm2.tsa import wold
 from sm2.tsa.tsatools import (lagmat, add_trend,
                               unintegrate, unintegrate_levels)
-from sm2.tsa.vector_ar import util
 from sm2.tsa.arima_process import arma2ma
 from sm2.tsa.ar_model import AR
 from sm2.tsa.kalmanf import KalmanFilter
@@ -82,10 +83,6 @@ _arma_params = """endog : array-like
     exog : array-like, optional
         An optional array of exogenous variables. This should *not* include a
         constant or trend. You can specify this in the `fit` method."""
-
-_arma_model = "Autoregressive Moving Average ARMA(p,q) Model"
-
-_arima_model = "Autoregressive Integrated Moving Average ARIMA(p,d,q) Model"
 
 _arima_params = """endog : array-like
         The endogenous variable.
@@ -381,30 +378,6 @@ def _arma_predict_in_sample(start, end, endog, resid, k_ar, method):
     return fittedvalues[fv_start:fv_end]
 
 
-def _make_arma_names(data, k_trend, order, exog_names):
-    k_ar, k_ma = order
-    exog_names = exog_names or []
-    ar_lag_names = util.make_lag_names([data.ynames], k_ar, 0)
-    ar_lag_names = [''.join(('ar.', i)) for i in ar_lag_names]
-    ma_lag_names = util.make_lag_names([data.ynames], k_ma, 0)
-    ma_lag_names = [''.join(('ma.', i)) for i in ma_lag_names]
-    trend_name = util.make_lag_names('', 0, k_trend)
-
-    # ensure exog_names stays unchanged when the `fit` method
-    # is called multiple times.
-    if k_ma == 0 and k_ar == 0:
-        if len(exog_names) != 0:
-            return exog_names
-    elif ((exog_names[-k_ma:] == ma_lag_names) and
-            exog_names[-(k_ar + k_ma):-k_ma] == ar_lag_names and
-            (not exog_names or not trend_name or
-             trend_name[0] == exog_names[0])):
-            return exog_names
-
-    exog_names = trend_name + exog_names + ar_lag_names + ma_lag_names
-    return exog_names
-
-
 # TODO: Does this belong somewhere else?
 def _make_arma_exog(endog, exog, trend):
     k_trend = 1  # overwritten if no constant
@@ -429,7 +402,7 @@ def _check_estimable(nobs, n_params):
 
 class ARMA(wold.ARMAParams, tsa_model.TimeSeriesModel):
     __doc__ = tsa_model._tsa_doc % {
-        "model": _arma_model,
+        "model": "Autoregressive Moving Average ARMA(p,q) Model",
         "params": _arma_params,
         "extra_params": "",
         "extra_sections": _armax_notes % {"Model": "ARMA"}}
@@ -441,6 +414,7 @@ class ARMA(wold.ARMAParams, tsa_model.TimeSeriesModel):
         if exog is not None:
             if exog.ndim == 1:
                 exog = exog[:, None]
+                # TODO: Not hit in tests; is this case really releevant?
             return exog.shape[1]  # number of exog. variables excl. const
         else:
             return 0
@@ -652,8 +626,8 @@ class ARMA(wold.ARMAParams, tsa_model.TimeSeriesModel):
             errors = KalmanFilter.geterrors(y, k, k_ar, k_ma, k_lags, nobs,
                                             Z_mat, m, R_mat, T_mat,
                                             paramsdtype)
-            if isinstance(errors, tuple):
-                errors = errors[0]  # non-cython version returns a tuple
+            assert not isinstance(errors, tuple)
+            # upstream checks for this saying non-cython version returns tuple
         else:
             # use scipy.signal.lfilter
             y = self.endog.copy()
@@ -947,7 +921,7 @@ class ARMA(wold.ARMAParams, tsa_model.TimeSeriesModel):
 # starting to think that order of model should be put in instantiation...
 class ARIMA(ARMA):
     __doc__ = tsa_model._tsa_doc % {
-        "model": _arima_model,
+        "model": "Autoregressive Integrated Moving Average ARIMA(p,d,q) Model",
         "params": _arima_params,
         "extra_params": "",
         "extra_sections": _armax_notes % {"Model": "ARIMA"}}
@@ -1190,7 +1164,7 @@ class ARIMA(ARMA):
                                            levels)[d:]]
                 else:
                     fv = predict + endog[start:end + 1]
-                    if d == 2:
+                    if d == 2:  # TODO: No tests with d == 2
                         fv += np.diff(endog[start - 1:end + 1])
             else:
                 k_ar = self.k_ar
@@ -1474,6 +1448,7 @@ class ARMAResults(wold.ARMARoots, tsa_model.TimeSeriesModelResults):
         conf_int = np.c_[forecast - const * fcasterr,
                          forecast + const * fcasterr]
         return conf_int
+        # TODO: DOes this need to be a method?
 
     def forecast(self, steps=1, exog=None, alpha=.05):
         """
@@ -1696,6 +1671,7 @@ class ARIMAResults(ARMAResults):
         const = stats.norm.ppf(1 - alpha / 2.)
         conf_int = np.c_[forecast - const * fcerr, forecast + const * fcerr]
         return conf_int
+        # TODO: Does this need to be a method?
 
     def forecast(self, steps=1, exog=None, alpha=.05):
         """

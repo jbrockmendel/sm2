@@ -10,6 +10,8 @@ import numpy as np
 import scipy.linalg
 from pandas._libs.properties import cache_readonly
 
+from sm2.tsa import autocov
+
 
 # -----------------------------------------------------------------------
 # Input Validation
@@ -412,6 +414,18 @@ class VARParams(object):
                                                             intercept)
         self.intercept = intercept
 
+    @cache_readonly  # TODO: Should be called arroots?
+    def roots(self):
+        neqs = self.neqs
+        k_ar = self.k_ar
+        p = neqs * k_ar
+        arr = np.zeros((p, p))
+        arr[:neqs, :] = np.column_stack(self.coefs)
+        arr[neqs:, :-neqs] = np.eye(p - neqs)
+        roots = np.linalg.eig(arr)[0]**-1
+        idx = np.argsort(np.abs(roots))[::-1]  # sort by reverse modulus
+        return roots[idx]
+
     @cache_readonly
     def _char_mat(self):
         arcoefs = self.arcoefs
@@ -433,7 +447,6 @@ class VARParams(object):
         # In VARProcess self.intercept is replaced by self.exog
         # TODO: does that make sense?
 
-    # TODO: catch np.linalg.LinAlgError?  Maybe return a vector of NaNs?
     def long_run_effects(self):
         r"""Compute long-run effect of unit impulse
 
@@ -518,3 +531,166 @@ class VARParams(object):
                 phis[i] += np.dot(phis[i - j], coefs[j - 1])
 
         return phis
+
+
+class VARProcess(VARParams):
+    """
+    Class represents a known VAR(p) process
+
+    Parameters
+    ----------
+    arcoefs : ndarray (p x k x k)
+    intercept : ndarray (length k)
+    sigma_u : ndarray (k x k)
+    """
+    def __init__(self, coefs, intercept, sigma_u):
+        VARParams.__init__(self, coefs, intercept=intercept)
+        self.sigma_u = sigma_u
+
+    @cache_readonly
+    def _chol_sigma_u(self):
+        return np.linalg.cholesky(self.sigma_u)
+
+    @cache_readonly
+    def detomega(self):
+        r"""
+        Return determinant of white noise covariance with degrees of freedom
+        correction:
+
+        .. math::
+
+            \hat \Omega = \frac{T}{T - Kp - 1} \hat \Omega_{\mathrm{MLE}}
+        """
+        return scipy.linalg.det(self.sigma_u)
+
+    def orth_ma_rep(self, maxn=10, P=None):
+        r"""Compute Orthogonalized MA coefficient matrices using P matrix such
+        that :math:`\Sigma_u = PP^\prime`. P defaults to the Cholesky
+        decomposition of :math:`\Sigma_u`
+
+        Parameters
+        ----------
+        maxn : int
+            Number of coefficient matrices to compute
+        P : ndarray (neqs x neqs), optional
+            Matrix such that Sigma_u = PP', defaults to the
+            Cholesky decomposition.
+
+        Returns
+        -------
+        coefs : ndarray (maxn x neqs x neqs)
+        """
+        if P is None:
+            P = self._chol_sigma_u
+
+        ma_mats = self.ma_rep(maxn=maxn)
+        return np.array([np.dot(coefs, P) for coefs in ma_mats])
+
+    def mse(self, steps):
+        r"""
+        Compute theoretical forecast error variance matrices
+
+        Parameters
+        ----------
+        steps : int
+            Number of steps ahead
+
+        Notes
+        -----
+        .. math:: \mathrm{MSE}(h) = \sum_{i=0}^{h-1} \Phi \Sigma_u \Phi^T
+
+        Returns
+        -------
+        forc_covs : ndarray (steps x neqs x neqs)
+        """
+        ma_coefs = self.ma_rep(steps)
+        sigma_u = self.sigma_u
+
+        neqs = len(sigma_u)
+        forc_covs = np.zeros((steps, neqs, neqs))
+
+        prior = np.zeros((neqs, neqs))
+        for h in range(steps):
+            # Sigma(h) = Sigma(h-1) + Phi Sig_u Phi'
+            phi = ma_coefs[h]
+            var = phi.dot(sigma_u).dot(phi.T)
+            forc_covs[h] = prior = prior + var
+
+        return forc_covs
+
+    forecast_cov = mse
+
+    def cov_ybar(self):
+        r"""Asymptotically consistent estimate of covariance of the sample mean
+
+        .. math::
+
+            \sqrt(T) (\bar{y} - \mu) \rightarrow {\cal N}(0,\Sigma_{\bar{y}})\\
+
+            \Sigma_{\bar{y}} = B \Sigma_u B^\prime,
+
+            \text{where } B = (I_K - A_1 - \cdots - A_p)^{-1}
+
+        Notes
+        -----
+        Lütkepohl Proposition 3.3
+        """
+        Ainv = scipy.linalg.inv(np.eye(self.neqs) - self.coefs.sum(0))
+        return Ainv.dot(self.sigma_u).dot(Ainv.T)
+
+    @cache_readonly
+    def _cov_sigma(self):
+        """
+        Estimated covariance matrix of vech(sigma_u)
+        """
+        from sm2.tsa.tsatools import duplication_matrix
+        D_K = duplication_matrix(self.neqs)
+        D_Kinv = np.linalg.pinv(D_K)
+
+        sigxsig = np.kron(self.sigma_u, self.sigma_u)
+        return 2 * D_Kinv.dot(sigxsig).dot(D_Kinv.T)
+
+    def acf(self, nlags=None):
+        """
+        Compute autocovariance function ACF_y(h) up to nlags of stable VAR(p)
+        process
+
+        Parameters
+        ----------
+        nlags : int, optional
+            Defaults to order p of system
+
+        Returns
+        -------
+        acf : ndarray, (p, k, k)
+
+        Notes
+        -----
+        Ref: Lütkepohl p.28-29
+        """
+        coefs = self.coefs
+        p, k, _ = coefs.shape
+        if nlags is None:
+            nlags = p
+
+        # p x k x k, ACF for lags 0, ..., p-1
+        result = np.zeros((nlags + 1, k, k))
+        result[:p] = autocov.var_acf(coefs, self.sigma_u)
+
+        # yule-walker equations
+        for h in range(p, nlags + 1):
+            # compute ACF for lag=h
+            # G(h) = A_1 G(h-1) + ... + A_p G(h-p)
+            for j in range(p):
+                result[h] += np.dot(coefs[j], result[h - j - 1])
+
+        return result
+
+    def acorr(self, nlags=None):
+        """Compute theoretical autocorrelation function
+
+        Returns
+        -------
+        acorr : ndarray (p x k x k)
+        """
+        return autocov.acf_to_acorr(self.acf(nlags=nlags))

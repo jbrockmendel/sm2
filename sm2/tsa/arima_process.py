@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
 """ARMA process and estimation with scipy.signal.lfilter
 
 Notes
@@ -652,29 +654,33 @@ class ArmaProcess(wold.ARMARoots):
         nobs = nobs or model_results.nobs
         return cls(np.r_[1, -arcoefs], np.r_[1, macoefs], nobs=nobs)
 
-    def __mul__(self, oth):
-        if isinstance(oth, self.__class__):
-            ar = (self.arpoly * oth.arpoly).coef
-            ma = (self.mapoly * oth.mapoly).coef
+    def __mul__(self, other):
+        if isinstance(other, self.__class__):
+            ar = (self.arpoly * other.arpoly).coef
+            ma = (self.mapoly * other.mapoly).coef
         else:
             try:
-                aroth, maoth = oth
+                aroth, maoth = other
                 arpolyoth = np.polynomial.Polynomial(aroth)
                 mapolyoth = np.polynomial.Polynomial(maoth)
                 ar = (self.arpoly * arpolyoth).coef
                 ma = (self.mapoly * mapolyoth).coef
-            except:
-                raise TypeError('Other type is not a valid type')
+            except (ValueError, TypeError):
+                raise TypeError('Cannot multiply type {cls} with type {other}'
+                                .format(cls=type(self).__name__,
+                                        other=type(other).__name__))
         return self.__class__(ar, ma, nobs=self.nobs)
 
     def __repr__(self):
-        msg = 'ArmaProcess({0}, {1}, nobs={2}) at {3}'
-        return msg.format(self.ar.tolist(), self.ma.tolist(),
-                          self.nobs, hex(id(self)))
+        msg = '{cls}({ar}, {ma}, nobs={nobs})'
+        return msg.format(cls=self.__class__.__name__,
+                          ar=self.ar.tolist(), ma=self.ma.tolist(),
+                          nobs=self.nobs)
 
     def __str__(self):
-        return 'ArmaProcess\nAR: {0}\nMA: {1}'.format(self.ar.tolist(),
-                                                      self.ma.tolist())
+        return '{cls}\nAR: {ar}\nMA: {ma}'.format(cls=self.__class__.__name__,
+                                                  ar=self.ar.tolist(),
+                                                  ma=self.ma.tolist())
 
     @copy_doc(arma_acovf.__doc__)
     def acovf(self, nobs=None):

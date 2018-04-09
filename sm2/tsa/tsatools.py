@@ -533,6 +533,7 @@ def vec(mat):
     return mat.ravel('F')
 
 
+# TODO: is this related to vector_ar.util.vech?
 def vech(mat):
     # Gets Fortran-order
     return mat.T.take(_triu_indices(len(mat)))
@@ -558,6 +559,7 @@ def unvec(v):
     k = int(np.sqrt(len(v)))
     assert k * k == len(v)
     return v.reshape((k, k), order='F')
+    # TODO: Is the 'F' part relevant?
 
 
 def unvech(v):

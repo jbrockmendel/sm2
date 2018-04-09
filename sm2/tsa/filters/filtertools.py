@@ -44,13 +44,13 @@ def _pad_nans(x, head=None, tail=None):
         raise ValueError("Nan-padding for ndim > 2 not implemented")
 
 
-def fftconvolveinv(in1, in2, mode="full"):
+def fftconvolveinv(in1, in2, mode="full"):  # pragma: no cover
     raise NotImplementedError("fftconvolveinv not ported from upstream, as "
                               "it is neither used nor tested there "
                               "(except in one sandbox example file)")
 
 
-def fftconvolve3(in1, in2=None, in3=None, mode="full"):
+def fftconvolve3(in1, in2=None, in3=None, mode="full"):  # pragma: no cover
     raise NotImplementedError("fftconvolve3 not ported from upstream, as "
                               "it is only used once (in a sandbox module) "
                               "and not tested there.")
@@ -206,6 +206,6 @@ def convolution_filter(x, filt, nsides=2):
     return result
 
 
-def miso_lfilter(ar, ma, x, useic=False):
+def miso_lfilter(ar, ma, x, useic=False):  # pragma: no cover
     raise NotImplementedError("miso_lfilter not ported from upstream, as "
                               "it is neither used nor tested there.")

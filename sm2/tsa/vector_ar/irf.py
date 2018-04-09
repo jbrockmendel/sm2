@@ -132,33 +132,31 @@ class BaseIRAnalysis(object):
 
         if plot_stderr is False:
             stderr = None
-
-        elif stderr_type not in ['asym', 'mc', 'sz1', 'sz2', 'sz3']:
+        elif stderr_type == 'asym':
+            stderr = self.cov(orth=orth)
+        elif stderr_type == 'mc':
+            stderr = self.errband_mc(orth=orth, svar=svar,
+                                     repl=repl, signif=signif,
+                                     seed=seed)
+        elif stderr_type == 'sz1':
+            stderr = self.err_band_sz1(orth=orth, svar=svar,
+                                       repl=repl, signif=signif,
+                                       seed=seed,
+                                       component=component)
+        elif stderr_type == 'sz2':
+            stderr = self.err_band_sz2(orth=orth, svar=svar,
+                                       repl=repl, signif=signif,
+                                       seed=seed,
+                                       component=component)
+        elif stderr_type == 'sz3':
+            stderr = self.err_band_sz3(orth=orth, svar=svar,
+                                       repl=repl, signif=signif,
+                                       seed=seed,
+                                       component=component)
+        else:
             raise ValueError("Error type must be either "
                              "'asym', 'mc', 'sz1', 'sz2', "
                              "or 'sz3'")  # pragma: no cover
-        else:
-            if stderr_type == 'asym':
-                stderr = self.cov(orth=orth)
-            if stderr_type == 'mc':
-                stderr = self.errband_mc(orth=orth, svar=svar,
-                                         repl=repl, signif=signif,
-                                         seed=seed)
-            if stderr_type == 'sz1':
-                stderr = self.err_band_sz1(orth=orth, svar=svar,
-                                           repl=repl, signif=signif,
-                                           seed=seed,
-                                           component=component)
-            if stderr_type == 'sz2':
-                stderr = self.err_band_sz2(orth=orth, svar=svar,
-                                           repl=repl, signif=signif,
-                                           seed=seed,
-                                           component=component)
-            if stderr_type == 'sz3':
-                stderr = self.err_band_sz3(orth=orth, svar=svar,
-                                           repl=repl, signif=signif,
-                                           seed=seed,
-                                           component=component)
 
         plotting.irf_grid_plot(irfs, stderr, impulse, response,
                                self.model.names, title, signif=signif,
@@ -331,16 +329,7 @@ class IRAnalysis(BaseIRAnalysis):
         q = util.norm_signif_level(signif)
 
         W, eigva, k = self._eigval_decomp_SZ(irf_resim)
-
-        if component is not None:
-            if np.shape(component) != (neqs, neqs):
-                raise ValueError("Component array must be {neqs}x{neqs}"
-                                 .format(neqs=neqs))
-            if np.argmax(component) >= neqs * periods:
-                raise ValueError("At least one of the components "
-                                 "does not exist")
-            else:
-                k = component
+        k = _validate_component(component, neqs, periods, dims=2, k=k)
 
         # here take the kth column of W, which we determine by finding
         # the largest eigenvalue of the covariance matrix
@@ -396,16 +385,7 @@ class IRAnalysis(BaseIRAnalysis):
                                     burn=100)
 
         W, eigva, k = self._eigval_decomp_SZ(irf_resim)
-
-        if component is not None:
-            if np.shape(component) != (neqs, neqs):
-                raise ValueError("Component array must be {neqs}x{neqs}"
-                                 .format(neqs=neqs))
-            if np.argmax(component) >= neqs * periods:
-                raise ValueError("At least one of the components "
-                                 "does not exist")
-            else:
-                k = component
+        k = _validate_component(component, neqs, periods, dims=2, k=k)
 
         gamma = np.zeros((repl, periods + 1, neqs, neqs))
         for p in range(repl):
@@ -414,16 +394,7 @@ class IRAnalysis(BaseIRAnalysis):
                     gamma[p, 1:, i, j] = (W[i, j, k[i, j], :] *
                                           irf_resim[p, 1:, i, j])
 
-        gamma_sort = np.sort(gamma, axis=0)  # sort to get quantiles
-        indx = round(signif / 2 * repl) - 1, round((1 - signif / 2) * repl) - 1
-
-        lower = np.copy(irfs)
-        upper = np.copy(irfs)
-        for i in range(neqs):
-            for j in range(neqs):
-                lower[:, i, j] = irfs[:, i, j] + gamma_sort[indx[0], :, i, j]
-                upper[:, i, j] = irfs[:, i, j] + gamma_sort[indx[1], :, i, j]
-
+        lower, upper = _fill_irfs(irfs, gamma, signif, repl)
         return lower, upper
 
     def err_band_sz3(self, orth=False, svar=False, repl=1000, signif=0.05,
@@ -477,16 +448,7 @@ class IRAnalysis(BaseIRAnalysis):
         W = np.zeros((neqs, periods * neqs, periods * neqs))
         eigva = np.zeros((neqs, periods * neqs))
         k = np.zeros((neqs))
-
-        if component is not None:
-            if np.size(component) != (neqs):
-                raise ValueError("Component array must be of length {neqs}"
-                                 .format(neqs=neqs))
-            if np.argmax(component) >= neqs * periods:
-                raise ValueError("At least one of the components "
-                                 "does not exist")
-            else:
-                k = component
+        k = _validate_component(component, neqs, periods, dims=1, k=k)
 
         # compute for eigen decomp for each stack
         for i in range(neqs):
@@ -504,16 +466,7 @@ class IRAnalysis(BaseIRAnalysis):
                         gamma[p, 1:, i, j] = (W[j, k[j], i * periods:] *
                                               irf_resim[p, 1:, i, j])
 
-        gamma_sort = np.sort(gamma, axis=0)  # sort to get quantiles
-        indx = round(signif / 2 * repl) - 1, round((1 - signif / 2) * repl) - 1
-
-        lower = np.copy(irfs)
-        upper = np.copy(irfs)
-        for i in range(neqs):
-            for j in range(neqs):
-                lower[:, i, j] = irfs[:, i, j] + gamma_sort[indx[0], :, i, j]
-                upper[:, i, j] = irfs[:, i, j] + gamma_sort[indx[1], :, i, j]
-
+        lower, upper = _fill_irfs(irfs, gamma, signif, repl)
         return lower, upper
 
     def _eigval_decomp_SZ(self, irf_resim):
@@ -691,5 +644,43 @@ class IRAnalysis(BaseIRAnalysis):
 
         return np.dot(Lk.T, scipy.linalg.inv(B))
 
-    def fevd_table(self):  # TODO: raise NotImplementedError?
-        pass
+    def fevd_table(self):
+        raise NotImplementedError
+        # TODO: upstream just passes, should be fixed
+
+
+def _validate_component(component, neqs, periods, dims, k):
+    assert dims in [1, 2]
+
+    if component is not None:
+        if dims == 2 and np.shape(component) != (neqs, neqs):
+            # dims == 2 --> err_band_sz1 or err_band_sz2
+            raise ValueError("Component array must be {neqs}x{neqs}"
+                             .format(neqs=neqs))
+        elif dims == 1 and np.size(component) != (neqs):
+            # dims == 1 --> err_band_sz3
+            raise ValueError("Component array must be of length {neqs}"
+                             .format(neqs=neqs))
+        if np.argmax(component) >= neqs * periods:
+            raise ValueError("At least one of the components "
+                             "does not exist")
+        else:
+            k = component
+
+    return k
+
+
+def _fill_irfs(irfs, gamma, signif, repl):
+    gamma_sort = np.sort(gamma, axis=0)  # sort to get quantiles
+    indx = (int(round(signif / 2 * repl) - 1),
+            int(round((1 - signif / 2) * repl) - 1))
+
+    neqs = irfs.shape[-1]
+    lower = np.copy(irfs)
+    upper = np.copy(irfs)
+    for i in range(neqs):
+        for j in range(neqs):
+            lower[:, i, j] = irfs[:, i, j] + gamma_sort[indx[0], :, i, j]
+            upper[:, i, j] = irfs[:, i, j] + gamma_sort[indx[1], :, i, j]
+
+    return lower, upper

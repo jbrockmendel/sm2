@@ -224,6 +224,7 @@ class GLM(base.LikelihoodModel):
     and statistics based on it, such AIC or likelihood ratio tests, are not
     appropriate.
 
+    # FIXME: duplicate docstring section, see GH#4447
     Attributes
     ----------
     df_model : float
