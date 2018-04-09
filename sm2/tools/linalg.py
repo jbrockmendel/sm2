@@ -130,6 +130,7 @@ def smw_solver(s, A, AtA, BI, di):
     A function that takes `rhs` as an input argument and returns a
     solution to the linear system defined above.
     """
+    # TODO: Shapes for the parameters
     # Use SMW identity
     qmat = AtA / s
     m = BI.shape[0]
