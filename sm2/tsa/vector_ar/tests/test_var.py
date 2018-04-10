@@ -384,9 +384,9 @@ class TestVARResults(CheckIRF, CheckFEVD):
         for i, name in enumerate(self.names):
             variables = self.names[:i] + self.names[i + 1:]
             result = self.res.test_causality(name, variables, kind='f')
-            assert_allclose(result.pvalue,
-                            causedby[i],
-                            rtol=1e-5)
+            assert_almost_equal(result.pvalue,
+                                causedby[i],
+                                4)
 
             rng = list(range(self.k))
             rng.remove(i)

@@ -281,6 +281,23 @@ class IRAnalysis(BaseIRAnalysis):
 
         return covs
 
+    def errband_mc(self, orth=False, svar=False, repl=1000,
+                   signif=0.05, seed=None, burn=100):
+        """
+        IRF Monte Carlo integrated error bands
+        """
+        model = self.model
+        periods = self.periods
+        if svar:
+            return model.sirf_errband_mc(orth=orth, repl=repl, T=periods,
+                                         signif=signif, seed=seed,
+                                         burn=burn, cum=False)
+        else:
+            return self.irf_errband_mc(orth=orth, repl=repl, T=periods,
+                                       signif=signif, seed=seed,
+                                       burn=burn, cum=False)
+
+    # TODO: De-dup highly redundant docstring arguments
     # upstream this is implemented directly in VARResults
     def irf_resim(self, orth=False, repl=1000, T=10,
                   seed=None, burn=100, cum=False):
@@ -290,19 +307,19 @@ class IRAnalysis(BaseIRAnalysis):
 
         Parameters
         ----------
-        orth: bool, default False
-            Compute orthoganalized impulse response error bands
-        repl: int
-            number of Monte Carlo replications to perform
+        orth : bool, default False
+            Compute orthogonalized impulse response error bands
+        repl : int, default 1000
+            Number of Monte Carlo replications to perform
         T: int, default 10
             number of impulse response periods
-        signif: float (0 < signif <1)
+        signif : float (0 < signif < 1)
             Significance level for error bars, defaults to 95% CI
-        seed: int
+        seed : int, default None
             np.random.seed for replications
-        burn: int
-            number of initial observations to discard for simulation
-        cum: bool, default False
+        burn : int, default 100
+            Number of initial simulated obs to discard
+        cum : bool, default False
             produce cumulative irf error bands
 
         Notes
@@ -352,19 +369,19 @@ class IRAnalysis(BaseIRAnalysis):
 
         Parameters
         ----------
-        orth: bool, default False
-            Compute orthoganalized impulse response error bands
-        repl: int
-            number of Monte Carlo replications to perform
-        T: int, default 10
+        orth : bool, default False
+            Compute orthogonalized impulse response error bands
+        repl : int, default 1000
+            Number of Monte Carlo replications to perform
+        T : int, default 10
             number of impulse response periods
-        signif: float (0 < signif <1)
+        signif : float (0 < signif < 1)
             Significance level for error bars, defaults to 95% CI
-        seed: int
+        seed : int, default None
             np.random.seed for replications
-        burn: int
-            number of initial observations to discard for simulation
-        cum: bool, default False
+        burn : int, default 100
+            Number of initial simulated obs to discard
+        cum : bool, default False
             produce cumulative irf error bands
 
         Notes
@@ -388,23 +405,6 @@ class IRAnalysis(BaseIRAnalysis):
         # TODO: If it weren't for model.exog (in irf_resim), this could go
         # higher in the inheritance hierarchy
 
-    def errband_mc(self, orth=False, svar=False, repl=1000,
-                   signif=0.05, seed=None, burn=100):
-        """
-        IRF Monte Carlo integrated error bands
-        """
-        model = self.model
-        periods = self.periods
-        if svar:
-            return model.sirf_errband_mc(orth=orth, repl=repl, T=periods,
-                                         signif=signif, seed=seed,
-                                         burn=burn, cum=False)
-        else:
-            # TODO: Simplify these to use self.irf_errband_mc
-            return self.irf_errband_mc(orth=orth, repl=repl, T=periods,
-                                       signif=signif, seed=seed,
-                                       burn=burn, cum=False)
-
     def err_band_sz1(self, orth=False, svar=False, repl=1000,
                      signif=0.05, seed=None, burn=100, component=None):
         """
@@ -414,13 +414,13 @@ class IRAnalysis(BaseIRAnalysis):
         Parameters
         ----------
         orth : bool, default False
-            Compute orthogonalized impulse responses
+            Compute orthogonalized impulse response error bands
         repl : int, default 1000
-            Number of MC replications
+            Number of Monte Carlo replications to perform
         signif : float (0 < signif < 1)
             Significance level for error bars, defaults to 95% CI
         seed : int, default None
-            np.random seed
+            np.random.seed for replications
         burn : int, default 100
             Number of initial simulated obs to discard
         component : neqs x neqs array, default to largest for each
@@ -465,13 +465,13 @@ class IRAnalysis(BaseIRAnalysis):
         Parameters
         ----------
         orth : bool, default False
-            Compute orthogonalized impulse responses
+            Compute orthogonalized impulse response error bands
         repl : int, default 1000
-            Number of MC replications
+            Number of Monte Carlo replications to perform
         signif : float (0 < signif < 1)
             Significance level for error bars, defaults to 95% CI
         seed : int, default None
-            np.random seed
+            np.random.seed for replications
         burn : int, default 100
             Number of initial simulated obs to discard
         component : neqs x neqs array, default to largest for each
@@ -512,13 +512,13 @@ class IRAnalysis(BaseIRAnalysis):
         Parameters
         ----------
         orth : bool, default False
-            Compute orthogonalized impulse responses
+            Compute orthogonalized impulse response error bands
         repl : int, default 1000
-            Number of MC replications
+            Number of Monte Carlo replications to perform
         signif : float (0 < signif < 1)
             Significance level for error bars, defaults to 95% CI
         seed : int, default None
-            np.random seed
+            np.random.seed for replications
         burn : int, default 100
             Number of initial simulated obs to discard
         component : vector length neqs, default to largest for each
