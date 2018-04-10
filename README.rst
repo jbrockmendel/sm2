@@ -27,7 +27,7 @@ Changes vs Statsmodels
   difference is that ``statsmodels`` is more feature-complete.
 
 - An enormous amount of code-cleanup has been done in ``sm2``.  Thousands of lines
-  of unused, untested, or deprecated code have been removed.  <i>Many</i> thousands
+  of unused, untested, or deprecated code have been removed.  *Many* thousands
   of flake8 formatting issues have been cleaned up.
 
 - ``summary2`` methods have not been ported from upstream, will
@@ -52,7 +52,7 @@ Issues and Pull Requests are welcome.  If you are looking a place to start,
 here are some suggestions:
 
 - Search for comments starting with ``# TODO:`` or ``# FIXME:``
-     - Some comments are copied from upstream and <i>should</i> have these labels
+     - Some comments are copied from upstream and *should* have these labels
        but are missing them.  If you find a comment that should have one of
        these labels (or is just unclear), add the label.
 
@@ -87,3 +87,5 @@ here are some suggestions:
 
 - If there is a change you parrticularly like, make a Pull Request upstream
   to get it implemented directly in statsmodels.
+
+.. |:issue:| https://github.com/statsmodels/statsmodels/issues/|
