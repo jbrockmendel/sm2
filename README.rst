@@ -1,5 +1,3 @@
-|Codecov Coverage|
-
 .. image:: https://travis-ci.org/jbrockmendel/sm2.svg?branch=master
     :target: https://travis-ci.org/jbrockmendel/sm2
 
@@ -12,7 +10,7 @@
 sm2
 ===
 
-`statsmodels <https://github.com/statsmodels/statsmodels>` is an excellent
+`statsmodels <https://github.com/statsmodels/statsmodels>`__ is an excellent
 project and important part of the python scientific stack.  But due to resource
 constraints, they cannot push out bugfixes often enough for my needs.  ``sm2``
 is a fork focused on bugfixes and addressing technical debt.
@@ -26,26 +24,26 @@ With luck, fixes made here will eventually be ported upstream.
 Changes vs Statsmodels
 ----------------------
 - sm2 contains a subset of the functionality of statsmodels.  The first big
-difference is that statsmodels is more feature-complete.
+  difference is that statsmodels is more feature-complete.
 
 - An enormous amount of code-cleanup has been done in sm2.  Thousands of lines
-of unused, untested, or deprecated code have been removed.  _Many_ thousands
-of flake8 formatting issues have been cleaned up.
+  of unused, untested, or deprecated code have been removed.  <i>Many</i> thousands
+  of flake8 formatting issues have been cleaned up.
 
 - `summary2` methods have not been ported from upstream, will
-raise `NotImplementedError`.
+  raise ``NotImplementedError``.
 
 - `ARModel.fit` incorrectly sets `model.df_resid` upstream.  That has been
-fixed here.
+  fixed here.
 
-- `GenericLikelihoodModelResults.__init__` incorrectly sets `model.df_resid`
-and `model.df_model`.  That has been fixed here.
+- ``GenericLikelihoodModelResults.__init__`` incorrectly sets ``model.df_resid``
+  and `model.df_model`.  That has been fixed here.
 
-- `GeneralizedLinearModel.fit` incorrect sets `self.mu` and `self.scale`.
-This has been fixed here.  (:issue:`4032`)
+- ``GeneralizedLinearModel.fit`` incorrect sets ``self.mu`` and ``self.scale``.
+  This has been fixed here.  (:issue:`4032`)
 
-- `LikelihoodModelResults._get_robustcov_results` incorrectly ignores
-`use_self` argument.  This has been fixed here.  (:issue:`4401`)
+- ``LikelihoodModelResults._get_robustcov_results`` incorrectly ignores
+  ``use_self`` argument.  This has been fixed here.  (:issue:`4401`)
 
 
 Contributing
@@ -54,7 +52,7 @@ Issues and Pull Requests are welcome.  If you are looking a place to start,
 here are some suggestions:
 
 - Search for comments starting with `# TODO:` or `# FIXME:`
-     - Some comments are copied from upstream and _should_ have these labels
+     - Some comments are copied from upstream and <i>should</i> have these labels
        but are missing them.  If you find a comment that should have one of
        these labels (or is just unclear), add the label.
 
@@ -75,9 +73,9 @@ here are some suggestions:
       these comparisons; they should be reproducible.
 
 - There are some spots where tests are meager and could use some attention:
-    - `tsa.vector_ar.irf`
-    - `regression._prediction`
-    - `stats.sandwich_covariance`
+    - ``tsa.vector_ar.irf``
+    - ``regression._prediction``
+    - ``stats.sandwich_covariance``
 
 - As of 2018-03-19 there are still 390 flake8 warnings/errors.  For many of
   these, fixing them requires figuring out what the writer's attention was
