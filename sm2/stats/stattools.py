@@ -103,7 +103,6 @@ def jarque_bera(resids, axis=0):
     -----
     Each output returned has 1 dimension fewer than data
 
-
     The Jarque-Bera test statistic tests the null that the data is normally
     distributed against an alternative that the data follow some other
     distribution. The test statistic is based on two moments of the data,
@@ -130,6 +129,7 @@ def jarque_bera(resids, axis=0):
     return jb, jb_pv, skew, kurtosis
 
 
+# TODO: Not used outside tests; needed?
 def robust_skewness(y, axis=0):
     """
     Calculates the four skewness measures in Kim & White
@@ -205,6 +205,7 @@ def robust_skewness(y, axis=0):
     return sk1, sk2, sk3, sk4
 
 
+# TODO: Not used outside tests; needed?
 def _kr3(y, alpha=5.0, beta=50.0):
     """
     KR3 estimator from Kim & White
@@ -236,10 +237,10 @@ def _kr3(y, alpha=5.0, beta=50.0):
 
     l_beta = np.mean(y[y < lower_beta])
     u_beta = np.mean(y[y > upper_beta])
-
     return (u_alpha - l_alpha) / (u_beta - l_beta)
 
 
+# TODO: Not used outside tests; needed?
 def expected_robust_kurtosis(ab=(5.0, 50.0), dg=(2.5, 25.0)):
     """
     Calculates the expected value of the robust kurtosis measures in Kim and
@@ -285,6 +286,7 @@ def expected_robust_kurtosis(ab=(5.0, 50.0), dg=(2.5, 25.0)):
     return expected_value
 
 
+# TODO: Not used outside tests; needed?
 def robust_kurtosis(y, axis=0, ab=(5.0, 50.0), dg=(2.5, 25.0), excess=True):
     """
     Calculates the four kurtosis measures in Kim & White
@@ -371,6 +373,7 @@ def robust_kurtosis(y, axis=0, ab=(5.0, 50.0), dg=(2.5, 25.0), excess=True):
     return kr1, kr2, kr3, kr4
 
 
+# TODO: Not used outside tests; needed?
 def _medcouple_1d(y):
     """
     Calculates the medcouple robust measure of skew.
@@ -418,6 +421,7 @@ def _medcouple_1d(y):
     return np.median(spread / standardization)
 
 
+# TODO: Not used outside tests; needed?
 def medcouple(y, axis=0):
     """
     Calculates the medcouple robust measure of skew.

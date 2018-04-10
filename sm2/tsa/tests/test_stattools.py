@@ -465,18 +465,13 @@ def test_coint_identical_series():
 
 
 @pytest.mark.not_vetted
-def test_pandasacovf():
-    s = pd.Series(list(range(1, 11)))
-    assert_almost_equal(acovf(s), acovf(s.values))
-
-
-@pytest.mark.not_vetted
 def test_acovf2d():
     dta = sunspots.load_pandas().data
     dta.index = pd.DatetimeIndex(start='1700', end='2009', freq='A')[:309]
     del dta["YEAR"]
     res = acovf(dta)
     assert_equal(res, acovf(dta.values))
+
     X = np.random.random((10, 2))
     with pytest.raises(ValueError):
         acovf(X)
@@ -609,3 +604,13 @@ def test_granger_fails_on_nobs_check():
     grangercausalitytests(X, 2, verbose=False)  # This should pass.
     with pytest.raises(ValueError):
         grangercausalitytests(X, 3, verbose=False)
+
+
+def test_pandasacovf():
+    # test that passing Series vs ndarray to acovf doesn't affect results
+    # TODO: GH reference?
+    # TODO: Same test for other functions?
+    ser = pd.Series(list(range(1, 11)))
+    assert_allclose(acovf(ser),
+                    acovf(ser.values),
+                    rtol=1e-12)

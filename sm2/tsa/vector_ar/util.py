@@ -153,7 +153,7 @@ def eigval_decomp(sym_array):
     return W, eigva, k
 
 
-def vech(A):
+def vech(A):  # TODO: why not just use A[np.triu_indices(A.shape[0])]?
     """
     Simple vech operator
     Returns
