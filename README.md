@@ -51,6 +51,11 @@ of flake8 formatting issues have been cleaned up.
 - `summary2` methods have not been ported from upstream, will
 raise `NotImplementedError`.
 
+- `VARResults.test_whiteness` has been superceeded upstream by
+`test_whiteness_new` as the older method was not an actual statistical
+test (:issue:`4036`).  `sm2` replaces the older version entirely and keeps
+only the name `test_whiteness`.
+
 - `ARModel.fit` incorrectly sets `model.df_resid` upstream.  That has been
 fixed here.
 
