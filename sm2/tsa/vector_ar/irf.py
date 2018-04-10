@@ -225,6 +225,7 @@ class BaseIRAnalysis(object):
                                stderr_type=stderr_type)
 
 
+# TODO: Whats the use case for this vs BaseIRAnalysis?
 class IRAnalysis(BaseIRAnalysis):
     """
     Impulse response analysis class. Computes impulse responses, asymptotic

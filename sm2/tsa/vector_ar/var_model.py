@@ -858,6 +858,7 @@ class VARResults(VARProcess):
         part1 = - (nobs * neqs / 2) * np.log(2 * np.pi)
         part2 = - (nobs / 2) * (logdet + neqs)
         return part1 + part2
+        # TODO: Can we define a general loglike?
 
     @cache_readonly
     def stderr(self):
@@ -1268,6 +1269,7 @@ class VARResults(VARProcess):
     # VAR Diagnostics: Granger-causality, whiteness of
     # residuals, normality, etc
 
+    # TODO: See if this can be de-duplicated with grangercausalitytests
     def test_causality(self, caused, causing=None, kind='f', signif=0.05):
         """
         Test Granger causality

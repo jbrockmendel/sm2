@@ -593,6 +593,7 @@ def levinson_durbin(s, nlags=10, isacov=False):
     order = nlags  # rename compared to nitime
     # from nitime
 
+    # TODO: What to make of the commented-out code below?
     # if sxx is not None and type(sxx) == np.ndarray:
     #    sxx_m = sxx[:order+1]
     # else:
@@ -695,6 +696,7 @@ def grangercausalitytests(x, maxlag, addconst=True, verbose=True):
             dtaown = add_constant(dta[:, 1:(mxlg + 1)], prepend=False)
             dtajoint = add_constant(dta[:, 1:], prepend=False)
         else:
+            # TODO: Whats intended here?
             raise NotImplementedError
             # dtaown = dta[:, 1:mxlg]
             # dtajoint = dta[:, 1:]
@@ -858,11 +860,9 @@ def arma_order_select_ic(y, max_ar=4, max_ma=2, ic='bic', trend='c',
                               "as it is only used in tests")
 
 
-def has_missing(data):
-    """
-    Returns True if 'data' contains missing entries, otherwise False
-    """
-    return np.isnan(np.sum(data))  # TODO: Don't do it like this...
+def has_missing(data):  # pragma: no cover
+    raise NotImplementedError("has_missing not ported from upstream; "
+                              "use `np.isnan(data).any()` instead.")
 
 
 def kpss(x, regression='c', lags=None, store=False):
