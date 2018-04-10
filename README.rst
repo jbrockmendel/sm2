@@ -15,7 +15,7 @@ project and important part of the python scientific stack.  But due to resource
 constraints, they cannot push out bugfixes often enough for my needs.  ``sm2``
 is a fork focused on bugfixes and addressing technical debt.
 
-Ideally sm2 will be a drop-in replacement for statsmodels.  In places where
+Ideally ``sm2`` will be a drop-in replacement for statsmodels.  In places where
 this fails, feel free to open an issue.
 
 With luck, fixes made here will eventually be ported upstream.
@@ -23,17 +23,17 @@ With luck, fixes made here will eventually be ported upstream.
 
 Changes vs Statsmodels
 ----------------------
-- sm2 contains a subset of the functionality of statsmodels.  The first big
-  difference is that statsmodels is more feature-complete.
+- ``sm2`` contains a subset of the functionality of ``statsmodels``.  The first big
+  difference is that ``statsmodels`` is more feature-complete.
 
-- An enormous amount of code-cleanup has been done in sm2.  Thousands of lines
+- An enormous amount of code-cleanup has been done in ``sm2``.  Thousands of lines
   of unused, untested, or deprecated code have been removed.  <i>Many</i> thousands
   of flake8 formatting issues have been cleaned up.
 
-- `summary2` methods have not been ported from upstream, will
+- ``summary2`` methods have not been ported from upstream, will
   raise ``NotImplementedError``.
 
-- `ARModel.fit` incorrectly sets `model.df_resid` upstream.  That has been
+- ``ARModel.fit`` incorrectly sets ``model.df_resid`` upstream.  That has been
   fixed here.
 
 - ``GenericLikelihoodModelResults.__init__`` incorrectly sets ``model.df_resid``
@@ -51,7 +51,7 @@ Contributing
 Issues and Pull Requests are welcome.  If you are looking a place to start,
 here are some suggestions:
 
-- Search for comments starting with `# TODO:` or `# FIXME:`
+- Search for comments starting with ``# TODO:`` or ``# FIXME:``
      - Some comments are copied from upstream and <i>should</i> have these labels
        but are missing them.  If you find a comment that should have one of
        these labels (or is just unclear), add the label.
@@ -62,11 +62,11 @@ here are some suggestions:
     - Is this a "smoke test"?  If so, it should be marked with
       `pytest.mark.smoke`.
     - Is this a test for a specific bug?  Can an Issue reference
-      (e.g. `# GH#1234`) be included?
+      (e.g. ``# GH#1234``) be included?
     - Is there something specific being tested?  If so, the test name should
       be made informative and often a comment should be added
-      (e.g. `# test function foo.bar in case where baz argument is
-      near-singular`)
+      (e.g. ``# test function foo.bar in case where baz argument is
+      near-singular``)
     - Is this testing results produced by statsmodels/sm2 against results
       produced by another package?  If so, it should be clear how those results
       were produced.  The original authors put a lot of effort into producing
