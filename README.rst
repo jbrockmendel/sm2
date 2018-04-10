@@ -1,4 +1,13 @@
-|Travis Build Status| |Appveyor Build Status| |Codecov Coverage|
+|Codecov Coverage|
+
+.. image:: https://travis-ci.org/jbrockmendel/sm2.svg?branch=master
+    :target: https://travis-ci.org/jbrockmendel/sm2
+
+.. image:: https://ci.appveyor.com/api/projects/status/gw9cui82oc1lnyqi/branch/master?svg=true
+    : target: https://ci.appveyor.com/project/jbrockmendel/sm2
+
+.. image:: https://codecov.io/gh/jbrockmendel/sm2/branch/master/graph/badge.svg
+    :target: https://codecov.io/gh/jbrockmendel/sm2
 
 sm2
 ===
