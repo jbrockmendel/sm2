@@ -21,12 +21,6 @@ from sm2.tsa.vector_ar.var_model import VAR
 
 cur_dir = os.path.dirname(os.path.abspath(__file__))
 
-DECIMAL_12 = 12
-DECIMAL_6 = 6
-DECIMAL_4 = 4
-DECIMAL_3 = 3
-DECIMAL_2 = 2
-
 have_matplotlib = False
 try:
     import matplotlib  # noqa:F401
@@ -246,6 +240,7 @@ class CheckFEVD(object):
     def test_fevd_summary(self):
         self.fevd.summary()
 
+    # TODO: xfail this?  make this a less-dumb test
     def test_fevd_cov(self):
         # test does not crash
         # not implemented
@@ -290,6 +285,7 @@ class TestVARResults(CheckIRF, CheckFEVD):
         model2 = VAR(self.data)
         assert model2.endog_names == list(self.ref.names)
 
+    @pytest.mark.skip(reason="get_eq_index not ported from upstream")
     def test_get_eq_index(self):
         assert type(self.res.names) is list
 
@@ -310,9 +306,9 @@ class TestVARResults(CheckIRF, CheckFEVD):
         repr(self.res)
 
     def test_params(self):
-        assert_almost_equal(self.res.params,
+        assert_allclose(self.res.params,
                             self.ref.params,
-                            DECIMAL_3)
+                            rtol=1e-3)
 
     @pytest.mark.smoke
     def test_cov_params(self):
@@ -368,9 +364,9 @@ class TestVARResults(CheckIRF, CheckFEVD):
         assert self.res.nobs == self.ref.nobs
 
     def test_stderr(self):
-        assert_almost_equal(self.res.stderr,
-                            self.ref.stderr,
-                            DECIMAL_4)
+        assert_allclose(self.res.stderr,
+                        self.ref.stderr,
+                        rtol=1e-4)
 
     def test_loglike(self):
         assert_almost_equal(self.res.llf, self.ref.loglike)
@@ -388,16 +384,16 @@ class TestVARResults(CheckIRF, CheckFEVD):
         for i, name in enumerate(self.names):
             variables = self.names[:i] + self.names[i + 1:]
             result = self.res.test_causality(name, variables, kind='f')
-            assert_almost_equal(result.pvalue,
-                                causedby[i],
-                                DECIMAL_4)
+            assert_allclose(result.pvalue,
+                            causedby[i],
+                            rtol=1e-5)
 
             rng = list(range(self.k))
             rng.remove(i)
             result2 = self.res.test_causality(i, rng, kind='f')
-            assert_almost_equal(result.pvalue,
-                                result2.pvalue,
-                                DECIMAL_12)
+            assert_allclose(result.pvalue,
+                            result2.pvalue,
+                            rtol=1e-12)
 
             # make sure works
             result = self.res.test_causality(name, variables, kind='wald')
@@ -508,7 +504,6 @@ class TestVARResults(CheckIRF, CheckFEVD):
 
 
 @pytest.mark.skip(reason="parse_lutkepohl_data not ported")
-@pytest.mark.not_vetted
 @pytest.mark.smoke
 def test_lutkepohl_parse():
     files = ['e%d' % i for i in range(1, 7)]
@@ -543,8 +538,8 @@ class TestVARResultsLutkepohl(object):
                          [.580, 1.581, .586],
                          [1.300, .586, 1.009]]) * 1e-4
 
-        assert_almost_equal(mse2, self.res.forecast_cov(3)[1],
-                            DECIMAL_3)
+        assert_allclose(mse2, self.res.forecast_cov(3)[1],
+                        rtol=1e-3)
 
     def test_irf_stderr(self):
         irf_stderr = self.irf.stderr(orth=False)

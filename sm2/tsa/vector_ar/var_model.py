@@ -18,7 +18,7 @@ from scipy import stats
 import scipy.linalg
 
 from sm2.tools.decorators import (cache_readonly, cached_value, cached_data,
-                                  deprecated_alias)
+                                  deprecated_alias, copy_doc)
 from sm2.tools.tools import chain_dot
 from sm2.tools.linalg import logdet_symm
 
@@ -44,7 +44,7 @@ _var_acf = autocov.var_acf
 # --------------------------------------------------------------------
 # VAR process routines
 
-def ma_rep(coefs, maxn=10):
+def ma_rep(coefs, maxn=10):  # pragma: no cover
     raise NotImplementedError("ma_rep is not ported from upstream, "
                               "is instead implemented directly in VARProcess "
                               "(or more specifically, VARParams, of which "
@@ -128,22 +128,10 @@ def forecast(y, coefs, trend_coefs, steps, exog=None):
     return forcs
 
 
-def _forecast_vars(steps, ma_coefs, sig_u):
-    """_forecast_vars function used by VECMResults. Note that the definition
-    of the local variable covs is the same as in VARProcess and as such it
-    differs from the one in VARResults!
-
-    Parameters
-    ----------
-    steps
-    ma_coefs
-    sig_u
-    """
-    covs = mse(ma_coefs, sig_u, steps)
-    # Take diagonal for each cov
-    neqs = len(sig_u)
-    inds = np.arange(neqs)
-    return covs[:, inds, inds]
+def _forecast_vars(steps, ma_coefs, sig_u):  # pragma: no cover
+    raise NotImplementedError("_forecast_vars not ported from upstream, "
+                              "as (contrary to its docstring) it is entirely "
+                              "redundant with VARREsults methods.  See GH#4459")
 
 
 def forecast_interval(y, coefs, trend_coefs, sig_u, steps=5, alpha=0.05,
@@ -566,9 +554,9 @@ class VARProcess(wold.VARProcess):
         self.trend = trend
         self.names = names
 
-    def get_eq_index(self, name):  # TODO: unused; get rid of this
-        "Return integer position of requested equation name"
-        return util.get_index(self.names, name)
+    def get_eq_index(self, name):  # pragma: no cover
+        raise NotImplementedError("get_eq_index is not ported from upstream, "
+                                  "as it is neither used nor tested.")
 
     def __str__(self):
         out = ('VAR(%d) process for %d-dimensional response y_t'
@@ -654,13 +642,8 @@ class VARProcess(wold.VARProcess):
 
         return point_forecast, forc_lower, forc_upper
 
+    @copy_doc(wold.VARParams.mean.__doc__)
     def mean(self):
-        r"""Mean of stable process
-
-        Lütkepohl eq. 2.1.23
-
-        .. math:: \mu = (I - A_1 - \dots - A_p)^{-1} \alpha
-        """
         if self.trend != "c" or (self.exog is not None and
                                  self.exog.shape[1] != 1):
             raise NotImplementedError("VAR Process mean is not well-defined "
@@ -818,6 +801,11 @@ class VARResults(VARProcess):
         VARProcess.__init__(self, coefs, intercept, exog, sigma_u,
                             trend=trend, names=names)
 
+    @cache_readonly
+    def sigma_u_mle(self):
+        """(Biased) maximum likelihood estimate of noise process covariance"""
+        return self.sigma_u * self.df_resid / self.nobs
+
     @cached_data
     def fittedvalues(self):
         """The predicted insample values of the response variables of
@@ -859,6 +847,21 @@ class VARResults(VARProcess):
         part2 = - (nobs / 2) * (logdet + neqs)
         return part1 + part2
         # TODO: Can we define a general loglike?
+
+    @cached_value
+    def cov_params(self):
+        """Estimated variance-covariance of model coefficients
+
+        Notes
+        -----
+        Covariance of vec(B), where B is the matrix
+        [params_for_deterministic_terms, A_1, ..., A_p] with the shape
+        (K x (Kp + number_of_deterministic_terms))
+        Adjusted to be an unbiased estimator
+        Ref: Lütkepohl p.74-75
+        """
+        z = self.endog_lagged
+        return np.kron(scipy.linalg.inv(np.dot(z.T, z)), self.sigma_u)
 
     @cache_readonly
     def stderr(self):
@@ -932,26 +935,6 @@ class VARResults(VARProcess):
         "Centered residual correlation matrix"
         return self.resid_acorr(0)[0]
 
-    @cache_readonly
-    def sigma_u_mle(self):
-        """(Biased) maximum likelihood estimate of noise process covariance"""
-        return self.sigma_u * self.df_resid / self.nobs
-
-    @cached_value
-    def cov_params(self):
-        """Estimated variance-covariance of model coefficients
-
-        Notes
-        -----
-        Covariance of vec(B), where B is the matrix
-        [params_for_deterministic_terms, A_1, ..., A_p] with the shape
-        (K x (Kp + number_of_deterministic_terms))
-        Adjusted to be an unbiased estimator
-        Ref: Lütkepohl p.74-75
-        """
-        z = self.endog_lagged
-        return np.kron(scipy.linalg.inv(np.dot(z.T, z)), self.sigma_u)
-
     # ------------------------------------------------------------
     # Estimation-related things
 
@@ -1024,124 +1007,22 @@ class VARResults(VARProcess):
         # TODO: use omega or don't define it.
         return mse  # + omegas / self.nobs
 
-    # Monte Carlo irf standard errors
-    def irf_errband_mc(self, orth=False, repl=1000, T=10,
-                       signif=0.05, seed=None, burn=100, cum=False):
-        """
-        Compute Monte Carlo integrated error bands assuming normally
-        distributed for impulse response functions
+    @copy_doc(irf.IRAnalysis.irf_errband_mc.__doc__)
+    def irf_errband_mc(self, orth=False, repl=1000, T=10, signif=0.05,
+                       seed=None, burn=100, cum=False):  # pragma: no cover
+        # Monte Carlo irf standard errors
+        # Upstream this is implemented directly in VARResults but used only
+        # in IRAnalysis
+        return self.irf().irf_errband_mc(orth=orth, repl=repl, T=T,
+                                         seed=seed, burn=burn, cum=cum)
 
-        Parameters
-        ----------
-        orth: bool, default False
-            Compute orthoganalized impulse response error bands
-        repl: int
-            number of Monte Carlo replications to perform
-        T: int, default 10
-            number of impulse response periods
-        signif: float (0 < signif <1)
-            Significance level for error bars, defaults to 95% CI
-        seed: int
-            np.random.seed for replications
-        burn: int
-            number of initial observations to discard for simulation
-        cum: bool, default False
-            produce cumulative irf error bands
-
-        Notes
-        -----
-        Lütkepohl (2005) Appendix D
-
-        Returns
-        -------
-        Tuple of lower and upper arrays of ma_rep monte carlo standard errors
-        """
-        neqs = self.neqs
-        k_ar = self.k_ar
-        coefs = self.coefs
-        sigma_u = self.sigma_u
-        intercept = self.intercept
-        nobs = self.nobs
-
-        ma_coll = np.zeros((repl, T + 1, neqs, neqs))
-
-        def fill_coll(sim):
-            ret = VAR(sim, exog=self.exog).fit(maxlags=k_ar, trend=self.trend)
-            ret = ret.orth_ma_rep(maxn=T) if orth else ret.ma_rep(maxn=T)
-            return ret.cumsum(axis=0) if cum else ret
-
-        for i in range(repl):
-            # discard first hundred to eliminate correct for starting bias
-            sim = util.varsim(coefs, intercept, sigma_u,
-                              seed=seed, steps=nobs + burn)
-            sim = sim[burn:]
-            ma_coll[i, :, :, :] = fill_coll(sim)
-
-        ma_sort = np.sort(ma_coll, axis=0)  # sort to get quantiles
-        index = (int(round(signif / 2 * repl) - 1),
-                 int(round((1 - signif / 2) * repl) - 1))
-        lower = ma_sort[index[0], :, :, :]
-        upper = ma_sort[index[1], :, :, :]
-        return lower, upper
-        # TODO: If it weren't for self.exog, this could go higher in the
-        # inheritance hierarchy
-
+    @copy_doc(irf.IRAnalysis.irf_resim.__doc__)
     def irf_resim(self, orth=False, repl=1000, T=10,
-                  seed=None, burn=100, cum=False):
-        """
-        Simulates impulse response function, returning an array of simulations.
-        Used for Sims-Zha error band calculation.
-
-        Parameters
-        ----------
-        orth: bool, default False
-            Compute orthoganalized impulse response error bands
-        repl: int
-            number of Monte Carlo replications to perform
-        T: int, default 10
-            number of impulse response periods
-        signif: float (0 < signif <1)
-            Significance level for error bars, defaults to 95% CI
-        seed: int
-            np.random.seed for replications
-        burn: int
-            number of initial observations to discard for simulation
-        cum: bool, default False
-            produce cumulative irf error bands
-
-        Notes
-        -----
-        Sims, Christoper A., and Tao Zha. 1999.
-            "Error Bands for Impulse Response." Econometrica 67: 1113-1155.
-
-        Returns
-        -------
-        Array of simulated impulse response functions
-        """
-        neqs = self.neqs
-        k_ar = self.k_ar
-        coefs = self.coefs
-        sigma_u = self.sigma_u
-        intercept = self.intercept
-        nobs = self.nobs
-
-        ma_coll = np.zeros((repl, T + 1, neqs, neqs))
-
-        def fill_coll(sim):
-            ret = VAR(sim, exog=self.exog).fit(maxlags=k_ar, trend=self.trend)
-            ret = ret.orth_ma_rep(maxn=T) if orth else ret.ma_rep(maxn=T)
-            return ret.cumsum(axis=0) if cum else ret
-
-        for i in range(repl):
-            # discard first hundred to eliminate correct for starting bias
-            sim = util.varsim(coefs, intercept, sigma_u,
-                              seed=seed, steps=nobs + burn)
-            sim = sim[burn:]
-            ma_coll[i, :, :, :] = fill_coll(sim)
-
-        return ma_coll
-        # TODO: If it weren't for self.exog, this could go higher in the
-        # inheritance hierarchy
+                  seed=None, burn=100, cum=False):  # pragma: no cover
+        # Upstream this is implemented directly in VARResults but used only
+        # in IRAnalysis
+        return self.irf().irf_resim(orth=orth, repl=repl, T=T,
+                                    seed=seed, burn=burn, cum=cum)
 
     def _omega_forc_cov(self, steps):  # pragma: no cover
         # Approximate MSE matrix \Omega(h) as defined in Lut p97
@@ -1401,8 +1282,6 @@ class VARResults(VARProcess):
         signif : float between 0 and 1, default 5 %
             Significance level for computing critical values for test,
             defaulting to standard 0.05 level
-        verbose : bool
-            If True, print a table with the results.
 
         Returns
         -------
@@ -1504,7 +1383,7 @@ class VARResults(VARProcess):
                                     crit_value, pvalue, df, signif,
                                     test="inst", method="wald")
 
-    def test_whiteness_new(self, nlags=10, signif=0.05, adjusted=False):
+    def test_whiteness(self, nlags=10, signif=0.05, adjusted=False):
         """
         Residual whiteness tests using Portmanteau
 
@@ -1547,36 +1426,13 @@ class VARResults(VARProcess):
         return WhitenessTestResults(statistic, crit_value, pvalue, df, signif,
                                     nlags, adjusted)
 
-    # TODO: This is not a formal test.  Deprecate in favor
-    #       of `test_whiteness_new`
-    def test_whiteness(self, nlags=10, plot=True, linewidth=8):
-        """
-        Test white noise assumption. Sample (Y) autocorrelations are compared
-        with the standard :math:`2 / \sqrt{T}` bounds.
-
-        Parameters
-        ----------
-        plot : boolean, default True
-            Plot autocorrelations with 2 / sqrt(T) bounds
-        """
-        acorrs = self.sample_acorr(nlags)
-        bound = 2 / np.sqrt(self.nobs)
-
-        # TODO: this probably needs some UI work
-
-        if (np.abs(acorrs) > bound).any():
-            print('FAIL: Some autocorrelations exceed %.4f bound. '
-                  'See plot' % bound)
-        else:
-            print('PASS: No autocorrelations exceed %.4f bound' % bound)
-
-        if plot:
-            fig = plotting.plot_full_acorr(acorrs[1:],
-                                           xlabel=np.arange(1, nlags + 1),
-                                           err_bound=bound,
-                                           linewidth=linewidth)
-            fig.suptitle(r"ACF plots with $2 / \sqrt{T}$ bounds "
-                         "for testing whiteness assumption")
+    def test_whiteness_new(self, *args, **kwargs):  # pragma: no cover
+        raise NotImplementedError("Use `test_whiteness` instead.  "
+                                  "statsmodels' version of test_whiteness "
+                                  "is not an actual hypothesis test.  "
+                                  "sm2 gets rid of the older version and "
+                                  "retains only the correct version.  "
+                                  "See GH#4036 upstream")
 
     def test_normality(self, signif=0.05):
         """

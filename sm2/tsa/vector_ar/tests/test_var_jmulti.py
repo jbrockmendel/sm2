@@ -409,7 +409,7 @@ def test_whiteness(case):
         # precision times ``max(M, N)`` where M and N are the input
         # matrix dimensions.v
         warnings.simplefilter("ignore")
-        obtained = res.test_whiteness_new(nlags=lags)
+        obtained = res.test_whiteness(nlags=lags)
 
     # test statistic
     desired = expected["whiteness"]["test statistic"]
@@ -425,7 +425,7 @@ def test_whiteness(case):
         # precision times ``max(M, N)`` where M and N are the input
         # matrix dimensions.v
         warnings.simplefilter("ignore")
-        obtained = res.test_whiteness_new(nlags=lags, adjusted=True)
+        obtained = res.test_whiteness(nlags=lags, adjusted=True)
 
     # test statistic (adjusted Portmanteau test)
     desired = expected["whiteness"]["test statistic adj."]

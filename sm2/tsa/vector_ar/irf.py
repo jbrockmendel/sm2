@@ -28,6 +28,8 @@ class BaseIRAnalysis(object):
                  vecm=False):
         self.model = model
         self.periods = periods
+        self.nobs = model.nobs
+        self.k_ar = model.k_ar
         self.neqs, self.lags, self.T = model.neqs, model.k_ar, model.nobs
         # TODO: Dont use non-standard `T`
 
@@ -76,6 +78,15 @@ class BaseIRAnalysis(object):
         else:
             self._A = util.comp_matrix(model.coefs)
 
+    def _choose_irfs(self, orth=False, svar=False):
+        # TODO: require not (orth and svar)?
+        if orth:
+            return self.orth_irfs
+        elif svar:
+            return self.svar_irfs
+        else:
+            return self.irfs
+
     def cov(self, *args, **kwargs):
         raise NotImplementedError
 
@@ -120,15 +131,13 @@ class BaseIRAnalysis(object):
         if orth and svar:  # pragma: no cover
             raise ValueError("For SVAR system, set orth=False")
 
+        irfs = self._choose_irfs(orth, svar)
         if orth:
             title = 'Impulse responses (orthogonalized)'
-            irfs = self.orth_irfs
         elif svar:
             title = 'Impulse responses (structural)'
-            irfs = self.svar_irfs
         else:
             title = 'Impulse responses'
-            irfs = self.irfs
 
         if plot_stderr is False:
             stderr = None
@@ -272,6 +281,113 @@ class IRAnalysis(BaseIRAnalysis):
 
         return covs
 
+    # upstream this is implemented directly in VARResults
+    def irf_resim(self, orth=False, repl=1000, T=10,
+                  seed=None, burn=100, cum=False):
+        """
+        Simulates impulse response function, returning an array of simulations.
+        Used for Sims-Zha error band calculation.
+
+        Parameters
+        ----------
+        orth: bool, default False
+            Compute orthoganalized impulse response error bands
+        repl: int
+            number of Monte Carlo replications to perform
+        T: int, default 10
+            number of impulse response periods
+        signif: float (0 < signif <1)
+            Significance level for error bars, defaults to 95% CI
+        seed: int
+            np.random.seed for replications
+        burn: int
+            number of initial observations to discard for simulation
+        cum: bool, default False
+            produce cumulative irf error bands
+
+        Notes
+        -----
+        Sims, Christoper A., and Tao Zha. 1999.
+            "Error Bands for Impulse Response." Econometrica 67: 1113-1155.
+
+        Returns
+        -------
+        Array of simulated impulse response functions
+        """
+        from sm2.tsa.vector_ar import var_model, util
+        model = self.model
+        coefs = model.coefs
+        sigma_u = model.sigma_u
+        intercept = model.intercept
+        k_ar = self.k_ar
+        neqs = self.neqs
+        nobs = self.nobs
+
+        ma_coll = np.zeros((repl, T + 1, neqs, neqs))
+
+        def fill_coll(sim):
+            ret = var_model.VAR(sim, exog=model.exog).fit(maxlags=k_ar,
+                                                          trend=model.trend)
+            ret = ret.orth_ma_rep(maxn=T) if orth else ret.ma_rep(maxn=T)
+            return ret.cumsum(axis=0) if cum else ret
+
+        for i in range(repl):
+            # discard first hundred to eliminate correct for starting bias
+            sim = util.varsim(coefs, intercept, sigma_u,
+                              seed=seed, steps=nobs + burn)
+            sim = sim[burn:]
+            ma_coll[i, :, :, :] = fill_coll(sim)
+
+        return ma_coll
+        # TODO: If it weren't for model.exog, this could go higher in the
+        # inheritance hierarchy
+
+    # upstream this is implemented directly in VARResults
+    def irf_errband_mc(self, orth=False, repl=1000, T=10,
+                       signif=0.05, seed=None, burn=100, cum=False):
+        # Monte Carlo irf standard errors
+        """
+        Compute Monte Carlo integrated error bands assuming normally
+        distributed for impulse response functions
+
+        Parameters
+        ----------
+        orth: bool, default False
+            Compute orthoganalized impulse response error bands
+        repl: int
+            number of Monte Carlo replications to perform
+        T: int, default 10
+            number of impulse response periods
+        signif: float (0 < signif <1)
+            Significance level for error bars, defaults to 95% CI
+        seed: int
+            np.random.seed for replications
+        burn: int
+            number of initial observations to discard for simulation
+        cum: bool, default False
+            produce cumulative irf error bands
+
+        Notes
+        -----
+        Lütkepohl (2005) Appendix D
+
+        Returns
+        -------
+        Tuple of lower and upper arrays of ma_rep monte carlo standard errors
+        """
+        ma_coll = self.irf_resim(orth=orth, repl=repl, T=T,
+                                 seed=seed, burn=burn, cum=cum)
+
+        # TODO: This block is really similar to _fill_irfs
+        ma_sort = np.sort(ma_coll, axis=0)  # sort to get quantiles
+        index = (int(round(signif / 2 * repl) - 1),
+                 int(round((1 - signif / 2) * repl) - 1))
+        lower = ma_sort[index[0], :, :, :]
+        upper = ma_sort[index[1], :, :, :]
+        return lower, upper
+        # TODO: If it weren't for model.exog (in irf_resim), this could go
+        # higher in the inheritance hierarchy
+
     def errband_mc(self, orth=False, svar=False, repl=1000,
                    signif=0.05, seed=None, burn=100):
         """
@@ -284,9 +400,10 @@ class IRAnalysis(BaseIRAnalysis):
                                          signif=signif, seed=seed,
                                          burn=burn, cum=False)
         else:
-            return model.irf_errband_mc(orth=orth, repl=repl, T=periods,
-                                        signif=signif, seed=seed,
-                                        burn=burn, cum=False)
+            # TODO: Simplify these to use self.irf_errband_mc
+            return self.irf_errband_mc(orth=orth, repl=repl, T=periods,
+                                       signif=signif, seed=seed,
+                                       burn=burn, cum=False)
 
     def err_band_sz1(self, orth=False, svar=False, repl=1000,
                      signif=0.05, seed=None, burn=100, component=None):
@@ -316,17 +433,11 @@ class IRAnalysis(BaseIRAnalysis):
         Sims, Christopher A., and Tao Zha. 1999. "Error Bands for Impulse
         Response". Econometrica 67: 1113-1155.
         """
-        model = self.model
         periods = self.periods
-        if orth:
-            irfs = self.orth_irfs
-        elif svar:
-            irfs = self.svar_irfs
-        else:
-            irfs = self.irfs
+        irfs = self._choose_irfs(orth, svar)
         neqs = self.neqs
-        irf_resim = model.irf_resim(orth=orth, repl=repl, T=periods, seed=seed,
-                                    burn=100)
+        irf_resim = self.irf_resim(orth=orth, repl=repl, T=periods, seed=seed,
+                                   burn=100)
         q = util.norm_signif_level(signif)
 
         W, eigva, k = self._eigval_decomp_SZ(irf_resim)
@@ -373,17 +484,11 @@ class IRAnalysis(BaseIRAnalysis):
         Sims, Christopher A., and Tao Zha. 1999. "Error Bands for Impulse
         Response". Econometrica 67: 1113-1155.
         """
-        model = self.model
         periods = self.periods
-        if orth:
-            irfs = self.orth_irfs
-        elif svar:
-            irfs = self.svar_irfs
-        else:
-            irfs = self.irfs
+        irfs = self._choose_irfs(orth, svar)
         neqs = self.neqs
-        irf_resim = model.irf_resim(orth=orth, repl=repl, T=periods, seed=seed,
-                                    burn=100)
+        irf_resim = self.irf_resim(orth=orth, repl=repl, T=periods, seed=seed,
+                                   burn=100)
 
         W, eigva, k = self._eigval_decomp_SZ(irf_resim)
         k = _validate_component(component, neqs, periods, dims=2, k=k)
@@ -426,17 +531,11 @@ class IRAnalysis(BaseIRAnalysis):
         Sims, Christopher A., and Tao Zha. 1999. "Error Bands for Impulse
         Response". Econometrica 67: 1113-1155.
         """
-        model = self.model
         periods = self.periods
-        if orth:
-            irfs = self.orth_irfs
-        elif svar:
-            irfs = self.svar_irfs
-        else:
-            irfs = self.irfs
+        irfs = self._choose_irfs(orth, svar)
         neqs = self.neqs
-        irf_resim = model.irf_resim(orth=orth, repl=repl, T=periods, seed=seed,
-                                    burn=100)
+        irf_resim = self.irf_resim(orth=orth, repl=repl, T=periods, seed=seed,
+                                   burn=100)
         stack = np.zeros((neqs, repl, periods * neqs))
 
         # stack left to right, up and down
@@ -596,11 +695,10 @@ class IRAnalysis(BaseIRAnalysis):
         """
         IRF Monte Carlo integrated error bands of cumulative effect
         """
-        model = self.model
         periods = self.periods
-        return model.irf_errband_mc(orth=orth, repl=repl,
-                                    T=periods, signif=signif,
-                                    seed=seed, burn=burn, cum=True)
+        return self.irf_errband_mc(orth=orth, repl=repl,
+                                   T=periods, signif=signif,
+                                   seed=seed, burn=burn, cum=True)
 
     def lr_effect_cov(self, orth=False):
         lre = self.lr_effects
