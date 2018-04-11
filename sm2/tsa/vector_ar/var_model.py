@@ -147,6 +147,19 @@ def var_loglike(resid, omega, nobs):  # pragma: no cover
                               "implemented directly in VARResults.llf")
 
 
+def _validate_causing(causing, name="causing", allow_none=False):
+    allowed_types = (string_types, int)
+    if isinstance(causing, allowed_types):
+        causing = [causing]
+    if not all(isinstance(c, allowed_types) for c in causing):
+        msg = ("{name} has to be of type string or int "
+               "(or a sequence of these types)")
+        if allow_none:
+            msg += " or None."
+        raise TypeError(msg.format(name=name))
+    return causing
+
+
 def _reordered(self, order):
     # Create new arrays to hold rearranged results from .fit()
     endog = self.endog
@@ -1203,44 +1216,33 @@ class VARResults(VARProcess):
         if not (0 < signif < 1):  # pragma: no cover
             raise ValueError("signif has to be between 0 and 1")
 
-        allowed_types = (string_types, int)
-
-        if isinstance(caused, allowed_types):
-            caused = [caused]
-        if not all(isinstance(c, allowed_types) for c in caused):
-            raise TypeError("caused has to be of type string or int (or a "
-                            "sequence of these types).")  # pragma: no cover
+        caused = _validate_causing(caused, "caused")
         caused = [self.names[c] if type(c) == int else c for c in caused]
         caused_ind = [util.get_index(self.names, c) for c in caused]
 
         if causing is not None:
-            if isinstance(causing, allowed_types):
-                causing = [causing]
-            if not all(isinstance(c, allowed_types) for c in causing):
-                raise TypeError("causing has to be of type string or int "
-                                "(or a sequence of these types) "
-                                "or None.")  # pragma: no cover
+            causing = _validate_causing(causing, "causing", allow_none=True)
             causing = [self.names[c] if type(c) == int else c for c in causing]
             causing_ind = [util.get_index(self.names, c) for c in causing]
-
-        if causing is None:
+        else:
             causing_ind = [i for i in range(self.neqs) if i not in caused_ind]
             causing = [self.names[c] for c in caused_ind]
 
-        k, p = self.neqs, self.k_ar
+        neqs, k_ar = self.neqs, self.k_ar
 
         # number of restrictions
-        num_restr = len(causing) * len(caused) * p
+        num_restr = len(causing) * len(caused) * k_ar
         num_det_terms = self.k_trend
 
         # Make restriction matrix
-        C = np.zeros((num_restr, k * num_det_terms + k**2 * p), dtype=float)
-        cols_det = k * num_det_terms
+        C = np.zeros((num_restr, neqs * num_det_terms + neqs**2 * k_ar),
+                     dtype=float)
+        cols_det = neqs * num_det_terms
         row = 0
-        for j in range(p):
+        for j in range(k_ar):
             for ing_ind in causing_ind:
                 for ed_ind in caused_ind:
-                    C[row, cols_det + ed_ind + k * ing_ind + k**2 * j] = 1
+                    C[row, cols_det + ed_ind + neqs * ing_ind + neqs**2 * j] = 1
                     row += 1
 
         # Lutkepohl 3.6.5
@@ -1255,7 +1257,7 @@ class VARResults(VARProcess):
             dist = stats.chi2(df)
         elif kind.lower() == 'f':
             statistic = lam_wald / num_restr
-            df = (num_restr, k * self.df_resid)
+            df = (num_restr, neqs * self.df_resid)
             dist = stats.f(*df)
         else:
             # TODO: this is Exception upstream, fix to ValueError
@@ -1263,7 +1265,6 @@ class VARResults(VARProcess):
 
         pvalue = dist.sf(statistic)
         crit_value = dist.ppf(1 - signif)
-
         return CausalityTestResults(causing, caused, statistic,
                                     crit_value, pvalue, df, signif,
                                     test="granger", method=kind)
@@ -1332,13 +1333,7 @@ class VARResults(VARProcess):
         if not (0 < signif < 1):
             raise ValueError("signif has to be between 0 and 1")
 
-        allowed_types = (string_types, int)
-        if isinstance(causing, allowed_types):
-            causing = [causing]
-        if not all(isinstance(c, allowed_types) for c in causing):
-            raise TypeError("causing has to be of type string or int (or a "
-                            "a sequence of these types).")
-
+        causing = _validate_causing(causing, "causing")
         causing = [self.names[c] if type(c) == int else c for c in causing]
         causing_ind = [util.get_index(self.names, c) for c in causing]
 
@@ -1378,11 +1373,11 @@ class VARResults(VARProcess):
 
         pvalue = dist.sf(wald_statistic)
         crit_value = dist.ppf(1 - signif)
-
         return CausalityTestResults(causing, caused, wald_statistic,
                                     crit_value, pvalue, df, signif,
                                     test="inst", method="wald")
 
+    # TODO: Is this test implemented elsewhere?
     def test_whiteness(self, nlags=10, signif=0.05, adjusted=False):
         """
         Residual whiteness tests using Portmanteau
@@ -1434,6 +1429,7 @@ class VARResults(VARProcess):
                                   "retains only the correct version.  "
                                   "See GH#4036 upstream")
 
+    # TODO: Can we use any of the jarque_bera code in stats.stattools?
     def test_normality(self, signif=0.05):
         """
         Test assumption of normal-distributed errors using Jarque-Bera-style
