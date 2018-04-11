@@ -91,8 +91,6 @@ def forecast(y, coefs, trend_coefs, steps, exog=None):
     Notes
     -----
     Lütkepohl p. 37
-
-    Also used by DynamicVAR class
     """
     p = len(coefs)
     k = len(coefs[0])
@@ -102,7 +100,7 @@ def forecast(y, coefs, trend_coefs, steps, exog=None):
         forcs += np.dot(exog, trend_coefs)
     # to make existing code (with trend_coefs=intercept and without exog) work:
     elif exog is None and trend_coefs is not None:
-        forcs += trend_coefs
+        forcs += trend_coefs  # TODO: not hit, also dumb overloading
 
     # h=0 forecast should be latest observation
     # forcs[0] = y[-1]
@@ -937,6 +935,7 @@ class VARResults(VARProcess):
         return 2 * stats.norm.sf(np.abs(self.tvalues))
 
     # ------------------------------------------------------------
+    # Sample Methods - just require endog (and names, dates, k_ar)
 
     def plot(self):
         """Plot input time series"""
@@ -953,6 +952,9 @@ class VARResults(VARProcess):
         "Plot theoretical autocorrelation function"
         plotting.plot_full_acorr(self.sample_acorr(nlags=nlags),
                                  linewidth=linewidth)
+
+    # ------------------------------------------------------------
+    # Resid Methods - require only self.resid
 
     def resid_acov(self, nlags=1):
         """
