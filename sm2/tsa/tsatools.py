@@ -18,6 +18,7 @@ from sm2.tools.sm_exceptions import ValueWarning
 from sm2.tools.data import _is_using_pandas, _is_recarray
 
 from sm2.tsa import wold
+# aliases for backwards/upstream compat
 _ar_transparams = wold.ARMAParams._ar_transparams
 _ar_invtransparams = wold.ARMAParams._ar_invtransparams
 _ma_transparams = wold.ARMAParams._ma_transparams
