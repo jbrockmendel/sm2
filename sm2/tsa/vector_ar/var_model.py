@@ -787,8 +787,7 @@ class VARResults(VARProcess, tsa_model.TimeSeriesModelResults):
 
     @property
     def df_model(self):
-        """Number of estimated parameters, including the intercept / trends
-        """
+        """Number of estimated parameters, including the intercept / trends"""
         return self.neqs * self.k_ar + self.k_trend
         # TODO: Should neqs be multiplying k_trend?
 
