@@ -19,8 +19,7 @@ import scipy.linalg
 
 from sm2.tools.decorators import (cache_readonly, cached_value, cached_data,
                                   deprecated_alias, copy_doc)
-from sm2.tools.tools import chain_dot
-from sm2.tools.linalg import logdet_symm
+from sm2.tools.linalg import logdet_symm, chain_dot
 
 import sm2.base.wrapper as wrap
 
@@ -70,6 +69,37 @@ def forecast_cov(ma_coefs, sigma_u, steps):  # pragma: no cover
 
 
 mse = forecast_cov
+
+
+def _forecast_vars(steps, ma_coefs, sig_u):  # pragma: no cover
+    raise NotImplementedError("_forecast_vars not ported from upstream, "
+                              "as (contrary to its docstring) it is entirely "
+                              "redundant with VARREsults methods.  See GH#4459")
+
+
+def forecast_interval(y, coefs, trend_coefs, sig_u, steps=5, alpha=0.05,
+                      exog=1):  # pragma: no cover
+    raise NotImplementedError("forecast_interval not ported from upstream "
+                              "since it is redundant with "
+                              "VARProcess.forecast_interval.  Use that method "
+                              "(or VARResults.forecast_interval) instead.")
+
+
+def var_loglike(resid, omega, nobs):  # pragma: no cover
+    raise NotImplementedError("var_loglike not ported from upstream, "
+                              "implemented directly in VARResults.llf")
+
+
+def orth_ma_rep(results, maxn=10, P=None):  # pragma: no cover
+    raise NotImplementedError("orth_ma_rep not ported from upstream, "
+                              "is instead implemented directly as a "
+                              "VARResults method.")
+
+
+def test_normality(results, signif=0.05):  # pragma: no cover
+    raise NotImplementedError("test_normality is not ported from upstream, is"
+                              "instead implemented directly in "
+                              "VARResults.test_normality")
 
 
 def forecast(y, coefs, trend_coefs, steps, exog=None):
@@ -124,25 +154,6 @@ def forecast(y, coefs, trend_coefs, steps, exog=None):
         forcs[h - 1] = f
 
     return forcs
-
-
-def _forecast_vars(steps, ma_coefs, sig_u):  # pragma: no cover
-    raise NotImplementedError("_forecast_vars not ported from upstream, "
-                              "as (contrary to its docstring) it is entirely "
-                              "redundant with VARREsults methods.  See GH#4459")
-
-
-def forecast_interval(y, coefs, trend_coefs, sig_u, steps=5, alpha=0.05,
-                      exog=1):  # pragma: no cover
-    raise NotImplementedError("forecast_interval not ported from upstream "
-                              "since it is redundant with "
-                              "VARProcess.forecast_interval.  Use that method "
-                              "(or VARResults.forecast_interval) instead.")
-
-
-def var_loglike(resid, omega, nobs):  # pragma: no cover
-    raise NotImplementedError("var_loglike not ported from upstream, "
-                              "implemented directly in VARResults.llf")
 
 
 def _validate_causing(causing, name="causing", allow_none=False):
@@ -200,18 +211,6 @@ def _reordered(self, order):
                       params=params_new, sigma_u=sigma_u_new,
                       lag_order=self.k_ar, model=self.model,
                       trend='c', names=names_new, dates=self.dates)
-
-
-def orth_ma_rep(results, maxn=10, P=None):  # pragma: no cover
-    raise NotImplementedError("orth_ma_rep not ported from upstream, "
-                              "is instead implemented directly as a "
-                              "VARResults method.")
-
-
-def test_normality(results, signif=0.05):  # pragma: no cover
-    raise NotImplementedError("test_normality is not ported from upstream, is"
-                              "instead implemented directly in "
-                              "VARResults.test_normality")
 
 
 class LagOrderResults:
@@ -576,6 +575,8 @@ class VARProcess(wold.VARProcess):
         plotting.plot_full_acorr(self.acorr(nlags=nlags), linewidth=linewidth)
 
     def _forecast_vars(self, steps):
+        # TODO: Should this go in wold?  Even if forecast_cov is
+        # overriden in VARResults?
         covs = self.forecast_cov(steps)
 
         # Take diagonal for each cov
@@ -713,7 +714,7 @@ class VARProcess(wold.VARProcess):
 
 
 # TODO: Make this subclass Results?
-class VARResults(VARProcess):
+class VARResults(VARProcess, tsa_model.TimeSeriesModelResults):
     """Estimate VAR(p) process with fixed number of lags
 
     Parameters
