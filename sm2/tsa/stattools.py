@@ -25,7 +25,7 @@ from sm2.tsa.autocov import ccovf, ccf, acovf, pacf_yw
 from sm2.tsa.adfvalues import mackinnonp, mackinnoncrit
 from sm2.tsa._bds import bds
 
-
+# TODO: bds is not used outside of tests; un-port?
 __all__ = ['acovf', 'acf', 'pacf', 'pacf_yw', 'pacf_ols', 'ccovf', 'ccf',
            'periodogram', 'q_stat', 'coint', 'arma_order_select_ic',
            'adfuller', 'kpss', 'bds']
