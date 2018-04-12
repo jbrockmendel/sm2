@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 import warnings
 
+import pytest
 from numpy.testing import assert_equal
 
 from sm2.tools.decorators import (cache_writable,
@@ -72,6 +73,8 @@ class TestCopyDoc:
         assert func.__doc__ == "foo"
 
 
+@pytest.mark.skip(reason="resettle_cache is in the progress of "
+                         "being un-ported from upstream.")
 def test_resettable_cache():
     # Refactored out from decorators.py's "if __name__" block
 

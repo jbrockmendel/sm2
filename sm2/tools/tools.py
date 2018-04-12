@@ -10,14 +10,31 @@ from six.moves import range, reduce
 
 from sm2.compat.python import asstr2
 
+from sm2.tools.linalg import pinv_extended, nan_dot, chain_dot  # noqa:F841
 from sm2.tools.data import _is_using_pandas, _is_recarray
 from sm2.base.naming import make_dictnames as _make_dictnames
 
 
-def drop_missing(Y, X=None, axis=1):  # pragma: no cover
-    raise NotImplementedError("drop_missing not ported from upstream, "
-                              "as it is neither used nor tested there.")
+def not_ported(name, used=False, tested=False, msg=None, sandbox=False):
+    if msg is None:
+        msg = "{name} not ported from upstream".format(name=name)
+        if sandbox:
+            msg += ", as it is used only in neglected sandbox/example files."
+        elif not used and not tested:
+            msg += ", as it is neither used nor tested there."
+        elif not used:
+            msg += ", as it is not used there."
+    def func(*args, **kwargs):  # pragma: no cover
+        # TODO: Maybe make a NotPortedError?
+        raise NotImplementedError(msg)
+    func.__name__ = name
+    return func
 
+
+drop_missing = not_ported("drop_missing")
+recipr0 = not_ported("drop_missing")
+unsqueeze = not_ported("unsqueeze", used=1, tested=False)
+_ensure_2d = not_ported("_ensure_2d", tested=False, sandbox=1)
 
 # TODO: needs to better preserve dtype and be more flexible
 # ie., if you still have a string variable in your array you don't
@@ -292,30 +309,6 @@ def isestimable(C, D):
     return True
 
 
-def pinv_extended(X, rcond=1e-15):
-    """
-    Return the pinv of an array X as well as the singular values
-    used in computation.
-
-    Code adapted from numpy.
-    """
-    X = np.asarray(X)
-    X = X.conjugate()
-    u, s, vt = np.linalg.svd(X, 0)
-    s_orig = np.copy(s)
-    m = u.shape[0]
-    n = vt.shape[1]
-    cutoff = rcond * np.maximum.reduce(s)
-    for i in range(min(n, m)):
-        if s[i] > cutoff:
-            s[i] = 1. / s[i]
-        else:
-            s[i] = 0.
-    res = np.dot(np.transpose(vt), np.multiply(s[:, np.core.newaxis],
-                                               np.transpose(u)))
-    return res, s_orig
-
-
 def recipr(x):
     """
     Return the reciprocal of an array, setting all entries less than or
@@ -333,11 +326,6 @@ def recipr(x):
     return out
 
 
-def recipr0(x):  # pragma: no cover
-    raise NotImplementedError("recipr0 not ported from upstream, "
-                              "as it is unused and barely-tested.")
-
-
 def clean0(matrix):
     """
     Erase columns of zeros: can save some time in pseudoinverse.
@@ -353,9 +341,7 @@ def fullrank(X, r=None):
 
     If the rank of X is known it can be specified as r -- no check
     is made to ensure that this really is the rank of X.
-
     """
-
     if r is None:
         r = np.linalg.matrix_rank(X)
 
@@ -366,60 +352,6 @@ def fullrank(X, r=None):
     for i in range(r):
         value.append(V[:, order[i]])
     return np.asarray(np.transpose(value)).astype(np.float64)
-
-
-def unsqueeze(data, axis, oldshape):  # pragma: no cover
-    raise NotImplementedError("unsqueeze not ported from upstream")
-
-
-def chain_dot(*arrs):
-    """
-    Returns the dot product of the given matrices.
-
-    Parameters
-    ----------
-    arrs: argument list of ndarray
-
-    Returns
-    -------
-    Dot product of all arguments.
-
-    Examples
-    --------
-    >>> import numpy as np
-    >>> from sm2.tools import chain_dot
-    >>> A = np.arange(1,13).reshape(3,4)
-    >>> B = np.arange(3,15).reshape(4,3)
-    >>> C = np.arange(5,8).reshape(3,1)
-    >>> chain_dot(A,B,C)
-    array([[1820],
-       [4300],
-       [6780]])
-    """
-    return reduce(lambda x, y: np.dot(y, x), arrs[::-1])
-
-
-def nan_dot(A, B):
-    """
-    Returns np.dot(left_matrix, right_matrix) with the convention that
-    nan * 0 = 0 and nan * x = nan if x != 0.
-
-    Parameters
-    ----------
-    A, B : np.ndarrays
-    """
-    # Find out who should be nan due to nan * nonzero
-    should_be_nan_1 = np.dot(np.isnan(A), (B != 0))
-    should_be_nan_2 = np.dot((A != 0), np.isnan(B))
-    should_be_nan = should_be_nan_1 + should_be_nan_2
-
-    # Multiply after setting all nan to 0
-    # This is what happens if there were no nan * nonzero conflicts
-    C = np.dot(np.nan_to_num(A), np.nan_to_num(B))
-
-    C[should_be_nan] = np.nan
-
-    return C
 
 
 def maybe_unwrap_results(results):
@@ -439,8 +371,3 @@ class Bunch(dict):
     def __init__(self, *args, **kwargs):
         super(Bunch, self).__init__(*args, **kwargs)
         self.__dict__ = self
-
-
-def _ensure_2d(x, ndarray=False):  # pragma: no cover
-    raise NotImplementedError("_ensure_2d not ported from upstream as it "
-                              "is only used in one sandbox module.")

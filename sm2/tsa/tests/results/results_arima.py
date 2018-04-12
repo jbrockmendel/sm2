@@ -297,7 +297,6 @@ class ARIMA112(object):
 
             # unpack stata results
             self.__dict__ = results
-            # TODO: Wait, WTF, is this going to over-write everything above?
             self.resid = self.resid[1:]
             self.params = self.params[:-1]
             self.sigma2 = self.sigma**2

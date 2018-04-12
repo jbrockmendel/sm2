@@ -67,60 +67,9 @@ def copy_doc(docstring):
     return decoration
 
 
-class ResettableCache(dict):
-    """
-    Dictionary whose elements may depend one from another.
 
-    If entry `B` depends on entry `A`, changing the values of entry `A` will
-    reset the value of entry `B` to a default (None); deleteing entry `A` will
-    delete entry `B`.  The connections between entries are stored in a
-    `_resetdict` private attribute.
-
-    Parameters
-    ----------
-    reset : dictionary, optional
-        An optional dictionary, associated a sequence of entries to any key
-        of the object.
-    items : var, optional
-        An optional dictionary used to initialize the dictionary
-
-    Examples
-    --------
-    >>> from numpy.testing import assert_equal
-    >>> reset = dict(a=('b',), b=('c',))
-    >>> cache = resettable_cache(a=0, b=1, c=2, reset=reset)
-    >>> assert_equal(cache, dict(a=0, b=1, c=2))
-
-    >>> print("Try resetting a")
-    >>> cache['a'] = 1
-    >>> assert_equal(cache, dict(a=1, b=None, c=None))
-    >>> cache['c'] = 2
-    >>> assert_equal(cache, dict(a=1, b=None, c=2))
-    >>> cache['b'] = 0
-    >>> assert_equal(cache, dict(a=1, b=0, c=None))
-
-    >>> print("Try deleting b")
-    >>> del(cache['a'])
-    >>> assert_equal(cache, {})
-    """
-
-    def __init__(self, reset=None, **items):
-        self._resetdict = reset or {}
-        dict.__init__(self, **items)
-
-    def __setitem__(self, key, value):
-        dict.__setitem__(self, key, value)
-        # if hasattr needed for unpickling with protocol=2
-        if hasattr(self, '_resetdict'):
-            for mustreset in self._resetdict.get(key, []):
-                self[mustreset] = None
-
-    def __delitem__(self, key):
-        dict.__delitem__(self, key)
-        for mustreset in self._resetdict.get(key, []):
-            del(self[mustreset])
-
-
+# Upstream ResettableCache is unnecessarily complicated.  See GH#4468
+ResettableCache = dict
 resettable_cache = ResettableCache
 
 
@@ -130,6 +79,7 @@ class CachedAttribute(object):
         self.fget = func
         self.name = func.__name__
         self.cachename = cachename or '_cache'
+        assert not resetlist  # changed from upstream
         self.resetlist = resetlist or ()
 
     def __get__(self, obj, type=None):
@@ -151,18 +101,7 @@ class CachedAttribute(object):
             # Call the "fget" function
             _cachedval = self.fget(obj)
             # Set the attribute in obj
-            try:
-                _cache[name] = _cachedval
-            except KeyError:  # TODO: How would this happen?
-                setattr(_cache, name, _cachedval)
-
-            # Update the reset list if needed (and possible)
-            resetlist = self.resetlist
-            if resetlist is not ():
-                try:
-                    _cache._resetdict[name] = self.resetlist
-                except AttributeError:
-                    pass
+            _cache[name] = _cachedval
 
         return _cachedval
 
@@ -174,26 +113,20 @@ class CachedAttribute(object):
 class CachedWritableAttribute(CachedAttribute):
     def __set__(self, obj, value):
         _cache = getattr(obj, self.cachename)
-        name = self.name
-        try:
-            _cache[name] = value
-        except KeyError:  # TODO: How would this happen?
-            setattr(_cache, name, value)
+        _cache[self.name] = value
 
 
 class _cache_readonly(object):
     """
     Decorator for CachedAttribute
     """
-    def __init__(self, cachename=None, resetlist=None):
+    def __init__(self, cachename=None):
         self.func = None
         self.cachename = cachename
-        self.resetlist = resetlist or None
 
     def __call__(self, func):
         return CachedAttribute(func,
-                               cachename=self.cachename,
-                               resetlist=self.resetlist)
+                               cachename=self.cachename)
 
 
 cache_readonly = _cache_readonly()
@@ -205,8 +138,7 @@ class cache_writable(_cache_readonly):
     """
     def __call__(self, func):
         return CachedWritableAttribute(func,
-                                       cachename=self.cachename,
-                                       resetlist=self.resetlist)
+                                       cachename=self.cachename)
 
 
 def nottest(fn):  # pragma: no cover

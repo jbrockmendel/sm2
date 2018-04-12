@@ -307,13 +307,14 @@ class TestVARResults(CheckIRF, CheckFEVD):
 
     def test_params(self):
         assert_allclose(self.res.params,
-                            self.ref.params,
-                            rtol=1e-3)
+                        self.ref.params,
+                        rtol=1e-3)
 
     @pytest.mark.smoke
     def test_cov_params(self):
         # do nothing for now
         self.res.cov_params
+        # TODO: Is this supposed to be cov_params()?
 
     @pytest.mark.smoke
     def test_cov_ybar(self):

@@ -354,75 +354,12 @@ def load_results_jmulti(dataset):
 
         # ---------------------------------------------------------------------
         # parse output related to instant causality:
-        iresults = {"p": {}, "test_stat": {}}
-        results["inst_caus"] = iresults
-        vn = dataset.variable_names
-        # all possible combinations of potentially causing variables
-        # (at least 1 variable and not all variables together):
-        var_combs = sublists(vn, 1, len(vn) - 1)
-        for causing in var_combs:
-            caused = tuple(el for el in vn if el not in causing)
-            # Though Granger- and instantaneous causality results are in the
-            # same file we use two separate files, since JMulTi is basing both
-            # tests on a VAR(p+1) model (where p is the number of lags in
-            # levels). According to Lutkepohl, Granger-causality tests are
-            # based on VAR(p+1) *but* tests for instantaneous causality are
-            # based on VAR(p)! Thus we have this separate file with JMulTi
-            # results for a VECM with the lag order reduced by one.
-            inst_file = ("vecm_" + dataset.__str__() + "_" + source + "_" +
-                         dt_string + "_inst_causality_" +
-                         stringify_var_names(causing) + "_" +
-                         stringify_var_names(caused) + ".txt")
-            inst_file = os.path.join(cur_dir, inst_file)
-            inst_file = open(inst_file)
-            inst_results = []
-            for line in inst_file:
-                str_number = "\d+\.\d{4}"
-                regex_number = re.compile(str_number)
-                number = re.search(regex_number, line)
-                if number is None:
-                    continue
-                number = float(number.group(0))
-                inst_results.append(number)
-            inst_file.close()
-            iresults["test_stat"][(causing, caused)] = inst_results[2]
-            iresults["p"][(causing, caused)] = inst_results[3]
+        results["inst_caus"] = parse_inst_causality_results(dataset, source,
+                                                            dt_string)
 
         # ---------------------------------------------------------------------
         # parse output related to impulse-response analysis:
-        ir_file = ("vecm_" + dataset.__str__() + "_" + source + "_" +
-                   dt_string + "_ir" + ".txt")
-        ir_file = os.path.join(cur_dir, ir_file)
-        ir_file = open(ir_file, encoding='latin_1')
-        causing = None
-        caused = None
-        data = None
-        regex_vars = re.compile("\w+")
-        regex_vals = re.compile("-?\d+\.\d{4}")
-        line_start_causing = "time"
-        data_line_indicator = "point estimate"
-        data_rows_read = 0
-        for line in ir_file:
-            if causing is None and not line.startswith(line_start_causing):
-                continue  # no relevant info in the header
-            if line.startswith(line_start_causing):
-                line = line[4:]
-                causing = re.findall(regex_vars, line)
-                # 21 periods shown in JMulTi output
-                data = np.empty((21, len(causing)))
-                continue
-            if caused is None:
-                caused = re.findall(regex_vars, line)
-                continue
-            # now start collecting the values:
-            if data_line_indicator not in line:
-                continue
-            start = line.find(data_line_indicator) + len(data_line_indicator)
-            line = line[start:]
-            data[data_rows_read] = re.findall(regex_vals, line)
-            data_rows_read += 1
-        ir_file.close()
-        results["ir"] = data
+        results["ir"] = parse_irf_results(dataset, source, dt_string)
 
         # ---------------------------------------------------------------------
         # parse output related to lag order selection:
@@ -446,6 +383,84 @@ def load_results_jmulti(dataset):
         results_dict_per_det_terms[dt_s] = results
 
     return results_dict_per_det_terms
+
+
+def parse_inst_causality_results(dataset, source, dt_string):
+    # parse output related to instant causality:
+    iresults = {"p": {}, "test_stat": {}}
+    vn = dataset.variable_names
+    # all possible combinations of potentially causing variables
+    # (at least 1 variable and not all variables together):
+    var_combs = sublists(vn, 1, len(vn) - 1)
+    for causing in var_combs:
+        caused = tuple(el for el in vn if el not in causing)
+        # Though Granger- and instantaneous causality results are in the
+        # same file we use two separate files, since JMulTi is basing both
+        # tests on a VAR(p+1) model (where p is the number of lags in
+        # levels). According to Lutkepohl, Granger-causality tests are
+        # based on VAR(p+1) *but* tests for instantaneous causality are
+        # based on VAR(p)! Thus we have this separate file with JMulTi
+        # results for a VECM with the lag order reduced by one.
+        inst_results = []
+
+        inst_fname = ("vecm_" + dataset.__str__() + "_" + source + "_" +
+                      dt_string + "_inst_causality_" +
+                      stringify_var_names(causing) + "_" +
+                      stringify_var_names(caused) + ".txt")
+        inst_path = os.path.join(cur_dir, inst_fname)
+        with open(inst_path, 'r') as fd:
+            for line in fd:
+                str_number = "\d+\.\d{4}"
+                regex_number = re.compile(str_number)
+                number = re.search(regex_number, line)
+                if number is None:
+                    continue
+                number = float(number.group(0))
+                inst_results.append(number)
+
+        iresults["test_stat"][(causing, caused)] = inst_results[2]
+        iresults["p"][(causing, caused)] = inst_results[3]
+
+    return iresults
+
+
+# TODO: near-identical to version in parse_jmulti_var_output
+def parse_irf_results(dataset, source, dt_string):
+    # parse output related to impulse-response analysis:
+    causing = None
+    caused = None
+    data = None
+
+    ir_fname = ("vecm_" + dataset.__str__() + "_" + source + "_" +
+                dt_string + "_ir" + ".txt")
+    ir_path = os.path.join(cur_dir, ir_fname)
+    with open(ir_path, encoding='latin_1') as fd:
+        regex_vars = re.compile("\w+")
+        regex_vals = re.compile("-?\d+\.\d{4}")
+        line_start_causing = "time"
+        data_line_indicator = "point estimate"
+        data_rows_read = 0
+        for line in fd:
+            if causing is None and not line.startswith(line_start_causing):
+                continue  # no relevant info in the header
+            if line.startswith(line_start_causing):
+                line = line[4:]
+                causing = re.findall(regex_vars, line)
+                # 21 periods shown in JMulTi output
+                data = np.empty((21, len(causing)))
+                continue
+            if caused is None:
+                caused = re.findall(regex_vars, line)
+                continue
+            # now start collecting the values:
+            if data_line_indicator not in line:
+                continue
+            start = line.find(data_line_indicator) + len(data_line_indicator)
+            line = line[start:]
+            data[data_rows_read] = re.findall(regex_vals, line)
+            data_rows_read += 1
+
+    return data
 
 
 # TODO: near-identical to version in parse_jmulti_var_output

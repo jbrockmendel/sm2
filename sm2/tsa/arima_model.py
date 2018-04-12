@@ -1448,7 +1448,7 @@ class ARMAResults(wold.ARMARoots, tsa_model.TimeSeriesModelResults):
         conf_int = np.c_[forecast - const * fcasterr,
                          forecast + const * fcasterr]
         return conf_int
-        # TODO: DOes this need to be a method?
+        # TODO: DOes this need to be a method?  also its identical to above
 
     def forecast(self, steps=1, exog=None, alpha=.05):
         """

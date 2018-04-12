@@ -233,71 +233,14 @@ def load_results_jmulti(dataset, dt_s_list):
 
         # ---------------------------------------------------------------------
         # parse output related to Granger-caus. and instantaneous causality:
-        results["granger_caus"] = {"p": {}, "test_stat": {}}
-        results["inst_caus"] = {"p": {}, "test_stat": {}}
-        vn = dataset.variable_names
-        # all possible combinations of potentially causing variables
-        # (at least 1 variable and not all variables together):
-        var_combs = sublists(vn, 1, len(vn) - 1)
-        print("\n\n\n" + dt_string)
-        for causing in var_combs:
-            caused = tuple(name for name in vn if name not in causing)
-            causality_file = (dataset.__str__() + "_" + source + "_" +
-                              dt_string + "_granger_causality_" +
-                              stringify_var_names(causing, "_") + ".txt")
-            causality_file = os.path.join(cur_dir, causality_file)
-            causality_file = open(causality_file)
-            causality_results = []
-            for line in causality_file:
-                str_number = "\d+\.\d{4}"
-                regex_number = re.compile(str_number)
-                number = re.search(regex_number, line)
-                if number is None:
-                    continue
-                number = float(number.group(0))
-                causality_results.append(number)
-            causality_file.close()
-            key = (causing, caused)
-            results["granger_caus"]["test_stat"][key] = causality_results[0]
-            results["granger_caus"]["p"][key] = causality_results[1]
-            results["inst_caus"]["test_stat"][key] = causality_results[2]
-            results["inst_caus"]["p"][key] = causality_results[3]
+        iresults, gresults = parse_inst_causality_results(dataset, source,
+                                                          dt_string)
+        results["granger_caus"] = gresults
+        results["inst_caus"] = iresults
 
         # ---------------------------------------------------------------------
         # parse output related to impulse-response analysis:
-        ir_file = dataset.__str__() + "_" + source + "_" + dt_string \
-            + "_ir" + ".txt"
-        ir_file = os.path.join(cur_dir, ir_file)
-        ir_file = open(ir_file, encoding='latin_1')
-        causing = None
-        caused = None
-        data = None
-        regex_vars = re.compile("\w+")
-        regex_vals = re.compile("-?\d+\.\d{4}")
-        line_start_causing = "time"
-        data_line_indicator = "point estimate"
-        data_rows_read = 0
-        for line in ir_file:
-            if causing is None and not line.startswith(line_start_causing):
-                continue  # no relevant info in the header
-            if line.startswith(line_start_causing):
-                line = line[4:]
-                causing = re.findall(regex_vars, line)
-                # 21 periods shown in JMulTi output
-                data = np.empty((21, len(causing)))
-                continue
-            if caused is None:
-                caused = re.findall(regex_vars, line)
-                continue
-            # now start collecting the values:
-            if data_line_indicator not in line:
-                continue
-            start = line.find(data_line_indicator) + len(data_line_indicator)
-            line = line[start:]
-            data[data_rows_read] = re.findall(regex_vals, line)
-            data_rows_read += 1
-        ir_file.close()
-        results["ir"] = data
+        results["ir"] = parse_irf_file(dataset, source, dt_string)
 
         # ---------------------------------------------------------------------
         # parse output related to lag order selection:
@@ -320,6 +263,79 @@ def load_results_jmulti(dataset, dt_s_list):
         results_dict_per_det_terms[dt_s] = results
 
     return results_dict_per_det_terms
+
+
+def parse_inst_causality_results(dataset, source, dt_string):
+    # parse output related to Granger-caus. and instantaneous causality:
+    iresults = {"p": {}, "test_stat": {}}
+    gresults = {"p": {}, "test_stat": {}}
+    vn = dataset.variable_names
+    # all possible combinations of potentially causing variables
+    # (at least 1 variable and not all variables together):
+    var_combs = sublists(vn, 1, len(vn) - 1)
+
+    for causing in var_combs:
+        causality_results = []
+        caused = tuple(name for name in vn if name not in causing)
+        causality_fname = (dataset.__str__() + "_" + source + "_" +
+                           dt_string + "_granger_causality_" +
+                           stringify_var_names(causing, "_") + ".txt")
+        causality_path = os.path.join(cur_dir, causality_fname)
+        with open(causality_path, 'r') as fd:
+            for line in fd:
+                str_number = "\d+\.\d{4}"
+                regex_number = re.compile(str_number)
+                number = re.search(regex_number, line)
+                if number is None:
+                    continue
+                number = float(number.group(0))
+                causality_results.append(number)
+
+        key = (causing, caused)
+        gresults["test_stat"][key] = causality_results[0]
+        gresults["p"][key] = causality_results[1]
+        iresults["test_stat"][key] = causality_results[2]
+        iresults["p"][key] = causality_results[3]
+
+    return iresults, gresults
+
+
+def parse_irf_file(dataset, source, dt_string):
+    # parse output related to impulse-response analysis:
+    causing = None
+    caused = None
+    data = None
+
+    ir_fname = (dataset.__str__() + "_" + source + "_" +
+                dt_string + "_ir" + ".txt")
+    ir_path = os.path.join(cur_dir, ir_fname)
+    with open(ir_path, encoding='latin_1') as fd:
+        regex_vars = re.compile("\w+")
+        regex_vals = re.compile("-?\d+\.\d{4}")
+        line_start_causing = "time"
+        data_line_indicator = "point estimate"
+        data_rows_read = 0
+        for line in fd:
+            if causing is None and not line.startswith(line_start_causing):
+                continue  # no relevant info in the header
+            if line.startswith(line_start_causing):
+                line = line[4:]
+                causing = re.findall(regex_vars, line)
+                # 21 periods shown in JMulTi output
+                data = np.empty((21, len(causing)))
+                continue
+            if caused is None:
+                caused = re.findall(regex_vars, line)
+                continue
+            # now start collecting the values:
+            if data_line_indicator not in line:
+                continue
+            start = line.find(data_line_indicator) + len(data_line_indicator)
+            line = line[start:]
+            data[data_rows_read] = re.findall(regex_vals, line)
+            data_rows_read += 1
+
+    return data
 
 
 # TODO: near-identical func in parse_jmulti_vecm_output

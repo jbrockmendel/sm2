@@ -19,8 +19,7 @@ import scipy.linalg
 
 from sm2.tools.decorators import (cache_readonly, cached_value, cached_data,
                                   deprecated_alias, copy_doc)
-from sm2.tools.tools import chain_dot
-from sm2.tools.linalg import logdet_symm
+from sm2.tools.linalg import logdet_symm, chain_dot
 
 import sm2.base.wrapper as wrap
 
@@ -72,6 +71,37 @@ def forecast_cov(ma_coefs, sigma_u, steps):  # pragma: no cover
 mse = forecast_cov
 
 
+def _forecast_vars(steps, ma_coefs, sig_u):  # pragma: no cover
+    raise NotImplementedError("_forecast_vars not ported from upstream, "
+                              "as (contrary to its docstring) it is entirely "
+                              "redundant with VARREsults methods.  See GH#4459")
+
+
+def forecast_interval(y, coefs, trend_coefs, sig_u, steps=5, alpha=0.05,
+                      exog=1):  # pragma: no cover
+    raise NotImplementedError("forecast_interval not ported from upstream "
+                              "since it is redundant with "
+                              "VARProcess.forecast_interval.  Use that method "
+                              "(or VARResults.forecast_interval) instead.")
+
+
+def var_loglike(resid, omega, nobs):  # pragma: no cover
+    raise NotImplementedError("var_loglike not ported from upstream, "
+                              "implemented directly in VARResults.llf")
+
+
+def orth_ma_rep(results, maxn=10, P=None):  # pragma: no cover
+    raise NotImplementedError("orth_ma_rep not ported from upstream, "
+                              "is instead implemented directly as a "
+                              "VARResults method.")
+
+
+def test_normality(results, signif=0.05):  # pragma: no cover
+    raise NotImplementedError("test_normality is not ported from upstream, is"
+                              "instead implemented directly in "
+                              "VARResults.test_normality")
+
+
 def forecast(y, coefs, trend_coefs, steps, exog=None):
     """
     Produce linear minimum MSE forecast
@@ -91,8 +121,6 @@ def forecast(y, coefs, trend_coefs, steps, exog=None):
     Notes
     -----
     Lütkepohl p. 37
-
-    Also used by DynamicVAR class
     """
     p = len(coefs)
     k = len(coefs[0])
@@ -102,7 +130,7 @@ def forecast(y, coefs, trend_coefs, steps, exog=None):
         forcs += np.dot(exog, trend_coefs)
     # to make existing code (with trend_coefs=intercept and without exog) work:
     elif exog is None and trend_coefs is not None:
-        forcs += trend_coefs
+        forcs += trend_coefs  # TODO: not hit, also dumb overloading
 
     # h=0 forecast should be latest observation
     # forcs[0] = y[-1]
@@ -128,23 +156,17 @@ def forecast(y, coefs, trend_coefs, steps, exog=None):
     return forcs
 
 
-def _forecast_vars(steps, ma_coefs, sig_u):  # pragma: no cover
-    raise NotImplementedError("_forecast_vars not ported from upstream, "
-                              "as (contrary to its docstring) it is entirely "
-                              "redundant with VARREsults methods.  See GH#4459")
-
-
-def forecast_interval(y, coefs, trend_coefs, sig_u, steps=5, alpha=0.05,
-                      exog=1):  # pragma: no cover
-    raise NotImplementedError("forecast_interval not ported from upstream "
-                              "since it is redundant with "
-                              "VARProcess.forecast_interval.  Use that method "
-                              "(or VARResults.forecast_interval) instead.")
-
-
-def var_loglike(resid, omega, nobs):  # pragma: no cover
-    raise NotImplementedError("var_loglike not ported from upstream, "
-                              "implemented directly in VARResults.llf")
+def _validate_causing(causing, name="causing", allow_none=False):
+    allowed_types = (string_types, int)
+    if isinstance(causing, allowed_types):
+        causing = [causing]
+    if not all(isinstance(c, allowed_types) for c in causing):
+        msg = ("{name} has to be of type string or int "
+               "(or a sequence of these types)")
+        if allow_none:
+            msg += " or None."
+        raise TypeError(msg.format(name=name))
+    return causing
 
 
 def _reordered(self, order):
@@ -189,18 +211,6 @@ def _reordered(self, order):
                       params=params_new, sigma_u=sigma_u_new,
                       lag_order=self.k_ar, model=self.model,
                       trend='c', names=names_new, dates=self.dates)
-
-
-def orth_ma_rep(results, maxn=10, P=None):  # pragma: no cover
-    raise NotImplementedError("orth_ma_rep not ported from upstream, "
-                              "is instead implemented directly as a "
-                              "VARResults method.")
-
-
-def test_normality(results, signif=0.05):  # pragma: no cover
-    raise NotImplementedError("test_normality is not ported from upstream, is"
-                              "instead implemented directly in "
-                              "VARResults.test_normality")
 
 
 class LagOrderResults:
@@ -394,7 +404,7 @@ class VAR(tsa_model.TimeSeriesModel):
 
         k_trend = util.get_trendorder(trend)
         self.exog_names = util.make_lag_names(self.endog_names, lags, k_trend)
-        # TODO: Don't set self params at this level
+        # TODO: Don't set self attrs at this level
         self.nobs = self.n_totobs - lags
 
         # add exog to data.xnames (necessary because the length of xnames also
@@ -407,19 +417,22 @@ class VAR(tsa_model.TimeSeriesModel):
 
         return self._estimate_var(lags, trend=trend)
 
-    def _estimate_var(self, lags, offset=0, trend='c'):
+    def _build_rhs(self, lags, offset=0, trend='c'):
         """
+        Construct the array of regressors to use as RHS variables in the
+        VAR Model.
+
+        Parameters
+        ----------
         lags : int
-            Lags of the endogenous variable.
-        offset : int
-            Periods to drop from beginning-- for order selection so it's an
-            apples-to-apples comparison
-        trend : string or None
-            As per above
+        offset : int, default 0
+        trend : {'nc', 'c', 'ct', 'ctt'}, default 'c'
+
+        Returns
+        -------
+        rhs : np.ndarray
         """
-        # have to do this again because select_order doesn't call fit
         k_trend = util.get_trendorder(trend)
-        # Note: upstream sets self.k_trend, shouldnt
 
         if offset < 0:  # pragma: no cover
             raise ValueError('offset must be >= 0')
@@ -453,10 +466,33 @@ class VAR(tsa_model.TimeSeriesModel):
             if (np.diff(np.sqrt(z[:, i])) == 1).all():
                 z[:, i] = (np.sqrt(z[:, i]) + lags)**2
 
+        return z
+
+    def _estimate_var(self, lags, offset=0, trend='c'):
+        """
+        lags : int
+            Lags of the endogenous variable.
+        offset : int
+            Periods to drop from beginning-- for order selection so it's an
+            apples-to-apples comparison
+        trend : string or None
+            As per above
+        """
+        # have to do this again because select_order doesn't call fit
+        k_trend = util.get_trendorder(trend)
+        # Note: upstream sets self.k_trend, shouldnt
+
+        if offset < 0:  # pragma: no cover
+            raise ValueError('offset must be >= 0')
+
+        endog = self.endog[offset:]
+        exog = None if self.exog is None else self.exog[offset:]
+
+        rhs = self._build_rhs(lags, offset, trend)
         y_sample = endog[lags:]
         # Lütkepohl p75, about 5x faster than stated formula
-        params = np.linalg.lstsq(z, y_sample, rcond=-1)[0]
-        resid = y_sample - np.dot(z, params)
+        params = np.linalg.lstsq(rhs, y_sample, rcond=-1)[0]
+        resid = y_sample - np.dot(rhs, params)
 
         # Unbiased estimate of covariance matrix $\Sigma_u$ of the white noise
         # process $u$
@@ -468,13 +504,13 @@ class VAR(tsa_model.TimeSeriesModel):
 
         avobs = len(y_sample)
         if exog is not None:
-            k_trend += exog.shape[1]
+            k_trend += exog.shape[1]  # TODO: Just define k_exog?
         df_resid = avobs - (self.neqs * lags + k_trend)
 
         sse = np.dot(resid.T, resid)
         omega = sse / df_resid
 
-        varfit = VARResults(endog, z, params, omega, lags,
+        varfit = VARResults(endog, rhs, params, omega, lags,
                             names=self.endog_names, trend=trend,
                             dates=self.data.dates, model=self, exog=self.exog)
         return VARResultsWrapper(varfit)
@@ -534,11 +570,13 @@ class VARProcess(wold.VARProcess):
     # -------------------------------------------------------------
     # Methods requiring `coefs` and `sigma_u`, but not `exog`
 
-    def plot_acorr(self, nlags=10, linewidth=8):
+    def plot_acorr(self, nlags=10, linewidth=8):  # TODO: belongs in wold?
         "Plot theoretical autocorrelation function"
         plotting.plot_full_acorr(self.acorr(nlags=nlags), linewidth=linewidth)
 
     def _forecast_vars(self, steps):
+        # TODO: Should this go in wold?  Even if forecast_cov is
+        # overriden in VARResults?
         covs = self.forecast_cov(steps)
 
         # Take diagonal for each cov
@@ -553,6 +591,7 @@ class VARProcess(wold.VARProcess):
         self.exog = exog
         self.trend = trend
         self.names = names
+        # TODO: names not used here, move them out of this class?
 
     def get_eq_index(self, name):  # pragma: no cover
         raise NotImplementedError("get_eq_index is not ported from upstream, "
@@ -592,6 +631,10 @@ class VARProcess(wold.VARProcess):
         -----
         Lütkepohl pp 37-38
         """
+        exog_future, trend_coefs = self._build_exog_future(exog_future, steps)
+        return forecast(y, self.coefs, trend_coefs, steps, exog_future)
+
+    def _build_exog_future(self, exog_future, steps):
         if self.exog is None and exog_future is not None:
             raise ValueError("No exog in model, so no exog_future supported "
                              "in forecast method.")  # pragma: no cover
@@ -601,15 +644,16 @@ class VARProcess(wold.VARProcess):
         trend_coefs = None if self.coefs_exog.size == 0 else self.coefs_exog.T
         # TODO: upstream is really, really dumb sometimes.  coefs_exog doesn't
         # exist at this level!
+        trend = self.trend
 
         exogs = []
-        if self.trend.startswith("c"):  # constant term
+        if trend.startswith("c"):  # constant term
             exogs.append(np.ones(steps))
         exog_lin_trend = np.arange(self.n_totobs + 1,
                                    self.n_totobs + 1 + steps)
-        if "t" in self.trend:
+        if "t" in trend:
             exogs.append(exog_lin_trend)
-        if "tt" in self.trend:
+        if "tt" in trend:
             exogs.append(exog_lin_trend**2)
         if exog_future is not None:
             exogs.append(exog_future)
@@ -618,7 +662,7 @@ class VARProcess(wold.VARProcess):
             exog_future = None
         else:
             exog_future = np.column_stack(exogs)
-        return forecast(y, self.coefs, trend_coefs, steps, exog_future)
+        return exog_future, trend_coefs
 
     def forecast_interval(self, y, steps, alpha=0.05, exog_future=None):
         """Construct forecast interval estimates assuming the y are Gaussian
@@ -670,7 +714,7 @@ class VARProcess(wold.VARProcess):
 
 
 # TODO: Make this subclass Results?
-class VARResults(VARProcess):
+class VARResults(VARProcess, tsa_model.TimeSeriesModelResults):
     """Estimate VAR(p) process with fixed number of lags
 
     Parameters
@@ -743,8 +787,7 @@ class VARResults(VARProcess):
 
     @property
     def df_model(self):
-        """Number of estimated parameters, including the intercept / trends
-        """
+        """Number of estimated parameters, including the intercept / trends"""
         return self.neqs * self.k_ar + self.k_trend
         # TODO: Should neqs be multiplying k_trend?
 
@@ -892,6 +935,7 @@ class VARResults(VARProcess):
         return 2 * stats.norm.sf(np.abs(self.tvalues))
 
     # ------------------------------------------------------------
+    # Sample Methods - just require endog (and names, dates, k_ar)
 
     def plot(self):
         """Plot input time series"""
@@ -908,6 +952,9 @@ class VARResults(VARProcess):
         "Plot theoretical autocorrelation function"
         plotting.plot_full_acorr(self.sample_acorr(nlags=nlags),
                                  linewidth=linewidth)
+
+    # ------------------------------------------------------------
+    # Resid Methods - require only self.resid
 
     def resid_acov(self, nlags=1):
         """
@@ -1203,44 +1250,33 @@ class VARResults(VARProcess):
         if not (0 < signif < 1):  # pragma: no cover
             raise ValueError("signif has to be between 0 and 1")
 
-        allowed_types = (string_types, int)
-
-        if isinstance(caused, allowed_types):
-            caused = [caused]
-        if not all(isinstance(c, allowed_types) for c in caused):
-            raise TypeError("caused has to be of type string or int (or a "
-                            "sequence of these types).")  # pragma: no cover
+        caused = _validate_causing(caused, "caused")
         caused = [self.names[c] if type(c) == int else c for c in caused]
         caused_ind = [util.get_index(self.names, c) for c in caused]
 
         if causing is not None:
-            if isinstance(causing, allowed_types):
-                causing = [causing]
-            if not all(isinstance(c, allowed_types) for c in causing):
-                raise TypeError("causing has to be of type string or int "
-                                "(or a sequence of these types) "
-                                "or None.")  # pragma: no cover
+            causing = _validate_causing(causing, "causing", allow_none=True)
             causing = [self.names[c] if type(c) == int else c for c in causing]
             causing_ind = [util.get_index(self.names, c) for c in causing]
-
-        if causing is None:
+        else:
             causing_ind = [i for i in range(self.neqs) if i not in caused_ind]
             causing = [self.names[c] for c in caused_ind]
 
-        k, p = self.neqs, self.k_ar
+        neqs, k_ar = self.neqs, self.k_ar
 
         # number of restrictions
-        num_restr = len(causing) * len(caused) * p
+        num_restr = len(causing) * len(caused) * k_ar
         num_det_terms = self.k_trend
 
         # Make restriction matrix
-        C = np.zeros((num_restr, k * num_det_terms + k**2 * p), dtype=float)
-        cols_det = k * num_det_terms
+        C = np.zeros((num_restr, neqs * num_det_terms + neqs**2 * k_ar),
+                     dtype=float)
+        cols_det = neqs * num_det_terms
         row = 0
-        for j in range(p):
+        for j in range(k_ar):
             for ing_ind in causing_ind:
                 for ed_ind in caused_ind:
-                    C[row, cols_det + ed_ind + k * ing_ind + k**2 * j] = 1
+                    C[row, cols_det + ed_ind + neqs * ing_ind + neqs**2 * j] = 1
                     row += 1
 
         # Lutkepohl 3.6.5
@@ -1255,7 +1291,7 @@ class VARResults(VARProcess):
             dist = stats.chi2(df)
         elif kind.lower() == 'f':
             statistic = lam_wald / num_restr
-            df = (num_restr, k * self.df_resid)
+            df = (num_restr, neqs * self.df_resid)
             dist = stats.f(*df)
         else:
             # TODO: this is Exception upstream, fix to ValueError
@@ -1263,7 +1299,6 @@ class VARResults(VARProcess):
 
         pvalue = dist.sf(statistic)
         crit_value = dist.ppf(1 - signif)
-
         return CausalityTestResults(causing, caused, statistic,
                                     crit_value, pvalue, df, signif,
                                     test="granger", method=kind)
@@ -1332,13 +1367,7 @@ class VARResults(VARProcess):
         if not (0 < signif < 1):
             raise ValueError("signif has to be between 0 and 1")
 
-        allowed_types = (string_types, int)
-        if isinstance(causing, allowed_types):
-            causing = [causing]
-        if not all(isinstance(c, allowed_types) for c in causing):
-            raise TypeError("causing has to be of type string or int (or a "
-                            "a sequence of these types).")
-
+        causing = _validate_causing(causing, "causing")
         causing = [self.names[c] if type(c) == int else c for c in causing]
         causing_ind = [util.get_index(self.names, c) for c in causing]
 
@@ -1378,11 +1407,11 @@ class VARResults(VARProcess):
 
         pvalue = dist.sf(wald_statistic)
         crit_value = dist.ppf(1 - signif)
-
         return CausalityTestResults(causing, caused, wald_statistic,
                                     crit_value, pvalue, df, signif,
                                     test="inst", method="wald")
 
+    # TODO: Is this test implemented elsewhere?
     def test_whiteness(self, nlags=10, signif=0.05, adjusted=False):
         """
         Residual whiteness tests using Portmanteau
@@ -1434,6 +1463,7 @@ class VARResults(VARProcess):
                                   "retains only the correct version.  "
                                   "See GH#4036 upstream")
 
+    # TODO: Can we use any of the jarque_bera code in stats.stattools?
     def test_normality(self, signif=0.05):
         """
         Test assumption of normal-distributed errors using Jarque-Bera-style
