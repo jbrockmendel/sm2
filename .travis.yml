@@ -11,6 +11,13 @@ matrix:
 
 install: pip install tox codecov
 
+before_script:
+    # configure a headless display to test plots
+    # https://stackoverflow.com/questions/35403127
+    - "export DISPLAY=:99.0"
+    - "sh -e /etc/init.d/xvfb start"
+    - sleep 3  # give xvfb some time to start
+
 script: tox
 
 notifications:
