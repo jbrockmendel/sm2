@@ -408,7 +408,7 @@ def parse_inst_causality_results(dataset, source, dt_string):
                       stringify_var_names(causing) + "_" +
                       stringify_var_names(caused) + ".txt")
         inst_path = os.path.join(cur_dir, inst_fname)
-        with open(inst_path, 'rb') as fd:
+        with open(inst_path, 'r') as fd:
             for line in fd:
                 str_number = "\d+\.\d{4}"
                 regex_number = re.compile(str_number)

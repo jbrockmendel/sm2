@@ -281,7 +281,7 @@ def parse_inst_causality_results(dataset, source, dt_string):
                            dt_string + "_granger_causality_" +
                            stringify_var_names(causing, "_") + ".txt")
         causality_path = os.path.join(cur_dir, causality_fname)
-        with open(causality_path, 'rb') as fd:
+        with open(causality_path, 'r') as fd:
             for line in fd:
                 str_number = "\d+\.\d{4}"
                 regex_number = re.compile(str_number)
