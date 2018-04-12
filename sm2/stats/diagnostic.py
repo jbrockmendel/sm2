@@ -167,6 +167,7 @@ def acorr_ljungbox(x, lags=None, boxpierce=False):
 
     acf2norm = acfx[1:maxlag + 1]**2 / (nobs - np.arange(1, maxlag + 1))
     qljungbox = nobs * (nobs + 2) * np.cumsum(acf2norm)[lags - 1]
+    # TODO: Is the above identical to tsa.stattools.q_stat?
     pval = stats.chi2.sf(qljungbox, lags)
     if not boxpierce:
         return qljungbox, pval

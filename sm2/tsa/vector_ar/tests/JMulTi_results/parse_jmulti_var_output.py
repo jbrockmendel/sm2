@@ -6,23 +6,7 @@ import numpy as np
 
 from .parse_jmulti_vecm_output import sublists, stringify_var_names
 
-debug_mode = False
-
 cur_dir = os.path.dirname(os.path.realpath(__file__))
-
-
-def print_debug_output(results, dt):
-    print("\n\n\nDETERMINISTIC TERMS: " + dt)
-    coefs = results["est"]["Lagged endogenous term"]
-    print("coefs:")
-    print(str(type(coefs)) + str(coefs.shape))
-    print(coefs)
-    print("se: ")
-    print(results["se"]["Lagged endogenous term"])
-    print("t: ")
-    print(results["t"]["Lagged endogenous term"])
-    print("p: ")
-    print(results["p"]["Lagged endogenous term"])
 
 
 # TODO: duplicated in parse_jmulti_vecm_output?
@@ -257,8 +241,6 @@ def load_results_jmulti(dataset, dt_s_list):
         results["whiteness"] = wresults
 
         # ---------------------------------------------------------------------
-        if debug_mode:
-            print_debug_output(results, dt_string)
 
         results_dict_per_det_terms[dt_s] = results
 

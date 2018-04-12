@@ -237,8 +237,7 @@ class WaldTestResults(object):
 
     @property
     def col_names(self):
-        """column names for summary table
-        """
+        """column names for summary table"""
         pr_test = "P>%s" % self.distribution
         col_names = [self.distribution, pr_test, 'df constraint']
         if self.distribution == 'F':

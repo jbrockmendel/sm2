@@ -1396,7 +1396,7 @@ class LikelihoodModelResults(wrap.SaveLoadMixin, Results):
         res.temp = constraints + combined_constraints + extra_constraints
         return res
 
-    def conf_int(self, alpha=.05, cols=None, method='default'):
+    def conf_int(self, alpha=.05, cols=None, method=None):
         """
         Returns the confidence interval of the fitted parameters.
 
@@ -1407,15 +1407,6 @@ class LikelihoodModelResults(wrap.SaveLoadMixin, Results):
             ie., The default `alpha` = .05 returns a 95% confidence interval.
         cols : array-like, optional
             `cols` specifies which confidence intervals to return
-        method : string
-            Not Implemented Yet
-            Method to estimate the confidence_interval.
-            "Default" : uses self.bse which is based on inverse Hessian for MLE
-            "hjjh" :
-            "jac" :
-            "boot-bse"
-            "boot_quant"
-            "profile"
 
         Returns
         --------
@@ -1445,10 +1436,14 @@ class LikelihoodModelResults(wrap.SaveLoadMixin, Results):
 
         Notes
         -----
-        The confidence interval is based on the standard normal distribution.
-        Models wish to use a different distribution should overwrite this
-        method.
+        The confidence interval is based on the Student's t-distribution
+        if the model's `use_t` attribute is True, otherwise they are
+        based on the standard normal distribution.
         """
+        if method is not None:  # pragma: no cover
+            raise NotImplementedError("`method` argument is not actually "
+                                      "supported.  Upstream silently ignores "
+                                      "it.")
         bse = self.bse
 
         if self.use_t:

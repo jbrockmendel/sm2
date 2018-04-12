@@ -1302,27 +1302,6 @@ class RegressionResults(base.LikelihoodModelResults):
         # FIXME: This should _return_ something right?
         self.summary()
 
-    def conf_int(self, alpha=.05, cols=None):
-        """
-        Returns the confidence interval of the fitted parameters.
-
-        Parameters
-        ----------
-        alpha : float, optional
-            The `alpha` level for the confidence interval.
-            ie., The default `alpha` = .05 returns a 95% confidence interval.
-        cols : array-like, optional
-            `cols` specifies which confidence intervals to return
-
-        Notes
-        -----
-        The confidence interval is based on Student's t-distribution.
-        """
-        # keep method for docstring for now
-        # TODO: can we get rid of this?
-        ci = super(RegressionResults, self).conf_int(alpha=alpha, cols=cols)
-        return ci
-
     @cached_data
     def wresid(self):
         return self.model.wendog - self.model.predict(self.params,
