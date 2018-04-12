@@ -1615,6 +1615,7 @@ class ARMAResults(wold.ARMARoots, tsa_model.TimeSeriesModelResults):
         # doing this twice. just add a plot keyword to predict?
         start, end, out_of_sample, _ = (
             self.model._get_prediction_index(start, end, dynamic=False))
+        # TODO: Why is dynamic hard-coded as False here?
 
         if out_of_sample:
             steps = out_of_sample
@@ -1766,6 +1767,7 @@ class ARIMAResults(ARMAResults):
 
         ax.legend(loc='best')
         return fig
+        # TODO: largely redundant with ARMAResults.plot_predict
 
 
 class ARIMAResultsWrapper(ARMAResultsWrapper):

@@ -31,7 +31,7 @@ __all__ = ['acovf', 'acf', 'pacf', 'pacf_yw', 'pacf_ols', 'ccovf', 'ccf',
 # NOTE: Changed unbiased to False
 # see for example
 # http://www.itl.nist.gov/div898/handbook/eda/section3/autocopl.htm
-def acf(x, unbiased=False, nlags=40, qstat=False, fft=False, alpha=None,
+def acf(x, unbiased=False, nlags=40, qstat=True, fft=False, alpha=True,
         missing='none'):
     """
     Autocorrelation function for 1d arrays.
@@ -86,27 +86,25 @@ def acf(x, unbiased=False, nlags=40, qstat=False, fft=False, alpha=None,
        and amplitude modulation. Sankhya: The Indian Journal of
        Statistics, Series A, pp.383-392.
     """
+    if not qstat or not alpha:  # pragma: no cover
+        raise NotImplementedError("Options `qstat` and `alpha` from upstream "
+                                  "are not supported in sm2.  `acf` always "
+                                  "returns a tuple "
+                                  "(acf, confint, qstat, pvalue)")
     nobs = len(x)  # should this shrink for missing='drop' and NaNs in x?
     avf = acovf(x, unbiased=unbiased, demean=True, fft=fft, missing=missing)
     acf = avf[:nlags + 1] / avf[0]
-    if not (qstat or alpha):
-        return acf
-    if alpha is not None:
-        varacf = np.ones(nlags + 1) / nobs
-        varacf[0] = 0
-        varacf[1] = 1. / nobs
-        varacf[2:] *= 1 + 2 * np.cumsum(acf[1:-1]**2)
-        interval = stats.norm.ppf(1 - alpha / 2.) * np.sqrt(varacf)
-        confint = np.array(list(zip(acf - interval, acf + interval)))
-        if not qstat:
-            return acf, confint
-    if qstat:
-        qstat, pvalue = q_stat(acf[1:], nobs=nobs)  # drop lag 0
-        if alpha is not None:
-            return acf, confint, qstat, pvalue
-        else:
-            return acf, qstat, pvalue
-    # TODO: remove multiple-return
+
+    varacf = np.ones(nlags + 1) / nobs
+    varacf[0] = 0
+    varacf[1] = 1. / nobs
+    varacf[2:] *= 1 + 2 * np.cumsum(acf[1:-1]**2)
+    interval = stats.norm.ppf(1 - alpha / 2.) * np.sqrt(varacf)
+    confint = np.array(list(zip(acf - interval, acf + interval)))
+
+    qstat, pvalue = q_stat(acf[1:], nobs=nobs)  # drop lag 0
+
+    return acf, confint, qstat, pvalue
 
 
 # FIXME: this is incorrect.

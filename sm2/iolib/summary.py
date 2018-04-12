@@ -50,6 +50,17 @@ def _getnames(self, yname=None, xname=None):
     return yname, xname
 
 
+def _build_gen_tuples(gen, default_items):
+    # replace missing (None) values with default values
+    gen_tuples = []
+    for item, value in gen:
+        if value is None:
+            value = default_items[item]()  # let KeyErrors raise exception
+        gen_tuples.append((item, value))
+
+    return gen_tuples
+
+
 def summary_top(results, title=None, gleft=None, gright=None,
                 yname=None, xname=None):
     """generate top table(s)
@@ -100,21 +111,10 @@ def summary_top(results, title=None, gleft=None, gright=None,
     gen_title = title
     gen_header = None
 
-    # replace missing (None) values with default values
-    gen_left_ = []
-    for item, value in gen_left:
-        if value is None:
-            value = default_items[item]()  # let KeyErrors raise exception
-        gen_left_.append((item, value))
-    gen_left = gen_left_
+    gen_left = _build_gen_tuples(gen_left, default_items)
 
     if gen_right:
-        gen_right_ = []
-        for item, value in gen_right:
-            if value is None:
-                value = default_items[item]()  # let KeyErrors raise exception
-            gen_right_.append((item, value))
-        gen_right = gen_right_
+        gen_right = _build_gen_tuples(gen_right, default_items)
 
     missing_values = [k for k, v in gen_left + gen_right if v is None]
     assert missing_values == [], missing_values

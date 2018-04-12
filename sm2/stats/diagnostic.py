@@ -96,7 +96,7 @@ def linear_lm(resid, exog, func=None):
     return lm, lm_pval, ftest
 
 
-def acorr_ljungbox(x, lags=None, boxpierce=False):
+def acorr_ljungbox(x, lags=None, boxpierce=True):
     """
     Ljung-Box test for no autocorrelation
 
@@ -151,6 +151,11 @@ def acorr_ljungbox(x, lags=None, boxpierce=False):
     Greene
     Wikipedia
     """
+    if not boxpierce:  # pragma: no cover  # TODO: Update docstring
+        raise NotImplementedError("`boxpierce=False` option is not ported from "
+                                  "upstream.  In sm2, acorr_ljungbox always "
+                                  "returns a tuple "
+                                  "(qljungbox, pval, qboxpierce, pvalbp)")
     x = np.asarray(x)
     nobs = x.shape[0]
     if lags is None:
@@ -162,20 +167,18 @@ def acorr_ljungbox(x, lags=None, boxpierce=False):
     maxlag = max(lags)
 
     from sm2.tsa.stattools import acf
-    acfx = acf(x, nlags=maxlag)  # normalize by nobs not (nobs - nlags)
+    acfx = acf(x, nlags=maxlag)[0]  # normalize by nobs not (nobs - nlags)
     # SS: unbiased=False is default now
 
     acf2norm = acfx[1:maxlag + 1]**2 / (nobs - np.arange(1, maxlag + 1))
     qljungbox = nobs * (nobs + 2) * np.cumsum(acf2norm)[lags - 1]
     # TODO: Is the above identical to tsa.stattools.q_stat?
     pval = stats.chi2.sf(qljungbox, lags)
-    if not boxpierce:
-        return qljungbox, pval
-    else:
-        qboxpierce = nobs * np.cumsum(acfx[1:maxlag + 1]**2)[lags - 1]
-        pvalbp = stats.chi2.sf(qboxpierce, lags)
-        return qljungbox, pval, qboxpierce, pvalbp
-    # TODO: Get rid of multiple-return
+
+
+    qboxpierce = nobs * np.cumsum(acfx[1:maxlag + 1]**2)[lags - 1]
+    pvalbp = stats.chi2.sf(qboxpierce, lags)
+    return qljungbox, pval, qboxpierce, pvalbp
 
 
 def acorr_lm(x, maxlag=None, autolag='AIC', store=False, regresults=False):

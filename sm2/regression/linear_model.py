@@ -1254,8 +1254,7 @@ class RegressionResults(base.LikelihoodModelResults):
         The residuals of the transformed/whitened regressand and
         regressor(s)
     """
-
-    _cache = {}  # needs to be a class attribute for scale setter?
+    _cache = {}
 
     @cached_value
     def nobs(self):
@@ -1451,7 +1450,7 @@ class RegressionResults(base.LikelihoodModelResults):
         return cov_HC0
 
     @cache_readonly
-    def cov_HC1(self):
+    def cov_HC1(self):  # TODO: I'm not wild about setting het_scale attr
         """See sm2.RegressionResults"""
         self.het_scale = self.nobs / (self.df_resid) * (self.wresid**2)
         cov_HC1 = self._HCCM(self.het_scale)

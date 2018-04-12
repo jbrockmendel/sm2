@@ -416,6 +416,11 @@ class DiscreteMargins(object):
         _check_at_is_all(self.margeff_options)
         return self.margeff / self.margeff_se
 
+    @cache_readonly
+    def pvalues(self):
+        _check_at_is_all(self.margeff_options)
+        return stats.norm.sf(np.abs(self.tvalues)) * 2
+
     def summary_frame(self, alpha=.05):
         """
         Returns a DataFrame summarizing the marginal effects.
@@ -470,11 +475,6 @@ class DiscreteMargins(object):
             index = var_names
 
         return pd.DataFrame(table, columns=names, index=index)
-
-    @cache_readonly
-    def pvalues(self):
-        _check_at_is_all(self.margeff_options)
-        return stats.norm.sf(np.abs(self.tvalues)) * 2
 
     def conf_int(self, alpha=.05):
         """

@@ -48,6 +48,13 @@ difference is that statsmodels is more feature-complete.
 of unused, untested, or deprecated code have been removed.  _Many_ thousands
 of flake8 formatting issues have been cleaned up.
 
+- `tsa.stattools.acf` will always return `(acf, confint, qstat, pvalue)` here
+instead of a different subset of these depending on the inputs.
+
+- stats.diagnostic.acorr_ljungbox will always return
+`(qljungbox, pval, qboxpierce, pvalbp)` here instead of a different subset
+of these depending on the inputs.
+
 - `summary2` methods have not been ported from upstream, will
 raise `NotImplementedError`.
 

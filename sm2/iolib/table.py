@@ -405,7 +405,9 @@ class SimpleTable(list):
         formatted_rows.append('</table>')
         return '\n'.join(formatted_rows)
 
-    def as_latex_tabular(self, center=True, **fmt_dict):
+    # disabling flake8 check since this misses by 1 (complexity=11)
+    # and there isn't an obvious way to simplify it
+    def as_latex_tabular(self, center=True, **fmt_dict):  # noqa:C901
         """Return string, the table as a LaTeX tabular environment.
         Note: will require the booktabs package.
         """
