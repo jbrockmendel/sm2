@@ -6,7 +6,7 @@ import numpy as np
 import numpy.lib.recfunctions as nprf
 
 from six import integer_types
-from six.moves import range, reduce
+from six.moves import range
 
 from sm2.compat.python import asstr2
 
@@ -24,9 +24,11 @@ def not_ported(name, used=False, tested=False, msg=None, sandbox=False):
             msg += ", as it is neither used nor tested there."
         elif not used:
             msg += ", as it is not used there."
+
     def func(*args, **kwargs):  # pragma: no cover
         # TODO: Maybe make a NotPortedError?
         raise NotImplementedError(msg)
+
     func.__name__ = name
     return func
 
@@ -35,6 +37,7 @@ drop_missing = not_ported("drop_missing")
 recipr0 = not_ported("drop_missing")
 unsqueeze = not_ported("unsqueeze", used=1, tested=False)
 _ensure_2d = not_ported("_ensure_2d", tested=False, sandbox=1)
+
 
 # TODO: needs to better preserve dtype and be more flexible
 # ie., if you still have a string variable in your array you don't

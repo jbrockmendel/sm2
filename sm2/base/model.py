@@ -4,7 +4,6 @@ from __future__ import print_function
 import warnings
 from collections import defaultdict
 
-from six.moves import range
 import numpy as np
 import pandas as pd
 from pandas.util._decorators import Substitution
@@ -12,10 +11,7 @@ from scipy import stats
 
 from sm2.tools.data import _is_using_pandas
 from sm2.tools.tools import recipr, nan_dot
-from sm2.tools.decorators import (resettable_cache,
-                                  cache_readonly, cached_value, cached_data,
-                                  copy_doc)
-from sm2.tools.numdiff import approx_fprime, approx_hess
+from sm2.tools.decorators import cache_readonly, cached_value, cached_data
 from sm2.tools.sm_exceptions import (ValueWarning, HessianInversionWarning,
                                      ConvergenceWarning)
 

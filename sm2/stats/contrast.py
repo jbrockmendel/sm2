@@ -5,8 +5,6 @@ from six.moves import range
 import numpy as np
 from scipy import stats
 
-from sm2.tools.tools import clean0, fullrank
-
 
 # TODO: should this be public if it's just a container?
 class ContrastResults(object):
@@ -63,7 +61,7 @@ class ContrastResults(object):
                 self.pvalue[not_nan] = self.dist.sf(np.abs(value[not_nan])) * 2
 
         # cleanup
-        # should we return python scalar?
+        # TODO: should we return python scalar?
         self.pvalue = np.squeeze(self.pvalue)
 
     # TODO: De-duplicate docstring identical
@@ -220,11 +218,11 @@ class WaldTestResults(object):
                 self.df_denom = table['df_denom'].values
 
         else:  # TODO: not hit in tests
-            if self.distribution is 'chi2':
+            if self.distribution == 'chi2':
                 self.dist = stats.chi2
                 self.df_constraints = self.dist_args[0]  # assumes tuple
                 # using dist_args[0] is a bit dangerous,
-            elif self.distribution is 'F':
+            elif self.distribution == 'F':
                 self.dist = stats.f
                 self.df_constraints, self.df_denom = self.dist_args
             else:
