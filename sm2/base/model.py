@@ -4,7 +4,6 @@ from __future__ import print_function
 import warnings
 from collections import defaultdict
 
-from six.moves import range
 import numpy as np
 import pandas as pd
 from pandas.util._decorators import Substitution
@@ -12,10 +11,7 @@ from scipy import stats
 
 from sm2.tools.data import _is_using_pandas
 from sm2.tools.tools import recipr, nan_dot
-from sm2.tools.decorators import (resettable_cache,
-                                  cache_readonly, cached_value, cached_data,
-                                  copy_doc)
-from sm2.tools.numdiff import approx_fprime, approx_hess
+from sm2.tools.decorators import cache_readonly, cached_value, cached_data
 from sm2.tools.sm_exceptions import (ValueWarning, HessianInversionWarning,
                                      ConvergenceWarning)
 
@@ -1396,7 +1392,7 @@ class LikelihoodModelResults(wrap.SaveLoadMixin, Results):
         res.temp = constraints + combined_constraints + extra_constraints
         return res
 
-    def conf_int(self, alpha=.05, cols=None, method='default'):
+    def conf_int(self, alpha=.05, cols=None, method=None):
         """
         Returns the confidence interval of the fitted parameters.
 
@@ -1407,15 +1403,6 @@ class LikelihoodModelResults(wrap.SaveLoadMixin, Results):
             ie., The default `alpha` = .05 returns a 95% confidence interval.
         cols : array-like, optional
             `cols` specifies which confidence intervals to return
-        method : string
-            Not Implemented Yet
-            Method to estimate the confidence_interval.
-            "Default" : uses self.bse which is based on inverse Hessian for MLE
-            "hjjh" :
-            "jac" :
-            "boot-bse"
-            "boot_quant"
-            "profile"
 
         Returns
         --------
@@ -1445,10 +1432,14 @@ class LikelihoodModelResults(wrap.SaveLoadMixin, Results):
 
         Notes
         -----
-        The confidence interval is based on the standard normal distribution.
-        Models wish to use a different distribution should overwrite this
-        method.
+        The confidence interval is based on the Student's t-distribution
+        if the model's `use_t` attribute is True, otherwise they are
+        based on the standard normal distribution.
         """
+        if method is not None:  # pragma: no cover
+            raise NotImplementedError("`method` argument is not actually "
+                                      "supported.  Upstream silently ignores "
+                                      "it.")
         bse = self.bse
 
         if self.use_t:

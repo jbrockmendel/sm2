@@ -16,13 +16,17 @@ from scipy import stats
 # copied and adjusted
 class PredictionResults(object):
 
-    def __init__(self, predicted_mean, var_pred_mean, var_resid,
-                 df=None, dist=None, row_labels=None):
+    def __init__(self, predicted_mean, var_pred_mean, var_resid=None,
+                 df=None, dist=None, row_labels=None, linpred=None, link=None):
         self.predicted_mean = predicted_mean
         self.var_pred_mean = var_pred_mean
         self.df = df
         self.var_resid = var_resid
         self.row_labels = row_labels
+
+        # linpred and link are for GLM's PredictionResults
+        self.linpred = linpred
+        self.link = link
 
         if dist is None or dist == 'norm':
             self.dist = stats.norm
@@ -41,6 +45,8 @@ class PredictionResults(object):
     @property
     def se_mean(self):
         return np.sqrt(self.var_pred_mean)
+
+    # TODO: tvalues?  GLM version has tvalues?  GH#4478
 
     def conf_int(self, obs=False, alpha=0.05):
         """
@@ -158,7 +164,8 @@ def get_prediction(self, exog=None, transform=True, weights=None,
         pred_kwds = {}
     predicted_mean = self.model.predict(self.params, exog, **pred_kwds)
 
-    covb = self.cov_params()
+    covb = self.cov_params()  # everything through here is the same in glmpred
+
     var_pred_mean = (exog * np.dot(covb, exog.T).T).sum(1)
     var_resid = self.scale  # self.mse_resid / weights
 

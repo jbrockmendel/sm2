@@ -3,8 +3,6 @@ from six import iterkeys
 from patsy import dmatrices, NAAction
 import numpy as np
 
-import sm2.tools.data as data_util
-
 # if users want to pass in a different formula framework, they can
 # add their handler here. how to do it interactively?
 

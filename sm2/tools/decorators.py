@@ -67,20 +67,17 @@ def copy_doc(docstring):
     return decoration
 
 
-
 # Upstream ResettableCache is unnecessarily complicated.  See GH#4468
 ResettableCache = dict
 resettable_cache = ResettableCache
 
 
 class CachedAttribute(object):
-
-    def __init__(self, func, cachename=None, resetlist=None):
+    # changed from upstream by getting rid of `resetlist`
+    def __init__(self, func, cachename=None):
         self.fget = func
         self.name = func.__name__
         self.cachename = cachename or '_cache'
-        assert not resetlist  # changed from upstream
-        self.resetlist = resetlist or ()
 
     def __get__(self, obj, type=None):
         if obj is None:

@@ -19,8 +19,7 @@ import pandas as pd
 from scipy import optimize, stats, signal
 
 
-from sm2.tools.decorators import (resettable_cache,
-                                  cached_value, cached_data,
+from sm2.tools.decorators import (cached_value, cached_data,
                                   deprecated_alias, copy_doc)
 from sm2.tools.numdiff import approx_hess_cs, approx_fprime_cs
 
@@ -1342,7 +1341,7 @@ class ARMAResults(wold.ARMARoots, tsa_model.TimeSeriesModelResults):
         self.k_ar = model.k_ar
         self.n_totobs = len(model.endog)
         self.k_ma = model.k_ma
-        self._cache = resettable_cache()  # TODO: Is this necessary? -- yep!
+        self._cache = {}  # not sure why, but this needs to be set explicitly
 
     @cached_value
     def arparams(self):
@@ -1448,7 +1447,7 @@ class ARMAResults(wold.ARMARoots, tsa_model.TimeSeriesModelResults):
         conf_int = np.c_[forecast - const * fcasterr,
                          forecast + const * fcasterr]
         return conf_int
-        # TODO: DOes this need to be a method?  also its identical to above
+        # TODO: Dees this need to be a method?  also its identical to above
 
     def forecast(self, steps=1, exog=None, alpha=.05):
         """
@@ -1615,6 +1614,7 @@ class ARMAResults(wold.ARMARoots, tsa_model.TimeSeriesModelResults):
         # doing this twice. just add a plot keyword to predict?
         start, end, out_of_sample, _ = (
             self.model._get_prediction_index(start, end, dynamic=False))
+        # TODO: Why is dynamic hard-coded as False here?
 
         if out_of_sample:
             steps = out_of_sample
@@ -1766,6 +1766,7 @@ class ARIMAResults(ARMAResults):
 
         ax.legend(loc='best')
         return fig
+        # TODO: largely redundant with ARMAResults.plot_predict
 
 
 class ARIMAResultsWrapper(ARMAResultsWrapper):

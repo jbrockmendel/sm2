@@ -845,7 +845,8 @@ class Binomial(Family):
         successes/(success + failures) is returned.  And n is set to
         successes + failures.
         """
-        # if not np.all(np.asarray(freq_weights) == 1):
+        # TODO: What to make of the next commented-out code?
+        #if not np.all(np.asarray(freq_weights) == 1):
         #     self.variance = varfuncs.Binomial(n=freq_weights)
         if (endog.ndim > 1 and endog.shape[1] > 1):
             y = endog[:, 0]
@@ -1257,12 +1258,6 @@ class NegativeBinomial(Family):
 
            Constant = \ln \Gamma{(Y_i + 1/ \alpha )} - \ln \Gamma(Y_i + 1) -
                       \ln \Gamma{(1/ \alpha )}
-
-        constant = (special.gammaln(endog + 1 / self.alpha) -
-                    special.gammaln(endog+1)-special.gammaln(1/self.alpha))
-        return (endog * np.log(self.alpha * mu / (1 + self.alpha * mu)) -
-                np.log(1 + self.alpha * mu) / self.alpha +
-                constant) * var_weights / scale
         """
         ll_obs = endog * np.log(self.alpha * mu)
         ll_obs -= (endog + 1 / self.alpha) * np.log(1 + self.alpha * mu)

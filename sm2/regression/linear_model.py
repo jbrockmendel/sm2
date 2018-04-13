@@ -1254,8 +1254,7 @@ class RegressionResults(base.LikelihoodModelResults):
         The residuals of the transformed/whitened regressand and
         regressor(s)
     """
-
-    _cache = {}  # needs to be a class attribute for scale setter?
+    _cache = {}
 
     @cached_value
     def nobs(self):
@@ -1301,27 +1300,6 @@ class RegressionResults(base.LikelihoodModelResults):
     def __str__(self):
         # FIXME: This should _return_ something right?
         self.summary()
-
-    def conf_int(self, alpha=.05, cols=None):
-        """
-        Returns the confidence interval of the fitted parameters.
-
-        Parameters
-        ----------
-        alpha : float, optional
-            The `alpha` level for the confidence interval.
-            ie., The default `alpha` = .05 returns a 95% confidence interval.
-        cols : array-like, optional
-            `cols` specifies which confidence intervals to return
-
-        Notes
-        -----
-        The confidence interval is based on Student's t-distribution.
-        """
-        # keep method for docstring for now
-        # TODO: can we get rid of this?
-        ci = super(RegressionResults, self).conf_int(alpha=alpha, cols=cols)
-        return ci
 
     @cached_data
     def wresid(self):
@@ -1472,7 +1450,7 @@ class RegressionResults(base.LikelihoodModelResults):
         return cov_HC0
 
     @cache_readonly
-    def cov_HC1(self):
+    def cov_HC1(self):  # TODO: I'm not wild about setting het_scale attr
         """See sm2.RegressionResults"""
         self.het_scale = self.nobs / (self.df_resid) * (self.wresid**2)
         cov_HC1 = self._HCCM(self.het_scale)

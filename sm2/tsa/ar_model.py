@@ -8,8 +8,7 @@ import numpy as np
 from scipy import stats
 
 from sm2.tools.numdiff import approx_fprime, approx_hess
-from sm2.tools.decorators import (resettable_cache,
-                                  cache_readonly, cache_writable)
+from sm2.tools.decorators import cache_readonly, cache_writable
 
 import sm2.base.model as base
 import sm2.base.wrapper as wrap
@@ -663,7 +662,7 @@ class ARResults(tsa_model.TimeSeriesModelResults):
     tvalues : array
         The t-values associated with `params`.
     """
-    _cache = {}  # for scale setter
+    _cache = {}
 
     @property
     def df_model(self):
@@ -677,14 +676,12 @@ class ARResults(tsa_model.TimeSeriesModelResults):
     def __init__(self, model, params, normalized_cov_params=None, scale=1.):
         super(ARResults, self).__init__(model, params, normalized_cov_params,
                                         scale)
-        self._cache = resettable_cache()
+        self._cache = {}  # not sure why, but this needs to be set explicitly
         self.nobs = model.nobs
-        n_totobs = len(model.endog)
-        self.n_totobs = n_totobs
+        self.n_totobs = len(model.endog)
         self.X = model.X  # copy?
         self.Y = model.Y  # TODO: Get rid of alias
-        k_ar = model.k_ar
-        self.k_ar = k_ar
+        self.k_ar = model.k_ar
         k_trend = model.k_trend
         self.k_trend = k_trend
         trendorder = None

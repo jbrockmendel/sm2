@@ -19,7 +19,7 @@ from sm2.base.data import PandasData
 import sm2.tsa.base.tsa_model as tsbase
 from sm2.tools.tools import Bunch
 from sm2.tools.numdiff import approx_fprime_cs, approx_hess_cs
-from sm2.tools.decorators import cache_readonly, resettable_cache
+from sm2.tools.decorators import cache_readonly
 from sm2.tools.eval_measures import aic, bic, hqic
 from sm2.tools.tools import pinv_extended
 from sm2.tools.sm_exceptions import EstimationWarning
@@ -1828,12 +1828,9 @@ class MarkovSwitchingResults(tsbase.TimeSeriesModelResults):
             self.cov_kwds = {}
         self.cov_type = cov_type
 
-        # Setup the cache
-        self._cache = resettable_cache()
-
         # Handle covariance matrix calculation
         if cov_kwds is None:
-                cov_kwds = {}
+            cov_kwds = {}
         self._cov_approx_complex_step = (
             cov_kwds.pop('approx_complex_step', True))
         self._cov_approx_centered = cov_kwds.pop('approx_centered', False)

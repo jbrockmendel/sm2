@@ -191,7 +191,7 @@ class TestACF_FFT(CheckCorrGram):
 
     def test_qstat(self):
         # TODO: why is res1/qstat 1 short
-        assert_almost_equal(self.res1[1], self.qstat, DECIMAL_3)
+        assert_almost_equal(self.res1[2], self.qstat, DECIMAL_3)
 
 
 class TestACFMissing(CheckCorrGram):
@@ -559,7 +559,7 @@ def test_arma_order_select_ic_failure():
 @pytest.mark.not_vetted
 def test_acf_fft_dataframe():
     # GH#322
-    result = acf(sunspots.load_pandas().data[['SUNACTIVITY']], fft=True)
+    result = acf(sunspots.load_pandas().data[['SUNACTIVITY']], fft=True)[0]
     assert result.ndim == 1
 
 

@@ -21,8 +21,7 @@ from sm2.tools.tools import add_constant
 from sm2.tools.sm_exceptions import PerfectSeparationError
 from sm2.discrete import discrete_model as discrete
 
-from . import glmnet_r_results
-from .results import results_glm
+from .results import glmnet_r_results, results_glm
 
 # Test Precisions
 DECIMAL_4 = 4
@@ -289,44 +288,25 @@ class CheckComparisonMixin(object):
 # Non-Canonical Links for the Binomial family require the algorithm to be
 # slightly changed
 # class TestGlmBinomialLog(CheckModelResultsMixin):
-#    pass
 # class TestGlmBinomialLogit(CheckModelResultsMixin):
-#    pass
 # class TestGlmBinomialProbit(CheckModelResultsMixin):
-#    pass
 # class TestGlmBinomialCloglog(CheckModelResultsMixin):
-#    pass
 # class TestGlmBinomialPower(CheckModelResultsMixin):
-#    pass
 # class TestGlmBinomialLoglog(CheckModelResultsMixin):
-#    pass
 # class TestGlmBinomialLogc(CheckModelResultsMixin):
 #    TODO: need include logc link
-#    pass
 # class TestGlmBernoulliIdentity(CheckModelResultsMixin):
-#    pass
 # class TestGlmBernoulliLog(CheckModelResultsMixin):
-#    pass
 # class TestGlmBernoulliProbit(CheckModelResultsMixin):
-#    pass
 # class TestGlmBernoulliCloglog(CheckModelResultsMixin):
-#    pass
 # class TestGlmBernoulliPower(CheckModelResultsMixin):
-#    pass
 # class TestGlmBernoulliLoglog(CheckModelResultsMixin):
-#    pass
 # class test_glm_bernoulli_logc(CheckModelResultsMixin):
-#    pass
 # class TestGlmPoissonIdentity(CheckModelResultsMixin):
-#    pass
 # class TestGlmPoissonPower(CheckModelResultsMixin):
-#    pass
 # class TestGlmNegbinomial_log(CheckModelResultsMixin):
-#    pass
 # class TestGlmNegbinomial_power(CheckModelResultsMixin):
-#    pass
 # class TestGlmNegbinomial_nbinom(CheckModelResultsMixin):
-#    pass
 
 
 @pytest.mark.not_vetted
