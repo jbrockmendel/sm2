@@ -2936,6 +2936,7 @@ class NegativeBinomialP(CountModel):
         nbinfit = res_class(self, mlefit._results)
         result = wrap_cls(nbinfit)
 
+        # TODO: Can we do this call in result.__init__?
         cov_kwds = cov_kwds or {}
         result._get_robustcov_results(cov_type=cov_type,
                                       use_self=True, use_t=use_t, **cov_kwds)

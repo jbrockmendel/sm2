@@ -25,8 +25,13 @@ scipy_old = scipy.__version__ < '0.16'
 try:
     import matplotlib.pyplot as plt
     have_matplotlib = True
+    from matplotlib.testing.decorators import image_comparison
 except ImportError:
     have_matplotlib = False
+    def image_comparison(*args, **kwargs):  # TODO: nicer way to do this?
+        def decorator(func):
+            return func
+        return decorator
 
 DECIMAL_4 = 4
 DECIMAL_3 = 3
@@ -2473,16 +2478,21 @@ def test_arima_predict_indices_css():
 
 @pytest.mark.smoke
 @pytest.mark.skipif('not have_matplotlib')
+@image_comparison(baseline_images=['arma_plot_predict_d1_insample0',
+                                   'arima_plot_predict_d1_insample0'],
+                  extensions=['png'])
 def test_plot_predict():
+    # upstream closes these figures, but we need it open for
+    # image_comparison to find it
     dta = datasets.sunspots.load_pandas().data[['SUNACTIVITY']]
     dta.index = pd.DatetimeIndex(start='1700', end='2009', freq='A')[:309]
     res = ARMA(dta, (3, 0)).fit(disp=-1)
     fig = res.plot_predict('1990', '2012', dynamic=True, plot_insample=False)
-    plt.close(fig)
+    # plt.close(fig)
 
     res = ARIMA(dta, (3, 1, 0)).fit(disp=-1)
     fig = res.plot_predict('1990', '2012', dynamic=True, plot_insample=False)
-    plt.close(fig)
+    # plt.close(fig)
 
 
 @pytest.mark.smoke
