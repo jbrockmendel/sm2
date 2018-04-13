@@ -34,7 +34,7 @@ def _check_discrete_args(at, method):
         raise ValueError("%s not allowed for discrete variables" % at)
 
 
-def _get_const_index(exog):
+def _get_const_index(exog):  # TODO: move to tools.data (along with next few)
     """
     Returns a boolean array of non-constant column indices in exog and
     an scalar array of where the constant is or None

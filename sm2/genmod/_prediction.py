@@ -12,39 +12,16 @@ from scipy import stats
 import pandas as pd
 
 
+from sm2.regression import _prediction
+
 # this is similar to ContrastResults after t_test, partially copied
 # and adjusted
-class PredictionResults(object):
-
-    def __init__(self, predicted_mean, var_pred_mean, var_resid=None,
-                 df=None, dist=None, row_labels=None, linpred=None, link=None):
-        # TODO: is var_resid used? drop from arguments?
-        self.predicted_mean = predicted_mean
-        self.var_pred_mean = var_pred_mean
-        self.df = df
-        self.var_resid = var_resid
-        self.row_labels = row_labels
-        self.linpred = linpred
-        self.link = link
-
-        if dist is None or dist == 'norm':
-            self.dist = stats.norm
-            self.dist_args = ()
-        elif dist == 't':
-            self.dist = stats.t
-            self.dist_args = (self.df,)
-        else:
-            self.dist = dist
-            self.dist_args = ()
+class PredictionResults(_prediction.PredictionResults):
 
     @property
     def se_obs(self):
         raise NotImplementedError
-        return np.sqrt(self.var_pred_mean + self.var_resid)
-
-    @property
-    def se_mean(self):
-        return np.sqrt(self.var_pred_mean)
+        return _prediction.PredictionResults.se_obs.fget(self)
 
     @property
     def tvalues(self):
@@ -111,6 +88,7 @@ class PredictionResults(object):
             ci = self.link.inverse(ci_linear)
         elif method == 'delta' or is_linear:
             se = self.se_mean
+            # TODO: what about the `obs` option in the linpred version?
             q = self.dist.ppf(1 - alpha / 2., *self.dist_args)
             lower = self.predicted_mean - q * se
             upper = self.predicted_mean + q * se
@@ -128,6 +106,7 @@ class PredictionResults(object):
         to_include['mean_se'] = self.se_mean
         to_include['mean_ci_lower'] = ci_mean[:, 0]
         to_include['mean_ci_upper'] = ci_mean[:, 1]
+        # TODO: Why does this not have the obs_ci stuff that the linpred has?
 
         # TODO: Do we _need_ to attach this?
         self.table = to_include
@@ -174,8 +153,7 @@ def get_prediction_glm(self, exog=None, transform=True, weights=None,
     # prepare exog and row_labels, based on base Results.predict
     if transform and hasattr(self.model, 'formula') and exog is not None:
         from patsy import dmatrix
-        exog = dmatrix(self.model.data.design_info.builder,
-                       exog)
+        exog = dmatrix(self.model.data.design_info.builder, exog)
 
     if exog is not None:
         if row_labels is None:
@@ -204,11 +182,14 @@ def get_prediction_glm(self, exog=None, transform=True, weights=None,
            (weights.ndim != 1 or weights.shape[0] == exog.shape[1])):
             raise ValueError('weights has wrong shape')
 
+    if pred_kwds is None:  # TODO: this clause is missing upstream
+        pred_kwds = {}
     pred_kwds['linear'] = False
     predicted_mean = self.model.predict(self.params, exog, **pred_kwds)
 
-    covb = self.cov_params()
+    covb = self.cov_params()  # everything up to here is the same in linpred
 
+    # these two link_deriv lines are the only real difference vs linpred
     link_deriv = self.model.family.link.inverse_deriv(linpred.predicted_mean)
     var_pred_mean = link_deriv**2 * (exog * np.dot(covb, exog.T).T).sum(1)
     var_resid = self.scale  # self.mse_resid / weights
