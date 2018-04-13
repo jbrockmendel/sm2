@@ -25,13 +25,22 @@ scipy_old = scipy.__version__ < '0.16'
 try:
     import matplotlib.pyplot as plt
     have_matplotlib = True
-    from matplotlib.testing.decorators import image_comparison
 except ImportError:
     have_matplotlib = False
     def image_comparison(*args, **kwargs):  # TODO: nicer way to do this?
         def decorator(func):
             return func
         return decorator
+else:
+    try:
+        import nose  # noqa:F841
+    except ImportError:
+        def image_comparison(*args, **kwargs):  # TODO: nicer way to do this?
+            def decorator(func):
+                return func
+            return decorator
+    else:
+        from matplotlib.testing.decorators import image_comparison
 
 DECIMAL_4 = 4
 DECIMAL_3 = 3
