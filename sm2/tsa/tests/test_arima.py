@@ -2488,7 +2488,8 @@ def test_arima_predict_indices_css():
 @pytest.mark.skipif('not have_matplotlib')
 @image_comparison(baseline_images=['arma_plot_predict_d1_insample0',
                                    'arima_plot_predict_d1_insample0'],
-                  extensions=['png'])
+                  extensions=['png'],
+                  tol=1e-3)
 def test_plot_predict():
     # upstream closes these figures, but we need it open for
     # image_comparison to find it
