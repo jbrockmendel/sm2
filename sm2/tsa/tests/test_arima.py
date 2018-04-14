@@ -863,8 +863,9 @@ def test_arma_predict_css_dates():
         mod._get_prediction_index('1701', '1751', False)
 
 
-@pytest.mark.not_vetted
 def test_arima_wrapper():
+    # test that names get attached to res.params correctly
+    # TODO: GH reference?
     cpi = datasets.macrodata.load_pandas().data['cpi']
     cpi.index = pd.Index(cpi_dates)
     res = ARIMA(cpi, (4, 1, 1), freq='Q').fit(disp=-1)
@@ -925,6 +926,7 @@ def test_arima_predict_bug():
 @pytest.mark.not_vetted
 def test_arima_predict_q2():
     # bug with q > 1 for arima predict
+    # TODO: GH reference?
     inv = datasets.macrodata.load().data['realinv']
     arima_mod = ARIMA(np.log(inv), (1, 1, 2)).fit(start_params=[0, 0, 0, 0],
                                                   disp=-1)
@@ -1535,19 +1537,6 @@ def test_arima_fit_multiple_calls():
     assert mod.exog_names == ['const']
 
 
-@pytest.mark.smoke
-@pytest.mark.parametrize('order', [(1, 0, 2), (0, 0, 0)])
-def test_arima_summary(order):
-    # same setup as test_arima_fit_multiple_calls
-    y = [-1214.360173, -1848.209905, -2100.918158, -3647.483678, -4711.186773]
-    model = ARIMA(y, order)
-    start_params = [np.mean(y)] + [.1] * sum(order)
-    res = model.fit(disp=False, start_params=start_params)
-
-    # ensure summary() works (here defined as "doesnt raise")
-    res.summary()
-
-
 @pytest.mark.not_vetted
 def test_long_ar_start_params():
     np.random.seed(12345)
@@ -1565,27 +1554,6 @@ def test_long_ar_start_params():
     model.fit(method='mle', start_ar_lags=10, disp=0)
     with pytest.raises(ValueError):
         model.fit(start_ar_lags=nobs + 5, disp=0)
-
-
-@pytest.mark.not_vetted
-@pytest.mark.skip(reason="fa not ported from upstream")
-def test_arma_pickle():
-    fa = None   # dummy to avoid flake8 complaints until ported
-
-    np.random.seed(9876565)
-    x = fa.ArmaFft([1, -0.5], [1., 0.4], 40).generate_sample(nsample=200,
-                                                             burnin=1000)
-    mod = ARMA(x, (1, 1))
-    pkl_mod = cPickle.loads(cPickle.dumps(mod))
-
-    res = mod.fit(trend="c", disp=-1)
-    pkl_res = pkl_mod.fit(trend="c", disp=-1)
-
-    assert_allclose(res.params, pkl_res.params)
-    assert_allclose(res.llf, pkl_res.llf)
-    assert_almost_equal(res.resid, pkl_res.resid)
-    assert_almost_equal(res.fittedvalues, pkl_res.fittedvalues)
-    assert_almost_equal(res.pvalues, pkl_res.pvalues)
 
 
 # ----------------------------------------------------------------
@@ -2449,12 +2417,11 @@ def test_arima_predict_indices():
         _check_end(model, *case)
 
 
-@pytest.mark.not_vetted
-def test_arima_predict_indices_css():
+def test_arima_predict_indices_css_invalid():
+    # TODO: GH Reference?
     cpi = datasets.macrodata.load().data['cpi']
     # NOTE: Doing no-constant for now to kick the conditional exogenous
     # GH#274 down the road
-    # go ahead and git the model to set up necessary variables
     model = ARIMA(cpi, (4, 1, 1))
     model.method = 'css'
 
@@ -2476,13 +2443,20 @@ def test_arima_predict_indices_css():
 def test_plot_predict():
     dta = datasets.sunspots.load_pandas().data[['SUNACTIVITY']]
     dta.index = pd.DatetimeIndex(start='1700', end='2009', freq='A')[:309]
+
     res = ARMA(dta, (3, 0)).fit(disp=-1)
-    fig = res.plot_predict('1990', '2012', dynamic=True, plot_insample=False)
-    plt.close(fig)
+    for dynamic in [True, False]:
+        for plot_insample in [True, False]:
+            fig = res.plot_predict('1990', '2012', dynamic=dynamic,
+                                   plot_insample=plot_insample)
+            plt.close(fig)
 
     res = ARIMA(dta, (3, 1, 0)).fit(disp=-1)
-    fig = res.plot_predict('1990', '2012', dynamic=True, plot_insample=False)
-    plt.close(fig)
+    for dynamic in [True, False]:
+        for plot_insample in [True, False]:
+            fig = res.plot_predict('1990', '2012', dynamic=dynamic,
+                                   plot_insample=plot_insample)
+            plt.close(fig)
 
 
 @pytest.mark.smoke
@@ -2534,8 +2508,43 @@ def test_arima_no_diff():
     res.predict()
 
 
+@pytest.mark.smoke
+@pytest.mark.parametrize('order', [(1, 0, 2), (0, 0, 0)])
+def test_arima_summary(order):
+    # TODO: GH Reference?
+    # same setup as test_arima_fit_multiple_calls
+    y = [-1214.360173, -1848.209905, -2100.918158, -3647.483678, -4711.186773]
+    model = ARIMA(y, order)
+    start_params = [np.mean(y)] + [.1] * sum(order)
+    res = model.fit(disp=False, start_params=start_params)
+
+    # ensure summary() works (here defined as "doesnt raise")
+    res.summary()
+
+
 # ----------------------------------------------------------------
 # Issue-specific tests -- Need to find GH references
+
+
+@pytest.mark.skip(reason="fa not ported from upstream")
+def test_arma_pickle():
+    fa = None   # dummy to avoid flake8 complaints until ported
+
+    np.random.seed(9876565)
+    x = fa.ArmaFft([1, -0.5], [1., 0.4], 40).generate_sample(nsample=200,
+                                                             burnin=1000)
+    mod = ARMA(x, (1, 1))
+    pkl_mod = cPickle.loads(cPickle.dumps(mod))
+
+    res = mod.fit(trend="c", disp=-1)
+    pkl_res = pkl_mod.fit(trend="c", disp=-1)
+
+    assert_allclose(res.params, pkl_res.params)
+    assert_allclose(res.llf, pkl_res.llf)
+    assert_almost_equal(res.resid, pkl_res.resid)
+    assert_almost_equal(res.fittedvalues, pkl_res.fittedvalues)
+    assert_almost_equal(res.pvalues, pkl_res.pvalues)
+    # TODO: check __eq__ once that is implemented
 
 
 def test_arima_pickle():

@@ -1001,122 +1001,6 @@ class Poisson(CountModel):
         # TODO: cache gammaln(endog + 1)?
         return -np.exp(linpred) + endog * linpred - gammaln(endog + 1)
 
-    def _get_start_params_null(self):
-        """
-        Compute one-step moment estimator for null (constant-only) model
-
-        This is a preliminary estimator used as start_params.
-
-        Returns
-        -------
-        params : ndarray
-            parameter estimate based one one-step moment matching
-        """
-        offset = getattr(self, "offset", 0)
-        exposure = getattr(self, "exposure", 0)
-        const = (self.endog / np.exp(offset + exposure)).mean()
-        params = [np.log(const)]
-        return params
-
-    # TODO: can we use FitBase?
-    @copy_doc(DiscreteModel.fit.__doc__)
-    def fit(self, start_params=None, method='newton', maxiter=35,
-            full_output=1, disp=1, callback=None, **kwargs):
-
-        if start_params is None and self.data.const_idx is not None:
-            # k_params or k_exog not available?
-            start_params = 0.001 * np.ones(self.exog.shape[1])
-            start_params[self.data.const_idx] = self._get_start_params_null()[0]
-            # TODO: make this into `_get_start_params?
-
-        cntfit = DiscreteModel.fit(self, start_params=start_params,
-                                   method=method, maxiter=maxiter,
-                                   full_output=full_output,
-                                   disp=disp, callback=callback,
-                                   **kwargs)
-
-        if 'cov_type' in kwargs:
-            cov_kwds = kwargs.get('cov_kwds', {})
-            kwds = {'cov_type': kwargs['cov_type'], 'cov_kwds': cov_kwds}
-        else:
-            kwds = {}
-
-        res_cls, wrap_cls = self._res_classes["fit"]
-        discretefit = res_cls(self, cntfit, **kwds)
-        return wrap_cls(discretefit)
-
-    def fit_constrained(self, constraints, start_params=None, **fit_kwds):
-        """fit the model subject to linear equality constraints
-
-        The constraints are of the form   `R params = q`
-        where R is the constraint_matrix and q is the vector of
-        constraint_values.
-
-        The estimation creates a new model with transformed design matrix,
-        exog, and converts the results back to the original parameterization.
-
-        Parameters
-        ----------
-        constraints : formula expression or tuple
-            If it is a tuple, then the constraint needs to be given by two
-            arrays (constraint_matrix, constraint_value), i.e. (R, q).
-            Otherwise, the constraints can be given as strings or list of
-            strings.
-            see t_test for details
-        start_params : None or array_like
-            starting values for the optimization. `start_params` needs to be
-            given in the original parameter space and are internally
-            transformed.
-        **fit_kwds : keyword arguments
-            fit_kwds are used in the optimization of the transformed model.
-
-        Returns
-        -------
-        results : Results instance
-        """
-        # constraints = (R, q)
-        # TODO: temporary trailing underscore to not overwrite the monkey
-        #       patched version
-        # TODO: decide whether to move the imports
-        from patsy import DesignInfo
-        from sm2.base._constraints import fit_constrained
-
-        # same pattern as in base.LikelihoodModel.t_test
-        lc = DesignInfo(self.exog_names).linear_constraint(constraints)
-        R, q = lc.coefs, lc.constants
-
-        # TODO: add start_params option, need access to tranformation
-        #       fit_constrained needs to do the transformation
-        params, cov, res_constr = fit_constrained(self, R, q,
-                                                  start_params=start_params,
-                                                  fit_kwds=fit_kwds)
-        # create dummy results Instance, TODO: wire up properly
-        res = self.fit(maxiter=0, method='nm', disp=0,
-                       warn_convergence=False)  # we get a wrapper back
-
-        constr_retvals = res_constr.mle_retvals
-        res.mle_retvals['fcall'] = constr_retvals.get('fcall', np.nan)
-        res.mle_retvals['iterations'] = constr_retvals.get('iterations',
-                                                           np.nan)
-        res.mle_retvals['converged'] = constr_retvals['converged']
-        res._results.params = params
-        res._results.cov_params_default = cov
-        cov_type = fit_kwds.get('cov_type', 'nonrobust')
-        if cov_type != 'nonrobust':
-            res._results.normalized_cov_params = cov  # assume scale=1
-        else:
-            res._results.normalized_cov_params = None
-
-        k_constr = len(q)
-        res._results.df_resid += k_constr
-        res._results.df_model -= k_constr
-        # FIXME: don't alter these in-place
-        res._results.constraints = lc
-        res._results.k_constr = k_constr
-        res._results.results_constrained = res_constr
-        # TODO: De-duplicate with _constraints.fit_constrained_wrap and genmod
-        return res
-
     def score(self, params):
         """
         Poisson model score (gradient) vector of the log-likelihood
@@ -1213,6 +1097,132 @@ class Poisson(CountModel):
         L = np.exp(linpred)
         return -np.dot(L * self.exog.T, self.exog)
 
+    def _get_start_params_null(self):
+        """
+        Compute one-step moment estimator for null (constant-only) model
+
+        This is a preliminary estimator used as start_params.
+
+        Returns
+        -------
+        params : ndarray
+            parameter estimate based one one-step moment matching
+        """
+        offset = getattr(self, "offset", 0)
+        exposure = getattr(self, "exposure", 0)
+        const = (self.endog / np.exp(offset + exposure)).mean()
+        params = [np.log(const)]
+        return params
+
+    def _get_start_params(self, start_params, robust=True):
+        if start_params is not None:
+            pass
+        elif (self.data.const_idx is not None and not robust):
+            # TODO: apparent numerical instability if we use these start_params
+            # with fit_regularized --> not `robust`
+            # TODO: k_params or k_exog not available?
+            # TODO: document why 0.001?
+            start_params = 0.001 * np.ones(self.exog.shape[1])
+            start_params[self.data.const_idx] = self._get_start_params_null()[0]
+        else:
+            start_params = CountModel._get_start_params(self, start_params)
+        return start_params
+
+    # TODO: can we use FitBase?
+    @copy_doc(DiscreteModel.fit.__doc__)
+    def fit(self, start_params=None, method='newton', maxiter=35,
+            full_output=1, disp=1, callback=None, **kwargs):
+
+        start_params = self._get_start_params(start_params, robust=False)
+
+        cntfit = DiscreteModel.fit(self, start_params=start_params,
+                                   method=method, maxiter=maxiter,
+                                   full_output=full_output,
+                                   disp=disp, callback=callback,
+                                   **kwargs)
+        # TODO: Can we avoid doing this here?  Do it in res_cls.__init__?
+        if 'cov_type' in kwargs:
+            cov_kwds = kwargs.get('cov_kwds', {})
+            kwds = {'cov_type': kwargs['cov_type'], 'cov_kwds': cov_kwds}
+        else:
+            kwds = {}
+
+        res_cls, wrap_cls = self._res_classes["fit"]
+        discretefit = res_cls(self, cntfit, **kwds)
+        return wrap_cls(discretefit)
+
+    def fit_constrained(self, constraints, start_params=None, **fit_kwds):
+        """fit the model subject to linear equality constraints
+
+        The constraints are of the form   `R params = q`
+        where R is the constraint_matrix and q is the vector of
+        constraint_values.
+
+        The estimation creates a new model with transformed design matrix,
+        exog, and converts the results back to the original parameterization.
+
+        Parameters
+        ----------
+        constraints : formula expression or tuple
+            If it is a tuple, then the constraint needs to be given by two
+            arrays (constraint_matrix, constraint_value), i.e. (R, q).
+            Otherwise, the constraints can be given as strings or list of
+            strings.
+            see t_test for details
+        start_params : None or array_like
+            starting values for the optimization. `start_params` needs to be
+            given in the original parameter space and are internally
+            transformed.
+        **fit_kwds : keyword arguments
+            fit_kwds are used in the optimization of the transformed model.
+
+        Returns
+        -------
+        results : Results instance
+        """
+        # constraints = (R, q)
+        # TODO: temporary trailing underscore to not overwrite the monkey
+        #       patched version
+        # TODO: decide whether to move the imports
+        from patsy import DesignInfo
+        from sm2.base._constraints import fit_constrained
+
+        # same pattern as in base.LikelihoodModel.t_test
+        lc = DesignInfo(self.exog_names).linear_constraint(constraints)
+        R, q = lc.coefs, lc.constants
+
+        # TODO: add start_params option, need access to tranformation
+        #       fit_constrained needs to do the transformation
+        params, cov, res_constr = fit_constrained(self, R, q,
+                                                  start_params=start_params,
+                                                  fit_kwds=fit_kwds)
+        # create dummy results Instance, TODO: wire up properly
+        res = self.fit(maxiter=0, method='nm', disp=0,
+                       warn_convergence=False)  # we get a wrapper back
+
+        constr_retvals = res_constr.mle_retvals
+        res.mle_retvals['fcall'] = constr_retvals.get('fcall', np.nan)
+        res.mle_retvals['iterations'] = constr_retvals.get('iterations',
+                                                           np.nan)
+        res.mle_retvals['converged'] = constr_retvals['converged']
+        res._results.params = params
+        res._results.cov_params_default = cov
+        cov_type = fit_kwds.get('cov_type', 'nonrobust')
+        if cov_type != 'nonrobust':
+            res._results.normalized_cov_params = cov  # assume scale=1
+        else:
+            res._results.normalized_cov_params = None
+
+        k_constr = len(q)
+        res._results.df_resid += k_constr
+        res._results.df_model -= k_constr
+        # FIXME: don't alter these in-place
+        res._results.constraints = lc
+        res._results.k_constr = k_constr
+        res._results.results_constrained = res_constr
+        # TODO: De-duplicate with _constraints.fit_constrained_wrap and genmod
+        return res
+
 
 class GeneralizedPoisson(CountModel):
     __doc__ = """
@@ -1300,6 +1310,128 @@ class GeneralizedPoisson(CountModel):
         # TODO: cache gammaln(endog+1)?
         return (np.log(mu) + (endog - 1) * np.log(a2) -
                 endog * np.log(a1) - gammaln(endog + 1) - a2 / a1)
+
+    def score_obs(self, params):
+        if self._transparams:
+            alpha = np.exp(params[-1])
+        else:
+            alpha = params[-1]
+
+        params = params[:-1]
+        p = self.parameterization
+        exog = self.exog
+        y = self.endog[:, None]
+        mu = self.predict(params)[:, None]
+        mu_p = np.power(mu, p)
+        amp = alpha * mu_p
+        a1 = 1 + amp
+        a2 = mu + amp * y
+        a3 = amp * p / mu
+        a4 = a3 * y
+        dmudb = mu * exog
+
+        dalpha = (mu_p * (y * ((y - 1) / a2 - 2 / a1) + a2 / a1**2))
+        dparams = dmudb * (-a4 / a1 +
+                           a3 * a2 / (a1 ** 2) +
+                           (1 + a4) * ((y - 1) / a2 - 1 / a1) +
+                           1 / mu)
+
+        return np.concatenate((dparams, np.atleast_2d(dalpha)),
+                              axis=1)
+
+    def score(self, params):
+        score = np.sum(self.score_obs(params), axis=0)
+        if self._transparams:
+            score[-1] == score[-1] ** 2
+            return score
+        else:
+            return score
+
+    def _score_p(self, params):  # pragma: no cover
+        raise NotImplementedError("_score_p not ported from upstream, "
+                                  "as it is neither used nor tested.")
+
+    def hessian(self, params):
+        """
+        Generalized Poisson model Hessian matrix of the loglikelihood
+
+        Parameters
+        ----------
+        params : array-like
+            The parameters of the model
+
+        Returns
+        -------
+        hess : ndarray, (k_vars, k_vars)
+            The Hessian, second derivative of loglikelihood function,
+            evaluated at `params`
+        """
+        if self._transparams:
+            alpha = np.exp(params[-1])
+        else:
+            alpha = params[-1]
+
+        params = params[:-1]
+        p = self.parameterization
+        exog = self.exog
+        y = self.endog[:, None]
+        mu = self.predict(params)[:, None]
+        mu_p = np.power(mu, p)
+        amp = alpha * mu_p
+        a1 = 1 + amp
+        a2 = mu + amp * y
+        a3 = amp * p / mu
+        a4 = a3 * y
+        a5 = p * mu ** (p - 1)
+        dmudb = mu * exog
+
+        # for dl/dparams dparams
+        dim = exog.shape[1]
+        hess_arr = np.empty((dim + 1, dim + 1))
+
+        for i in range(dim):
+            for j in range(i + 1):
+                hess_arr[i, j] = np.sum(
+                    mu * exog[:, i, None] * exog[:, j, None] *
+                    (mu * (a3 * a4 / a1**2 -
+                           2 * a3**2 * a2 / a1**3 +
+                           2 * a3 * (a4 + 1) / a1**2 -
+                           a4 * p / (mu * a1) +
+                           a3 * p * a2 / (mu * a1**2) +
+                           a4 / (mu * a1) -
+                           a3 * a2 / (mu * a1**2) +
+                           (y - 1) * a4 * (p - 1) / (a2 * mu) -
+                           (y - 1) * (1 + a4)**2 / a2**2 -
+                           a4 * (p - 1) / (a1 * mu) -
+                           1 / mu**2) +
+                     (-a4 / a1 +
+                      a3 * a2 / a1**2 +
+                      (y - 1) * (1 + a4) / a2 -
+                      (1 + a4) / a1 +
+                      1 / mu)), axis=0)
+        tri_idx = np.triu_indices(dim, k=1)
+        hess_arr[tri_idx] = hess_arr.T[tri_idx]
+
+        # for dl/dparams dalpha
+        dldpda = np.sum((2 * a4 * mu_p / a1**2 -
+                         2 * a3 * mu_p * a2 / a1**3 -
+                         mu_p * y * (y - 1) * (1 + a4) / a2**2 +
+                         mu_p * (1 + a4) / a1**2 +
+                         a5 * y * (y - 1) / a2 -
+                         2 * a5 * y / a1 +
+                         a5 * a2 / a1**2) * dmudb,
+                        axis=0)
+
+        hess_arr[-1, :-1] = dldpda
+        hess_arr[:-1, -1] = dldpda
+
+        # for dl/dalpha dalpha
+        dldada = mu_p**2 * (3 * y / a1**2 - (y / a2)**2. * (y - 1) - 2 * a2 /
+                            a1**3)
+
+        hess_arr[-1, -1] = dldada.sum()
+
+        return hess_arr
 
     @copy_doc(Poisson._get_start_params_null.__doc__)
     def _get_start_params_null(self):
@@ -1441,128 +1573,6 @@ class GeneralizedPoisson(CountModel):
         res_cls, wrap_cls = self._res_classes["fit_regularized"]
         discretefit = res_cls(self, cntfit)
         return wrap_cls(discretefit)
-
-    def score_obs(self, params):
-        if self._transparams:
-            alpha = np.exp(params[-1])
-        else:
-            alpha = params[-1]
-
-        params = params[:-1]
-        p = self.parameterization
-        exog = self.exog
-        y = self.endog[:, None]
-        mu = self.predict(params)[:, None]
-        mu_p = np.power(mu, p)
-        amp = alpha * mu_p
-        a1 = 1 + amp
-        a2 = mu + amp * y
-        a3 = amp * p / mu
-        a4 = a3 * y
-        dmudb = mu * exog
-
-        dalpha = (mu_p * (y * ((y - 1) / a2 - 2 / a1) + a2 / a1**2))
-        dparams = dmudb * (-a4 / a1 +
-                           a3 * a2 / (a1 ** 2) +
-                           (1 + a4) * ((y - 1) / a2 - 1 / a1) +
-                           1 / mu)
-
-        return np.concatenate((dparams, np.atleast_2d(dalpha)),
-                              axis=1)
-
-    def score(self, params):
-        score = np.sum(self.score_obs(params), axis=0)
-        if self._transparams:
-            score[-1] == score[-1] ** 2
-            return score
-        else:
-            return score
-
-    def _score_p(self, params):  # pragma: no cover
-        raise NotImplementedError("_score_p not ported from upstream, "
-                                  "as it is neither used nor tested.")
-
-    def hessian(self, params):
-        """
-        Generalized Poisson model Hessian matrix of the loglikelihood
-
-        Parameters
-        ----------
-        params : array-like
-            The parameters of the model
-
-        Returns
-        -------
-        hess : ndarray, (k_vars, k_vars)
-            The Hessian, second derivative of loglikelihood function,
-            evaluated at `params`
-        """
-        if self._transparams:
-            alpha = np.exp(params[-1])
-        else:
-            alpha = params[-1]
-
-        params = params[:-1]
-        p = self.parameterization
-        exog = self.exog
-        y = self.endog[:, None]
-        mu = self.predict(params)[:, None]
-        mu_p = np.power(mu, p)
-        amp = alpha * mu_p
-        a1 = 1 + amp
-        a2 = mu + amp * y
-        a3 = amp * p / mu
-        a4 = a3 * y
-        a5 = p * mu ** (p - 1)
-        dmudb = mu * exog
-
-        # for dl/dparams dparams
-        dim = exog.shape[1]
-        hess_arr = np.empty((dim + 1, dim + 1))
-
-        for i in range(dim):
-            for j in range(i + 1):
-                hess_arr[i, j] = np.sum(
-                    mu * exog[:, i, None] * exog[:, j, None] *
-                    (mu * (a3 * a4 / a1**2 -
-                           2 * a3**2 * a2 / a1**3 +
-                           2 * a3 * (a4 + 1) / a1**2 -
-                           a4 * p / (mu * a1) +
-                           a3 * p * a2 / (mu * a1**2) +
-                           a4 / (mu * a1) -
-                           a3 * a2 / (mu * a1**2) +
-                           (y - 1) * a4 * (p - 1) / (a2 * mu) -
-                           (y - 1) * (1 + a4)**2 / a2**2 -
-                           a4 * (p - 1) / (a1 * mu) -
-                           1 / mu**2) +
-                     (-a4 / a1 +
-                      a3 * a2 / a1**2 +
-                      (y - 1) * (1 + a4) / a2 -
-                      (1 + a4) / a1 +
-                      1 / mu)), axis=0)
-        tri_idx = np.triu_indices(dim, k=1)
-        hess_arr[tri_idx] = hess_arr.T[tri_idx]
-
-        # for dl/dparams dalpha
-        dldpda = np.sum((2 * a4 * mu_p / a1**2 -
-                         2 * a3 * mu_p * a2 / a1**3 -
-                         mu_p * y * (y - 1) * (1 + a4) / a2**2 +
-                         mu_p * (1 + a4) / a1**2 +
-                         a5 * y * (y - 1) / a2 -
-                         2 * a5 * y / a1 +
-                         a5 * a2 / a1**2) * dmudb,
-                        axis=0)
-
-        hess_arr[-1, :-1] = dldpda
-        hess_arr[:-1, -1] = dldpda
-
-        # for dl/dalpha dalpha
-        dldada = mu_p**2 * (3 * y / a1**2 - (y / a2)**2. * (y - 1) - 2 * a2 /
-                            a1**3)
-
-        hess_arr[-1, -1] = dldada.sum()
-
-        return hess_arr
 
     def predict(self, params, exog=None, exposure=None, offset=None,
                 which='mean'):
@@ -2070,7 +2080,7 @@ class MNLogit(MultinomialModel):
         return np.dot(wresid.T, self.exog).flatten()
         # Note: this is non-trivially more performant than wrapping score_obs
 
-    def loglike_and_score(self, params):
+    def loglike_and_score(self, params):  # TODO: Is this needed/used?
         """
         Returns log likelihood and score, efficiently reusing calculations.
 
@@ -2187,9 +2197,6 @@ class NegativeBinomial(CountModel):
 
     References
     ----------
-
-    References:
-
     Greene, W. 2008. "Functional forms for the negtive binomial model
         for count data". Economics Letters. Volume 99, Number 3, pp.585-590.
     Hilbe, J.M. 2011. "Negative binomial regression". Cambridge University

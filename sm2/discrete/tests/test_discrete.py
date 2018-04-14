@@ -2421,28 +2421,6 @@ def test_perfect_prediction():
 
 
 @pytest.mark.not_vetted
-def test_iscount():
-    X = np.random.random((50, 10))
-    X[:, 2] = np.random.randint(1, 10, size=50)
-    X[:, 6] = np.random.randint(1, 10, size=50)
-    X[:, 4] = np.random.randint(0, 2, size=50)
-    X[:, 1] = np.random.randint(-10, 10, size=50)  # not integers
-    count_ind = _iscount(X)
-    assert_equal(count_ind, [2, 6])
-
-
-@pytest.mark.not_vetted
-def test_isdummy():
-    X = np.random.random((50, 10))
-    X[:, 2] = np.random.randint(1, 10, size=50)
-    X[:, 6] = np.random.randint(0, 2, size=50)
-    X[:, 4] = np.random.randint(0, 2, size=50)
-    X[:, 1] = np.random.randint(-10, 10, size=50)  # not integers
-    count_ind = _isdummy(X)
-    assert_equal(count_ind, [4, 6])
-
-
-@pytest.mark.not_vetted
 def test_mnlogit_factor():
     dta = sm2.datasets.anes96.load_pandas()
     dta['endog'] = dta.endog.replace(dict(zip(range(7), 'ABCDEFG')))
@@ -2519,6 +2497,26 @@ def test_non_binary():
     X = np.random.randn(6, 2)
     with pytest.raises(ValueError):
         Logit(y, X)
+
+
+def test_isdummy():
+    X = np.random.random((50, 10))
+    X[:, 2] = np.random.randint(1, 10, size=50)
+    X[:, 6] = np.random.randint(0, 2, size=50)
+    X[:, 4] = np.random.randint(0, 2, size=50)
+    X[:, 1] = np.random.randint(-10, 10, size=50)  # not integers
+    count_ind = _isdummy(X)
+    assert_equal(count_ind, [4, 6])
+
+
+def test_iscount():
+    X = np.random.random((50, 10))
+    X[:, 2] = np.random.randint(1, 10, size=50)
+    X[:, 6] = np.random.randint(1, 10, size=50)
+    X[:, 4] = np.random.randint(0, 2, size=50)
+    X[:, 1] = np.random.randint(-10, 10, size=50)  # not integers
+    count_ind = _iscount(X)
+    assert_equal(count_ind, [2, 6])
 
 
 # ------------------------------------------------------------------
