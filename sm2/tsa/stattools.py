@@ -15,7 +15,7 @@ from sm2.regression.linear_model import OLS
 from sm2.tsa.tsatools import lagmat, lagmat2ds
 
 # upstream these autocov functions are implemented here in stattools
-from sm2.tsa.autocov import ccovf, ccf, acovf, pacf_yw
+from sm2.tsa.autocov import acf, ccovf, ccf, acovf, pacf_yw
 
 from sm2.tsa.adfvalues import mackinnonp, mackinnoncrit  # noqa:F841
 from sm2.tsa._bds import bds
@@ -26,85 +26,6 @@ from sm2.tsa.unit_root import (kpss, _sigma_est_kpss, coint,  # noqa:F841
 __all__ = ['acovf', 'acf', 'pacf', 'pacf_yw', 'pacf_ols', 'ccovf', 'ccf',
            'periodogram', 'q_stat', 'coint', 'arma_order_select_ic',
            'adfuller', 'kpss', 'bds']
-
-
-# NOTE: Changed unbiased to False
-# see for example
-# http://www.itl.nist.gov/div898/handbook/eda/section3/autocopl.htm
-def acf(x, unbiased=False, nlags=40, qstat=True, fft=False, alpha=True,
-        missing='none'):
-    """
-    Autocorrelation function for 1d arrays.
-
-    Parameters
-    ----------
-    x : array
-       Time series data
-    unbiased : bool
-       If True, then denominators for autocovariance are n-k, otherwise n
-    nlags: int, optional
-        Number of lags to return autocorrelation for.
-    qstat : bool, optional
-        If True, returns the Ljung-Box q statistic for each autocorrelation
-        coefficient.  See q_stat for more information.
-    fft : bool, optional
-        If True, computes the ACF via FFT.
-    alpha : scalar, optional
-        If a number is given, the confidence intervals for the given level are
-        returned. For instance if alpha=.05, 95 % confidence intervals are
-        returned where the standard deviation is computed according to
-        Bartlett's formula.
-    missing : str, optional
-        A string in ['none', 'raise', 'conservative', 'drop'] specifying how
-        any NaNs are to be treated.
-
-    Returns
-    -------
-    acf : array
-        autocorrelation function
-    confint : array, optional
-        Confidence intervals for the ACF. Returned if confint is not None.
-    qstat : array, optional
-        The Ljung-Box Q-Statistic.  Returned if q_stat is True.
-    pvalues : array, optional
-        The p-values associated with the Q-statistics.  Returned if q_stat is
-        True.
-
-    Notes
-    -----
-    The acf at lag 0 (ie., 1) is returned.
-
-    This is based np.correlate which does full convolution. For very long time
-    series it is recommended to use fft convolution instead.
-
-    If unbiased is true, the denominator for the autocovariance is adjusted
-    but the autocorrelation is not an unbiased estimtor.
-
-    References
-    ----------
-    .. [*] Parzen, E., 1963. On spectral analysis with missing observations
-       and amplitude modulation. Sankhya: The Indian Journal of
-       Statistics, Series A, pp.383-392.
-    """
-    if not qstat or not alpha:  # pragma: no cover
-        raise NotImplementedError("Options `qstat` and `alpha` from upstream "
-                                  "are not supported in sm2.  `acf` always "
-                                  "returns a tuple "
-                                  "(acf, confint, qstat, pvalue)")
-    nobs = len(x)  # should this shrink for missing='drop' and NaNs in x?
-    avf = acovf(x, unbiased=unbiased, demean=True, fft=fft, missing=missing)
-    acf = avf[:nlags + 1] / avf[0]
-
-    varacf = np.ones(nlags + 1) / nobs
-    varacf[0] = 0
-    varacf[1] = 1. / nobs
-    varacf[2:] *= 1 + 2 * np.cumsum(acf[1:-1]**2)
-    interval = stats.norm.ppf(1 - alpha / 2.) * np.sqrt(varacf)
-    confint = np.array(list(zip(acf - interval, acf + interval)))
-
-    qstat, pvalue = q_stat(acf[1:], nobs=nobs)  # drop lag 0
-
-    return acf, confint, qstat, pvalue
 
 
 # FIXME: this is incorrect.
