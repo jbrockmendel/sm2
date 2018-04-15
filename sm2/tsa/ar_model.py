@@ -333,7 +333,7 @@ class AR(wold.ARMAParams, tsa_model.TimeSeriesModel):
         else:
             return self._loglike_mle(params)
 
-    # TODO: use default implementation?
+    # TODO: use default implementation?  the 1e-8 is not the same
     def score(self, params):
         """
         Return the gradient of the loglikelihood at params.

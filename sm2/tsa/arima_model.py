@@ -553,7 +553,8 @@ class ARMA(wold.ARMAParams, tsa_model.TimeSeriesModel):
                 start_params = self._transparams(start_params)
         return start_params
 
-    # TODO: Can we use a base-class version?
+    # TODO: Can we use a base-class version?  the cs and (False) are
+    # different from the base class
     def score(self, params):
         """
         Compute the score function at params.
@@ -564,7 +565,8 @@ class ARMA(wold.ARMAParams, tsa_model.TimeSeriesModel):
         """
         return approx_fprime_cs(params, self.loglike, args=(False,))
 
-    # TODO: Can we use a base-class version?
+    # TODO: Can we use a base-class version?  the cs and (False) are
+    # different from the base class
     def hessian(self, params):
         """
         Compute the Hessian at params,

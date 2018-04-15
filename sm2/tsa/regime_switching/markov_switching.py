@@ -1142,22 +1142,8 @@ class MarkovSwitching(tsbase.TimeSeriesModel):
 
         return np.log(results[5])
 
-    # TODO: Use default implementation from base class?
-    def loglike(self, params, transformed=True):
-        """
-        Loglikelihood evaluation
-
-        Parameters
-        ----------
-        params : array_like
-            Array of parameters at which to evaluate the loglikelihood
-            function.
-        transformed : boolean, optional
-            Whether or not `params` is already transformed. Default is True.
-        """
-        return np.sum(self.loglikeobs(params, transformed))
-
-    # TODO: Just use default implementation from base class?
+    # TODO: Just use default implementation from base class?  the cs part is
+    # different
     def score(self, params, transformed=True):
         """
         Compute the score function at params.
@@ -1173,6 +1159,8 @@ class MarkovSwitching(tsbase.TimeSeriesModel):
         params = np.array(params, ndmin=1)
         return approx_fprime_cs(params, self.loglike, args=(transformed,))
 
+    # TODO: Just use default implementation from base class?  the cs part is
+    # different
     def score_obs(self, params, transformed=True):
         """
         Compute the score per observation, evaluated at params
