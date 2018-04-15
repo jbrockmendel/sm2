@@ -11,6 +11,7 @@ from scipy import stats
 
 from sm2.tools.data import _is_using_pandas
 from sm2.tools.tools import recipr, nan_dot
+from sm2.tools.numdiff import approx_hess
 from sm2.tools.decorators import cache_readonly, cached_value, cached_data
 from sm2.tools.sm_exceptions import (ValueWarning, HessianInversionWarning,
                                      ConvergenceWarning)
@@ -276,9 +277,10 @@ class LikelihoodModel(Model):
     def hessian(self, params):
         """
         The Hessian matrix of the model
+
+        The default implementation uses a numerical derivative.
         """
-        raise NotImplementedError  # pragma: no cover
-        # TODO: default implementation using approx_hess?
+        return approx_hess(params, self.loglike)  # TODO: Use approx_hess_cs?
 
     # upstream this is implemented in GenericLikelihoodModel
     def hessian_factor(self, params, scale=None, observed=True):
