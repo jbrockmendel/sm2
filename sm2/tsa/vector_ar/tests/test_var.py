@@ -12,6 +12,7 @@ from six.moves import range, StringIO
 import numpy as np
 from numpy.testing import assert_almost_equal, assert_allclose
 import pandas as pd
+import scipy.linalg
 import pytest
 
 import sm2.api as sm
@@ -313,8 +314,7 @@ class TestVARResults(CheckIRF, CheckFEVD):
     @pytest.mark.smoke
     def test_cov_params(self):
         # do nothing for now
-        self.res.cov_params
-        # TODO: Is this supposed to be cov_params()?
+        self.res.cov_params  # TODO: make sure we get a pandas test in here
 
     @pytest.mark.smoke
     def test_cov_ybar(self):
@@ -650,6 +650,28 @@ def test_var_invalid_trend_rasies():
 
 # ----------------------------------------------------------------
 # Issue-Specific Regression Tests
+
+def test_cov_params_wrapping():
+    # GH#4463 (not the main issue) test that:
+    # a) res.cov_params doesn't raise and
+    # b) that the wrapping gets the order of the param index levels right
+    data = sm.datasets.macrodata.load_pandas().data
+    endog = data[['realgdp', 'realcons', 'realinv']].diff().iloc[1:]
+    model = VAR(endog)
+    res = model.fit(3)
+
+    cp = res.cov_params
+    z = res.endog_lagged
+    v = scipy.linalg.inv(np.dot(z.T, z))
+    v = pd.DataFrame(v, index=res.params.index, columns=res.params.index)
+    for eq1 in res.sigma_u.index:
+        for eq2 in res.sigma_u.index:
+            subdf = cp.loc[(slice(None), eq1), (slice(None), eq2)]
+            expected = res.sigma_u.loc[eq1, eq2] * v
+            # unfortunately subdf comes back with a MultiIndex constant in
+            # its second level, so we have to compare values instead of frames.
+            assert (expected.values == subdf.values).all()
+
 
 def test_var_constant():
     # GH#2043 if one of the variables in a VAR is constant --> singularity

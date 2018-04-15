@@ -21,3 +21,4 @@ from .genmod.generalized_linear_model import GLM
 from .genmod import families
 
 from . import datasets, distributions, robust
+from .tsa import api as tsa

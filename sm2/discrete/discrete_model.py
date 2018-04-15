@@ -51,6 +51,10 @@ try:
 except ImportError:
     have_cvxopt = False
 
+# alias for upstream/backwards compat
+_numpy_to_dummies = data_tools.numpy_to_dummies
+_pandas_to_dummies = data_tools.pandas_to_dummies
+
 __all__ = ["Poisson", "Logit", "Probit", "MNLogit", "NegativeBinomial",
            "GeneralizedPoisson", "NegativeBinomialP"]
 
@@ -111,39 +115,6 @@ _l1_results_attr = """    nnz_params : Integer
         trim_params == True or else numerical error will distort this.
     trimmed : Boolean array
         trimmed[i] == True if the ith parameter was trimmed from the model."""
-
-
-# helper for MNLogit (will be generally useful later)
-
-
-def _numpy_to_dummies(endog):
-    if endog.dtype.kind in ['S', 'O']:
-        endog_dummies, ynames = tools.categorical(endog, drop=True,
-                                                  dictnames=True)
-    elif endog.ndim == 2:
-        endog_dummies = endog
-        ynames = range(endog.shape[1])
-    else:
-        endog_dummies, ynames = tools.categorical(endog, drop=True,
-                                                  dictnames=True)
-    return endog_dummies, ynames
-
-
-def _pandas_to_dummies(endog):
-    if endog.ndim == 2:
-        if endog.shape[1] == 1:
-            yname = endog.columns[0]
-            endog_dummies = pd.get_dummies(endog.iloc[:, 0])
-        else:  # series
-            yname = 'y'
-            endog_dummies = endog
-    else:
-        yname = endog.name
-        endog_dummies = pd.get_dummies(endog)
-    ynames = endog_dummies.columns.tolist()
-
-    return endog_dummies, ynames, yname
-
 
 # ----------------------------------------------------------------
 # Private Model Classes
@@ -878,7 +849,7 @@ class CountModel(FitBase):
                                           count_idx, transform)
 
 
-class OrderedModel(DiscreteModel):
+class OrderedModel(DiscreteModel):  # TODO: Why does this exist?
     pass
 
 
@@ -1542,6 +1513,7 @@ class GeneralizedPoisson(CountModel):
 
         self._transparams = False
         if start_params is None:
+            # TODO: merge with _get_start_params?  _get_start_params_L1?
             offset = getattr(self, "offset", 0) + getattr(self, "exposure", 0)
             if np.size(offset) == 1 and offset == 0:
                 offset = None
@@ -1989,10 +1961,7 @@ class MNLogit(MultinomialModel):
     See developer notes for further information on `MNLogit` internals.
     """ % {'extra_params': base._missing_param_doc}
 
-    def pdf(self, eXB):
-        """
-        NotImplemented
-        """
+    def pdf(self, eXB):  # TODO: implement this
         raise NotImplementedError
 
     def cdf(self, X):
@@ -2550,6 +2519,7 @@ class NegativeBinomial(CountModel):
                 a = self._estimate_dispersion(res_poi.predict(), res_poi.resid,
                                               df_resid=res_poi.df_resid)
                 start_params = np.append(start_params, max(0.05, a))
+                # TODO: Document reasoning behind `max(0.05, a)`
         else:
             if self._transparams is True:
                 # transform user provided start_params dispersion, see GH#3918
@@ -2581,6 +2551,7 @@ class NegativeBinomial(CountModel):
         else:
             result = mlefit
 
+        # TODO: can we avoid doing this here?
         cov_kwds = cov_kwds or {}
         result._get_robustcov_results(cov_type=cov_type,
                                       use_self=True, use_t=use_t, **cov_kwds)

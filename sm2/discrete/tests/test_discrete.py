@@ -2499,26 +2499,6 @@ def test_non_binary():
         Logit(y, X)
 
 
-def test_isdummy():
-    X = np.random.random((50, 10))
-    X[:, 2] = np.random.randint(1, 10, size=50)
-    X[:, 6] = np.random.randint(0, 2, size=50)
-    X[:, 4] = np.random.randint(0, 2, size=50)
-    X[:, 1] = np.random.randint(-10, 10, size=50)  # not integers
-    count_ind = _isdummy(X)
-    assert_equal(count_ind, [4, 6])
-
-
-def test_iscount():
-    X = np.random.random((50, 10))
-    X[:, 2] = np.random.randint(1, 10, size=50)
-    X[:, 6] = np.random.randint(1, 10, size=50)
-    X[:, 4] = np.random.randint(0, 2, size=50)
-    X[:, 1] = np.random.randint(-10, 10, size=50)  # not integers
-    count_ind = _iscount(X)
-    assert_equal(count_ind, [2, 6])
-
-
 # ------------------------------------------------------------------
 # Issue Regression Tests
 
