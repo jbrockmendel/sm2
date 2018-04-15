@@ -933,8 +933,9 @@ class VARResults(VARProcess, tsa_model.TimeSeriesModelResults):
         """Two-sided p-values for model coefficients from
         Student t-distribution
         """
-        # return stats.t.sf(np.abs(self.tvalues), self.df_resid)*2
+        # return 2 * stats.t.sf(np.abs(self.tvalues), self.df_resid)
         return 2 * stats.norm.sf(np.abs(self.tvalues))
+        # TODO: is the docstring inaccurate? this uses stats.norm, not stats.t
 
     # ------------------------------------------------------------
     # Sample Methods - just require endog (and names, dates, k_ar)
@@ -1514,6 +1515,7 @@ class VARResults(VARProcess, tsa_model.TimeSeriesModelResults):
                                     self.neqs * 2, signif)
 
 
+# TODO: wrapping for endog_lagged?
 class VARResultsWrapper(wrap.ResultsWrapper):
     _attrs = {'bse': 'columns_eq',
               'cov_params': 'cov',
