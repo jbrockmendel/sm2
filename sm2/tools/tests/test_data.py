@@ -40,7 +40,7 @@ def test_recarray():
 
 
 @pytest.mark.not_vetted
-def test_dataframe():
+def test_dataframe():  # TODO: GH Reference?
     X = np.random.random((10, 5))
     df = pd.DataFrame(X)
     vals, cnames, rnames = data.interpret_data(df)
@@ -50,7 +50,8 @@ def test_dataframe():
 
 
 @pytest.mark.not_vetted
-def test_patsy_577():
+def test_patsy_with_none_exog():
+    # GH#577 when exog is None, make sure is_using_patsy is still correct
     X = np.random.random((10, 2))
     df = pd.DataFrame(X, columns=["var1", "var2"])
 
