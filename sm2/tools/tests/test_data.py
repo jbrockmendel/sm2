@@ -40,7 +40,7 @@ def test_recarray():
 
 
 @pytest.mark.not_vetted
-def test_dataframe():
+def test_dataframe():  # TODO: GH Reference?
     X = np.random.random((10, 5))
     df = pd.DataFrame(X)
     vals, cnames, rnames = data.interpret_data(df)
@@ -50,7 +50,8 @@ def test_dataframe():
 
 
 @pytest.mark.not_vetted
-def test_patsy_577():
+def test_patsy_with_none_exog():
+    # GH#577 when exog is None, make sure is_using_patsy is still correct
     X = np.random.random((10, 2))
     df = pd.DataFrame(X, columns=["var1", "var2"])
 
@@ -59,3 +60,25 @@ def test_patsy_577():
 
     exog = dmatrix("var2 - 1", df)
     assert data._is_using_patsy(endog, exog)
+
+
+# moved from test_discrete upstream
+def test_isdummy():
+    X = np.random.random((50, 10))
+    X[:, 2] = np.random.randint(1, 10, size=50)
+    X[:, 6] = np.random.randint(0, 2, size=50)
+    X[:, 4] = np.random.randint(0, 2, size=50)
+    X[:, 1] = np.random.randint(-10, 10, size=50)  # not integers
+    count_ind = data.isdummy(X)
+    np.testing.assert_equal(count_ind, [4, 6])
+
+
+# moved from test_discrete upstream
+def test_iscount():
+    X = np.random.random((50, 10))
+    X[:, 2] = np.random.randint(1, 10, size=50)
+    X[:, 6] = np.random.randint(1, 10, size=50)
+    X[:, 4] = np.random.randint(0, 2, size=50)
+    X[:, 1] = np.random.randint(-10, 10, size=50)  # not integers
+    count_ind = data.iscount(X)
+    np.testing.assert_equal(count_ind, [2, 6])

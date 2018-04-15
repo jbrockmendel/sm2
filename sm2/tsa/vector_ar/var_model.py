@@ -905,6 +905,7 @@ class VARResults(VARProcess, tsa_model.TimeSeriesModelResults):
         """
         z = self.endog_lagged
         return np.kron(scipy.linalg.inv(np.dot(z.T, z)), self.sigma_u)
+        # TODO: Why are we using sigma_u here instead of sigma_u_mle?
 
     @cache_readonly
     def stderr(self):
@@ -912,6 +913,7 @@ class VARResults(VARProcess, tsa_model.TimeSeriesModelResults):
         stderr = np.sqrt(np.diag(self.cov_params))
         return stderr.reshape((self.df_model, self.neqs), order='C')
         # TODO: why df_model?  could we use self.params.shape?
+        # then could we just use the base class version?
 
     bse = stderr  # sm2 interface?
 
@@ -931,8 +933,9 @@ class VARResults(VARProcess, tsa_model.TimeSeriesModelResults):
         """Two-sided p-values for model coefficients from
         Student t-distribution
         """
-        # return stats.t.sf(np.abs(self.tvalues), self.df_resid)*2
+        # return 2 * stats.t.sf(np.abs(self.tvalues), self.df_resid)
         return 2 * stats.norm.sf(np.abs(self.tvalues))
+        # TODO: is the docstring inaccurate? this uses stats.norm, not stats.t
 
     # ------------------------------------------------------------
     # Sample Methods - just require endog (and names, dates, k_ar)
@@ -1281,7 +1284,8 @@ class VARResults(VARProcess, tsa_model.TimeSeriesModelResults):
 
         # Lutkepohl 3.6.5
         Cb = np.dot(C, vec(self.params.T))
-        middle = scipy.linalg.inv(chain_dot(C, self.cov_params, C.T))
+        chained = chain_dot(C, self.cov_params, C.T)
+        middle = scipy.linalg.inv(chained)
 
         # wald statistic
         lam_wald = statistic = chain_dot(Cb, middle, Cb)
@@ -1511,6 +1515,7 @@ class VARResults(VARProcess, tsa_model.TimeSeriesModelResults):
                                     self.neqs * 2, signif)
 
 
+# TODO: wrapping for endog_lagged?
 class VARResultsWrapper(wrap.ResultsWrapper):
     _attrs = {'bse': 'columns_eq',
               'cov_params': 'cov',

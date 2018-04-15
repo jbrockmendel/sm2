@@ -51,6 +51,10 @@ try:
 except ImportError:
     have_cvxopt = False
 
+# alias for upstream/backwards compat
+_numpy_to_dummies = data_tools.numpy_to_dummies
+_pandas_to_dummies = data_tools.pandas_to_dummies
+
 __all__ = ["Poisson", "Logit", "Probit", "MNLogit", "NegativeBinomial",
            "GeneralizedPoisson", "NegativeBinomialP"]
 
@@ -111,39 +115,6 @@ _l1_results_attr = """    nnz_params : Integer
         trim_params == True or else numerical error will distort this.
     trimmed : Boolean array
         trimmed[i] == True if the ith parameter was trimmed from the model."""
-
-
-# helper for MNLogit (will be generally useful later)
-
-
-def _numpy_to_dummies(endog):
-    if endog.dtype.kind in ['S', 'O']:
-        endog_dummies, ynames = tools.categorical(endog, drop=True,
-                                                  dictnames=True)
-    elif endog.ndim == 2:
-        endog_dummies = endog
-        ynames = range(endog.shape[1])
-    else:
-        endog_dummies, ynames = tools.categorical(endog, drop=True,
-                                                  dictnames=True)
-    return endog_dummies, ynames
-
-
-def _pandas_to_dummies(endog):
-    if endog.ndim == 2:
-        if endog.shape[1] == 1:
-            yname = endog.columns[0]
-            endog_dummies = pd.get_dummies(endog.iloc[:, 0])
-        else:  # series
-            yname = 'y'
-            endog_dummies = endog
-    else:
-        yname = endog.name
-        endog_dummies = pd.get_dummies(endog)
-    ynames = endog_dummies.columns.tolist()
-
-    return endog_dummies, ynames, yname
-
 
 # ----------------------------------------------------------------
 # Private Model Classes
@@ -878,7 +849,7 @@ class CountModel(FitBase):
                                           count_idx, transform)
 
 
-class OrderedModel(DiscreteModel):
+class OrderedModel(DiscreteModel):  # TODO: Why does this exist?
     pass
 
 
@@ -1001,122 +972,6 @@ class Poisson(CountModel):
         # TODO: cache gammaln(endog + 1)?
         return -np.exp(linpred) + endog * linpred - gammaln(endog + 1)
 
-    def _get_start_params_null(self):
-        """
-        Compute one-step moment estimator for null (constant-only) model
-
-        This is a preliminary estimator used as start_params.
-
-        Returns
-        -------
-        params : ndarray
-            parameter estimate based one one-step moment matching
-        """
-        offset = getattr(self, "offset", 0)
-        exposure = getattr(self, "exposure", 0)
-        const = (self.endog / np.exp(offset + exposure)).mean()
-        params = [np.log(const)]
-        return params
-
-    # TODO: can we use FitBase?
-    @copy_doc(DiscreteModel.fit.__doc__)
-    def fit(self, start_params=None, method='newton', maxiter=35,
-            full_output=1, disp=1, callback=None, **kwargs):
-
-        if start_params is None and self.data.const_idx is not None:
-            # k_params or k_exog not available?
-            start_params = 0.001 * np.ones(self.exog.shape[1])
-            start_params[self.data.const_idx] = self._get_start_params_null()[0]
-            # TODO: make this into `_get_start_params?
-
-        cntfit = DiscreteModel.fit(self, start_params=start_params,
-                                   method=method, maxiter=maxiter,
-                                   full_output=full_output,
-                                   disp=disp, callback=callback,
-                                   **kwargs)
-
-        if 'cov_type' in kwargs:
-            cov_kwds = kwargs.get('cov_kwds', {})
-            kwds = {'cov_type': kwargs['cov_type'], 'cov_kwds': cov_kwds}
-        else:
-            kwds = {}
-
-        res_cls, wrap_cls = self._res_classes["fit"]
-        discretefit = res_cls(self, cntfit, **kwds)
-        return wrap_cls(discretefit)
-
-    def fit_constrained(self, constraints, start_params=None, **fit_kwds):
-        """fit the model subject to linear equality constraints
-
-        The constraints are of the form   `R params = q`
-        where R is the constraint_matrix and q is the vector of
-        constraint_values.
-
-        The estimation creates a new model with transformed design matrix,
-        exog, and converts the results back to the original parameterization.
-
-        Parameters
-        ----------
-        constraints : formula expression or tuple
-            If it is a tuple, then the constraint needs to be given by two
-            arrays (constraint_matrix, constraint_value), i.e. (R, q).
-            Otherwise, the constraints can be given as strings or list of
-            strings.
-            see t_test for details
-        start_params : None or array_like
-            starting values for the optimization. `start_params` needs to be
-            given in the original parameter space and are internally
-            transformed.
-        **fit_kwds : keyword arguments
-            fit_kwds are used in the optimization of the transformed model.
-
-        Returns
-        -------
-        results : Results instance
-        """
-        # constraints = (R, q)
-        # TODO: temporary trailing underscore to not overwrite the monkey
-        #       patched version
-        # TODO: decide whether to move the imports
-        from patsy import DesignInfo
-        from sm2.base._constraints import fit_constrained
-
-        # same pattern as in base.LikelihoodModel.t_test
-        lc = DesignInfo(self.exog_names).linear_constraint(constraints)
-        R, q = lc.coefs, lc.constants
-
-        # TODO: add start_params option, need access to tranformation
-        #       fit_constrained needs to do the transformation
-        params, cov, res_constr = fit_constrained(self, R, q,
-                                                  start_params=start_params,
-                                                  fit_kwds=fit_kwds)
-        # create dummy results Instance, TODO: wire up properly
-        res = self.fit(maxiter=0, method='nm', disp=0,
-                       warn_convergence=False)  # we get a wrapper back
-
-        constr_retvals = res_constr.mle_retvals
-        res.mle_retvals['fcall'] = constr_retvals.get('fcall', np.nan)
-        res.mle_retvals['iterations'] = constr_retvals.get('iterations',
-                                                           np.nan)
-        res.mle_retvals['converged'] = constr_retvals['converged']
-        res._results.params = params
-        res._results.cov_params_default = cov
-        cov_type = fit_kwds.get('cov_type', 'nonrobust')
-        if cov_type != 'nonrobust':
-            res._results.normalized_cov_params = cov  # assume scale=1
-        else:
-            res._results.normalized_cov_params = None
-
-        k_constr = len(q)
-        res._results.df_resid += k_constr
-        res._results.df_model -= k_constr
-        # FIXME: don't alter these in-place
-        res._results.constraints = lc
-        res._results.k_constr = k_constr
-        res._results.results_constrained = res_constr
-        # TODO: De-duplicate with _constraints.fit_constrained_wrap and genmod
-        return res
-
     def score(self, params):
         """
         Poisson model score (gradient) vector of the log-likelihood
@@ -1213,6 +1068,132 @@ class Poisson(CountModel):
         L = np.exp(linpred)
         return -np.dot(L * self.exog.T, self.exog)
 
+    def _get_start_params_null(self):
+        """
+        Compute one-step moment estimator for null (constant-only) model
+
+        This is a preliminary estimator used as start_params.
+
+        Returns
+        -------
+        params : ndarray
+            parameter estimate based one one-step moment matching
+        """
+        offset = getattr(self, "offset", 0)
+        exposure = getattr(self, "exposure", 0)
+        const = (self.endog / np.exp(offset + exposure)).mean()
+        params = [np.log(const)]
+        return params
+
+    def _get_start_params(self, start_params, robust=True):
+        if start_params is not None:
+            pass
+        elif (self.data.const_idx is not None and not robust):
+            # TODO: apparent numerical instability if we use these start_params
+            # with fit_regularized --> not `robust`
+            # TODO: k_params or k_exog not available?
+            # TODO: document why 0.001?
+            start_params = 0.001 * np.ones(self.exog.shape[1])
+            start_params[self.data.const_idx] = self._get_start_params_null()[0]
+        else:
+            start_params = CountModel._get_start_params(self, start_params)
+        return start_params
+
+    # TODO: can we use FitBase?
+    @copy_doc(DiscreteModel.fit.__doc__)
+    def fit(self, start_params=None, method='newton', maxiter=35,
+            full_output=1, disp=1, callback=None, **kwargs):
+
+        start_params = self._get_start_params(start_params, robust=False)
+
+        cntfit = DiscreteModel.fit(self, start_params=start_params,
+                                   method=method, maxiter=maxiter,
+                                   full_output=full_output,
+                                   disp=disp, callback=callback,
+                                   **kwargs)
+        # TODO: Can we avoid doing this here?  Do it in res_cls.__init__?
+        if 'cov_type' in kwargs:
+            cov_kwds = kwargs.get('cov_kwds', {})
+            kwds = {'cov_type': kwargs['cov_type'], 'cov_kwds': cov_kwds}
+        else:
+            kwds = {}
+
+        res_cls, wrap_cls = self._res_classes["fit"]
+        discretefit = res_cls(self, cntfit, **kwds)
+        return wrap_cls(discretefit)
+
+    def fit_constrained(self, constraints, start_params=None, **fit_kwds):
+        """fit the model subject to linear equality constraints
+
+        The constraints are of the form   `R params = q`
+        where R is the constraint_matrix and q is the vector of
+        constraint_values.
+
+        The estimation creates a new model with transformed design matrix,
+        exog, and converts the results back to the original parameterization.
+
+        Parameters
+        ----------
+        constraints : formula expression or tuple
+            If it is a tuple, then the constraint needs to be given by two
+            arrays (constraint_matrix, constraint_value), i.e. (R, q).
+            Otherwise, the constraints can be given as strings or list of
+            strings.
+            see t_test for details
+        start_params : None or array_like
+            starting values for the optimization. `start_params` needs to be
+            given in the original parameter space and are internally
+            transformed.
+        **fit_kwds : keyword arguments
+            fit_kwds are used in the optimization of the transformed model.
+
+        Returns
+        -------
+        results : Results instance
+        """
+        # constraints = (R, q)
+        # TODO: temporary trailing underscore to not overwrite the monkey
+        #       patched version
+        # TODO: decide whether to move the imports
+        from patsy import DesignInfo
+        from sm2.base._constraints import fit_constrained
+
+        # same pattern as in base.LikelihoodModel.t_test
+        lc = DesignInfo(self.exog_names).linear_constraint(constraints)
+        R, q = lc.coefs, lc.constants
+
+        # TODO: add start_params option, need access to tranformation
+        #       fit_constrained needs to do the transformation
+        params, cov, res_constr = fit_constrained(self, R, q,
+                                                  start_params=start_params,
+                                                  fit_kwds=fit_kwds)
+        # create dummy results Instance, TODO: wire up properly
+        res = self.fit(maxiter=0, method='nm', disp=0,
+                       warn_convergence=False)  # we get a wrapper back
+
+        constr_retvals = res_constr.mle_retvals
+        res.mle_retvals['fcall'] = constr_retvals.get('fcall', np.nan)
+        res.mle_retvals['iterations'] = constr_retvals.get('iterations',
+                                                           np.nan)
+        res.mle_retvals['converged'] = constr_retvals['converged']
+        res._results.params = params
+        res._results.cov_params_default = cov
+        cov_type = fit_kwds.get('cov_type', 'nonrobust')
+        if cov_type != 'nonrobust':
+            res._results.normalized_cov_params = cov  # assume scale=1
+        else:
+            res._results.normalized_cov_params = None
+
+        k_constr = len(q)
+        res._results.df_resid += k_constr
+        res._results.df_model -= k_constr
+        # FIXME: don't alter these in-place
+        res._results.constraints = lc
+        res._results.k_constr = k_constr
+        res._results.results_constrained = res_constr
+        # TODO: De-duplicate with _constraints.fit_constrained_wrap and genmod
+        return res
+
 
 class GeneralizedPoisson(CountModel):
     __doc__ = """
@@ -1300,147 +1281,6 @@ class GeneralizedPoisson(CountModel):
         # TODO: cache gammaln(endog+1)?
         return (np.log(mu) + (endog - 1) * np.log(a2) -
                 endog * np.log(a1) - gammaln(endog + 1) - a2 / a1)
-
-    @copy_doc(Poisson._get_start_params_null.__doc__)
-    def _get_start_params_null(self):
-        offset = getattr(self, "offset", 0)
-        exposure = getattr(self, "exposure", 0)
-
-        const = (self.endog / np.exp(offset + exposure)).mean()
-        params = [np.log(const)]
-        mu = const * np.exp(offset + exposure)
-        resid = self.endog - mu
-        a = self._estimate_dispersion(mu, resid, df_resid=resid.shape[0] - 1)
-        params.append(a)
-
-        return np.array(params)
-
-    def _estimate_dispersion(self, mu, resid, df_resid=None):
-        q = self.parameterization
-        if df_resid is None:
-            df_resid = resid.shape[0]
-        a = ((np.abs(resid) / np.sqrt(mu) - 1) * mu**(-q)).sum() / df_resid
-        return a
-
-    def fit(self, start_params=None, method='bfgs', maxiter=35,
-            full_output=1, disp=1, callback=None, use_transparams=False,
-            cov_type='nonrobust', cov_kwds=None, use_t=None, **kwargs):
-        """
-        Parameters
-        ----------
-        use_transparams : bool
-            This parameter enable internal transformation to impose
-            non-negativity.  True to enable. Default is False.
-            use_transparams=True imposes the no underdispersion (alpha > 0)
-            constaint. In case use_transparams=True and method="newton"
-            or "ncg" transformation is ignored.
-        """
-        if use_transparams and method not in ['newton', 'ncg']:
-            self._transparams = True
-        else:
-            if use_transparams:
-                warnings.warn('Parameter "use_transparams" is ignored',
-                              RuntimeWarning)
-            self._transparams = False
-
-        if start_params is None:
-            # TODO: Make all this into _get_start_params?
-            offset = getattr(self, "offset", 0) + getattr(self, "exposure", 0)
-            if np.size(offset) == 1 and offset == 0:
-                offset = None
-            optim_kwds_prelim = {'disp': 0, 'skip_hessian': True,
-                                 'warn_convergence': False}
-            optim_kwds_prelim.update(kwargs.get('optim_kwds_prelim', {}))
-            mod_poi = Poisson(self.endog, self.exog, offset=offset)
-            res_poi = mod_poi.fit(**optim_kwds_prelim)
-            start_params = res_poi.params
-            a = self._estimate_dispersion(res_poi.predict(), res_poi.resid,
-                                          df_resid=res_poi.df_resid)
-            start_params = np.append(start_params, max(-0.1, a))
-
-        if callback is None:
-            # work around perfect separation callback GH#3895
-            callback = lambda *x: x
-
-        # TODO: skip CountModel and go straight to DiscreteModel?
-        mlefit = CountModel.fit(self, start_params=start_params,
-                                maxiter=maxiter,
-                                method=method, disp=disp,
-                                full_output=full_output,
-                                callback=callback,
-                                **kwargs)
-
-        if use_transparams and method not in ["newton", "ncg"]:
-            self._transparams = False
-            mlefit._results.params[-1] = np.exp(mlefit._results.params[-1])
-
-        res_cls, wrap_cls = self._res_classes["fit"]
-        gpfit = res_cls(self, mlefit._results)
-        result = wrap_cls(gpfit)
-
-        cov_kwds = cov_kwds or {}
-        result._get_robustcov_results(cov_type=cov_type,
-                                      use_self=True, use_t=use_t, **cov_kwds)
-        return result
-
-    fit.__doc__ = DiscreteModel.fit.__doc__ + fit.__doc__
-
-    @copy_doc(DiscreteModel.fit_regularized.__doc__)
-    def fit_regularized(self, start_params=None, method='l1',
-                        maxiter='defined_by_method', full_output=1, disp=1,
-                        callback=None, alpha=0, trim_mode='auto',
-                        auto_trim_tol=0.01, size_trim_tol=1e-4,
-                        qc_tol=0.03, **kwargs):
-
-        if method not in ['l1', 'l1_cvxopt_cp']:
-            # TODO: Fix upstream raises Exception
-            # (and does it at the _end_ of the method)
-            raise ValueError("argument method == %s, which is not handled"
-                             % method)  # pragma: no cover
-
-        if np.size(alpha) == 1 and alpha != 0:
-            k_params = self.exog.shape[1] + self.k_extra
-            alpha = alpha * np.ones(k_params)
-            alpha[-1] = 0
-
-        if self.k_extra and np.size(alpha) > 1:
-            alpha_p = alpha[:-1]
-        else:
-            alpha_p = alpha
-
-        self._transparams = False
-        if start_params is None:
-            offset = getattr(self, "offset", 0) + getattr(self, "exposure", 0)
-            if np.size(offset) == 1 and offset == 0:
-                offset = None
-            mod_poi = Poisson(self.endog, self.exog, offset=offset)
-            res_poi = mod_poi.fit_regularized(start_params=start_params,
-                                              method=method, maxiter=maxiter,
-                                              full_output=full_output, disp=0,
-                                              callback=callback,
-                                              alpha=alpha_p,
-                                              trim_mode=trim_mode,
-                                              auto_trim_tol=auto_trim_tol,
-                                              size_trim_tol=size_trim_tol,
-                                              qc_tol=qc_tol, **kwargs)
-            start_params = res_poi.params
-            start_params = np.append(start_params, 0.1)
-
-        cntfit = DiscreteModel.fit_regularized(self,
-                                               start_params=start_params,
-                                               method=method,
-                                               maxiter=maxiter,
-                                               full_output=full_output,
-                                               disp=disp, callback=callback,
-                                               alpha=alpha,
-                                               trim_mode=trim_mode,
-                                               auto_trim_tol=auto_trim_tol,
-                                               size_trim_tol=size_trim_tol,
-                                               qc_tol=qc_tol, **kwargs)
-
-        res_cls, wrap_cls = self._res_classes["fit_regularized"]
-        discretefit = res_cls(self, cntfit)
-        return wrap_cls(discretefit)
 
     def score_obs(self, params):
         if self._transparams:
@@ -1563,6 +1403,148 @@ class GeneralizedPoisson(CountModel):
         hess_arr[-1, -1] = dldada.sum()
 
         return hess_arr
+
+    @copy_doc(Poisson._get_start_params_null.__doc__)
+    def _get_start_params_null(self):
+        offset = getattr(self, "offset", 0)
+        exposure = getattr(self, "exposure", 0)
+
+        const = (self.endog / np.exp(offset + exposure)).mean()
+        params = [np.log(const)]
+        mu = const * np.exp(offset + exposure)
+        resid = self.endog - mu
+        a = self._estimate_dispersion(mu, resid, df_resid=resid.shape[0] - 1)
+        params.append(a)
+
+        return np.array(params)
+
+    def _estimate_dispersion(self, mu, resid, df_resid=None):
+        q = self.parameterization
+        if df_resid is None:
+            df_resid = resid.shape[0]
+        a = ((np.abs(resid) / np.sqrt(mu) - 1) * mu**(-q)).sum() / df_resid
+        return a
+
+    def fit(self, start_params=None, method='bfgs', maxiter=35,
+            full_output=1, disp=1, callback=None, use_transparams=False,
+            cov_type='nonrobust', cov_kwds=None, use_t=None, **kwargs):
+        """
+        Parameters
+        ----------
+        use_transparams : bool
+            This parameter enable internal transformation to impose
+            non-negativity.  True to enable. Default is False.
+            use_transparams=True imposes the no underdispersion (alpha > 0)
+            constaint. In case use_transparams=True and method="newton"
+            or "ncg" transformation is ignored.
+        """
+        if use_transparams and method not in ['newton', 'ncg']:
+            self._transparams = True
+        else:
+            if use_transparams:
+                warnings.warn('Parameter "use_transparams" is ignored',
+                              RuntimeWarning)
+            self._transparams = False
+
+        if start_params is None:
+            # TODO: Make all this into _get_start_params?
+            offset = getattr(self, "offset", 0) + getattr(self, "exposure", 0)
+            if np.size(offset) == 1 and offset == 0:
+                offset = None
+            optim_kwds_prelim = {'disp': 0, 'skip_hessian': True,
+                                 'warn_convergence': False}
+            optim_kwds_prelim.update(kwargs.get('optim_kwds_prelim', {}))
+            mod_poi = Poisson(self.endog, self.exog, offset=offset)
+            res_poi = mod_poi.fit(**optim_kwds_prelim)
+            start_params = res_poi.params
+            a = self._estimate_dispersion(res_poi.predict(), res_poi.resid,
+                                          df_resid=res_poi.df_resid)
+            start_params = np.append(start_params, max(-0.1, a))
+
+        if callback is None:
+            # work around perfect separation callback GH#3895
+            callback = lambda *x: x
+
+        # TODO: skip CountModel and go straight to DiscreteModel?
+        mlefit = CountModel.fit(self, start_params=start_params,
+                                maxiter=maxiter,
+                                method=method, disp=disp,
+                                full_output=full_output,
+                                callback=callback,
+                                **kwargs)
+
+        if use_transparams and method not in ["newton", "ncg"]:
+            self._transparams = False
+            mlefit._results.params[-1] = np.exp(mlefit._results.params[-1])
+
+        res_cls, wrap_cls = self._res_classes["fit"]
+        gpfit = res_cls(self, mlefit._results)
+        result = wrap_cls(gpfit)
+
+        cov_kwds = cov_kwds or {}
+        result._get_robustcov_results(cov_type=cov_type,
+                                      use_self=True, use_t=use_t, **cov_kwds)
+        return result
+
+    fit.__doc__ = DiscreteModel.fit.__doc__ + fit.__doc__
+
+    @copy_doc(DiscreteModel.fit_regularized.__doc__)
+    def fit_regularized(self, start_params=None, method='l1',
+                        maxiter='defined_by_method', full_output=1, disp=1,
+                        callback=None, alpha=0, trim_mode='auto',
+                        auto_trim_tol=0.01, size_trim_tol=1e-4,
+                        qc_tol=0.03, **kwargs):
+
+        if method not in ['l1', 'l1_cvxopt_cp']:
+            # TODO: Fix upstream raises Exception
+            # (and does it at the _end_ of the method)
+            raise ValueError("argument method == %s, which is not handled"
+                             % method)  # pragma: no cover
+
+        if np.size(alpha) == 1 and alpha != 0:
+            k_params = self.exog.shape[1] + self.k_extra
+            alpha = alpha * np.ones(k_params)
+            alpha[-1] = 0
+
+        if self.k_extra and np.size(alpha) > 1:
+            alpha_p = alpha[:-1]
+        else:
+            alpha_p = alpha
+
+        self._transparams = False
+        if start_params is None:
+            # TODO: merge with _get_start_params?  _get_start_params_L1?
+            offset = getattr(self, "offset", 0) + getattr(self, "exposure", 0)
+            if np.size(offset) == 1 and offset == 0:
+                offset = None
+            mod_poi = Poisson(self.endog, self.exog, offset=offset)
+            res_poi = mod_poi.fit_regularized(start_params=start_params,
+                                              method=method, maxiter=maxiter,
+                                              full_output=full_output, disp=0,
+                                              callback=callback,
+                                              alpha=alpha_p,
+                                              trim_mode=trim_mode,
+                                              auto_trim_tol=auto_trim_tol,
+                                              size_trim_tol=size_trim_tol,
+                                              qc_tol=qc_tol, **kwargs)
+            start_params = res_poi.params
+            start_params = np.append(start_params, 0.1)
+
+        cntfit = DiscreteModel.fit_regularized(self,
+                                               start_params=start_params,
+                                               method=method,
+                                               maxiter=maxiter,
+                                               full_output=full_output,
+                                               disp=disp, callback=callback,
+                                               alpha=alpha,
+                                               trim_mode=trim_mode,
+                                               auto_trim_tol=auto_trim_tol,
+                                               size_trim_tol=size_trim_tol,
+                                               qc_tol=qc_tol, **kwargs)
+
+        res_cls, wrap_cls = self._res_classes["fit_regularized"]
+        discretefit = res_cls(self, cntfit)
+        return wrap_cls(discretefit)
 
     def predict(self, params, exog=None, exposure=None, offset=None,
                 which='mean'):
@@ -1979,10 +1961,7 @@ class MNLogit(MultinomialModel):
     See developer notes for further information on `MNLogit` internals.
     """ % {'extra_params': base._missing_param_doc}
 
-    def pdf(self, eXB):
-        """
-        NotImplemented
-        """
+    def pdf(self, eXB):  # TODO: implement this
         raise NotImplementedError
 
     def cdf(self, X):
@@ -2070,7 +2049,7 @@ class MNLogit(MultinomialModel):
         return np.dot(wresid.T, self.exog).flatten()
         # Note: this is non-trivially more performant than wrapping score_obs
 
-    def loglike_and_score(self, params):
+    def loglike_and_score(self, params):  # TODO: Is this needed/used?
         """
         Returns log likelihood and score, efficiently reusing calculations.
 
@@ -2187,9 +2166,6 @@ class NegativeBinomial(CountModel):
 
     References
     ----------
-
-    References:
-
     Greene, W. 2008. "Functional forms for the negtive binomial model
         for count data". Economics Letters. Volume 99, Number 3, pp.585-590.
     Hilbe, J.M. 2011. "Negative binomial regression". Cambridge University
@@ -2543,6 +2519,7 @@ class NegativeBinomial(CountModel):
                 a = self._estimate_dispersion(res_poi.predict(), res_poi.resid,
                                               df_resid=res_poi.df_resid)
                 start_params = np.append(start_params, max(0.05, a))
+                # TODO: Document reasoning behind `max(0.05, a)`
         else:
             if self._transparams is True:
                 # transform user provided start_params dispersion, see GH#3918
@@ -2574,6 +2551,7 @@ class NegativeBinomial(CountModel):
         else:
             result = mlefit
 
+        # TODO: can we avoid doing this here?
         cov_kwds = cov_kwds or {}
         result._get_robustcov_results(cov_type=cov_type,
                                       use_self=True, use_t=use_t, **cov_kwds)

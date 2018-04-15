@@ -4,9 +4,10 @@ results, and doing data cleaning
 """
 import copy
 
+from six import string_types
 from six.moves import range, reduce, zip
 import numpy as np
-from pandas import DataFrame, Series, isnull
+import pandas as pd
 
 from sm2.tools.decorators import (resettable_cache, cache_readonly,
                                   cache_writable)
@@ -26,12 +27,12 @@ def _asarray_2d_null_rows(x):
     Makes sure input is an array and is 2d. Makes sure output is 2d. True
     indicates a null in the rows of 2d x.
     """
-    # Have to have the asarrays because isnull doesn't account for array-like
+    # Have to have the asarrays because isna doesn't account for array-like
     # input
     x = np.asarray(x)
     if x.ndim == 1:
         x = x[:, None]
-    return np.any(isnull(x), axis=1)[:, None]
+    return np.any(pd.isna(x), axis=1)[:, None]
 
 
 def _nan_rows(*arrs):
@@ -488,32 +489,40 @@ class PandasData(ModelData):
     def attach_generic_columns(self, result, names):
         # get the attribute to use
         column_names = getattr(self, names, None)
-        return Series(result, index=column_names)
+        return pd.Series(result, index=column_names)
 
     def attach_generic_columns_2d(self, result, rownames, colnames=None):
         colnames = colnames or rownames
         rownames = getattr(self, rownames, None)
         colnames = getattr(self, colnames, None)
-        return DataFrame(result, index=rownames, columns=colnames)
+        return pd.DataFrame(result, index=rownames, columns=colnames)
 
     def attach_columns(self, result):
         # this can either be a 1d array or a scalar
         # don't squeeze because it might be a 2d row array
         # if it needs a squeeze, the bug is elsewhere
         if result.ndim <= 1:
-            return Series(result, index=self.param_names)
+            return pd.Series(result, index=self.param_names)
         else:  # for e.g., confidence intervals
-            return DataFrame(result, index=self.param_names)
+            return pd.DataFrame(result, index=self.param_names)
 
     def attach_columns_eq(self, result):
-        return DataFrame(result, index=self.xnames, columns=self.ynames)
+        return pd.DataFrame(result, index=self.xnames, columns=self.ynames)
 
     def attach_cov(self, result):
-        return DataFrame(result, index=self.param_names,
-                         columns=self.param_names)
+        if len(self.ynames) > 1 and not isinstance(self.ynames, string_types):
+            # e.g. VARResults.cov_params
+            index = pd.MultiIndex.from_product([self.param_names, self.ynames],
+                                               names=['Parameter', 'Equation'])
+            # TODO: Need to be careful we are ordering the levels right!
+            if result.shape == (len(index), len(index)):
+                # FIXME: this is kind of a kludge
+                return pd.DataFrame(result, columns=index, index=index)
+        return pd.DataFrame(result, index=self.param_names,
+                            columns=self.param_names)
 
     def attach_cov_eq(self, result):
-        return DataFrame(result, index=self.ynames, columns=self.ynames)
+        return pd.DataFrame(result, index=self.ynames, columns=self.ynames)
 
     def attach_rows(self, result):
         # assumes if len(row_labels) > len(result) it's bc it was truncated
@@ -524,10 +533,10 @@ class PandasData(ModelData):
             squeezed = squeezed[None, :]
         # May be zero-dim, for example in the case of forecast one step in tsa
         if squeezed.ndim < 2:
-            return Series(squeezed, index=self.row_labels[-len(result):])
+            return pd.Series(squeezed, index=self.row_labels[-len(result):])
         else:
-            return DataFrame(result, index=self.row_labels[-len(result):],
-                             columns=self.ynames)
+            return pd.DataFrame(result, index=self.row_labels[-len(result):],
+                                columns=self.ynames)
 
     def attach_dates(self, result):
         squeezed = result.squeeze()
@@ -536,27 +545,27 @@ class PandasData(ModelData):
             squeezed = squeezed[None, :]
         # May be zero-dim, for example in the case of forecast one step in tsa
         if squeezed.ndim < 2:
-            return Series(squeezed, index=self.predict_dates)
+            return pd.Series(squeezed, index=self.predict_dates)
         else:
-            return DataFrame(result, index=self.predict_dates,
-                             columns=self.ynames)
+            return pd.DataFrame(result, index=self.predict_dates,
+                                columns=self.ynames)
 
     def attach_ynames(self, result):
         squeezed = result.squeeze()
         # May be zero-dim, for example in the case of forecast one step in tsa
         if squeezed.ndim < 2:
-            return Series(squeezed, name=self.ynames)
+            return pd.Series(squeezed, name=self.ynames)
         else:
-            return DataFrame(result, columns=self.ynames)
+            return pd.DataFrame(result, columns=self.ynames)
 
 
 def _get_names(arr):
     if hasattr(arr, 'design_info'):
         # PatsyData
         return arr.design_info.column_names
-    elif isinstance(arr, DataFrame):
+    elif isinstance(arr, pd.DataFrame):
         return list(arr.columns)
-    elif isinstance(arr, Series):
+    elif isinstance(arr, pd.Series):
         if arr.name:  # TODO: What if arr.name is `False`??
             return [arr.name]
         else:
@@ -589,7 +598,7 @@ def _get_yarr(endog):
     return endog.squeeze()
 
 
-def _make_endog_names(endog):
+def _make_endog_names(endog):  # TODO: belongs in `naming`
     if endog.ndim == 1 or endog.shape[1] == 1:
         ynames = ['y']
     else:  # for VAR
@@ -598,7 +607,7 @@ def _make_endog_names(endog):
     return ynames
 
 
-def _make_exog_names(exog):
+def _make_exog_names(exog):  # TODO: belongs in `naming`
     exog_var = exog.var(0)
     if (exog_var == 0).any():
         # assumes one constant in first or last position

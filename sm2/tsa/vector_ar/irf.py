@@ -13,7 +13,7 @@ import scipy.linalg  # TODO: can we just use np.linalg.inv?
 from sm2.tools.decorators import cache_readonly
 from sm2.tools.tools import chain_dot
 
-import sm2.tsa.tsatools as tsa
+from sm2.tsa import tsatools
 from . import util, plotting
 
 
@@ -715,16 +715,16 @@ class IRAnalysis(BaseIRAnalysis):
             return chain_dot(Finfty, self.cov_a, Finfty.T)
 
     def stderr(self, orth=False):
-        return np.array([tsa.unvec(np.sqrt(np.diag(c)))
+        return np.array([tsatools.unvec(np.sqrt(np.diag(c)))
                          for c in self.cov(orth=orth)])
 
     def cum_effect_stderr(self, orth=False):
-        return np.array([tsa.unvec(np.sqrt(np.diag(c)))
+        return np.array([tsatools.unvec(np.sqrt(np.diag(c)))
                          for c in self.cum_effect_cov(orth=orth)])
 
     def lr_effect_stderr(self, orth=False):
         cov = self.lr_effect_cov(orth=orth)
-        return tsa.unvec(np.sqrt(np.diag(cov)))
+        return tsatools.unvec(np.sqrt(np.diag(cov)))
 
     def _empty_covm(self, periods):
         return np.zeros((periods, self.neqs ** 2, self.neqs ** 2),
@@ -733,8 +733,8 @@ class IRAnalysis(BaseIRAnalysis):
     @cache_readonly
     def H(self):
         k = self.neqs
-        Lk = tsa.elimination_matrix(k)
-        Kkk = tsa.commutation_matrix(k, k)
+        Lk = tsatools.elimination_matrix(k)
+        Kkk = tsatools.commutation_matrix(k, k)
         Ik = np.eye(k)
 
         B = chain_dot(Lk,

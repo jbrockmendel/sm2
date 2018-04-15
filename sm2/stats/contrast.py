@@ -5,6 +5,8 @@ from six.moves import range
 import numpy as np
 from scipy import stats
 
+from sm2.tools.tools import not_ported
+
 
 # TODO: should this be public if it's just a container?
 class ContrastResults(object):
@@ -17,8 +19,8 @@ class ContrastResults(object):
 
     The attributes depend on the statistical test and are either based on the
     normal, the t, the F or the chisquare distribution.
-
     """
+    __array__ = not_ported("__array__")  # GH#4470
 
     def __init__(self, t=None, F=None, sd=None, effect=None, df_denom=None,
                  df_num=None, alpha=0.05, **kwds):
@@ -94,12 +96,6 @@ class ContrastResults(object):
         else:  # pragma: no cover
             # TODO: Should this be a ValueError?
             raise NotImplementedError('Confidence Interval not available')
-
-    def __array__(self):  # TODO: not hit in tests.  what is this for?
-        if hasattr(self, "fvalue"):
-            return self.fvalue
-        else:
-            return self.tvalue
 
     def __str__(self):
         return self.summary().__str__()

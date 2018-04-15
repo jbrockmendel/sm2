@@ -48,6 +48,9 @@ difference is that statsmodels is more feature-complete.
 of unused, untested, or deprecated code have been removed.  _Many_ thousands
 of flake8 formatting issues have been cleaned up.
 
+- `VARResults.cov_params` will correctly return a `DataFrame` instead
+of raising `ValueError`.
+
 - `tsa.stattools.acf` will always return `(acf, confint, qstat, pvalue)` here
 instead of a different subset of these depending on the inputs.
 

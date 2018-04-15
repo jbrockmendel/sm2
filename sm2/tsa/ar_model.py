@@ -350,21 +350,6 @@ class AR(wold.ARMAParams, tsa_model.TimeSeriesModel):
         loglike = self.loglike
         return approx_fprime(params, loglike, epsilon=1e-8)
 
-    def information(self, params):
-        """
-        Not Implemented Yet
-        """
-        # TODO: This just passes upstream; fix it there
-        raise NotImplementedError
-
-    # TODO: use default implementation?
-    def hessian(self, params):
-        """
-        Returns numerical hessian for now.
-        """
-        loglike = self.loglike
-        return approx_hess(params, loglike)
-
     def _stackX(self, k_ar, trend):
         """
         Private method to build the RHS matrix for estimation.

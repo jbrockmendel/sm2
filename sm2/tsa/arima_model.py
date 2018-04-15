@@ -629,24 +629,32 @@ class ARMA(wold.ARMAParams, tsa_model.TimeSeriesModel):
             # upstream checks for this saying non-cython version returns tuple
         else:
             # use scipy.signal.lfilter
-            y = self.endog.copy()
-            k = self.k_exog + self.k_trend
-            if k > 0:
-                y -= np.dot(self.exog, params[:k])
+            errors = self._geterrors_css(params)
+        return errors.squeeze()
 
-            k_ar = self.k_ar
-            k_ma = self.k_ma
+    def _geterrors_css(self, params):
+        # use scipy.signal.lfilter
+        params = np.asarray(params)
 
-            (trendparams, exparams,
-             arparams, maparams) = _unpack_params(params, (k_ar, k_ma),
-                                                  self.k_trend, self.k_exog,
-                                                  reverse=False)
-            b, a = np.r_[1, -arparams], np.r_[1, maparams]
-            zi = np.zeros((max(k_ar, k_ma)))
-            for i in range(k_ar):
-                zi[i] = sum(-b[:i + 1][::-1] * y[:i + 1])
-            e = signal.lfilter(b, a, y, zi=zi)
-            errors = e[0][k_ar:]
+        y = self.endog.copy()
+        k = self.k_exog + self.k_trend
+        if k > 0:
+            y -= np.dot(self.exog, params[:k])
+
+        k_ar = self.k_ar
+        k_ma = self.k_ma
+
+        (trendparams, exparams,
+         arparams, maparams) = _unpack_params(params, (k_ar, k_ma),
+                                              self.k_trend, self.k_exog,
+                                              reverse=False)
+        macoefs = np.r_[1, maparams]
+        arcoefs = np.r_[1, -arparams]
+        zi = np.zeros((max(k_ar, k_ma)))
+        for i in range(k_ar):
+            zi[i] = sum(-arcoefs[:i + 1][::-1] * y[:i + 1])
+        e = signal.lfilter(arcoefs, macoefs, y, zi=zi)
+        errors = e[0][k_ar:]
         return errors.squeeze()
 
     @copy_doc(_arma_predict)
@@ -734,7 +742,7 @@ class ARMA(wold.ARMAParams, tsa_model.TimeSeriesModel):
         k = self.k_exog + self.k_trend
         y = self.endog.copy().astype(params.dtype)
         nobs = self.nobs
-        # how to handle if empty?
+        # TODO: how to handle if empty?
         if self.transparams:
             newparams = self._transparams(params)
         else:
@@ -747,6 +755,7 @@ class ARMA(wold.ARMAParams, tsa_model.TimeSeriesModel):
         for i in range(k_ar):
             zi[i] = sum(-b[:i + 1][::-1] * y[:i + 1])
         errors = signal.lfilter(b, a, y, zi=zi)[0][k_ar:]
+        # TODO: Use geterrors_css for this
 
         ssr = np.dot(errors, errors)
         sigma2 = ssr / nobs

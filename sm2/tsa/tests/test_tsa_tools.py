@@ -16,22 +16,12 @@ from sm2 import datasets
 
 from sm2.tsa import stattools, tsatools
 from sm2.tsa.tests.results import savedrvs
-from sm2.tsa.tests.results.datamlw_tls import mlpacf, mlacf
+from sm2.tsa.tests.results.datamlw_tls import mlpacf
 
 
 xo = savedrvs.rvsdata.xar2
 x100 = xo[-100:] / 1000.
 x1000 = xo / 1000.
-
-
-@pytest.mark.not_vetted
-def test_acf():
-    acf_x = stattools.acf(x100, unbiased=False)[0][:21]
-    assert_array_almost_equal(mlacf.acf100.ravel(), acf_x, 8)
-    # TODO: why only dec=8?
-    acf_x = stattools.acf(x1000, unbiased=False)[0][:21]
-    assert_array_almost_equal(mlacf.acf1000.ravel(), acf_x, 8)
-    # TODO: why only dec=9? (comment out of date?)
 
 
 @pytest.mark.not_vetted
