@@ -7,6 +7,7 @@ from scipy import stats
 
 from sm2.tools.tools import not_ported
 
+
 # TODO: should this be public if it's just a container?
 class ContrastResults(object):
     """
