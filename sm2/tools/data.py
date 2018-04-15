@@ -23,7 +23,6 @@ def numpy_to_dummies(endog):
 
 # upstream this is in discrete_model._pandas_to_dummies
 def pandas_to_dummies(endog):
-    from sm2.tools import tools
     if endog.ndim == 2:
         if endog.shape[1] == 1:
             yname = endog.columns[0]

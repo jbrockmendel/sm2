@@ -8,7 +8,7 @@ from six.moves import range, zip
 import numpy as np
 from scipy import stats
 
-from sm2.tools.tools import add_constant, Bunch
+from sm2.tools.tools import add_constant
 
 from sm2.regression.linear_model import OLS
 
