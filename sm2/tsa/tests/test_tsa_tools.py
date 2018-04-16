@@ -361,6 +361,7 @@ class TestLagmat(object):
         tm.assert_frame_equal(lags, expected.iloc[:, 1:])
 
 
+@pytest.mark.skip(reason="freq_to_period not ported from upstream (yet)")
 @pytest.mark.not_vetted
 def test_freq_to_period():
     freqs = ['A', 'AS-MAR', 'Q', 'QS', 'QS-APR', 'W', 'W-MON', 'B', 'D', 'H']

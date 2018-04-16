@@ -501,42 +501,5 @@ def unintegrate(x, levels):
     return np.cumsum(np.r_[x0, x])
 
 
-def freq_to_period(freq):
-    """
-    Convert a pandas frequency to a periodicity
-
-    Parameters
-    ----------
-    freq : str or offset
-        Frequency to convert
-
-    Returns
-    -------
-    period : int
-        Periodicity of freq
-
-    Notes
-    -----
-    Annual maps to 1, quarterly maps to 4, monthly to 12, weekly to 52.
-    """
-    if not isinstance(freq, pd.DateOffset):
-        freq = to_offset(freq)  # go ahead and standardize
-    freq = freq.rule_code.upper()
-
-    if freq == 'A' or freq.startswith(('A-', 'AS-')):
-        return 1
-    elif freq == 'Q' or freq.startswith(('Q-', 'QS-')):
-        return 4
-    elif freq == 'M' or freq.startswith(('M-', 'MS')):
-        return 12
-    elif freq == 'W' or freq.startswith('W-'):
-        return 52
-    elif freq == 'D':
-        return 7
-    elif freq == 'B':
-        return 5
-    elif freq == 'H':
-        return 24
-    else:  # pragma: no cover
-        raise ValueError("freq {} not understood. Please report if you "
-                         "think this is in error.".format(freq))
+def freq_to_period(freq):  # pragma: no cover
+    raise NotImplementedError("freq_to_period not ported from upstream (yet)")

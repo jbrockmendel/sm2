@@ -94,7 +94,6 @@ class MarkovRegression(markov_switching.MarkovSwitching):
     Classical and Gibbs-Sampling Approaches with Applications".
     MIT Press Books. The MIT Press.
     """
-
     @property
     def _res_classes(self):
         return {'fit': (MarkovRegressionResults,
@@ -269,7 +268,6 @@ class MarkovRegression(markov_switching.MarkovSwitching):
         """
         Compute likelihoods conditional on the current period's regime
         """
-
         # Get residuals
         resid = self._resid(params)
 

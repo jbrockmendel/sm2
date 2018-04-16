@@ -91,7 +91,6 @@ class MarkovAutoregression(markov_regression.MarkovRegression):
     Classical and Gibbs-Sampling Approaches with Applications".
     MIT Press Books. The MIT Press.
     """
-
     @property
     def _res_classes(self):
         return {'fit': (MarkovAutoregressionResults,
