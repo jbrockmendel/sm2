@@ -8,7 +8,8 @@ import numpy as np
 from scipy import stats
 
 from sm2.tools.numdiff import approx_fprime, approx_hess
-from sm2.tools.decorators import cache_readonly, cache_writable
+from sm2.tools.decorators import (cache_writable,
+                                  cached_value, cached_data)
 
 import sm2.base.model as base
 import sm2.base.wrapper as wrap
@@ -333,7 +334,7 @@ class AR(wold.ARMAParams, tsa_model.TimeSeriesModel):
         else:
             return self._loglike_mle(params)
 
-    # TODO: use default implementation?
+    # TODO: use default implementation?  the 1e-8 is not the same
     def score(self, params):
         """
         Return the gradient of the loglikelihood at params.
@@ -661,6 +662,7 @@ class ARResults(tsa_model.TimeSeriesModelResults):
     def __init__(self, model, params, normalized_cov_params=None, scale=1.):
         super(ARResults, self).__init__(model, params, normalized_cov_params,
                                         scale)
+        self.method = model.method  # TODO: pass this as a kwarg
         self._cache = {}  # not sure why, but this needs to be set explicitly
         self.nobs = model.nobs
         self.n_totobs = len(model.endog)
@@ -677,8 +679,7 @@ class ARResults(tsa_model.TimeSeriesModelResults):
 
     @cache_writable()
     def sigma2(self):
-        model = self.model
-        if model.method == "cmle":  # do DOF correction
+        if self.method == "cmle":  # do DOF correction
             return 1. / self.nobs * (self.resid**2).sum()
         else:
             # TODO: sigma2 shouldnt be a model attribute at all
@@ -688,9 +689,9 @@ class ARResults(tsa_model.TimeSeriesModelResults):
     def scale(self):
         return self.sigma2
 
-    @cache_readonly
+    @cached_value
     def bse(self):  # allow user to specify?
-        if self.model.method == "cmle":  # uses different scale/sigma def.
+        if self.method == "cmle":  # uses different scale/sigma def.
             resid = self.resid
             ssr = np.dot(resid, resid)
             ols_scale = ssr / (self.nobs - self.k_ar - self.k_trend)
@@ -701,11 +702,11 @@ class ARResults(tsa_model.TimeSeriesModelResults):
             return np.sqrt(np.diag(-np.linalg.inv(hess)))
 
     # TODO: use default implementation?
-    @cache_readonly
+    @cached_value
     def pvalues(self):
         return stats.norm.sf(np.abs(self.tvalues)) * 2
 
-    @cache_readonly
+    @cached_value
     def aic(self):
         # JP: this is based on loglike with dropped constant terms ?
         # Lutkepohl
@@ -715,7 +716,7 @@ class ARResults(tsa_model.TimeSeriesModelResults):
         # Stata defintion
         # return -2 * self.llf/nobs + 2 * (self.k_ar+self.k_trend)/nobs
 
-    @cache_readonly
+    @cached_value
     def hqic(self):
         nobs = self.nobs
         # Lutkepohl
@@ -727,14 +728,14 @@ class ARResults(tsa_model.TimeSeriesModelResults):
         # return -2 * self.llf/nobs + 2 * np.log(np.log(nobs))/nobs * \
         #        (self.k_ar + self.k_trend)
 
-    @cache_readonly
+    @cached_value
     def fpe(self):
         nobs = self.nobs
         df_model = self.df_model
         # Lutkepohl
         return ((nobs + df_model) / (nobs - df_model)) * self.sigma2
 
-    @cache_readonly
+    @cached_value
     def bic(self):
         nobs = self.nobs
         # Lutkepohl
@@ -745,12 +746,12 @@ class ARResults(tsa_model.TimeSeriesModelResults):
         # return -2 * self.llf/nobs + np.log(nobs)/nobs * (self.k_ar +
         #                                                  self.k_trend)
 
-    @cache_readonly
+    @cached_data
     def resid(self):
         # NOTE: uses fittedvalues because it calculate presample values for mle
         model = self.model
         endog = model.endog.squeeze()
-        if model.method == "cmle":  # elimate pre-sample
+        if self.method == "cmle":  # elimate pre-sample
             return endog[self.k_ar:] - self.fittedvalues
         else:
             return model.endog.squeeze() - self.fittedvalues
@@ -759,7 +760,7 @@ class ARResults(tsa_model.TimeSeriesModelResults):
     #    resid = self.resid
     #    return np.dot(resid, resid)
 
-    @cache_readonly
+    @cached_value
     def roots(self):
         k = self.k_trend
         return np.roots(np.r_[1, -self.params[k:]]) ** -1

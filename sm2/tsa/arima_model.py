@@ -406,6 +406,8 @@ class ARMA(wold.ARMAParams, tsa_model.TimeSeriesModel):
         "extra_params": "",
         "extra_sections": _armax_notes % {"Model": "ARMA"}}
 
+    _use_approx_cs = True
+
     @property
     def k_exog(self):
         # TODO: can we merge this special case back in with the general case?
@@ -552,28 +554,6 @@ class ARMA(wold.ARMAParams, tsa_model.TimeSeriesModel):
             if self.transparams:
                 start_params = self._transparams(start_params)
         return start_params
-
-    # TODO: Can we use a base-class version?
-    def score(self, params):
-        """
-        Compute the score function at params.
-
-        Notes
-        -----
-        This is a numerical approximation.
-        """
-        return approx_fprime_cs(params, self.loglike, args=(False,))
-
-    # TODO: Can we use a base-class version?
-    def hessian(self, params):
-        """
-        Compute the Hessian at params,
-
-        Notes
-        -----
-        This is a numerical approximation.
-        """
-        return approx_hess_cs(params, self.loglike, args=(False,))
 
     def _get_prediction_index(self, start, end, dynamic, index=None):
         method = getattr(self, 'method', 'mle')

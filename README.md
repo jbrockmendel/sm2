@@ -44,6 +44,8 @@ Changes vs Statsmodels
 - sm2 contains a subset of the functionality of statsmodels.  The first big
 difference is that statsmodels is more feature-complete.
 
+- Test coverage statistics reported for sm2 are meaningful (:issue:`4331`)
+
 - An enormous amount of code-cleanup has been done in sm2.  Thousands of lines
 of unused, untested, or deprecated code have been removed.  _Many_ thousands
 of flake8 formatting issues have been cleaned up.

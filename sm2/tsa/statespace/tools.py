@@ -14,7 +14,7 @@ import numpy as np
 import pandas as pd
 
 from sm2.tools.data import _is_using_pandas
-
+# from sm2.tools.tools import not_ported
 
 compatibility_mode = False
 has_trmm = True
@@ -513,225 +513,25 @@ def unconstrain_stationary_univariate(constrained):
 
 
 '''
-def _constrain_sv_less_than_one_python(unconstrained, order=None,
-                                       k_endog=None):
-    """
-    Transform arbitrary matrices to matrices with singular values less than
-    one.
 
-    Parameters
-    ----------
-    unconstrained : list
-        Arbitrary matrices. Should be a list of length `order`, where each
-        element is an array sized `k_endog` x `k_endog`.
-    order : integer, optional
-        The order of the autoregression.
-    k_endog : integer, optional
-        The dimension of the data vector.
+_constrain_sv_less_than_one_python = not_ported(
+    "_constrain_sv_less_than_one_python",
+    msg="Not needed because constrain_stationary_multivariate_python "
+        "is not needed.")
 
-    Returns
-    -------
-    constrained : list
-        Partial autocorrelation matrices. Should be a list of length
-        `order`, where each element is an array sized `k_endog` x `k_endog`.
+_compute_coefficients_from_multivariate_pacf_python = not_ported(
+    "_compute_coefficients_from_multivariate_pacf_python",
+    msg="Not needed because constrain_stationary_multivariate_python "
+        "is not needed.")
 
-    Notes
-    -----
-    Corresponds to Lemma 2.2 in Ansley and Kohn (1986). See
-    `constrain_stationary_multivariate` for more details.
-
-    There is a Cython implementation of this function that can be much faster,
-    but which requires SciPy 0.14.0 or greater. See
-    `constrain_stationary_multivariate` for details.
-    """
-    constrained = []  # P_s,  s = 1, ..., p
-    if order is None:
-        order = len(unconstrained)
-    if k_endog is None:
-        k_endog = unconstrained[0].shape[0]
-
-    eye = np.eye(k_endog)
-    for i in range(order):
-        A = unconstrained[i]
-        B, lower = linalg.cho_factor(eye + np.dot(A, A.T), lower=True)
-        constrained.append(linalg.solve_triangular(B, A, lower=lower))
-    return constrained
+constrain_stationary_multivariate_python = not_ported(
+    "constrain_stationary_multivariate_python",
+    msg="not necessary because sm2 requires sufficiently recent scipy.")
 
 
-def _compute_coefficients_from_multivariate_pacf_python(
-        partial_autocorrelations, error_variance, transform_variance=False,
-        order=None, k_endog=None):
-    """
-    Transform matrices with singular values less than one to matrices
-    corresponding to a stationary (or invertible) process.
-
-    Parameters
-    ----------
-    partial_autocorrelations : list
-        Partial autocorrelation matrices. Should be a list of length `order`,
-        where each element is an array sized `k_endog` x `k_endog`.
-    error_variance : array
-        The variance / covariance matrix of the error term. Should be sized
-        `k_endog` x `k_endog`. This is used as input in the algorithm even if
-        is not transformed by it (when `transform_variance` is False). The
-        error term variance is required input when transformation is used
-        either to force an autoregressive component to be stationary or to
-        force a moving average component to be invertible.
-    transform_variance : boolean, optional
-        Whether or not to transform the error variance term. This option is
-        not typically used, and the default is False.
-    order : integer, optional
-        The order of the autoregression.
-    k_endog : integer, optional
-        The dimension of the data vector.
-
-    Returns
-    -------
-    coefficient_matrices : list
-        Transformed coefficient matrices leading to a stationary VAR
-        representation.
-
-    Notes
-    -----
-    Corresponds to Lemma 2.1 in Ansley and Kohn (1986). See
-    `constrain_stationary_multivariate` for more details.
-
-    There is a Cython implementation of this function that can be much faster,
-    but which requires SciPy 0.14.0 or greater. See
-    `constrain_stationary_multivariate` for details.
-    """
-    if order is None:
-        order = len(partial_autocorrelations)
-    if k_endog is None:
-        k_endog = partial_autocorrelations[0].shape[0]
-
-    # If we want to keep the provided variance but with the constrained
-    # coefficient matrices, we need to make a copy here, and then after the
-    # main loop we will transform the coefficients to match the passed variance
-    if not transform_variance:
-        initial_variance = error_variance
-        # Need to make the input variance large enough that the recursions
-        # don't lead to zero-matrices due to roundoff error, which would case
-        # exceptions from the Cholesky decompositions.
-        # Note that this will still not always ensure positive definiteness,
-        # and for k_endog, order large enough an exception may still be raised
-        error_variance = np.eye(k_endog) * (order + k_endog)**10
-
-    forward_variances = [error_variance]   # \Sigma_s
-    backward_variances = [error_variance]  # \Sigma_s^*,  s = 0, ..., p
-    autocovariances = [error_variance]     # \Gamma_s
-    # \phi_{s,k}, s = 1, ..., p
-    #             k = 1, ..., s+1
-    forwards = []
-    # \phi_{s,k}^*
-    backwards = []
-
-    error_variance_factor = linalg.cholesky(error_variance, lower=True)
-
-    forward_factors = [error_variance_factor]
-    backward_factors = [error_variance_factor]
-
-    # We fill in the entries as follows:
-    # [1,1]
-    # [2,2], [2,1]
-    # [3,3], [3,1], [3,2]
-    # ...
-    # [p,p], [p,1], ..., [p,p-1]
-    # the last row, correctly ordered, is then used as the coefficients
-    for s in range(order):  # s = 0, ..., p-1
-        prev_forwards = forwards
-        prev_backwards = backwards
-        forwards = []
-        backwards = []
-
-        # Create the "last" (k = s+1) matrix
-        # Note: this is for k = s+1. However, below we then have to fill
-        # in for k = 1, ..., s in order.
-        # P L*^{-1} = x
-        # x L* = P
-        # L*' x' = P'
-        forwards.append(
-            linalg.solve_triangular(
-                backward_factors[s], partial_autocorrelations[s].T,
-                lower=True, trans='T'))
-        forwards[0] = np.dot(forward_factors[s], forwards[0].T)
-
-        # P' L^{-1} = x
-        # x L = P'
-        # L' x' = P
-        backwards.append(
-            linalg.solve_triangular(
-                forward_factors[s], partial_autocorrelations[s],
-                lower=True, trans='T'))
-        backwards[0] = np.dot(backward_factors[s], backwards[0].T)
-
-        # Update the variance
-        # Note: if s >= 1, this will be further updated in the for loop
-        # below
-        # Also, this calculation will be re-used in the forward variance
-        tmp = np.dot(forwards[0], backward_variances[s])
-        autocovariances.append(tmp.copy().T)
-
-        # Create the remaining k = 1, ..., s matrices,
-        # only has an effect if s >= 1
-        for k in range(s):
-            forwards.insert(k, prev_forwards[k] - np.dot(
-                forwards[-1], prev_backwards[s - (k + 1)]))
-
-            backwards.insert(k, prev_backwards[k] - np.dot(
-                backwards[-1], prev_forwards[s - (k + 1)]))
-
-            autocovariances[s + 1] += np.dot(autocovariances[k + 1],
-                                             prev_forwards[s - (k + 1)].T)
-
-        # Create forward and backwards variances
-        forward_variances.append(
-            forward_variances[s] - np.dot(tmp, forwards[s].T)
-        )
-        backward_variances.append(
-            backward_variances[s] -
-            np.dot(
-                np.dot(backwards[s], forward_variances[s]),
-                backwards[s].T
-            )
-        )
-
-        # Cholesky factors
-        forward_factors.append(
-            linalg.cholesky(forward_variances[s + 1], lower=True)
-        )
-        backward_factors.append(
-            linalg.cholesky(backward_variances[s + 1], lower=True)
-        )
-
-    # If we do not want to use the transformed variance, we need to
-    # adjust the constrained matrices, as presented in Lemma 2.3, see above
-    variance = forward_variances[-1]
-    if not transform_variance:
-        # Here, we need to construct T such that:
-        # variance = T * initial_variance * T'
-        # To do that, consider the Cholesky of variance (L) and
-        # input_variance (M) to get:
-        # L L' = T M M' T' = (TM) (TM)'
-        # => L = T M
-        # => L M^{-1} = T
-        initial_variance_factor = np.linalg.cholesky(initial_variance)
-        transformed_variance_factor = np.linalg.cholesky(variance)
-        transform = np.dot(initial_variance_factor,
-                           np.linalg.inv(transformed_variance_factor))
-        inv_transform = np.linalg.inv(transform)
-
-        for i in range(order):
-            forwards[i] = (
-                np.dot(np.dot(transform, forwards[i]), inv_transform)
-            )
-
-    return forwards, variance
-
-
-def constrain_stationary_multivariate_python(unconstrained, error_variance,
-                                             transform_variance=False,
-                                             prefix=None):
+def constrain_stationary_multivariate(unconstrained, variance,
+                                      transform_variance=False,
+                                      prefix=None):
     """
     Transform unconstrained parameters used by the optimizer to constrained
     parameters used in likelihood evaluation for a vector autoregression.
@@ -798,94 +598,51 @@ def constrain_stationary_multivariate_python(unconstrained, error_variance,
        In Proceedings of the Business and Economic Statistics Section, 349-53.
        American Statistical Association
     """
+    # Upstream defines constrain_stationary_multivariate conditionally
+    # depending on whether trmm is available (i.e. scipy >= 0.14.0).
 
     use_list = type(unconstrained) == list
-    if not use_list:
-        k_endog, order = unconstrained.shape
-        order //= k_endog
+    if use_list:
+        unconstrained = np.concatenate(unconstrained, axis=1)
 
-        unconstrained = [
-            unconstrained[:k_endog, i * k_endog:(i + 1) * k_endog]
-            for i in range(order)
-        ]
+    k_endog, order = unconstrained.shape
+    order //= k_endog
 
-    order = len(unconstrained)
-    k_endog = unconstrained[0].shape[0]
+    if order < 1:
+        raise ValueError('Must have order at least 1')
+    if k_endog < 1:
+        raise ValueError('Must have at least 1 endogenous variable')
+
+    if prefix is None:
+        prefix, dtype, _ = find_best_blas_type(
+            [unconstrained, variance])
+    dtype = prefix_dtype_map[prefix]
+
+    unconstrained = np.asfortranarray(unconstrained, dtype=dtype)
+    variance = np.asfortranarray(variance, dtype=dtype)
 
     # Step 1: convert from arbitrary matrices to those with singular values
     # less than one.
-    sv_constrained = _constrain_sv_less_than_one_python(
-        unconstrained, order, k_endog)
+    # sv_constrained = _constrain_sv_less_than_one(unconstrained, order,
+    #                                              k_endog, prefix)
+    sv_constrained = prefix_sv_map[prefix](unconstrained, order, k_endog)
 
-    # Step 2: convert matrices from our "partial autocorrelation matrix" space
-    # (matrices with singular values less than one) to the space of stationary
-    # coefficient matrices
-    constrained, var = _compute_coefficients_from_multivariate_pacf_python(
-        sv_constrained, error_variance, transform_variance, order, k_endog)
+    # Step 2: convert matrices from our "partial autocorrelation matrix"
+    # space (matrices with singular values less than one) to the space of
+    # stationary coefficient matrices
+    constrained, variance = prefix_pacf_map[prefix](
+        sv_constrained, variance, transform_variance, order, k_endog)
 
-    if not use_list:
-        constrained = np.concatenate(constrained, axis=1).reshape(
-            k_endog, k_endog * order)
+    constrained = np.array(constrained, dtype=dtype)
+    variance = np.array(variance, dtype=dtype)
 
-    return constrained, var
+    if use_list:
+        constrained = [
+            constrained[:k_endog, i * k_endog:(i + 1) * k_endog]
+            for i in range(order)
+        ]
 
-
-# Conditionally use the Cython versions of the multivariate constraint if
-# possible (i.e. if Scipy >= 0.14.0 is available.)
-if has_trmm:
-
-    def constrain_stationary_multivariate(unconstrained, variance,
-                                          transform_variance=False,
-                                          prefix=None):
-
-        use_list = type(unconstrained) == list
-        if use_list:
-            unconstrained = np.concatenate(unconstrained, axis=1)
-
-        k_endog, order = unconstrained.shape
-        order //= k_endog
-
-        if order < 1:
-            raise ValueError('Must have order at least 1')
-        if k_endog < 1:
-            raise ValueError('Must have at least 1 endogenous variable')
-
-        if prefix is None:
-            prefix, dtype, _ = find_best_blas_type(
-                [unconstrained, variance])
-        dtype = prefix_dtype_map[prefix]
-
-        unconstrained = np.asfortranarray(unconstrained, dtype=dtype)
-        variance = np.asfortranarray(variance, dtype=dtype)
-
-        # Step 1: convert from arbitrary matrices to those with singular values
-        # less than one.
-        # sv_constrained = _constrain_sv_less_than_one(unconstrained, order,
-        #                                              k_endog, prefix)
-        sv_constrained = prefix_sv_map[prefix](unconstrained, order, k_endog)
-
-        # Step 2: convert matrices from our "partial autocorrelation matrix"
-        # space (matrices with singular values less than one) to the space of
-        # stationary coefficient matrices
-        constrained, variance = prefix_pacf_map[prefix](
-            sv_constrained, variance, transform_variance, order, k_endog)
-
-        constrained = np.array(constrained, dtype=dtype)
-        variance = np.array(variance, dtype=dtype)
-
-        if use_list:
-            constrained = [
-                constrained[:k_endog, i * k_endog:(i + 1) * k_endog]
-                for i in range(order)
-            ]
-
-        return constrained, variance
-    constrain_stationary_multivariate.__doc__ = (
-        constrain_stationary_multivariate_python.__doc__)
-
-else:
-    constrain_stationary_multivariate = (
-        constrain_stationary_multivariate_python)
+    return constrained, variance
 
 
 def _unconstrain_sv_less_than_one(constrained, order=None, k_endog=None):
@@ -931,6 +688,7 @@ def _unconstrain_sv_less_than_one(constrained, order=None, k_endog=None):
     return unconstrained
 
 
+# TODO: only used in tests and _compute_multivariate_sample_pacf
 def _compute_multivariate_sample_acovf(endog, maxlag):
     """
     Computer multivariate sample autocovariances
@@ -1090,6 +848,7 @@ def _compute_multivariate_acovf_from_coefficients(
     return autocovariances
 
 
+# TODO: not used outside of tests
 def _compute_multivariate_sample_pacf(endog, maxlag):
     """
     Computer multivariate sample partial autocorrelations
@@ -1421,17 +1180,17 @@ def validate_matrix_shape(name, shape, nrows, ncols, nobs):
         If the matrix is not of the desired shape.
     """
     ndim = len(shape)
-
+    # TODO: This is really similar to the cython version
     # Enforce dimension
     if ndim not in [2, 3]:
         raise ValueError('Invalid value for %s matrix. Requires a'
                          ' 2- or 3-dimensional array, got %d dimensions' %
                          (name, ndim))
     # Enforce the shape of the matrix
-    if not shape[0] == nrows:
+    if shape[0] != nrows:
         raise ValueError('Invalid dimensions for %s matrix: requires %d'
                          ' rows, got %d' % (name, nrows, shape[0]))
-    if not shape[1] == ncols:
+    if shape[1] != ncols:
         raise ValueError('Invalid dimensions for %s matrix: requires %d'
                          ' columns, got %d' % (name, ncols, shape[1]))
 
@@ -1471,7 +1230,7 @@ def validate_vector_shape(name, shape, nrows, nobs):
     ValueError
         If the vector is not of the desired shape.
     """
-    ndim = len(shape)
+    ndim = len(shape)  # TODO: this is similar to the cython version
     # Enforce dimension
     if ndim not in [1, 2]:
         raise ValueError('Invalid value for %s vector. Requires a'
@@ -1539,7 +1298,6 @@ def reorder_missing_matrix(matrix, missing, reorder_rows=False,
 
     reorder(matrix, np.asfortranarray(missing), reorder_rows, reorder_cols,
             is_diagonal)
-
     return matrix
 
 
@@ -1573,7 +1331,6 @@ def reorder_missing_vector(vector, missing, inplace=False, prefix=None):
         vector = np.copy(vector, order='F')
 
     reorder(vector, np.asfortranarray(missing))
-
     return vector
 
 
@@ -1630,7 +1387,6 @@ def copy_missing_matrix(A, B, missing, missing_rows=False, missing_cols=False,
 
     copy(A, B, np.asfortranarray(missing), missing_rows, missing_cols,
          is_diagonal)
-
     return B
 
 
@@ -1674,7 +1430,6 @@ def copy_missing_vector(a, b, missing, inplace=False, prefix=None):
         a = np.asfortranarray(a)
 
     copy(a, b, np.asfortranarray(missing))
-
     return b
 
 
@@ -1729,9 +1484,7 @@ def copy_index_matrix(A, B, index, index_rows=False, index_cols=False,
     except:
         A = np.asfortranarray(A)
 
-    copy(A, B, np.asfortranarray(index), index_rows, index_cols,
-         is_diagonal)
-
+    copy(A, B, np.asfortranarray(index), index_rows, index_cols, is_diagonal)
     return B
 
 
@@ -1775,7 +1528,6 @@ def copy_index_vector(a, b, index, inplace=False, prefix=None):
         a = np.asfortranarray(a)
 
     copy(a, b, np.asfortranarray(index))
-
     return b
 '''
 
