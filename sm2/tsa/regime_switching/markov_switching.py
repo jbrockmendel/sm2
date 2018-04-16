@@ -646,6 +646,7 @@ class MarkovSwitching(tsbase.TimeSeriesModel):
     Classical and Gibbs-Sampling Approaches with Applications".
     MIT Press Books. The MIT Press.
     """
+    _use_approx_cs = True
 
     @property
     def _res_classes(self):
@@ -1141,56 +1142,6 @@ class MarkovSwitching(tsbase.TimeSeriesModel):
         results = self._filter(params)
 
         return np.log(results[5])
-
-    # TODO: Just use default implementation from base class?  the cs part is
-    # different
-    def score(self, params, transformed=True):
-        """
-        Compute the score function at params.
-
-        Parameters
-        ----------
-        params : array_like
-            Array of parameters at which to evaluate the score
-            function.
-        transformed : boolean, optional
-            Whether or not `params` is already transformed. Default is True.
-        """
-        params = np.array(params, ndmin=1)
-        return approx_fprime_cs(params, self.loglike, args=(transformed,))
-
-    # TODO: Just use default implementation from base class?  the cs part is
-    # different
-    def score_obs(self, params, transformed=True):
-        """
-        Compute the score per observation, evaluated at params
-
-        Parameters
-        ----------
-        params : array_like
-            Array of parameters at which to evaluate the score
-            function.
-        transformed : boolean, optional
-            Whether or not `params` is already transformed. Default is True.
-        """
-        params = np.array(params, ndmin=1)
-        return approx_fprime_cs(params, self.loglikeobs, args=(transformed,))
-
-    def hessian(self, params, transformed=True):
-        """
-        Hessian matrix of the likelihood function, evaluated at the given
-        parameters
-
-        Parameters
-        ----------
-        params : array_like
-            Array of parameters at which to evaluate the Hessian
-            function.
-        transformed : boolean, optional
-            Whether or not `params` is already transformed. Default is True.
-        """
-        params = np.array(params, ndmin=1)
-        return approx_hess_cs(params, self.loglike)
 
     def fit(self, start_params=None, transformed=True, cov_type='approx',
             cov_kwds=None, method='bfgs', maxiter=100, full_output=1, disp=0,

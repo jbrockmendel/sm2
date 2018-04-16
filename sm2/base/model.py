@@ -11,7 +11,8 @@ from scipy import stats
 
 from sm2.tools.data import _is_using_pandas
 from sm2.tools.tools import recipr, nan_dot
-from sm2.tools.numdiff import approx_hess, approx_fprime
+from sm2.tools.numdiff import (approx_fprime, approx_fprime_cs,
+                               approx_hess, approx_hess_cs)
 from sm2.tools.decorators import cache_readonly, cached_value, cached_data
 from sm2.tools.sm_exceptions import (ValueWarning, HessianInversionWarning,
                                      ConvergenceWarning)
@@ -223,6 +224,10 @@ class LikelihoodModel(Model):
     """
     Likelihood model is a subclass of Model.
     """
+    _use_approx_cs = False
+    # _use_approx_cs describes whether or not we can/should use complex-step
+    # when numerically differentiating the likelihood function.
+
     def __init__(self, endog, exog=None, **kwargs):
         super(LikelihoodModel, self).__init__(endog, exog, **kwargs)
         self.initialize()
@@ -253,7 +258,12 @@ class LikelihoodModel(Model):
         Score vector of model evaluated pointwise.  The gradient of loglikeobs
         with respect to each parameter.
         """
-        return approx_fprime(params, self.loglikeobs, args=args, kwargs=kwargs)
+        if self._use_approx_cs:
+            return approx_fprime_cs(params, self.loglikeobs,
+                                    args=args, kwargs=kwargs)
+        else:
+            return approx_fprime(params, self.loglikeobs,
+                                 args=args, kwargs=kwargs)
 
     def score(self, params, *args, **kwargs):
         """
@@ -268,8 +278,9 @@ class LikelihoodModel(Model):
         except NotImplementedError:
             # Fallback in case a `loglike` is implemented but `loglikeobs`
             # is not.
-            return approx_fprime(params, self.loglike, args=args, kwargs=kwargs)
-
+            approx_func = (approx_fprime_cs
+                           if self._use_approx_cs else approx_fprime)
+            return approx_func(params, self.loglike, args=args, kwargs=kwargs)
 
     def information(self, params):
         """
@@ -280,13 +291,18 @@ class LikelihoodModel(Model):
         # TODO: If the docstring is right, then why not just implement this?
         raise NotImplementedError  # pragma: no cover
 
-    def hessian(self, params):
+    def hessian(self, params, *args, **kwargs):
         """
         The Hessian matrix of the model
 
         The default implementation uses a numerical derivative.
         """
-        return approx_hess(params, self.loglike)  # TODO: Use approx_hess_cs?
+        if self._use_approx_cs:
+            return approx_hess_cs(params, self.loglike,
+                                  args=args, kwargs=kwargs)
+        else:
+            return approx_hess(params, self.loglike,
+                               args=args, kwargs=kwargs)
 
     # upstream this is implemented in GenericLikelihoodModel
     def hessian_factor(self, params, scale=None, observed=True):

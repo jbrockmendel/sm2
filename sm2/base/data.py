@@ -420,7 +420,7 @@ class ModelData(NullHandler):
         elif how == 'ynames':
             return self.attach_ynames(obj)
         else:
-            return obj
+            return obj  # TODO: raise on unrecognized?
 
     def attach_columns(self, result):
         return result
@@ -529,6 +529,7 @@ class PandasData(ModelData):
         # at the front, for AR lags, for example
         squeezed = result.squeeze()
         k_endog = np.array(self.ynames, ndmin=1).shape[0]
+        # TODO: is this just checking that k_endog is listlike (not stringy)?
         if k_endog > 1 and squeezed.shape == (k_endog,):
             squeezed = squeezed[None, :]
         # May be zero-dim, for example in the case of forecast one step in tsa
@@ -573,7 +574,7 @@ def _get_names(arr):
     else:
         try:
             return arr.dtype.names
-        except AttributeError:
+        except AttributeError:  # TODO: never hit; don't try/except?
             pass
 
     return None
@@ -638,7 +639,7 @@ def handle_data_class_factory(endog, exog):
         klass = ModelData
     elif data_util._is_using_pandas(endog, exog):
         klass = PandasData
-    elif data_util._is_using_patsy(endog, exog):
+    elif data_util._is_using_patsy(endog, exog):  # TODO: never used.  needed?
         klass = PatsyData
     # keep this check last
     elif data_util._is_using_ndarray(endog, exog):
