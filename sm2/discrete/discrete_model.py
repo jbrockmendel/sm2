@@ -24,7 +24,6 @@ from six.moves import range
 from sm2.compat.scipy import loggamma
 
 import numpy as np
-import pandas as pd
 from pandas.util._decorators import deprecate_kwarg
 
 from scipy.special import gammaln
@@ -35,7 +34,7 @@ from sm2.tools.decorators import (resettable_cache,
                                   copy_doc)
 from sm2.tools.sm_exceptions import PerfectSeparationError
 from sm2.tools.numdiff import approx_fprime_cs
-from sm2.tools import tools, data as data_tools
+from sm2.tools import data as data_tools
 
 from sm2.base import naming
 import sm2.base.model as base

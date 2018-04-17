@@ -8,12 +8,12 @@ from __future__ import division, absolute_import, print_function
 
 import numpy as np
 
-from sm2.tools.decorators import cache_readonly
+from sm2.tools.decorators import cached_value
 import sm2.base.wrapper as wrap
 from sm2.tsa.regime_switching import markov_switching
 
 
-def _get_trend_exog(trend, nobs):
+def _get_trend_exog(trend, nobs):  # TODO: similar to util.get_trendorder?
     # TODO: Does this belong in e.g vector_ar.utils?
     trend_exog = None
     if trend == 'c':
@@ -99,14 +99,14 @@ class MarkovRegression(markov_switching.MarkovSwitching):
         return {'fit': (MarkovRegressionResults,
                         MarkovRegressionResultsWrapper)}
 
-    @cache_readonly
+    @cached_value
     def k_exog(self):
         if self.data.orig_exog is None:
             return 0
         return self.data.orig_exog.shape[1] - self.k_trend
-        # TODO: Does this make sense at all?
+        # TODO: Is there a cleaner way to do this?
 
-    @cache_readonly
+    @cached_value
     def k_trend(self):
         trend = self.trend
         if trend == 'c':
@@ -203,7 +203,7 @@ class MarkovRegression(markov_switching.MarkovSwitching):
         return params
 
     @property
-    def param_names(self):
+    def param_names(self):  # TODO: delegate to base.naming?
         """
         (list of str) List of human readable parameter names (for parameters
         actually included in the model).

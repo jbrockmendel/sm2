@@ -18,7 +18,6 @@ from scipy.misc import logsumexp
 from sm2.base.data import PandasData
 import sm2.tsa.base.tsa_model as tsbase
 from sm2.tools.tools import Bunch
-from sm2.tools.numdiff import approx_fprime_cs, approx_hess_cs
 from sm2.tools.decorators import cache_readonly
 from sm2.tools.eval_measures import aic, bic, hqic
 from sm2.tools.tools import pinv_extended
@@ -561,9 +560,9 @@ class MarkovSwitchingParams(object):
         elif _type is tuple:
             if not len(key) == 2:
                 raise IndexError('Invalid index')
-            if type(key[1]) == str and type(key[0]) == int:
+            if type(key[1]) is str and type(key[0]) is int:
                 return self.index_regime_purpose[key[0]][key[1]]
-            elif type(key[0]) == str and type(key[1]) == int:
+            elif type(key[0]) is str and type(key[1]) is int:
                 return self.index_regime_purpose[key[1]][key[0]]
             else:
                 raise IndexError('Invalid index')
@@ -716,7 +715,7 @@ class MarkovSwitching(tsbase.TimeSeriesModel):
         return params
 
     @property
-    def param_names(self):
+    def param_names(self):  # TODO: delegate to base.naming?
         """
         (list of str) List of human readable parameter names (for parameters
         actually included in the model).

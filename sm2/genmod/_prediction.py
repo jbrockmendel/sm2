@@ -14,6 +14,7 @@ import pandas as pd
 
 from sm2.regression import _prediction
 
+
 # this is similar to ContrastResults after t_test, partially copied
 # and adjusted
 class PredictionResults(_prediction.PredictionResults):

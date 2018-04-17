@@ -9,7 +9,7 @@ from scipy import stats
 from sm2.tools.decorators import cache_readonly, resettable_cache
 
 # import with private names for upstream compat
-from sm2.tools.data import (get_const_index as _get_const_index,
+from sm2.tools.data import (get_const_index as _get_const_index,  # noqa:F841
                             isdummy as _isdummy,
                             get_dummy_index as _get_dummy_index,
                             iscount as _iscount,

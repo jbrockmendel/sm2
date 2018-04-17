@@ -3,18 +3,13 @@
 __all__ = ['lagmat', 'lagmat2ds', 'add_trend', 'duplication_matrix',
            'elimination_matrix', 'commutation_matrix',
            'vec', 'vech', 'unvec', 'unvech']
-import warnings
 
-from six import PY3, integer_types
+from six import PY3
 from six.moves import range
 
 import numpy as np
-import numpy.lib.recfunctions as nprf
 import pandas as pd
-from pandas.tseries.frequencies import to_offset
 
-from sm2.compat.numpy import recarray_select
-from sm2.tools.sm_exceptions import ValueWarning
 from sm2.tools.data import _is_using_pandas, _is_recarray
 
 from sm2.tsa import wold
@@ -28,6 +23,7 @@ _ma_invtransparams = wold.ARMAParams._ma_invtransparams
 def add_lag(*args, **kwargs):  # pragma: no cover
     raise NotImplementedError("add_lag not ported from upstream, as it "
                               "is not used outside of tests.")
+
 
 def detrend(*args, **kwargs):  # pragma: no cover
     raise NotImplementedError("detrend not ported from upstream, as it "

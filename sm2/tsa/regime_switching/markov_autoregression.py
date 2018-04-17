@@ -215,7 +215,7 @@ class MarkovAutoregression(markov_regression.MarkovRegression):
         return params
 
     @property
-    def param_names(self):
+    def param_names(self):  # TODO: delegate to base.naming?
         """
         (list of str) List of human readable parameter names (for parameters
         actually included in the model).

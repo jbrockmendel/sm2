@@ -21,7 +21,6 @@ from scipy import optimize, stats, signal
 
 from sm2.tools.decorators import (cached_value, cached_data,
                                   deprecated_alias, copy_doc)
-from sm2.tools.numdiff import approx_hess_cs, approx_fprime_cs
 
 import sm2.base.wrapper as wrap
 from sm2.base.naming import make_arma_names as _make_arma_names
@@ -1414,7 +1413,7 @@ class ARMAResults(wold.ARMARoots, tsa_model.TimeSeriesModelResults):
         return self.model.geterrors(self.params)
 
     @cached_value
-    def pvalues(self):
+    def pvalues(self):  # TODO: why does this use t dist while others dont?
         # TODO: same for conditional and unconditional?
         df_resid = self.df_resid
         return stats.t.sf(np.abs(self.tvalues), df_resid) * 2
@@ -1490,7 +1489,7 @@ class ARMAResults(wold.ARMARoots, tsa_model.TimeSeriesModelResults):
         fcasterr = self._forecast_error(steps)
         conf_int = self._forecast_conf_int(forecast, fcasterr, alpha)
 
-        return forecast, fcasterr, conf_int
+        return forecast, fcasterr, conf_int  # TODO: return a DataFrame?
 
     def summary(self, alpha=.05):
         """Summarize the Model

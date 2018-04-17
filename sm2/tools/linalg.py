@@ -55,7 +55,7 @@ def stationary_solve(r, b):  # pragma: no cover
 
 
 # upstream this is implemented in regression.mixed_linear_model._smw_solver
-def smw_solver(s, A, AtA, BI, di):
+def smw_solver(s, A, AtA, BI, di):  # TODO: Clarify I think A*B*A' is matmul
     """
     Solves the system (s*I + A*B*A') * x = rhs for an arbitrary rhs.
 
