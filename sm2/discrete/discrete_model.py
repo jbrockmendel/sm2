@@ -8,7 +8,6 @@ dependent variables.
 
 General References
 --------------------
-
 A.C. Cameron and P.K. Trivedi.  `Regression Analysis of Count Data`.
     Cambridge, 1998
 
@@ -484,7 +483,7 @@ class BinaryModel(FitBase):
         -------
         array
             Fitted values at exog.
-        """
+        """  # TODO: Can we share this docstring?
         if exog is None:
             exog = self.exog
         if not linear:

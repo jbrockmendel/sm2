@@ -75,14 +75,13 @@ def kalman_filter_double(double[:] y not None,
                                                  cnp.NPY_DOUBLE, FORTRAN)
         int lda = alpha.strides[1] / sizeof(float64_t)
         # initial variance
-        double[::1, :] P = np.asfortranarray(np.dot(np.linalg.pinv(np.identity(r**2)-
-                                                  np.kron(T_mat, T_mat)),
+        double[::1, :] P = np.asfortranarray(np.dot(np.linalg.pinv(np.identity(r**2) - np.kron(T_mat, T_mat)),
                                              np.dot(R_mat, R_mat.T).ravel('F')
                                              ).reshape(r, r, order='F'))
         int ldp = P.strides[1] / sizeof(float64_t)
         double F_mat = 0.
         double Finv = 0.
-        #ndarray[float64_t, ndim=2] v_mat = cnp.PyArray_Zeros(2, [1,1], cnp.NPY_FLOAT64, 0)
+        #ndarray[float64_t, ndim=2] v_mat = cnp.PyArray_Zeros(2, [1, 1], cnp.NPY_FLOAT64, 0)
         double v_mat = 0
         double[::1, :] K = cnp.PyArray_ZEROS(2, r2shape,
                                              cnp.NPY_DOUBLE, FORTRAN)
@@ -93,7 +92,7 @@ def kalman_filter_double(double[:] y not None,
         double[::1, :] tmp1 = cnp.PyArray_ZEROS(2, r2shape,
                                                 cnp.NPY_DOUBLE, FORTRAN)
         int ldt1 = tmp1.strides[1] / sizeof(float64_t)
-        double[::1, :] tmp2 = np.zeros_like(alpha, order='F') # K rows x v_mat cols
+        double[::1, :] tmp2 = np.zeros_like(alpha, order='F')  # K rows x v_mat cols
         int ldt2 = tmp2.strides[1] / sizeof(float64_t)
         double[::1, :] L = np.zeros_like(T_mat, order='F')
         int ldl = L.strides[1] / sizeof(float64_t)
@@ -105,9 +104,8 @@ def kalman_filter_double(double[:] y not None,
         double alph = 1.0
         double beta = 0.0
 
-    #NOTE: not sure about just checking F_mat[0, 0], didn't appear to work
+    # NOTE: not sure about just checking F_mat[0, 0], didn't appear to work
     while not F_mat == 1. and i < nobs:
-        #print i
         # Predict
         #v_mat = ddot(&r, &Z_mat[0, 0], &one, &alpha[0, 0], &one)
         #v_mat = y[i] - v_mat # copies?
@@ -119,7 +117,7 @@ def kalman_filter_double(double[:] y not None,
         #dgemm("N", "N", &one, &r, &r, &alph, &Z_mat[0, 0], &ldz, &P[0, 0], &ldp,
         #      &beta, &tmp1[0, 0], &ldt1)
         #F_mat = ddot(&r, &tmp1[0, 0], &one, &Z_mat[0, 0], &one)
-        #Z_mat is just a selector matrix
+        # Z_mat is just a selector matrix
         F_mat = P[0, 0]
         F[i, 0] = F_mat
         Finv = 1. / F_mat  # always scalar for univariate series
@@ -130,10 +128,8 @@ def kalman_filter_double(double[:] y not None,
         # tmp3 = np.dot(tmp1, Z_mat.T)
         # K = np.dot(tmp3, Finv) or tmp3*Finv
 
-        #print "Finv: ", np.asarray(<float64_t[:1, :1] *> &Finv[0,0])
         dgemm("N", "N", &r, &r, &r, &alph, &T_mat[0, 0], &ldt, &P[0, 0], &ldp,
               &beta, &tmp1[0, 0], &ldt1)
-        #print "tmp1: ", np.asarray(<float64_t[:r, :r] *> &tmp1[0,0])
         # tmp1 . Z_mat.T
 
         dgemv("N", &r, &r, &Finv, &tmp1[0, 0], &ldt1, &Z_mat[0, 0], &one, &beta,
@@ -234,7 +230,7 @@ def kalman_filter_complex(complex128_t[:] y,
         int lda = alpha.strides[1] / sizeof(complex128_t)
         # initial variance
         complex128_t[::1, :] P = np.asfortranarray(np.dot(np.linalg.pinv(np.identity(r**2) - np.kron(T_mat, T_mat)),
-                                           np.dot(R_mat, R_mat.T).ravel('F')).reshape(r, r, order='F'))
+                                                          np.dot(R_mat, R_mat.T).ravel('F')).reshape(r, r, order='F'))
         int ldp = P.strides[1] / sizeof(complex128_t)
         complex128_t F_mat = 0
         complex128_t Finv = 0
@@ -273,7 +269,7 @@ def kalman_filter_complex(complex128_t[:] y,
         # Z_mat is just a selctor matrix so the below is equivalent
         F_mat = P[0, 0]
         F[i, 0] = F_mat
-        Finv = 1. / F_mat # always scalar for univariate series
+        Finv = 1. / F_mat  # always scalar for univariate series
         # compute Kalman Gain, K
         # K = np.dot(np.dot(np.dot(T_mat,P), Z_mat.T),Finv)
         # tmp1 = np.dot(T_mat, P)
@@ -298,9 +294,8 @@ def kalman_filter_complex(complex128_t[:] y,
         #daxpy(r, alph, &tmp2[0,0], 1, &alpha[0,0], 1)
         for ii in range(r):
             alpha[ii, 0] = K[ii, 0] * v_mat + tmp2[ii, 0]
-        #print "alpha:", np.asarray(<complex128_t[:m, :1] *> &alpha[0,0])
 
-        #L = T_mat - np.dot(K,Z_mat)
+        #L = T_mat - np.dot(K, Z_mat)
         zgemm("N", "N", &r, &r, &one, &alph, &K[0, 0], &ldk, &Z_mat[0, 0], &ldz,
               &beta, &L[0, 0], &ldl)
 
@@ -326,7 +321,7 @@ def kalman_filter_complex(complex128_t[:] y,
 
     for i in xrange(i, nobs):
         #v_mat = zdotu(&r, &Z_mat[0, 0], &one, &alpha[0, 0], &one)
-        #Z_mat is just a selector
+        # Z_mat is just a selector
         v_mat = y[i] - alpha[0, 0]
         v[i, 0] = v_mat
         #alpha = np.dot(T_mat, alpha) + np.dot(K, v_mat)

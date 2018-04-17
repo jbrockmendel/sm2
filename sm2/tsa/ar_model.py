@@ -792,6 +792,7 @@ class ARResults(tsa_model.TimeSeriesModelResults):
     #"""
     predict.__doc__ = '\n'.join(preddoc[:5] + preddoc[7:20] + extra_doc +
                                 preddoc[20:])
+    # TODO: is the docstring inaccurate?  It looks like confint isnt returned
 
 
 class ARResultsWrapper(wrap.ResultsWrapper):
