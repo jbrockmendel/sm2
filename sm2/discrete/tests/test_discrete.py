@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """
 Tests for discrete models
 
@@ -37,18 +38,6 @@ try:
 except ImportError:
     has_cvxopt = False
 
-# TODO: I think the next two try/except imports are always OK in sm2
-try:
-    from scipy.optimize import basinhopping  # noqa:F401
-    has_basinhopping = True
-except ImportError:
-    has_basinhopping = False
-
-try:  # noqa:F401
-    from scipy.optimize._trustregion_dogleg import _minimize_dogleg  # noqa:F401,E501
-    has_dogleg = True
-except ImportError:
-    has_dogleg = False
 
 # ------------------------------------------------------------------
 # Results Data
@@ -892,11 +881,8 @@ class TestProbitNCG(CheckProbitSpector):
 
 
 @pytest.mark.not_vetted
-@pytest.mark.skipif(not has_basinhopping,
-                    reason='Skipped TestProbitBasinhopping '
-                           'since basinhopping solver is '
-                           'not available')
 class TestProbitBasinhopping(CheckProbitSpector):
+    # upstream skips this test conditionally if scipy doesnt have basinhopping
     fit_kwargs = {"method": "basinhopping", "disp": False,
                   "niter": 5,
                   "minimizer": {"method": "L-BFGS-B", "tol": 1e-8}}
@@ -909,10 +895,8 @@ class TestProbitMinimizeDefault(CheckProbitSpector):
 
 
 @pytest.mark.not_vetted
-@pytest.mark.skipif(not has_dogleg,
-                    reason="Skipped TestProbitMinimizeDogleg since "
-                           "dogleg method is not available")
 class TestProbitMinimizeDogleg(CheckProbitSpector):
+    # upstream skips this test conditionally if scipy doesnt have dogleg
     fit_kwargs = {"method": "minimize", "disp": False,
                   "niter": 5, "tol": 1e-8, "min_method": "dogleg"}
 
@@ -961,10 +945,7 @@ class TestProbitCG(CheckProbitSpector):
 
 
 class CheckLikelihoodModelL1(object):
-    """
-    For testing results generated with L1 regularization
-    """
-
+    """For testing results generated with L1 regularization"""
     tols = {
         "bic": {"atol": 1e-3},
         "aic": {"atol": 1e-3},

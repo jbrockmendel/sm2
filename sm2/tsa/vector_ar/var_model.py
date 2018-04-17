@@ -1326,22 +1326,16 @@ class VARResults(VARProcess, tsa_model.TimeSeriesModelResults):
         -------
         results : dict
             A dict holding the test's results. The dict's keys are:
-
             "statistic" : float
               The calculated test statistic.
-
             "crit_value" : float
               The critical value of the Chi^2-distribution.
-
             "pvalue" : float
               The p-value corresponding to the test statistic.
-
             "df" : float
               The degrees of freedom of the Chi^2-distribution.
-
             "conclusion" : str {"reject", "fail to reject"}
               Whether H0 can be rejected or not.
-
             "signif" : float
               Significance level
 

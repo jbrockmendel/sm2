@@ -2288,7 +2288,7 @@ class NegativeBinomial(CountModel):
     def _score_nbin(self, params, Q=0):
         """
         Score vector for NB2 model
-        """
+        """  # TODO: Is docstring accurate?  NB2?
         if self._transparams:  # lnalpha came in during fit
             alpha = np.exp(params[-1])
         else:
@@ -3523,7 +3523,6 @@ class BinaryResults(DiscreteResults):
 
         For now :math:`M_j` is always set to 1.
         """
-        # Pearson residuals
         endog = self.model.endog
         # M = # of individuals that share a covariate pattern
         # so M[i] = 2 for i = two share a covariate pattern
@@ -3567,7 +3566,6 @@ class LogitResults(BinaryResults):
         where :math:`p=cdf(X\\beta)`. This is the same as the `resid_response`
         for the Logit model.
         """
-        # Generalized residuals
         return self.model.endog - self.predict()
 
 

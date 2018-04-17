@@ -20,6 +20,8 @@ from sm2.genmod.generalized_linear_model import GLM
 
 @pytest.mark.not_vetted
 class ConstrainedCompareMixin(object):
+    model_cls = GLM
+    fit_kwargs = {}
     idx_c = [1]
     idx_uc = [0, 2, 3, 4]
 
@@ -73,9 +75,6 @@ class ConstrainedCompareMixin(object):
 
 @pytest.mark.not_vetted
 class TestGLMGaussianOffset(ConstrainedCompareMixin):
-    model_cls = GLM
-    fit_kwargs = {}
-
     @classmethod
     def init(cls):
         mod = cls.model_cls(cls.endog, cls.exogc,
@@ -87,9 +86,6 @@ class TestGLMGaussianOffset(ConstrainedCompareMixin):
 
 @pytest.mark.not_vetted
 class TestGLMGaussianConstrained(ConstrainedCompareMixin):
-    model_cls = GLM
-    fit_kwargs = {}
-
     @classmethod
     def init(cls):
         mod = cls.model_cls(cls.endog, cls.exog)
@@ -99,7 +95,6 @@ class TestGLMGaussianConstrained(ConstrainedCompareMixin):
 
 @pytest.mark.not_vetted
 class TestGLMGaussianOffsetHC(ConstrainedCompareMixin):
-    model_cls = GLM
     fit_kwargs = {"cov_type": "HC0"}
 
     @classmethod
@@ -113,7 +108,6 @@ class TestGLMGaussianOffsetHC(ConstrainedCompareMixin):
 
 @pytest.mark.not_vetted
 class TestGLMGaussianConstrainedHC(ConstrainedCompareMixin):
-    model_cls = GLM
     fit_kwargs = {"cov_type": "HC0"}
 
     @classmethod
@@ -149,9 +143,6 @@ class ConstrainedCompareWtdMixin(ConstrainedCompareMixin):
 
 @pytest.mark.not_vetted
 class TestGLMWtdGaussianOffset(ConstrainedCompareWtdMixin):
-    model_cls = GLM
-    fit_kwargs = {}
-
     @classmethod
     def init(cls):
         mod = cls.model_cls(cls.endog, cls.exogc,
@@ -164,9 +155,6 @@ class TestGLMWtdGaussianOffset(ConstrainedCompareWtdMixin):
 
 @pytest.mark.not_vetted
 class TestGLMWtdGaussianConstrained(ConstrainedCompareWtdMixin):
-    model_cls = GLM
-    fit_kwargs = {}
-
     @classmethod
     def init(cls):
         mod = cls.model_cls(cls.endog, cls.exog, var_weights=cls.aweights)
@@ -176,7 +164,6 @@ class TestGLMWtdGaussianConstrained(ConstrainedCompareWtdMixin):
 
 @pytest.mark.not_vetted
 class TestGLMWtdGaussianOffsetHC(ConstrainedCompareWtdMixin):
-    model_cls = GLM
     fit_kwargs = {"cov_type": "HC0"}
 
     @classmethod
@@ -191,7 +178,6 @@ class TestGLMWtdGaussianOffsetHC(ConstrainedCompareWtdMixin):
 
 @pytest.mark.not_vetted
 class TestGLMWtdGaussianConstrainedHC(ConstrainedCompareWtdMixin):
-    model_cls = GLM
     fit_kwargs = {"cov_type": "HC0"}
 
     @classmethod
