@@ -506,9 +506,9 @@ class TestOLSRobustCluster2Large(CheckOLSRobustCluster,
         self.bse_robust2 = se1
         self.cov_robust2 = cov1
 
-    # skipping see GH#1189
+    @pytest.mark.skip(reason="GH#1189")
     def test_f_value(self):
-        pass
+        super(TestOLSRobustCluster2Large, self).test_f_value()
 
 
 @pytest.mark.not_vetted

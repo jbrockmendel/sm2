@@ -40,22 +40,32 @@ exog_data = ships_data['yr_con op_75_79'.split()]
 exog = add_constant(exog_data, prepend=False)
 group = np.asarray(ships_data['ship'], int)
 exposure = np.asarray(ships_data['service'])
-
+nobs, k_exog = exog.shape
 
 # TODO get the test methods from regression/tests
 
 
 @pytest.mark.not_vetted
 class CheckCountRobustMixin(object):
+    mod_kwargs = {}
+    fit_kwargs = {}
+
     @classmethod
     def get_robust_clu(cls):
         res1 = cls.res1
         cov_clu = sw.cov_cluster(res1, group)
         cls.bse_rob = sw.se_cov(cov_clu)
+        cls.get_corr_fact()
 
-        nobs, k_vars = res1.model.exog.shape
-        k_params = len(res1.params)
-        corr_fact = (nobs - 1.) / float(nobs - k_params)
+    @classmethod
+    def get_corr_fact(cls, use_k=True):
+        if use_k:
+            # TODO: document why some classes do this while others dont
+            k_params = len(cls.res1.params)
+            corr_fact = (nobs - 1.) / float(nobs - k_params)
+        else:
+            corr_fact = (nobs - 1.) / nobs  # TODO: WTF?
+
         # for bse we need sqrt of correction factor
         cls.corr_fact = np.sqrt(corr_fact)
 
@@ -103,12 +113,11 @@ class CheckCountRobustMixin(object):
 class TestPoissonClu(CheckCountRobustMixin):
     res2 = results_st.results_poisson_clu
     model_cls = smd.Poisson
-    fit_kwargs = {"disp": False}
 
-    @classmethod
+    @classmethod  # TODO: de-duplicate method
     def setup_class(cls):
-        mod = cls.model_cls(endog, exog)
-        cls.res1 = mod.fit(**cls.fit_kwargs)
+        mod = cls.model_cls(endog, exog, **cls.mod_kwargs)
+        cls.res1 = mod.fit(disp=False, **cls.fit_kwargs)
         cls.get_robust_clu()
 
 
@@ -116,12 +125,12 @@ class TestPoissonClu(CheckCountRobustMixin):
 class TestPoissonCluExposure(CheckCountRobustMixin):
     res2 = results_st.results_poisson_exposure_clu  # nonrobust
     model_cls = smd.Poisson
-    fit_kwargs = {"disp": False}
+    mod_kwargs = {"exposure": exposure}
 
     @classmethod
     def setup_class(cls):
-        mod = cls.model_cls(endog, exog, exposure=exposure)
-        cls.res1 = mod.fit(**cls.fit_kwargs)
+        mod = cls.model_cls(endog, exog, **cls.mod_kwargs)
+        cls.res1 = mod.fit(disp=False, **cls.fit_kwargs)
         cls.get_robust_clu()
 
 
@@ -129,12 +138,12 @@ class TestPoissonCluExposure(CheckCountRobustMixin):
 class TestNegbinClu(CheckCountRobustMixin):
     res2 = results_st.results_negbin_clu
     model_cls = smd.NegativeBinomial
-    fit_kwargs = {"disp": False, "gtol": 1e-7}
+    fit_kwargs = {"gtol": 1e-7}
 
     @classmethod
     def setup_class(cls):
-        mod = cls.model_cls(endog, exog)
-        cls.res1 = mod.fit(**cls.fit_kwargs)
+        mod = cls.model_cls(endog, exog, **cls.mod_kwargs)
+        cls.res1 = mod.fit(disp=False, **cls.fit_kwargs)
         cls.get_robust_clu()
 
 
@@ -142,11 +151,12 @@ class TestNegbinClu(CheckCountRobustMixin):
 class TestGLMPoissonClu(CheckCountRobustMixin):
     res2 = results_st.results_poisson_clu
     model_cls = GLM
+    mod_kwargs = {"family": families.Poisson()}
 
     @classmethod
     def setup_class(cls):
-        mod = cls.model_cls(endog, exog, family=families.Poisson())
-        cls.res1 = mod.fit()
+        mod = cls.model_cls(endog, exog, **cls.mod_kwargs)
+        cls.res1 = mod.fit(disp=False, **cls.fit_kwargs)
         cls.get_robust_clu()
 
 
@@ -158,8 +168,8 @@ class TestPoissonCluGeneric(CheckCountRobustMixin):
 
     @classmethod
     def setup_class(cls):
-        mod = cls.model_cls(endog, exog)
-        cls.res1 = mod.fit(disp=False)
+        mod = cls.model_cls(endog, exog, **cls.mod_kwargs)
+        cls.res1 = mod.fit(disp=False, **cls.fit_kwargs)
 
         get_robustcov_results(cls.res1._results, cls.cov_type,
                               groups=group,
@@ -169,11 +179,7 @@ class TestPoissonCluGeneric(CheckCountRobustMixin):
                               use_self=True)
         cls.bse_rob = cls.res1.bse
 
-        nobs, k_vars = cls.res1.model.exog.shape
-        k_params = len(cls.res1.params)
-        corr_fact = (nobs - 1.) / float(nobs - k_params)
-        # for bse we need sqrt of correction factor
-        cls.corr_fact = np.sqrt(corr_fact)
+        cls.get_corr_fact()
 
 
 @pytest.mark.not_vetted
@@ -183,15 +189,12 @@ class TestPoissonHC1Generic(CheckCountRobustMixin):
 
     @classmethod
     def setup_class(cls):
-        mod = cls.model_cls(endog, exog)
-        cls.res1 = mod.fit(disp=False)
+        mod = cls.model_cls(endog, exog, **cls.mod_kwargs)
+        cls.res1 = mod.fit(disp=False, **cls.fit_kwargs)
 
         get_robustcov_results(cls.res1._results, 'HC1', use_self=True)
         cls.bse_rob = cls.res1.bse
-        nobs, k_vars = mod.exog.shape
-        corr_fact = (nobs) / float(nobs - 1.)
-        # for bse we need sqrt of correction factor
-        cls.corr_fact = np.sqrt(1. / corr_fact)
+        cls.get_corr_fact(use_k=False)
 
 
 # TODO: refactor xxxFit to full testing results
@@ -200,25 +203,19 @@ class TestPoissonCluFit(CheckCountRobustMixin):
     res2 = results_st.results_poisson_clu
     model_cls = smd.Poisson
     cov_type = 'cluster'
+    cov_kwds = dict(groups=group,
+                    use_correction=True,
+                    # scaling of cov_params_default to match Stata
+                    # TODO should the default be changed?
+                    scaling_factor=1. / ((nobs - 1.) / float(nobs - k_exog)),
+                    df_correction=True)  # TODO has no effect
+    fit_kwargs = {"cov_type": cov_type, "cov_kwds": cov_kwds,
+                  "use_t": False}  # True,
 
     @classmethod
     def setup_class(cls):
-        mod = cls.model_cls(endog, exog)
-
-        # scaling of cov_params_default to match Stata
-        # TODO should the default be changed?
-        nobs, k_params = mod.exog.shape
-        sc_fact = (nobs - 1.) / float(nobs - k_params)
-
-        cov_kwds = dict(groups=group,
-                        use_correction=True,
-                        scaling_factor=1. / sc_fact,
-                        df_correction=True)  # TODO has no effect
-
-        cls.res1 = mod.fit(disp=False, cov_type=cls.cov_type,
-                           cov_kwds=cov_kwds,
-                           use_t=False,  # True,
-                           )
+        mod = cls.model_cls(endog, exog, **cls.mod_kwargs)
+        cls.res1 = mod.fit(disp=False, **cls.fit_kwargs)
 
         # The model results, t_test, ... should also work without
         # normalized_cov_params, see GH#2209
@@ -248,47 +245,45 @@ class TestPoissonHC1Fit(CheckCountRobustMixin):
     res2 = results_st.results_poisson_hc1
     model_cls = smd.Poisson
     cov_type = 'HC1'
+    fit_kwargs = {"cov_type": cov_type}
 
     @classmethod
     def setup_class(cls):
-        mod = cls.model_cls(endog, exog)
-        cls.res1 = mod.fit(disp=False, cov_type=cls.cov_type)
+        mod = cls.model_cls(endog, exog, **cls.mod_kwargs)
+        cls.res1 = mod.fit(disp=False, **cls.fit_kwargs)
 
         cls.bse_rob = cls.res1.bse
-        nobs, k_vars = mod.exog.shape
-        corr_fact = (nobs) / float(nobs - 1.)
-        # for bse we need sqrt of correction factor
-        cls.corr_fact = np.sqrt(1. / corr_fact)
+        cls.get_corr_fact(use_k=False)
 
 
 @pytest.mark.not_vetted
 class TestPoissonHC1FitExposure(CheckCountRobustMixin):
     res2 = results_st.results_poisson_exposure_hc1
     model_cls = smd.Poisson
+    mod_kwargs = {"exposure": exposure}
     cov_type = 'HC1'
+    fit_kwargs = {"cov_type": cov_type}
 
     @classmethod
     def setup_class(cls):
-        mod = cls.model_cls(endog, exog, exposure=exposure)
-        cls.res1 = mod.fit(disp=False, cov_type=cls.cov_type)
+        mod = cls.model_cls(endog, exog, **cls.mod_kwargs)
+        cls.res1 = mod.fit(disp=False, **cls.fit_kwargs)
 
         cls.bse_rob = cls.res1.bse
-        nobs, k_vars = mod.exog.shape
-        corr_fact = (nobs) / float(nobs - 1.)
-        # for bse we need sqrt of correction factor
-        cls.corr_fact = np.sqrt(1. / corr_fact)
+        cls.get_corr_fact(use_k=False)
 
 
 @pytest.mark.not_vetted
 class TestPoissonCluExposureGeneric(CheckCountRobustMixin):
     res2 = results_st.results_poisson_exposure_clu  # nonrobust
     model_cls = smd.Poisson
+    mod_kwargs = {"exposure": exposure}
     cov_type = 'cluster'
 
     @classmethod
     def setup_class(cls):
-        mod = cls.model_cls(endog, exog, exposure=exposure)
-        cls.res1 = mod.fit(disp=False)
+        mod = cls.model_cls(endog, exog, **cls.mod_kwargs)
+        cls.res1 = mod.fit(disp=False, **cls.fit_kwargs)
 
         get_robustcov_results(cls.res1._results, cls.cov_type,
                               groups=group,
@@ -297,12 +292,7 @@ class TestPoissonCluExposureGeneric(CheckCountRobustMixin):
                               use_t=False,  # True,
                               use_self=True)
         cls.bse_rob = cls.res1.bse
-
-        nobs, k_vars = cls.res1.model.exog.shape
-        k_params = len(cls.res1.params)
-        corr_fact = (nobs - 1.) / float(nobs - k_params)
-        # for bse we need sqrt of correction factor
-        cls.corr_fact = np.sqrt(corr_fact)
+        cls.get_corr_fact()
 
 
 @pytest.mark.not_vetted
@@ -310,11 +300,12 @@ class TestGLMPoissonCluGeneric(CheckCountRobustMixin):
     res2 = results_st.results_poisson_clu
     cov_type = 'cluster'
     model_cls = GLM
+    mod_kwargs = {"family": families.Poisson()}
 
     @classmethod
     def setup_class(cls):
-        mod = cls.model_cls(endog, exog, family=families.Poisson())
-        cls.res1 = mod.fit()
+        mod = cls.model_cls(endog, exog, **cls.mod_kwargs)
+        cls.res1 = mod.fit(disp=False, **cls.fit_kwargs)
 
         get_robustcov_results(cls.res1._results, cls.cov_type,
                               groups=group,
@@ -323,12 +314,7 @@ class TestGLMPoissonCluGeneric(CheckCountRobustMixin):
                               use_t=False,  # True,
                               use_self=True)
         cls.bse_rob = cls.res1.bse
-
-        nobs, k_vars = cls.res1.model.exog.shape
-        k_params = len(cls.res1.params)
-        corr_fact = (nobs - 1.) / float(nobs - k_params)
-        # for bse we need sqrt of correction factor
-        cls.corr_fact = np.sqrt(corr_fact)
+        cls.get_corr_fact()
 
 
 # TODO: refactor xxxFit to full testing results
@@ -336,18 +322,16 @@ class TestGLMPoissonCluGeneric(CheckCountRobustMixin):
 class TestGLMPoissonHC1Generic(CheckCountRobustMixin):
     res2 = results_st.results_poisson_hc1
     model_cls = GLM
+    mod_kwargs = {"family": families.Poisson()}
 
     @classmethod
     def setup_class(cls):
-        mod = cls.model_cls(endog, exog, family=families.Poisson())
-        cls.res1 = mod.fit()
+        mod = cls.model_cls(endog, exog, **cls.mod_kwargs)
+        cls.res1 = mod.fit(disp=False, **cls.fit_kwargs)
 
         get_robustcov_results(cls.res1._results, 'HC1', use_self=True)
         cls.bse_rob = cls.res1.bse
-        nobs, k_vars = mod.exog.shape
-        corr_fact = (nobs) / float(nobs - 1.)
-        # for bse we need sqrt of correction factor
-        cls.corr_fact = np.sqrt(1. / corr_fact)
+        cls.get_corr_fact(use_k=False)
 
 
 @pytest.mark.not_vetted
@@ -355,17 +339,18 @@ class TestGLMPoissonCluFit(CheckCountRobustMixin):
     res2 = results_st.results_poisson_clu
     cov_type = 'cluster'
     model_cls = GLM
+    mod_kwargs = {"family": families.Poisson()}
     cov_kwds = dict(groups=group,
                     use_correction=True,
                     df_correction=True)  # TODO has no effect
+    fit_kwargs = {"cov_type": cov_type,
+                  "cov_kwds": cov_kwds,
+                  "use_t": False}  # True,
 
     @classmethod
     def setup_class(cls):
-        mod = cls.model_cls(endog, exog, family=families.Poisson())
-        cls.res1 = mod.fit(cov_type=cls.cov_type,
-                           cov_kwds=cls.cov_kwds,
-                           use_t=False,  # True,
-                           )
+        mod = cls.model_cls(endog, exog, **cls.mod_kwargs)
+        cls.res1 = mod.fit(disp=False, **cls.fit_kwargs)
 
         # The model results, t_test, ... should also work without
         # normalized_cov_params, see GH#2209
@@ -373,12 +358,7 @@ class TestGLMPoissonCluFit(CheckCountRobustMixin):
         cls.res1._results.normalized_cov_params = None
 
         cls.bse_rob = cls.res1.bse
-
-        nobs, k_vars = mod.exog.shape
-        k_params = len(cls.res1.params)
-        corr_fact = (nobs - 1.) / float(nobs - k_params)
-        # for bse we need sqrt of correction factor
-        cls.corr_fact = np.sqrt(corr_fact)
+        cls.get_corr_fact()
 
 
 @pytest.mark.not_vetted
@@ -386,28 +366,28 @@ class TestGLMPoissonHC1Fit(CheckCountRobustMixin):
     res2 = results_st.results_poisson_hc1
     cov_type = 'HC1'
     model_cls = GLM
+    mod_kwargs = {"family": families.Poisson()}
+    fit_kwargs = {"cov_type": cov_type}
 
     @classmethod
     def setup_class(cls):
-        mod = cls.model_cls(endog, exog, family=families.Poisson())
-        cls.res1 = mod.fit(cov_type=cls.cov_type)
+        mod = cls.model_cls(endog, exog, **cls.mod_kwargs)
+        cls.res1 = mod.fit(disp=False, **cls.fit_kwargs)
 
         cls.bse_rob = cls.res1.bse
-        nobs, k_vars = mod.exog.shape
-        corr_fact = (nobs) / float(nobs - 1.)
-        # for bse we need sqrt of correction factor
-        cls.corr_fact = np.sqrt(1. / corr_fact)
+        cls.get_corr_fact(use_k=False)
 
 
 @pytest.mark.not_vetted
 class TestNegbinCluExposure(CheckCountRobustMixin):
     res2 = results_st.results_negbin_exposure_clu  # nonrobust
     model_cls = smd.NegativeBinomial
+    mod_kwargs = {"exposure": exposure}
 
     @classmethod
     def setup_class(cls):
-        mod = cls.model_cls(endog, exog, exposure=exposure)
-        cls.res1 = mod.fit(disp=False)
+        mod = cls.model_cls(endog, exog, **cls.mod_kwargs)
+        cls.res1 = mod.fit(disp=False, **cls.fit_kwargs)
         cls.get_robust_clu()
         # Upstream has a bunch of commented-out code after this point;
         # never got a helpful explanation for it.  Might be worth
@@ -422,7 +402,7 @@ class TestNegbinCluGeneric(CheckCountRobustMixin):
 
     @classmethod
     def setup_class(cls):
-        mod = cls.model_cls(endog, exog)
+        mod = cls.model_cls(endog, exog, **cls.mod_kwargs)
         cls.res1 = mod.fit(disp=False, gtol=1e-7)
 
         get_robustcov_results(cls.res1._results, cls.cov_type,
@@ -432,12 +412,7 @@ class TestNegbinCluGeneric(CheckCountRobustMixin):
                               use_t=False,  # True,
                               use_self=True)
         cls.bse_rob = cls.res1.bse
-
-        nobs, k_vars = mod.exog.shape
-        k_params = len(cls.res1.params)
-        corr_fact = (nobs - 1.) / float(nobs - k_params)
-        # for bse we need sqrt of correction factor
-        cls.corr_fact = np.sqrt(corr_fact)
+        cls.get_corr_fact()
 
 
 @pytest.mark.not_vetted
@@ -448,47 +423,36 @@ class TestNegbinCluFit(CheckCountRobustMixin):
     cov_kwds = dict(groups=group,
                     use_correction=True,
                     df_correction=True)  # TODO has no effect
+    fit_kwargs = {"cov_type": cov_type, "cov_kwds": cov_kwds,
+                  "use_t": False,  # True,
+                  "gtol": 1e-7}
 
     @classmethod
     def setup_class(cls):
-        mod = cls.model_cls(endog, exog)
-        cls.res1 = mod.fit(disp=False, cov_type=cls.cov_type,
-                           cov_kwds=cls.cov_kwds,
-                           use_t=False,  # True,
-                           gtol=1e-7)
+        mod = cls.model_cls(endog, exog, **cls.mod_kwargs)
+        cls.res1 = mod.fit(disp=False, **cls.fit_kwargs)
         cls.bse_rob = cls.res1.bse
-
-        nobs, k_vars = mod.exog.shape
-        k_params = len(cls.res1.params)
-        corr_fact = (nobs - 1.) / float(nobs - k_params)
-        # for bse we need sqrt of correction factor
-        cls.corr_fact = np.sqrt(corr_fact)
+        cls.get_corr_fact()
 
 
 @pytest.mark.not_vetted
 class TestNegbinCluExposureFit(CheckCountRobustMixin):
     res2 = results_st.results_negbin_exposure_clu  # nonrobust
     model_cls = smd.NegativeBinomial
+    mod_kwargs = {"exposure": exposure}
     cov_type = 'cluster'
     cov_kwds = dict(groups=group,
                     use_correction=True,
                     df_correction=True)  # TODO has no effect
+    fit_kwargs = {"cov_type": cov_type, "cov_kwds": cov_kwds,
+                  "use_t": False}  # True,
 
     @classmethod
     def setup_class(cls):
-        mod = cls.model_cls(endog, exog, exposure=exposure)
-        cls.res1 = mod.fit(disp=False,
-                           cov_type=cls.cov_type,
-                           cov_kwds=cls.cov_kwds,
-                           use_t=False,  # True,
-                           )
+        mod1 = cls.model_cls(endog, exog, **cls.mod_kwargs)
+        cls.res1 = mod1.fit(disp=False, **cls.fit_kwargs)
         cls.bse_rob = cls.res1.bse
-
-        nobs, k_vars = mod.exog.shape
-        k_params = len(cls.res1.params)
-        corr_fact = (nobs - 1.) / float(nobs - k_params)
-        # for bse we need sqrt of correction factor
-        cls.corr_fact = np.sqrt(corr_fact)
+        cls.get_corr_fact()
 
 
 @pytest.mark.not_vetted
@@ -515,13 +479,14 @@ class CheckDiscreteGLM(object):
 class TestGLMLogit(CheckDiscreteGLM):
     cov_type = 'cluster'
     model_cls = GLM
+    mod_kwargs = {"family": families.Binomial()}
     cov_kwds = {'groups': group}
 
     @classmethod
     def setup_class(cls):
         endog_bin = (endog > endog.mean()).astype(int)
 
-        mod1 = cls.model_cls(endog_bin, exog, family=families.Binomial())
+        mod1 = cls.model_cls(endog_bin, exog, **cls.mod_kwargs)
         cls.res1 = mod1.fit(cov_type=cls.cov_type, cov_kwds=cls.cov_kwds)
 
         mod1 = smd.Logit(endog_bin, exog)
@@ -552,75 +517,85 @@ class TestGLMProbit(CheckDiscreteGLM):
 class TestGLMGaussNonRobust(CheckDiscreteGLM):
     cov_type = 'nonrobust'
     model_cls = GLM
+    mod_kwargs = {"family": families.Gaussian()}
     cov_kwds = {}
+    fit_kwargs = {"cov_kwds": cov_kwds}
 
     @classmethod
     def setup_class(cls):
-        mod1 = cls.model_cls(endog, exog, family=families.Gaussian())
-        cls.res1 = mod1.fit(cov_kwds=cls.cov_kwds)
+        mod1 = cls.model_cls(endog, exog, **cls.mod_kwargs)
+        cls.res1 = mod1.fit(disp=False, **cls.fit_kwargs)
 
         mod2 = OLS(endog, exog)
-        cls.res2 = mod2.fit(cov_kwds=cls.cov_kwds)
+        cls.res2 = mod2.fit(disp=False, **cls.fit_kwargs)
 
 
 @pytest.mark.not_vetted
 class TestGLMGaussClu(CheckDiscreteGLM):
     cov_type = 'cluster'
     model_cls = GLM
+    mod_kwargs = {"family": families.Gaussian()}
     cov_kwds = {'groups': group}
+    fit_kwargs = {"cov_type": cov_type, "cov_kwds": cov_kwds}
 
     @classmethod
-    def setup_class(cls):
-        mod1 = cls.model_cls(endog, exog, family=families.Gaussian())
-        cls.res1 = mod1.fit(cov_type=cls.cov_type, cov_kwds=cls.cov_kwds)
+    def setup_class(cls):  # TODO: de-dup with other setup_classes
+        mod1 = cls.model_cls(endog, exog, **cls.mod_kwargs)
+        cls.res1 = mod1.fit(disp=False, **cls.fit_kwargs)
 
         mod2 = OLS(endog, exog)
-        cls.res2 = mod2.fit(cov_type=cls.cov_type, cov_kwds=cls.cov_kwds)
+        cls.res2 = mod2.fit(disp=False, **cls.fit_kwargs)
 
 
 @pytest.mark.not_vetted
 class TestGLMGaussHC(CheckDiscreteGLM):
     cov_type = 'HC0'
     model_cls = GLM
+    mod_kwargs = {"family": families.Gaussian()}
     cov_kwds = {}
+    fit_kwargs = {"cov_type": cov_type, "cov_kwds": cov_kwds}
 
     @classmethod
     def setup_class(cls):
-        mod1 = cls.model_cls(endog, exog, family=families.Gaussian())
-        cls.res1 = mod1.fit(cov_type=cls.cov_type, cov_kwds=cls.cov_kwds)
+        mod1 = cls.model_cls(endog, exog, **cls.mod_kwargs)
+        cls.res1 = mod1.fit(disp=False, **cls.fit_kwargs)
 
         mod2 = OLS(endog, exog)
-        cls.res2 = mod2.fit(cov_type=cls.cov_type, cov_kwds=cls.cov_kwds)
+        cls.res2 = mod2.fit(disp=False, **cls.fit_kwargs)
 
 
 @pytest.mark.not_vetted
 class TestGLMGaussHAC(CheckDiscreteGLM):
     cov_type = 'HAC'
     model_cls = GLM
+    mod_kwargs = {"family": families.Gaussian()}
     cov_kwds = {'maxlags': 2}
+    fit_kwargs = {"cov_type": cov_type, "cov_kwds": cov_kwds}
 
     @classmethod
     def setup_class(cls):
-        mod1 = cls.model_cls(endog, exog, family=families.Gaussian())
-        cls.res1 = mod1.fit(cov_type=cls.cov_type, cov_kwds=cls.cov_kwds)
+        mod1 = cls.model_cls(endog, exog, **cls.mod_kwargs)
+        cls.res1 = mod1.fit(disp=False, **cls.fit_kwargs)
 
         mod2 = OLS(endog, exog)
-        cls.res2 = mod2.fit(cov_type=cls.cov_type, cov_kwds=cls.cov_kwds)
+        cls.res2 = mod2.fit(disp=False, **cls.fit_kwargs)
 
 
 @pytest.mark.not_vetted
 class TestGLMGaussHACUniform(CheckDiscreteGLM):
     cov_type = 'HAC'
     model_cls = GLM
+    mod_kwargs = {"family": families.Gaussian()}
     cov_kwds = {'kernel': sw.weights_uniform, 'maxlags': 2}
+    fit_kwargs = {"cov_type": cov_type, "cov_kwds": cov_kwds}
 
     @classmethod
     def setup_class(cls):
-        mod1 = cls.model_cls(endog, exog, family=families.Gaussian())
-        cls.res1 = mod1.fit(cov_type=cls.cov_type, cov_kwds=cls.cov_kwds)
+        mod1 = cls.model_cls(endog, exog, **cls.mod_kwargs)
+        cls.res1 = mod1.fit(disp=False, **cls.fit_kwargs)
 
         mod2 = OLS(endog, exog)
-        cls.res2 = mod2.fit(cov_type=cls.cov_type, cov_kwds=cls.cov_kwds)
+        cls.res2 = mod2.fit(disp=False, **cls.fit_kwargs)
 
         # for debugging
         cls.res3 = mod2.fit(cov_type=cls.cov_type, cov_kwds={'maxlags': 2})
@@ -665,22 +640,23 @@ class TestGLMGaussHACUniform(CheckDiscreteGLM):
 class TestGLMGaussHACPanel(CheckDiscreteGLM):
     cov_type = 'hac-panel'
     model_cls = GLM
+    mod_kwargs = {"family": families.Gaussian()}
     cov_kwds = {'time': np.tile(np.arange(7), 5)[:-1],
                 # time index is just made up to have a test case
                 'maxlags': 2,
                 'kernel': sw.weights_uniform,
                 'use_correction': 'hac',
                 'df_correction': False}
+    fit_kwargs = {"cov_type": cov_type, "cov_kwds": cov_kwds}
 
     @classmethod
     def setup_class(cls):
-        mod1 = cls.model_cls(endog.copy(), exog.copy(),
-                             family=families.Gaussian())
-        cls.res1 = mod1.fit(cov_type=cls.cov_type, cov_kwds=cls.cov_kwds)
+        mod1 = cls.model_cls(endog, exog, **cls.mod_kwargs)
+        cls.res1 = mod1.fit(disp=False, **cls.fit_kwargs)
         cls.res1b = mod1.fit(cov_type='nw-panel', cov_kwds=cls.cov_kwds)
 
         mod2 = OLS(endog, exog)
-        cls.res2 = mod2.fit(cov_type=cls.cov_type, cov_kwds=cls.cov_kwds)
+        cls.res2 = mod2.fit(disp=False, **cls.fit_kwargs)
 
     def test_kwd(self):
         # test corrected keyword name
@@ -699,36 +675,38 @@ class TestGLMGaussHACPanelGroups(CheckDiscreteGLM):
                 'kernel': sw.weights_uniform,
                 'use_correction': 'hac',
                 'df_correction': False}
+    fit_kwargs = {"cov_type": cov_type, "cov_kwds": cov_kwds}
 
     @classmethod
-    def setup_class(cls):
-        mod1 = cls.model_cls(endog.copy(), exog.copy(),
-                             family=families.Gaussian())
-        cls.res1 = mod1.fit(cov_type=cls.cov_type, cov_kwds=cls.cov_kwds)
+    def setup_class(cls):  # TODO: Why does upstream copy endog/exog?
+        mod1 = cls.model_cls(endog, exog, **cls.mod_kwargs)
+        cls.res1 = mod1.fit(disp=False, **cls.fit_kwargs)
 
         mod2 = OLS(endog, exog)
-        cls.res2 = mod2.fit(cov_type=cls.cov_type, cov_kwds=cls.cov_kwds)
+        cls.res2 = mod2.fit(disp=False, **cls.fit_kwargs)
 
 
 @pytest.mark.not_vetted
 class TestGLMGaussHACGroupsum(CheckDiscreteGLM):
     cov_type = 'hac-groupsum'
     model_cls = GLM
+    mod_kwargs = {"family": families.Gaussian()}
     cov_kwds = {'time': pd.Series(np.tile(np.arange(7), 5)[:-1]),
                 # time index is just made up to have a test case
                 # check for GH#3606
                 'maxlags': 2,
                 'use_correction': 'hac',
                 'df_correction': False}
+    fit_kwargs = {"cov_type": cov_type, "cov_kwds": cov_kwds}
 
     @classmethod
     def setup_class(cls):
-        mod1 = cls.model_cls(endog, exog, family=families.Gaussian())
-        cls.res1 = mod1.fit(cov_type=cls.cov_type, cov_kwds=cls.cov_kwds)
-        cls.res1b = mod1.fit(cov_type=cls.cov_type, cov_kwds=cls.cov_kwds)
+        mod1 = cls.model_cls(endog, exog, **cls.mod_kwargs)
+        cls.res1 = mod1.fit(disp=False, **cls.fit_kwargs)
+        cls.res1b = mod1.fit(disp=False, **cls.fit_kwargs)
 
         mod2 = OLS(endog, exog)
-        cls.res2 = mod2.fit(cov_type=cls.cov_type, cov_kwds=cls.cov_kwds)
+        cls.res2 = mod2.fit(disp=False, **cls.fit_kwargs)
 
     def test_kwd(self):
         # test corrected keyword name

@@ -1253,43 +1253,15 @@ class GLM(base.LikelihoodModel):
 
 class GLMResults(base.LikelihoodModelResults):
     """
-    Class to contain GLM results.
-
-    GLMResults inherits from sm2.LikelihoodModelResults
-
-    Parameters
-    ----------
-    See sm2.LikelihoodModelReesults
-
-    Returns
-    -------
-    **Attributes**
-
-    aic : float
-        Akaike Information Criterion
-        -2 * `llf` + 2*(`df_model` + 1)
-    bic : float
-        Bayes Information Criterion
-        `deviance` - `df_resid` * log(`nobs`)
-    deviance : float
-        See sm2.families.family for the distribution-specific deviance
-        functions.
-    df_model : float
-        See GLM.df_model
-    df_resid : float
-        See GLM.df_resid
     fit_history : dict
         Contains information about the iterations. Its keys are `iterations`,
         `deviance` and `params`.
     fittedvalues : array
         Linear predicted values for the fitted model.
-        dot(exog, params)
     llf : float
         Value of the loglikelihood function evalued at params.
         See sm2.families.family for distribution-specific
         loglikelihoods.
-    model : class instance
-        Pointer to GLM model instance that called fit.
     mu : array
         See GLM docstring.
     nobs : float
@@ -1510,6 +1482,10 @@ class GLMResults(base.LikelihoodModelResults):
 
     @cache_readonly
     def deviance(self):
+        """
+        See sm2.families.family for the distribution-specific deviance
+        functions.
+        """
         return self.family.deviance(self.model.endog, self.mu,
                                     self._var_weights,
                                     self._freq_weights)
@@ -1544,10 +1520,12 @@ class GLMResults(base.LikelihoodModelResults):
 
     @cache_readonly
     def aic(self):
+        """Akaike Informaton Criterion"""
         return -2 * self.llf + 2 * (self.df_model + 1)
 
     @cache_readonly
     def bic(self):
+        """Bayes Information Criterion"""
         return self.deviance - self.df_resid * np.log(self.model.wnobs)
 
     @copy_doc(pred.get_prediction_glm.__doc__)
