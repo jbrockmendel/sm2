@@ -1254,7 +1254,6 @@ class TestARMA00(object):
 
 @pytest.mark.not_vetted
 def test_arima_dates_startatend():
-    # bug
     # TODO: GH reference?
     np.random.seed(18)
     x = pd.Series(np.random.random(36),

@@ -20,7 +20,7 @@ x100 = xo[-100:] / 1000.
 x1000 = xo / 1000.
 
 # -----------------------------------------------------------------
-# FIXME: This section is duplicated in test_stattools
+# TODO: This section is duplicated in test_stattools
 cur_dir = os.path.dirname(os.path.abspath(__file__))
 path = os.path.join(cur_dir, "results", "results_corrgram.csv")
 results_corrgram = pd.read_csv(path, delimiter=',')

@@ -85,6 +85,7 @@ class TestLagmat(object):
         cls.macro_df.index = index
         cls.series = cls.macro_df.cpi
 
+    @pytest.mark.skip(reason="add_lag not ported from upstream")
     def test_add_lag_insert(self):
         data = self.macro_data
         nddata = data.view((float, 4))
@@ -94,6 +95,7 @@ class TestLagmat(object):
         assert_equal(lag_data.view((float, len(lag_data.dtype.names))),
                      results)
 
+    @pytest.mark.skip(reason="add_lag not ported from upstream")
     def test_add_lag_noinsert(self):
         data = self.macro_data
         nddata = data.view((float, 4))
@@ -103,6 +105,7 @@ class TestLagmat(object):
         assert_equal(lag_data.view((float, len(lag_data.dtype.names))),
                      results)
 
+    @pytest.mark.skip(reason="add_lag not ported from upstream")
     def test_add_lag_noinsert_atend(self):
         data = self.macro_data
         nddata = data.view((float, 4))
@@ -116,6 +119,7 @@ class TestLagmat(object):
         assert_equal(lag_data2.view((float, len(lag_data2.dtype.names))),
                      results)
 
+    @pytest.mark.skip(reason="add_lag not ported from upstream")
     def test_add_lag_ndarray(self):
         data = self.macro_data
         nddata = data.view((float, 4))
@@ -124,6 +128,7 @@ class TestLagmat(object):
         lag_data = tsatools.add_lag(nddata, 2, 3)
         assert_equal(lag_data, results)
 
+    @pytest.mark.skip(reason="add_lag not ported from upstream")
     def test_add_lag_noinsert_ndarray(self):
         data = self.macro_data
         nddata = data.view((float, 4))
@@ -132,6 +137,7 @@ class TestLagmat(object):
         lag_data = tsatools.add_lag(nddata, 2, 3, insert=False)
         assert_equal(lag_data, results)
 
+    @pytest.mark.skip(reason="add_lag not ported from upstream")
     def test_add_lag_noinsertatend_ndarray(self):
         data = self.macro_data
         nddata = data.view((float, 4))
@@ -155,6 +161,7 @@ class TestLagmat(object):
         assert_equal(expected_lags, lagmat)
         assert_equal(expected_leads, leads)
 
+    @pytest.mark.skip(reason="add_lag not ported from upstream")
     def test_add_lag1d(self):
         data = self.random_data
         lagmat = tsatools.lagmat(data, 3, trim='Both')
@@ -169,6 +176,7 @@ class TestLagmat(object):
         lag_data = tsatools.add_lag(data, lags=3, insert=True)
         assert_equal(results, lag_data)
 
+    @pytest.mark.skip(reason="add_lag not ported from upstream")
     def test_add_lag1d_drop(self):
         data = self.random_data
         lagmat = tsatools.lagmat(data, 3, trim='Both')
@@ -179,6 +187,7 @@ class TestLagmat(object):
         lag_data = tsatools.add_lag(data, lags=3, drop=True, insert=False)
         assert_equal(lagmat, lag_data)
 
+    @pytest.mark.skip(reason="add_lag not ported from upstream")
     def test_add_lag1d_struct(self):
         data = np.zeros(100, dtype=[('variable', float)])
         nddata = self.random_data
@@ -194,6 +203,7 @@ class TestLagmat(object):
         lag_data = tsatools.add_lag(data, lags=3, insert=True)
         assert_equal(lagmat, lag_data.view((float, 4)))
 
+    @pytest.mark.skip(reason="add_lag not ported from upstream")
     def test_add_lag_1d_drop_struct(self):
         data = np.zeros(100, dtype=[('variable', float)])
         nddata = self.random_data
@@ -203,6 +213,7 @@ class TestLagmat(object):
         lag_data = tsatools.add_lag(data, lags=3, drop=True)
         assert_equal(lagmat, lag_data.view((float, 3)))
 
+    @pytest.mark.skip(reason="add_lag not ported from upstream")
     def test_add_lag_drop_insert(self):
         data = self.macro_data
         nddata = data.view((float, 4))
@@ -212,6 +223,7 @@ class TestLagmat(object):
         assert_equal(lag_data.view((float, len(lag_data.dtype.names))),
                      results)
 
+    @pytest.mark.skip(reason="add_lag not ported from upstream")
     def test_add_lag_drop_noinsert(self):
         data = self.macro_data
         nddata = data.view((float, 4))
@@ -349,6 +361,7 @@ class TestLagmat(object):
         tm.assert_frame_equal(lags, expected.iloc[:, 1:])
 
 
+@pytest.mark.skip(reason="freq_to_period not ported from upstream (yet)")
 @pytest.mark.not_vetted
 def test_freq_to_period():
     freqs = ['A', 'AS-MAR', 'Q', 'QS', 'QS-APR', 'W', 'W-MON', 'B', 'D', 'H']
@@ -358,6 +371,7 @@ def test_freq_to_period():
         assert_equal(tsatools.freq_to_period(to_offset(i)), j)
 
 
+@pytest.mark.skip(reason="detrend not ported from upstream")
 @pytest.mark.not_vetted
 class TestDetrend(object):
     @classmethod

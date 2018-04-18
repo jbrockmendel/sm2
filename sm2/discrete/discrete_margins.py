@@ -1,5 +1,5 @@
+# -*- coding: utf-8 -*-
 # Splitting out marginal effects to see if they can be generalized
-
 from six.moves import range
 import numpy as np
 import pandas as pd
@@ -9,14 +9,13 @@ from scipy import stats
 from sm2.tools.decorators import cache_readonly, resettable_cache
 
 # import with private names for upstream compat
-from sm2.tools.data import (get_const_index as _get_const_index,
+from sm2.tools.data import (get_const_index as _get_const_index,  # noqa:F841
                             isdummy as _isdummy,
                             get_dummy_index as _get_dummy_index,
                             iscount as _iscount,
                             get_count_index as _get_count_index)
 
-# margeff helper functions
-# NOTE: todo marginal effects for group 2
+# TODO: marginal effects for group 2
 # group 2 oprobit, ologit, gologit, mlogit, biprobit
 
 

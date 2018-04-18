@@ -6,9 +6,13 @@ to Wold's Theorem.
 """
 from __future__ import division
 
+import warnings
+
 import numpy as np
 import scipy.linalg
+import scipy.signal
 from pandas._libs.properties import cache_readonly
+from pandas.util._decorators import deprecate_kwarg
 
 from sm2.tsa import autocov
 
@@ -24,6 +28,18 @@ def _shape_params(params):
         # i.e. 1 lag
         params = params[None, :, :]
     return params
+
+
+def _check_is_poly(params):
+    """
+    Validate that the given params is in the form of a lag polynomial,
+    i.e. is a 1-dimensional np.ndarray with first entry 1.
+    """
+    if np.ndim(params) != 1:  # pragma: no cover
+        raise ValueError(params.shape, params)
+    elif params[0] != 1:  # pragma: no cover
+        raise ValueError('Params must be in the form of a Lag Polynomial',
+                         params)
 
 
 def _check_param_dims(params):
@@ -199,13 +215,331 @@ class ARMARoots(object):
             mainv = pnew.coef / pnew.coef[0]
 
         if retnew:
-            return self.__class__(self.ar, mainv, nobs=self.nobs)
+            return self.__class__(self.ar, mainv)
             # TODO: dont do this multiple-return thing
         else:
             return (mainv, invertible)
 
 
-class ARMAParams(object):
+class ARMAParams(ARMARoots):
+    """
+    Represents the deterministic component of an ARMA process with known
+    parameters.
+    """
+    # TODO: (optional)
+    # quantecon.arma.set_params docstring is nice
+    # def spectral_density(self) # See quantecon.arma
+    # def autocorrelation(self)
+
+    # TODO: Make the inputs fooparams or foocoefs; don't pile on another
+    # naming scheme.
+    # TODO: Check unit root behavior
+    # @deprecate_kwarg("nobs", None)  # TODO: can't use on classmethod
+    def __init__(self, ar=None, ma=None, intercept=0):
+        if ar is None:
+            ar = np.array([1.])
+        if ma is None:
+            ma = np.array([1.])
+        self.ar = np.asarray(ar)
+        self.ma = np.asarray(ma)
+        _check_is_poly(self.ar)
+        _check_is_poly(self.ma)
+
+        self.arcoefs = -self.ar[1:]
+        self.macoefs = self.ma[1:]
+
+        self.arpoly = np.polynomial.Polynomial(self.ar)
+        self.mapoly = np.polynomial.Polynomial(self.ma)
+
+        (k_ar, k_ma, neqs, intercept) = _unpack_lags_and_neqs(self.ar,
+                                                              self.ma,
+                                                              intercept)
+        self.intercept = intercept
+        if neqs != 1:
+            raise NotImplementedError("Lag Polynomials for the vector case "
+                                      "not implemented.")
+
+    def __eq__(self, other):
+        # Easier to check polynomials than coefficients
+        # TODO: I'd rather `nobs` not be an attribute at this level.
+        return (self.arpoly == other.arpoly and
+                self.mapoly == other.mapoly and
+                getattr(self, 'nobs', None) == getattr(other, 'nobs', None))
+
+    def __ne__(self, other):
+        return not self.__eq__(other)
+
+    def __mul__(self, other):
+        if issubclass(other.__class__, ARMAParams):
+            ar = (self.arpoly * other.arpoly).coef
+            ma = (self.mapoly * other.mapoly).coef
+        elif not isinstance(other, (list, tuple)) or len(other) != 2:
+            raise TypeError('Cannot multiply type {cls} with type {other}'
+                            .format(cls=type(self).__name__,
+                                    other=type(other).__name__))
+        else:
+            (aroth, maoth) = other
+            arpolyoth = np.polynomial.Polynomial(aroth)
+            mapolyoth = np.polynomial.Polynomial(maoth)
+            ar = (self.arpoly * arpolyoth).coef
+            ma = (self.mapoly * mapolyoth).coef
+
+        product = self.__class__(ar, ma)
+        return product
+
+    def __repr__(self):  # TODO: Make this match __str__
+        msg = '{cls}({ar}, {ma}, nobs={nobs})'
+        return msg.format(cls=self.__class__.__name__,
+                          ar=self.ar.tolist(), ma=self.ma.tolist())
+
+    def __str__(self):
+        return '{cls}\nAR: {ar}\nMA: {ma}'.format(cls=self.__class__.__name__,
+                                                  ar=self.ar.tolist(),
+                                                  ma=self.ma.tolist())
+
+    # @deprecate_kwarg("nobs", None)  # TODO: can't use on classmethod
+    @classmethod
+    def from_coeffs(cls, arcoefs=None, macoefs=None):
+        """Create instance from coefficients of the lag-polynomials
+
+        Parameters
+        ----------
+        arcoefs : array-like
+            Coefficient for autoregressive lag polynomial, not including zero
+            lag. The sign is inverted to conform to the usual time series
+            representation of an ARMA process in statistics. See the class
+            docstring for more information.
+        macoefs : array-like
+            Coefficient for moving-average lag polynomial, including zero lag
+
+        Examples
+        --------
+        >>> arcoefs = [.75, -.25]
+        >>> macoefs = [.65, .35]
+        >>> arma_process = sm2.tsa.ArmaProcess.from_coeffs(arcoefs, macoefs)
+        >>> arma_process.isstationary
+        True
+        >>> arma_process.isinvertible
+        True
+        """
+        if macoefs is None:
+            macoefs = []
+        if arcoefs is None:
+            arcoefs = []
+        arcoefs = np.asarray(arcoefs)
+        macoefs = np.asarray(macoefs)
+        return cls(np.r_[1, -arcoefs],
+                   np.r_[1, macoefs])
+
+    # @deprecate_kwarg("nobs", None)  # TODO: can't use on classmethod
+    @classmethod
+    def from_estimation(cls, model_results):
+        """
+        Convenience function to create an ArmaProcess from the results
+        of an ARMA estimation
+
+        Parameters
+        ----------
+        model_results : ARMAResults instance
+        """
+        arcoefs = model_results.arparams
+        macoefs = model_results.maparams
+        return cls(np.r_[1, -arcoefs],
+                   np.r_[1, macoefs])
+
+    # TODO: Fix upstream the docstring gets patched incorrectly
+    # TODO: Should arma2ma, arma2ar return a ARMARepresentation object
+    # instead of just an array?
+    @deprecate_kwarg(old_arg_name='nobs', new_arg_name='lags')
+    def arma2ma(self, lags=None):  # TODO: Default lags?
+        """
+        Get the impulse response function (MA representation) for
+        ARMA process
+
+        Parameters
+        ----------
+        ma : array_like, 1d
+            moving average lag polynomial
+        ar : array_like, 1d
+            auto regressive lag polynomial
+        lags : int
+            number of observations to calculate
+
+        Returns
+        -------
+        ir : array, 1d
+            impulse response function with nobs elements
+
+        Notes
+        -----
+        This is the same as finding the MA representation of an ARMA(p,q).
+        By reversing the role of ar and ma in the function arguments, the
+        returned result is the AR representation of an ARMA(p,q), i.e
+
+        ma_representation = arma_impulse_response(ar, ma, lags=100)
+        ar_representation = arma_impulse_response(ma, ar, lags=100)
+
+        Fully tested against matlab
+
+        Examples
+        --------
+        AR(1)
+
+        >>> arma_impulse_response([1.0, -0.8], [1.], lags=10)
+        array([ 1.        ,  0.8       ,  0.64      ,  0.512     ,  0.4096    ,
+                0.32768   ,  0.262144  ,  0.2097152 ,  0.16777216,  0.13421773])
+
+        this is the same as
+
+        >>> 0.8**np.arange(10)
+        array([ 1.        ,  0.8       ,  0.64      ,  0.512     ,  0.4096    ,
+                0.32768   ,  0.262144  ,  0.2097152 ,  0.16777216,  0.13421773])
+
+        MA(2)
+
+        >>> arma_impulse_response([1.0], [1., 0.5, 0.2], lags=10)
+        array([ 1. ,  0.5,  0.2,  0. ,  0. ,  0. ,  0. ,  0. ,  0. ,  0. ])
+
+        ARMA(1, 2)
+
+        >>> arma_impulse_response([1.0, -0.8], [1., 0.5, 0.2], lags=10)
+        array([ 1.        ,  1.3       ,  1.24      ,  0.992     ,  0.7936    ,
+                0.63488   ,  0.507904  ,  0.4063232 ,  0.32505856,  0.26004685])
+        """  # TODO: update docstring
+        ar = self.ar
+        ma = self.ma
+        _check_is_poly(np.array(ar))
+        _check_is_poly(np.array(ma))
+        impulse = np.zeros(lags)
+        impulse[0] = 1.0
+        return scipy.signal.lfilter(ma, ar, impulse)
+
+    def impulse_response(self, leads):  # TODO: Why is this leads not lags?
+        """Alias for arma2ma"""  # TODO: default leads?
+        return self.arma2ma(leads)
+
+    @deprecate_kwarg(old_arg_name='nobs', new_arg_name='lags')
+    def arma2ar(self, lags):
+        """Get the AR representation of an ARMA process
+
+        Parameters
+        ----------
+        ar : array_like, 1d
+            auto regressive lag polynomial
+        ma : array_like, 1d
+            moving average lag polynomial
+        lags : int
+            number of observations to calculate
+
+        Returns
+        -------
+        ar : array, 1d
+            coefficients of AR lag polynomial with nobs elements
+
+        Notes
+        -----
+        This is an alias for
+        `ar_representation = arma_impulse_response(ma, ar, lags=100)`
+        which has been fully tested against MATLAB.
+        """  # TODO: update docstring
+        # Switches the order of the arguments
+        other = ARMAParams(self.ma, self.ar)
+        return other.arma2ma(lags)
+
+    # TODO: clarify worN arg?
+    # Note: upstream only has nobs kwarg
+    def periodogram(self, nobs=100, whole=0):
+        """
+        This might be more accurately referred to as a Spectral Density.
+        Spectral Density refers to the population function, while Periodiogram
+        refers to the sample estimate of the Spectral Density [citation needed]
+
+        Periodogram for ARMA process given by lag-polynomials ar and ma
+
+        Let $\phi$ and $\theta$ be lag polynomials so that we can write
+        our ARMA process as:
+
+        \phi(L)x_t = \theta(L)\epsilon_t
+
+        The spectral density function $f(\omega)$ of this process is then:
+
+        f(\omega) = \sigma^2_{\epsilon} \frac{|\theta(e^{-2\pi i \omega})|^2}\
+            {|\phi(e^{-2\pi i \omega})|^2}
+
+        # TODO: Reference for the claim above
+
+        Parameters
+        ----------
+        ar : array_like
+            autoregressive lag-polynomial with leading 1 and lhs sign
+        ma : array_like
+            moving average lag-polynomial with leading 1
+        worN : {None, int}, optional
+            option for scipy.signal.freqz   (read "w or N")
+            If None, then compute at 512 frequencies around the unit circle.
+            If a single integer, the compute at that many frequencies.
+            Otherwise, compute the response at frequencies given in worN
+        whole : {0,1}, optional
+            options for scipy.signal.freqz
+            Normally, frequencies are computed from 0 to pi (upper-half of
+            unit-circle.  If whole is non-zero compute frequencies from 0
+            to 2*pi.
+
+        Returns
+        -------
+        w : array
+            frequencies
+        sd : array
+            periodogram, spectral density
+
+        Notes
+        -----
+        Normalization ?
+
+        This uses signal.freqz, which does not use fft. There is a fft
+        version somewhere.
+        """  # TODO: fix/update docstring
+        worN = nobs  # convention from upstream
+        ar = self.ar
+        ma = self.ma
+        _check_is_poly(np.array(ar))
+        _check_is_poly(np.array(ma))
+        (w, h) = scipy.signal.freqz(ma, ar, worN=worN, whole=whole)
+        sd = np.abs(h)**2 / np.sqrt(2 * np.pi)
+        # TODO: is this normalization standard in the literature?
+        # Fourier Transforms are like armpits...
+        if np.isnan(h).any():
+            # This happens with unit root or seasonal unit root
+            warnings.warn('nan in frequency response h, may be a unit root')
+        return (w, sd)
+
+
+@deprecate_kwarg(old_arg_name='nobs', new_arg_name='lags')
+def arma2ar(ar, ma, lags):
+    # TODO: docstring?
+    arma = ARMAParams(ar, ma)
+    return arma.arma2ar(lags)
+
+
+def arma2ma(ar, ma, lags):
+    # TODO: docstring?
+    arma = ARMAParams(ar, ma)
+    return arma.arma2ma(lags)
+
+
+@deprecate_kwarg(old_arg_name='nobs', new_arg_name='leads')
+def arma_impulse_response(ar, ma, leads=100):
+    """alias for arma2ma"""
+    return arma2ma(ar, ma, lags=leads)
+
+
+def arma_periodogram(ar, ma, worN=None, whole=0):
+# TODO: docstring?
+    arma = ARMAParams(ar, ma)
+    return arma.periodogram(nobs=worN, whole=whole)
+
+
+class ARMATransparams(object):
 
     @staticmethod
     def _unpack_params(params, order, k_trend, k_exog, reverse=False):
@@ -366,7 +700,7 @@ class ARMAParams(object):
         return newparams
 
 
-# TODO: Can this be extended to VARMA?
+# TODO: Can this be extended to VARMA?  VARIMA?
 class VARParams(object):
     """Class representing a known VAR(p) process, *without* any information
     about the distribution of error terms.
@@ -376,6 +710,8 @@ class VARParams(object):
     arcoefs : ndarray (p x k x k)
     intercept : ndarray (length k), optional
     """
+    # def isindependent --> property from varma_process
+    # def isstructured --> property from varma_process
 
     @cache_readonly
     def k_ar(self):

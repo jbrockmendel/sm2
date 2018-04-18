@@ -83,7 +83,7 @@ class _MinimalWLS(object):
         See Also
         --------
         sm2.regression.linear_model.WLS
-        """
+        """  # TODO: docstring inaccurate
         if method == 'pinv':
             pinv_wexog = np.linalg.pinv(self.wexog)
             params = pinv_wexog.dot(self.wendog)

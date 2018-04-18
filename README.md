@@ -53,6 +53,8 @@ of flake8 formatting issues have been cleaned up.
 - `VARResults.cov_params` will correctly return a `DataFrame` instead
 of raising `ValueError`.
 
+- The `ArmaProcess` class does not have a `nobs` attribute.
+
 - `tsa.stattools.acf` will always return `(acf, confint, qstat, pvalue)` here
 instead of a different subset of these depending on the inputs.
 

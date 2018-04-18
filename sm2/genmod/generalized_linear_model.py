@@ -1310,36 +1310,11 @@ class GLMResults(base.LikelihoodModelResults):
         See GLM docstring.
     pvalues : array
         The two-tailed p-values for the parameters.
-    resid_anscombe : array
-        Anscombe residuals.  See sm2.families.family for distribution-
-        specific Anscombe residuals. Currently, the unscaled residuals are
-        provided. In a future version, the scaled residuals will be provided.
-    resid_anscombe_scaled : array
-        Scaled Anscombe residuals.  See sm2.families.family for
-        distribution-specific Anscombe residuals.
-    resid_anscombe_unscaled : array
-        Unscaled Anscombe residuals.  See sm2.families.family for
-        distribution-specific Anscombe residuals.
-    resid_deviance : array
-        Deviance residuals.  See sm2.families.family for distribution-
-        specific deviance residuals.
-    resid_pearson : array
-        Pearson residuals.  The Pearson residuals are defined as
-        (`endog` - `mu`)/sqrt(VAR(`mu`)) where VAR is the distribution
-        specific variance function.  See sm2.families.family and
-        sm2.families.varfuncs for more information.
-    resid_response : array
-        Respnose residuals.  The response residuals are defined as
-        `endog` - `fittedvalues`
-    resid_working : array
-        Working residuals.  The working residuals are defined as
-        `resid_response`/link'(`mu`).  See sm2.family.links for the
-        derivatives of the link functions.  They are defined analytically.
     scale : float
         The estimate of the scale / dispersion for the model fit.
         See GLM.fit and GLM.estimate_scale for more information.
     stand_errors : array
-        The standard errors of the fitted GLM.   #TODO still named bse
+        The standard errors of the fitted GLM.   # TODO still named bse
 
     See Also
     --------
@@ -1435,13 +1410,24 @@ class GLMResults(base.LikelihoodModelResults):
         return self._n_trials * (self.model.endog - self.mu)
 
     @cache_readonly
-    def resid_pearson(self):
+    def resid_pearson(self):  # FIXME: docstring inaccurate?  GH#4495
+        """
+        The Pearson residuals are defined as
+        (`endog` - `mu`)/sqrt(VAR(`mu`)) where VAR is the distribution
+        specific variance function.
+
+        See sm2.families.family and sm2.families.varfuncs for more information.
+        """
         return (np.sqrt(self._n_trials) * (self.model.endog - self.mu) *
                 np.sqrt(self._var_weights) /
                 np.sqrt(self.family.variance(self.mu)))
 
     @cache_readonly
     def resid_working(self):
+        """
+        See sm2.family.links for the
+        derivatives of the link functions.  They are defined analytically.
+        """
         # TODO: Isn't self.resid_response is already adjusted by _n_trials?
         val = (self.resid_response *
                self.family.link.deriv(self.mu) *
@@ -1450,6 +1436,13 @@ class GLMResults(base.LikelihoodModelResults):
 
     @cache_readonly
     def resid_anscombe(self):
+        """
+        Anscombe residuals.
+        See sm2.families.family for distribution- specific Anscombe residuals.
+
+        Currently, the unscaled residuals are provided. In a future version,
+        the scaled residuals will be returned.
+        """
         warnings.warn('Anscombe residuals currently unscaled. In a future '
                       'release, they will be scaled.')
         return self.family.resid_anscombe(self.model.endog, self.fittedvalues,
@@ -1458,18 +1451,29 @@ class GLMResults(base.LikelihoodModelResults):
 
     @cache_readonly
     def resid_anscombe_scaled(self):
+        """
+        Scaled Anscombe residuals.
+        See sm2.families.family for distribution-specific Anscombe residuals.
+        """
         return self.family.resid_anscombe(self.model.endog, self.fittedvalues,
                                           var_weights=self._var_weights,
                                           scale=self.scale)
 
     @cache_readonly
     def resid_anscombe_unscaled(self):
+        """
+        Unscaled Anscombe residuals.
+        See sm2.families.family for distribution-specific Anscombe residuals.
+        """
         return self.family.resid_anscombe(self.model.endog, self.fittedvalues,
                                           var_weights=self._var_weights,
                                           scale=1.)
 
     @cache_readonly
     def resid_deviance(self):
+        """
+        See sm2.families.family for distribution-specific deviance residuals.
+        """
         dev = self.family.resid_dev(self.model.endog, self.fittedvalues,
                                     var_weights=self._var_weights,
                                     scale=1.)

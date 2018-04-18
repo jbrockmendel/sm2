@@ -96,24 +96,25 @@ def _manual_arma_generate_sample(ar, ma, eta):
 
 
 @pytest.mark.not_vetted
-def test_arma_generate_sample():
+@pytest.mark.parametrize('dist', [np.random.randn])
+@pytest.mark.parametrize('ar', arlist)
+@pytest.mark.parametrize('ma', malist)
+def test_arma_generate_sample(dist, ar, ma):
     # Test that this generates a true ARMA process
     # (amounts to just a test that scipy.signal.lfilter does what we want)
     T = 100
     dists = [np.random.randn]
-    for dist in dists:
-        np.random.seed(1234)
-        eta = dist(T)
-        for ar in arlist:
-            for ma in malist:
-                # rep1: from module function
-                np.random.seed(1234)
-                rep1 = arma_generate_sample(ar, ma, T, distrvs=dist)
-                # rep2: "manually" create the ARMA process
-                ar_params = -1 * np.array(ar[1:])
-                ma_params = np.array(ma[1:])
-                rep2 = _manual_arma_generate_sample(ar_params, ma_params, eta)
-                assert_array_almost_equal(rep1, rep2, 13)
+    np.random.seed(1234)
+    eta = dist(T)
+
+    # rep1: from module function
+    np.random.seed(1234)
+    rep1 = arma_generate_sample(ar, ma, T, distrvs=dist)
+    # rep2: "manually" create the ARMA process
+    ar_params = -1 * np.array(ar[1:])
+    ma_params = np.array(ma[1:])
+    rep2 = _manual_arma_generate_sample(ar_params, ma_params, eta)
+    assert_array_almost_equal(rep1, rep2, 13)
 
 
 @pytest.mark.not_vetted
@@ -217,7 +218,7 @@ class TestArmaProcess(object):
 
         assert_equal(process.arcoefs, process_direct.arcoefs)
         assert_equal(process.macoefs, process_direct.macoefs)
-        assert_equal(process.nobs, process_direct.nobs)
+        #assert_equal(process.nobs, process_direct.nobs)
         assert_equal(process.maroots, process_direct.maroots)
         assert_equal(process.arroots, process_direct.arroots)
         assert_equal(process.isinvertible, process_direct.isinvertible)
@@ -232,11 +233,11 @@ class TestArmaProcess(object):
         y = process.generate_sample(t, burnin=100, distrvs=rs.standard_normal)
         res = ARMA(y, (1, 1)).fit(disp=False)
         process_model = ArmaProcess.from_estimation(res)
-        process_coef = ArmaProcess.from_coeffs(res.arparams, res.maparams, t)
+        process_coef = ArmaProcess.from_coeffs(res.arparams, res.maparams)#, t)
 
         assert_equal(process_model.arcoefs, process_coef.arcoefs)
         assert_equal(process_model.macoefs, process_coef.macoefs)
-        assert_equal(process_model.nobs, process_coef.nobs)
+        #assert_equal(process_model.nobs, process_coef.nobs)
         assert_equal(process_model.isinvertible, process_coef.isinvertible)
         assert_equal(process_model.isstationary, process_coef.isstationary)
 
@@ -269,7 +270,7 @@ class TestArmaProcess(object):
         assert out.find('MA: [1.0, 0.2]') != -1
 
         out = process1.__repr__()
-        assert out.find('nobs=100') != -1
+        #assert out.find('nobs=100') != -1
         assert out.find('at ' + str(hex(id(process1)))) != -1
 
     def test_acf(self):
@@ -279,7 +280,7 @@ class TestArmaProcess(object):
         assert_array_almost_equal(acf, expected)
 
         acf = process1.acf()
-        assert acf.shape[0] == process1.nobs
+        #assert acf.shape[0] == process1.nobs
 
     def test_pacf(self):
         process1 = ArmaProcess.from_coeffs([.9])
@@ -288,7 +289,7 @@ class TestArmaProcess(object):
         assert_array_almost_equal(pacf, expected)
 
         pacf = process1.pacf()
-        assert pacf.shape[0] == process1.nobs
+        #assert pacf.shape[0] == process1.nobs
 
     def test_isstationary(self):
         process1 = ArmaProcess.from_coeffs([1.1])

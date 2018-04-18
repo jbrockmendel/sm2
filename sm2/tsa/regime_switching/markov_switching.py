@@ -18,7 +18,6 @@ from scipy.misc import logsumexp
 from sm2.base.data import PandasData
 import sm2.tsa.base.tsa_model as tsbase
 from sm2.tools.tools import Bunch
-from sm2.tools.numdiff import approx_fprime_cs, approx_hess_cs
 from sm2.tools.decorators import cache_readonly
 from sm2.tools.eval_measures import aic, bic, hqic
 from sm2.tools.tools import pinv_extended
@@ -50,17 +49,17 @@ def _logistic(x):
     Note that this is not a vectorized function
     """
     x = np.array(x)
-    # np.exp(x) / (1 + np.exp(x))
     if x.ndim == 0:
+        # np.exp(x) / (1 + np.exp(x))
         y = np.reshape(x, (1, 1, 1))
-    # np.exp(x[i]) / (1 + np.sum(np.exp(x[:])))
     elif x.ndim == 1:
+        # np.exp(x[i]) / (1 + np.sum(np.exp(x[:])))
         y = np.reshape(x, (len(x), 1, 1))
-    # np.exp(x[i,t]) / (1 + np.sum(np.exp(x[:,t])))
     elif x.ndim == 2:
+        # np.exp(x[i,t]) / (1 + np.sum(np.exp(x[:,t])))
         y = np.reshape(x, (x.shape[0], 1, x.shape[1]))
-    # np.exp(x[i,j,t]) / (1 + np.sum(np.exp(x[:,j,t])))
     elif x.ndim == 3:
+        # np.exp(x[i,j,t]) / (1 + np.sum(np.exp(x[:,j,t])))
         y = x
     else:
         raise NotImplementedError
@@ -77,20 +76,20 @@ def _partials_logistic(x):
     """
     tmp = _logistic(x)
 
-    # k
     if tmp.ndim == 0:
+        # k
         return tmp - tmp**2
-    # k x k
     elif tmp.ndim == 1:
+        # k x k
         partials = np.diag(tmp - tmp**2)
-    # k x k x t
     elif tmp.ndim == 2:
+        # k x k x t
         partials = [np.diag(tmp[:, t] - tmp[:, t]**2)
                     for t in range(tmp.shape[1])]
         shape = tmp.shape[1], tmp.shape[0], tmp.shape[0]
         partials = np.concatenate(partials).reshape(shape).transpose((1, 2, 0))
-    # k x k x j x t
     else:
+        # k x k x j x t
         partials = [[np.diag(tmp[:, j, t] - tmp[:, j, t]**2)
                      for t in range(tmp.shape[2])]
                     for j in range(tmp.shape[1])]
@@ -469,7 +468,6 @@ class MarkovSwitchingParams(object):
 
     Notes
     -----
-
     The purpose is to allow selecting parameter indexes / slices based on
     parameter type, regime number, or both.
 
@@ -562,9 +560,9 @@ class MarkovSwitchingParams(object):
         elif _type is tuple:
             if not len(key) == 2:
                 raise IndexError('Invalid index')
-            if type(key[1]) == str and type(key[0]) == int:
+            if type(key[1]) is str and type(key[0]) is int:
                 return self.index_regime_purpose[key[0]][key[1]]
-            elif type(key[0]) == str and type(key[1]) == int:
+            elif type(key[0]) is str and type(key[1]) is int:
                 return self.index_regime_purpose[key[1]][key[0]]
             else:
                 raise IndexError('Invalid index')
@@ -717,7 +715,7 @@ class MarkovSwitching(tsbase.TimeSeriesModel):
         return params
 
     @property
-    def param_names(self):
+    def param_names(self):  # TODO: delegate to base.naming?
         """
         (list of str) List of human readable parameter names (for parameters
         actually included in the model).
@@ -935,6 +933,8 @@ class MarkovSwitching(tsbase.TimeSeriesModel):
         In-sample prediction, conditional on the current, and possibly past,
         regimes
 
+        Must be implemented by subclasses.
+
         Parameters
         ----------
         params : array_like
@@ -946,16 +946,16 @@ class MarkovSwitching(tsbase.TimeSeriesModel):
             Array of predictions conditional on current, and possibly past,
             regimes
         """
-        raise NotImplementedError
+        raise NotImplementedError  # pragma: no cover
 
     def _conditional_likelihoods(self, params):
         """
         Compute likelihoods conditional on the current period's regime (and
         the last self.order periods' regimes if self.order > 0).
 
-        Must be implemented in subclasses.
+        Must be implemented by subclasses.
         """
-        raise NotImplementedError
+        raise NotImplementedError  # pragma: no cover
 
     def _filter(self, params, regime_transition=None):
         # Get the regime transition matrix if not provided
@@ -1214,8 +1214,7 @@ class MarkovSwitching(tsbase.TimeSeriesModel):
         -------
         MarkovSwitchingResults
         """
-
-        if start_params is None:
+        if start_params is None:  # TODO: Make _get_start_params?
             start_params = self.start_params
             transformed = True
         else:
@@ -1249,11 +1248,11 @@ class MarkovSwitching(tsbase.TimeSeriesModel):
                                                   skip_hessian=True, **kwargs)
 
         # TODO: get rid of multiple-return
-        # Just return the fitted parameters if requested
         if return_params:
+            # Just return the fitted parameters if requested
             result = self.transform_params(mlefit.params)
-        # Otherwise construct the results class if desired
         else:
+            # Otherwise construct the results class if desired
             result = self.smooth(mlefit.params, transformed=False,
                                  cov_type=cov_type, cov_kwds=cov_kwds)
 
@@ -1308,8 +1307,7 @@ class MarkovSwitching(tsbase.TimeSeriesModel):
         -------
         MarkovSwitchingResults
         """
-
-        if start_params is None:
+        if start_params is None:  # TODO: make _get_start_params
             start_params = self.start_params
             transformed = True
         else:
@@ -1331,12 +1329,12 @@ class MarkovSwitching(tsbase.TimeSeriesModel):
                 delta = 2 * (llf[-1] - llf[-2]) / np.abs((llf[-1] + llf[-2]))
             i += 1
 
-        # TODO: Get rid of multiple-return
-        # Just return the fitted parameters if requested
+        # TODO: Get rid of multiple-return; also de-dup with above
         if return_params:
+            # Just return the fitted parameters if requested
             result = params[-1]
-        # Otherwise construct the results class if desired
         else:
+            # Otherwise construct the results class if desired
             result = self.filter(params[-1], transformed=True,
                                  cov_type=cov_type, cov_kwds=cov_kwds)
 
@@ -1516,12 +1514,12 @@ class MarkovSwitching(tsbase.TimeSeriesModel):
         constrained = constrained.astype(
             np.promote_types(np.float64, constrained.dtype))
 
-        # Nothing to do for transition probabilities if TVTP
         if self.tvtp:
+            # Nothing to do for transition probabilities if TVTP
             constrained[self.parameters['regime_transition']] = (
                 unconstrained[self.parameters['regime_transition']])
-        # Otherwise do logistic transformation
         else:
+            # Otherwise do logistic transformation
             # Transition probabilities
             for i in range(self.k_regimes):
                 tmp1 = unconstrained[self.parameters[i, 'regime_transition']]
@@ -1530,7 +1528,6 @@ class MarkovSwitching(tsbase.TimeSeriesModel):
                     tmp1 - logsumexp(tmp2))
 
         # Do not do anything for the rest of the parameters
-
         return constrained
 
     # TODO: Does this need to be a method?

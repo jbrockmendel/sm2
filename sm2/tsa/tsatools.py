@@ -3,26 +3,31 @@
 __all__ = ['lagmat', 'lagmat2ds', 'add_trend', 'duplication_matrix',
            'elimination_matrix', 'commutation_matrix',
            'vec', 'vech', 'unvec', 'unvech']
-import warnings
 
-from six import PY3, integer_types
+from six import PY3
 from six.moves import range
 
 import numpy as np
-import numpy.lib.recfunctions as nprf
 import pandas as pd
-from pandas.tseries.frequencies import to_offset
 
-from sm2.compat.numpy import recarray_select
-from sm2.tools.sm_exceptions import ValueWarning
 from sm2.tools.data import _is_using_pandas, _is_recarray
 
 from sm2.tsa import wold
 # aliases for backwards/upstream compat
-_ar_transparams = wold.ARMAParams._ar_transparams
-_ar_invtransparams = wold.ARMAParams._ar_invtransparams
-_ma_transparams = wold.ARMAParams._ma_transparams
-_ma_invtransparams = wold.ARMAParams._ma_invtransparams
+_ar_transparams = wold.ARMATransparams._ar_transparams
+_ar_invtransparams = wold.ARMATransparams._ar_invtransparams
+_ma_transparams = wold.ARMATransparams._ma_transparams
+_ma_invtransparams = wold.ARMATransparams._ma_invtransparams
+
+
+def add_lag(*args, **kwargs):  # pragma: no cover
+    raise NotImplementedError("add_lag not ported from upstream, as it "
+                              "is not used outside of tests.")
+
+
+def detrend(*args, **kwargs):  # pragma: no cover
+    raise NotImplementedError("detrend not ported from upstream, as it "
+                              " is not used outside of tests.")
 
 
 def add_trend(x, trend="c", prepend=False, has_constant='skip'):
@@ -148,191 +153,6 @@ def add_trend(x, trend="c", prepend=False, has_constant='skip'):
         x = x.astype(np.dtype(descr))
 
     return x
-
-
-def add_lag(x, col=None, lags=1, drop=False, insert=True):
-    """
-    Returns an array with lags included given an array.
-
-    Parameters
-    ----------
-    x : array
-        An array or NumPy ndarray subclass. Can be either a 1d or 2d array with
-        observations in columns.
-    col : 'string', int, or None
-        If data is a structured array or a recarray, `col` can be a string
-        that is the name of the column containing the variable. Or `col` can
-        be an int of the zero-based column index. If it's a 1d array `col`
-        can be None.
-    lags : int
-        The number of lags desired.
-    drop : bool
-        Whether to keep the contemporaneous variable for the data.
-    insert : bool or int
-        If True, inserts the lagged values after `col`. If False, appends
-        the data. If int inserts the lags at int.
-
-    Returns
-    -------
-    array : ndarray
-        Array with lags
-
-    Examples
-    --------
-    >>> import sm2.api as sm
-    >>> data = sm.datasets.macrodata.load()
-    >>> data = data.data[['year','quarter','realgdp','cpi']]
-    >>> data = sm.tsa.add_lag(data, 'realgdp', lags=2)
-
-    Notes
-    -----
-    Trims the array both forward and backward, so that the array returned
-    so that the length of the returned array is len(`X`) - lags. The lags are
-    returned in increasing order, ie., t-1,t-2,...,t-lags
-    """
-    if x.dtype.names:
-        names = x.dtype.names
-        if not col and np.squeeze(x).ndim > 1:  # pragma: no cover
-            raise IndexError("col is None and the input array is not 1d")
-        elif len(names) == 1:
-            col = names[0]
-        if isinstance(col, integer_types):
-            col = x.dtype.names[col]
-        if not PY3:
-            # TODO: Get rid of this kludge.  See GH#3658
-            names = [bytes(name) if isinstance(name, unicode) else name
-                     for name in names]
-            # Fail loudly if there is a non-ascii name.
-            x.dtype.names = names
-            if isinstance(col, unicode):
-                col = bytes(col)
-
-        contemp = x[col]
-
-        # make names for lags
-        tmp_names = [col + '_' + 'L(%i)' % i for i in range(1, lags + 1)]
-        ndlags = lagmat(contemp, maxlag=lags, trim='Both')
-
-        # get index for return
-        if insert is True:
-            ins_idx = list(names).index(col) + 1
-        elif insert is False:
-            ins_idx = len(names) + 1
-        else:
-            # insert is an int
-            if insert > len(names):
-                warnings.warn("insert > number of variables, inserting at the"
-                              " last position", ValueWarning)
-            ins_idx = insert
-
-        first_names = list(names[:ins_idx])
-        last_names = list(names[ins_idx:])
-
-        if drop:
-            if col in first_names:
-                first_names.pop(first_names.index(col))
-            else:
-                last_names.pop(last_names.index(col))
-
-        if first_names:  # only do this if x isn't "empty"
-            # Workaround to avoid NumPy FutureWarning
-            _x = recarray_select(x, first_names)
-            first_arr = nprf.append_fields(_x[lags:], tmp_names, ndlags.T,
-                                           usemask=False)
-
-        else:
-            dtype = list(zip(tmp_names, (x[col].dtype,) * lags))
-            first_arr = np.zeros(len(x) - lags, dtype=dtype)
-            for i, name in enumerate(tmp_names):
-                first_arr[name] = ndlags[:, i]
-        if last_names:
-            return nprf.append_fields(first_arr, last_names,
-                                      [x[name][lags:] for name in last_names],
-                                      usemask=False)
-        else:  # lags for last variable
-            return first_arr
-
-    else:
-        # we have an ndarray
-
-        if x.ndim == 1:  # make 2d if 1d
-            x = x[:, None]
-        if col is None:
-            col = 0
-
-        # handle negative index
-        if col < 0:
-            col = x.shape[1] + col
-
-        contemp = x[:, col]
-
-        if insert is True:  # TODO: This block is redundant with a block above
-            ins_idx = col + 1
-        elif insert is False:
-            ins_idx = x.shape[1]
-        else:
-            if insert < 0:  # handle negative index
-                insert = x.shape[1] + insert + 1
-            if insert > x.shape[1]:
-                insert = x.shape[1]
-                warnings.warn("insert > number of variables, inserting at the"
-                              " last position", ValueWarning)
-            ins_idx = insert
-
-        ndlags = lagmat(contemp, lags, trim='Both')
-        first_cols = list(range(ins_idx))
-        last_cols = list(range(ins_idx, x.shape[1]))
-        if drop:
-            if col in first_cols:
-                first_cols.pop(first_cols.index(col))
-            else:
-                last_cols.pop(last_cols.index(col))
-        return np.column_stack((x[lags:, first_cols],
-                                ndlags,
-                                x[lags:, last_cols]))
-
-
-def detrend(x, order=1, axis=0):
-    """
-    Detrend an array with a trend of given order along axis 0 or 1
-
-    Parameters
-    ----------
-    x : array_like, 1d or 2d
-        data, if 2d, then each row or column is independently detrended with
-        the same trendorder, but independent trend estimates
-    order : int
-        specifies the polynomial order of the trend, zero is constant, one is
-        linear trend, two is quadratic trend
-    axis : int
-        axis can be either 0, observations by rows,
-        or 1, observations by columns
-
-    Returns
-    -------
-    detrended data series : ndarray
-        The detrended series is the residual of the linear regression of the
-        data on the trend of given order.
-    """
-    if x.ndim == 2 and int(axis) == 1:
-        x = x.T
-    elif x.ndim > 2:
-        raise NotImplementedError('x.ndim > 2 is not implemented until '
-                                  'it is needed')
-
-    nobs = x.shape[0]
-    if order == 0:
-        # Special case demean
-        resid = x - x.mean(axis=0)
-    else:
-        trends = np.vander(np.arange(float(nobs)), N=order + 1)
-        beta = np.linalg.pinv(trends).dot(x)
-        resid = x - np.dot(trends, beta)
-
-    if x.ndim == 2 and int(axis) == 1:
-        resid = resid.T
-
-    return resid
 
 
 def lagmat(x, maxlag, trim='forward', original='ex', use_pandas=False):
@@ -677,42 +497,5 @@ def unintegrate(x, levels):
     return np.cumsum(np.r_[x0, x])
 
 
-def freq_to_period(freq):
-    """
-    Convert a pandas frequency to a periodicity
-
-    Parameters
-    ----------
-    freq : str or offset
-        Frequency to convert
-
-    Returns
-    -------
-    period : int
-        Periodicity of freq
-
-    Notes
-    -----
-    Annual maps to 1, quarterly maps to 4, monthly to 12, weekly to 52.
-    """
-    if not isinstance(freq, pd.DateOffset):
-        freq = to_offset(freq)  # go ahead and standardize
-    freq = freq.rule_code.upper()
-
-    if freq == 'A' or freq.startswith(('A-', 'AS-')):
-        return 1
-    elif freq == 'Q' or freq.startswith(('Q-', 'QS-')):
-        return 4
-    elif freq == 'M' or freq.startswith(('M-', 'MS')):
-        return 12
-    elif freq == 'W' or freq.startswith('W-'):
-        return 52
-    elif freq == 'D':
-        return 7
-    elif freq == 'B':
-        return 5
-    elif freq == 'H':
-        return 24
-    else:  # pragma: no cover
-        raise ValueError("freq {} not understood. Please report if you "
-                         "think this is in error.".format(freq))
+def freq_to_period(freq):  # pragma: no cover
+    raise NotImplementedError("freq_to_period not ported from upstream (yet)")

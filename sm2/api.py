@@ -4,7 +4,7 @@ __all__ = ['OLS', 'WLS',
            'ZeroInflatedNegativeBinomialP',
            'GLM',
            'RLM',
-           'families', 'genmod', 'robust',
+           'families', 'genmod', 'robust', 'tsa',
            'add_constant', 'datasets', 'distributions']
 
 from .regression.linear_model import OLS, WLS

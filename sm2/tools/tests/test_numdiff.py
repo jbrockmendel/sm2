@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """Testing numerical differentiation
 
 Still some problems, with API (args tuple versus *args)

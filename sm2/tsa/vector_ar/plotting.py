@@ -161,7 +161,7 @@ def acorr_plot(acorr, linewidth=8, xlabel=None, ax=None):
     ax.set_xlim([-1, xlabel[-1] + 1])
 
 
-def plot_acorr_with_error():
+def plot_acorr_with_error():  # TODO: Delete?  raise?
     pass
 
 
@@ -214,7 +214,7 @@ def irf_grid_plot(values, stderr, impcol, rescol, names, title,
     for (j, i, ai, aj) in to_plot:
         ax = axes[ai][aj]
 
-        # HACK?
+        # TODO: HACK?
         if stderr is not None:
             if stderr_type == 'asym':
                 sig = np.sqrt(stderr[:, j * k + i, j * k + i])
@@ -266,7 +266,3 @@ def _get_irf_plot_config(names, impcol, rescol):
         to_plot = [(j, i, i, j) for i in range(k) for j in range(k)]
 
     return nrows, ncols, to_plot
-
-
-# ---------------------------------------------------------------
-# Forecast error variance decomposition

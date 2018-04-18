@@ -8,7 +8,6 @@ dependent variables.
 
 General References
 --------------------
-
 A.C. Cameron and P.K. Trivedi.  `Regression Analysis of Count Data`.
     Cambridge, 1998
 
@@ -24,7 +23,6 @@ from six.moves import range
 from sm2.compat.scipy import loggamma
 
 import numpy as np
-import pandas as pd
 from pandas.util._decorators import deprecate_kwarg
 
 from scipy.special import gammaln
@@ -35,7 +33,7 @@ from sm2.tools.decorators import (resettable_cache,
                                   copy_doc)
 from sm2.tools.sm_exceptions import PerfectSeparationError
 from sm2.tools.numdiff import approx_fprime_cs
-from sm2.tools import tools, data as data_tools
+from sm2.tools import data as data_tools
 
 from sm2.base import naming
 import sm2.base.model as base
@@ -485,7 +483,7 @@ class BinaryModel(FitBase):
         -------
         array
             Fitted values at exog.
-        """
+        """  # TODO: Can we share this docstring?
         if exog is None:
             exog = self.exog
         if not linear:
@@ -2290,7 +2288,7 @@ class NegativeBinomial(CountModel):
     def _score_nbin(self, params, Q=0):
         """
         Score vector for NB2 model
-        """
+        """  # TODO: Is docstring accurate?  NB2?
         if self._transparams:  # lnalpha came in during fit
             alpha = np.exp(params[-1])
         else:
@@ -3525,7 +3523,6 @@ class BinaryResults(DiscreteResults):
 
         For now :math:`M_j` is always set to 1.
         """
-        # Pearson residuals
         endog = self.model.endog
         # M = # of individuals that share a covariate pattern
         # so M[i] = 2 for i = two share a covariate pattern
@@ -3569,7 +3566,6 @@ class LogitResults(BinaryResults):
         where :math:`p=cdf(X\\beta)`. This is the same as the `resid_response`
         for the Logit model.
         """
-        # Generalized residuals
         return self.model.endog - self.predict()
 
 

@@ -1259,7 +1259,6 @@ def test_missing_formula_predict():
 # -------------------------------------------------------------
 # Vetted Tests, May Need GH References
 
-
 def test_ols_bad_size_raises():
     # TODO: GH reference?
     np.random.seed(54321)
