@@ -616,6 +616,7 @@ class GLM(base.LikelihoodModel):
         Fisher information matrix.
         """
         return self.hessian(params, scale=scale, observed=False)
+        # FIXME: this is positive-hessian, but base class docstring says neg
 
     def score_test(self, params_constrained, k_constraints=None,
                    exog_extra=None, observed=True):
@@ -825,7 +826,6 @@ class GLM(base.LikelihoodModel):
 
         Exposure values must be strictly positive.
         """
-
         # Use fit offset if appropriate
         if offset is None and exog is None and hasattr(self, 'offset'):
             offset = self.offset
@@ -987,7 +987,6 @@ class GLM(base.LikelihoodModel):
         Fits a generalized linear model for a given family iteratively
         using the scipy gradient optimizers.
         """
-
         if (max_start_irls > 0) and (start_params is None):
             irls_rslt = self._fit_irls(start_params=start_params,
                                        maxiter=max_start_irls,
@@ -1332,7 +1331,7 @@ class GLMResults(base.LikelihoodModelResults):
         self.data_in_cache = getattr(self, 'data_in_cache', [])
         self.data_in_cache.extend(['null', 'mu'])
         self._data_attr_model = getattr(self, '_data_attr_model', [])
-        self._data_attr_model.append('mu')
+        self._data_attr_model.append('mu')  # TODO: get rid of these
 
         # robust covariance
         if use_t is None:
@@ -1637,10 +1636,6 @@ class GLMResults(base.LikelihoodModelResults):
             smry.add_extra_txt(['Model has been estimated subject to linear '
                                 'equality constraints.'])
         return smry
-
-    def summary2(self, yname=None, xname=None, title=None, alpha=.05,
-                 float_format="%.4f"):
-        raise NotImplementedError("summary2 not ported from upstream")
 
 
 class GLMResultsWrapper(lm.RegressionResultsWrapper):

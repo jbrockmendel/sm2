@@ -2432,7 +2432,6 @@ def test_mnlogit_factor():
 # TODO: mark as slow?  its 32.6 seconds in profiling
 # TODO: mark as an internal-consistency test?
 # TODO: GH reference?
-@pytest.mark.not_vetted
 @pytest.mark.skipif(not has_cvxopt, reason='Skipped test_cvxopt since cvxopt '
                                            'is not available')
 def test_cvxopt_versus_slsqp():

@@ -428,13 +428,6 @@ class FitBase(DiscreteModel):
                         auto_trim_tol=0.01, size_trim_tol=1e-4, qc_tol=0.03,
                         **kwargs):
 
-        if method not in ['l1', 'l1_cvxopt_cp']:
-            # TODO: is this check necessary?  Its done in DiscreteModel call
-            # TODO: fix upstream raises Exception
-            # (and does it at the _end_ of the call)
-            raise ValueError("argument method == %s, which is not handled"
-                             % method)  # pragma: no cover
-
         bnryfit = DiscreteModel.fit_regularized(self,
                                                 start_params=start_params,
                                                 method=method, maxiter=maxiter,
@@ -1218,6 +1211,7 @@ class GeneralizedPoisson(CountModel):
         equal to 1.
 
     """ + base._missing_param_doc}
+    _check_perfect_pred = None  # placeholder until implemented GH#3895
 
     @property
     def _res_classes(self):
@@ -1458,10 +1452,11 @@ class GeneralizedPoisson(CountModel):
             a = self._estimate_dispersion(res_poi.predict(), res_poi.resid,
                                           df_resid=res_poi.df_resid)
             start_params = np.append(start_params, max(-0.1, a))
+            # TODO: reasoning for -0.1?
 
-        if callback is None:
-            # work around perfect separation callback GH#3895
-            callback = lambda *x: x
+        #if callback is None:
+        #    # work around perfect separation callback GH#3895
+        #    callback = lambda *x: x
 
         # TODO: skip CountModel and go straight to DiscreteModel?
         mlefit = CountModel.fit(self, start_params=start_params,
@@ -1479,12 +1474,44 @@ class GeneralizedPoisson(CountModel):
         gpfit = res_cls(self, mlefit._results)
         result = wrap_cls(gpfit)
 
+        # TODO: Can we leave this to results __init__?
         cov_kwds = cov_kwds or {}
         result._get_robustcov_results(cov_type=cov_type,
                                       use_self=True, use_t=use_t, **cov_kwds)
         return result
 
     fit.__doc__ = DiscreteModel.fit.__doc__ + fit.__doc__
+
+    def _get_start_params_l1(self, start_params, method, maxiter,
+                             full_output, disp, callback, alpha, trim_mode,
+                             auto_trim_tol, size_trim_tol, qc_tol,
+                             **kwargs):
+        if start_params is not None:
+            return start_params
+
+        if self.k_extra and np.size(alpha) > 1:
+            alpha_p = alpha[:-1]
+        else:
+            alpha_p = alpha
+
+        offset = getattr(self, "offset", 0) + getattr(self, "exposure", 0)
+        if np.size(offset) == 1 and offset == 0:
+            offset = None
+
+        mod_poi = Poisson(self.endog, self.exog, offset=offset)
+        res_poi = mod_poi.fit_regularized(start_params=start_params,
+                                          method=method, maxiter=maxiter,
+                                          full_output=full_output, disp=0,
+                                          callback=callback,
+                                          alpha=alpha_p,
+                                          trim_mode=trim_mode,
+                                          auto_trim_tol=auto_trim_tol,
+                                          size_trim_tol=size_trim_tol,
+                                          qc_tol=qc_tol, **kwargs)
+        start_params = res_poi.params
+        start_params = np.append(start_params, 0.1)
+        # TODO: Document reason for 0.1
+        return start_params
 
     @copy_doc(DiscreteModel.fit_regularized.__doc__)
     def fit_regularized(self, start_params=None, method='l1',
@@ -1493,40 +1520,23 @@ class GeneralizedPoisson(CountModel):
                         auto_trim_tol=0.01, size_trim_tol=1e-4,
                         qc_tol=0.03, **kwargs):
 
-        if method not in ['l1', 'l1_cvxopt_cp']:
-            # TODO: Fix upstream raises Exception
-            # (and does it at the _end_ of the method)
-            raise ValueError("argument method == %s, which is not handled"
-                             % method)  # pragma: no cover
-
         if np.size(alpha) == 1 and alpha != 0:
             k_params = self.exog.shape[1] + self.k_extra
             alpha = alpha * np.ones(k_params)
             alpha[-1] = 0
+
+        self._transparams = False  # TODO: Im not wild about doing this here
 
         if self.k_extra and np.size(alpha) > 1:
             alpha_p = alpha[:-1]
         else:
             alpha_p = alpha
 
-        self._transparams = False
-        if start_params is None:
-            # TODO: merge with _get_start_params?  _get_start_params_L1?
-            offset = getattr(self, "offset", 0) + getattr(self, "exposure", 0)
-            if np.size(offset) == 1 and offset == 0:
-                offset = None
-            mod_poi = Poisson(self.endog, self.exog, offset=offset)
-            res_poi = mod_poi.fit_regularized(start_params=start_params,
-                                              method=method, maxiter=maxiter,
-                                              full_output=full_output, disp=0,
-                                              callback=callback,
-                                              alpha=alpha_p,
-                                              trim_mode=trim_mode,
-                                              auto_trim_tol=auto_trim_tol,
-                                              size_trim_tol=size_trim_tol,
-                                              qc_tol=qc_tol, **kwargs)
-            start_params = res_poi.params
-            start_params = np.append(start_params, 0.1)
+        start_params = self._get_start_params_l1(start_params,
+            method=method, maxiter=maxiter, full_output=full_output,
+            disp=disp, callback=callback,
+            alpha=alpha, trim_mode=trim_mode, auto_trim_tol=auto_trim_tol,
+            size_trim_tol=size_trim_tol, qc_tol=qc_tol, **kwargs)
 
         cntfit = DiscreteModel.fit_regularized(self,
                                                start_params=start_params,
@@ -1584,7 +1594,7 @@ class GeneralizedPoisson(CountModel):
 
 class Logit(BinaryModel):
     __doc__ = """
-    Binary choice logit model
+    Binary choice Logit model
 
     %(params)s
     %(extra_params)s
@@ -1760,20 +1770,7 @@ class Logit(BinaryModel):
 
 
 class Probit(BinaryModel):
-    __doc__ = """
-    Binary choice Probit model
-
-    %(params)s
-    %(extra_params)s
-
-    Attributes
-    -----------
-    endog : array
-        A reference to the endogenous response variable
-    exog : array
-        A reference to the exogenous design.
-    """ % {'params': base._model_params_doc,
-           'extra_params': base._missing_param_doc}
+    __doc__ = Logit.__doc__.replace("Logit", "Probit")
 
     @property
     def _res_classes(self):
@@ -1837,8 +1834,8 @@ class Probit(BinaryModel):
         Where :math:`q=2y-1`. This simplification comes from the fact that the
         normal distribution is symmetric.
         """
-        Xb = np.dot(self.exog, params)
         q = 2 * self.endog - 1
+        Xb = np.dot(self.exog, params)
         prob = self.cdf(q * Xb)
         # clip to get rid of invalid divide complaint
         L = q * self.pdf(q * Xb) / np.clip(prob,
@@ -2056,9 +2053,9 @@ class MNLogit(MultinomialModel):
         """
         params = params.reshape(self.K, -1, order='F')
         Xb = np.dot(self.exog, params)
-        cdf_dot_exog_params = self.cdf(Xb)
-        loglike_value = np.sum(self.wendog * np.log(cdf_dot_exog_params))
-        wresid = self.wendog[:, 1:] - cdf_dot_exog_params[:, 1:]
+        prob = self.cdf(Xb)
+        loglike_value = np.sum(self.wendog * np.log(prob))
+        wresid = self.wendog[:, 1:] - prob[:, 1:]
         score_array = np.dot(wresid.T, self.exog).flatten()
         return loglike_value, score_array
 
@@ -2555,17 +2552,47 @@ class NegativeBinomial(CountModel):
                                       use_self=True, use_t=use_t, **cov_kwds)
         return result
 
+    def _get_start_params_l1(self, start_params, method, maxiter,
+                             full_output, disp, callback, alpha, trim_mode,
+                             auto_trim_tol, size_trim_tol, qc_tol,
+                             **kwargs):
+        if start_params is not None:
+            return start_params
+
+        # Use poisson fit as first guess.
+        # TODO, Warning: this assumes exposure is logged
+        offset = getattr(self, "offset", 0) + getattr(self, "exposure", 0)
+        if np.size(offset) == 1 and offset == 0:
+            offset = None
+
+        # alpha for regularized poisson to get starting values
+        if self.k_extra and np.size(alpha) > 1:
+            alpha_p = alpha[:-1]
+        else:
+            alpha_p = alpha
+
+        mod_poi = Poisson(self.endog, self.exog, offset=offset)
+        res_poi = mod_poi.fit_regularized(start_params=start_params,
+                                          method=method,
+                                          maxiter=maxiter,
+                                          full_output=full_output,
+                                          disp=0, callback=callback,
+                                          alpha=alpha_p,
+                                          trim_mode=trim_mode,
+                                          auto_trim_tol=auto_trim_tol,
+                                          size_trim_tol=size_trim_tol,
+                                          qc_tol=qc_tol, **kwargs)
+        start_params = res_poi.params
+        if self.loglike_method.startswith('nb'):
+            start_params = np.append(start_params, 0.1)
+            # TODO: document why 0.1
+        return start_params
+
     def fit_regularized(self, start_params=None, method='l1',
                         maxiter='defined_by_method', full_output=1, disp=1,
                         callback=None, alpha=0, trim_mode='auto',
                         auto_trim_tol=0.01, size_trim_tol=1e-4,
                         qc_tol=0.03, **kwargs):
-
-        if method not in ['l1', 'l1_cvxopt_cp']:
-            # TODO: fix upstream incorrectly raises Exception
-            # (and does it at the very _end_ of the method)
-            raise ValueError("argument method == %s, which is not handled"
-                             % method)  # pragma: no cover
 
         if self.loglike_method.startswith('nb') and (np.size(alpha) == 1 and
                                                      alpha != 0):
@@ -2574,33 +2601,13 @@ class NegativeBinomial(CountModel):
             alpha = alpha * np.ones(k_params)
             alpha[-1] = 0
 
-        # alpha for regularized poisson to get starting values
-        if self.k_extra and np.size(alpha) > 1:
-            alpha_p = alpha[:-1]
-        else:
-            alpha_p = alpha
+        self._transparams = False  # TODO: im not wild about setting this here
 
-        self._transparams = False
-        if start_params is None:
-            # Use poisson fit as first guess.
-            # TODO, Warning: this assumes exposure is logged
-            offset = getattr(self, "offset", 0) + getattr(self, "exposure", 0)
-            if np.size(offset) == 1 and offset == 0:
-                offset = None
-            mod_poi = Poisson(self.endog, self.exog, offset=offset)
-            res_poi = mod_poi.fit_regularized(start_params=start_params,
-                                              method=method,
-                                              maxiter=maxiter,
-                                              full_output=full_output,
-                                              disp=0, callback=callback,
-                                              alpha=alpha_p,
-                                              trim_mode=trim_mode,
-                                              auto_trim_tol=auto_trim_tol,
-                                              size_trim_tol=size_trim_tol,
-                                              qc_tol=qc_tol, **kwargs)
-            start_params = res_poi.params
-            if self.loglike_method.startswith('nb'):
-                start_params = np.append(start_params, 0.1)
+        start_params = self._get_start_params_l1(start_params,
+            method=method, maxiter=maxiter, full_output=full_output,
+            disp=disp, callback=callback,
+            alpha=alpha, trim_mode=trim_mode, auto_trim_tol=auto_trim_tol,
+            size_trim_tol=size_trim_tol, qc_tol=qc_tol, **kwargs)
 
         cntfit = DiscreteModel.fit_regularized(self,
                                                start_params=start_params,
@@ -2921,6 +2928,37 @@ class NegativeBinomialP(CountModel):
 
     fit.__doc__ += DiscreteModel.fit.__doc__
 
+    # TODO: See if we can de-duplicate this with other methods
+    def _get_start_params_l1(self, start_params, method='l1',
+                             maxiter='defined_by_method', full_output=1,
+                             disp=1, callback=None, alpha=0, trim_mode='auto',
+                             auto_trim_tol=0.01, size_trim_tol=1e-4,
+                             qc_tol=0.03, **kwargs):
+
+        if start_params is not None:
+            return start_params
+
+        offset = getattr(self, "offset", 0) + getattr(self, "exposure", 0)
+        if np.size(offset) == 1 and offset == 0:
+            offset = None
+
+        if self.k_extra and np.size(alpha) > 1:
+            alpha_p = alpha[:-1]
+        else:
+            alpha_p = alpha
+
+        mod_poi = Poisson(self.endog, self.exog, offset=offset)
+        start_params = mod_poi.fit_regularized(
+            start_params=start_params, method=method, maxiter=maxiter,
+            full_output=full_output, disp=0, callback=callback,
+            alpha=alpha_p, trim_mode=trim_mode,
+            auto_trim_tol=auto_trim_tol,
+            size_trim_tol=size_trim_tol, qc_tol=qc_tol, **kwargs).params
+
+        start_params = np.append(start_params, 0.1)
+        # TODO: reasoning behind 0.1?
+        return start_params
+
     @copy_doc(DiscreteModel.fit_regularized.__doc__)
     def fit_regularized(self, start_params=None, method='l1',
                         maxiter='defined_by_method', full_output=1,
@@ -2928,34 +2966,19 @@ class NegativeBinomialP(CountModel):
                         auto_trim_tol=0.01, size_trim_tol=1e-4, qc_tol=0.03,
                         **kwargs):
 
-        if method not in ['l1', 'l1_cvxopt_cp']:
-            # TODO: Fix upstream incorrectly raises TypeError
-            raise ValueError("argument method == %s, which is not handled"
-                             % method)  # pragma: no cover
-
         if np.size(alpha) == 1 and alpha != 0:
             k_params = self.exog.shape[1] + self.k_extra
             alpha = alpha * np.ones(k_params)
             alpha[-1] = 0
 
-        if self.k_extra and np.size(alpha) > 1:
-            alpha_p = alpha[:-1]
-        else:
-            alpha_p = alpha
-
         self._transparams = False  # TODO: Not the right place to set this
-        if start_params is None:
-            offset = getattr(self, "offset", 0) + getattr(self, "exposure", 0)
-            if np.size(offset) == 1 and offset == 0:
-                offset = None
-            mod_poi = Poisson(self.endog, self.exog, offset=offset)
-            start_params = mod_poi.fit_regularized(
-                start_params=start_params, method=method, maxiter=maxiter,
+
+        start_params = self._get_start_params_l1(start_params,
+                method=method, maxiter=maxiter,
                 full_output=full_output, disp=0, callback=callback,
-                alpha=alpha_p, trim_mode=trim_mode,
+                alpha=alpha, trim_mode=trim_mode,
                 auto_trim_tol=auto_trim_tol,
-                size_trim_tol=size_trim_tol, qc_tol=qc_tol, **kwargs).params
-            start_params = np.append(start_params, 0.1)
+                size_trim_tol=size_trim_tol, qc_tol=qc_tol, **kwargs)
 
         cntfit = DiscreteModel.fit_regularized(self,
                                                start_params=start_params,
@@ -3315,10 +3338,6 @@ class DiscreteResults(base.LikelihoodModelResults):
                                 'equality constraints.'])
         return smry
 
-    def summary2(self, yname=None, xname=None, title=None, alpha=.05,
-                 float_format="%.4f"):
-        raise NotImplementedError("summary2 not ported from upstream")
-
 
 class CountResults(DiscreteResults):
     __doc__ = _discrete_results_docs % {
@@ -3420,9 +3439,7 @@ class OrderedResults(DiscreteResults):
 
 
 class BinaryResults(DiscreteResults):
-    __doc__ = _discrete_results_docs % {
-        "one_line_description": "A results class for binary data",
-        "extra_attr": ""}
+    __doc__ = OrderedResults.__doc__.replace("ordered discrete", "binary")
 
     def pred_table(self, threshold=.5):
         """
@@ -3571,9 +3588,7 @@ class LogitResults(BinaryResults):
 
 
 class ProbitResults(BinaryResults):
-    __doc__ = _discrete_results_docs % {
-        "one_line_description": "A results class for Probit Model",
-        "extra_attr": ""}
+    __doc__ = BinaryResults.__doc__.replace("binary data", "Probit Model")
 
     @cached_data
     def resid_generalized(self):
@@ -3597,9 +3612,7 @@ class ProbitResults(BinaryResults):
 
 
 class MultinomialResults(DiscreteResults):
-    __doc__ = _discrete_results_docs % {
-        "one_line_description": "A results class for multinomial data",
-        "extra_attr": ""}
+    __doc__ = ProbitResults.__doc__.replace("Probit", "multinomial")
 
     def __init__(self, model, mlefit):
         # Make sure params have the appropriate shape;
@@ -3698,9 +3711,6 @@ class MultinomialResults(DiscreteResults):
         return (self.model.wendog.argmax(1) !=
                 self.predict().argmax(1)).astype(float)
 
-    def summary2(self, alpha=0.05, float_format="%.4f"):
-        raise NotImplementedError("summary2 not ported from upstream")
-
 
 # --------------------------------------------------------------------
 # L1 Results classes
@@ -3766,10 +3776,7 @@ class L1GeneralizedPoissonResults(L1CountResults, GeneralizedPoissonResults):
 
 
 class L1BinaryResults(BinaryResults, L1ResultsMixin):
-    __doc__ = _discrete_results_docs % {
-        "one_line_description": "Results instance for binary data fit "
-                                "by l1 regularization",
-        "extra_attr": _l1_results_attr}
+    __doc__ = L1CountResults.__doc__.replace("count", "binary")
 
     def __init__(self, model, bnryfit):
         self.nobs = model.endog.shape[0]
@@ -3781,10 +3788,7 @@ class L1BinaryResults(BinaryResults, L1ResultsMixin):
 
 
 class L1MultinomialResults(MultinomialResults, L1ResultsMixin):
-    __doc__ = _discrete_results_docs % {
-        "one_line_description": "A results class for multinomial data "
-                                "fit by l1 regularization",
-        "extra_attr": _l1_results_attr}
+    __doc__ = L1BinaryResults.__doc__.replace("binary", "multinomial")
 
     def __init__(self, model, mlefit):
         self.nobs = model.endog.shape[0]

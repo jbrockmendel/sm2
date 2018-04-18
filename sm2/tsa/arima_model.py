@@ -748,7 +748,7 @@ class ARMA(wold.ARMATransparams, tsa_model.TimeSeriesModel):
         for i in range(k_ar):
             zi[i] = sum(-b[:i + 1][::-1] * y[:i + 1])
         errors = signal.lfilter(b, a, y, zi=zi)[0][k_ar:]
-        # TODO: Use geterrors_css for this
+        # TODO: Use geterrors_css for this --> breaks for some reason
 
         nobs = len(errors)
         ssr = np.dot(errors, errors)
@@ -1099,7 +1099,7 @@ class ARIMA(ARMA):
         normalized_cov_params = None  # TODO: fix this?
         arima_fit = ARIMAResults(self, mlefit._results.params,
                                  normalized_cov_params)
-        arima_fit.k_diff = self.k_diff
+        arima_fit.k_diff = self.k_diff  # TODO: Dont set these here
 
         arima_fit.mle_retvals = mlefit.mle_retvals
         arima_fit.mle_settings = mlefit.mle_settings
@@ -1120,6 +1120,7 @@ class ARIMA(ARMA):
             # Adjustment since _index was already changed to fit the
             # differenced endog.
             start += self.k_diff
+
         if typ == 'linear':
             if not dynamic or (start != self.k_ar + self.k_diff and
                                start is not None):
@@ -1282,8 +1283,6 @@ class ARMAResults(tsa_model.TimeSeriesModelResults, wold.ARMAParams):
         (1 + maparams[0]*z + maparams[1]*z**2 + ... + maparams[q-1]*z**q) = 0
         Stability requires that the roots in modules lie outside the unit
         circle.
-    model : ARMA instance
-        A reference to the model that was fit.
     nobs : float
         The number of observations used to fit the model. If the model is fit
         using exact maximum likelihood this is equal to the total number of
@@ -1316,6 +1315,7 @@ class ARMAResults(tsa_model.TimeSeriesModelResults, wold.ARMAParams):
         fit.
     """
     _cache = {}
+    k_diff = 0  # k_diff !=0 is for ARIMA
 
     # TODO: Make this actually return instead of raising?
     _ic_df_model = deprecated_alias("_ic_df_model", "df_model + 1")
@@ -1432,8 +1432,10 @@ class ARMAResults(tsa_model.TimeSeriesModelResults, wold.ARMAParams):
         ma_rep = arma2ma(np.r_[1, -self.arparams],
                          np.r_[1, self.maparams], lags=steps)
 
-        fcasterr = np.sqrt(sigma2 * np.cumsum(ma_rep**2))
-        return fcasterr
+        # kdiff is 0 for ARMA, nonzero for ARIMA.
+        cumul_ma_rep = cumsum_n(ma_rep, self.k_diff)
+        fcerr = np.sqrt(np.cumsum(cumul_ma_rep**2) * sigma2)
+        return fcerr
 
     def forecast(self, steps=1, exog=None, alpha=.05):
         """
@@ -1586,9 +1588,6 @@ class ARMAResults(tsa_model.TimeSeriesModelResults, wold.ARMAParams):
             smry.tables.append(roots_table)
         return smry
 
-    def summary2(self, title=None, alpha=.05, float_format="%.4f"):
-        raise NotImplementedError("summary2 not ported from upstream")
-
     @copy_doc(_plot_predict)
     def plot_predict(self, start=None, end=None, exog=None, dynamic=False,
                      alpha=.05, plot_insample=True, ax=None):
@@ -1642,14 +1641,6 @@ class ARIMAResults(ARMAResults):
     def predict(self, start=None, end=None, exog=None, typ='linear',
                 dynamic=False):
         return self.model.predict(self.params, start, end, exog, typ, dynamic)
-
-    def _forecast_error(self, steps):
-        sigma2 = self.sigma2
-        ma_rep = arma2ma(np.r_[1, -self.arparams],
-                         np.r_[1, self.maparams], lags=steps)
-
-        fcerr = np.sqrt(np.cumsum(cumsum_n(ma_rep, self.k_diff)**2) * sigma2)
-        return fcerr  # TODO: share with ARMAResults?
 
     def forecast(self, steps=1, exog=None, alpha=.05):
         """

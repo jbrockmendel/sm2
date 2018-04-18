@@ -304,13 +304,13 @@ class TestZeroInflatedGeneralizedPoisson(CheckGeneric):
         cls.init_keys = ['exog_infl', 'exposure', 'inflation', 'offset', 'p']
         cls.init_kwds = {'inflation': 'logit', 'p': 1}
 
-    def test_bse(self):
+    def test_bse(self):  # TODO: pytest.skip?
         pass
 
-    def test_conf_int(self):
+    def test_conf_int(self):  # TODO: pytest.skip?
         pass
 
-    def test_bic(self):
+    def test_bic(self):  # TODO: pytest.skip?
         pass
 
     def test_t(self):
@@ -434,10 +434,10 @@ class TestZeroInflatedNegativeBinomialP(CheckGeneric):
                         self.res2.params,
                         atol=1e-3, rtol=1e-3)
 
-    def test_conf_int(self):
+    def test_conf_int(self):  # TODO: pytest.skip?
         pass
 
-    def test_bic(self):
+    def test_bic(self):  # TODO: pytest.skip?
         pass
 
     def test_fit_regularized(self):
@@ -531,7 +531,7 @@ class TestZeroInflatedNegativeBinomialP_predict(object):
                         rtol=0.01)
 
     def test_var(self):
-        # todo check precision
+        # TODO: check precision
         assert_allclose((self.res.predict().mean() *
                          self.res._dispersion_factor.mean()),
                         self.endog.var(),

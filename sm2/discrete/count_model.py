@@ -143,9 +143,6 @@ class GenericZeroInflated(CountModel):
             cov_type='nonrobust', cov_kwds=None, use_t=None, **kwargs):
 
         if start_params is None:
-            offset = getattr(self, "offset", 0) + getattr(self, "exposure", 0)
-            if np.size(offset) == 1 and offset == 0:
-                offset = None  # TODO: Why is this conditional on start_params?
             start_params = self._get_start_params()
 
         if callback is None:
@@ -165,20 +162,13 @@ class GenericZeroInflated(CountModel):
         zipfit = res_cls(self, mlefit._results)
         return wrap_cls(zipfit)
 
-    @copy_doc(DiscreteModel.fit_regularized.__doc__)
-    def fit_regularized(self, start_params=None, method='l1',
+    def _get_start_params_l1(self, start_params, method='l1',
                         maxiter='defined_by_method', full_output=1, disp=1,
                         callback=None, alpha=0, trim_mode='auto',
                         auto_trim_tol=0.01, size_trim_tol=1e-4,
                         qc_tol=0.03, **kwargs):
-
-        if method not in ['l1', 'l1_cvxopt_cp']:  # pragma: no cover
-            raise ValueError("argument method == %s, which is not "
-                             "handled" % method)
-
-        if np.size(alpha) == 1 and alpha != 0:
-            k_params = self.k_exog + self.k_inflate
-            alpha = alpha * np.ones(k_params)
+        if start_params is not None:
+            return start_params
 
         extra = self.k_extra - self.k_inflate
         if self.k_extra and np.size(alpha) > 1:
@@ -186,17 +176,37 @@ class GenericZeroInflated(CountModel):
         else:
             alpha_p = alpha
 
-        if start_params is None:
-            offset = getattr(self, "offset", 0) + getattr(self, "exposure", 0)
-            if np.size(offset) == 1 and offset == 0:
-                offset = None
-            start_params = self.model_main.fit_regularized(
-                start_params=start_params, method=method, maxiter=maxiter,
+        offset = getattr(self, "offset", 0) + getattr(self, "exposure", 0)
+        if np.size(offset) == 1 and offset == 0:
+            offset = None
+
+        start_params = self.model_main.fit_regularized(
+            start_params=start_params, method=method, maxiter=maxiter,
+            full_output=full_output, disp=0, callback=callback,
+            alpha=alpha_p, trim_mode=trim_mode,
+            auto_trim_tol=auto_trim_tol,
+            size_trim_tol=size_trim_tol, qc_tol=qc_tol, **kwargs).params
+
+        start_params = np.append(np.ones(self.k_inflate), start_params)
+        return start_params
+
+    @copy_doc(DiscreteModel.fit_regularized.__doc__)
+    def fit_regularized(self, start_params=None, method='l1',
+                        maxiter='defined_by_method', full_output=1, disp=1,
+                        callback=None, alpha=0, trim_mode='auto',
+                        auto_trim_tol=0.01, size_trim_tol=1e-4,
+                        qc_tol=0.03, **kwargs):
+
+        if np.size(alpha) == 1 and alpha != 0:
+            k_params = self.k_exog + self.k_inflate
+            alpha = alpha * np.ones(k_params)
+
+        start_params = self._get_start_params_l1(start_params,
+                method=method, maxiter=maxiter,
                 full_output=full_output, disp=0, callback=callback,
-                alpha=alpha_p, trim_mode=trim_mode,
+                alpha=alpha, trim_mode=trim_mode,
                 auto_trim_tol=auto_trim_tol,
-                size_trim_tol=size_trim_tol, qc_tol=qc_tol, **kwargs).params
-            start_params = np.append(np.ones(self.k_inflate), start_params)
+                size_trim_tol=size_trim_tol, qc_tol=qc_tol, **kwargs)
 
         cntfit = super(CountModel, self).fit_regularized(
             start_params=start_params, method=method, maxiter=maxiter,

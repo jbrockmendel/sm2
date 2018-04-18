@@ -1964,10 +1964,6 @@ class RegressionResults(base.LikelihoodModelResults):
             smry.add_extra_txt(etext)
         return smry
 
-    def summary2(self, yname=None, xname=None, title=None, alpha=.05,
-                 float_format="%.4f"):  # pragma: no cover
-        raise NotImplementedError("summary2 not ported from upstream")
-
 
 class OLSResults(RegressionResults):
     """
