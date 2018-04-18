@@ -2732,12 +2732,12 @@ class NegativeBinomialP(CountModel):
         a1 = mu_p / alpha
         a2 = mu + a1
         a3 = y + a1
-        a4 = p * a1 / mu
+        a4 = a1 * p / mu
 
         dgpart = special.digamma(y + a1) - special.digamma(a1)
 
-        dparams = (a4 * (dgpart + np.log(a1 / a2) + 1) -
-                   (1 + a4) * a3 / a2 +
+        dparams = (a4 * (dgpart + np.log(a1 / a2) + 1 - a3 / a2) -
+                   a3 / a2 +
                    y / mu)
         dparams = (self.exog.T * mu * dparams).T
         dalpha = -a1 / alpha * (dgpart + np.log(a1 / a2) + 1 - a3 / a2)
@@ -2799,7 +2799,7 @@ class NegativeBinomialP(CountModel):
         a1 = mu_p / alpha
         a2 = mu + a1
         a3 = y + a1
-        a4 = p * a1 / mu
+        a4 = a1 * p / mu
         a5 = a4 * p / mu
 
         dim = exog.shape[1]
@@ -2808,28 +2808,29 @@ class NegativeBinomialP(CountModel):
         dgpart = special.digamma(y + a1) - special.digamma(a1)
         pgpart = special.polygamma(1, a1) - special.polygamma(1, y + a1)
 
-        coeff = mu**2 * ((1 + a4)**2 * a3 / a2**2 -
-                         a3 * a5 / a2 -
-                         2 * a4 * (1 + a4) / a2 +
-                         a5 * (np.log(a1 / a2) + dgpart + 2) -
-                         a4**2 * pgpart -
-                         a3 / a2 / mu)
+        coeff = mu**2 * ((1 + a4)**2 * a3 / a2**2
+                         - 2 * a4 * (1 + a4) / a2
+                         + a5 * (np.log(a1 / a2) + dgpart + 2 - a3 / a2)
+                         - a4**2 * pgpart
+                         - a3 / a2 / mu)
 
         for i in range(dim):
             hess_arr[i, :-1] = np.sum(exog[:, :].T * exog[:, i] * coeff,
                                       axis=1)
 
         hess_arr[-1, :-1] = (exog[:, :].T * mu * a1 *
-                             ((1 + a4) * (1 - a3 / a2) / a2 -
-                              p * (np.log(a1 / a2) + dgpart + 2) / mu +
-                              p * (a3 / mu + a4) / a2 +
-                              a4 * pgpart) / alpha).sum(axis=1)
+                             ((1 + a4) * (1 - a3 / a2) / a2
+                              - p / mu * (np.log(a1 / a2) + dgpart + 2 - a3 / a2)
+                              + p * a4 / a2
+                              + a4 * pgpart
+                              ) / alpha).sum(axis=1)
 
-        da2 = (a1 * (2 * np.log(a1 / a2) + 2 * dgpart + 3 -
-                     2 * a3 / a2 -
-                     a1 * pgpart -
-                     2 * a1 / a2 +
-                     a1 * a3 / a2**2) / alpha**2)
+        da2 = (a1 * (2 * np.log(a1 / a2) + 2 * dgpart + 4 - 2 * a3 / a2
+                     - 1
+                     - a1 * pgpart
+                     - 2 * a1 / a2
+                     + (a1 / a2) * (a3 / a2)
+                     ) / alpha**2)
 
         hess_arr[-1, -1] = da2.sum()
 

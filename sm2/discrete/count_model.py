@@ -145,7 +145,7 @@ class GenericZeroInflated(CountModel):
         if start_params is None:
             offset = getattr(self, "offset", 0) + getattr(self, "exposure", 0)
             if np.size(offset) == 1 and offset == 0:
-                offset = None
+                offset = None  # TODO: Why is this conditional on start_params?
             start_params = self._get_start_params()
 
         if callback is None:
@@ -257,7 +257,7 @@ class GenericZeroInflated(CountModel):
         return np.hstack((dldw, dldp))
 
     def _hessian_main(self, params):
-        pass
+        pass  # TODO: Should this raise?
 
     def _hessian_logit(self, params):
         params_infl = params[:self.k_inflate]
