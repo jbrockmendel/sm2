@@ -14,10 +14,10 @@ from sm2.tools.data import _is_using_pandas, _is_recarray
 
 from sm2.tsa import wold
 # aliases for backwards/upstream compat
-_ar_transparams = wold.ARMAParams._ar_transparams
-_ar_invtransparams = wold.ARMAParams._ar_invtransparams
-_ma_transparams = wold.ARMAParams._ma_transparams
-_ma_invtransparams = wold.ARMAParams._ma_invtransparams
+_ar_transparams = wold.ARMATransparams._ar_transparams
+_ar_invtransparams = wold.ARMATransparams._ar_invtransparams
+_ma_transparams = wold.ARMATransparams._ma_transparams
+_ma_invtransparams = wold.ARMATransparams._ma_invtransparams
 
 
 def add_lag(*args, **kwargs):  # pragma: no cover

@@ -217,7 +217,7 @@ class TestArmaProcess(object):
 
         assert_equal(process.arcoefs, process_direct.arcoefs)
         assert_equal(process.macoefs, process_direct.macoefs)
-        assert_equal(process.nobs, process_direct.nobs)
+        #assert_equal(process.nobs, process_direct.nobs)
         assert_equal(process.maroots, process_direct.maroots)
         assert_equal(process.arroots, process_direct.arroots)
         assert_equal(process.isinvertible, process_direct.isinvertible)
@@ -232,11 +232,11 @@ class TestArmaProcess(object):
         y = process.generate_sample(t, burnin=100, distrvs=rs.standard_normal)
         res = ARMA(y, (1, 1)).fit(disp=False)
         process_model = ArmaProcess.from_estimation(res)
-        process_coef = ArmaProcess.from_coeffs(res.arparams, res.maparams, t)
+        process_coef = ArmaProcess.from_coeffs(res.arparams, res.maparams)#, t)
 
         assert_equal(process_model.arcoefs, process_coef.arcoefs)
         assert_equal(process_model.macoefs, process_coef.macoefs)
-        assert_equal(process_model.nobs, process_coef.nobs)
+        #assert_equal(process_model.nobs, process_coef.nobs)
         assert_equal(process_model.isinvertible, process_coef.isinvertible)
         assert_equal(process_model.isstationary, process_coef.isstationary)
 
@@ -269,7 +269,7 @@ class TestArmaProcess(object):
         assert out.find('MA: [1.0, 0.2]') != -1
 
         out = process1.__repr__()
-        assert out.find('nobs=100') != -1
+        #assert out.find('nobs=100') != -1
         assert out.find('at ' + str(hex(id(process1)))) != -1
 
     def test_acf(self):
@@ -279,7 +279,7 @@ class TestArmaProcess(object):
         assert_array_almost_equal(acf, expected)
 
         acf = process1.acf()
-        assert acf.shape[0] == process1.nobs
+        #assert acf.shape[0] == process1.nobs
 
     def test_pacf(self):
         process1 = ArmaProcess.from_coeffs([.9])
@@ -288,7 +288,7 @@ class TestArmaProcess(object):
         assert_array_almost_equal(pacf, expected)
 
         pacf = process1.pacf()
-        assert pacf.shape[0] == process1.nobs
+        #assert pacf.shape[0] == process1.nobs
 
     def test_isstationary(self):
         process1 = ArmaProcess.from_coeffs([1.1])

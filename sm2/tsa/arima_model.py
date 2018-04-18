@@ -34,7 +34,7 @@ from sm2.tsa.arima_process import arma2ma
 from sm2.tsa.ar_model import AR
 from sm2.tsa.kalmanf import KalmanFilter
 
-_unpack_params = wold.ARMAParams._unpack_params  # staticmethod
+_unpack_params = wold.ARMATransparams._unpack_params  # staticmethod
 
 
 def _unpack_order(order):  # pragma: no cover
@@ -52,6 +52,15 @@ def _create_mpl_ax(ax):
     else:
         fig = ax.figure
     return fig, ax
+
+
+def _forecast_conf_int(forecast, fcerr, alpha):
+    # upstream this is (unnecesarily a method in both
+    # ARMAResults and ARIMAResults)
+    const = stats.norm.ppf(1 - alpha / 2.)
+    conf_int = np.c_[forecast - const * fcerr,
+                     forecast + const * fcerr]
+    return conf_int
 
 
 _armax_notes = """
@@ -398,7 +407,7 @@ def _check_estimable(nobs, n_params):
         raise ValueError("Insufficient degrees of freedom to estimate")
 
 
-class ARMA(wold.ARMAParams, tsa_model.TimeSeriesModel):
+class ARMA(wold.ARMATransparams, tsa_model.TimeSeriesModel):
     __doc__ = tsa_model._tsa_doc % {
         "model": "Autoregressive Moving Average ARMA(p,q) Model",
         "params": _arma_params,
@@ -534,24 +543,28 @@ class ARMA(wold.ARMAParams, tsa_model.TimeSeriesModel):
         # check MA coefficients
         return start_params
 
+    def _fit_start_params_css(self, order, start_ar_lags=None):
+        func = lambda params: -self.loglike_css(params)
+        start_params = self._fit_start_params_hr(order, start_ar_lags)
+        if self.transparams:
+            start_params = self._invtransparams(start_params)
+        bounds = [(None,) * 2] * sum(order)
+        mlefit = optimize.fmin_l_bfgs_b(func, start_params,
+                                        approx_grad=True, m=12,
+                                        pgtol=1e-7, factr=1e3,
+                                        bounds=bounds, iprint=-1)
+        start_params = mlefit[0]
+        if self.transparams:
+            start_params = self._transparams(start_params)
+        return start_params
+
     def _fit_start_params(self, order, method, start_ar_lags=None):
         if method != 'css-mle':
             # use Hannan-Rissanen to get start params
             start_params = self._fit_start_params_hr(order, start_ar_lags)
         else:
             # use CSS to get start params
-            func = lambda params: -self.loglike_css(params)
-            start_params = self._fit_start_params_hr(order, start_ar_lags)
-            if self.transparams:
-                start_params = self._invtransparams(start_params)
-            bounds = [(None,) * 2] * sum(order)
-            mlefit = optimize.fmin_l_bfgs_b(func, start_params,
-                                            approx_grad=True, m=12,
-                                            pgtol=1e-7, factr=1e3,
-                                            bounds=bounds, iprint=-1)
-            start_params = mlefit[0]
-            if self.transparams:
-                start_params = self._transparams(start_params)
+            start_params = self._fit_start_params_css(order, start_ar_lags)
         return start_params
 
     def _get_prediction_index(self, start, end, dynamic, index=None):
@@ -716,6 +729,7 @@ class ARMA(wold.ARMAParams, tsa_model.TimeSeriesModel):
         """
         Conditional Sum of Squares likelihood function.
         """
+
         k_ar = self.k_ar
         k_ma = self.k_ma
         k = self.k_exog + self.k_trend
@@ -736,6 +750,7 @@ class ARMA(wold.ARMAParams, tsa_model.TimeSeriesModel):
         errors = signal.lfilter(b, a, y, zi=zi)[0][k_ar:]
         # TODO: Use geterrors_css for this
 
+        nobs = len(errors)
         ssr = np.dot(errors, errors)
         sigma2 = ssr / nobs
         if set_sigma2:
@@ -820,7 +835,7 @@ class ARMA(wold.ARMAParams, tsa_model.TimeSeriesModel):
         unkown state is zero, and that the inital variance is
         P = dot(inv(identity(m**2)-kron(T,T)),dot(R,R.T).ravel('F')).reshape(r,
         r, order = 'F')
-        """
+        """  # TODO: Can we share this docstring?
         k_ar = self.k_ar
         k_ma = self.k_ma
 
@@ -1063,13 +1078,12 @@ class ARIMA(ARMA):
 
         Returns
         -------
-        `sm2.tsa.arima.ARIMAResults` class
+        result : sm2.tsa.arima.ARIMAResults
 
         See also
         --------
         sm2.base.model.LikelihoodModel.fit : for more information
             on using the solvers.
-        ARIMAResults : results class returned by fit
 
         Notes
         ------
@@ -1077,7 +1091,7 @@ class ARIMA(ARMA):
         unkown state is zero, and that the inital variance is
         P = dot(inv(identity(m**2)-kron(T,T)),dot(R,R.T).ravel('F')).reshape(r,
         r, order = 'F')
-        """
+        """  # TODO: Can we share any of the docstring?
         mlefit = super(ARIMA, self).fit(start_params, trend,
                                         method, transparams, solver,
                                         maxiter, full_output, disp,
@@ -1089,7 +1103,6 @@ class ARIMA(ARMA):
 
         arima_fit.mle_retvals = mlefit.mle_retvals
         arima_fit.mle_settings = mlefit.mle_settings
-
         return ARIMAResultsWrapper(arima_fit)
 
     @copy_doc(_arima_predict)
@@ -1201,7 +1214,8 @@ class ARIMA(ARMA):
         return fv
 
 
-class ARMAResults(wold.ARMARoots, tsa_model.TimeSeriesModelResults):
+class ARMAResults(wold.ARMARoots, tsa_model.TimeSeriesModelResults,
+                  wold.ARMAParams):
     """
     Class to hold results from fitting an ARMA model.
 
@@ -1219,7 +1233,6 @@ class ARMAResults(wold.ARMARoots, tsa_model.TimeSeriesModelResults):
     Returns
     --------
     **Attributes**
-
     aic : float
         Akaike Information Criterion
         :math:`-2*llf+2* df_model`
@@ -1305,8 +1318,6 @@ class ARMAResults(wold.ARMARoots, tsa_model.TimeSeriesModelResults):
     """
     _cache = {}
 
-    # TODO: use this for docstring when we fix nobs issue
-
     # TODO: Make this actually return instead of raising?
     _ic_df_model = deprecated_alias("_ic_df_model", "df_model + 1")
 
@@ -1331,32 +1342,29 @@ class ARMAResults(wold.ARMARoots, tsa_model.TimeSeriesModelResults):
         self.k_ma = model.k_ma
         self._cache = {}  # not sure why, but this needs to be set explicitly
 
+        # We can only use the arparams/maparams attrs below because
+        # they happen to be aliases for arcoefs/macoefs
+        ar = np.r_[1, -self.arparams]
+        ma = np.r_[1, self.maparams]
+        wold.ARMAParams.__init__(self, ar, ma)  # FIXME: Intercept?
+
     @cached_value
     def arparams(self):
+        """Alias for arcoefs used for naming convention compatibility.
+        In the future, `arparams` may be changed to correspond
+        to np.r_[1, -arcoefs]
+        """
+        # (Unfortunately) arparams is a alias for arcoefs for back-compat
         k = self.k_exog + self.k_trend
         return self.params[k:k + self.k_ar]
 
     @cached_value
     def maparams(self):
-        k = self.k_exog + self.k_trend
-        k_ar = self.k_ar
-        return self.params[k + k_ar:]
-
-    @cached_value
-    def arcoefs(self):
-        """Alias for arparams used for naming convention compatibility.
-        In the future, `arparams` may be changed to correspond
-        to np.r_[1, -arcoefs]
-        """
-        k = self.k_exog + self.k_trend
-        return self.params[k:k + self.k_ar]
-
-    @cached_value
-    def macoefs(self):
-        """Alias for maparams used for naming convention compatibility.
+        """Alias for macoefs used for naming convention compatibility.
         In the future, `maparams` may be changed to correspond
         to np.r_[1, macoefs]
         """
+        # (Unfortunately) maparams is a alias for macoefs for back-compat
         k = self.k_exog + self.k_trend
         k_ar = self.k_ar
         return self.params[k + k_ar:]
@@ -1430,13 +1438,6 @@ class ARMAResults(wold.ARMARoots, tsa_model.TimeSeriesModelResults):
         fcasterr = np.sqrt(sigma2 * np.cumsum(ma_rep**2))
         return fcasterr
 
-    def _forecast_conf_int(self, forecast, fcasterr, alpha):
-        const = stats.norm.ppf(1 - alpha / 2.)
-        conf_int = np.c_[forecast - const * fcasterr,
-                         forecast + const * fcasterr]
-        return conf_int
-        # TODO: Does this need to be a method?  also its identical to above
-
     def forecast(self, steps=1, exog=None, alpha=.05):
         """
         Out-of-sample forecasts
@@ -1468,7 +1469,7 @@ class ARMAResults(wold.ARMARoots, tsa_model.TimeSeriesModelResults):
             exog = np.asarray(exog)
             if self.k_exog == 1 and exog.ndim == 1:
                 exog = exog[:, None]
-            elif exog.ndim == 1:
+            elif exog.ndim == 1:  # TODO: Why is this branch not done below?
                 if len(exog) != self.k_exog:
                     raise ValueError("1d exog given and len(exog) != k_exog")
                 exog = exog[None, :]
@@ -1487,11 +1488,10 @@ class ARMAResults(wold.ARMARoots, tsa_model.TimeSeriesModelResults):
 
         # compute the standard errors
         fcasterr = self._forecast_error(steps)
-        conf_int = self._forecast_conf_int(forecast, fcasterr, alpha)
-
+        conf_int = _forecast_conf_int(forecast, fcasterr, alpha)
         return forecast, fcasterr, conf_int  # TODO: return a DataFrame?
 
-    def summary(self, alpha=.05):
+    def summary(self, alpha=.05):  # TODO: Can we share this docstring?
         """Summarize the Model
 
         Parameters
@@ -1607,8 +1607,7 @@ class ARMAResults(wold.ARMARoots, tsa_model.TimeSeriesModelResults):
         if out_of_sample:
             steps = out_of_sample
             fc_error = self._forecast_error(steps)
-            conf_int = self._forecast_conf_int(forecast[-steps:], fc_error,
-                                               alpha)
+            conf_int = _forecast_conf_int(forecast[-steps:], fc_error, alpha)
 
         if hasattr(self.data, "predict_dates"):
             forecast = pd.Series(forecast, index=self.data.predict_dates)
@@ -1653,13 +1652,7 @@ class ARIMAResults(ARMAResults):
                          np.r_[1, self.maparams], lags=steps)
 
         fcerr = np.sqrt(np.cumsum(cumsum_n(ma_rep, self.k_diff)**2) * sigma2)
-        return fcerr
-
-    def _forecast_conf_int(self, forecast, fcerr, alpha):
-        const = stats.norm.ppf(1 - alpha / 2.)
-        conf_int = np.c_[forecast - const * fcerr, forecast + const * fcerr]
-        return conf_int
-        # TODO: Does this need to be a method?
+        return fcerr  # TODO: share with ARMAResults?
 
     def forecast(self, steps=1, exog=None, alpha=.05):
         """
@@ -1690,7 +1683,7 @@ class ARIMAResults(ARMAResults):
         -----
         Prediction is done in the levels of the original endogenous variable.
         If you would like prediction of differences in levels use `predict`.
-        """
+        """  # TODO: share docstring?
         if exog is not None:
             if self.k_exog == 1 and exog.ndim == 1:
                 exog = exog[:, None]
@@ -1712,7 +1705,7 @@ class ARIMAResults(ARMAResults):
 
         # get forecast errors
         fcerr = self._forecast_error(steps)
-        conf_int = self._forecast_conf_int(forecast, fcerr, alpha)
+        conf_int = _forecast_conf_int(forecast, fcerr, alpha)
         return forecast, fcerr, conf_int
 
     @copy_doc(_arima_plot_predict)
@@ -1729,8 +1722,7 @@ class ARIMAResults(ARMAResults):
         if out_of_sample:
             steps = out_of_sample
             fc_error = self._forecast_error(steps)
-            conf_int = self._forecast_conf_int(forecast[-steps:], fc_error,
-                                               alpha)
+            conf_int = _forecast_conf_int(forecast[-steps:], fc_error, alpha)
 
         if hasattr(self.data, "predict_dates"):
             forecast = pd.Series(forecast, index=self.data.predict_dates)

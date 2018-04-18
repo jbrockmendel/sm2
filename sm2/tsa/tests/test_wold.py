@@ -7,8 +7,42 @@ import numpy as np
 from sm2.tsa import wold
 
 
+def test_from_coeffs_None():
+    # Test case where None is passed into from_coeffs constructor
+    arma = wold.ARMAParams.from_coeffs(None, [.5, -.1])
+    control = wold.ARMAParams.from_coeffs([], [.5, -.1])
+    assert arma == control
+
+
 @pytest.mark.skip(reason="VARParams doesnt inherit RootsMixin yet")
 class TestRoots(object):
+    @classmethod
+    def setup_class(cls):
+        # AR Process that we'll treat as a VAR
+        ar = [1, -.25]
+        # Note that this induces an
+        # AR Polynomial L^0 - L^1 + .25 L^2 --> (1-.5L)**2
+        arparams = np.array(ar)
+        ma = []
+        maparams = np.array(ma)
+        cls.varma = wold.VARParams(arparams, maparams)
+
+    def test_k_ma(self):
+        assert self.varma.k_ma == 0, (self.varma.k_ma, self.varma.macoefs)
+
+    def test_neqs(self):
+        assert self.varma.neqs == 1, self.varma.neqs
+
+    def test_roots(self):
+        # Our ar params induce an
+        # AR Polynomial L^0 - L^1 + .25 L^2 --> (1-.5L)**2
+        # so the roots should both be 2
+        roots = self.varma.roots
+        assert roots.shape == (2,)
+        assert (roots == 2).all()
+
+
+class TestVARParamsUnivariate(object):
     @classmethod
     def setup_class(cls):
         # AR Process that we'll treat as a VAR

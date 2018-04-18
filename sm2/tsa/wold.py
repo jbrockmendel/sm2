@@ -9,6 +9,7 @@ from __future__ import division
 import numpy as np
 import scipy.linalg
 from pandas._libs.properties import cache_readonly
+from pandas.util._decorators import deprecate_kwarg
 
 from sm2.tsa import autocov
 
@@ -24,6 +25,18 @@ def _shape_params(params):
         # i.e. 1 lag
         params = params[None, :, :]
     return params
+
+
+def _check_is_poly(params):
+    """
+    Validate that the given params is in the form of a lag polynomial,
+    i.e. is a 1-dimensional np.ndarray with first entry 1.
+    """
+    if np.ndim(params) != 1:  # pragma: no cover
+        raise ValueError(params.shape, params)
+    elif params[0] != 1:  # pragma: no cover
+        raise ValueError('Params must be in the form of a Lag Polynomial',
+                         params)
 
 
 def _check_param_dims(params):
@@ -199,13 +212,125 @@ class ARMARoots(object):
             mainv = pnew.coef / pnew.coef[0]
 
         if retnew:
-            return self.__class__(self.ar, mainv, nobs=self.nobs)
+            return self.__class__(self.ar, mainv)
             # TODO: dont do this multiple-return thing
         else:
             return (mainv, invertible)
 
 
 class ARMAParams(object):
+    """
+    Represents the deterministic component of an ARMA process with known
+    parameters.
+    """
+    # TODO: Make the inputs fooparams or foocoefs; don't pile on another
+    # naming scheme.
+    # TODO: Check unit root behavior
+    # @deprecate_kwarg("nobs", None)  # TODO: can't use on classmethod
+    def __init__(self, ar=None, ma=None, intercept=0):
+        if ar is None:
+            ar = np.array([1.])
+        if ma is None:
+            ma = np.array([1.])
+        self.ar = np.asarray(ar)
+        self.ma = np.asarray(ma)
+        _check_is_poly(self.ar)
+        _check_is_poly(self.ma)
+
+        self.arcoefs = -self.ar[1:]
+        self.macoefs = self.ma[1:]
+
+        self.arpoly = np.polynomial.Polynomial(self.ar)
+        self.mapoly = np.polynomial.Polynomial(self.ma)
+
+        (k_ar, k_ma, neqs, intercept) = _unpack_lags_and_neqs(self.ar,
+                                                              self.ma,
+                                                              intercept)
+        self.intercept = intercept
+        if neqs != 1:
+            raise NotImplementedError("Lag Polynomials for the vector case "
+                                      "not implemented.")
+
+    def __eq__(self, other):
+        # Easier to check polynomials than coefficients
+        # TODO: I'd rather `nobs` not be an attribute at this level.
+        return (self.arpoly == other.arpoly and
+                self.mapoly == other.mapoly and
+                getattr(self, 'nobs', None) == getattr(other, 'nobs', None))
+
+    def __ne__(self, other):
+        return not self.__eq__(other)
+
+    def __mul__(self, other):
+        if issubclass(other.__class__, ARMAParams):
+            ar = (self.arpoly * other.arpoly).coef
+            ma = (self.mapoly * other.mapoly).coef
+        elif not isinstance(other, (list, tuple)) or len(other) != 2:
+            raise TypeError('Cannot multiply type {cls} with type {other}'
+                            .format(cls=type(self).__name__,
+                                    other=type(other).__name__))
+        else:
+            (aroth, maoth) = other
+            arpolyoth = np.polynomial.Polynomial(aroth)
+            mapolyoth = np.polynomial.Polynomial(maoth)
+            ar = (self.arpoly * arpolyoth).coef
+            ma = (self.mapoly * mapolyoth).coef
+
+        product = self.__class__(ar, ma)
+        return product
+
+    # @deprecate_kwarg("nobs", None)  # TODO: can't use on classmethod
+    @classmethod
+    def from_coeffs(cls, arcoefs=None, macoefs=None):
+        """Create instance from coefficients of the lag-polynomials
+
+        Parameters
+        ----------
+        arcoefs : array-like
+            Coefficient for autoregressive lag polynomial, not including zero
+            lag. The sign is inverted to conform to the usual time series
+            representation of an ARMA process in statistics. See the class
+            docstring for more information.
+        macoefs : array-like
+            Coefficient for moving-average lag polynomial, including zero lag
+
+        Examples
+        --------
+        >>> arcoefs = [.75, -.25]
+        >>> macoefs = [.65, .35]
+        >>> arma_process = sm2.tsa.ArmaProcess.from_coeffs(arcoefs, macoefs)
+        >>> arma_process.isstationary
+        True
+        >>> arma_process.isinvertible
+        True
+        """
+        if macoefs is None:
+            macoefs = []
+        if arcoefs is None:
+            arcoefs = []
+        arcoefs = np.asarray(arcoefs)
+        macoefs = np.asarray(macoefs)
+        return cls(np.r_[1, -arcoefs],
+                   np.r_[1, macoefs])
+
+    # @deprecate_kwarg("nobs", None)  # TODO: can't use on classmethod
+    @classmethod
+    def from_estimation(cls, model_results):
+        """
+        Convenience function to create an ArmaProcess from the results
+        of an ARMA estimation
+
+        Parameters
+        ----------
+        model_results : ARMAResults instance
+        """
+        arcoefs = model_results.arparams
+        macoefs = model_results.maparams
+        return cls(np.r_[1, -arcoefs],
+                   np.r_[1, macoefs])
+
+
+class ARMATransparams(object):
 
     @staticmethod
     def _unpack_params(params, order, k_trend, k_exog, reverse=False):
@@ -366,7 +491,7 @@ class ARMAParams(object):
         return newparams
 
 
-# TODO: Can this be extended to VARMA?
+# TODO: Can this be extended to VARMA?  VARIMA?
 class VARParams(object):
     """Class representing a known VAR(p) process, *without* any information
     about the distribution of error terms.

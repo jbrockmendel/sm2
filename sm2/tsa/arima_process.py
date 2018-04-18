@@ -531,7 +531,8 @@ def deconvolve(num, den, n=None):  # pragma: no cover
                               "scipy.signal.signaltools.")
 
 
-class ArmaProcess(wold.ARMARoots):
+# NB: The upstream implementation has a `nobs` kwarg/attr
+class ArmaProcess(wold.ARMARoots, wold.ARMAParams):
     r"""
     Theoretical properties of an ARMA process for specified lag-polynomials
 
@@ -542,9 +543,6 @@ class ArmaProcess(wold.ARMARoots):
         See the notes for some information about the sign.
     ma : array_like, 1d, optional
         Coefficient for moving-average lag polynomial, including zero lag
-    nobs : int, optional
-        Length of simulated time series. Used, for example, if a sample is
-        generated. See example.
 
     Notes
     -----
@@ -587,95 +585,10 @@ class ArmaProcess(wold.ARMARoots):
     >>> model.params
     array([ 0.79044189, -0.23140636,  0.70072904,  0.40608028])
     """
-
-    # TODO: Check unit root behavior
-    def __init__(self, ar=None, ma=None, nobs=100):
-        if ar is None:
-            ar = np.array([1.])
-        if ma is None:
-            ma = np.array([1.])
-        self.ar = np.asarray(ar)
-        self.ma = np.asarray(ma)
-        self.arcoefs = -self.ar[1:]
-        self.macoefs = self.ma[1:]
-        self.arpoly = np.polynomial.Polynomial(self.ar)
-        self.mapoly = np.polynomial.Polynomial(self.ma)
-        self.nobs = nobs
-
-    @classmethod
-    def from_coeffs(cls, arcoefs=None, macoefs=None, nobs=100):
-        """
-        Convenience function to create ArmaProcess from ARMA representation
-
-        Parameters
-        ----------
-        arcoefs : array-like, optional
-            Coefficient for autoregressive lag polynomial, not including zero
-            lag. The sign is inverted to conform to the usual time series
-            representation of an ARMA process in statistics. See the class
-            docstring for more information.
-        macoefs : array-like, optional
-            Coefficient for moving-average lag polynomial, excluding zero lag
-        nobs : int, optional
-            Length of simulated time series. Used, for example, if a sample
-            is generated.
-
-        Examples
-        --------
-        >>> arparams = [.75, -.25]
-        >>> maparams = [.65, .35]
-        >>> arma_process = sm.tsa.ArmaProcess.from_coeffs(ar, ma)
-        >>> arma_process.isstationary
-        True
-        >>> arma_process.isinvertible
-        True
-        """
-        arcoefs = [] if arcoefs is None else arcoefs
-        macoefs = [] if macoefs is None else macoefs
-        return cls(np.r_[1, -np.asarray(arcoefs)],
-                   np.r_[1, np.asarray(macoefs)],
-                   nobs=nobs)
-
-    @classmethod
-    def from_estimation(cls, model_results, nobs=None):
-        """
-        Convenience function to create an ArmaProcess from the results
-        of an ARMA estimation
-
-        Parameters
-        ----------
-        model_results : ARMAResults instance
-            A fitted model
-        nobs : int, optional
-            If None, nobs is taken from the results
-        """
-        arcoefs = model_results.arparams
-        macoefs = model_results.maparams
-        nobs = nobs or model_results.nobs
-        return cls(np.r_[1, -arcoefs], np.r_[1, macoefs], nobs=nobs)
-
-    def __mul__(self, other):
-        if isinstance(other, self.__class__):
-            ar = (self.arpoly * other.arpoly).coef
-            ma = (self.mapoly * other.mapoly).coef
-        else:
-            try:
-                aroth, maoth = other
-                arpolyoth = np.polynomial.Polynomial(aroth)
-                mapolyoth = np.polynomial.Polynomial(maoth)
-                ar = (self.arpoly * arpolyoth).coef
-                ma = (self.mapoly * mapolyoth).coef
-            except (ValueError, TypeError):
-                raise TypeError('Cannot multiply type {cls} with type {other}'
-                                .format(cls=type(self).__name__,
-                                        other=type(other).__name__))
-        return self.__class__(ar, ma, nobs=self.nobs)
-
     def __repr__(self):
         msg = '{cls}({ar}, {ma}, nobs={nobs})'
         return msg.format(cls=self.__class__.__name__,
-                          ar=self.ar.tolist(), ma=self.ma.tolist(),
-                          nobs=self.nobs)
+                          ar=self.ar.tolist(), ma=self.ma.tolist())
 
     def __str__(self):
         return '{cls}\nAR: {ar}\nMA: {ma}'.format(cls=self.__class__.__name__,
@@ -683,28 +596,23 @@ class ArmaProcess(wold.ARMARoots):
                                                   ma=self.ma.tolist())
 
     @copy_doc(arma_acovf.__doc__)
-    def acovf(self, nobs=None):
-        nobs = nobs or self.nobs
+    def acovf(self, nobs=100):
         return arma_acovf(self.ar, self.ma, nobs=nobs)
 
     @copy_doc(arma_acf.__doc__)
-    def acf(self, lags=None):
-        lags = lags or self.nobs
+    def acf(self, lags=100):
         return arma_acf(self.ar, self.ma, lags=lags)
 
     @copy_doc(arma_pacf.__doc__)
-    def pacf(self, lags=None):
-        lags = lags or self.nobs
+    def pacf(self, lags=100):
         return arma_pacf(self.ar, self.ma, lags=lags)
 
     @copy_doc(arma_periodogram.__doc__)
-    def periodogram(self, nobs=None):
-        nobs = nobs or self.nobs
+    def periodogram(self, nobs=100):
         return arma_periodogram(self.ar, self.ma, worN=nobs)
 
     @copy_doc(arma_impulse_response.__doc__)
-    def impulse_response(self, leads=None):
-        leads = leads or self.nobs
+    def impulse_response(self, leads=100):
         return arma_impulse_response(self.ar, self.ma, leads=leads)
 
     # TODO: Fix upstream the docstring gets patched incorrectly

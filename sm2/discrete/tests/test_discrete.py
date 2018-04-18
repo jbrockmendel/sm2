@@ -99,7 +99,7 @@ class CheckModelResults(object):
                         atol=1e-4)
 
     # FIXME: the reason it is mangled upstream is because the tests fail!
-    # TODO: upstream fix the name "pvalues" --> "test_pvalues"
+    # TODO: upstream fix the name "pvalues" --> "test_pvalues" (and un-mangle!)
     #def test_pvalues(self):
     #    # not overriden --> parametrize?
     #    assert_allclose(self.res1.pvalues,

@@ -58,7 +58,7 @@ def _ar_predict_out_of_sample(y, params, p, k_trend, steps, start=0):
     return forecast
 
 
-class AR(wold.ARMAParams, tsa_model.TimeSeriesModel):
+class AR(wold.ARMATransparams, tsa_model.TimeSeriesModel):
     __doc__ = tsa_model._tsa_doc % {
         "model": "Autoregressive AR(p) model",
         "params": """endog : array-like
