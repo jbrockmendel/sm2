@@ -3,6 +3,8 @@
 
 import pytest
 import numpy as np
+from numpy.testing import assert_allclose, assert_equal
+import scipy.signal
 
 from sm2.tsa import wold
 
@@ -14,7 +16,105 @@ def test_from_coeffs_None():
     assert arma == control
 
 
-@pytest.mark.skip(reason="VARParams doesnt inherit RootsMixin yet")
+def test_mult():
+    a20 = wold.ARMAParams.from_coeffs([.5, -.1], [])
+    assert (a20.arcoefs == [.5, -.1]).all()
+    assert (a20.macoefs == []).all()
+    assert (a20.ar == [1, -0.5, 0.1]).all()
+
+    a11 = wold.ARMAParams.from_coeffs([-0.1], [.6])
+    assert (a11.arcoefs == [-0.1]).all()
+    assert (a11.macoefs == [.6]).all()
+    assert (a11.ar == [1, 0.1]).all()
+
+    m = a20 * a11
+
+    assert m.arpoly == a20.arpoly * a11.arpoly
+    assert m.mapoly == a20.mapoly * a11.mapoly
+
+    # __mul__ with slightly different types
+    m2 = a20 * (a11.ar, a11.ma)
+    assert m == m2
+
+    assert not m != m2
+
+
+def test_arma_periodogram_unit_root():
+    # Hits case where "np.isnan(h).any()"
+    ar = np.array([1, -1])
+    ma = np.array([1])
+
+    wsd = wold.arma_periodogram(ar, ma, None, 0)
+    assert np.isinf(wsd[1][0])
+
+
+def test_arma_periodiogram_AR1():
+    # TODO: non-AR test case
+    # TODO: check on the normalizations
+
+    # Start with a simple case where we can calculate the autocovariances
+    # easily
+    ar = np.array([1, -0.5])
+    ma = np.array([1])
+
+    wsd = wold.arma_periodogram(ar, ma, None, 0)
+
+    (w, h) = scipy.signal.freqz(ma, ar, worN=None, whole=0)
+    sd = np.abs(h)**2 / np.sqrt(2 * np.pi)
+
+    hrng = np.arange(-100, 100)  # 100 is an arbitrary cutoff
+    # Autocorrelations
+    # The reader can verify that the variance of this process is 4/3
+    variance = 4. / 3.
+    gammas = variance * np.array([2.**-abs(n) for n in hrng])
+
+    fw = 0 * w
+    for n in range(len(fw)):
+        omega = w[n]
+        val = gammas * np.exp(-1j * omega * hrng)
+        # Note we are not multiplying by 2 here.  I dont know of an
+        # especially good reason why not.
+        fw[n] = val.sum().real / np.sqrt(2 * np.pi)
+        # Note that the denominator is not standard across implementations
+
+    assert_allclose(fw, sd)
+    assert_equal(wsd[1], sd)
+
+
+def test_arma_periodiogram_MA1():
+    # TODO: check on the normalizations
+
+    # MA case where we can calculate autocovariances easily
+    ar = np.array([1.])
+    ma = np.array([1., .4])
+
+    wsd = wold.arma_periodogram(ar, ma, None, 0)
+
+    (w, h) = scipy.signal.freqz(ma, ar, worN=None, whole=0)
+    sd = np.abs(h)**2 / np.sqrt(2 * np.pi)
+
+    hrng = np.arange(-100, 100)  # 100 is an arbitrary cutoff
+    # Autocorrelations
+    gammas = np.array([0. for n in hrng])
+    gammas[100] = 1. + .4**2
+    gammas[99] = .4
+    gammas[101] = .4
+
+    fw = 0 * w
+    for n in range(len(fw)):
+        omega = w[n]
+        val = gammas * np.exp(-1j * omega * hrng)
+        # Note we are not multiplying by 2 here.  I dont know of an
+        # especially good reason why not.
+        fw[n] = val.sum().real / np.sqrt(2 * np.pi)
+        # Note that the denominator is not standard across implementations
+
+    assert_allclose(fw, sd)
+    assert_equal(wsd[1], sd)
+
+
+# -------------------------------------------------------------------
+
 class TestRoots(object):
     @classmethod
     def setup_class(cls):
@@ -41,6 +141,53 @@ class TestRoots(object):
         assert roots.shape == (2,)
         assert (roots == 2).all()
 
+
+class TestARMAParams(object):
+    @classmethod
+    def setup_class(cls):
+        # Basic AR(1)
+        cls.ar = [1, -0.5]
+        cls.ma = [1]
+        cls.arma = wold.ARMAParams(cls.ar, cls.ma)
+
+    def test_stationary(self):
+        # $y_t = 0.5 * y_{t-1}$ is stationary
+        assert self.arma.isstationary  # TODO: This belongs in a separate test
+
+    def test_invertible(self):  # TODO: get a less-dumb test case
+        # The MA component is just a [1], so the roots is an empty array
+        assert self.arma.maroots.size == 0
+        # All on an empty set always returns True, so self.maroots
+        # is invertible.
+        assert self.arma.isinvertible, (self.ar, self.ma)
+
+    def test_2ar(self):
+        # Getting the AR Representation should be effectively the
+        # identity operation
+        ar = self.ar
+        ma = self.ma
+        arma = self.arma
+        arrep = arma.arma2ar(5)
+
+        assert (arrep[:2] == ar).all()
+
+        # get the same object via the wold.arma2ar function
+        arrep2 = wold.arma2ar(ar, ma, 5)
+        assert (arrep2 == arrep).all()  # TODO: belongs in separate test?
+
+    def test_2ma(self):
+        # Getting the MA Representation should be an exponential decay
+        # with rate .5
+        arma = self.arma
+        marep = arma.arma2ma(5)
+        assert (marep == [2.**-n for n in range(len(marep))]).all()
+
+    def test_str(self):
+        rep = str(self.arma)
+        assert rep == 'ARMAParams\nAR: [1.0, -0.5]\nMA: [1]', rep
+
+
+# -------------------------------------------------------------------
 
 class TestVARParamsUnivariate(object):
     @classmethod

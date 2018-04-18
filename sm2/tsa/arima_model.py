@@ -1214,8 +1214,7 @@ class ARIMA(ARMA):
         return fv
 
 
-class ARMAResults(wold.ARMARoots, tsa_model.TimeSeriesModelResults,
-                  wold.ARMAParams):
+class ARMAResults(tsa_model.TimeSeriesModelResults, wold.ARMAParams):
     """
     Class to hold results from fitting an ARMA model.
 
@@ -1354,7 +1353,6 @@ class ARMAResults(wold.ARMARoots, tsa_model.TimeSeriesModelResults,
         In the future, `arparams` may be changed to correspond
         to np.r_[1, -arcoefs]
         """
-        # (Unfortunately) arparams is a alias for arcoefs for back-compat
         k = self.k_exog + self.k_trend
         return self.params[k:k + self.k_ar]
 
@@ -1364,7 +1362,6 @@ class ARMAResults(wold.ARMARoots, tsa_model.TimeSeriesModelResults,
         In the future, `maparams` may be changed to correspond
         to np.r_[1, macoefs]
         """
-        # (Unfortunately) maparams is a alias for macoefs for back-compat
         k = self.k_exog + self.k_trend
         k_ar = self.k_ar
         return self.params[k + k_ar:]

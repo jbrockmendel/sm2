@@ -96,24 +96,25 @@ def _manual_arma_generate_sample(ar, ma, eta):
 
 
 @pytest.mark.not_vetted
-def test_arma_generate_sample():
+@pytest.mark.parametrize('dist', [np.random.randn])
+@pytest.mark.parametrize('ar', arlist)
+@pytest.mark.parametrize('ma', malist)
+def test_arma_generate_sample(dist, ar, ma):
     # Test that this generates a true ARMA process
     # (amounts to just a test that scipy.signal.lfilter does what we want)
     T = 100
     dists = [np.random.randn]
-    for dist in dists:
-        np.random.seed(1234)
-        eta = dist(T)
-        for ar in arlist:
-            for ma in malist:
-                # rep1: from module function
-                np.random.seed(1234)
-                rep1 = arma_generate_sample(ar, ma, T, distrvs=dist)
-                # rep2: "manually" create the ARMA process
-                ar_params = -1 * np.array(ar[1:])
-                ma_params = np.array(ma[1:])
-                rep2 = _manual_arma_generate_sample(ar_params, ma_params, eta)
-                assert_array_almost_equal(rep1, rep2, 13)
+    np.random.seed(1234)
+    eta = dist(T)
+
+    # rep1: from module function
+    np.random.seed(1234)
+    rep1 = arma_generate_sample(ar, ma, T, distrvs=dist)
+    # rep2: "manually" create the ARMA process
+    ar_params = -1 * np.array(ar[1:])
+    ma_params = np.array(ma[1:])
+    rep2 = _manual_arma_generate_sample(ar_params, ma_params, eta)
+    assert_array_almost_equal(rep1, rep2, 13)
 
 
 @pytest.mark.not_vetted

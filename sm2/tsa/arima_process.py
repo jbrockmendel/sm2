@@ -32,6 +32,12 @@ __all__ = ['arma_acf', 'arma_acovf', 'arma_generate_sample',
            'arma_impulse_response', 'arma2ar', 'arma2ma', 'deconvolve',
            'lpol2index', 'index2lpol']
 
+# upstream these are defined here.
+arma_impulse_response = wold.arma_impulse_response
+arma2ar = wold.arma2ar
+arma2ma = wold.arma2ma
+arma_periodogram = wold.arma_periodogram
+
 
 def arma_generate_sample(ar, ma, nsample, sigma=1, distrvs=np.random.randn,
                          burnin=0):
@@ -207,161 +213,6 @@ def arma_pacf(ar, ma, lags=10):
     return apacf
 
 
-def arma_periodogram(ar, ma, worN=None, whole=0):
-    """
-    Periodogram for ARMA process given by lag-polynomials ar and ma
-
-    Parameters
-    ----------
-    ar : array_like
-        autoregressive lag-polynomial with leading 1 and lhs sign
-    ma : array_like
-        moving average lag-polynomial with leading 1
-    worN : {None, int}, optional
-        option for scipy.signal.freqz (read "w or N")
-        If None, then compute at 512 frequencies around the unit circle.
-        If a single integer, the compute at that many frequencies.
-        Otherwise, compute the response at frequencies given in worN
-    whole : {0,1}, optional
-        options for scipy.signal.freqz
-        Normally, frequencies are computed from 0 to pi (upper-half of
-        unit-circle.  If whole is non-zero compute frequencies from 0 to 2*pi.
-
-    Returns
-    -------
-    w : array
-        frequencies
-    sd : array
-        periodogram, spectral density
-
-    Notes
-    -----
-    Normalization ?
-
-    This uses signal.freqz, which does not use fft. There is a fft version
-    somewhere.
-    """
-    w, h = signal.freqz(ma, ar, worN=worN, whole=whole)
-    sd = np.abs(h) ** 2 / np.sqrt(2 * np.pi)
-    if np.any(np.isnan(h)):
-        # this happens with unit root or seasonal unit root'
-        warnings.warn('Warning: nan in frequency response h, maybe a unit '
-                      'root', RuntimeWarning)
-    return w, sd
-
-
-@deprecate_kwarg('nobs', 'leads')
-def arma_impulse_response(ar, ma, leads=100):
-    """
-    Get the impulse response function (MA representation) for ARMA process
-
-    Parameters
-    ----------
-    ma : array_like, 1d
-        moving average lag polynomial
-    ar : array_like, 1d
-        auto regressive lag polynomial
-    leads : int
-        number of observations to calculate
-
-    Returns
-    -------
-    ir : array, 1d
-        impulse response function with nobs elements
-
-    Notes
-    -----
-    This is the same as finding the MA representation of an ARMA(p,q).
-    By reversing the role of ar and ma in the function arguments, the
-    returned result is the AR representation of an ARMA(p,q), i.e
-
-    ma_representation = arma_impulse_response(ar, ma, leads=100)
-    ar_representation = arma_impulse_response(ma, ar, leads=100)
-
-    Fully tested against matlab
-
-    Examples
-    --------
-    AR(1)
-
-    >>> arma_impulse_response([1.0, -0.8], [1.], leads=10)
-    array([ 1.        ,  0.8       ,  0.64      ,  0.512     ,  0.4096    ,
-            0.32768   ,  0.262144  ,  0.2097152 ,  0.16777216,  0.13421773])
-
-    this is the same as
-
-    >>> 0.8**np.arange(10)
-    array([ 1.        ,  0.8       ,  0.64      ,  0.512     ,  0.4096    ,
-            0.32768   ,  0.262144  ,  0.2097152 ,  0.16777216,  0.13421773])
-
-    MA(2)
-
-    >>> arma_impulse_response([1.0], [1., 0.5, 0.2], leads=10)
-    array([ 1. ,  0.5,  0.2,  0. ,  0. ,  0. ,  0. ,  0. ,  0. ,  0. ])
-
-    ARMA(1,2)
-
-    >>> arma_impulse_response([1.0, -0.8], [1., 0.5, 0.2], leads=10)
-    array([ 1.        ,  1.3       ,  1.24      ,  0.992     ,  0.7936    ,
-            0.63488   ,  0.507904  ,  0.4063232 ,  0.32505856,  0.26004685])
-    """
-    impulse = np.zeros(leads)
-    impulse[0] = 1.
-    return signal.lfilter(ma, ar, impulse)
-
-
-@deprecate_kwarg('nobs', 'lags')
-def arma2ma(ar, ma, lags=100):
-    """
-    Get the MA representation of an ARMA process
-
-    Parameters
-    ----------
-    ar : array_like, 1d
-        auto regressive lag polynomial
-    ma : array_like, 1d
-        moving average lag polynomial
-    lags : int
-        number of coefficients to calculate
-
-    Returns
-    -------
-    ar : array, 1d
-        coefficients of AR lag polynomial with nobs elements
-
-    Notes
-    -----
-    Equivalent to ``arma_impulse_response(ma, ar, leads=100)``
-    """
-    return arma_impulse_response(ar, ma, leads=lags)
-
-
-@deprecate_kwarg('nobs', 'lags')
-def arma2ar(ar, ma, lags=100):
-    """
-    Get the AR representation of an ARMA process
-
-    Parameters
-    ----------
-    ar : array_like, 1d
-        auto regressive lag polynomial
-    ma : array_like, 1d
-        moving average lag polynomial
-    lags : int
-        number of coefficients to calculate
-
-    Returns
-    -------
-    ar : array, 1d
-        coefficients of AR lag polynomial with nobs elements
-
-    Notes
-    -----
-    Equivalent to ``arma_impulse_response(ma, ar, leads=100)``
-    """
-    return arma_impulse_response(ma, ar, leads=lags)
-
-
 # TODO: not hit in tests (here or upstream)
 # moved from sandbox.tsa.try_fi
 def ar2arma(ar_des, p, q, n=20, mse='ar', start=None):
@@ -532,7 +383,7 @@ def deconvolve(num, den, n=None):  # pragma: no cover
 
 
 # NB: The upstream implementation has a `nobs` kwarg/attr
-class ArmaProcess(wold.ARMARoots, wold.ARMAParams):
+class ArmaProcess(wold.ARMAParams):
     r"""
     Theoretical properties of an ARMA process for specified lag-polynomials
 
@@ -585,16 +436,6 @@ class ArmaProcess(wold.ARMARoots, wold.ARMAParams):
     >>> model.params
     array([ 0.79044189, -0.23140636,  0.70072904,  0.40608028])
     """
-    def __repr__(self):
-        msg = '{cls}({ar}, {ma}, nobs={nobs})'
-        return msg.format(cls=self.__class__.__name__,
-                          ar=self.ar.tolist(), ma=self.ma.tolist())
-
-    def __str__(self):
-        return '{cls}\nAR: {ar}\nMA: {ma}'.format(cls=self.__class__.__name__,
-                                                  ar=self.ar.tolist(),
-                                                  ma=self.ma.tolist())
-
     @copy_doc(arma_acovf.__doc__)
     def acovf(self, nobs=100):
         return arma_acovf(self.ar, self.ma, nobs=nobs)
@@ -606,26 +447,6 @@ class ArmaProcess(wold.ARMARoots, wold.ARMAParams):
     @copy_doc(arma_pacf.__doc__)
     def pacf(self, lags=100):
         return arma_pacf(self.ar, self.ma, lags=lags)
-
-    @copy_doc(arma_periodogram.__doc__)
-    def periodogram(self, nobs=100):
-        return arma_periodogram(self.ar, self.ma, worN=nobs)
-
-    @copy_doc(arma_impulse_response.__doc__)
-    def impulse_response(self, leads=100):
-        return arma_impulse_response(self.ar, self.ma, leads=leads)
-
-    # TODO: Fix upstream the docstring gets patched incorrectly
-    @copy_doc(arma2ma.__doc__)
-    def arma2ma(self, lags=None):
-        lags = lags or self.lags
-        return arma2ma(self.ar, self.ma, lags=lags)
-
-    # TODO: Fix upstream the docstring gets patched incorrectly
-    @copy_doc(arma2ar.__doc__)
-    def arma2ar(self, lags=None):
-        lags = lags or self.lags
-        return arma2ar(self.ar, self.ma, lags=lags)
 
     def generate_sample(self, nsample=100, scale=1., distrvs=None, axis=0,
                         burnin=0):
