@@ -184,23 +184,12 @@ class GenericZeroInflated(CountModel):
         start_params = np.append(np.ones(self.k_inflate), start_params)
         return start_params
 
-    @copy_doc(DiscreteModel.fit_regularized.__doc__)
-    def fit_regularized(self, start_params=None, method='l1',
-                        maxiter='defined_by_method', full_output=1, disp=1,
-                        callback=None, alpha=0, trim_mode='auto',
-                        auto_trim_tol=0.01, size_trim_tol=1e-4,
-                        qc_tol=0.03, **kwargs):
-
+    @copy_doc(DiscreteModel._set_alpha.__doc__)
+    def _set_alpha(self, alpha):
         if np.size(alpha) == 1 and alpha != 0:
             k_params = self.k_exog + self.k_inflate
             alpha = alpha * np.ones(k_params)
-
-        cntfit = DiscreteModel.fit_regularized(self,
-            start_params=start_params, method=method, maxiter=maxiter,
-            full_output=full_output, disp=disp, callback=callback,
-            alpha=alpha, trim_mode=trim_mode, auto_trim_tol=auto_trim_tol,
-            size_trim_tol=size_trim_tol, qc_tol=qc_tol, **kwargs)
-        return cntfit
+        return alpha
 
     def score_obs(self, params):
         """
