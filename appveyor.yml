@@ -11,7 +11,7 @@ platform:
   - x64
 
 install:
-  - pip install pytest matplotlib
+  - pip install pytest matplotlib wheel
   - pip install -r requirements.txt
   - python setup.py build_ext --inplace
 
