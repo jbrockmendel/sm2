@@ -418,7 +418,7 @@ class DiscreteModel(base.LikelihoodModel):
 
 # TODO: Can we just move this all the way up into DiscreteModel?
 class FitBase(DiscreteModel):
-    """Mixin to wrap DiscreteModel.fit and fit_regularized"""
+    """Mixin to wrap DiscreteModel.fit"""
 
     @copy_doc(DiscreteModel.fit.__doc__)
     def fit(self, start_params=None, method='newton', maxiter=35,
@@ -2447,6 +2447,32 @@ class NegativeBinomial(CountModel):
             a = (resid**2 / mu - 1).sum() / df_resid
         return a
 
+    def _get_start_params(self, start_params, **kwargs):
+        if start_params is not None:
+            return start_params
+
+        # Use poisson fit as first guess.
+        # TODO, Warning: this assumes exposure is logged
+        offset = getattr(self, "offset", 0) + getattr(self, "exposure", 0)
+        if np.size(offset) == 1 and offset == 0:
+            offset = None
+
+        optim_kwds_prelim = {'disp': 0, 'skip_hessian': True,
+                             'warn_convergence': False}
+        optim_kwds_prelim.update(kwargs.get('optim_kwds_prelim', {}))
+
+        mod_poi = Poisson(self.endog, self.exog, offset=offset)
+        res_poi = mod_poi.fit(**optim_kwds_prelim)
+        start_params = res_poi.params
+
+        if self.loglike_method.startswith('nb'):
+            a = self._estimate_dispersion(res_poi.predict(), res_poi.resid,
+                                          df_resid=res_poi.df_resid)
+            start_params = np.append(start_params, max(0.05, a))
+            # TODO: Document reasoning behind `max(0.05, a)`
+
+        return start_params
+
     def fit(self, start_params=None, method='bfgs', maxiter=35,
             full_output=1, disp=1, callback=None,
             cov_type='nonrobust', cov_kwds=None, use_t=None, **kwargs):
@@ -2460,28 +2486,14 @@ class NegativeBinomial(CountModel):
         elif self.loglike_method.startswith('nb'):  # method is newton/ncg
             self._transparams = False  # because we need to step in alpha space
 
-        if start_params is None:
-            # Use poisson fit as first guess.
-            # TODO, Warning: this assumes exposure is logged
-            offset = getattr(self, "offset", 0) + getattr(self, "exposure", 0)
-            if np.size(offset) == 1 and offset == 0:
-                offset = None
-            optim_kwds_prelim = {'disp': 0, 'skip_hessian': True,
-                                 'warn_convergence': False}
-            optim_kwds_prelim.update(kwargs.get('optim_kwds_prelim', {}))
-            mod_poi = Poisson(self.endog, self.exog, offset=offset)
-            res_poi = mod_poi.fit(**optim_kwds_prelim)
-            start_params = res_poi.params
-            if self.loglike_method.startswith('nb'):
-                a = self._estimate_dispersion(res_poi.predict(), res_poi.resid,
-                                              df_resid=res_poi.df_resid)
-                start_params = np.append(start_params, max(0.05, a))
-                # TODO: Document reasoning behind `max(0.05, a)`
-        else:
-            if self._transparams is True:
-                # transform user provided start_params dispersion, see GH#3918
-                start_params = np.array(start_params, copy=True)
-                start_params[-1] = np.log(start_params[-1])
+        if start_params is not None and self._transparams:
+            # Note: we cannot do this in `_get_start_params` or it risks
+            # being done repeatedly
+            # transform user provided start_params dispersion, see GH#3918
+            start_params = np.array(start_params, copy=True)
+            start_params[-1] = np.log(start_params[-1])
+
+        start_params = self._get_start_params(start_params, **kwargs)
 
         # TODO: can we skip CountModel and go straight to DiscreteModel?
         mlefit = CountModel.fit(self, start_params=start_params,

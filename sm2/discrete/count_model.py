@@ -144,8 +144,8 @@ class GenericZeroInflated(CountModel):
             full_output=1, disp=1, callback=None,
             cov_type='nonrobust', cov_kwds=None, use_t=None, **kwargs):
 
-        if start_params is None:
-            start_params = self._get_start_params()
+        # passing kwargs is not actually necessary, but harmless
+        start_params = self._get_start_params(start_params, **kwargs)
 
         mlefit = super(GenericZeroInflated, self).fit(
             start_params=start_params,
@@ -506,7 +506,7 @@ class ZeroInflatedPoisson(GenericZeroInflated):
         result = self.distribution.pmf(counts, mu, w)
         return result[0] if transform else result
 
-    def _get_start_params(self, start_params=None):
+    def _get_start_params(self, start_params=None, **kwargs):
         if start_params is None:
             start_params = self.model_main.fit(disp=0, method="nm").params
             start_params = np.append(np.ones(self.k_inflate) * 0.1,
@@ -595,7 +595,7 @@ class ZeroInflatedGeneralizedPoisson(GenericZeroInflated):
         result = self.distribution.pmf(counts, mu, params_main[-1], p, w)
         return result[0] if transform else result
 
-    def _get_start_params(self, start_params=None):
+    def _get_start_params(self, start_params=None, **kwargs):
         if start_params is None:
             zmod = ZeroInflatedPoisson(self.endog, self.exog,
                                        exog_infl=self.exog_infl)
@@ -685,7 +685,7 @@ class ZeroInflatedNegativeBinomialP(GenericZeroInflated):
         result = self.distribution.pmf(counts, mu, params_main[-1], p, w)
         return result[0] if transform else result
 
-    def _get_start_params(self, start_params=None):
+    def _get_start_params(self, start_params=None, **kwargs):
         if start_params is None:
             start_params = self.model_main.fit(disp=0, method='nm').params
             start_params = np.append(np.zeros(self.k_inflate), start_params)
