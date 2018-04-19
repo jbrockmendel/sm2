@@ -24,8 +24,9 @@ def _shape_params(params):
     if np.ndim(params) == 1:
         # Univariate Case, the one dimension of params represents lags
         params = params[:, None, None]
-    elif np.ndim(params) == 2:
+    elif np.ndim(params) == 2 and params.shape[0] == params.shape[1]:
         # i.e. 1 lag
+        # TODO: is this _unambigously_ correct?
         params = params[None, :, :]
     return params
 
@@ -35,14 +36,14 @@ def _check_is_poly(params):
     Validate that the given params is in the form of a lag polynomial,
     i.e. is a 1-dimensional np.ndarray with first entry 1.
     """
-    if np.ndim(params) != 1:  # pragma: no cover
+    if np.ndim(params) != 1:
         raise ValueError(params.shape, params)
-    elif params[0] != 1:  # pragma: no cover
+    elif params[0] != 1:
         raise ValueError('Params must be in the form of a Lag Polynomial',
                          params)
 
 
-def _check_param_dims(params):
+def _check_param_dims(params):  # TODO: Document that this is specific to VAR
     """
     `params` are either `ar` or `ma`
     """
