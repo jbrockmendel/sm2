@@ -53,6 +53,8 @@ class GenericZeroInflated(CountModel):
     """ % {'params': base._model_params_doc,
            'extra_params': _doc_zi_params + base._missing_param_doc}
 
+    _check_perfect_pred = None  # placeholder until implemented GH#3895
+
     def __init__(self, endog, exog, exog_infl=None, offset=None,
                  inflation='logit', exposure=None, missing='none', **kwargs):
         super(GenericZeroInflated, self).__init__(endog, exog, offset=offset,
@@ -137,20 +139,14 @@ class GenericZeroInflated(CountModel):
 
         return llf
 
+    # TODO: Can we use FitBase for this?
     @copy_doc(DiscreteModel.fit.__doc__)
     def fit(self, start_params=None, method='bfgs', maxiter=35,
             full_output=1, disp=1, callback=None,
             cov_type='nonrobust', cov_kwds=None, use_t=None, **kwargs):
 
-        if start_params is None:
-            offset = getattr(self, "offset", 0) + getattr(self, "exposure", 0)
-            if np.size(offset) == 1 and offset == 0:
-                offset = None
-            start_params = self._get_start_params()
-
-        if callback is None:
-            # work around perfect separation callback GH#3895
-            callback = lambda *x: x
+        # passing kwargs is not actually necessary, but harmless
+        start_params = self._get_start_params(start_params, **kwargs)
 
         mlefit = super(GenericZeroInflated, self).fit(
             start_params=start_params,
@@ -165,20 +161,13 @@ class GenericZeroInflated(CountModel):
         zipfit = res_cls(self, mlefit._results)
         return wrap_cls(zipfit)
 
-    @copy_doc(DiscreteModel.fit_regularized.__doc__)
-    def fit_regularized(self, start_params=None, method='l1',
-                        maxiter='defined_by_method', full_output=1, disp=1,
-                        callback=None, alpha=0, trim_mode='auto',
-                        auto_trim_tol=0.01, size_trim_tol=1e-4,
-                        qc_tol=0.03, **kwargs):
-
-        if method not in ['l1', 'l1_cvxopt_cp']:  # pragma: no cover
-            raise ValueError("argument method == %s, which is not "
-                             "handled" % method)
-
-        if np.size(alpha) == 1 and alpha != 0:
-            k_params = self.k_exog + self.k_inflate
-            alpha = alpha * np.ones(k_params)
+    def _get_start_params_l1(self, start_params, method='l1',
+                             maxiter='defined_by_method', full_output=1, disp=1,
+                             callback=None, alpha=0, trim_mode='auto',
+                             auto_trim_tol=0.01, size_trim_tol=1e-4,
+                             qc_tol=0.03, **kwargs):
+        if start_params is not None:
+            return start_params
 
         extra = self.k_extra - self.k_inflate
         if self.k_extra and np.size(alpha) > 1:
@@ -186,27 +175,22 @@ class GenericZeroInflated(CountModel):
         else:
             alpha_p = alpha
 
-        if start_params is None:
-            offset = getattr(self, "offset", 0) + getattr(self, "exposure", 0)
-            if np.size(offset) == 1 and offset == 0:
-                offset = None
-            start_params = self.model_main.fit_regularized(
-                start_params=start_params, method=method, maxiter=maxiter,
-                full_output=full_output, disp=0, callback=callback,
-                alpha=alpha_p, trim_mode=trim_mode,
-                auto_trim_tol=auto_trim_tol,
-                size_trim_tol=size_trim_tol, qc_tol=qc_tol, **kwargs).params
-            start_params = np.append(np.ones(self.k_inflate), start_params)
-
-        cntfit = super(CountModel, self).fit_regularized(
+        start_params = self.model_main.fit_regularized(
             start_params=start_params, method=method, maxiter=maxiter,
-            full_output=full_output, disp=disp, callback=callback,
-            alpha=alpha, trim_mode=trim_mode, auto_trim_tol=auto_trim_tol,
-            size_trim_tol=size_trim_tol, qc_tol=qc_tol, **kwargs)
+            full_output=full_output, disp=0, callback=callback,
+            alpha=alpha_p, trim_mode=trim_mode,
+            auto_trim_tol=auto_trim_tol,
+            size_trim_tol=size_trim_tol, qc_tol=qc_tol, **kwargs).params
 
-        res_cls, wrap_cls = self._res_classes["fit_regularized"]
-        discretefit = res_cls(self, cntfit)
-        return wrap_cls(discretefit)
+        start_params = np.append(np.ones(self.k_inflate), start_params)
+        return start_params
+
+    @copy_doc(DiscreteModel._set_alpha.__doc__)
+    def _set_alpha(self, alpha):
+        if np.size(alpha) == 1 and alpha != 0:
+            k_params = self.k_exog + self.k_inflate
+            alpha = alpha * np.ones(k_params)
+        return alpha
 
     def score_obs(self, params):
         """
@@ -257,7 +241,7 @@ class GenericZeroInflated(CountModel):
         return np.hstack((dldw, dldp))
 
     def _hessian_main(self, params):
-        pass
+        pass  # TODO: Should this raise?
 
     def _hessian_logit(self, params):
         params_infl = params[:self.k_inflate]
@@ -523,7 +507,7 @@ class ZeroInflatedPoisson(GenericZeroInflated):
         result = self.distribution.pmf(counts, mu, w)
         return result[0] if transform else result
 
-    def _get_start_params(self, start_params=None):
+    def _get_start_params(self, start_params=None, **kwargs):
         if start_params is None:
             start_params = self.model_main.fit(disp=0, method="nm").params
             start_params = np.append(np.ones(self.k_inflate) * 0.1,
@@ -612,7 +596,7 @@ class ZeroInflatedGeneralizedPoisson(GenericZeroInflated):
         result = self.distribution.pmf(counts, mu, params_main[-1], p, w)
         return result[0] if transform else result
 
-    def _get_start_params(self, start_params=None):
+    def _get_start_params(self, start_params=None, **kwargs):
         if start_params is None:
             zmod = ZeroInflatedPoisson(self.endog, self.exog,
                                        exog_infl=self.exog_infl)
@@ -702,7 +686,7 @@ class ZeroInflatedNegativeBinomialP(GenericZeroInflated):
         result = self.distribution.pmf(counts, mu, params_main[-1], p, w)
         return result[0] if transform else result
 
-    def _get_start_params(self, start_params=None):
+    def _get_start_params(self, start_params=None, **kwargs):
         if start_params is None:
             start_params = self.model_main.fit(disp=0, method='nm').params
             start_params = np.append(np.zeros(self.k_inflate), start_params)

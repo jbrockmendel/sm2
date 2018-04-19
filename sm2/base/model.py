@@ -103,8 +103,7 @@ class Model(object):
             self._init_keys.append('hasconst')
 
     def _get_init_kwds(self):
-        """return dictionary with extra keys used in model.__init__
-        """
+        """return dictionary with extra keys used in model.__init__"""
         kwds = dict(((key, getattr(self, key, None))
                      for key in self._init_keys))
         return kwds
@@ -328,6 +327,10 @@ class LikelihoodModel(Model):
         """
         raise NotImplementedError  # pragma: no cover
 
+    def _get_start_params_l1(self, start_params, **kwargs):
+        # TODO: docstring
+        return start_params
+
     def _get_start_params(self, start_params=None):
         """
         If no start_params are given, use reasonable defaults.
@@ -504,7 +507,7 @@ class Results(object):
         self._data_attr = []
 
     def initialize(self, model, params, **kwargs):
-        # TODO: Get rid of this redundant method
+        # TODO: Get rid of this redundant method; looks like it isnt used AT ALL
         pass
 
     @cached_data
@@ -612,6 +615,9 @@ class Results(object):
         # TODO: Make this raise upstream instead of just "pass"
         raise NotImplementedError  # pragma: no cover
         # TODO: move the GenericLikelihoodModelResults implementation here?
+
+    def summary2(self, *args, **kwargs):
+        raise NotImplementedError("summary2 not ported from upstream")
 
 
 # TODO: public method?
@@ -841,8 +847,8 @@ class LikelihoodModelResults(wrap.SaveLoadMixin, Results):
     @cache_readonly
     def bse(self):
         # GH#3299
-        if ((not hasattr(self, 'cov_params_default')) and
-                (self.normalized_cov_params is None)):
+        if (not hasattr(self, 'cov_params_default') and
+                self.normalized_cov_params is None):
             bse = np.empty(len(self.params))
             bse[:] = np.nan
         else:

@@ -147,7 +147,7 @@ class CheckRegressionResults(object):
                             DECIMAL_4)
 
     def test_wresid(self):
-        if not self._do_check_wresid:
+        if not self._do_check_wresid:  # TODO: pytest.skip?
             return
         assert_almost_equal(self.res1.wresid,
                             self.res2.wresid,
@@ -615,6 +615,7 @@ class TestFtest(object):
                             DECIMAL_4)
 
     def test_Df_denom(self):
+        # TODO: should be res1.df_resid, not res1.model.df_resid
         assert self.Ftest.df_denom == self.res1.model.df_resid
 
     def test_Df_num(self):

@@ -30,7 +30,6 @@ from sm2.discrete.discrete_model import (Logit, Probit, MNLogit,
                                          CountModel, GeneralizedPoisson,
                                          NegativeBinomialP, MultinomialModel,
                                          genpoisson_p)
-from sm2.discrete.discrete_margins import _iscount, _isdummy
 
 try:
     import cvxopt  # noqa:F401
@@ -2432,7 +2431,6 @@ def test_mnlogit_factor():
 # TODO: mark as slow?  its 32.6 seconds in profiling
 # TODO: mark as an internal-consistency test?
 # TODO: GH reference?
-@pytest.mark.not_vetted
 @pytest.mark.skipif(not has_cvxopt, reason='Skipped test_cvxopt since cvxopt '
                                            'is not available')
 def test_cvxopt_versus_slsqp():

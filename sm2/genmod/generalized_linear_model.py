@@ -616,6 +616,7 @@ class GLM(base.LikelihoodModel):
         Fisher information matrix.
         """
         return self.hessian(params, scale=scale, observed=False)
+        # FIXME: this is positive-hessian, but base class docstring says neg
 
     def score_test(self, params_constrained, k_constraints=None,
                    exog_extra=None, observed=True):
@@ -825,7 +826,6 @@ class GLM(base.LikelihoodModel):
 
         Exposure values must be strictly positive.
         """
-
         # Use fit offset if appropriate
         if offset is None and exog is None and hasattr(self, 'offset'):
             offset = self.offset
@@ -987,7 +987,6 @@ class GLM(base.LikelihoodModel):
         Fits a generalized linear model for a given family iteratively
         using the scipy gradient optimizers.
         """
-
         if (max_start_irls > 0) and (start_params is None):
             irls_rslt = self._fit_irls(start_params=start_params,
                                        maxiter=max_start_irls,
@@ -1253,43 +1252,15 @@ class GLM(base.LikelihoodModel):
 
 class GLMResults(base.LikelihoodModelResults):
     """
-    Class to contain GLM results.
-
-    GLMResults inherits from sm2.LikelihoodModelResults
-
-    Parameters
-    ----------
-    See sm2.LikelihoodModelReesults
-
-    Returns
-    -------
-    **Attributes**
-
-    aic : float
-        Akaike Information Criterion
-        -2 * `llf` + 2*(`df_model` + 1)
-    bic : float
-        Bayes Information Criterion
-        `deviance` - `df_resid` * log(`nobs`)
-    deviance : float
-        See sm2.families.family for the distribution-specific deviance
-        functions.
-    df_model : float
-        See GLM.df_model
-    df_resid : float
-        See GLM.df_resid
     fit_history : dict
         Contains information about the iterations. Its keys are `iterations`,
         `deviance` and `params`.
     fittedvalues : array
         Linear predicted values for the fitted model.
-        dot(exog, params)
     llf : float
         Value of the loglikelihood function evalued at params.
         See sm2.families.family for distribution-specific
         loglikelihoods.
-    model : class instance
-        Pointer to GLM model instance that called fit.
     mu : array
         See GLM docstring.
     nobs : float
@@ -1360,7 +1331,7 @@ class GLMResults(base.LikelihoodModelResults):
         self.data_in_cache = getattr(self, 'data_in_cache', [])
         self.data_in_cache.extend(['null', 'mu'])
         self._data_attr_model = getattr(self, '_data_attr_model', [])
-        self._data_attr_model.append('mu')
+        self._data_attr_model.append('mu')  # TODO: get rid of these
 
         # robust covariance
         if use_t is None:
@@ -1510,6 +1481,10 @@ class GLMResults(base.LikelihoodModelResults):
 
     @cache_readonly
     def deviance(self):
+        """
+        See sm2.families.family for the distribution-specific deviance
+        functions.
+        """
         return self.family.deviance(self.model.endog, self.mu,
                                     self._var_weights,
                                     self._freq_weights)
@@ -1544,10 +1519,12 @@ class GLMResults(base.LikelihoodModelResults):
 
     @cache_readonly
     def aic(self):
+        """Akaike Informaton Criterion"""
         return -2 * self.llf + 2 * (self.df_model + 1)
 
     @cache_readonly
     def bic(self):
+        """Bayes Information Criterion"""
         return self.deviance - self.df_resid * np.log(self.model.wnobs)
 
     @copy_doc(pred.get_prediction_glm.__doc__)
@@ -1659,10 +1636,6 @@ class GLMResults(base.LikelihoodModelResults):
             smry.add_extra_txt(['Model has been estimated subject to linear '
                                 'equality constraints.'])
         return smry
-
-    def summary2(self, yname=None, xname=None, title=None, alpha=.05,
-                 float_format="%.4f"):
-        raise NotImplementedError("summary2 not ported from upstream")
 
 
 class GLMResultsWrapper(lm.RegressionResultsWrapper):

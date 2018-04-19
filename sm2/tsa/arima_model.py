@@ -729,12 +729,10 @@ class ARMA(wold.ARMATransparams, tsa_model.TimeSeriesModel):
         """
         Conditional Sum of Squares likelihood function.
         """
-
         k_ar = self.k_ar
         k_ma = self.k_ma
         k = self.k_exog + self.k_trend
         y = self.endog.copy().astype(params.dtype)
-        nobs = self.nobs
         # TODO: how to handle if empty?
         if self.transparams:
             newparams = self._transparams(params)
@@ -748,7 +746,7 @@ class ARMA(wold.ARMATransparams, tsa_model.TimeSeriesModel):
         for i in range(k_ar):
             zi[i] = sum(-b[:i + 1][::-1] * y[:i + 1])
         errors = signal.lfilter(b, a, y, zi=zi)[0][k_ar:]
-        # TODO: Use geterrors_css for this
+        # TODO: Use geterrors_css for this --> breaks for some reason
 
         nobs = len(errors)
         ssr = np.dot(errors, errors)
@@ -905,7 +903,8 @@ class ARMA(wold.ARMATransparams, tsa_model.TimeSeriesModel):
         self.transparams = False  # so methods don't expect transf.
 
         normalized_cov_params = None  # TODO: fix this
-        armafit = ARMAResults(self, params, normalized_cov_params)
+        armafit = ARMAResults(self, params, normalized_cov_params,
+                              method=method)
         armafit.mle_retvals = mlefit.mle_retvals
         armafit.mle_settings = mlefit.mle_settings
         return ARMAResultsWrapper(armafit)
@@ -1098,8 +1097,8 @@ class ARIMA(ARMA):
                                         callback, start_ar_lags, **kwargs)
         normalized_cov_params = None  # TODO: fix this?
         arima_fit = ARIMAResults(self, mlefit._results.params,
-                                 normalized_cov_params)
-        arima_fit.k_diff = self.k_diff
+                                 normalized_cov_params, method=method)
+        arima_fit.k_diff = self.k_diff  # TODO: Dont set these here
 
         arima_fit.mle_retvals = mlefit.mle_retvals
         arima_fit.mle_settings = mlefit.mle_settings
@@ -1120,6 +1119,7 @@ class ARIMA(ARMA):
             # Adjustment since _index was already changed to fit the
             # differenced endog.
             start += self.k_diff
+
         if typ == 'linear':
             if not dynamic or (start != self.k_ar + self.k_diff and
                                start is not None):
@@ -1282,8 +1282,6 @@ class ARMAResults(tsa_model.TimeSeriesModelResults, wold.ARMAParams):
         (1 + maparams[0]*z + maparams[1]*z**2 + ... + maparams[q-1]*z**q) = 0
         Stability requires that the roots in modules lie outside the unit
         circle.
-    model : ARMA instance
-        A reference to the model that was fit.
     nobs : float
         The number of observations used to fit the model. If the model is fit
         using exact maximum likelihood this is equal to the total number of
@@ -1316,6 +1314,7 @@ class ARMAResults(tsa_model.TimeSeriesModelResults, wold.ARMAParams):
         fit.
     """
     _cache = {}
+    k_diff = 0  # k_diff !=0 is for ARIMA
 
     # TODO: Make this actually return instead of raising?
     _ic_df_model = deprecated_alias("_ic_df_model", "df_model + 1")
@@ -1328,12 +1327,21 @@ class ARMAResults(tsa_model.TimeSeriesModelResults, wold.ARMAParams):
     def df_resid(self):
         return self.nobs - self.df_model
 
-    def __init__(self, model, params, normalized_cov_params=None, scale=1.):
+    @property
+    def nobs(self):
+        if self.method == 'css':
+            # adjust nobs for css
+            return self.n_totobs - self.k_ar
+        else:
+            return self.n_totobs
+
+    def __init__(self, model, params, normalized_cov_params=None, scale=1.,
+                 method=None):
         super(ARMAResults, self).__init__(model, params, normalized_cov_params,
                                           scale)
+        self.method = method
         self.sigma2 = model.sigma2
         # TODO: make sigma2 a kwarg, dont set it in model
-        self.nobs = model.nobs
         self.k_exog = model.k_exog
         self.k_trend = model.k_trend
         self.k_ar = model.k_ar
@@ -1367,7 +1375,7 @@ class ARMAResults(tsa_model.TimeSeriesModelResults, wold.ARMAParams):
         return self.params[k + k_ar:]
 
     @cached_value
-    def bse(self):
+    def bse(self):  # TODO: can we use the base class implementation?
         params = self.params
         hess = self.model.hessian(params)
         if len(params) == 1:  # can't take an inverse, ensure 1d
@@ -1401,9 +1409,9 @@ class ARMAResults(tsa_model.TimeSeriesModelResults, wold.ARMAParams):
         k_ar = self.k_ar
         exog = model.exog  # this is a copy
         if exog is not None:
-            if model.method == "css" and k_ar > 0:
+            if self.method == "css" and k_ar > 0:
                 exog = exog[k_ar:]
-        if model.method == "css" and k_ar > 0:
+        if self.method == "css" and k_ar > 0:
             endog = endog[k_ar:]
         fv = endog - self.resid
         # add deterministic part back in
@@ -1432,8 +1440,10 @@ class ARMAResults(tsa_model.TimeSeriesModelResults, wold.ARMAParams):
         ma_rep = arma2ma(np.r_[1, -self.arparams],
                          np.r_[1, self.maparams], lags=steps)
 
-        fcasterr = np.sqrt(sigma2 * np.cumsum(ma_rep**2))
-        return fcasterr
+        # kdiff is 0 for ARMA, nonzero for ARIMA.
+        cumul_ma_rep = cumsum_n(ma_rep, self.k_diff)
+        fcerr = np.sqrt(np.cumsum(cumul_ma_rep**2) * sigma2)
+        return fcerr
 
     def forecast(self, steps=1, exog=None, alpha=.05):
         """
@@ -1481,7 +1491,7 @@ class ARMAResults(tsa_model.TimeSeriesModelResults, wold.ARMAParams):
                                                steps, self.resid, self.k_ar,
                                                self.k_ma, self.k_trend,
                                                self.k_exog, self.model.endog,
-                                               exog, method=self.model.method)
+                                               exog, method=self.method)
 
         # compute the standard errors
         fcasterr = self._forecast_error(steps)
@@ -1509,7 +1519,7 @@ class ARMAResults(tsa_model.TimeSeriesModelResults, wold.ARMAParams):
         from sm2.iolib.summary import Summary
         model = self.model
         title = model.__class__.__name__ + ' Model Results'
-        method = model.method
+        method = self.method
         # get sample TODO: make better sample machinery for estimation
         k_diff = getattr(self, 'k_diff', 0)
         if 'mle' in method:
@@ -1586,9 +1596,6 @@ class ARMAResults(tsa_model.TimeSeriesModelResults, wold.ARMAParams):
             smry.tables.append(roots_table)
         return smry
 
-    def summary2(self, title=None, alpha=.05, float_format="%.4f"):
-        raise NotImplementedError("summary2 not ported from upstream")
-
     @copy_doc(_plot_predict)
     def plot_predict(self, start=None, end=None, exog=None, dynamic=False,
                      alpha=.05, plot_insample=True, ax=None):
@@ -1643,14 +1650,6 @@ class ARIMAResults(ARMAResults):
                 dynamic=False):
         return self.model.predict(self.params, start, end, exog, typ, dynamic)
 
-    def _forecast_error(self, steps):
-        sigma2 = self.sigma2
-        ma_rep = arma2ma(np.r_[1, -self.arparams],
-                         np.r_[1, self.maparams], lags=steps)
-
-        fcerr = np.sqrt(np.cumsum(cumsum_n(ma_rep, self.k_diff)**2) * sigma2)
-        return fcerr  # TODO: share with ARMAResults?
-
     def forecast(self, steps=1, exog=None, alpha=.05):
         """
         Out-of-sample forecasts
@@ -1694,7 +1693,7 @@ class ARIMAResults(ARMAResults):
                                                self.k_ar, self.k_ma,
                                                self.k_trend, self.k_exog,
                                                self.model.endog,
-                                               exog, method=self.model.method)
+                                               exog, method=self.method)
 
         d = self.k_diff
         endog = self.model.data.endog[-d:]

@@ -18,8 +18,6 @@ Judge, ... (1985): The Theory and Practise of Econometrics
 Author: josefpktd
 License: BSD
 """
-import warnings
-
 from six.moves import range
 import numpy as np
 from scipy import signal, optimize, linalg
