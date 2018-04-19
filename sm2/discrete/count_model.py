@@ -139,6 +139,7 @@ class GenericZeroInflated(CountModel):
 
         return llf
 
+    # TODO: Can we use FitBase for this?
     @copy_doc(DiscreteModel.fit.__doc__)
     def fit(self, start_params=None, method='bfgs', maxiter=35,
             full_output=1, disp=1, callback=None,
