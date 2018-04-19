@@ -1,6 +1,7 @@
 import warnings
 
 from six import integer_types
+from six.moves import range
 import numpy as np
 
 import pandas as pd
@@ -42,8 +43,7 @@ def _get_int64_index_loc(index, key, base_index):
     elif key > base_index[-1]:
         # Out-of-sample (note that we include key itself in the
         # new index)
-        index = pd.Int64Index(np.arange(base_index[0], int(key + 1)))
-        # TODO: Use RangeIndex!
+        index = pd.Index(range(base_index[0], int(key + 1)))
     return key, index
 
 
@@ -276,9 +276,12 @@ class TimeSeriesModel(base.LikelihoodModel):
         has_index = index is not None
         date_index = isinstance(index, (pd.DatetimeIndex, pd.PeriodIndex))
         int_index = isinstance(index, pd.Int64Index)
+        range_index = isinstance(index, pd.RangeIndex)
         has_freq = index.freq is not None if date_index else None
-        increment = pd.Int64Index(np.arange(self.endog.shape[0]))
-        is_increment = index.equals(increment) if int_index else None
+        increment = pd.Index(range(self.endog.shape[0]))
+        is_increment = None
+        if int_index or range_index:
+            is_increment = index.equals(increment)
 
         # Issue warnings for unsupported indexes
         if has_index and not (date_index or is_increment):
@@ -292,8 +295,9 @@ class TimeSeriesModel(base.LikelihoodModel):
         # Construct the internal index
         index_generated = False
 
-        if (date_index and has_freq) or (int_index and is_increment):
-            _index = index.copy()
+        if ((date_index and has_freq) or
+                (int_index and is_increment) or range_index):
+            _index = index
         else:
             _index = increment
             index_generated = True
@@ -335,15 +339,28 @@ class TimeSeriesModel(base.LikelihoodModel):
         If `key` is past the end of of the given index, and the index is either
         an Int64Index or a date index, this function extends the index up to
         and including key, and then returns the location in the new index.
-
         """
         if base_index is None:
-            base_index = self._index
+            base_index = self._index  # TODO: when is this _not_ the case?
 
         index = base_index
         date_index = isinstance(base_index, (pd.PeriodIndex, pd.DatetimeIndex))
+        int_index = isinstance(base_index, pd.Int64Index)
+        range_index = isinstance(base_index, pd.RangeIndex)
+        nobs = len(base_index)
 
-        if (isinstance(index, pd.Int64Index) and not date_index and
+        if range_index and isinstance(key, (integer_types, np.integer)):
+            # Special handling for RangeIndex
+            if key < 0 and -key <= nobs:
+                # Negative indices (that lie in the Index)
+                key = nobs + key
+            elif key > nobs - 1:
+                stop = base_index._start + (key + 1) * base_index._step
+                index = pd.RangeIndex(start=base_index._start,
+                                      stop=stop,
+                                      step=base_index._step) 
+
+        elif (not range_index and not date_index and int_index and
                 isinstance(key, (integer_types, np.integer))):
             # Special handling for Int64Index
             key, index = _get_int64_index_loc(index, key, base_index)
@@ -352,17 +369,35 @@ class TimeSeriesModel(base.LikelihoodModel):
             # Special handling for date indexes
             key, index = _get_date_index_loc(index, key, base_index)
 
-        # Get the location (note that get_loc will throw a KeyError if key is
-        # invalid)
-        loc = index.get_loc(key)
+        if date_index:
+            # Get the location
+            # (note that get_loc will throw a KeyError if key is invalid)
+            loc = index.get_loc(key)
+        elif int_index or range_index:
+            # For Int64Index and RangeIndex, key is assumed to be the location
+            # and not an index value (this assumption is required to support
+            # RangeIndex)
+            try:
+                index[key]
+            except (IndexError, ValueError) as e:
+                # We want to raise a KeyError in this case, to keep the
+                # exception consistent across index types.
+                # - Attempting to index with an out-of-bound location (e.g.
+                #   index[10] on an index of length 9) will raise an IndexError
+                #   (as of Pandas 0.22)
+                # - Attemtping to index with a type that cannot be cast to
+                #   integer (e.g. a non-numeric string) will raise a ValueError
+                #   if the index is RangeIndex (otherwise will raise an
+                #   IndexError) (as of Pandas 0.22)
+                raise KeyError(str(e))
+            loc = key
+        else:
+            # Get the location (note that get_loc will throw a KeyError if
+            # key is invalid)
+            loc = index.get_loc(key)
 
         # Check if we now have a modified index
         index_was_expanded = index is not base_index
-
-        # (Never return the actual index object)
-        # TODO: why not?  its immutable...
-        if not index_was_expanded:
-            index = index.copy()
 
         # Return the index through the end of the loc / slice
         if isinstance(loc, slice):

@@ -13,8 +13,6 @@ from __future__ import division, absolute_import, print_function
 import warnings
 
 import numpy as np
-from numpy.testing import assert_equal
-
 import pandas as pd
 import pytest
 
@@ -70,7 +68,11 @@ series_datetime_indexes = [(pd.Series(x, dtype=object), y)
 series_timestamp_indexes = [(pd.Series(x), x.freq) for x in base_date_indexes]
 
 # Supported increment indexes
-supported_increment_indexes = [(pd.Int64Index(np.arange(nobs)), None)]
+supported_increment_indexes = [
+    (pd.Int64Index(np.arange(nobs)), None),
+    (pd.RangeIndex(start=0, stop=nobs, step=1), None),
+    (pd.RangeIndex(start=-5, stop=nobs - 5, step=1), None),
+    (pd.RangeIndex(start=0, stop=nobs * 6, step=6), None)]
 
 # Supported date indexes
 # Only the Int64Index and the `date_indexes` are valid without
@@ -109,7 +111,7 @@ def test_instantiation_no_dates():
             warnings.simplefilter('error')
 
             mod = tsa_model.TimeSeriesModel(endog)
-            assert type(mod._index) == pd.Int64Index
+            assert isinstance(mod._index, (pd.Int64Index, pd.RangeIndex))
             assert mod._index_none is True
             assert mod._index_dates is False
             assert mod._index_generated is True
@@ -160,15 +162,13 @@ def test_instantiation_no_index(endog):
                 freq = ix.freq
             if not isinstance(freq, str):
                 freq = freq.freqstr
-            assert_equal(
-                isinstance(mod._index, (pd.DatetimeIndex, pd.PeriodIndex)),
-                True)
-            assert_equal(mod._index_none, False)
-            assert_equal(mod._index_dates, True)
-            assert_equal(mod._index_generated, False)
-            assert_equal(mod._index.freq, mod._index_freq)
-            assert_equal(mod.data.dates.equals(mod._index), True)
-            assert_equal(mod.data.freq, freq)
+            assert isinstance(mod._index, (pd.DatetimeIndex, pd.PeriodIndex))
+            assert mod._index_none is False
+            assert mod._index_dates is True
+            assert mod._index_generated is False
+            assert mod._index.freq == mod._index_freq
+            assert mod.data.dates.equals(mod._index)
+            assert mod.data.freq == freq
 
     # Other supported indexes, with valid freq, should not raise warnings
     with warnings.catch_warnings():
@@ -180,15 +180,13 @@ def test_instantiation_no_index(endog):
                 freq = ix.freq
             if not isinstance(freq, str):
                 freq = freq.freqstr
-            assert_equal(
-                isinstance(mod._index, (pd.DatetimeIndex, pd.PeriodIndex)),
-                True)
-            assert_equal(mod._index_none, False)
-            assert_equal(mod._index_dates, True)
-            assert_equal(mod._index_generated, False)
-            assert_equal(mod._index.freq, mod._index_freq)
-            assert_equal(mod.data.dates.equals(mod._index), True)
-            assert_equal(mod.data.freq, freq)
+            assert isinstance(mod._index, (pd.DatetimeIndex, pd.PeriodIndex))
+            assert mod._index_none is False
+            assert mod._index_dates is True
+            assert mod._index_generated is False
+            assert mod._index.freq == mod._index_freq
+            assert mod.data.dates.equals(mod._index)
+            assert mod.data.freq == freq
 
     # Since only supported indexes are valid `dates` arguments, everything
     # else is invalid here
@@ -215,15 +213,14 @@ def test_instantiation_valid_datetimeindex_periodindex():
                     freq = ix.freq
                 if not isinstance(freq, str):
                     freq = freq.freqstr
-                assert_equal(
-                    isinstance(mod._index, (pd.DatetimeIndex, pd.PeriodIndex)),
-                    True)
-                assert_equal(mod._index_none, False)
-                assert_equal(mod._index_dates, True)
-                assert_equal(mod._index_generated, False)
-                assert_equal(mod._index.freq, mod._index_freq)
-                assert_equal(mod.data.dates.equals(mod._index), True)
-                assert_equal(mod.data.freq, freq)
+                assert isinstance(mod._index,
+                                  (pd.DatetimeIndex, pd.PeriodIndex))
+                assert mod._index_none is False
+                assert mod._index_dates is True
+                assert mod._index_generated is False
+                assert mod._index.freq == mod._index_freq
+                assert mod.data.dates.equals(mod._index)
+                assert mod.data.freq == freq
 
 
 @pytest.mark.not_vetted
@@ -248,9 +245,27 @@ def test_instantiation_valid_supported_with_freq():
                 assert mod._index_none is False
                 assert mod._index_dates is True
                 assert mod._index_generated is False
-                assert_equal(mod._index.freq, mod._index_freq)
+                assert mod._index.freq == mod._index_freq
                 assert mod.data.dates.equals(mod._index) is True
-                assert_equal(mod.data.freq, freq)
+                assert mod.data.freq == freq
+
+@pytest.mark.not_vetted
+def test_instantiation_valid_range_index():
+    # GH#4457
+    # See long comment in `test_instantiation_valid`
+    for base_endog in dta[2:4]:
+        # RangeIndex (start=0, end=nobs, so equivalent to increment index)
+        endog = base_endog.copy()
+        endog.index = supported_increment_indexes[1][0]
+
+        mod = tsa_model.TimeSeriesModel(endog)
+        assert type(mod._index) is pd.RangeIndex
+        assert mod._index_none is False
+        assert mod._index_dates is False
+        assert mod._index_generated is False
+        assert mod._index_freq is None
+        assert mod.data.dates is None
+        assert mod.data.freq is None
 
 
 @pytest.mark.not_vetted
@@ -272,10 +287,11 @@ def test_instantiation_valid():
     #
     # Each pandas index (of `endog`, `exog`, or passed to `dates`) can be:
     # 0. None
-    # 1. Int64Index with values exactly equal to 0, 1, ..., nobs-1
-    # 2. DatetimeIndex with frequency
-    # 3. PeriodIndex with frequency
-    # 4. Anything that doesn't fall into the above categories also should
+    # 1. RangeIndex (if applicable; i.e. if Pandas >= 0.18)
+    # 2. Int64Index with values exactly equal to 0, 1, ..., nobs-1
+    # 3. DatetimeIndex with frequency
+    # 4. PeriodIndex with frequency
+    # 5. Anything that doesn't fall into the above categories also should
     #    only raise an exception if it was passed to dates, and may trigger
     #    a warning otherwise.
     #
@@ -330,13 +346,13 @@ def test_instantiation_valid():
         endog.index = supported_increment_indexes[0][0]
 
         mod = tsa_model.TimeSeriesModel(endog)
-        assert isinstance(mod._index, pd.Int64Index)
-        assert_equal(mod._index_none, False)
-        assert_equal(mod._index_dates, False)
-        assert_equal(mod._index_generated, False)
-        assert_equal(mod._index_freq, None)
-        assert_equal(mod.data.dates, None)
-        assert_equal(mod.data.freq, None)
+        assert isinstance(mod._index, (pd.Int64Index, pd.RangeIndex))
+        assert mod._index_none is False
+        assert mod._index_dates is False
+        assert mod._index_generated is False
+        assert mod._index_freq is None
+        assert mod.data.dates is None
+        assert mod.data.freq is None
 
         # Unsupported (or any) indexes to the given series, *when a supported
         # date and freq is given*, should not raise a warning
@@ -352,15 +368,14 @@ def test_instantiation_valid():
                     freq = ix.freq
                 if not isinstance(freq, str):
                     freq = freq.freqstr
-                assert_equal(
-                    isinstance(mod._index, (pd.DatetimeIndex, pd.PeriodIndex)),
-                    True)
-                assert_equal(mod._index_none, False)
-                assert_equal(mod._index_dates, True)
-                assert_equal(mod._index_generated, False)
-                assert_equal(mod._index.freq, mod._index_freq)
-                assert_equal(mod.data.dates.equals(mod._index), True)
-                assert_equal(mod.data.freq, freq)
+                assert isinstance(mod._index,
+                                  (pd.DatetimeIndex, pd.PeriodIndex))
+                assert mod._index_none is False
+                assert mod._index_dates is True
+                assert mod._index_generated is False
+                assert mod._index.freq == mod._index_freq
+                assert mod.data.dates.equals(mod._index)
+                assert mod.data.freq == freq
 
         # Date indexes with inferrable freq, but no given freq, should all give
         # warnings
@@ -378,11 +393,11 @@ def test_instantiation_valid():
                 if not isinstance(freq, str):
                     freq = freq.freqstr
                 assert isinstance(mod._index, pd.DatetimeIndex)
-                assert_equal(mod._index_none, False)
-                assert_equal(mod._index_dates, True)
-                assert_equal(mod._index_generated, False)
-                assert_equal(mod._index.freq, mod._index_freq)
-                assert_equal(mod.data.dates.equals(mod._index), True)
+                assert mod._index_none is False
+                assert mod._index_dates is True
+                assert mod._index_generated is False
+                assert mod._index.freq == mod._index_freq
+                assert mod.data.dates.equals(mod._index)
 
                 # Note: here, we need to hedge the test a little bit because
                 # inferred frequencies aren't always the same as the original
@@ -393,8 +408,8 @@ def test_instantiation_valid():
                 # of the freq, and just test that the right message is given
                 # (even though it won't have the actual freq of the data in
                 # it).
-                assert_equal(mod.data.freq.split('-')[0], freq.split('-')[0])
-                assert_equal(str(w[-1].message), message % mod.data.freq)
+                assert mod.data.freq.split('-')[0] == freq.split('-')[0]
+                assert str(w[-1].message) == message % mod.data.freq
 
         # Unsupported (but valid) indexes, should all give warnings
         message = ('An unsupported index was provided and will be'
@@ -406,15 +421,15 @@ def test_instantiation_valid():
                 endog = base_endog.copy()
                 endog.index = ix
                 mod = tsa_model.TimeSeriesModel(endog)
-                assert isinstance(mod._index, pd.Int64Index)
-                assert_equal(mod._index_none, False)
-                assert_equal(mod._index_dates, False)
-                assert_equal(mod._index_generated, True)
-                assert_equal(mod._index_freq, None)
-                assert_equal(mod.data.dates, None)
-                assert_equal(mod.data.freq, None)
+                assert isinstance(mod._index, (pd.Int64Index, pd.RangeIndex))
+                assert mod._index_none is False
+                assert mod._index_dates is False
+                assert mod._index_generated is True
+                assert mod._index_freq is None
+                assert mod.data.dates is None
+                assert mod.data.freq is None
 
-                assert_equal(str(w[0].message), message)
+                assert str(w[0].message) == message
 
         # Date indexes without inferrable freq, and with no given freq, should
         # all give warnings
@@ -428,15 +443,15 @@ def test_instantiation_valid():
                 endog = base_endog.copy()
                 endog.index = ix
                 mod = tsa_model.TimeSeriesModel(endog)
-                assert isinstance(mod._index, pd.Int64Index)
-                assert_equal(mod._index_none, False)
-                assert_equal(mod._index_dates, False)
-                assert_equal(mod._index_generated, True)
-                assert_equal(mod._index_freq, None)
-                assert_equal(mod.data.dates, None)
-                assert_equal(mod.data.freq, None)
+                assert isinstance(mod._index, (pd.Int64Index, pd.RangeIndex))
+                assert mod._index_none is False
+                assert mod._index_dates is False
+                assert mod._index_generated is True
+                assert mod._index_freq is None
+                assert mod.data.dates is None
+                assert mod.data.freq is None
 
-                assert_equal(str(w[0].message), message)
+                assert str(w[0].message) == message
 
 
 @pytest.mark.not_vetted
@@ -482,10 +497,10 @@ def test_prediction_increment_unsupported():
     start, end, out_of_sample, prediction_index = (
         mod._get_prediction_index(start_key, end_key))
 
-    assert_equal(start, 0)
-    assert_equal(end, nobs - 1)
-    assert_equal(out_of_sample, 0)
-    assert_equal(prediction_index.equals(mod.data.row_labels), True)
+    assert start == 0
+    assert end == nobs - 1
+    assert out_of_sample == 0
+    assert prediction_index.equals(mod.data.row_labels)
 
     # Negative index: [-2, end]; notice that since this is an in-sample
     # prediction, the index returned is a piece of the (unsupported)
@@ -495,10 +510,10 @@ def test_prediction_increment_unsupported():
     start, end, out_of_sample, prediction_index = (
         mod._get_prediction_index(start_key, end_key))
 
-    assert_equal(start, 3)
-    assert_equal(end, 4)
-    assert_equal(out_of_sample, 0)
-    assert_equal(prediction_index.equals(mod.data.row_labels[3:]), True)
+    assert start == 3
+    assert end == 4
+    assert out_of_sample == 0
+    assert prediction_index.equals(mod.data.row_labels[3:])
 
     # Forecasting: [1, 5], notice that since an unsupported index was given,
     # a warning will be issued
@@ -513,12 +528,12 @@ def test_prediction_increment_unsupported():
         start, end, out_of_sample, prediction_index = (
             mod._get_prediction_index(start_key, end_key))
 
-        assert_equal(str(w[0].message), message)
+        assert str(w[0].message) == message
 
-    assert_equal(start, 1)
-    assert_equal(end, 4)
-    assert_equal(out_of_sample, 1)
-    assert_equal(prediction_index.equals(pd.Index(np.arange(1, 6))), True)
+    assert start == 1
+    assert end == 4
+    assert out_of_sample == 1
+    assert prediction_index.equals(pd.Index(np.arange(1, 6)))
 
 
 @pytest.mark.not_vetted
@@ -533,10 +548,10 @@ def test_prediction_increment_nonpandas():
     start, end, out_of_sample, prediction_index = (
         mod._get_prediction_index(start_key, end_key))
 
-    assert_equal(start, 0)
-    assert_equal(end, nobs - 1)
-    assert_equal(out_of_sample, 0)
-    assert_equal(prediction_index is None, True)
+    assert start == 0
+    assert end == nobs - 1
+    assert out_of_sample == 0
+    assert prediction_index is None
 
     # Negative index: [-2, end]; since there was no index at all and the data
     # is not Pandas, the returned prediction_index is None
@@ -545,10 +560,10 @@ def test_prediction_increment_nonpandas():
     start, end, out_of_sample, prediction_index = (
         mod._get_prediction_index(start_key, end_key))
 
-    assert_equal(start, 3)
-    assert_equal(end, 4)
-    assert_equal(out_of_sample, 0)
-    assert_equal(prediction_index is None, True)
+    assert start == 3
+    assert end == 4
+    assert out_of_sample == 0
+    assert prediction_index is None
 
     # Forecasting: [1, 5]; since there was no index at all and the data
     # is not Pandas, the returned prediction_index is None
@@ -557,10 +572,10 @@ def test_prediction_increment_nonpandas():
     start, end, out_of_sample, prediction_index = (
         mod._get_prediction_index(start_key, end_key))
 
-    assert_equal(start, 1)
-    assert_equal(end, 4)
-    assert_equal(out_of_sample, 1)
-    assert_equal(prediction_index is None, True)
+    assert start == 1
+    assert end == 4
+    assert out_of_sample == 1
+    assert prediction_index is None
 
 
 @pytest.mark.not_vetted
@@ -576,10 +591,10 @@ def test_prediction_increment_pandas_noindex():
     start, end, out_of_sample, prediction_index = (
         mod._get_prediction_index(start_key, end_key))
 
-    assert_equal(start, 0)
-    assert_equal(end, nobs - 1)
-    assert_equal(out_of_sample, 0)
-    assert_equal(prediction_index.equals(mod._index), True)
+    assert start == 0
+    assert end == nobs - 1
+    assert out_of_sample == 0
+    assert prediction_index.equals(mod._index)
 
     # Negative index: [-2, end]; since there was no index and the data is
     # Pandas, the index is the generated incrementing index, and no warning is
@@ -589,10 +604,10 @@ def test_prediction_increment_pandas_noindex():
     start, end, out_of_sample, prediction_index = (
         mod._get_prediction_index(start_key, end_key))
 
-    assert_equal(start, 3)
-    assert_equal(end, 4)
-    assert_equal(out_of_sample, 0)
-    assert_equal(prediction_index.equals(mod._index[3:]), True)
+    assert start == 3
+    assert end == 4
+    assert out_of_sample == 0
+    assert prediction_index.equals(mod._index[3:])
 
     # Forecasting: [1, 5]; since there was no index and the data is
     # Pandas, the index is the generated incrementing index, and no warning is
@@ -602,10 +617,10 @@ def test_prediction_increment_pandas_noindex():
     start, end, out_of_sample, prediction_index = (
         mod._get_prediction_index(start_key, end_key))
 
-    assert_equal(start, 1)
-    assert_equal(end, 4)
-    assert_equal(out_of_sample, 1)
-    assert_equal(prediction_index.equals(pd.Index(np.arange(1, 6))), True)
+    assert start == 1
+    assert end == 4
+    assert out_of_sample == 1
+    assert prediction_index.equals(pd.Index(np.arange(1, 6)))
 
 
 @pytest.mark.not_vetted
@@ -621,11 +636,11 @@ def test_prediction_increment_pandas_dates():
     start, end, out_of_sample, prediction_index = (
         mod._get_prediction_index(start_key, end_key))
 
-    assert_equal(start, 0)
-    assert_equal(end, nobs - 1)
-    assert_equal(out_of_sample, 0)
+    assert start == 0
+    assert end == nobs - 1
+    assert out_of_sample == 0
     assert type(prediction_index) == type(endog.index)  # noqa: E721
-    assert_equal(prediction_index.equals(mod._index), True)
+    assert prediction_index.equals(mod._index)
 
     # Negative index: [-2, end]
     start_key = -2
@@ -633,11 +648,11 @@ def test_prediction_increment_pandas_dates():
     start, end, out_of_sample, prediction_index = (
         mod._get_prediction_index(start_key, end_key))
 
-    assert_equal(start, 3)
-    assert_equal(end, 4)
-    assert_equal(out_of_sample, 0)
+    assert start == 3
+    assert end == 4
+    assert out_of_sample == 0
     assert type(prediction_index) == type(endog.index)  # noqa: E721
-    assert_equal(prediction_index.equals(mod._index[3:]), True)
+    assert prediction_index.equals(mod._index[3:])
 
     # Forecasting: [1, 5]; the index is an extended version of the date index
     start_key = 1
@@ -645,11 +660,11 @@ def test_prediction_increment_pandas_dates():
     start, end, out_of_sample, prediction_index = (
         mod._get_prediction_index(start_key, end_key))
 
-    assert_equal(start, 1)
-    assert_equal(end, 4)
-    assert_equal(out_of_sample, 1)
+    assert start == 1
+    assert end == 4
+    assert out_of_sample == 1
     desired_index = pd.DatetimeIndex(start='1950-01-02', periods=5, freq='D')
-    assert_equal(prediction_index.equals(desired_index), True)
+    assert prediction_index.equals(desired_index)
 
     # Date-based keys
     start_key = '1950-01-01'
@@ -657,11 +672,11 @@ def test_prediction_increment_pandas_dates():
     start, end, out_of_sample, prediction_index = (
         mod._get_prediction_index(start_key, end_key))
 
-    assert_equal(start, 0)
-    assert_equal(end, 4)
-    assert_equal(out_of_sample, 3)
+    assert start == 0
+    assert end == 4
+    assert out_of_sample == 3
     desired_index = pd.DatetimeIndex(start='1950-01-01', periods=8, freq='D')
-    assert_equal(prediction_index.equals(desired_index), True)
+    assert prediction_index.equals(desired_index)
 
 
 @pytest.mark.not_vetted
@@ -681,11 +696,11 @@ def test_prediction_increment_pandas_dates_nanosecond():
     start, end, out_of_sample, prediction_index = (
         mod._get_prediction_index(start_key, end_key))
 
-    assert_equal(start, 0)
-    assert_equal(end, nobs - 1)
-    assert_equal(out_of_sample, 0)
+    assert start == 0
+    assert end == nobs - 1
+    assert out_of_sample == 0
     assert type(prediction_index) == type(endog.index)  # noqa: E721
-    assert_equal(prediction_index.equals(mod._index), True)
+    assert prediction_index.equals(mod._index)
 
     # Negative index: [-2, end]
     start_key = -2
@@ -693,11 +708,11 @@ def test_prediction_increment_pandas_dates_nanosecond():
     start, end, out_of_sample, prediction_index = (
         mod._get_prediction_index(start_key, end_key))
 
-    assert_equal(start, 3)
-    assert_equal(end, 4)
-    assert_equal(out_of_sample, 0)
+    assert start == 3
+    assert end == 4
+    assert out_of_sample == 0
     assert type(prediction_index) == type(endog.index)  # noqa: E721
-    assert_equal(prediction_index.equals(mod._index[3:]), True)
+    assert prediction_index.equals(mod._index[3:])
 
     # Forecasting: [1, 5]; the index is an extended version of the date index
     start_key = 1
@@ -705,12 +720,12 @@ def test_prediction_increment_pandas_dates_nanosecond():
     start, end, out_of_sample, prediction_index = (
         mod._get_prediction_index(start_key, end_key))
 
-    assert_equal(start, 1)
-    assert_equal(end, 4)
-    assert_equal(out_of_sample, 1)
+    assert start == 1
+    assert end == 4
+    assert out_of_sample == 1
     desired_index = pd.DatetimeIndex(start='1970-01-01',
                                      periods=6, freq='N')[1:]
-    assert_equal(prediction_index.equals(desired_index), True)
+    assert prediction_index.equals(desired_index)
 
     # Date-based keys
     start_key = pd.Timestamp('1970-01-01')
@@ -718,11 +733,11 @@ def test_prediction_increment_pandas_dates_nanosecond():
     start, end, out_of_sample, prediction_index = (
         mod._get_prediction_index(start_key, end_key))
 
-    assert_equal(start, 0)
-    assert_equal(end, 4)
-    assert_equal(out_of_sample, 3)
+    assert start == 0
+    assert end == 4
+    assert out_of_sample == 3
     desired_index = pd.DatetimeIndex(start='1970-01-01', periods=8, freq='N')
-    assert_equal(prediction_index.equals(desired_index), True)
+    assert prediction_index.equals(desired_index)
 
 
 @pytest.mark.not_vetted
@@ -737,19 +752,19 @@ def test_custom_index():
         warnings.simplefilter('always')
 
         mod = tsa_model.TimeSeriesModel(endog)
-        assert_equal(str(w[0].message), message)
+        assert str(w[0].message) == message
     start_key = -2
     end_key = -1
     start, end, out_of_sample, prediction_index = (
         mod._get_prediction_index(start_key, end_key))
 
     # Test the default output index
-    assert_equal(prediction_index.equals(pd.Index(['d', 'e'])), True)
+    assert prediction_index.equals(pd.Index(['d', 'e']))
     start, end, out_of_sample, prediction_index = (
         mod._get_prediction_index(start_key, end_key, index=['f', 'g']))
 
     # Test custom output index
-    assert_equal(prediction_index.equals(pd.Index(['f', 'g'])), True)
+    assert prediction_index.equals(pd.Index(['f', 'g']))
 
     # Test out-of-sample
     start_key = 4
@@ -762,14 +777,119 @@ def test_custom_index():
 
         start, end, out_of_sample, prediction_index = (
             mod._get_prediction_index(start_key, end_key))
-        assert_equal(prediction_index.equals(pd.Index([4, 5])), True)
-        assert_equal(str(w[0].message), message)
+        assert prediction_index.equals(pd.Index([4, 5]))
+        assert str(w[0].message) == message
 
     # Test out-of-sample custom index
     start, end, out_of_sample, prediction_index = (
         mod._get_prediction_index(start_key, end_key, index=['f', 'g']))
-    assert_equal(prediction_index.equals(pd.Index(['f', 'g'])), True)
+    assert prediction_index.equals(pd.Index(['f', 'g']))
 
     # Test invalid custom index
     with pytest.raises(ValueError):
         mod._get_prediction_index(start_key, end_key, index=['f', 'g', 'h'])
+
+
+def test_range_index():
+    # GH#4457
+    tsa_model.__warningregistry__ = {}
+
+    endog = pd.Series(np.random.normal(size=5))
+    assert isinstance(endog.index, pd.RangeIndex)
+    # Warning should not be given
+    with warnings.catch_warnings(record=True) as w:
+        warnings.simplefilter('always')
+        mod = tsa_model.TimeSeriesModel(endog)
+        assert len(w) == 0
+
+
+def test_prediction_rangeindex():
+    # GH#4457
+    index = supported_increment_indexes[2][0]
+    endog = pd.Series(dta[0], index=index)
+    mod = tsa_model.TimeSeriesModel(endog)
+
+    # Tests three common use cases: basic prediction, negative indexes, and
+    # out-of-sample indexes.
+
+    # Basic prediction: [0, end]
+    start_key = 0
+    end_key = None
+    start, end, out_of_sample, prediction_index = (
+        mod._get_prediction_index(start_key, end_key))
+
+    assert start == 0
+    assert end == nobs - 1
+    assert out_of_sample == 0
+    desired_index = pd.RangeIndex(start=-5, stop=0, step=1)
+    assert prediction_index.equals(desired_index)
+
+    # Negative index: [-2, end]
+    start_key = -2
+    end_key = -1
+    start, end, out_of_sample, prediction_index = (
+        mod._get_prediction_index(start_key, end_key))
+
+    assert start == 3
+    assert end == 4
+    assert out_of_sample == 0
+    desired_index = pd.RangeIndex(start=-2, stop=0, step=1)
+    assert prediction_index.equals(desired_index)
+
+    # Forecasting: [1, 5]
+    start_key = 1
+    end_key = nobs
+    start, end, out_of_sample, prediction_index = (
+        mod._get_prediction_index(start_key, end_key))
+
+    assert start == 1
+    assert end == 4
+    assert out_of_sample == 1
+    desired_index = pd.RangeIndex(start=-4, stop=1, step=1)
+    assert prediction_index.equals(desired_index)
+
+
+def test_prediction_rangeindex_withstep():
+    # GH#4457
+    index = supported_increment_indexes[3][0]
+    endog = pd.Series(dta[0], index=index)
+    mod = tsa_model.TimeSeriesModel(endog)
+
+    # Tests three common use cases: basic prediction, negative indexes, and
+    # out-of-sample indexes.
+
+    # Basic prediction: [0, end]
+    start_key = 0
+    end_key = None
+    start, end, out_of_sample, prediction_index = (
+        mod._get_prediction_index(start_key, end_key))
+
+    assert start == 0
+    assert end == nobs - 1
+    assert out_of_sample == 0
+    desired_index = pd.RangeIndex(start=0, stop=nobs * 6, step=6)
+    assert prediction_index.equals(desired_index)
+
+    # Negative index: [-2, end]
+    start_key = -2
+    end_key = -1
+    start, end, out_of_sample, prediction_index = (
+        mod._get_prediction_index(start_key, end_key))
+
+    assert start == 3
+    assert end == 4
+    assert out_of_sample == 0
+    desired_index = pd.RangeIndex(start=3 * 6, stop=nobs * 6, step=6)
+    assert prediction_index.equals(desired_index)
+
+    # Forecasting: [1, 5]
+    start_key = 1
+    end_key = nobs
+    start, end, out_of_sample, prediction_index = (
+        mod._get_prediction_index(start_key, end_key))
+
+    assert start == 1
+    assert end == 4
+    assert out_of_sample == 1
+    desired_index = pd.RangeIndex(start=1 * 6, stop=(nobs + 1) * 6, step=6)
+    assert prediction_index.equals(desired_index)
