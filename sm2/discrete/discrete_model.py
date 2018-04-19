@@ -296,6 +296,13 @@ class DiscreteModel(base.LikelihoodModel):
             raise NotImplementedError("option `qc_verbose` is available "
                                       "upstream, but is disabled in sm2.")
 
+        start_params = self._get_start_params_l1(start_params,
+            method=method, maxiter=maxiter,
+            full_output=full_output, disp=0, callback=callback,
+            alpha=alpha, trim_mode=trim_mode,
+            auto_trim_tol=auto_trim_tol,
+            size_trim_tol=size_trim_tol, qc_tol=qc_tol, **kwargs)
+
         cov_params_func = self.cov_params_func_l1
 
         # Bundle up extra kwargs for the dictionary kwargs.  These are
@@ -384,11 +391,11 @@ class DiscreteModel(base.LikelihoodModel):
         raise NotImplementedError
 
     def _derivative_exog(self, params, exog=None, dummy_idx=None,
-                         count_idx=None):  # pragma: no cover
+                         count_idx=None):
         """
         This should implement the derivative of the non-linear function
         """
-        raise NotImplementedError
+        raise NotImplementedError  # pragma: no cover
 
     def _wrap_derivative_exog(self, margeff, params, exog, dummy_idx,
                               count_idx, transform):
@@ -1527,17 +1534,6 @@ class GeneralizedPoisson(CountModel):
 
         self._transparams = False  # TODO: Im not wild about doing this here
 
-        if self.k_extra and np.size(alpha) > 1:
-            alpha_p = alpha[:-1]
-        else:
-            alpha_p = alpha
-
-        start_params = self._get_start_params_l1(start_params,
-            method=method, maxiter=maxiter, full_output=full_output,
-            disp=disp, callback=callback,
-            alpha=alpha, trim_mode=trim_mode, auto_trim_tol=auto_trim_tol,
-            size_trim_tol=size_trim_tol, qc_tol=qc_tol, **kwargs)
-
         cntfit = DiscreteModel.fit_regularized(self,
                                                start_params=start_params,
                                                method=method,
@@ -2603,12 +2599,6 @@ class NegativeBinomial(CountModel):
 
         self._transparams = False  # TODO: im not wild about setting this here
 
-        start_params = self._get_start_params_l1(start_params,
-            method=method, maxiter=maxiter, full_output=full_output,
-            disp=disp, callback=callback,
-            alpha=alpha, trim_mode=trim_mode, auto_trim_tol=auto_trim_tol,
-            size_trim_tol=size_trim_tol, qc_tol=qc_tol, **kwargs)
-
         cntfit = DiscreteModel.fit_regularized(self,
                                                start_params=start_params,
                                                method=method, maxiter=maxiter,
@@ -2972,13 +2962,6 @@ class NegativeBinomialP(CountModel):
             alpha[-1] = 0
 
         self._transparams = False  # TODO: Not the right place to set this
-
-        start_params = self._get_start_params_l1(start_params,
-                method=method, maxiter=maxiter,
-                full_output=full_output, disp=0, callback=callback,
-                alpha=alpha, trim_mode=trim_mode,
-                auto_trim_tol=auto_trim_tol,
-                size_trim_tol=size_trim_tol, qc_tol=qc_tol, **kwargs)
 
         cntfit = DiscreteModel.fit_regularized(self,
                                                start_params=start_params,

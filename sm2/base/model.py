@@ -327,6 +327,10 @@ class LikelihoodModel(Model):
         """
         raise NotImplementedError  # pragma: no cover
 
+    def _get_start_params_l1(self, start_params, **kwargs):
+        # TODO: docstring
+        return start_params
+
     def _get_start_params(self, start_params=None):
         """
         If no start_params are given, use reasonable defaults.

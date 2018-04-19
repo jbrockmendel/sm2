@@ -729,12 +729,10 @@ class ARMA(wold.ARMATransparams, tsa_model.TimeSeriesModel):
         """
         Conditional Sum of Squares likelihood function.
         """
-
         k_ar = self.k_ar
         k_ma = self.k_ma
         k = self.k_exog + self.k_trend
         y = self.endog.copy().astype(params.dtype)
-        nobs = self.nobs
         # TODO: how to handle if empty?
         if self.transparams:
             newparams = self._transparams(params)
@@ -905,7 +903,8 @@ class ARMA(wold.ARMATransparams, tsa_model.TimeSeriesModel):
         self.transparams = False  # so methods don't expect transf.
 
         normalized_cov_params = None  # TODO: fix this
-        armafit = ARMAResults(self, params, normalized_cov_params)
+        armafit = ARMAResults(self, params, normalized_cov_params,
+                              method=method)
         armafit.mle_retvals = mlefit.mle_retvals
         armafit.mle_settings = mlefit.mle_settings
         return ARMAResultsWrapper(armafit)
@@ -1098,7 +1097,7 @@ class ARIMA(ARMA):
                                         callback, start_ar_lags, **kwargs)
         normalized_cov_params = None  # TODO: fix this?
         arima_fit = ARIMAResults(self, mlefit._results.params,
-                                 normalized_cov_params)
+                                 normalized_cov_params, method=method)
         arima_fit.k_diff = self.k_diff  # TODO: Dont set these here
 
         arima_fit.mle_retvals = mlefit.mle_retvals
@@ -1328,12 +1327,21 @@ class ARMAResults(tsa_model.TimeSeriesModelResults, wold.ARMAParams):
     def df_resid(self):
         return self.nobs - self.df_model
 
-    def __init__(self, model, params, normalized_cov_params=None, scale=1.):
+    @property
+    def nobs(self):
+        if self.method == 'css':
+            # adjust nobs for css
+            return self.n_totobs - self.k_ar
+        else:
+            return self.n_totobs
+
+    def __init__(self, model, params, normalized_cov_params=None, scale=1.,
+                 method=None):
         super(ARMAResults, self).__init__(model, params, normalized_cov_params,
                                           scale)
+        self.method = method
         self.sigma2 = model.sigma2
         # TODO: make sigma2 a kwarg, dont set it in model
-        self.nobs = model.nobs
         self.k_exog = model.k_exog
         self.k_trend = model.k_trend
         self.k_ar = model.k_ar
@@ -1367,7 +1375,7 @@ class ARMAResults(tsa_model.TimeSeriesModelResults, wold.ARMAParams):
         return self.params[k + k_ar:]
 
     @cached_value
-    def bse(self):
+    def bse(self):  # TODO: can we use the base class implementation?
         params = self.params
         hess = self.model.hessian(params)
         if len(params) == 1:  # can't take an inverse, ensure 1d
@@ -1401,9 +1409,9 @@ class ARMAResults(tsa_model.TimeSeriesModelResults, wold.ARMAParams):
         k_ar = self.k_ar
         exog = model.exog  # this is a copy
         if exog is not None:
-            if model.method == "css" and k_ar > 0:
+            if self.method == "css" and k_ar > 0:
                 exog = exog[k_ar:]
-        if model.method == "css" and k_ar > 0:
+        if self.method == "css" and k_ar > 0:
             endog = endog[k_ar:]
         fv = endog - self.resid
         # add deterministic part back in
@@ -1483,7 +1491,7 @@ class ARMAResults(tsa_model.TimeSeriesModelResults, wold.ARMAParams):
                                                steps, self.resid, self.k_ar,
                                                self.k_ma, self.k_trend,
                                                self.k_exog, self.model.endog,
-                                               exog, method=self.model.method)
+                                               exog, method=self.method)
 
         # compute the standard errors
         fcasterr = self._forecast_error(steps)
@@ -1511,7 +1519,7 @@ class ARMAResults(tsa_model.TimeSeriesModelResults, wold.ARMAParams):
         from sm2.iolib.summary import Summary
         model = self.model
         title = model.__class__.__name__ + ' Model Results'
-        method = model.method
+        method = self.method
         # get sample TODO: make better sample machinery for estimation
         k_diff = getattr(self, 'k_diff', 0)
         if 'mle' in method:
@@ -1685,7 +1693,7 @@ class ARIMAResults(ARMAResults):
                                                self.k_ar, self.k_ma,
                                                self.k_trend, self.k_exog,
                                                self.model.endog,
-                                               exog, method=self.model.method)
+                                               exog, method=self.method)
 
         d = self.k_diff
         endog = self.model.data.endog[-d:]

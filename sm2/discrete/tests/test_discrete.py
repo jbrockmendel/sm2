@@ -30,7 +30,6 @@ from sm2.discrete.discrete_model import (Logit, Probit, MNLogit,
                                          CountModel, GeneralizedPoisson,
                                          NegativeBinomialP, MultinomialModel,
                                          genpoisson_p)
-from sm2.discrete.discrete_margins import _iscount, _isdummy
 
 try:
     import cvxopt  # noqa:F401

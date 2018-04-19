@@ -53,6 +53,8 @@ class GenericZeroInflated(CountModel):
     """ % {'params': base._model_params_doc,
            'extra_params': _doc_zi_params + base._missing_param_doc}
 
+    _check_perfect_pred = None  # placeholder until implemented GH#3895
+
     def __init__(self, endog, exog, exog_infl=None, offset=None,
                  inflation='logit', exposure=None, missing='none', **kwargs):
         super(GenericZeroInflated, self).__init__(endog, exog, offset=offset,
@@ -145,10 +147,6 @@ class GenericZeroInflated(CountModel):
         if start_params is None:
             start_params = self._get_start_params()
 
-        if callback is None:
-            # work around perfect separation callback GH#3895
-            callback = lambda *x: x
-
         mlefit = super(GenericZeroInflated, self).fit(
             start_params=start_params,
             maxiter=maxiter,
@@ -163,10 +161,10 @@ class GenericZeroInflated(CountModel):
         return wrap_cls(zipfit)
 
     def _get_start_params_l1(self, start_params, method='l1',
-                        maxiter='defined_by_method', full_output=1, disp=1,
-                        callback=None, alpha=0, trim_mode='auto',
-                        auto_trim_tol=0.01, size_trim_tol=1e-4,
-                        qc_tol=0.03, **kwargs):
+                             maxiter='defined_by_method', full_output=1, disp=1,
+                             callback=None, alpha=0, trim_mode='auto',
+                             auto_trim_tol=0.01, size_trim_tol=1e-4,
+                             qc_tol=0.03, **kwargs):
         if start_params is not None:
             return start_params
 
@@ -175,10 +173,6 @@ class GenericZeroInflated(CountModel):
             alpha_p = alpha[:-(self.k_extra - extra)]
         else:
             alpha_p = alpha
-
-        offset = getattr(self, "offset", 0) + getattr(self, "exposure", 0)
-        if np.size(offset) == 1 and offset == 0:
-            offset = None
 
         start_params = self.model_main.fit_regularized(
             start_params=start_params, method=method, maxiter=maxiter,
@@ -200,13 +194,6 @@ class GenericZeroInflated(CountModel):
         if np.size(alpha) == 1 and alpha != 0:
             k_params = self.k_exog + self.k_inflate
             alpha = alpha * np.ones(k_params)
-
-        start_params = self._get_start_params_l1(start_params,
-                method=method, maxiter=maxiter,
-                full_output=full_output, disp=0, callback=callback,
-                alpha=alpha, trim_mode=trim_mode,
-                auto_trim_tol=auto_trim_tol,
-                size_trim_tol=size_trim_tol, qc_tol=qc_tol, **kwargs)
 
         cntfit = super(CountModel, self).fit_regularized(
             start_params=start_params, method=method, maxiter=maxiter,
