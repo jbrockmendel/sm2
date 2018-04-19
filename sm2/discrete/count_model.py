@@ -195,15 +195,12 @@ class GenericZeroInflated(CountModel):
             k_params = self.k_exog + self.k_inflate
             alpha = alpha * np.ones(k_params)
 
-        cntfit = super(CountModel, self).fit_regularized(
+        cntfit = DiscreteModel.fit_regularized(self,
             start_params=start_params, method=method, maxiter=maxiter,
             full_output=full_output, disp=disp, callback=callback,
             alpha=alpha, trim_mode=trim_mode, auto_trim_tol=auto_trim_tol,
             size_trim_tol=size_trim_tol, qc_tol=qc_tol, **kwargs)
-
-        res_cls, wrap_cls = self._res_classes["fit_regularized"]
-        discretefit = res_cls(self, cntfit)
-        return wrap_cls(discretefit)
+        return cntfit
 
     def score_obs(self, params):
         """

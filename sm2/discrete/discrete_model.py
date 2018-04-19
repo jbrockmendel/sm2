@@ -355,7 +355,9 @@ class DiscreteModel(base.LikelihoodModel):
             cov_params_func=cov_params_func,
             **kwargs)
 
-        return mlefit  # up to subclasses to wrap results
+        res_cls, wrap_cls = self._res_classes["fit_regularized"]
+        discretefit = res_cls(self, mlefit)
+        return wrap_cls(discretefit)
 
     # TODO: Might this go higher up the hierarchy?
     def cov_params_func_l1(self, likelihood_model, xopt, retvals):
@@ -425,28 +427,6 @@ class FitBase(DiscreteModel):
                                     **kwargs)
 
         res_cls, wrap_cls = self._res_classes["fit"]
-        discretefit = res_cls(self, bnryfit)
-        return wrap_cls(discretefit)
-
-    @copy_doc(DiscreteModel.fit_regularized.__doc__)
-    def fit_regularized(self, start_params=None, method='l1',
-                        maxiter='defined_by_method', full_output=1, disp=1,
-                        callback=None, alpha=0, trim_mode='auto',
-                        auto_trim_tol=0.01, size_trim_tol=1e-4, qc_tol=0.03,
-                        **kwargs):
-
-        bnryfit = DiscreteModel.fit_regularized(self,
-                                                start_params=start_params,
-                                                method=method, maxiter=maxiter,
-                                                full_output=full_output,
-                                                disp=disp, callback=callback,
-                                                alpha=alpha,
-                                                trim_mode=trim_mode,
-                                                auto_trim_tol=auto_trim_tol,
-                                                size_trim_tol=size_trim_tol,
-                                                qc_tol=qc_tol, **kwargs)
-
-        res_cls, wrap_cls = self._res_classes["fit_regularized"]
         discretefit = res_cls(self, bnryfit)
         return wrap_cls(discretefit)
 
@@ -1461,10 +1441,6 @@ class GeneralizedPoisson(CountModel):
             start_params = np.append(start_params, max(-0.1, a))
             # TODO: reasoning for -0.1?
 
-        #if callback is None:
-        #    # work around perfect separation callback GH#3895
-        #    callback = lambda *x: x
-
         # TODO: skip CountModel and go straight to DiscreteModel?
         mlefit = CountModel.fit(self, start_params=start_params,
                                 maxiter=maxiter,
@@ -1545,10 +1521,7 @@ class GeneralizedPoisson(CountModel):
                                                auto_trim_tol=auto_trim_tol,
                                                size_trim_tol=size_trim_tol,
                                                qc_tol=qc_tol, **kwargs)
-
-        res_cls, wrap_cls = self._res_classes["fit_regularized"]
-        discretefit = res_cls(self, cntfit)
-        return wrap_cls(discretefit)
+        return cntfit
 
     def predict(self, params, exog=None, exposure=None, offset=None,
                 which='mean'):
@@ -2610,9 +2583,7 @@ class NegativeBinomial(CountModel):
                                                size_trim_tol=size_trim_tol,
                                                qc_tol=qc_tol, **kwargs)
 
-        res_cls, wrap_cls = self._res_classes["fit_regularized"]
-        discretefit = res_cls(self, cntfit)
-        return wrap_cls(discretefit)
+        return cntfit
 
 
 class NegativeBinomialP(CountModel):
@@ -2974,9 +2945,7 @@ class NegativeBinomialP(CountModel):
                                                size_trim_tol=size_trim_tol,
                                                qc_tol=qc_tol, **kwargs)
 
-        res_cls, wrap_cls = self._res_classes["fit_regularized"]
-        discretefit = res_cls(self, cntfit)
-        return wrap_cls(discretefit)
+        return cntfit
 
     def predict(self, params, exog=None, exposure=None, offset=None,
                 which='mean'):
