@@ -189,7 +189,7 @@ class DiscreteModel(base.LikelihoodModel):
 
     fit.__doc__ += base.LikelihoodModel.fit.__doc__
 
-    def _set_alpha(self, alpha):
+    def _set_alpha(self, alpha):  # TODO: Move higher up?
         """
         Call to setup parameter transformations at the beginning
         of fit_regularized.
@@ -763,6 +763,79 @@ class CountModel(FitBase):
             kwds['exposure'] = np.exp(kwds['exposure'])
         return kwds
 
+    # TODO: This overlaps a lot with count_model version
+    def _get_start_params_l1(self, start_params, method, maxiter,
+                             full_output, disp, callback, alpha, trim_mode,
+                             auto_trim_tol, size_trim_tol, qc_tol,
+                             **kwargs):
+        if start_params is not None:
+            return start_params
+
+        elif self.__class__ == Poisson:
+            # FIXME: kludge so we can put this method in CountModel to avoid
+            # duplication
+            return start_params
+
+        # alpha for regularized poisson to get starting values
+        if self.k_extra and np.size(alpha) > 1:
+            alpha_p = alpha[:-1]
+        else:
+            alpha_p = alpha
+
+        # TODO: Warning: this assumes exposure is logged
+        offset = getattr(self, "offset", 0) + getattr(self, "exposure", 0)
+        if np.size(offset) == 1 and offset == 0:
+            offset = None
+
+        # Use poisson fit as first guess.
+        mod_poi = Poisson(self.endog, self.exog, offset=offset)
+        res_poi = mod_poi.fit_regularized(
+            start_params=start_params, method=method, maxiter=maxiter,
+            full_output=full_output, disp=0, callback=callback,
+            alpha=alpha_p, trim_mode=trim_mode, auto_trim_tol=auto_trim_tol,
+            size_trim_tol=size_trim_tol, qc_tol=qc_tol, **kwargs)
+
+        start_params = res_poi.params
+
+        loglike_method = getattr(self, 'loglike_method', None)
+        if loglike_method is None or loglike_method.startswith('nb'):
+            # FIXME: kludge to accomodate NegativeBinomial without
+            # code duplication
+            start_params = np.append(start_params, 0.1)
+            # TODO: Document reason for 0.1
+        return start_params
+
+    def _get_start_params_null(self):
+        """
+        Compute one-step moment estimator for null (constant-only) model
+
+        This is a preliminary estimator used as start_params.
+
+        Returns
+        -------
+        params : ndarray
+            parameter estimate based one one-step moment matching
+        """
+        if hasattr(self, 'k_inflate'):
+            # FIXME: kludge to exclude count_model
+            return None
+
+        offset = getattr(self, "offset", 0)
+        exposure = getattr(self, "exposure", 0)
+
+        const = (self.endog / np.exp(offset + exposure)).mean()
+        params = [np.log(const)]
+
+        if hasattr(self, '_estimate_dispersion'):
+            # includes NegativeBinomial, GeneralizedPoisson, NegativeBinomialP
+            # excludes Poisson
+            mu = const * np.exp(offset + exposure)
+            resid = self.endog - mu
+            a = self._estimate_dispersion(mu, resid,
+                                          df_resid=resid.shape[0] - 1)
+            params.append(a)
+        return np.array(params)
+
     def predict(self, params, exog=None, exposure=None, offset=None,
                 linear=False):
         """
@@ -1050,23 +1123,6 @@ class Poisson(CountModel):
         L = np.exp(linpred)
         return -np.dot(L * self.exog.T, self.exog)
 
-    def _get_start_params_null(self):
-        """
-        Compute one-step moment estimator for null (constant-only) model
-
-        This is a preliminary estimator used as start_params.
-
-        Returns
-        -------
-        params : ndarray
-            parameter estimate based one one-step moment matching
-        """
-        offset = getattr(self, "offset", 0)
-        exposure = getattr(self, "exposure", 0)
-        const = (self.endog / np.exp(offset + exposure)).mean()
-        params = [np.log(const)]
-        return params
-
     def _get_start_params(self, start_params, robust=True):
         if start_params is not None:
             pass
@@ -1105,6 +1161,7 @@ class Poisson(CountModel):
         discretefit = res_cls(self, cntfit, **kwds)
         return wrap_cls(discretefit)
 
+    # TODO: Is anything special about this Poisson-specific?
     def fit_constrained(self, constraints, start_params=None, **fit_kwds):
         """fit the model subject to linear equality constraints
 
@@ -1388,26 +1445,26 @@ class GeneralizedPoisson(CountModel):
 
         return hess_arr
 
-    @copy_doc(Poisson._get_start_params_null.__doc__)
-    def _get_start_params_null(self):
-        offset = getattr(self, "offset", 0)
-        exposure = getattr(self, "exposure", 0)
-
-        const = (self.endog / np.exp(offset + exposure)).mean()
-        params = [np.log(const)]
-        mu = const * np.exp(offset + exposure)
-        resid = self.endog - mu
-        a = self._estimate_dispersion(mu, resid, df_resid=resid.shape[0] - 1)
-        params.append(a)
-
-        return np.array(params)
-
     def _estimate_dispersion(self, mu, resid, df_resid=None):
         q = self.parameterization
         if df_resid is None:
             df_resid = resid.shape[0]
         a = ((np.abs(resid) / np.sqrt(mu) - 1) * mu**(-q)).sum() / df_resid
         return a
+
+    # ----------------------------------------------------------------
+    # Helper Methods for `fit` and `fit_regularized`
+
+    @copy_doc(DiscreteModel._set_alpha.__doc__)
+    def _set_alpha(self, alpha):
+        self._transparams = False
+
+        if np.size(alpha) == 1 and alpha != 0:
+            k_params = self.exog.shape[1] + self.k_extra
+            alpha = alpha * np.ones(k_params)
+            alpha[-1] = 0
+
+        return alpha
 
     # TODO: Overlap with _get_start_params_l1?
     def _get_start_params(self, start_params, **kwargs):
@@ -1429,6 +1486,8 @@ class GeneralizedPoisson(CountModel):
         start_params = np.append(start_params, max(-0.1, a))
         # TODO: reasoning for -0.1?
         return start_params
+
+    # ----------------------------------------------------------------
 
     def fit(self, start_params=None, method='bfgs', maxiter=35,
             full_output=1, disp=1, callback=None, use_transparams=False,
@@ -1454,17 +1513,15 @@ class GeneralizedPoisson(CountModel):
         start_params = self._get_start_params(start_params, **kwargs)
 
         # TODO: skip CountModel and go straight to DiscreteModel?
-        mlefit = CountModel.fit(self, start_params=start_params,
-                                maxiter=maxiter,
-                                method=method, disp=disp,
-                                full_output=full_output,
-                                callback=callback,
-                                **kwargs)
+        mlefit = CountModel.fit(self,
+            start_params=start_params, maxiter=maxiter, method=method,
+            disp=disp, full_output=full_output, callback=callback, **kwargs)
 
         if use_transparams and method not in ["newton", "ncg"]:
             self._transparams = False
             mlefit._results.params[-1] = np.exp(mlefit._results.params[-1])
-            delattr(mlefit._results, "cov_type")  # ensure this is reevaluated
+            # ensure cov_params are re-evaluated with updated params
+            delattr(mlefit._results, "cov_type")
 
         res_cls, wrap_cls = self._res_classes["fit"]
         gpfit = res_cls(self, mlefit._results,
@@ -1472,48 +1529,6 @@ class GeneralizedPoisson(CountModel):
         return wrap_cls(gpfit)
 
     fit.__doc__ = DiscreteModel.fit.__doc__ + fit.__doc__
-
-    def _get_start_params_l1(self, start_params, method, maxiter,
-                             full_output, disp, callback, alpha, trim_mode,
-                             auto_trim_tol, size_trim_tol, qc_tol,
-                             **kwargs):
-        if start_params is not None:
-            return start_params
-
-        if self.k_extra and np.size(alpha) > 1:
-            alpha_p = alpha[:-1]
-        else:
-            alpha_p = alpha
-
-        offset = getattr(self, "offset", 0) + getattr(self, "exposure", 0)
-        if np.size(offset) == 1 and offset == 0:
-            offset = None
-
-        mod_poi = Poisson(self.endog, self.exog, offset=offset)
-        res_poi = mod_poi.fit_regularized(start_params=start_params,
-                                          method=method, maxiter=maxiter,
-                                          full_output=full_output, disp=0,
-                                          callback=callback,
-                                          alpha=alpha_p,
-                                          trim_mode=trim_mode,
-                                          auto_trim_tol=auto_trim_tol,
-                                          size_trim_tol=size_trim_tol,
-                                          qc_tol=qc_tol, **kwargs)
-        start_params = res_poi.params
-        start_params = np.append(start_params, 0.1)
-        # TODO: Document reason for 0.1
-        return start_params
-
-    @copy_doc(DiscreteModel._set_alpha.__doc__)
-    def _set_alpha(self, alpha):
-        self._transparams = False
-
-        if np.size(alpha) == 1 and alpha != 0:
-            k_params = self.exog.shape[1] + self.k_extra
-            alpha = alpha * np.ones(k_params)
-            alpha[-1] = 0
-
-        return alpha
 
     def predict(self, params, exog=None, exposure=None, offset=None,
                 which='mean'):
@@ -2425,18 +2440,6 @@ class NegativeBinomial(CountModel):
     def score_obs(self, params):
         return approx_fprime_cs(params, self.loglikeobs)
 
-    @copy_doc(Poisson._get_start_params_null.__doc__)
-    def _get_start_params_null(self):
-        offset = getattr(self, "offset", 0)
-        exposure = getattr(self, "exposure", 0)
-        const = (self.endog / np.exp(offset + exposure)).mean()
-        params = [np.log(const)]
-        mu = const * np.exp(offset + exposure)
-        resid = self.endog - mu
-        a = self._estimate_dispersion(mu, resid, df_resid=resid.shape[0] - 1)
-        params.append(a)
-        return np.array(params)
-
     def _estimate_dispersion(self, mu, resid, df_resid=None):
         if df_resid is None:
             df_resid = resid.shape[0]
@@ -2446,6 +2449,21 @@ class NegativeBinomial(CountModel):
             # i.e. self.loglike_method == 'nb1':
             a = (resid**2 / mu - 1).sum() / df_resid
         return a
+
+    # ----------------------------------------------------------------
+    # Helper Methods for `fit` and `fit_regularized`
+
+    @copy_doc(DiscreteModel._set_alpha.__doc__)
+    def _set_alpha(self, alpha):
+        self._transparams = False
+
+        if self.loglike_method.startswith('nb') and (np.size(alpha) == 1 and
+                                                     alpha != 0):
+            # don't penalize alpha if alpha is scalar
+            k_params = self.exog.shape[1] + self.k_extra
+            alpha = alpha * np.ones(k_params)
+            alpha[-1] = 0
+        return alpha
 
     def _get_start_params(self, start_params, **kwargs):
         if start_params is not None:
@@ -2473,6 +2491,8 @@ class NegativeBinomial(CountModel):
 
         return start_params
 
+    # ----------------------------------------------------------------
+
     def fit(self, start_params=None, method='bfgs', maxiter=35,
             full_output=1, disp=1, callback=None,
             cov_type='nonrobust', cov_kwds=None, use_t=None, **kwargs):
@@ -2496,12 +2516,9 @@ class NegativeBinomial(CountModel):
         start_params = self._get_start_params(start_params, **kwargs)
 
         # TODO: can we skip CountModel and go straight to DiscreteModel?
-        mlefit = CountModel.fit(self, start_params=start_params,
-                                maxiter=maxiter,
-                                method=method, disp=disp,
-                                full_output=full_output,
-                                callback=callback,
-                                **kwargs)
+        mlefit = CountModel.fit(self,
+            start_params=start_params, maxiter=maxiter, method=method,
+            disp=disp, full_output=full_output, callback=callback, **kwargs)
 
         # TODO: Fix NBin _check_perfect_pred
         if self.loglike_method.startswith('nb'):
@@ -2510,7 +2527,8 @@ class NegativeBinomial(CountModel):
             # change from lnalpha to alpha
             if method not in ["newton", "ncg"]:
                 mlefit._results.params[-1] = np.exp(mlefit._results.params[-1])
-                delattr(mlefit._results, "cov_type")  # ensure this is reevaluated
+                # ensure cov_params are re-evaluated with updated params
+                delattr(mlefit._results, "cov_type")
 
             res_cls, wrap_cls = self._res_classes["fit"]
             nbinfit = res_cls(self, mlefit._results,
@@ -2524,49 +2542,6 @@ class NegativeBinomial(CountModel):
             result._get_robustcov_results(cov_type=cov_type,
                                       use_self=True, use_t=use_t, **cov_kwds)
         return result
-
-    def _get_start_params_l1(self, start_params, method, maxiter,
-                             full_output, disp, callback, alpha, trim_mode,
-                             auto_trim_tol, size_trim_tol, qc_tol,
-                             **kwargs):
-        if start_params is not None:
-            return start_params
-
-        # Use poisson fit as first guess.
-        # TODO, Warning: this assumes exposure is logged
-        offset = getattr(self, "offset", 0) + getattr(self, "exposure", 0)
-        if np.size(offset) == 1 and offset == 0:
-            offset = None
-
-        # alpha for regularized poisson to get starting values
-        if self.k_extra and np.size(alpha) > 1:
-            alpha_p = alpha[:-1]
-        else:
-            alpha_p = alpha
-
-        mod_poi = Poisson(self.endog, self.exog, offset=offset)
-        res_poi = mod_poi.fit_regularized(
-            start_params=start_params, method=method, maxiter=maxiter,
-            full_output=full_output, disp=0, callback=callback,
-            alpha=alpha_p, trim_mode=trim_mode, auto_trim_tol=auto_trim_tol,
-            size_trim_tol=size_trim_tol, qc_tol=qc_tol, **kwargs)
-        start_params = res_poi.params
-        if self.loglike_method.startswith('nb'):
-            start_params = np.append(start_params, 0.1)
-            # TODO: document why 0.1
-        return start_params
-
-    @copy_doc(DiscreteModel._set_alpha.__doc__)
-    def _set_alpha(self, alpha):
-        self._transparams = False
-
-        if self.loglike_method.startswith('nb') and (np.size(alpha) == 1 and
-                                                     alpha != 0):
-            # don't penalize alpha if alpha is scalar
-            k_params = self.exog.shape[1] + self.k_extra
-            alpha = alpha * np.ones(k_params)
-            alpha[-1] = 0
-        return alpha
 
 
 class NegativeBinomialP(CountModel):
@@ -2748,7 +2723,7 @@ class NegativeBinomialP(CountModel):
         mu = self.predict(params)
 
         mu_p = mu**p
-        a1 = mu_p / alpha
+        a1 = mu_p / alpha  # AKA size
         a2 = mu + a1
         a3 = y + a1
         a4 = a1 * p / mu
@@ -2759,10 +2734,12 @@ class NegativeBinomialP(CountModel):
 
         dgpart = special.digamma(y + a1) - special.digamma(a1)
         pgpart = special.polygamma(1, a1) - special.polygamma(1, y + a1)
+        dgterm = np.log(a1 / a2) + dgpart + 1 - a3 / a2
+        # TODO: better name or interpretation for dgterm?
 
         coeff = mu**2 * ((1 + a4)**2 * a3 / a2**2
                          - 2 * a4 * (1 + a4) / a2
-                         + a5 * (np.log(a1 / a2) + dgpart + 2 - a3 / a2)
+                         + a5 * (dgterm + 1)
                          - a4**2 * pgpart
                          - a3 / a2 / mu)
 
@@ -2772,13 +2749,13 @@ class NegativeBinomialP(CountModel):
 
         hess_arr[-1, :-1] = (exog[:, :].T * mu * a1 *
                              ((1 + a4) * (1 - a3 / a2) / a2
-                              - p / mu * (np.log(a1 / a2) + dgpart + 2 - a3 / a2)
+                              - p / mu * (dgterm + 1)
                               + p * a4 / a2
                               + a4 * pgpart
                               ) / alpha).sum(axis=1)
 
-        da2 = (a1 * (2 * np.log(a1 / a2) + 2 * dgpart + 4 - 2 * a3 / a2
-                     - 1
+        da2 = (a1 * (2 * dgterm
+                     + 1
                      - a1 * pgpart
                      - 2 * a1 / a2
                      + (a1 / a2) * (a3 / a2)
@@ -2791,25 +2768,24 @@ class NegativeBinomialP(CountModel):
 
         return hess_arr
 
-    @copy_doc(Poisson._get_start_params_null.__doc__)
-    def _get_start_params_null(self):
-        offset = getattr(self, "offset", 0)
-        exposure = getattr(self, "exposure", 0)
-
-        const = (self.endog / np.exp(offset + exposure)).mean()
-        params = [np.log(const)]
-        mu = const * np.exp(offset + exposure)
-        resid = self.endog - mu
-        a = self._estimate_dispersion(mu, resid, df_resid=resid.shape[0] - 1)
-        params.append(a)
-        return np.array(params)
-
     def _estimate_dispersion(self, mu, resid, df_resid=None):
         q = self.parameterization - 1
         if df_resid is None:
             df_resid = resid.shape[0]
         a = ((resid**2 / mu - 1) * mu**(-q)).sum() / df_resid
         return a
+
+    # --------------------------------------------------------------
+    # Helper Methods for `fit` and `fit_regularized`
+
+    @copy_doc(DiscreteModel._set_alpha.__doc__)
+    def _set_alpha(self, alpha):
+        self._transparams = False
+        if np.size(alpha) == 1 and alpha != 0:
+            k_params = self.exog.shape[1] + self.k_extra
+            alpha = alpha * np.ones(k_params)
+            alpha[-1] = 0
+        return alpha
 
     def _get_start_params(self, start_params, **kwargs):
         if start_params is not None:
@@ -2831,6 +2807,8 @@ class NegativeBinomialP(CountModel):
         start_params = np.append(start_params, max(0.05, a))
         # TODO: Document reason for 0.05
         return start_params
+
+    # --------------------------------------------------------------
 
     def fit(self, start_params=None, method='bfgs', maxiter=35,
             full_output=1, disp=1, callback=None, use_transparams=False,
@@ -2856,15 +2834,15 @@ class NegativeBinomialP(CountModel):
         start_params = self._get_start_params(start_params, **kwargs)
 
         # TODO: can we skip CountModel and go straight to DiscreteModel?
-        mlefit = CountModel.fit(self, start_params=start_params,
-                                maxiter=maxiter, method=method, disp=disp,
-                                full_output=full_output, callback=callback,
-                                **kwargs)
+        mlefit = CountModel.fit(self,
+            start_params=start_params, maxiter=maxiter, method=method,
+            disp=disp, full_output=full_output, callback=callback, **kwargs)
 
-        if use_transparams and method not in ["newton", "ncg"]:
-            self._transparams = False  # TODO: Not the right place to set this
+        if self._transparams:
+            self._transparams = False
             mlefit._results.params[-1] = np.exp(mlefit._results.params[-1])
-            delattr(mlefit._results, "cov_type")  # ensure this is reevaluated
+            # ensure that cov_params is re-evaluated with updated params
+            delattr(mlefit._results, "cov_type")
 
         res_class, wrap_cls = self._res_classes["fit"]
         nbinfit = res_class(self, mlefit._results,
@@ -2872,45 +2850,6 @@ class NegativeBinomialP(CountModel):
         return wrap_cls(nbinfit)
 
     fit.__doc__ += DiscreteModel.fit.__doc__
-
-    # TODO: See if we can de-duplicate this with other methods
-    def _get_start_params_l1(self, start_params, method='l1',
-                             maxiter='defined_by_method', full_output=1,
-                             disp=1, callback=None, alpha=0, trim_mode='auto',
-                             auto_trim_tol=0.01, size_trim_tol=1e-4,
-                             qc_tol=0.03, **kwargs):
-
-        if start_params is not None:
-            return start_params
-
-        offset = getattr(self, "offset", 0) + getattr(self, "exposure", 0)
-        if np.size(offset) == 1 and offset == 0:
-            offset = None
-
-        if self.k_extra and np.size(alpha) > 1:
-            alpha_p = alpha[:-1]
-        else:
-            alpha_p = alpha
-
-        mod_poi = Poisson(self.endog, self.exog, offset=offset)
-        start_params = mod_poi.fit_regularized(
-            start_params=start_params, method=method, maxiter=maxiter,
-            full_output=full_output, disp=0, callback=callback,
-            alpha=alpha_p, trim_mode=trim_mode, auto_trim_tol=auto_trim_tol,
-            size_trim_tol=size_trim_tol, qc_tol=qc_tol, **kwargs).params
-
-        start_params = np.append(start_params, 0.1)
-        # TODO: reasoning behind 0.1?
-        return start_params
-
-    @copy_doc(DiscreteModel._set_alpha.__doc__)
-    def _set_alpha(self, alpha):
-        self._transparams = False
-        if np.size(alpha) == 1 and alpha != 0:
-            k_params = self.exog.shape[1] + self.k_extra
-            alpha = alpha * np.ones(k_params)
-            alpha[-1] = 0
-        return alpha
 
     def predict(self, params, exog=None, exposure=None, offset=None,
                 which='mean'):
@@ -2970,7 +2909,7 @@ class NegativeBinomialP(CountModel):
             # TODO: fix upstream this is A TypeError
             raise ValueError('keyword "which" = %s not recognized' % which)
 
-    def convert_params(self, params, mu):
+    def convert_params(self, params, mu):  # TODO: use this more?  privatize?
         alpha = params[-1]
         p = 2 - self.parameterization
 
@@ -3264,8 +3203,6 @@ class CountResults(DiscreteResults):
     @cached_data
     def resid(self):
         """
-        Residuals
-
         Notes
         -----
         The residuals for Count models are defined as
@@ -3586,7 +3523,7 @@ class MultinomialResults(DiscreteResults):
         bse = np.sqrt(np.diag(self.cov_params()))
         return bse.reshape(self.params.shape, order='F')
         # TODO: Is the order='F') part necessary?  Can we just add the
-        # reshape to the general case?
+        # reshape to the general case? --> appears to break
 
     @cached_value
     def aic(self):
