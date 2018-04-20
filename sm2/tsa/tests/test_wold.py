@@ -9,36 +9,6 @@ import scipy.signal
 from sm2.tsa import wold
 
 
-def test_from_coeffs_None():
-    # Test case where None is passed into from_coeffs constructor
-    arma = wold.ARMAParams.from_coeffs(None, [.5, -.1])
-    control = wold.ARMAParams.from_coeffs([], [.5, -.1])
-    assert arma == control
-
-
-def test_mult():
-    a20 = wold.ARMAParams.from_coeffs([.5, -.1], [])
-    assert (a20.arcoefs == [.5, -.1]).all()
-    assert (a20.macoefs == []).all()
-    assert (a20.ar == [1, -0.5, 0.1]).all()
-
-    a11 = wold.ARMAParams.from_coeffs([-0.1], [.6])
-    assert (a11.arcoefs == [-0.1]).all()
-    assert (a11.macoefs == [.6]).all()
-    assert (a11.ar == [1, 0.1]).all()
-
-    m = a20 * a11
-
-    assert m.arpoly == a20.arpoly * a11.arpoly
-    assert m.mapoly == a20.mapoly * a11.mapoly
-
-    # __mul__ with slightly different types
-    m2 = a20 * (a11.ar, a11.ma)
-    assert m == m2
-
-    assert not m != m2
-
-
 def test_arma_periodogram_unit_root():
     # Hits case where "np.isnan(h).any()"
     ar = np.array([1, -1])
@@ -114,6 +84,46 @@ def test_arma_periodiogram_MA1():
 
 
 # -------------------------------------------------------------------
+# Tests for ARMAParams construction
+
+def test_from_coeffs_None():
+    # Test case where None is passed into from_coeffs constructor
+    arma = wold.ARMAParams.from_coeffs(None, [.5, -.1])
+    control = wold.ARMAParams.from_coeffs([], [.5, -.1])
+    assert arma == control
+
+
+def test_invalid_poly():
+    # check that passing invalid parameters to ARMAParams raise as expected
+    good = np.array([1.0, -0.5])
+    bad = np.array([-0.5])
+
+    # smoke check that valid params _dont_ raise
+    wold.ARMAParams(good, good)
+
+    for other in [good, bad, None]:
+        with pytest.raises(ValueError):
+            wold.ARMAParams(other, bad)
+        with pytest.raises(ValueError):
+            wold.ARMAParams(bad, other)
+
+
+def test_invalid_shapes_arma():
+    # check that passing params with invalid shapes to ARMAParams/VARParams
+    # raises as expected
+    # 1-dimensional case
+    good = np.array([1, .34, -.2])
+
+    # Check that correct params dont raise
+    wold.ARMAParams(good, None)
+    wold.ARMAParams(None, good)
+
+    for bad in [np.array(1), good.reshape(1, 3), good.reshape(3, 1, 1)]:
+        with pytest.raises(ValueError):
+            wold.ARMAParams(good, bad)
+        with pytest.raises(ValueError):
+            wold.ARMAParams(bad, good)
+
 
 class TestRoots(object):
     @classmethod
@@ -187,7 +197,83 @@ class TestARMAParams(object):
         assert rep == 'ARMAParams\nAR: [1.0, -0.5]\nMA: [1]', rep
 
 
+def test_mult():
+    a20 = wold.ARMAParams.from_coeffs([.5, -.1], [])
+    assert (a20.arcoefs == [.5, -.1]).all()
+    assert (a20.macoefs == []).all()
+    assert (a20.ar == [1, -0.5, 0.1]).all()
+
+    a11 = wold.ARMAParams.from_coeffs([-0.1], [.6])
+    assert (a11.arcoefs == [-0.1]).all()
+    assert (a11.macoefs == [.6]).all()
+    assert (a11.ar == [1, 0.1]).all()
+
+    m = a20 * a11
+
+    assert m.arpoly == a20.arpoly * a11.arpoly
+    assert m.mapoly == a20.mapoly * a11.mapoly
+
+    # __mul__ with slightly different types
+    m2 = a20 * (a11.ar, a11.ma)
+    assert m == m2
+
+    assert not m != m2
+
+
 # -------------------------------------------------------------------
+# Tests for VARParams construction
+
+def test_invalid_shapes_var():
+    # 3-lag 2-equation VAR
+    ar3 = np.random.randn(3, 2, 2)
+
+    with pytest.raises(ValueError):
+        # too few dimensions
+        wold.VARParams(ar3[:, :, 0])
+
+    with pytest.raises(ValueError):
+        # shape[1] != shape[2]
+        wold.VARParams(ar3[:, :, :-1])
+
+    with pytest.raises(ValueError):
+        # len(shape) < 3
+        wold.VARParams(ar3[:, :, 0])
+
+
+def test_neqs_mismatch():
+    # The number of equations implied by ar shape doesn't match that of ma
+    # 3-lag 2-equation 4MA VARMA
+    ar3 = np.random.randn(3, 2, 2)
+    ma4 = np.random.randn(4, 2, 2)
+
+    wold.VARParams(ar3, ma4)
+
+    with pytest.raises(ValueError):
+        # pass ma that suggests too few equations
+        wold.VARParams(ar3, ma4[:, :-1, :-1])
+
+    with pytest.raises(ValueError):
+        # pass ma with internally-inconsistent shape
+        wold.VARParams(ar3, ma4[:, :-1, :])
+
+
+def test_invalid_intercept_var():
+    # 3-lag 2-equation VAR
+    ar3 = np.random.randn(3, 2, 2)
+    intercept = np.array([1, 2])
+    # smoke tests for valid paramaters
+    wold.VARParams(ar3)
+    wold.VARParams(ar3, intercept=intercept)
+
+    with pytest.raises(ValueError):
+        wold.VARParams(ar3, intercept=intercept.reshape(2, 1))
+
+    with pytest.raises(ValueError):
+        wold.VARParams(ar3, intercept=intercept.reshape(1, 2))
+
+    with pytest.raises(ValueError):
+        wold.VARParams(ar3, intercept=np.array(4))
+
 
 class TestVARParamsUnivariate(object):
     @classmethod
@@ -262,7 +348,6 @@ class TestVARParams(object):
         assert (self.varma.long_run_effects() ==
                 self.varma2.long_run_effects()).all()
 
-    @pytest.mark.skip(reason="VARParams doesnt inherit RootsMixin yet")
     def test_roots(self):
         roots = self.varma.roots
         assert roots.shape == (6,)

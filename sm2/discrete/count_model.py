@@ -161,6 +161,11 @@ class GenericZeroInflated(CountModel):
         zipfit = res_cls(self, mlefit._results)
         return wrap_cls(zipfit)
 
+    def _get_start_params_null(self):
+        # Override CountModel method
+        return None
+        # TODO: implement something here
+
     def _get_start_params_l1(self, start_params, method='l1',
                              maxiter='defined_by_method', full_output=1, disp=1,
                              callback=None, alpha=0, trim_mode='auto',
