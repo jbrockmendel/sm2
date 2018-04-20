@@ -763,48 +763,6 @@ class CountModel(FitBase):
             kwds['exposure'] = np.exp(kwds['exposure'])
         return kwds
 
-    # TODO: This overlaps a lot with count_model version
-    def _get_start_params_l1(self, start_params, method, maxiter,
-                             full_output, disp, callback, alpha, trim_mode,
-                             auto_trim_tol, size_trim_tol, qc_tol,
-                             **kwargs):
-        if start_params is not None:
-            return start_params
-
-        elif self.__class__ == Poisson:
-            # FIXME: kludge so we can put this method in CountModel to avoid
-            # duplication
-            return start_params
-
-        # alpha for regularized poisson to get starting values
-        if self.k_extra and np.size(alpha) > 1:
-            alpha_p = alpha[:-1]
-        else:
-            alpha_p = alpha
-
-        # TODO: Warning: this assumes exposure is logged
-        offset = getattr(self, "offset", 0) + getattr(self, "exposure", 0)
-        if np.size(offset) == 1 and offset == 0:
-            offset = None
-
-        # Use poisson fit as first guess.
-        mod_poi = Poisson(self.endog, self.exog, offset=offset)
-        res_poi = mod_poi.fit_regularized(
-            start_params=start_params, method=method, maxiter=maxiter,
-            full_output=full_output, disp=0, callback=callback,
-            alpha=alpha_p, trim_mode=trim_mode, auto_trim_tol=auto_trim_tol,
-            size_trim_tol=size_trim_tol, qc_tol=qc_tol, **kwargs)
-
-        start_params = res_poi.params
-
-        loglike_method = getattr(self, 'loglike_method', None)
-        if loglike_method is None or loglike_method.startswith('nb'):
-            # FIXME: kludge to accomodate NegativeBinomial without
-            # code duplication
-            start_params = np.append(start_params, 0.1)
-            # TODO: Document reason for 0.1
-        return start_params
-
     def _get_start_params_null(self):
         """
         Compute one-step moment estimator for null (constant-only) model
@@ -816,10 +774,6 @@ class CountModel(FitBase):
         params : ndarray
             parameter estimate based one one-step moment matching
         """
-        if hasattr(self, 'k_inflate'):
-            # FIXME: kludge to exclude count_model
-            return None
-
         offset = getattr(self, "offset", 0)
         exposure = getattr(self, "exposure", 0)
 
@@ -902,6 +856,89 @@ class CountModel(FitBase):
 
         return self._wrap_derivative_exog(margeff, params, exog, dummy_idx,
                                           count_idx, transform)
+
+
+class _CountMixin(object):
+    """
+    Mixin for methods that are common to some but not all CountModel
+    subclasses
+    """
+    @property
+    def _should_append(self):  # TODO: Better name?
+        # compatibility shim for NegativeBinomial; semi-kludge
+        loglike_method = getattr(self, 'loglike_method', None)
+        return loglike_method is None or loglike_method.startswith('nb')
+
+    @copy_doc(DiscreteModel._set_alpha.__doc__)
+    def _set_alpha(self, alpha):
+        self._transparams = False
+
+        loglike_method = getattr(self, 'loglike_method', None)
+        if self._should_append and (np.size(alpha) == 1 and alpha != 0):
+            # don't penalize alpha if alpha is scalar
+            k_params = self.exog.shape[1] + self.k_extra
+            alpha = alpha * np.ones(k_params)
+            alpha[-1] = 0
+        return alpha
+
+    # TODO: This overlaps a lot with count_model version
+    def _get_start_params_l1(self, start_params, method, maxiter,
+                             full_output, disp, callback, alpha, trim_mode,
+                             auto_trim_tol, size_trim_tol, qc_tol,
+                             **kwargs):
+        if start_params is not None:
+            return start_params
+
+        # alpha for regularized poisson to get starting values
+        if self.k_extra and np.size(alpha) > 1:
+            alpha_p = alpha[:-1]
+        else:
+            alpha_p = alpha
+
+        # TODO: Warning: this assumes exposure is logged
+        offset = getattr(self, "offset", 0) + getattr(self, "exposure", 0)
+        if np.size(offset) == 1 and offset == 0:
+            offset = None
+
+        # Use poisson fit as first guess.
+        mod_poi = Poisson(self.endog, self.exog, offset=offset)
+        res_poi = mod_poi.fit_regularized(
+            start_params=start_params, method=method, maxiter=maxiter,
+            full_output=full_output, disp=0, callback=callback,
+            alpha=alpha_p, trim_mode=trim_mode, auto_trim_tol=auto_trim_tol,
+            size_trim_tol=size_trim_tol, qc_tol=qc_tol, **kwargs)
+
+        start_params = res_poi.params
+
+        if self._should_append:
+            start_params = np.append(start_params, 0.1)
+            # TODO: Document reason for 0.1
+        return start_params
+
+    # TODO: Overlap with _get_start_params_l1?
+    def _get_start_params(self, start_params, **kwargs):
+        if start_params is not None:
+            return start_params
+
+        offset = getattr(self, "offset", 0) + getattr(self, "exposure", 0)
+        if np.size(offset) == 1 and offset == 0:
+            offset = None
+
+        optim_kwds_prelim = {'disp': 0, 'skip_hessian': True,
+                             'warn_convergence': False}
+        optim_kwds_prelim.update(kwargs.get('optim_kwds_prelim', {}))
+        mod_poi = Poisson(self.endog, self.exog, offset=offset)
+        res_poi = mod_poi.fit(**optim_kwds_prelim)
+        start_params = res_poi.params
+
+        if self._should_append:
+            a = self._estimate_dispersion(res_poi.predict(), res_poi.resid,
+                                          df_resid=res_poi.df_resid)
+            start_params = np.append(start_params, max(0.05, a))
+            # FIXME: upstream uses -0.1 for GeneralizedPoisson and 0.05
+            # for the others.  GH#4521
+            # TODO: reasoning for -0.1?
+        return start_params
 
 
 class OrderedModel(DiscreteModel):  # TODO: Why does this exist?
@@ -1145,11 +1182,10 @@ class Poisson(CountModel):
         start_params = self._get_start_params(start_params, robust=False)
         # TODO: can we get rid of robust now?
 
-        cntfit = DiscreteModel.fit(self, start_params=start_params,
-                                   method=method, maxiter=maxiter,
-                                   full_output=full_output,
-                                   disp=disp, callback=callback,
-                                   **kwargs)
+        cntfit = DiscreteModel.fit(self,
+            start_params=start_params, method=method, maxiter=maxiter,
+            full_output=full_output, disp=disp, callback=callback, **kwargs)
+
         # TODO: Can we avoid doing this here?  Do it in res_cls.__init__?
         if 'cov_type' in kwargs:
             cov_kwds = kwargs.get('cov_kwds', {})
@@ -1235,7 +1271,7 @@ class Poisson(CountModel):
         return res
 
 
-class GeneralizedPoisson(CountModel):
+class GeneralizedPoisson(_CountMixin, CountModel):
     __doc__ = """
     Generalized Poisson model for count data
 
@@ -1451,41 +1487,6 @@ class GeneralizedPoisson(CountModel):
             df_resid = resid.shape[0]
         a = ((np.abs(resid) / np.sqrt(mu) - 1) * mu**(-q)).sum() / df_resid
         return a
-
-    # ----------------------------------------------------------------
-    # Helper Methods for `fit` and `fit_regularized`
-
-    @copy_doc(DiscreteModel._set_alpha.__doc__)
-    def _set_alpha(self, alpha):
-        self._transparams = False
-
-        if np.size(alpha) == 1 and alpha != 0:
-            k_params = self.exog.shape[1] + self.k_extra
-            alpha = alpha * np.ones(k_params)
-            alpha[-1] = 0
-
-        return alpha
-
-    # TODO: Overlap with _get_start_params_l1?
-    def _get_start_params(self, start_params, **kwargs):
-        if start_params is not None:
-            return start_params
-
-        offset = getattr(self, "offset", 0) + getattr(self, "exposure", 0)
-        if np.size(offset) == 1 and offset == 0:
-            offset = None
-
-        optim_kwds_prelim = {'disp': 0, 'skip_hessian': True,
-                             'warn_convergence': False}
-        optim_kwds_prelim.update(kwargs.get('optim_kwds_prelim', {}))
-        mod_poi = Poisson(self.endog, self.exog, offset=offset)
-        res_poi = mod_poi.fit(**optim_kwds_prelim)
-        start_params = res_poi.params
-        a = self._estimate_dispersion(res_poi.predict(), res_poi.resid,
-                                      df_resid=res_poi.df_resid)
-        start_params = np.append(start_params, max(-0.1, a))
-        # TODO: reasoning for -0.1?
-        return start_params
 
     # ----------------------------------------------------------------
 
@@ -2121,7 +2122,7 @@ class MNLogit(MultinomialModel):
         return H
 
 
-class NegativeBinomial(CountModel):
+class NegativeBinomial(_CountMixin, CountModel):
     __doc__ = """
     Negative Binomial Model for count data
 
@@ -2220,6 +2221,9 @@ class NegativeBinomial(CountModel):
     def __setstate__(self, indict):
         self.__dict__.update(indict)
         self._initialize()
+
+    # ----------------------------------------------------------------
+    # Loglike/Score/Hessian Methods
 
     def _ll_nbin(self, params, alpha, Q=0):
         if np.any(np.iscomplex(params)) or np.iscomplex(alpha):
@@ -2440,6 +2444,8 @@ class NegativeBinomial(CountModel):
     def score_obs(self, params):
         return approx_fprime_cs(params, self.loglikeobs)
 
+    # ----------------------------------------------------------------
+
     def _estimate_dispersion(self, mu, resid, df_resid=None):
         if df_resid is None:
             df_resid = resid.shape[0]
@@ -2449,49 +2455,6 @@ class NegativeBinomial(CountModel):
             # i.e. self.loglike_method == 'nb1':
             a = (resid**2 / mu - 1).sum() / df_resid
         return a
-
-    # ----------------------------------------------------------------
-    # Helper Methods for `fit` and `fit_regularized`
-
-    @copy_doc(DiscreteModel._set_alpha.__doc__)
-    def _set_alpha(self, alpha):
-        self._transparams = False
-
-        if self.loglike_method.startswith('nb') and (np.size(alpha) == 1 and
-                                                     alpha != 0):
-            # don't penalize alpha if alpha is scalar
-            k_params = self.exog.shape[1] + self.k_extra
-            alpha = alpha * np.ones(k_params)
-            alpha[-1] = 0
-        return alpha
-
-    def _get_start_params(self, start_params, **kwargs):
-        if start_params is not None:
-            return start_params
-
-        # Use poisson fit as first guess.
-        # TODO, Warning: this assumes exposure is logged
-        offset = getattr(self, "offset", 0) + getattr(self, "exposure", 0)
-        if np.size(offset) == 1 and offset == 0:
-            offset = None
-
-        optim_kwds_prelim = {'disp': 0, 'skip_hessian': True,
-                             'warn_convergence': False}
-        optim_kwds_prelim.update(kwargs.get('optim_kwds_prelim', {}))
-
-        mod_poi = Poisson(self.endog, self.exog, offset=offset)
-        res_poi = mod_poi.fit(**optim_kwds_prelim)
-        start_params = res_poi.params
-
-        if self.loglike_method.startswith('nb'):
-            a = self._estimate_dispersion(res_poi.predict(), res_poi.resid,
-                                          df_resid=res_poi.df_resid)
-            start_params = np.append(start_params, max(0.05, a))
-            # TODO: Document reasoning behind `max(0.05, a)`
-
-        return start_params
-
-    # ----------------------------------------------------------------
 
     def fit(self, start_params=None, method='bfgs', maxiter=35,
             full_output=1, disp=1, callback=None,
@@ -2544,7 +2507,7 @@ class NegativeBinomial(CountModel):
         return result
 
 
-class NegativeBinomialP(CountModel):
+class NegativeBinomialP(_CountMixin, CountModel):
     __doc__ = """
     Generalized Negative Binomial (NB-P) model for count data
     %(params)s
@@ -2768,47 +2731,14 @@ class NegativeBinomialP(CountModel):
 
         return hess_arr
 
+    # --------------------------------------------------------------
+
     def _estimate_dispersion(self, mu, resid, df_resid=None):
         q = self.parameterization - 1
         if df_resid is None:
             df_resid = resid.shape[0]
         a = ((resid**2 / mu - 1) * mu**(-q)).sum() / df_resid
         return a
-
-    # --------------------------------------------------------------
-    # Helper Methods for `fit` and `fit_regularized`
-
-    @copy_doc(DiscreteModel._set_alpha.__doc__)
-    def _set_alpha(self, alpha):
-        self._transparams = False
-        if np.size(alpha) == 1 and alpha != 0:
-            k_params = self.exog.shape[1] + self.k_extra
-            alpha = alpha * np.ones(k_params)
-            alpha[-1] = 0
-        return alpha
-
-    def _get_start_params(self, start_params, **kwargs):
-        if start_params is not None:
-            return start_params
-
-        offset = getattr(self, "offset", 0) + getattr(self, "exposure", 0)
-        if np.size(offset) == 1 and offset == 0:
-            offset = None
-
-        optim_kwds_prelim = {'disp': 0, 'skip_hessian': True,
-                             'warn_convergence': False}
-        optim_kwds_prelim.update(kwargs.get('optim_kwds_prelim', {}))
-
-        mod_poi = Poisson(self.endog, self.exog, offset=offset)
-        res_poi = mod_poi.fit(**optim_kwds_prelim)
-        start_params = res_poi.params
-        a = self._estimate_dispersion(res_poi.predict(), res_poi.resid,
-                                      df_resid=res_poi.df_resid)
-        start_params = np.append(start_params, max(0.05, a))
-        # TODO: Document reason for 0.05
-        return start_params
-
-    # --------------------------------------------------------------
 
     def fit(self, start_params=None, method='bfgs', maxiter=35,
             full_output=1, disp=1, callback=None, use_transparams=False,
