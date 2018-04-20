@@ -249,6 +249,7 @@ def test_instantiation_valid_supported_with_freq():
                 assert mod.data.dates.equals(mod._index) is True
                 assert mod.data.freq == freq
 
+
 @pytest.mark.not_vetted
 def test_instantiation_valid_range_index():
     # GH#4457

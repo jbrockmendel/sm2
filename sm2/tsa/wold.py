@@ -535,7 +535,7 @@ def arma_impulse_response(ar, ma, leads=100):
 
 
 def arma_periodogram(ar, ma, worN=None, whole=0):
-# TODO: docstring?
+    # TODO: docstring?
     arma = ARMAParams(ar, ma)
     return arma.periodogram(nobs=worN, whole=whole)
 

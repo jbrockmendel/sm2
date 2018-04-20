@@ -358,7 +358,7 @@ class TimeSeriesModel(base.LikelihoodModel):
                 stop = base_index._start + (key + 1) * base_index._step
                 index = pd.RangeIndex(start=base_index._start,
                                       stop=stop,
-                                      step=base_index._step) 
+                                      step=base_index._step)
 
         elif (not range_index and not date_index and int_index and
                 isinstance(key, (integer_types, np.integer))):
