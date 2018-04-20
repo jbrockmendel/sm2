@@ -643,11 +643,8 @@ class ARMA(wold.ARMATransparams, tsa_model.TimeSeriesModel):
                                               self.k_trend, self.k_exog,
                                               reverse=False)
 
-        b, a = np.r_[1, -params[k:k + k_ar]], np.r_[1, params[k + k_ar:]]
         macoefs = np.r_[1, maparams]
         arcoefs = np.r_[1, -arparams]
-        assert (arcoefs == b).all()
-        assert (macoefs == a).all()
         zi = np.zeros((max(k_ar, k_ma)), dtype=params.dtype)
         for i in range(k_ar):
             zi[i] = sum(-arcoefs[:i + 1][::-1] * y[:i + 1])
