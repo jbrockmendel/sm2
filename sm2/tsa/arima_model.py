@@ -628,7 +628,9 @@ class ARMA(wold.ARMATransparams, tsa_model.TimeSeriesModel):
         # use scipy.signal.lfilter
         params = np.asarray(params)
 
-        y = self.endog.copy()
+        # TODO: Shouldnt this up-cast if endog is e.g. complex128?
+        # TODO: is the copy redundant with the astype?
+        y = self.endog.copy().astype(params.dtype)
         k = self.k_exog + self.k_trend
         if k > 0:
             y -= np.dot(self.exog, params[:k])
@@ -640,9 +642,13 @@ class ARMA(wold.ARMATransparams, tsa_model.TimeSeriesModel):
          arparams, maparams) = _unpack_params(params, (k_ar, k_ma),
                                               self.k_trend, self.k_exog,
                                               reverse=False)
+
+        b, a = np.r_[1, -params[k:k + k_ar]], np.r_[1, params[k + k_ar:]]
         macoefs = np.r_[1, maparams]
         arcoefs = np.r_[1, -arparams]
-        zi = np.zeros((max(k_ar, k_ma)))
+        assert (arcoefs == b).all()
+        assert (macoefs == a).all()
+        zi = np.zeros((max(k_ar, k_ma)), dtype=params.dtype)
         for i in range(k_ar):
             zi[i] = sum(-arcoefs[:i + 1][::-1] * y[:i + 1])
         e = signal.lfilter(arcoefs, macoefs, y, zi=zi)
@@ -729,24 +735,11 @@ class ARMA(wold.ARMATransparams, tsa_model.TimeSeriesModel):
         """
         Conditional Sum of Squares likelihood function.
         """
-        k_ar = self.k_ar
-        k_ma = self.k_ma
-        k = self.k_exog + self.k_trend
-        y = self.endog.copy().astype(params.dtype)
-        # TODO: how to handle if empty?
         if self.transparams:
             newparams = self._transparams(params)
         else:
             newparams = params
-        if k > 0:
-            y -= np.dot(self.exog, newparams[:k])
-        # the order of p determines how many zeros errors to set for lfilter
-        b, a = np.r_[1, -newparams[k:k + k_ar]], np.r_[1, newparams[k + k_ar:]]
-        zi = np.zeros((max(k_ar, k_ma)), dtype=params.dtype)
-        for i in range(k_ar):
-            zi[i] = sum(-b[:i + 1][::-1] * y[:i + 1])
-        errors = signal.lfilter(b, a, y, zi=zi)[0][k_ar:]
-        # TODO: Use geterrors_css for this --> breaks for some reason
+        errors = self._geterrors_css(newparams)
 
         nobs = len(errors)
         ssr = np.dot(errors, errors)
