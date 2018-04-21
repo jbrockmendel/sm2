@@ -49,7 +49,7 @@ _extra_param_doc = """
 """
 
 
-class Model(object):
+class Model(wrap.RemoveDataMixin):
     __doc__ = """
     A (predictive) statistical model. Intended to be subclassed not used.
 
