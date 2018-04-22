@@ -677,7 +677,7 @@ class ARResults(tsa_model.TimeSeriesModelResults):
         self.trendorder = trendorder
         # TODO: What purpose does trendorder serve?
 
-    @cache_writable()
+    @cache_writable
     def sigma2(self):
         if self.method == "cmle":  # do DOF correction
             return 1. / self.nobs * (self.resid**2).sum()
@@ -685,7 +685,7 @@ class ARResults(tsa_model.TimeSeriesModelResults):
             # TODO: sigma2 shouldnt be a model attribute at all
             return self.model.sigma2
 
-    @cache_writable()   # for compatability with RegressionResults
+    @cache_writable   # for compatability with RegressionResults
     def scale(self):
         return self.sigma2
 

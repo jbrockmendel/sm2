@@ -336,7 +336,7 @@ class ModelData(NullHandler):
 
         return yarr, xarr
 
-    @cache_writable()
+    @cache_writable
     def ynames(self):
         endog = self.orig_endog
         ynames = _get_names(endog)
@@ -348,7 +348,7 @@ class ModelData(NullHandler):
         else:
             return list(ynames)
 
-    @cache_writable()
+    @cache_writable
     def xnames(self):
         exog = self.orig_exog
         if exog is not None:

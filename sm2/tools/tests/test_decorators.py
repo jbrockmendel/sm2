@@ -73,7 +73,7 @@ class TestCopyDoc:
         assert func.__doc__ == "foo"
 
 
-@pytest.mark.skip(reason="resettle_cache is in the progress of "
+@pytest.mark.skip(reason="resettable_cache is in the process of "
                          "being un-ported from upstream.")
 def test_resettable_cache():
     # Refactored out from decorators.py's "if __name__" block

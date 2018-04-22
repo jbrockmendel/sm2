@@ -1307,7 +1307,7 @@ class RegressionResults(base.LikelihoodModelResults):
                                                       self.model.wexog)
 
     # TODO: fix writable example
-    @cache_writable()
+    @cache_writable
     def scale(self):
         wresid = self.wresid
         return np.dot(wresid, wresid) / self.df_resid

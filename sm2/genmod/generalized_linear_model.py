@@ -1336,8 +1336,6 @@ class GLMResults(base.LikelihoodModelResults):
                                 '_var_weights', '_iweights'])
         self.data_in_cache = getattr(self, 'data_in_cache', [])
         self.data_in_cache.extend(['null'])#, 'mu'])
-        self._data_attr_model = getattr(self, '_data_attr_model', [])
-        #self._data_attr_model.append('mu')  # TODO: get rid of these
 
         # robust covariance
         if use_t is None:

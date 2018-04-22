@@ -129,15 +129,6 @@ class _cache_readonly(object):
 cache_readonly = _cache_readonly()
 
 
-class cache_writable(_cache_readonly):
-    """
-    Decorator for CachedWritableAttribute
-    """
-    def __call__(self, func):
-        return CachedWritableAttribute(func,
-                                       cachename=self.cachename)
-
-
 def nottest(fn):  # pragma: no cover
     raise NotImplementedError("nottest not ported from upstream")
 
@@ -155,3 +146,14 @@ class cached_data(CR):
 
 class cached_value(CR):
     pass
+
+
+class cache_writable(CR):
+    def __set__(self, obj, value):
+        try:
+            cache = obj._cache
+        except AttributeError:
+            cache = {}
+            obj._cache = cache
+
+        cache[self.name] = value
