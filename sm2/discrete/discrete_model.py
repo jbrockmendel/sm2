@@ -189,7 +189,7 @@ class DiscreteModel(base.LikelihoodModel):
 
     fit.__doc__ += base.LikelihoodModel.fit.__doc__
 
-    def _set_alpha(self, alpha):  # TODO: Move higher up?
+    def _set_alpha(self, alpha):  # TODO: Move higher up?  rename?
         """
         Call to setup parameter transformations at the beginning
         of fit_regularized.
@@ -1192,6 +1192,7 @@ class Poisson(CountModel):
             kwds = {'cov_type': kwargs['cov_type'], 'cov_kwds': cov_kwds}
         else:
             kwds = {}
+        # TODO: This (along with passing **kwds below) doesnt appear necessary
 
         res_cls, wrap_cls = self._res_classes["fit"]
         discretefit = res_cls(self, cntfit, **kwds)
@@ -1514,15 +1515,17 @@ class GeneralizedPoisson(_CountMixin, CountModel):
         start_params = self._get_start_params(start_params, **kwargs)
 
         # TODO: skip CountModel and go straight to DiscreteModel?
+        # Yes, just need to change "mlefit._results" --> "mlefit" below
         mlefit = CountModel.fit(self,
             start_params=start_params, maxiter=maxiter, method=method,
             disp=disp, full_output=full_output, callback=callback, **kwargs)
 
-        if use_transparams and method not in ["newton", "ncg"]:
+        if self._transparams:
             self._transparams = False
             mlefit._results.params[-1] = np.exp(mlefit._results.params[-1])
             # ensure cov_params are re-evaluated with updated params
             delattr(mlefit._results, "cov_type")
+            # TODO: not hit in tests
 
         res_cls, wrap_cls = self._res_classes["fit"]
         gpfit = res_cls(self, mlefit._results,
@@ -2466,8 +2469,6 @@ class NegativeBinomial(_CountMixin, CountModel):
         if self.loglike_method.startswith('nb') and method not in ['newton',
                                                                    'ncg']:
             self._transparams = True  # in case same Model instance is refit
-        elif self.loglike_method.startswith('nb'):  # method is newton/ncg
-            self._transparams = False  # because we need to step in alpha space
 
         if start_params is not None and self._transparams:
             # Note: we cannot do this in `_get_start_params` or it risks
@@ -2479,31 +2480,38 @@ class NegativeBinomial(_CountMixin, CountModel):
         start_params = self._get_start_params(start_params, **kwargs)
 
         # TODO: can we skip CountModel and go straight to DiscreteModel?
+        # Yes, just need to change "mlefit._results" --> "mlefit" below
         mlefit = CountModel.fit(self,
             start_params=start_params, maxiter=maxiter, method=method,
             disp=disp, full_output=full_output, callback=callback, **kwargs)
-
         # TODO: Fix NBin _check_perfect_pred
-        if self.loglike_method.startswith('nb'):
+
+        res_cls, wrap_cls = self._res_classes["fit"]
+        if self._transparams:
             # mlefit is a wrapped counts results
             self._transparams = False  # don't need to transform anymore now
-            # change from lnalpha to alpha
-            if method not in ["newton", "ncg"]:
-                mlefit._results.params[-1] = np.exp(mlefit._results.params[-1])
-                # ensure cov_params are re-evaluated with updated params
-                delattr(mlefit._results, "cov_type")
 
-            res_cls, wrap_cls = self._res_classes["fit"]
+            # change from lnalpha to alpha
+            mlefit._results.params[-1] = np.exp(mlefit._results.params[-1])
+            # ensure cov_params are re-evaluated with updated params
+            delattr(mlefit._results, "cov_type")
+
             nbinfit = res_cls(self, mlefit._results,
                               cov_type=cov_type, use_t=use_t, cov_kwds=cov_kwds)
             result = wrap_cls(nbinfit)
         else:
-            result = mlefit
-
+            result = mlefit  # TODO: Shouldn't this be wrapped?
+            # FIXME: result.bse -->
+            # ValueError: cannot reshape array of size 1 into shape (2,)
             # TODO: can we avoid doing this here?
             cov_kwds = cov_kwds or {}
+            # FIXME: What's the point of re-calling _get_robutcov_results?
+            #  normalized_cov_params already exists and is unchanged after
+            #  re-calling
             result._get_robustcov_results(cov_type=cov_type,
-                                      use_self=True, use_t=use_t, **cov_kwds)
+                                          use_self=True, use_t=use_t,
+                                          **cov_kwds)
+            # FIXME: Should this return CountResultsWrapper?  GH#4529
         return result
 
 
