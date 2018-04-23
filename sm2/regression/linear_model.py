@@ -540,6 +540,7 @@ class GLS(RegressionModel):
         # n in denominator
         if self.sigma is not None:
             alpha = alpha * np.sum(1 / np.diag(self.sigma)) / len(self.endog)
+            # TODO: Make this into _set_alpha
 
         rslt = OLS(self.wendog, self.wexog).fit_regularized(
             method=method, alpha=alpha,
@@ -689,6 +690,7 @@ class WLS(RegressionModel):
         # Need to adjust since RSS/n in elastic net uses nominal n in
         # denominator
         alpha = alpha * np.sum(self.weights) / len(self.weights)
+        # TODO: make this into `_set_alpha`?
 
         rslt = OLS(self.wendog, self.wexog).fit_regularized(
             method=method, alpha=alpha,
@@ -1497,7 +1499,7 @@ class RegressionResults(base.LikelihoodModelResults):
         """See sm2.RegressionResults"""
         return np.sqrt(np.diag(self.cov_HC3))
 
-    @cache_readonly
+    @cached_data
     def resid_pearson(self):
         """
         Residuals, normalized to have unit variance.
@@ -1943,18 +1945,16 @@ class RegressionResults(base.LikelihoodModelResults):
             wstr = "The input rank is higher than the number of observations."
             etext.append(wstr)
         if eigvals[-1] < 1e-10:
-            wstr = "The smallest eigenvalue is %6.3g. This might indicate "
-            wstr += "that there are\n"
-            wstr += "strong multicollinearity problems or that the design "
-            wstr += "matrix is singular."
-            wstr = wstr % eigvals[-1]
+            wstr = ("The smallest eigenvalue is %6.3g. This might indicate "
+                    "that there are\n"
+                    "strong multicollinearity problems or that the design "
+                    "matrix is singular." % eigvals[-1])
             etext.append(wstr)
         elif condno > 1000:  # TODO: what is recommended?
-            wstr = "The condition number is large, %6.3g. This might "
-            wstr += "indicate that there are\n"
-            wstr += "strong multicollinearity or other numerical "
-            wstr += "problems."
-            wstr = wstr % condno
+            wstr = ("The condition number is large, %6.3g. This might "
+                    "indicate that there are\n"
+                    "strong multicollinearity or other numerical "
+                    "problems." % condno)
             etext.append(wstr)
 
         if etext:

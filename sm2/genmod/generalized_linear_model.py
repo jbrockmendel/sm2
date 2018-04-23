@@ -1316,6 +1316,7 @@ class GLMResults(base.LikelihoodModelResults):
 
         self.family = model.family
 
+        # TODO: Why are these private?
         self._freq_weights = model.freq_weights
         self._var_weights = model.var_weights
         self._iweights = model.iweights
@@ -1334,8 +1335,6 @@ class GLMResults(base.LikelihoodModelResults):
         # for remove data and pickle without large arrays
         self._data_attr.extend(['results_constrained', '_freq_weights',
                                 '_var_weights', '_iweights'])
-        self.data_in_cache = getattr(self, 'data_in_cache', [])
-        self.data_in_cache.extend(['null'])#, 'mu'])
 
         # robust covariance
         if use_t is None:
@@ -1465,7 +1464,7 @@ class GLMResults(base.LikelihoodModelResults):
     def mu(self):
         return self.fittedvalues
 
-    @cache_readonly
+    @cached_data
     def null(self):
         endog = self.model.endog
         model = self.model
