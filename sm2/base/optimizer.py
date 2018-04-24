@@ -330,13 +330,13 @@ def _fit_newton(f, score, start_params, fargs, kwargs, disp=True,
         if disp:  # TODO: not hit in tests.  remove?
             print("Warning: Maximum number of iterations has been exceeded.\n"
                   "         Current function value: %f\n"
-                  "         Iterations: %d" % (iterations, fval))
+                  "         Iterations: %d" % (fval, iterations))
     else:
         warnflag = 0
         if disp:
             print("Optimization terminated successfully.\n"
                   "         Current function value: %f\n"
-                  "         Iterations %d" % (iterations, fval))
+                  "         Iterations %d" % (fval, iterations))
 
     if full_output:
         (xopt, fopt, niter,
