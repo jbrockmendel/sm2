@@ -43,6 +43,8 @@ from sm2.tools.tools import chain_dot, pinv_extended
 from sm2.tools.decorators import (resettable_cache,
                                   cache_readonly, cached_data, cached_value,
                                   cache_writable, copy_doc)
+import sm2.stats.sandwich_covariance as sw
+
 import sm2.base.model as base
 import sm2.base.wrapper as wrap
 from sm2.base import covtype
@@ -1590,8 +1592,6 @@ class RegressionResults(base.LikelihoodModelResults):
         -----
         TODO: explain LM text
         """
-        import sm2.stats.sandwich_covariance as sw
-
         if not self._is_nested(restricted):
             raise ValueError("Restricted model is not nested by full model.")
 
@@ -1800,6 +1800,8 @@ class RegressionResults(base.LikelihoodModelResults):
 
         if 'kernel' in kwds:
             kwds['weights_func'] = kwds.pop('kernel')
+        if 'weights_func' in kwds and not callable(kwds['weights_func']):
+            kwds['weights_func'] = sw.kernel_dict[kwds['weights_func']]
 
         # TODO: make separate function that returns a robust cov plus info
         use_self = kwds.pop('use_self', False)
