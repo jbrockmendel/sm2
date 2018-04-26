@@ -2413,6 +2413,11 @@ def test_mnlogit_factor():
     res.summary()
     predicted = res.predict(exog.iloc[:5, :])
 
+    # wrapping tests; # TODO: separate into distinct test
+    assert isinstance(predicted, pd.DataFrame)  # passed DataFrame exog
+    pred = res.predict()  # specifically _without_ passing exog
+    assert isinstance(pred, pd.DataFrame)
+
     # with patsy
     mod = MNLogit.from_formula('PID ~ ' + ' + '.join(dta.exog.columns),
                                dta.data)
@@ -2422,6 +2427,8 @@ def test_mnlogit_factor():
 
     assert_allclose(params_f, params, rtol=1e-10)
     predicted_f = res2.predict(dta.exog.iloc[:5, :])
+    # FIXME: These are not getting the correct columns --> TODO: xfail?
+    # tm.assert_frame_equal(predicted_f, predicted)
     assert_allclose(predicted_f, predicted, rtol=1e-10)
 
 

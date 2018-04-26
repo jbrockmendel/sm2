@@ -23,6 +23,7 @@ from six.moves import range
 from sm2.compat.scipy import loggamma
 
 import numpy as np
+import pandas as pd
 from pandas.util._decorators import deprecate_kwarg
 
 from scipy.special import gammaln
@@ -553,6 +554,8 @@ class MultinomialModel(BinaryModel):
                                     L1MultinomialResultsWrapper)}
 
     def _handle_data(self, endog, exog, missing, hasconst, **kwargs):
+        # FIXME: I don't think we go through this correctly when
+        # using from_formula --> eqn_names doesn't get set
         if data_tools._is_using_ndarray_type(endog, None):
             endog_dummies, ynames = _numpy_to_dummies(endog)
             yname = 'y'
@@ -568,10 +571,19 @@ class MultinomialModel(BinaryModel):
 
         self._ynames_map = ynames
         data = handle_data(endog_dummies, exog, missing, hasconst, **kwargs)
-        data.ynames = yname  # overwrite this to single endog name
+
+        eqn_names = [x[1] for x in sorted(list(ynames.items()))]
+        data.ynames = pd.Index(eqn_names, name=yname)
+        # e.g. if user passes a pandas Series as endog, the index.name here
+        # will match the name of that Series.
+        # TODO: make this a Data method?
+        # TODO: upstram had `data.ynames = yname` and comment to overwrite
+        # single endog name; but why?
         data.orig_endog = endog
+
         self.wendog = data.endog
 
+        # TODO: use super here?
         # repeating from upstream...
         for key in kwargs:
             if key in ['design_info', 'formula']:  # leave attached to data
@@ -1885,8 +1897,8 @@ class NegativeBinomial(_CountMixin, CountModel):
         da2 = 2 * alpha**-3
         # assert da2 == 2*a1**3, (da2, 2*a1**3)
         # this assertion fails only due to floating point error
-        dalpha = da1 * (dgpart + np.log(prob) - (y - mu) / (a1 + mu))
-        dada = (da2 * dalpha / da1 + da1**2 * (pgpart + 1 / a1 - 1 / (a1 + mu) +
+        dalpha = dgpart + np.log(prob) - (y - mu) / (a1 + mu)
+        dada = (da2 * dalpha + da1**2 * (pgpart + 1 / a1 - 1 / (a1 + mu) +
                 (y - mu) / (mu + a1)**2)).sum()
         hess_arr[-1, -1] = dada
 
@@ -2628,6 +2640,7 @@ class Probit(BinaryModel):
         return np.dot(-L * (L + Xb) * self.exog.T, self.exog)
 
 
+# FIXME: MNLogit doesn't have `resid` upstream, and it raises here
 class MNLogit(MultinomialModel):
     __doc__ = """
     Multinomial logit model
@@ -2693,8 +2706,12 @@ class MNLogit(MultinomialModel):
         In the multinomial logit model.
         .. math:: \frac{\exp(\beta_{j}^{\prime}x_{i})}{\sum_{k=0}^{J}\exp(\beta_{k}^{\prime}x_{i})}
         """  # noqa:E501
-        eXB = np.column_stack((np.ones(len(X)), np.exp(X)))
-        return eXB / eXB.sum(1)[:, None]
+        # subtract max to avoid overflow, see GH#3778
+        Xb = np.column_stack((np.zeros(len(X)), X))
+        Xb -= Xb.max(1).reshape(-1, 1)
+        eXB = np.exp(Xb)
+        denom = eXB.sum(1)[:, None]
+        return eXB / denom
 
     def loglikeobs(self, params):
         r"""
@@ -2723,8 +2740,16 @@ class MNLogit(MultinomialModel):
         """  # noqa:E501
         params = params.reshape(self.K, -1, order='F')
         Xb = np.dot(self.exog, params)
-        logprob = np.log(self.cdf(Xb))
-        return self.wendog * logprob
+        prob = self.cdf(Xb)
+        logprob = np.log(prob)
+        out = self.wendog * logprob
+        if np.isnan(out).any():
+            # TODO: More efficient way to do this check?
+            # GH#3778 We can avoid some NaN issues by convention
+            # that 0 * np.inf = 0
+            mask = self.wendog == 0
+            out[mask] = 0
+        return out
 
     def score(self, params):
         r"""
@@ -2841,16 +2866,17 @@ class MNLogit(MultinomialModel):
         X = self.exog
         Xb = np.dot(self.exog, params)
         pr = self.cdf(Xb)
-        partials = []
         J = self.J
         K = self.K
+        partials = [[None for i in range(J - 1)] for j in range(J - 1)]
         for i in range(J - 1):
-            for j in range(J - 1):  # this loop assumes we drop the first col.
+            for j in range(i, J - 1):  # this loop assumes we drop the first col.
                 if i == j:
                     part = ((pr[:, i + 1] * (1 - pr[:, j + 1]))[:, None] * X).T
                 else:
                     part = ((pr[:, i + 1] * -pr[:, j + 1])[:, None] * X).T
-                partials.append(-np.dot(part, X))
+                partials[i][j] = -np.dot(part, X)
+                partials[j][i] = partials[i][j]
 
         H = np.array(partials)
         # the developer's notes on multinomial should clear this math up
@@ -3438,7 +3464,7 @@ class MultinomialResults(DiscreteResults):
             ynames = naming.maybe_convert_ynames_int(ynames)
             # use range below to ensure sortedness
             ynames = [ynames[key] for key in range(int(model.J))]
-            ynames = ['='.join([yname, name]) for name in ynames]
+            ynames = ['='.join([yname.name, name]) for name in ynames]
             if not use_all:
                 yname_list = ynames[1:]  # assumes first variable is dropped
             else:
@@ -3665,6 +3691,9 @@ class MultinomialResultsWrapper(lm.RegressionResultsWrapper):
     _attrs = {"resid_misclassified": "rows"}
     _wrap_attrs = wrap.union_dicts(lm.RegressionResultsWrapper._wrap_attrs,
                                    _attrs)
+    _methods = {"predict": "rows_eq"}
+    _wrap_methods = wrap.union_dicts(
+        lm.RegressionResultsWrapper._wrap_methods, _methods)
 wrap.populate_wrapper(MultinomialResultsWrapper,  # noqa: E305
                       MultinomialResults)
 
