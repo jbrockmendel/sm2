@@ -4,7 +4,8 @@ Elastic net regularization.
 Routines for fitting regression models using elastic net
 regularization.  The elastic net minimizes the objective function
 
--llf / nobs + alpha((1 - L1_wt) * sum(params**2) / 2 + L1_wt * sum(abs(params)))
+-llf / nobs + alpha((1 - L1_wt) * sum(params**2) / 2 +
+    L1_wt * sum(abs(params)))
 
 The algorithm implemented here closely follows the implementation in
 the R glmnet package, documented here:
@@ -219,9 +220,9 @@ def _build_result(model, params, method, itr):
     cov = np.zeros((k_exog, k_exog))
     init_args = dict([(k, getattr(model, k, None)) for k in model._init_keys])
     if len(ii) > 0:
-        model1 = model.__class__(model.endog, model.exog[:, ii],
-                                 **init_args)
+        model1 = model.__class__(model.endog, model.exog[:, ii], **init_args)
         rslt = model1.fit()
+        params[ii] = rslt.params
         cov[np.ix_(ii, ii)] = rslt.normalized_cov_params
     else:
         # Hack: no variables were selected but we need to run fit in
@@ -239,11 +240,23 @@ def _build_result(model, params, method, itr):
     # Not all models have a scale
     scale = getattr(rslt, 'scale', 1.)
 
+    # The degrees of freedom should reflect the number of parameters
+    # in the refit model, not including the zeros that are displayed
+    # to indicate which variables were dropped.  See issue #1723 for
+    # discussion about setting df parameters in model and results
+    # classes.
+    p, q = model.df_model, model.df_resid
+    model.df_model = len(ii)
+    model.df_resid = model.nobs - model.df_model
+
     # Assuming a standard signature for creating results classes.
     refit = klass(model, params, cov, scale=scale)
     refit.regularized = True
     refit.method = method
     refit.fit_history = {'iteration': itr + 1}
+
+    # Restore df in model class, see issue #1723 for discussion.
+    model.df_model, model.df_resid = p, q
     return refit
 
 
@@ -251,8 +264,8 @@ def _opt_1d(func, grad, hess, model, start, L1_wt, tol, check_step=True):
     """
     One-dimensional helper for elastic net.
 
-    Parameters:
-    -----------
+    Parameters
+    ----------
     func : function
         A smooth function of a single variable to be optimized
         with L1 penaty.
