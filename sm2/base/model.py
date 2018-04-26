@@ -49,7 +49,7 @@ _extra_param_doc = """
 """
 
 
-class Model(object):
+class Model(wrap.RemoveDataMixin):
     __doc__ = """
     A (predictive) statistical model. Intended to be subclassed not used.
 
@@ -431,6 +431,7 @@ class LikelihoodModel(Model):
             Hinv = cov_params_func(self, xopt, retvals)
         elif method == 'newton' and full_output:
             Hinv = np.linalg.inv(-retvals['Hessian']) / nobs
+            # TODO: try/except for non-invertible hessian?
         elif not skip_hessian:
             H = -1 * self.hessian(xopt)
             invertible = False
@@ -582,7 +583,10 @@ class Results(object):
             if predict_results.ndim == 1:
                 return pd.Series(predict_results, index=exog_index)
             else:
-                return pd.DataFrame(predict_results, index=exog_index)
+                # FIXME: columns-->neq_names for e.g. MNLogit, VAR
+                ynames = self.model.data.ynames
+                return pd.DataFrame(predict_results, index=exog_index,
+                                    columns=ynames)
 
         else:
             return predict_results
@@ -1491,9 +1495,9 @@ class LikelihoodModelResults(wrap.SaveLoadMixin, Results):
 
 
 class LikelihoodResultsWrapper(wrap.ResultsWrapper):
-    _attrs = {'params': 'columns',
+    _attrs = {'params': 'columns_eq',
               'bse': 'columns',
-              'pvalues': 'columns',
+              'pvalues': 'columns',  # TODO: columns_eq?
               'tvalues': 'columns',
               'resid': 'rows',
               'fittedvalues': 'rows',

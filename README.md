@@ -50,6 +50,9 @@ difference is that statsmodels is more feature-complete.
 of unused, untested, or deprecated code have been removed.  _Many_ thousands
 of flake8 formatting issues have been cleaned up.
 
+- `MultinomialResults.params` and `predict` will have correct column and row
+labels (:issue:`4541`)
+
 - `VARResults.cov_params` will correctly return a `DataFrame` instead
 of raising `ValueError`.
 

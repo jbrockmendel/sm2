@@ -149,11 +149,8 @@ class GenericZeroInflated(CountModel):
         start_params = self._get_start_params(start_params, **kwargs)
 
         mlefit = super(GenericZeroInflated, self).fit(
-            start_params=start_params,
-            maxiter=maxiter,
-            disp=disp, method=method,
-            full_output=full_output,
-            callback=callback,
+            start_params=start_params, maxiter=maxiter, method=method,
+            disp=disp, full_output=full_output, callback=callback,
             cov_type=cov_type, cov_kwds=cov_kwds, use_t=use_t,
             **kwargs)
 

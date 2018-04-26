@@ -336,7 +336,7 @@ class ModelData(NullHandler):
 
         return yarr, xarr
 
-    @cache_writable()
+    @cache_writable
     def ynames(self):
         endog = self.orig_endog
         ynames = _get_names(endog)
@@ -348,7 +348,7 @@ class ModelData(NullHandler):
         else:
             return list(ynames)
 
-    @cache_writable()
+    @cache_writable
     def xnames(self):
         exog = self.orig_exog
         if exog is not None:
@@ -409,6 +409,8 @@ class ModelData(NullHandler):
             return self.attach_cov(obj)
         elif how == 'dates':
             return self.attach_dates(obj)
+        elif how == "rows_eq":
+            return self.attach_rows_eq(obj)
         elif how == 'columns_eq':
             return self.attach_columns_eq(obj)
         elif how == 'cov_eq':
@@ -432,6 +434,9 @@ class ModelData(NullHandler):
         return result
 
     def attach_cov_eq(self, result):
+        return result
+
+    def attach_rows_eq(self, result):
         return result
 
     def attach_rows(self, result):
@@ -507,7 +512,15 @@ class PandasData(ModelData):
             return pd.DataFrame(result, index=self.param_names)
 
     def attach_columns_eq(self, result):
-        return pd.DataFrame(result, index=self.xnames, columns=self.ynames)
+        if result.ndim <= 1:
+            # i.e. neqs == 1
+            return self.attach_columns(result)
+
+        ynames = self.ynames
+        if result.shape[1] == len(ynames) - 1:
+            # kludge; assume we drop the first entry for MNLogit
+            ynames = ynames[1:]
+        return pd.DataFrame(result, index=self.xnames, columns=ynames)
 
     def attach_cov(self, result):
         if len(self.ynames) > 1 and not isinstance(self.ynames, string_types):
@@ -523,6 +536,10 @@ class PandasData(ModelData):
 
     def attach_cov_eq(self, result):
         return pd.DataFrame(result, index=self.ynames, columns=self.ynames)
+
+    def attach_rows_eq(self, result):
+        return pd.DataFrame(result, index=self.row_labels,
+                            columns=self.ynames)
 
     def attach_rows(self, result):
         # assumes if len(row_labels) > len(result) it's bc it was truncated

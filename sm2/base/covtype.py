@@ -81,7 +81,9 @@ def get_robustcov_results(self, cov_type='HC1', use_t=None, **kwds):
     - 'HAC' and keywords
 
         - `maxlag` integer (required) : number of lags to use
-        - `kernel` string (optional) : kernel, default is Bartlett
+        - `kernel` callable or str (optional) : kernel
+              currently available kernels are ['bartlett', 'uniform'],
+              default is Bartlett
         - `use_correction` bool (optional) : If true, use small sample
               correction
 
@@ -110,7 +112,9 @@ def get_robustcov_results(self, cov_type='HC1', use_t=None, **kwds):
 
         - `time` array_like (required) : index of time periods
         - `maxlag` integer (required) : number of lags to use
-        - `kernel` string (optional) : kernel, default is Bartlett
+        - `kernel` callable or str (optional) : kernel
+              currently available kernels are ['bartlett', 'uniform'],
+              default is Bartlett
         - `use_correction` {False, 'hac', 'cluster'} (optional) :
               If False the sandwich covariance is calculated without
               small sample correction.
@@ -134,7 +138,9 @@ def get_robustcov_results(self, cov_type='HC1', use_t=None, **kwds):
           `groups` : indicator for groups
           `time` : index of time periods
         - `maxlag` integer (required) : number of lags to use
-        - `kernel` string (optional) : kernel, default is Bartlett
+        - `kernel` callable or str (optional) : kernel
+              currently available kernels are ['bartlett', 'uniform'],
+              default is Bartlett
         - `use_correction` {False, 'hac', 'cluster'} (optional) :
               If False the sandwich covariance is calculated without
               small sample correction.
@@ -153,6 +159,8 @@ def get_robustcov_results(self, cov_type='HC1', use_t=None, **kwds):
 
     if 'kernel' in kwds:
         kwds['weights_func'] = kwds.pop('kernel')
+    if 'weights_func' in kwds and not callable(kwds['weights_func']):
+        kwds['weights_func'] = sw.kernel_dict[kwds['weights_func']]
 
     # pop because HCx raises if any kwds
     sc_factor = kwds.pop('scaling_factor', None)

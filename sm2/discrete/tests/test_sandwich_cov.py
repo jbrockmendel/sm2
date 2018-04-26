@@ -458,6 +458,7 @@ class TestNegbinCluExposureFit(CheckCountRobustMixin):
 @pytest.mark.not_vetted
 class CheckDiscreteGLM(object):
     # compare GLM with other models, no verified reference results
+    model_cls = GLM
 
     def test_basic(self):
         res1 = self.res1
@@ -478,7 +479,6 @@ class CheckDiscreteGLM(object):
 @pytest.mark.not_vetted
 class TestGLMLogit(CheckDiscreteGLM):
     cov_type = 'cluster'
-    model_cls = GLM
     mod_kwargs = {"family": families.Binomial()}
     cov_kwds = {'groups': group}
 
@@ -498,7 +498,6 @@ class TestGLMLogit(CheckDiscreteGLM):
                           "invalid link. What's Probit as GLM?")
 class TestGLMProbit(CheckDiscreteGLM):
     cov_type = 'cluster'
-    model_cls = GLM
     cov_kwds = {'groups': group}
 
     @classmethod
@@ -516,7 +515,6 @@ class TestGLMProbit(CheckDiscreteGLM):
 @pytest.mark.not_vetted
 class TestGLMGaussNonRobust(CheckDiscreteGLM):
     cov_type = 'nonrobust'
-    model_cls = GLM
     mod_kwargs = {"family": families.Gaussian()}
     cov_kwds = {}
     fit_kwargs = {"cov_kwds": cov_kwds}
@@ -533,7 +531,6 @@ class TestGLMGaussNonRobust(CheckDiscreteGLM):
 @pytest.mark.not_vetted
 class TestGLMGaussClu(CheckDiscreteGLM):
     cov_type = 'cluster'
-    model_cls = GLM
     mod_kwargs = {"family": families.Gaussian()}
     cov_kwds = {'groups': group}
     fit_kwargs = {"cov_type": cov_type, "cov_kwds": cov_kwds}
@@ -550,7 +547,6 @@ class TestGLMGaussClu(CheckDiscreteGLM):
 @pytest.mark.not_vetted
 class TestGLMGaussHC(CheckDiscreteGLM):
     cov_type = 'HC0'
-    model_cls = GLM
     mod_kwargs = {"family": families.Gaussian()}
     cov_kwds = {}
     fit_kwargs = {"cov_type": cov_type, "cov_kwds": cov_kwds}
@@ -565,9 +561,26 @@ class TestGLMGaussHC(CheckDiscreteGLM):
 
 
 @pytest.mark.not_vetted
+class TestGLMGaussHAC2(CheckDiscreteGLM):
+    cov_type = 'HAC'
+    mod_kwargs = {"family": families.Gaussian()}
+    cov_kwds = {'kernel': 'bartlett', 'maxlags': 2}
+    fit_kwargs = {"cov_type": cov_type, "cov_kwds": cov_kwds}
+
+    @classmethod
+    def setup_class(cls):
+        # check kernel specified as string
+        mod1 = cls.model_cls(endog, exog, **cls.mod_kwargs)
+        cls.res1 = mod1.fit(disp=False, **cls.fit_kwargs)
+
+        mod2 = OLS(endog, exog)
+        cls.res2 = mod2.fit(disp=False,
+                            cov_type=cls.cov_type, cov_kwds={'maxlags': 2})
+
+
+@pytest.mark.not_vetted
 class TestGLMGaussHAC(CheckDiscreteGLM):
     cov_type = 'HAC'
-    model_cls = GLM
     mod_kwargs = {"family": families.Gaussian()}
     cov_kwds = {'maxlags': 2}
     fit_kwargs = {"cov_type": cov_type, "cov_kwds": cov_kwds}
@@ -584,7 +597,6 @@ class TestGLMGaussHAC(CheckDiscreteGLM):
 @pytest.mark.not_vetted
 class TestGLMGaussHACUniform(CheckDiscreteGLM):
     cov_type = 'HAC'
-    model_cls = GLM
     mod_kwargs = {"family": families.Gaussian()}
     cov_kwds = {'kernel': sw.weights_uniform, 'maxlags': 2}
     fit_kwargs = {"cov_type": cov_type, "cov_kwds": cov_kwds}
@@ -637,9 +649,27 @@ class TestGLMGaussHACUniform(CheckDiscreteGLM):
 
 
 @pytest.mark.not_vetted
+class TestGLMGaussHACUniform2(TestGLMGaussHACUniform):
+    # GH#4524
+    cov_type = 'HAC'
+    mod_kwargs = {"family": families.Gaussian()}
+    cov_kwds = {"kernel": sw.weights_uniform, "maxlags": 2}
+    fit_kwargs = {"cov_type": cov_type, "cov_kwds": cov_kwds}
+
+    @classmethod
+    def setup_class(cls):
+        mod1 = cls.model_cls(endog, exog, **cls.mod_kwargs)
+        cls.res1 = mod1.fit(**cls.fit_kwargs)
+
+        mod2 = OLS(endog, exog)
+        # check kernel as string
+        kwds2 = {'kernel': 'uniform', 'maxlags': 2}
+        cls.res2 = mod2.fit(cov_type=cls.cov_type, cov_kwds=kwds2)
+
+
+@pytest.mark.not_vetted
 class TestGLMGaussHACPanel(CheckDiscreteGLM):
     cov_type = 'hac-panel'
-    model_cls = GLM
     mod_kwargs = {"family": families.Gaussian()}
     cov_kwds = {'time': np.tile(np.arange(7), 5)[:-1],
                 # time index is just made up to have a test case
@@ -668,7 +698,6 @@ class TestGLMGaussHACPanel(CheckDiscreteGLM):
 @pytest.mark.not_vetted
 class TestGLMGaussHACPanelGroups(CheckDiscreteGLM):
     cov_type = 'hac-panel'
-    model_cls = GLM
     cov_kwds = {'groups': pd.Series(np.repeat(np.arange(5), 7)[:-1]),
                 # check for GH#3606
                 'maxlags': 2,
@@ -689,7 +718,6 @@ class TestGLMGaussHACPanelGroups(CheckDiscreteGLM):
 @pytest.mark.not_vetted
 class TestGLMGaussHACGroupsum(CheckDiscreteGLM):
     cov_type = 'hac-groupsum'
-    model_cls = GLM
     mod_kwargs = {"family": families.Gaussian()}
     cov_kwds = {'time': pd.Series(np.tile(np.arange(7), 5)[:-1]),
                 # time index is just made up to have a test case

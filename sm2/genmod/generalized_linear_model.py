@@ -22,7 +22,8 @@ import warnings
 import numpy as np
 
 from sm2.tools.decorators import (cache_readonly, resettable_cache,
-                                  copy_doc, deprecated_alias)
+                                  copy_doc, deprecated_alias,
+                                  cached_data, cached_value)
 from sm2.tools.sm_exceptions import (PerfectSeparationError, DomainWarning,
                                      SpecificationWarning)
 
@@ -298,18 +299,18 @@ class GLM(base.LikelihoodModel):
     def df_resid(self):
         return self.wnobs - (self.df_model + 1)
 
-    @cache_readonly
+    @cached_value
     def df_model(self):
         return np.linalg.matrix_rank(self.exog) - 1
         # TODO: Does "assumes constant" apply here?
 
-    @cache_readonly
+    @cached_value
     def nobs(self):
         # TODO: make sure this is retained if/when data is stripped
         # TODO: Do this further up the inheritance hierarchy
         return self.endog.shape[0]
 
-    @cache_readonly
+    @cached_value
     def wnobs(self):
         if ((self.freq_weights is not None) and
                 (self.freq_weights.shape[0] == self.endog.shape[0])):
@@ -360,7 +361,7 @@ class GLM(base.LikelihoodModel):
 
         # TODO: Make this more systematic
         # things to remove_data
-        self._data_attr.extend(['weights', 'pinv_wexog', 'mu', 'freq_weights',
+        self._data_attr.extend(['weights', 'freq_weights',
                                 'var_weights', 'iweights', '_offset_exposure',
                                 'n_trials'])
         # register kwds for __init__, offset and exposure are added by super
@@ -378,20 +379,18 @@ class GLM(base.LikelihoodModel):
         self._offset_exposure = offset_exposure
 
         self.scaletype = None
-
-    # TODO: Get rid of this method; merge it into __init__
-    def initialize(self):
-        """
-        Initialize a generalized linear model.
-        """
-        # TODO: intended for public use?
         self.history = {'fittedvalues': [],
                         'params': [np.inf],
                         'deviance': [np.inf]}
 
-        self.pinv_wexog = np.linalg.pinv(self.exog)
-        self.normalized_cov_params = np.dot(self.pinv_wexog,
-                                            np.transpose(self.pinv_wexog))
+    @cached_data
+    def pinv_wexog(self):
+        return np.linalg.pinv(self.exog)
+
+    @cached_value
+    def normalized_cov_params(self):
+        return np.dot(self.pinv_wexog,
+                      np.transpose(self.pinv_wexog))
 
     def _check_inputs(self, family, offset, exposure, endog, freq_weights,
                       var_weights):
@@ -659,7 +658,6 @@ class GLM(base.LikelihoodModel):
         -----
         not yet verified for case with scale not equal to 1.
         """
-
         if exog_extra is None:
             if k_constraints is None:  # pragma: no cover
                 raise ValueError('if exog_extra is None, then k_constraints'
@@ -1070,6 +1068,7 @@ class GLM(base.LikelihoodModel):
             wls_results = lm.RegressionResults(self, start_params, None)
             iteration = 0
         for iteration in range(maxiter):
+            # TODO: I don't like setting self.weights
             self.weights = (self.iweights * self.n_trials *
                             self.family.weights(mu))
             wlsendog = (lin_pred +
@@ -1104,7 +1103,7 @@ class GLM(base.LikelihoodModel):
                               scale,
                               cov_type=cov_type, cov_kwds=cov_kwds,
                               use_t=use_t)
-
+        # TODO: these attributes should be set in res_cls.__init__
         glm_results.method = "IRLS"
         glm_results.mle_settings = {}
         glm_results.mle_settings['wls_method'] = wls_method
@@ -1173,6 +1172,8 @@ class GLM(base.LikelihoodModel):
 
         if method != "elastic_net":  # pragma: no cover
             raise ValueError("method for fit_regularied must be elastic_net")
+            # TODO: Should this be NotImplementedError?  Why bother with
+            # having an arg for this?
 
         defaults = {"maxiter": 50, "L1_wt": 1, "cnvrg_tol": 1e-10,
                     "zero_tol": 1e-10}
@@ -1292,7 +1293,13 @@ class GLMResults(base.LikelihoodModelResults):
     sm2.base.model.LikelihoodModelResults
     """
 
-    @cache_readonly
+    @cached_data
+    def pinv_wexog(self):
+        # we make this a cached_value instead of attribute so that remove_data
+        # gets it correctly
+        return self.model.pinv_wexog
+
+    @cached_value
     def nobs(self):
         return self.model.endog.shape[0]
 
@@ -1309,6 +1316,7 @@ class GLMResults(base.LikelihoodModelResults):
 
         self.family = model.family
 
+        # TODO: Why are these private?
         self._freq_weights = model.freq_weights
         self._var_weights = model.var_weights
         self._iweights = model.iweights
@@ -1320,7 +1328,6 @@ class GLMResults(base.LikelihoodModelResults):
         self.df_resid = model.df_resid - k_constr
         self.df_model = model.df_model + k_constr
 
-        self.pinv_wexog = model.pinv_wexog
         self._cache = resettable_cache()
         # TODO: are these intermediate results needed or can we just
         # call the model's attributes?
@@ -1328,10 +1335,6 @@ class GLMResults(base.LikelihoodModelResults):
         # for remove data and pickle without large arrays
         self._data_attr.extend(['results_constrained', '_freq_weights',
                                 '_var_weights', '_iweights'])
-        self.data_in_cache = getattr(self, 'data_in_cache', [])
-        self.data_in_cache.extend(['null', 'mu'])
-        self._data_attr_model = getattr(self, '_data_attr_model', [])
-        self._data_attr_model.append('mu')  # TODO: get rid of these
 
         # robust covariance
         if use_t is None:
@@ -1376,11 +1379,11 @@ class GLMResults(base.LikelihoodModelResults):
         self._iweights = None
         self._n_trials = None
 
-    @cache_readonly
+    @cached_data
     def resid_response(self):
         return self._n_trials * (self.model.endog - self.mu)
 
-    @cache_readonly
+    @cached_data
     def resid_pearson(self):  # FIXME: docstring inaccurate?  GH#4495
         """
         The Pearson residuals are defined as
@@ -1393,7 +1396,7 @@ class GLMResults(base.LikelihoodModelResults):
                 np.sqrt(self._var_weights) /
                 np.sqrt(self.family.variance(self.mu)))
 
-    @cache_readonly
+    @cached_data
     def resid_working(self):
         """
         See sm2.family.links for the
@@ -1405,7 +1408,7 @@ class GLMResults(base.LikelihoodModelResults):
                self._n_trials)
         return val
 
-    @cache_readonly
+    @cached_data
     def resid_anscombe(self):
         """
         Anscombe residuals.
@@ -1420,7 +1423,7 @@ class GLMResults(base.LikelihoodModelResults):
                                           var_weights=self._var_weights,
                                           scale=1.)
 
-    @cache_readonly
+    @cached_data
     def resid_anscombe_scaled(self):
         """
         Scaled Anscombe residuals.
@@ -1430,7 +1433,7 @@ class GLMResults(base.LikelihoodModelResults):
                                           var_weights=self._var_weights,
                                           scale=self.scale)
 
-    @cache_readonly
+    @cached_data
     def resid_anscombe_unscaled(self):
         """
         Unscaled Anscombe residuals.
@@ -1440,7 +1443,7 @@ class GLMResults(base.LikelihoodModelResults):
                                           var_weights=self._var_weights,
                                           scale=1.)
 
-    @cache_readonly
+    @cached_data
     def resid_deviance(self):
         """
         See sm2.families.family for distribution-specific deviance residuals.
@@ -1450,18 +1453,18 @@ class GLMResults(base.LikelihoodModelResults):
                                     scale=1.)
         return dev
 
-    @cache_readonly
+    @cached_value
     def pearson_chi2(self):
         chisq = (self.model.endog - self.mu)**2 / self.family.variance(self.mu)
         chisq *= self._iweights * self._n_trials
         chisqsum = np.sum(chisq)
         return chisqsum
 
-    @cache_readonly
+    @cached_data
     def mu(self):
         return self.fittedvalues
 
-    @cache_readonly
+    @cached_data
     def null(self):
         endog = self.model.endog
         model = self.model
@@ -1502,7 +1505,7 @@ class GLMResults(base.LikelihoodModelResults):
                                    freq_weights=self._freq_weights,
                                    scale=self.scale)
 
-    @cache_readonly
+    @cached_value
     def llf(self):
         if (isinstance(self.family, families.Gaussian) and
                 isinstance(self.family.link, families.links.Power) and
@@ -1517,12 +1520,12 @@ class GLMResults(base.LikelihoodModelResults):
                                   scale=scale)
         return val
 
-    @cache_readonly
+    @cached_value
     def aic(self):
         """Akaike Informaton Criterion"""
         return -2 * self.llf + 2 * (self.df_model + 1)
 
-    @cache_readonly
+    @cached_value
     def bic(self):
         """Bayes Information Criterion"""
         return self.deviance - self.df_resid * np.log(self.model.wnobs)

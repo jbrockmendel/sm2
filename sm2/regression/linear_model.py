@@ -43,6 +43,8 @@ from sm2.tools.tools import chain_dot, pinv_extended
 from sm2.tools.decorators import (resettable_cache,
                                   cache_readonly, cached_data, cached_value,
                                   cache_writable, copy_doc)
+import sm2.stats.sandwich_covariance as sw
+
 import sm2.base.model as base
 import sm2.base.wrapper as wrap
 from sm2.base import covtype
@@ -540,6 +542,7 @@ class GLS(RegressionModel):
         # n in denominator
         if self.sigma is not None:
             alpha = alpha * np.sum(1 / np.diag(self.sigma)) / len(self.endog)
+            # TODO: Make this into _set_alpha
 
         rslt = OLS(self.wendog, self.wexog).fit_regularized(
             method=method, alpha=alpha,
@@ -689,6 +692,7 @@ class WLS(RegressionModel):
         # Need to adjust since RSS/n in elastic net uses nominal n in
         # denominator
         alpha = alpha * np.sum(self.weights) / len(self.weights)
+        # TODO: make this into `_set_alpha`?
 
         rslt = OLS(self.wendog, self.wexog).fit_regularized(
             method=method, alpha=alpha,
@@ -1307,7 +1311,7 @@ class RegressionResults(base.LikelihoodModelResults):
                                                       self.model.wexog)
 
     # TODO: fix writable example
-    @cache_writable()
+    @cache_writable
     def scale(self):
         wresid = self.wresid
         return np.dot(wresid, wresid) / self.df_resid
@@ -1497,7 +1501,7 @@ class RegressionResults(base.LikelihoodModelResults):
         """See sm2.RegressionResults"""
         return np.sqrt(np.diag(self.cov_HC3))
 
-    @cache_readonly
+    @cached_data
     def resid_pearson(self):
         """
         Residuals, normalized to have unit variance.
@@ -1588,8 +1592,6 @@ class RegressionResults(base.LikelihoodModelResults):
         -----
         TODO: explain LM text
         """
-        import sm2.stats.sandwich_covariance as sw
-
         if not self._is_nested(restricted):
             raise ValueError("Restricted model is not nested by full model.")
 
@@ -1798,6 +1800,8 @@ class RegressionResults(base.LikelihoodModelResults):
 
         if 'kernel' in kwds:
             kwds['weights_func'] = kwds.pop('kernel')
+        if 'weights_func' in kwds and not callable(kwds['weights_func']):
+            kwds['weights_func'] = sw.kernel_dict[kwds['weights_func']]
 
         # TODO: make separate function that returns a robust cov plus info
         use_self = kwds.pop('use_self', False)
@@ -1943,18 +1947,16 @@ class RegressionResults(base.LikelihoodModelResults):
             wstr = "The input rank is higher than the number of observations."
             etext.append(wstr)
         if eigvals[-1] < 1e-10:
-            wstr = "The smallest eigenvalue is %6.3g. This might indicate "
-            wstr += "that there are\n"
-            wstr += "strong multicollinearity problems or that the design "
-            wstr += "matrix is singular."
-            wstr = wstr % eigvals[-1]
+            wstr = ("The smallest eigenvalue is %6.3g. This might indicate "
+                    "that there are\n"
+                    "strong multicollinearity problems or that the design "
+                    "matrix is singular." % eigvals[-1])
             etext.append(wstr)
         elif condno > 1000:  # TODO: what is recommended?
-            wstr = "The condition number is large, %6.3g. This might "
-            wstr += "indicate that there are\n"
-            wstr += "strong multicollinearity or other numerical "
-            wstr += "problems."
-            wstr = wstr % condno
+            wstr = ("The condition number is large, %6.3g. This might "
+                    "indicate that there are\n"
+                    "strong multicollinearity or other numerical "
+                    "problems." % condno)
             etext.append(wstr)
 
         if etext:

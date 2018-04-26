@@ -108,15 +108,15 @@ class RLM(base.LikelihoodModel):
     """ % {'params': base._model_params_doc,
            'extra_params': base._missing_param_doc}
 
-    @cache_readonly
+    @cached_value
     def nobs(self):
         return float(self.endog.shape[0])
 
-    @cache_readonly
+    @cached_value
     def df_resid(self):
         return self.nobs - (self.df_model + 1)
 
-    @cache_readonly
+    @cached_value
     def df_model(self):
         rank = np.linalg.matrix_rank(self.exog)
         return rank - 1.0
@@ -130,23 +130,18 @@ class RLM(base.LikelihoodModel):
         self.M = M
         super(base.LikelihoodModel, self).__init__(endog, exog,
                                                    missing=missing, **kwargs)
-        self._initialize()
         # things to remove_data
-        self._data_attr.extend(['weights', 'pinv_wexog'])
+        self._data_attr.extend(['weights'])
 
-    # TODO: Get rid of this dumb method, or at least make it `initialize`
-    def _initialize(self):
-        """
-        Initializes the model for the IRLS fit.
-        """  # NOTE: this is really similar to GLM.initialize
-        self.pinv_wexog = np.linalg.pinv(self.exog)
-        self.normalized_cov_params = np.dot(self.pinv_wexog,
-                                            np.transpose(self.pinv_wexog))
+    @cached_data
+    def pinv_wexog(self):
+        return np.linalg.pinv(self.exog)
+
+    @cached_value
+    def normalized_cov_params(self):
+        return np.dot(self.pinv_wexog, np.transpose(self.pinv_wexog))
 
     def score(self, params):
-        raise NotImplementedError
-
-    def information(self, params):
         raise NotImplementedError
 
     # TODO: Redundant with version in linear_model?
@@ -287,10 +282,9 @@ class RLM(base.LikelihoodModel):
         iteration = 1
         converged = 0
         while not converged:
-            # TODO: Sure we want to set this as a model attribute?
-            self.weights = self.M.weights(wls_results.resid / self.scale)
+            weights = self.M.weights(wls_results.resid / self.scale)
             wls_results = reg_tools._MinimalWLS(self.endog, self.exog,
-                                                weights=self.weights).fit()
+                                                weights=weights).fit()
             if update_scale is True:
                 self.scale = self._estimate_scale(wls_results.resid)
             history = self._update_history(wls_results, history, conv)
@@ -300,7 +294,8 @@ class RLM(base.LikelihoodModel):
         res_cls, wrap_cls = self._res_classes["fit"]
 
         results = res_cls(self, wls_results.params,
-                          self.normalized_cov_params, self.scale)
+                          self.normalized_cov_params, self.scale,
+                          weights=weights)
 
         history['iteration'] = iteration
         results.fit_history = history
@@ -400,7 +395,6 @@ class RLMResults(base.LikelihoodModelResults):
     --------
     sm2.base.model.LikelihoodModelResults
     """
-
     @cached_value
     def nobs(self):
         return float(self.model.endog.shape[0])
@@ -414,13 +408,13 @@ class RLMResults(base.LikelihoodModelResults):
         rank = np.linalg.matrix_rank(self.model.exog)
         return rank - 1.0
 
-    def __init__(self, model, params, normalized_cov_params, scale):
-        super(RLMResults, self).__init__(model, params,
-                                         normalized_cov_params, scale)
+    def __init__(self, model, params, normalized_cov_params, scale, weights):
+        self.weights = weights
         self.model = model
         self._cache = resettable_cache()
-        # for remove_data
-        self.data_in_cache = ['sresid']
+        super(RLMResults, self).__init__(model, params,
+                                         normalized_cov_params, scale)
+        self._data_attr.append('weights')  # TODO: not wild about this
 
         self.cov_params_default = self.bcov_scaled
         # TODO: "pvals" should come from chisq on bse?
@@ -432,10 +426,6 @@ class RLMResults(base.LikelihoodModelResults):
     @cached_value
     def bcov_unscaled(self):
         return self.normalized_cov_params
-
-    @cached_data
-    def weights(self):
-        return self.model.weights
 
     @cache_readonly
     def bcov_scaled(self):
@@ -528,10 +518,6 @@ class RLMResults(base.LikelihoodModelResults):
         if etext:
             smry.add_extra_txt(etext)
         return smry
-
-    def summary2(self, xname=None, yname=None, title=None, alpha=.05,
-                 float_format="%.4f"):  # pragma: no cover
-        raise NotImplementedError("summary2 not ported from upstream")
 
 
 class RLMResultsWrapper(lm.RegressionResultsWrapper):

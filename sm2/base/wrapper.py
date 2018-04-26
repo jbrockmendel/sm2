@@ -21,47 +21,7 @@ def _get_cls_attrs(cls):
     return cls_attrs
 
 
-# TODO: Does this need to be part of ResultsWrapper at all?
-class SaveLoadMixin(object):
-    """Mixin defining save and load methods"""
-
-    def save(self, fname, remove_data=False):
-        """save a pickle of this instance
-
-        Parameters
-        ----------
-        fname : string or filehandle
-            fname can be a string to a file path or filename, or a filehandle.
-        remove_data : bool
-            If False (default), then the instance is pickled without changes.
-            If True, then all arrays with length nobs are set to None before
-            pickling. See the remove_data method.
-            In some cases not all arrays will be set to None.
-        """
-        from sm2.iolib.smpickle import save_pickle
-
-        if remove_data:
-            self.remove_data()
-
-        save_pickle(self, fname)
-
-    @classmethod
-    def load(cls, fname):
-        """
-        load a pickle, (class method)
-
-        Parameters
-        ----------
-        fname : string or filehandle
-            fname can be a string to a file path or filename, or a filehandle.
-
-        Returns
-        -------
-        unpickled instance
-        """
-        from sm2.iolib.smpickle import load_pickle
-        return load_pickle(fname)
-
+class RemoveDataMixin(object):
     @property
     def _value_attrs(self):
         cls_attrs = _get_cls_attrs(self.__class__)
@@ -111,6 +71,9 @@ class SaveLoadMixin(object):
             # TODO: Just move this to the Results class.
             return self._results.remove_data()
 
+        if hasattr(self, 'model'):
+            self.model.remove_data()
+
         value_attrs = self._value_attrs
         # make sure the caches for value_attrs are evaluated; this needs to
         # occur _before_ any other attributes are removed.
@@ -122,9 +85,11 @@ class SaveLoadMixin(object):
             self._cache[name] = None
 
         data_attr = getattr(self, "_data_attr_model", [])
-        model_only = ['model.' + i for i in data_attr]
-        model_attr = ['model.' + i for i in self.model._data_attr]
-        for att in self._data_attr + model_attr + model_only:
+        model_attr = ['model.' + i for i in data_attr]
+        if hasattr(self, 'model'):
+            # i.e. not if self is already a Model
+            model_attr += ['model.' + i for i in self.model._data_attr]
+        for att in self._data_attr + model_attr:
             _wipe(self, att)
 
         data_in_cache = getattr(self, 'data_in_cache', [])
@@ -147,6 +112,48 @@ def _wipe(obj, att):
             setattr(obj_, att_, None)
     except AttributeError:
         pass
+
+
+# TODO: Does this need to be part of ResultsWrapper at all?
+class SaveLoadMixin(RemoveDataMixin):
+    """Mixin defining save and load methods"""
+
+    def save(self, fname, remove_data=False):
+        """save a pickle of this instance
+
+        Parameters
+        ----------
+        fname : string or filehandle
+            fname can be a string to a file path or filename, or a filehandle.
+        remove_data : bool
+            If False (default), then the instance is pickled without changes.
+            If True, then all arrays with length nobs are set to None before
+            pickling. See the remove_data method.
+            In some cases not all arrays will be set to None.
+        """
+        from sm2.iolib.smpickle import save_pickle
+
+        if remove_data:
+            self.remove_data()
+
+        save_pickle(self, fname)
+
+    @classmethod
+    def load(cls, fname):
+        """
+        load a pickle, (class method)
+
+        Parameters
+        ----------
+        fname : string or filehandle
+            fname can be a string to a file path or filename, or a filehandle.
+
+        Returns
+        -------
+        unpickled instance
+        """
+        from sm2.iolib.smpickle import load_pickle
+        return load_pickle(fname)
 
 
 class ResultsWrapper(SaveLoadMixin):

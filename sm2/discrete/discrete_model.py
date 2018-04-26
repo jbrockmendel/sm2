@@ -23,6 +23,7 @@ from six.moves import range
 from sm2.compat.scipy import loggamma
 
 import numpy as np
+import pandas as pd
 from pandas.util._decorators import deprecate_kwarg
 
 from scipy.special import gammaln
@@ -62,6 +63,9 @@ FLOAT_EPS = np.finfo(float).eps
 
 # TODO: add options for the parameter covariance/variance
 # ie., OIM, EIM, and BHHH see Green 21.4
+# Dogit
+# Ordered Logit/Probit
+# Generalized Ordered Logit
 
 _discrete_results_docs = """
     %(one_line_description)s
@@ -189,7 +193,7 @@ class DiscreteModel(base.LikelihoodModel):
 
     fit.__doc__ += base.LikelihoodModel.fit.__doc__
 
-    def _set_alpha(self, alpha):  # TODO: Move higher up?
+    def _set_alpha(self, alpha):  # TODO: Move higher up?  rename?
         """
         Call to setup parameter transformations at the beginning
         of fit_regularized.
@@ -304,8 +308,8 @@ class DiscreteModel(base.LikelihoodModel):
                                       "upstream, but is disabled in sm2.")
 
         alpha = self._set_alpha(alpha)
-        start_params = self._get_start_params_l1(start_params,
-            method=method, maxiter=maxiter,
+        start_params = self._get_start_params_l1(
+            start_params, method=method, maxiter=maxiter,
             full_output=full_output, disp=0, callback=callback,
             alpha=alpha, trim_mode=trim_mode, auto_trim_tol=auto_trim_tol,
             size_trim_tol=size_trim_tol, qc_tol=qc_tol, **kwargs)
@@ -550,6 +554,8 @@ class MultinomialModel(BinaryModel):
                                     L1MultinomialResultsWrapper)}
 
     def _handle_data(self, endog, exog, missing, hasconst, **kwargs):
+        # FIXME: I don't think we go through this correctly when
+        # using from_formula --> eqn_names doesn't get set
         if data_tools._is_using_ndarray_type(endog, None):
             endog_dummies, ynames = _numpy_to_dummies(endog)
             yname = 'y'
@@ -565,10 +571,19 @@ class MultinomialModel(BinaryModel):
 
         self._ynames_map = ynames
         data = handle_data(endog_dummies, exog, missing, hasconst, **kwargs)
-        data.ynames = yname  # overwrite this to single endog name
+
+        eqn_names = [x[1] for x in sorted(list(ynames.items()))]
+        data.ynames = pd.Index(eqn_names, name=yname)
+        # e.g. if user passes a pandas Series as endog, the index.name here
+        # will match the name of that Series.
+        # TODO: make this a Data method?
+        # TODO: upstram had `data.ynames = yname` and comment to overwrite
+        # single endog name; but why?
         data.orig_endog = endog
+
         self.wendog = data.endog
 
+        # TODO: use super here?
         # repeating from upstream...
         for key in kwargs:
             if key in ['design_info', 'formula']:  # leave attached to data
@@ -873,7 +888,6 @@ class _CountMixin(object):
     def _set_alpha(self, alpha):
         self._transparams = False
 
-        loglike_method = getattr(self, 'loglike_method', None)
         if self._should_append and (np.size(alpha) == 1 and alpha != 0):
             # don't penalize alpha if alpha is scalar
             k_params = self.exog.shape[1] + self.k_extra
@@ -1182,8 +1196,8 @@ class Poisson(CountModel):
         start_params = self._get_start_params(start_params, robust=False)
         # TODO: can we get rid of robust now?
 
-        cntfit = DiscreteModel.fit(self,
-            start_params=start_params, method=method, maxiter=maxiter,
+        cntfit = DiscreteModel.fit(
+            self, start_params=start_params, method=method, maxiter=maxiter,
             full_output=full_output, disp=disp, callback=callback, **kwargs)
 
         # TODO: Can we avoid doing this here?  Do it in res_cls.__init__?
@@ -1192,6 +1206,7 @@ class Poisson(CountModel):
             kwds = {'cov_type': kwargs['cov_type'], 'cov_kwds': cov_kwds}
         else:
             kwds = {}
+        # TODO: This (along with passing **kwds below) doesnt appear necessary
 
         res_cls, wrap_cls = self._res_classes["fit"]
         discretefit = res_cls(self, cntfit, **kwds)
@@ -1514,15 +1529,17 @@ class GeneralizedPoisson(_CountMixin, CountModel):
         start_params = self._get_start_params(start_params, **kwargs)
 
         # TODO: skip CountModel and go straight to DiscreteModel?
-        mlefit = CountModel.fit(self,
-            start_params=start_params, maxiter=maxiter, method=method,
+        # Yes, just need to change "mlefit._results" --> "mlefit" below
+        mlefit = CountModel.fit(
+            self, start_params=start_params, maxiter=maxiter, method=method,
             disp=disp, full_output=full_output, callback=callback, **kwargs)
 
-        if use_transparams and method not in ["newton", "ncg"]:
+        if self._transparams:
             self._transparams = False
             mlefit._results.params[-1] = np.exp(mlefit._results.params[-1])
             # ensure cov_params are re-evaluated with updated params
             delattr(mlefit._results, "cov_type")
+            # TODO: not hit in tests
 
         res_cls, wrap_cls = self._res_classes["fit"]
         gpfit = res_cls(self, mlefit._results,
@@ -1568,6 +1585,739 @@ class GeneralizedPoisson(_CountMixin, CountModel):
         else:  # pragma: no cover
             raise ValueError('keyword "which" not recognized')
 
+
+class NegativeBinomial(_CountMixin, CountModel):
+    __doc__ = """
+    Negative Binomial Model for count data
+
+    %(params)s
+    %(extra_params)s
+
+    Attributes
+    -----------
+    endog : array
+        A reference to the endogenous response variable
+    exog : array
+        A reference to the exogenous design.
+
+    References
+    ----------
+    Greene, W. 2008. "Functional forms for the negtive binomial model
+        for count data". Economics Letters. Volume 99, Number 3, pp.585-590.
+    Hilbe, J.M. 2011. "Negative binomial regression". Cambridge University
+        Press.
+    """ % {'params': base._model_params_doc,
+           'extra_params':
+           """loglike_method : string
+        Log-likelihood type. 'nb2', 'nb1', or 'geometric'.
+        Fitted value :math:`\\mu`
+        Heterogeneity parameter :math:`\\alpha`
+
+        - nb2: Variance equal to :math:`\\mu + \\alpha\\mu^2` (most common)
+        - nb1: Variance equal to :math:`\\mu + \\alpha\\mu`
+        - geometric: Variance equal to :math:`\\mu + \\mu^2`
+    offset : array_like
+        Offset is added to the linear prediction with coefficient equal to 1.
+    exposure : array_like
+        Log(exposure) is added to the linear prediction with coefficient
+        equal to 1.
+
+    """ + base._missing_param_doc}
+    _check_perfect_pred = None  # placeholder until implemented GH#3895
+
+    @property
+    def _res_classes(self):
+        return {"fit": (NegativeBinomialResults,
+                        NegativeBinomialResultsWrapper),
+                "fit_regularized": (L1NegativeBinomialResults,
+                                    L1NegativeBinomialResultsWrapper)}
+
+    def __init__(self, endog, exog, loglike_method='nb2', offset=None,
+                 exposure=None, missing='none', **kwargs):
+        super(NegativeBinomial, self).__init__(endog, exog, offset=offset,
+                                               exposure=exposure,
+                                               missing=missing, **kwargs)
+        self.loglike_method = loglike_method
+        self._initialize()
+        if loglike_method in ['nb2', 'nb1']:
+            self.exog_names.append('alpha')
+            self.k_extra = 1
+        else:
+            self.k_extra = 0
+        # store keys for extras if we need to recreate model instance
+        # we need to append keys that don't go to super
+        self._init_keys.append('loglike_method')
+
+    def _initialize(self):
+        if self.loglike_method == 'nb2':
+            self.hessian = self._hessian_nb2
+            self.score = self._score_nbin
+            self.loglikeobs = self._ll_nb2
+            self._transparams = True  # transform lnalpha -> alpha in fit
+        elif self.loglike_method == 'nb1':
+            self.hessian = self._hessian_nb1
+            self.score = self._score_nb1
+            self.loglikeobs = self._ll_nb1
+            self._transparams = True  # transform lnalpha -> alpha in fit
+        elif self.loglike_method == 'geometric':
+            self.hessian = self._hessian_geom
+            self.score = self._score_geom
+            self.loglikeobs = self._ll_geometric
+        else:  # pragma: no cover
+            # TODO: Should this be a ValueError?
+            raise NotImplementedError("Likelihood type must nb1, nb2 or "
+                                      "geometric")
+
+    # TODO: Can we move this to the base class?
+    def __getstate__(self):
+        odict = self.__dict__.copy()  # copy the dict since we change it
+        # Workaround to pickle instance methods; see GH#4083
+        import types
+        # TODO: can we just say `callable(odict[key])`?
+        methods = [key for key in odict
+                   if isinstance(odict[key], types.MethodType)]
+        for key in methods:
+            # In this case we need to get rid of hessian, score, and
+            # loglikeobs.  The implementation here is more general.
+            del odict[key]
+        return odict
+
+    def __setstate__(self, indict):
+        self.__dict__.update(indict)
+        self._initialize()
+
+    # ----------------------------------------------------------------
+    # Loglike/Score/Hessian Methods
+
+    def _ll_nbin(self, params, alpha, Q=0):
+        if np.any(np.iscomplex(params)) or np.iscomplex(alpha):
+            gamma_ln = loggamma
+        else:
+            gamma_ln = gammaln
+        endog = self.endog
+        mu = self.predict(params)
+        size = 1 / alpha * mu**Q
+        prob = size / (size + mu)
+        coeff = gamma_ln(size + endog) - gamma_ln(endog + 1) - gamma_ln(size)
+        # TODO: cache gamma_ln(endog+1)
+        llf = coeff + size * np.log(prob) + endog * np.log(1 - prob)
+        return llf
+
+    def _ll_nb2(self, params):
+        if self._transparams:  # got lnalpha during fit
+            alpha = np.exp(params[-1])
+        else:
+            alpha = params[-1]
+        return self._ll_nbin(params[:-1], alpha, Q=0)
+
+    def _ll_nb1(self, params):
+        if self._transparams:  # got lnalpha during fit
+            alpha = np.exp(params[-1])
+        else:
+            alpha = params[-1]
+        return self._ll_nbin(params[:-1], alpha, Q=1)
+
+    def _ll_geometric(self, params):
+        # we give alpha of 1 because it's actually log(alpha) where alpha=0
+        return self._ll_nbin(params, 1, 0)
+
+    def _score_geom(self, params):
+        y = self.endog[:, None]
+        mu = self.predict(params)[:, None]
+        dparams = self.exog * (y - mu) / (mu + 1)
+        return dparams.sum(0)
+
+    def _score_nbin(self, params, Q=0):
+        """
+        Score vector for NB2 model
+        """  # TODO: Is docstring accurate?  NB2?
+        if self._transparams:  # lnalpha came in during fit
+            alpha = np.exp(params[-1])
+        else:
+            alpha = params[-1]
+        params = params[:-1]
+        exog = self.exog
+        y = self.endog[:, None]
+        mu = self.predict(params)[:, None]
+
+        a1 = 1 / alpha * mu**Q
+        prob = a1 / (a1 + mu)
+        dgpart = special.digamma(y + a1) - special.digamma(a1)
+
+        if Q:
+            # nb1
+            assert Q == 1, Q
+            # in this case:
+            #    a1 = mu / alpha
+            #    prob = 1 / (alpha + 1)
+            dparams = exog * a1 * (np.log(prob) + dgpart)
+            dalphas = (prob * (y - mu) - a1 * (np.log(prob) + dgpart)) / alpha
+            dalpha = dalphas.sum()
+        else:
+            # nb2
+            # in this case:
+            #   a1 = 1 / alpha
+            #   prob = a1 / (a1 + mu)
+            dparams = exog * a1 * (y - mu) / (mu + a1)
+            da1 = -alpha**-2
+            dalpha = (dgpart + np.log(prob) - (y - mu) / (a1 + mu)).sum() * da1
+
+        # multiply above by constant outside sum to reduce rounding error
+        if self._transparams:
+            return np.r_[dparams.sum(0), dalpha * alpha]
+        else:
+            return np.r_[dparams.sum(0), dalpha]
+
+    def _score_nb1(self, params):
+        return self._score_nbin(params, Q=1)
+
+    def _hessian_geom(self, params):
+        exog = self.exog
+        y = self.endog[:, None]
+        mu = self.predict(params)[:, None]
+
+        # for dl/dparams dparams
+        dim = exog.shape[1]
+        hess_arr = np.empty((dim, dim))
+        const_arr = mu * (1 + y) / (mu + 1)**2
+        for i in range(dim):
+            for j in range(dim):
+                if j > i:
+                    continue
+                hess_arr[i, j] = np.sum(-exog[:, i, None] * exog[:, j, None] *
+                                        const_arr, axis=0)
+        tri_idx = np.triu_indices(dim, k=1)
+        hess_arr[tri_idx] = hess_arr.T[tri_idx]
+        return hess_arr
+
+    def _hessian_nb1(self, params):
+        """
+        Hessian of NB1 model.
+        """
+        if self._transparams:  # lnalpha came in during fit
+            alpha = np.exp(params[-1])
+        else:
+            alpha = params[-1]
+
+        params = params[:-1]
+        exog = self.exog
+        y = self.endog[:, None]
+        mu = self.predict(params)[:, None]
+
+        a1 = mu / alpha
+        prob = 1 / (alpha + 1)  # Note: this equals a1 / (a1 + mu)
+        dgpart = special.digamma(y + a1) - special.digamma(a1)
+        pgpart = special.polygamma(1, a1 + y) - special.polygamma(1, a1)
+
+        # for dl/dparams dparams
+        dim = exog.shape[1]
+        hess_arr = np.empty((dim + 1, dim + 1))
+        # const_arr = a1*mu*(a1+y)/(mu+a1)**2
+        # not all of dparams
+        dparams = exog / alpha * (np.log(prob) + dgpart)
+
+        dmudb = exog * mu
+        xmu_alpha = exog * a1
+        for i in range(dim):
+            for j in range(dim):
+                if j > i:
+                    continue
+                hij = ((dparams[:, i, None] * dmudb[:, j, None]) +
+                       (xmu_alpha[:, i, None] *
+                        xmu_alpha[:, j, None] *
+                        pgpart))
+                hess_arr[i, j] = hij.sum(axis=0)
+        tri_idx = np.triu_indices(dim, k=1)
+        hess_arr[tri_idx] = hess_arr.T[tri_idx]
+
+        dldpda = np.sum(-a1 * dparams + exog * a1 *
+                        (-pgpart * a1 / alpha - prob), axis=0)
+
+        hess_arr[-1, :-1] = dldpda
+        hess_arr[:-1, -1] = dldpda
+
+        # for dl/dalpha dalpha
+
+        log_alpha = np.log(prob)
+        alpha3 = alpha**3
+        alpha2 = alpha**2
+        mu2 = mu**2
+        dada = ((2 * alpha * (alpha + 1)**2 * mu * (log_alpha + dgpart)
+                 + (alpha + 1)**2 * mu2 * pgpart
+                 + 3 * alpha3 * mu
+                 - 2 * alpha3 * y
+                 + alpha2 * (2 * mu - y)
+                 ) / (alpha**4 * (alpha + 1)**2))
+        hess_arr[-1, -1] = dada.sum()
+
+        return hess_arr
+
+    def _hessian_nb2(self, params):
+        """
+        Hessian of NB2 model.
+        """
+        if self._transparams:  # lnalpha came in during fit
+            alpha = np.exp(params[-1])
+        else:
+            alpha = params[-1]
+        params = params[:-1]
+
+        exog = self.exog
+        y = self.endog[:, None]
+        mu = self.predict(params)[:, None]
+
+        a1 = 1 / alpha
+        prob = a1 / (a1 + mu)
+        dgpart = special.digamma(a1 + y) - special.digamma(a1)
+        pgpart = special.polygamma(1, a1 + y) - special.polygamma(1, a1)
+
+        # for dl/dparams dparams
+        dim = exog.shape[1]
+        hess_arr = np.empty((dim + 1, dim + 1))
+        const_arr = a1 * mu * (a1 + y) / (mu + a1)**2
+        for i in range(dim):
+            for j in range(dim):
+                if j > i:
+                    continue
+                hess_arr[i, j] = np.sum(-exog[:, i, None] * exog[:, j, None] *
+                                        const_arr, axis=0)
+        tri_idx = np.triu_indices(dim, k=1)
+        hess_arr[tri_idx] = hess_arr.T[tri_idx]
+
+        # for dl/dparams dalpha
+        da1 = -alpha**-2
+        # assert da1 == -a1**2, (da1, -a1**2)
+        # this assertion fails only due to floating point error
+        dldpda = np.sum(mu * exog * (y - mu) * da1 / (mu + a1)**2, axis=0)
+        hess_arr[-1, :-1] = dldpda
+        hess_arr[:-1, -1] = dldpda
+
+        # for dl/dalpha dalpha
+        # NOTE: polygamma(1, x) is the trigamma function
+        da2 = 2 * alpha**-3
+        # assert da2 == 2*a1**3, (da2, 2*a1**3)
+        # this assertion fails only due to floating point error
+        dalpha = dgpart + np.log(prob) - (y - mu) / (a1 + mu)
+        dada = (da2 * dalpha + da1**2 * (pgpart + 1 / a1 - 1 / (a1 + mu) +
+                (y - mu) / (mu + a1)**2)).sum()
+        hess_arr[-1, -1] = dada
+
+        return hess_arr
+
+    # TODO: replace this with analytic where is it used?
+    def score_obs(self, params):
+        return approx_fprime_cs(params, self.loglikeobs)
+
+    # ----------------------------------------------------------------
+
+    def _estimate_dispersion(self, mu, resid, df_resid=None):
+        if df_resid is None:
+            df_resid = resid.shape[0]
+        if self.loglike_method == 'nb2':
+            a = ((resid**2 / mu - 1) / mu).sum() / df_resid
+        else:
+            # i.e. self.loglike_method == 'nb1':
+            a = (resid**2 / mu - 1).sum() / df_resid
+        return a
+
+    def fit(self, start_params=None, method='bfgs', maxiter=35,
+            full_output=1, disp=1, callback=None,
+            cov_type='nonrobust', cov_kwds=None, use_t=None, **kwargs):
+
+        # Note: don't let super handle robust covariance because it has
+        # transformed params
+        self._transparams = False  # always define attribute
+        if self.loglike_method.startswith('nb') and method not in ['newton',
+                                                                   'ncg']:
+            self._transparams = True  # in case same Model instance is refit
+
+        if start_params is not None and self._transparams:
+            # Note: we cannot do this in `_get_start_params` or it risks
+            # being done repeatedly
+            # transform user provided start_params dispersion, see GH#3918
+            start_params = np.array(start_params, copy=True)
+            start_params[-1] = np.log(start_params[-1])
+
+        start_params = self._get_start_params(start_params, **kwargs)
+
+        # TODO: can we skip CountModel and go straight to DiscreteModel?
+        # Yes, just need to change "mlefit._results" --> "mlefit" below
+        mlefit = CountModel.fit(
+            self, start_params=start_params, maxiter=maxiter, method=method,
+            disp=disp, full_output=full_output, callback=callback, **kwargs)
+        # TODO: Fix NBin _check_perfect_pred
+
+        res_cls, wrap_cls = self._res_classes["fit"]
+        if self._transparams:
+            # mlefit is a wrapped counts results
+            self._transparams = False  # don't need to transform anymore now
+
+            # change from lnalpha to alpha
+            mlefit._results.params[-1] = np.exp(mlefit._results.params[-1])
+            # ensure cov_params are re-evaluated with updated params
+            delattr(mlefit._results, "cov_type")
+
+            nbinfit = res_cls(self, mlefit._results,
+                              cov_type=cov_type, use_t=use_t, cov_kwds=cov_kwds)
+            result = wrap_cls(nbinfit)
+        else:
+            result = mlefit  # TODO: Shouldn't this be wrapped?
+            # FIXME: result.bse -->
+            # ValueError: cannot reshape array of size 1 into shape (2,)
+            # TODO: can we avoid doing this here?
+            cov_kwds = cov_kwds or {}
+            # FIXME: What's the point of re-calling _get_robutcov_results?
+            #  normalized_cov_params already exists and is unchanged after
+            #  re-calling
+            result._get_robustcov_results(cov_type=cov_type,
+                                          use_self=True, use_t=use_t,
+                                          **cov_kwds)
+            # FIXME: Should this return CountResultsWrapper?  GH#4529
+        return result
+
+
+class NegativeBinomialP(_CountMixin, CountModel):
+    __doc__ = """
+    Generalized Negative Binomial (NB-P) model for count data
+    %(params)s
+    %(extra_params)s
+    Attributes
+    -----------
+    endog : array
+        A reference to the endogenous response variable
+    exog : array
+        A reference to the exogenous design.
+    p : scalar
+        P denotes parameterizations for NB-P regression. p=1 for NB-1 and
+        p=2 for NB-2. Default is p=1.
+    """ % {'params': base._model_params_doc,
+           'extra_params': """p: scalar
+        P denotes parameterizations for NB regression. p=1 for NB-1 and
+        p=2 for NB-2. Default is p=2.
+    offset : array_like
+        Offset is added to the linear prediction with coefficient equal to 1.
+    exposure : array_like
+        Log(exposure) is added to the linear prediction with coefficient
+        equal to 1.
+    """ + base._missing_param_doc}
+    _check_perfect_pred = None  # placeholder until implemented GH#3895
+
+    @property
+    def _res_classes(self):
+        return {"fit": (NegativeBinomialResults,
+                        NegativeBinomialResultsWrapper),
+                "fit_regularized": (L1NegativeBinomialResults,
+                                    L1NegativeBinomialResultsWrapper)}
+
+    def __init__(self, endog, exog, p=2, offset=None,
+                 exposure=None, missing='none', **kwargs):
+        super(NegativeBinomialP, self).__init__(endog, exog, offset=offset,
+                                                exposure=exposure,
+                                                missing=missing, **kwargs)
+        self.parameterization = p
+        self.exog_names.append('alpha')
+        self.k_extra = 1
+        self._transparams = False
+
+    def _get_init_kwds(self):
+        kwds = super(NegativeBinomialP, self)._get_init_kwds()
+        kwds['p'] = self.parameterization
+        return kwds
+
+    # TODO: This is pretty slow.  can it be optimized?
+    def loglikeobs(self, params):
+        """
+        Loglikelihood for observations of Generalized Negative
+        Binomial (NB-P) model
+
+        Parameters
+        ----------
+        params : array-like
+            The parameters of the model.
+
+        Returns
+        -------
+        loglike : ndarray
+            The log likelihood for each observation of the model evaluated
+            at `params`. See Notes
+        """
+        if self._transparams:
+            alpha = np.exp(params[-1])
+        else:
+            alpha = params[-1]
+
+        params = params[:-1]
+        p = self.parameterization
+        y = self.endog
+
+        mu = self.predict(params)
+        mu_p = mu**(2 - p)
+        a1 = mu_p / alpha
+        a2 = mu + a1
+
+        llf = (gammaln(y + a1) - gammaln(y + 1) - gammaln(a1) +
+               a1 * np.log(a1 / a2) + y * np.log(mu / a2))
+
+        return llf
+
+    # TODO: This is pretty slow.  can it be optimized?
+    def score_obs(self, params):
+        """
+        Generalized Negative Binomial (NB-P) model score (gradient)
+        vector of the log-likelihood for each observations.
+
+        Parameters
+        ----------
+        params : array-like
+            The parameters of the model
+
+        Returns
+        -------
+        score : ndarray, 1-D
+            The score vector of the model, i.e. the first derivative of the
+            loglikelihood function, evaluated at `params`
+        """
+        if self._transparams:
+            alpha = np.exp(params[-1])
+        else:
+            alpha = params[-1]
+
+        params = params[:-1]
+        p = 2 - self.parameterization
+        y = self.endog
+
+        mu = self.predict(params)
+        mu_p = mu**p
+        a1 = mu_p / alpha
+        a2 = mu + a1
+        a3 = y + a1
+        a4 = a1 * p / mu
+
+        dgpart = special.digamma(y + a1) - special.digamma(a1)
+
+        dparams = (a4 * (dgpart + np.log(a1 / a2) + 1 - a3 / a2) -
+                   a3 / a2 +
+                   y / mu)
+        dparams = (self.exog.T * mu * dparams).T
+        dalpha = -a1 / alpha * (dgpart + np.log(a1 / a2) + 1 - a3 / a2)
+
+        return np.concatenate((dparams, np.atleast_2d(dalpha).T),
+                              axis=1)
+
+    def score(self, params):
+        """
+        Generalized Negative Binomial (NB-P) model score (gradient)
+        vector of the log-likelihood
+
+        Parameters
+        ----------
+        params : array-like
+            The parameters of the model
+
+        Returns
+        -------
+        score : ndarray, 1-D
+            The score vector of the model, i.e. the first derivative of the
+            loglikelihood function, evaluated at `params`
+        """
+        score = np.sum(self.score_obs(params), axis=0)
+        if self._transparams:
+            score[-1] == score[-1] ** 2
+            return score
+        else:
+            return score
+
+    # TODO: This is pretty slow.  can it be optimized?
+    def hessian(self, params):
+        """
+        Generalized Negative Binomial (NB-P) model hessian maxtrix
+        of the log-likelihood
+
+        Parameters
+        ----------
+        params : array-like
+            The parameters of the model
+
+        Returns
+        -------
+        hessian : ndarray, 2-D
+            The hessian matrix of the model.
+        """
+        if self._transparams:
+            alpha = np.exp(params[-1])
+        else:
+            alpha = params[-1]
+        params = params[:-1]
+
+        p = 2 - self.parameterization
+        y = self.endog
+        exog = self.exog
+        mu = self.predict(params)
+
+        mu_p = mu**p
+        a1 = mu_p / alpha  # AKA size
+        a2 = mu + a1
+        a3 = y + a1
+        a4 = a1 * p / mu
+        a5 = a4 * p / mu
+
+        dim = exog.shape[1]
+        hess_arr = np.zeros((dim + 1, dim + 1))
+
+        dgpart = special.digamma(y + a1) - special.digamma(a1)
+        pgpart = special.polygamma(1, a1) - special.polygamma(1, y + a1)
+        dgterm = np.log(a1 / a2) + dgpart + 1 - a3 / a2
+        # TODO: better name or interpretation for dgterm?
+
+        coeff = mu**2 * ((1 + a4)**2 * a3 / a2**2
+                         - 2 * a4 * (1 + a4) / a2
+                         + a5 * (dgterm + 1)
+                         - a4**2 * pgpart
+                         - a3 / a2 / mu)
+
+        for i in range(dim):
+            hess_arr[i, :-1] = np.sum(exog[:, :].T * exog[:, i] * coeff,
+                                      axis=1)
+
+        hess_arr[-1, :-1] = (exog[:, :].T * mu * a1 *
+                             ((1 + a4) * (1 - a3 / a2) / a2
+                              - p / mu * (dgterm + 1)
+                              + p * a4 / a2
+                              + a4 * pgpart
+                              ) / alpha).sum(axis=1)
+
+        da2 = (a1 * (2 * dgterm
+                     + 1
+                     - a1 * pgpart
+                     - 2 * a1 / a2
+                     + (a1 / a2) * (a3 / a2)
+                     ) / alpha**2)
+
+        hess_arr[-1, -1] = da2.sum()
+
+        tri_idx = np.triu_indices(dim + 1, k=1)
+        hess_arr[tri_idx] = hess_arr.T[tri_idx]
+
+        return hess_arr
+
+    # --------------------------------------------------------------
+
+    def _estimate_dispersion(self, mu, resid, df_resid=None):
+        q = self.parameterization - 1
+        if df_resid is None:
+            df_resid = resid.shape[0]
+        a = ((resid**2 / mu - 1) * mu**(-q)).sum() / df_resid
+        return a
+
+    def fit(self, start_params=None, method='bfgs', maxiter=35,
+            full_output=1, disp=1, callback=None, use_transparams=False,
+            cov_type='nonrobust', cov_kwds=None, use_t=None, **kwargs):
+        """
+        Parameters
+        ----------
+        use_transparams : bool
+            This parameter enable internal transformation to impose
+            non-negativity.  True to enable. Default is False.
+            use_transparams=True imposes the no underdispersion (alpha > 0)
+            constaint.  In case use_transparams=True and method="newton"
+            or "ncg" transformation is ignored.
+        """
+        if use_transparams and method not in ['newton', 'ncg']:
+            self._transparams = True
+        else:
+            if use_transparams:
+                warnings.warn('Parameter "use_transparams" is ignored',
+                              RuntimeWarning)
+            self._transparams = False
+
+        start_params = self._get_start_params(start_params, **kwargs)
+
+        # TODO: can we skip CountModel and go straight to DiscreteModel?
+        mlefit = CountModel.fit(
+            self, start_params=start_params, maxiter=maxiter, method=method,
+            disp=disp, full_output=full_output, callback=callback, **kwargs)
+
+        if self._transparams:
+            self._transparams = False
+            mlefit._results.params[-1] = np.exp(mlefit._results.params[-1])
+            # ensure that cov_params is re-evaluated with updated params
+            delattr(mlefit._results, "cov_type")
+
+        res_class, wrap_cls = self._res_classes["fit"]
+        nbinfit = res_class(self, mlefit._results,
+                            cov_type=cov_type, use_t=use_t, cov_kwds=cov_kwds)
+        return wrap_cls(nbinfit)
+
+    fit.__doc__ += DiscreteModel.fit.__doc__
+
+    def predict(self, params, exog=None, exposure=None, offset=None,
+                which='mean'):
+        """
+        Predict response variable of a model given exogenous variables.
+
+        Parameters
+        ----------
+        params : array-like
+            2d array of fitted parameters of the model. Should be in the
+            order returned from the model.
+        exog : array-like, optional
+            1d or 2d array of exogenous values.  If not supplied, the
+            whole exog attribute of the model is used. If a 1d array is given
+            it assumed to be 1 row of exogenous variables. If you only have
+            one regressor and would like to do prediction, you must provide
+            a 2d array with shape[1] == 1.
+        linear : bool, optional
+            If True, returns the linear predictor dot(exog, params).  Else,
+            returns the value of the cdf at the linear predictor.
+        offset : array_like, optional
+            Offset is added to the linear prediction with coefficient
+            equal to 1.
+        exposure : array_like, optional
+            Log(exposure) is added to the linear prediction with coefficient
+        equal to 1.
+        which : 'mean', 'linear', 'prob', optional.
+            'mean' returns the exp of linear predictor exp(dot(exog, params)).
+            'linear' returns the linear predictor dot(exog, params).
+            'prob' return probabilities for counts from 0 to max(endog).
+            Default is 'mean'.
+        """
+        if exog is None:
+            exog = self.exog
+
+        if exposure is None:
+            exposure = getattr(self, 'exposure', 0)
+        elif exposure != 0:
+            exposure = np.log(exposure)
+
+        if offset is None:
+            offset = getattr(self, 'offset', 0)
+
+        fitted = np.dot(exog, params[:exog.shape[1]])
+        linpred = fitted + exposure + offset
+
+        if which == 'mean':
+            return np.exp(linpred)
+        elif which == 'linear':
+            return linpred
+        elif which == 'prob':
+            counts = np.atleast_2d(np.arange(0, np.max(self.endog) + 1))
+            mu = self.predict(params, exog, exposure, offset)
+            size, prob = self.convert_params(params, mu)
+            return stats.nbinom.pmf(counts, size[:, None], prob[:, None])
+        else:  # pragma: no cover
+            # TODO: fix upstream this is A TypeError
+            raise ValueError('keyword "which" = %s not recognized' % which)
+
+    def convert_params(self, params, mu):  # TODO: use this more?  privatize?
+        alpha = params[-1]
+        p = 2 - self.parameterization
+
+        size = 1. / alpha * mu**p
+        prob = size / (size + mu)
+        return (size, prob)
+
+
+# ----------------------------------------------------------------
 
 class Logit(BinaryModel):
     __doc__ = """
@@ -1890,6 +2640,7 @@ class Probit(BinaryModel):
         return np.dot(-L * (L + Xb) * self.exog.T, self.exog)
 
 
+# FIXME: MNLogit doesn't have `resid` upstream, and it raises here
 class MNLogit(MultinomialModel):
     __doc__ = """
     Multinomial logit model
@@ -1955,8 +2706,12 @@ class MNLogit(MultinomialModel):
         In the multinomial logit model.
         .. math:: \frac{\exp(\beta_{j}^{\prime}x_{i})}{\sum_{k=0}^{J}\exp(\beta_{k}^{\prime}x_{i})}
         """  # noqa:E501
-        eXB = np.column_stack((np.ones(len(X)), np.exp(X)))
-        return eXB / eXB.sum(1)[:, None]
+        # subtract max to avoid overflow, see GH#3778
+        Xb = np.column_stack((np.zeros(len(X)), X))
+        Xb -= Xb.max(1).reshape(-1, 1)
+        eXB = np.exp(Xb)
+        denom = eXB.sum(1)[:, None]
+        return eXB / denom
 
     def loglikeobs(self, params):
         r"""
@@ -1985,8 +2740,16 @@ class MNLogit(MultinomialModel):
         """  # noqa:E501
         params = params.reshape(self.K, -1, order='F')
         Xb = np.dot(self.exog, params)
-        logprob = np.log(self.cdf(Xb))
-        return self.wendog * logprob
+        prob = self.cdf(Xb)
+        logprob = np.log(prob)
+        out = self.wendog * logprob
+        if np.isnan(out).any():
+            # TODO: More efficient way to do this check?
+            # GH#3778 We can avoid some NaN issues by convention
+            # that 0 * np.inf = 0
+            mask = self.wendog == 0
+            out[mask] = 0
+        return out
 
     def score(self, params):
         r"""
@@ -2103,16 +2866,17 @@ class MNLogit(MultinomialModel):
         X = self.exog
         Xb = np.dot(self.exog, params)
         pr = self.cdf(Xb)
-        partials = []
         J = self.J
         K = self.K
+        partials = [[None for i in range(J - 1)] for j in range(J - 1)]
         for i in range(J - 1):
-            for j in range(J - 1):  # this loop assumes we drop the first col.
+            for j in range(i, J - 1):  # this loop assumes we drop the first col.
                 if i == j:
                     part = ((pr[:, i + 1] * (1 - pr[:, j + 1]))[:, None] * X).T
                 else:
                     part = ((pr[:, i + 1] * -pr[:, j + 1])[:, None] * X).T
-                partials.append(-np.dot(part, X))
+                partials[i][j] = -np.dot(part, X)
+                partials[j][i] = partials[i][j]
 
         H = np.array(partials)
         # the developer's notes on multinomial should clear this math up
@@ -2120,732 +2884,6 @@ class MNLogit(MultinomialModel):
         H = np.transpose(H, (0, 2, 1, 3))
         H = H.reshape((J - 1) * K, (J - 1) * K)
         return H
-
-
-class NegativeBinomial(_CountMixin, CountModel):
-    __doc__ = """
-    Negative Binomial Model for count data
-
-    %(params)s
-    %(extra_params)s
-
-    Attributes
-    -----------
-    endog : array
-        A reference to the endogenous response variable
-    exog : array
-        A reference to the exogenous design.
-
-    References
-    ----------
-    Greene, W. 2008. "Functional forms for the negtive binomial model
-        for count data". Economics Letters. Volume 99, Number 3, pp.585-590.
-    Hilbe, J.M. 2011. "Negative binomial regression". Cambridge University
-        Press.
-    """ % {'params': base._model_params_doc,
-           'extra_params':
-           """loglike_method : string
-        Log-likelihood type. 'nb2', 'nb1', or 'geometric'.
-        Fitted value :math:`\\mu`
-        Heterogeneity parameter :math:`\\alpha`
-
-        - nb2: Variance equal to :math:`\\mu + \\alpha\\mu^2` (most common)
-        - nb1: Variance equal to :math:`\\mu + \\alpha\\mu`
-        - geometric: Variance equal to :math:`\\mu + \\mu^2`
-    offset : array_like
-        Offset is added to the linear prediction with coefficient equal to 1.
-    exposure : array_like
-        Log(exposure) is added to the linear prediction with coefficient
-        equal to 1.
-
-    """ + base._missing_param_doc}
-    _check_perfect_pred = None  # placeholder until implemented GH#3895
-
-    @property
-    def _res_classes(self):
-        return {"fit": (NegativeBinomialResults,
-                        NegativeBinomialResultsWrapper),
-                "fit_regularized": (L1NegativeBinomialResults,
-                                    L1NegativeBinomialResultsWrapper)}
-
-    def __init__(self, endog, exog, loglike_method='nb2', offset=None,
-                 exposure=None, missing='none', **kwargs):
-        super(NegativeBinomial, self).__init__(endog, exog, offset=offset,
-                                               exposure=exposure,
-                                               missing=missing, **kwargs)
-        self.loglike_method = loglike_method
-        self._initialize()
-        if loglike_method in ['nb2', 'nb1']:
-            self.exog_names.append('alpha')
-            self.k_extra = 1
-        else:
-            self.k_extra = 0
-        # store keys for extras if we need to recreate model instance
-        # we need to append keys that don't go to super
-        self._init_keys.append('loglike_method')
-
-    def _initialize(self):
-        if self.loglike_method == 'nb2':
-            self.hessian = self._hessian_nb2
-            self.score = self._score_nbin
-            self.loglikeobs = self._ll_nb2
-            self._transparams = True  # transform lnalpha -> alpha in fit
-        elif self.loglike_method == 'nb1':
-            self.hessian = self._hessian_nb1
-            self.score = self._score_nb1
-            self.loglikeobs = self._ll_nb1
-            self._transparams = True  # transform lnalpha -> alpha in fit
-        elif self.loglike_method == 'geometric':
-            self.hessian = self._hessian_geom
-            self.score = self._score_geom
-            self.loglikeobs = self._ll_geometric
-        else:  # pragma: no cover
-            # TODO: Should this be a ValueError?
-            raise NotImplementedError("Likelihood type must nb1, nb2 or "
-                                      "geometric")
-
-    # TODO: Can we move this to the base class?
-    def __getstate__(self):
-        odict = self.__dict__.copy()  # copy the dict since we change it
-        # Workaround to pickle instance methods; see GH#4083
-        import types
-        # TODO: can we just say `callable(odict[key])`?
-        methods = [key for key in odict
-                   if isinstance(odict[key], types.MethodType)]
-        for key in methods:
-            # In this case we need to get rid of hessian, score, and
-            # loglikeobs.  The implementation here is more general.
-            del odict[key]
-        return odict
-
-    def __setstate__(self, indict):
-        self.__dict__.update(indict)
-        self._initialize()
-
-    # ----------------------------------------------------------------
-    # Loglike/Score/Hessian Methods
-
-    def _ll_nbin(self, params, alpha, Q=0):
-        if np.any(np.iscomplex(params)) or np.iscomplex(alpha):
-            gamma_ln = loggamma
-        else:
-            gamma_ln = gammaln
-        endog = self.endog
-        mu = self.predict(params)
-        size = 1 / alpha * mu**Q
-        prob = size / (size + mu)
-        coeff = gamma_ln(size + endog) - gamma_ln(endog + 1) - gamma_ln(size)
-        # TODO: cache gamma_ln(endog+1)
-        llf = coeff + size * np.log(prob) + endog * np.log(1 - prob)
-        return llf
-
-    def _ll_nb2(self, params):
-        if self._transparams:  # got lnalpha during fit
-            alpha = np.exp(params[-1])
-        else:
-            alpha = params[-1]
-        return self._ll_nbin(params[:-1], alpha, Q=0)
-
-    def _ll_nb1(self, params):
-        if self._transparams:  # got lnalpha during fit
-            alpha = np.exp(params[-1])
-        else:
-            alpha = params[-1]
-        return self._ll_nbin(params[:-1], alpha, Q=1)
-
-    def _ll_geometric(self, params):
-        # we give alpha of 1 because it's actually log(alpha) where alpha=0
-        return self._ll_nbin(params, 1, 0)
-
-    def _score_geom(self, params):
-        y = self.endog[:, None]
-        mu = self.predict(params)[:, None]
-        dparams = self.exog * (y - mu) / (mu + 1)
-        return dparams.sum(0)
-
-    def _score_nbin(self, params, Q=0):
-        """
-        Score vector for NB2 model
-        """  # TODO: Is docstring accurate?  NB2?
-        if self._transparams:  # lnalpha came in during fit
-            alpha = np.exp(params[-1])
-        else:
-            alpha = params[-1]
-        params = params[:-1]
-        exog = self.exog
-        y = self.endog[:, None]
-        mu = self.predict(params)[:, None]
-
-        a1 = 1 / alpha * mu**Q
-        prob = a1 / (a1 + mu)
-        dgpart = special.digamma(y + a1) - special.digamma(a1)
-
-        if Q:
-            # nb1
-            assert Q == 1, Q
-            # in this case:
-            #    a1 = mu / alpha
-            #    prob = 1 / (alpha + 1)
-            dparams = exog * a1 * (np.log(prob) + dgpart)
-            dalphas = (prob * (y - mu) - a1 * (np.log(prob) + dgpart)) / alpha
-            dalpha = dalphas.sum()
-        else:
-            # nb2
-            # in this case:
-            #   a1 = 1 / alpha
-            #   prob = a1 / (a1 + mu)
-            dparams = exog * a1 * (y - mu) / (mu + a1)
-            da1 = -alpha**-2
-            dalpha = (dgpart + np.log(prob) - (y - mu) / (a1 + mu)).sum() * da1
-
-        # multiply above by constant outside sum to reduce rounding error
-        if self._transparams:
-            return np.r_[dparams.sum(0), dalpha * alpha]
-        else:
-            return np.r_[dparams.sum(0), dalpha]
-
-    def _score_nb1(self, params):
-        return self._score_nbin(params, Q=1)
-
-    def _hessian_geom(self, params):
-        exog = self.exog
-        y = self.endog[:, None]
-        mu = self.predict(params)[:, None]
-
-        # for dl/dparams dparams
-        dim = exog.shape[1]
-        hess_arr = np.empty((dim, dim))
-        const_arr = mu * (1 + y) / (mu + 1)**2
-        for i in range(dim):
-            for j in range(dim):
-                if j > i:
-                    continue
-                hess_arr[i, j] = np.sum(-exog[:, i, None] * exog[:, j, None] *
-                                        const_arr, axis=0)
-        tri_idx = np.triu_indices(dim, k=1)
-        hess_arr[tri_idx] = hess_arr.T[tri_idx]
-        return hess_arr
-
-    def _hessian_nb1(self, params):
-        """
-        Hessian of NB1 model.
-        """
-        if self._transparams:  # lnalpha came in during fit
-            alpha = np.exp(params[-1])
-        else:
-            alpha = params[-1]
-
-        params = params[:-1]
-        exog = self.exog
-        y = self.endog[:, None]
-        mu = self.predict(params)[:, None]
-
-        a1 = mu / alpha
-        prob = 1 / (alpha + 1)  # Note: this equals a1 / (a1 + mu)
-        dgpart = special.digamma(y + a1) - special.digamma(a1)
-        pgpart = special.polygamma(1, a1 + y) - special.polygamma(1, a1)
-
-        # for dl/dparams dparams
-        dim = exog.shape[1]
-        hess_arr = np.empty((dim + 1, dim + 1))
-        # const_arr = a1*mu*(a1+y)/(mu+a1)**2
-        # not all of dparams
-        dparams = exog / alpha * (np.log(prob) + dgpart)
-
-        dmudb = exog * mu
-        xmu_alpha = exog * a1
-        for i in range(dim):
-            for j in range(dim):
-                if j > i:
-                    continue
-                hij = ((dparams[:, i, None] * dmudb[:, j, None]) +
-                       (xmu_alpha[:, i, None] *
-                        xmu_alpha[:, j, None] *
-                        pgpart))
-                hess_arr[i, j] = hij.sum(axis=0)
-        tri_idx = np.triu_indices(dim, k=1)
-        hess_arr[tri_idx] = hess_arr.T[tri_idx]
-
-        dldpda = np.sum(-a1 * dparams + exog * a1 *
-                        (-pgpart * a1 / alpha - prob), axis=0)
-
-        hess_arr[-1, :-1] = dldpda
-        hess_arr[:-1, -1] = dldpda
-
-        # for dl/dalpha dalpha
-
-        log_alpha = np.log(prob)
-        alpha3 = alpha**3
-        alpha2 = alpha**2
-        mu2 = mu**2
-        dada = ((2 * alpha * (alpha + 1)**2 * mu * (log_alpha + dgpart)
-                 + (alpha + 1)**2 * mu2 * pgpart
-                 + 3 * alpha3 * mu
-                 - 2 * alpha3 * y
-                 + alpha2 * (2 * mu - y)
-                 ) / (alpha**4 * (alpha + 1)**2))
-        hess_arr[-1, -1] = dada.sum()
-
-        return hess_arr
-
-    def _hessian_nb2(self, params):
-        """
-        Hessian of NB2 model.
-        """
-        if self._transparams:  # lnalpha came in during fit
-            alpha = np.exp(params[-1])
-        else:
-            alpha = params[-1]
-        params = params[:-1]
-
-        exog = self.exog
-        y = self.endog[:, None]
-        mu = self.predict(params)[:, None]
-
-        a1 = 1 / alpha
-        prob = a1 / (a1 + mu)
-        dgpart = special.digamma(a1 + y) - special.digamma(a1)
-        pgpart = special.polygamma(1, a1 + y) - special.polygamma(1, a1)
-
-        # for dl/dparams dparams
-        dim = exog.shape[1]
-        hess_arr = np.empty((dim + 1, dim + 1))
-        const_arr = a1 * mu * (a1 + y) / (mu + a1)**2
-        for i in range(dim):
-            for j in range(dim):
-                if j > i:
-                    continue
-                hess_arr[i, j] = np.sum(-exog[:, i, None] * exog[:, j, None] *
-                                        const_arr, axis=0)
-        tri_idx = np.triu_indices(dim, k=1)
-        hess_arr[tri_idx] = hess_arr.T[tri_idx]
-
-        # for dl/dparams dalpha
-        da1 = -alpha**-2
-        # assert da1 == -a1**2, (da1, -a1**2)
-        # this assertion fails only due to floating point error
-        dldpda = np.sum(mu * exog * (y - mu) * da1 / (mu + a1)**2, axis=0)
-        hess_arr[-1, :-1] = dldpda
-        hess_arr[:-1, -1] = dldpda
-
-        # for dl/dalpha dalpha
-        # NOTE: polygamma(1, x) is the trigamma function
-        da2 = 2 * alpha**-3
-        # assert da2 == 2*a1**3, (da2, 2*a1**3)
-        # this assertion fails only due to floating point error
-        dalpha = da1 * (dgpart + np.log(prob) - (y - mu) / (a1 + mu))
-        dada = (da2 * dalpha / da1 + da1**2 * (pgpart + 1 / a1 - 1 / (a1 + mu) +
-                (y - mu) / (mu + a1)**2)).sum()
-        hess_arr[-1, -1] = dada
-
-        return hess_arr
-
-    # TODO: replace this with analytic where is it used?
-    def score_obs(self, params):
-        return approx_fprime_cs(params, self.loglikeobs)
-
-    # ----------------------------------------------------------------
-
-    def _estimate_dispersion(self, mu, resid, df_resid=None):
-        if df_resid is None:
-            df_resid = resid.shape[0]
-        if self.loglike_method == 'nb2':
-            a = ((resid**2 / mu - 1) / mu).sum() / df_resid
-        else:
-            # i.e. self.loglike_method == 'nb1':
-            a = (resid**2 / mu - 1).sum() / df_resid
-        return a
-
-    def fit(self, start_params=None, method='bfgs', maxiter=35,
-            full_output=1, disp=1, callback=None,
-            cov_type='nonrobust', cov_kwds=None, use_t=None, **kwargs):
-
-        # Note: don't let super handle robust covariance because it has
-        # transformed params
-        self._transparams = False  # always define attribute
-        if self.loglike_method.startswith('nb') and method not in ['newton',
-                                                                   'ncg']:
-            self._transparams = True  # in case same Model instance is refit
-        elif self.loglike_method.startswith('nb'):  # method is newton/ncg
-            self._transparams = False  # because we need to step in alpha space
-
-        if start_params is not None and self._transparams:
-            # Note: we cannot do this in `_get_start_params` or it risks
-            # being done repeatedly
-            # transform user provided start_params dispersion, see GH#3918
-            start_params = np.array(start_params, copy=True)
-            start_params[-1] = np.log(start_params[-1])
-
-        start_params = self._get_start_params(start_params, **kwargs)
-
-        # TODO: can we skip CountModel and go straight to DiscreteModel?
-        mlefit = CountModel.fit(self,
-            start_params=start_params, maxiter=maxiter, method=method,
-            disp=disp, full_output=full_output, callback=callback, **kwargs)
-
-        # TODO: Fix NBin _check_perfect_pred
-        if self.loglike_method.startswith('nb'):
-            # mlefit is a wrapped counts results
-            self._transparams = False  # don't need to transform anymore now
-            # change from lnalpha to alpha
-            if method not in ["newton", "ncg"]:
-                mlefit._results.params[-1] = np.exp(mlefit._results.params[-1])
-                # ensure cov_params are re-evaluated with updated params
-                delattr(mlefit._results, "cov_type")
-
-            res_cls, wrap_cls = self._res_classes["fit"]
-            nbinfit = res_cls(self, mlefit._results,
-                              cov_type=cov_type, use_t=use_t, cov_kwds=cov_kwds)
-            result = wrap_cls(nbinfit)
-        else:
-            result = mlefit
-
-            # TODO: can we avoid doing this here?
-            cov_kwds = cov_kwds or {}
-            result._get_robustcov_results(cov_type=cov_type,
-                                      use_self=True, use_t=use_t, **cov_kwds)
-        return result
-
-
-class NegativeBinomialP(_CountMixin, CountModel):
-    __doc__ = """
-    Generalized Negative Binomial (NB-P) model for count data
-    %(params)s
-    %(extra_params)s
-    Attributes
-    -----------
-    endog : array
-        A reference to the endogenous response variable
-    exog : array
-        A reference to the exogenous design.
-    p : scalar
-        P denotes parameterizations for NB-P regression. p=1 for NB-1 and
-        p=2 for NB-2. Default is p=1.
-    """ % {'params': base._model_params_doc,
-           'extra_params': """p: scalar
-        P denotes parameterizations for NB regression. p=1 for NB-1 and
-        p=2 for NB-2. Default is p=2.
-    offset : array_like
-        Offset is added to the linear prediction with coefficient equal to 1.
-    exposure : array_like
-        Log(exposure) is added to the linear prediction with coefficient
-        equal to 1.
-    """ + base._missing_param_doc}
-    _check_perfect_pred = None  # placeholder until implemented GH#3895
-
-    @property
-    def _res_classes(self):
-        return {"fit": (NegativeBinomialResults,
-                        NegativeBinomialResultsWrapper),
-                "fit_regularized": (L1NegativeBinomialResults,
-                                    L1NegativeBinomialResultsWrapper)}
-
-    def __init__(self, endog, exog, p=2, offset=None,
-                 exposure=None, missing='none', **kwargs):
-        super(NegativeBinomialP, self).__init__(endog, exog, offset=offset,
-                                                exposure=exposure,
-                                                missing=missing, **kwargs)
-        self.parameterization = p
-        self.exog_names.append('alpha')
-        self.k_extra = 1
-        self._transparams = False
-
-    def _get_init_kwds(self):
-        kwds = super(NegativeBinomialP, self)._get_init_kwds()
-        kwds['p'] = self.parameterization
-        return kwds
-
-    # TODO: This is pretty slow.  can it be optimized?
-    def loglikeobs(self, params):
-        """
-        Loglikelihood for observations of Generalized Negative
-        Binomial (NB-P) model
-
-        Parameters
-        ----------
-        params : array-like
-            The parameters of the model.
-
-        Returns
-        -------
-        loglike : ndarray
-            The log likelihood for each observation of the model evaluated
-            at `params`. See Notes
-        """
-        if self._transparams:
-            alpha = np.exp(params[-1])
-        else:
-            alpha = params[-1]
-
-        params = params[:-1]
-        p = self.parameterization
-        y = self.endog
-
-        mu = self.predict(params)
-        mu_p = mu**(2 - p)
-        a1 = mu_p / alpha
-        a2 = mu + a1
-
-        llf = (gammaln(y + a1) - gammaln(y + 1) - gammaln(a1) +
-               a1 * np.log(a1 / a2) + y * np.log(mu / a2))
-
-        return llf
-
-    # TODO: This is pretty slow.  can it be optimized?
-    def score_obs(self, params):
-        """
-        Generalized Negative Binomial (NB-P) model score (gradient)
-        vector of the log-likelihood for each observations.
-
-        Parameters
-        ----------
-        params : array-like
-            The parameters of the model
-
-        Returns
-        -------
-        score : ndarray, 1-D
-            The score vector of the model, i.e. the first derivative of the
-            loglikelihood function, evaluated at `params`
-        """
-        if self._transparams:
-            alpha = np.exp(params[-1])
-        else:
-            alpha = params[-1]
-
-        params = params[:-1]
-        p = 2 - self.parameterization
-        y = self.endog
-
-        mu = self.predict(params)
-        mu_p = mu**p
-        a1 = mu_p / alpha
-        a2 = mu + a1
-        a3 = y + a1
-        a4 = a1 * p / mu
-
-        dgpart = special.digamma(y + a1) - special.digamma(a1)
-
-        dparams = (a4 * (dgpart + np.log(a1 / a2) + 1 - a3 / a2) -
-                   a3 / a2 +
-                   y / mu)
-        dparams = (self.exog.T * mu * dparams).T
-        dalpha = -a1 / alpha * (dgpart + np.log(a1 / a2) + 1 - a3 / a2)
-
-        return np.concatenate((dparams, np.atleast_2d(dalpha).T),
-                              axis=1)
-
-    def score(self, params):
-        """
-        Generalized Negative Binomial (NB-P) model score (gradient)
-        vector of the log-likelihood
-
-        Parameters
-        ----------
-        params : array-like
-            The parameters of the model
-
-        Returns
-        -------
-        score : ndarray, 1-D
-            The score vector of the model, i.e. the first derivative of the
-            loglikelihood function, evaluated at `params`
-        """
-        score = np.sum(self.score_obs(params), axis=0)
-        if self._transparams:
-            score[-1] == score[-1] ** 2
-            return score
-        else:
-            return score
-
-    # TODO: This is pretty slow.  can it be optimized?
-    def hessian(self, params):
-        """
-        Generalized Negative Binomial (NB-P) model hessian maxtrix
-        of the log-likelihood
-
-        Parameters
-        ----------
-        params : array-like
-            The parameters of the model
-
-        Returns
-        -------
-        hessian : ndarray, 2-D
-            The hessian matrix of the model.
-        """
-        if self._transparams:
-            alpha = np.exp(params[-1])
-        else:
-            alpha = params[-1]
-        params = params[:-1]
-
-        p = 2 - self.parameterization
-        y = self.endog
-        exog = self.exog
-        mu = self.predict(params)
-
-        mu_p = mu**p
-        a1 = mu_p / alpha  # AKA size
-        a2 = mu + a1
-        a3 = y + a1
-        a4 = a1 * p / mu
-        a5 = a4 * p / mu
-
-        dim = exog.shape[1]
-        hess_arr = np.zeros((dim + 1, dim + 1))
-
-        dgpart = special.digamma(y + a1) - special.digamma(a1)
-        pgpart = special.polygamma(1, a1) - special.polygamma(1, y + a1)
-        dgterm = np.log(a1 / a2) + dgpart + 1 - a3 / a2
-        # TODO: better name or interpretation for dgterm?
-
-        coeff = mu**2 * ((1 + a4)**2 * a3 / a2**2
-                         - 2 * a4 * (1 + a4) / a2
-                         + a5 * (dgterm + 1)
-                         - a4**2 * pgpart
-                         - a3 / a2 / mu)
-
-        for i in range(dim):
-            hess_arr[i, :-1] = np.sum(exog[:, :].T * exog[:, i] * coeff,
-                                      axis=1)
-
-        hess_arr[-1, :-1] = (exog[:, :].T * mu * a1 *
-                             ((1 + a4) * (1 - a3 / a2) / a2
-                              - p / mu * (dgterm + 1)
-                              + p * a4 / a2
-                              + a4 * pgpart
-                              ) / alpha).sum(axis=1)
-
-        da2 = (a1 * (2 * dgterm
-                     + 1
-                     - a1 * pgpart
-                     - 2 * a1 / a2
-                     + (a1 / a2) * (a3 / a2)
-                     ) / alpha**2)
-
-        hess_arr[-1, -1] = da2.sum()
-
-        tri_idx = np.triu_indices(dim + 1, k=1)
-        hess_arr[tri_idx] = hess_arr.T[tri_idx]
-
-        return hess_arr
-
-    # --------------------------------------------------------------
-
-    def _estimate_dispersion(self, mu, resid, df_resid=None):
-        q = self.parameterization - 1
-        if df_resid is None:
-            df_resid = resid.shape[0]
-        a = ((resid**2 / mu - 1) * mu**(-q)).sum() / df_resid
-        return a
-
-    def fit(self, start_params=None, method='bfgs', maxiter=35,
-            full_output=1, disp=1, callback=None, use_transparams=False,
-            cov_type='nonrobust', cov_kwds=None, use_t=None, **kwargs):
-        """
-        Parameters
-        ----------
-        use_transparams : bool
-            This parameter enable internal transformation to impose
-            non-negativity.  True to enable. Default is False.
-            use_transparams=True imposes the no underdispersion (alpha > 0)
-            constaint.  In case use_transparams=True and method="newton"
-            or "ncg" transformation is ignored.
-        """
-        if use_transparams and method not in ['newton', 'ncg']:
-            self._transparams = True
-        else:
-            if use_transparams:
-                warnings.warn('Parameter "use_transparams" is ignored',
-                              RuntimeWarning)
-            self._transparams = False
-
-        start_params = self._get_start_params(start_params, **kwargs)
-
-        # TODO: can we skip CountModel and go straight to DiscreteModel?
-        mlefit = CountModel.fit(self,
-            start_params=start_params, maxiter=maxiter, method=method,
-            disp=disp, full_output=full_output, callback=callback, **kwargs)
-
-        if self._transparams:
-            self._transparams = False
-            mlefit._results.params[-1] = np.exp(mlefit._results.params[-1])
-            # ensure that cov_params is re-evaluated with updated params
-            delattr(mlefit._results, "cov_type")
-
-        res_class, wrap_cls = self._res_classes["fit"]
-        nbinfit = res_class(self, mlefit._results,
-                            cov_type=cov_type, use_t=use_t, cov_kwds=cov_kwds)
-        return wrap_cls(nbinfit)
-
-    fit.__doc__ += DiscreteModel.fit.__doc__
-
-    def predict(self, params, exog=None, exposure=None, offset=None,
-                which='mean'):
-        """
-        Predict response variable of a model given exogenous variables.
-
-        Parameters
-        ----------
-        params : array-like
-            2d array of fitted parameters of the model. Should be in the
-            order returned from the model.
-        exog : array-like, optional
-            1d or 2d array of exogenous values.  If not supplied, the
-            whole exog attribute of the model is used. If a 1d array is given
-            it assumed to be 1 row of exogenous variables. If you only have
-            one regressor and would like to do prediction, you must provide
-            a 2d array with shape[1] == 1.
-        linear : bool, optional
-            If True, returns the linear predictor dot(exog, params).  Else,
-            returns the value of the cdf at the linear predictor.
-        offset : array_like, optional
-            Offset is added to the linear prediction with coefficient
-            equal to 1.
-        exposure : array_like, optional
-            Log(exposure) is added to the linear prediction with coefficient
-        equal to 1.
-        which : 'mean', 'linear', 'prob', optional.
-            'mean' returns the exp of linear predictor exp(dot(exog, params)).
-            'linear' returns the linear predictor dot(exog, params).
-            'prob' return probabilities for counts from 0 to max(endog).
-            Default is 'mean'.
-        """
-        if exog is None:
-            exog = self.exog
-
-        if exposure is None:
-            exposure = getattr(self, 'exposure', 0)
-        elif exposure != 0:
-            exposure = np.log(exposure)
-
-        if offset is None:
-            offset = getattr(self, 'offset', 0)
-
-        fitted = np.dot(exog, params[:exog.shape[1]])
-        linpred = fitted + exposure + offset
-
-        if which == 'mean':
-            return np.exp(linpred)
-        elif which == 'linear':
-            return linpred
-        elif which == 'prob':
-            counts = np.atleast_2d(np.arange(0, np.max(self.endog) + 1))
-            mu = self.predict(params, exog, exposure, offset)
-            size, prob = self.convert_params(params, mu)
-            return stats.nbinom.pmf(counts, size[:, None], prob[:, None])
-        else:  # pragma: no cover
-            # TODO: fix upstream this is A TypeError
-            raise ValueError('keyword "which" = %s not recognized' % which)
-
-    def convert_params(self, params, mu):  # TODO: use this more?  privatize?
-        alpha = params[-1]
-        p = 2 - self.parameterization
-
-        size = 1. / alpha * mu**p
-        prob = size / (size + mu)
-        return (size, prob)
 
 
 # ----------------------------------------------------------------
@@ -3426,7 +3464,7 @@ class MultinomialResults(DiscreteResults):
             ynames = naming.maybe_convert_ynames_int(ynames)
             # use range below to ensure sortedness
             ynames = [ynames[key] for key in range(int(model.J))]
-            ynames = ['='.join([yname, name]) for name in ynames]
+            ynames = ['='.join([yname.name, name]) for name in ynames]
             if not use_all:
                 yname_list = ynames[1:]  # assumes first variable is dropped
             else:
@@ -3653,6 +3691,9 @@ class MultinomialResultsWrapper(lm.RegressionResultsWrapper):
     _attrs = {"resid_misclassified": "rows"}
     _wrap_attrs = wrap.union_dicts(lm.RegressionResultsWrapper._wrap_attrs,
                                    _attrs)
+    _methods = {"predict": "rows_eq"}
+    _wrap_methods = wrap.union_dicts(
+        lm.RegressionResultsWrapper._wrap_methods, _methods)
 wrap.populate_wrapper(MultinomialResultsWrapper,  # noqa: E305
                       MultinomialResults)
 
