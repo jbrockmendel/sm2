@@ -273,6 +273,10 @@ def weights_uniform(nlags):
     return np.ones(nlags + 1)
 
 
+kernel_dict = {'bartlett': weights_bartlett,
+               'uniform': weights_uniform}
+
+
 def S_hac_simple(x, nlags=None, weights_func=weights_bartlett):
     """inner covariance matrix for HAC (Newey, West) sandwich
 
