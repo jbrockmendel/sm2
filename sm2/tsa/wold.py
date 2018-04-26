@@ -541,7 +541,6 @@ def arma_periodogram(ar, ma, worN=None, whole=0):
 
 
 class ARMATransparams(object):
-
     @staticmethod
     def _unpack_params(params, order, k_trend, k_exog, reverse=False):
         (k_ar, k_ma) = order
@@ -567,7 +566,7 @@ class ARMATransparams(object):
 
         k = getattr(self, 'k_exog', 0) + self.k_trend
 
-        # TODO: Use unpack_params?
+        # Equivalent to (but less verbose than) calling self._unpack_params
         arparams = params[k:k + k_ar]  # TODO: Should we call this arcoefs?
         maparams = params[k + k_ar:]
 
