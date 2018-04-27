@@ -128,12 +128,14 @@ def arma_acovf(ar, ma, nobs=10):
         nobs_ir = max(1000, 2 * nobs)  # no idea right now how large is needed
     else:
         nobs_ir = max(100, 2 * nobs)  # no idea right now
+
     ir = arma_impulse_response(ar, ma, leads=nobs_ir)
     # better safe than sorry (?), I have no idea about the required precision
     # only checked for AR(1)
     while ir[-1] > 5 * 1e-5:
         nobs_ir *= 10
         ir = arma_impulse_response(ar, ma, leads=nobs_ir)
+
     # again no idea where the speed break points are:
     if nobs_ir > 50000 and nobs < 1001:
         end = len(ir)
@@ -445,58 +447,3 @@ class ArmaProcess(wold.ARMAParams):
     @copy_doc(arma_pacf.__doc__)
     def pacf(self, lags=100):
         return arma_pacf(self.ar, self.ma, lags=lags)
-
-    def generate_sample(self, nsample=100, scale=1., distrvs=None, axis=0,
-                        burnin=0):
-        """
-        Simulate an ARMA
-
-        Parameters
-        ----------
-        nsample : int or tuple of ints
-            If nsample is an integer, then this creates a 1d timeseries of
-            length size. If nsample is a tuple, creates a len(nsample)
-            dimensional time series where time is indexed along the input
-            variable ``axis``. All series are unless ``distrvs`` generates
-            dependent data.
-        scale : float
-            standard deviation of noise
-        distrvs : function, random number generator
-            function that generates the random numbers, and takes sample size
-            as argument
-            default: np.random.randn
-            TODO: change to size argument
-        burnin : integer (default: 0)
-            to reduce the effect of initial conditions, burnin observations
-            at the beginning of the sample are dropped
-        axis : int
-            See nsample.
-
-        Returns
-        -------
-        rvs : ndarray
-            random sample(s) of arma process
-
-        Notes
-        -----
-        Should work for n-dimensional with time series along axis, but not
-        tested yet. Processes are sampled independently.
-        """
-        if distrvs is None:
-            distrvs = np.random.normal
-        if np.ndim(nsample) == 0:
-            nsample = [nsample]
-        if burnin:
-            # handle burin time for nd arrays
-            # maybe there is a better trick in scipy.fft code
-            newsize = list(nsample)
-            newsize[axis] += burnin
-            newsize = tuple(newsize)
-            fslice = [slice(None)] * len(newsize)
-            fslice[axis] = slice(burnin, None, None)
-            fslice = tuple(fslice)
-        else:
-            newsize = tuple(nsample)
-            fslice = tuple([slice(None)] * np.ndim(newsize))
-        eta = scale * distrvs(size=newsize)
-        return signal.lfilter(self.ma, self.ar, eta, axis=axis)[fslice]
