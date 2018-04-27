@@ -17,7 +17,7 @@ from scipy import stats
 from patsy import PatsyError
 
 from sm2.tools.tools import add_constant, categorical
-from sm2.regression.linear_model import OLS, WLS, GLS, yule_walker
+from sm2.regression.linear_model import OLS, WLS, GLS
 from sm2 import datasets
 
 from .results import results_regression
@@ -1035,21 +1035,6 @@ class TestGLS(object):
 
 
 # -------------------------------------------------------------
-
-# TODO: belongs elsewhere?
-@pytest.mark.not_vetted
-def test_yule_walker():
-    # TODO: Document where R_params came from
-    R_params = [1.2831003105694765, -0.45240924374091945,
-                -0.20770298557575195, 0.047943648089542337]
-
-    data = datasets.sunspots.load()
-    rho, sigma = yule_walker(data.endog, order=4, method="mle")
-    # TODO: assert something about sigma?
-
-    assert_almost_equal(rho,
-                        R_params,
-                        4)
 
 
 # TODO: WTF why is this a class?
