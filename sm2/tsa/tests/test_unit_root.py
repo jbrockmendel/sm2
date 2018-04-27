@@ -57,11 +57,11 @@ class TestADFConstant(CheckADF):
     teststat = .97505319
     pvalue = .99399563
     critvalues = [-3.476, -2.883, -2.573]
+    kwargs = {"regression": "c", "maxlag": 4}
 
     @classmethod
     def setup_class(cls):
-        cls.res1 = unit_root.adfuller(cls.x, regression="c",
-                                      autolag=None, maxlag=4)
+        cls.res1 = unit_root.adfuller(cls.x, autolag=None, **cls.kwargs)
 
 
 @pytest.mark.not_vetted
@@ -69,11 +69,11 @@ class TestADFConstantTrend(CheckADF):
     teststat = -1.8566374
     pvalue = .67682968
     critvalues = [-4.007, -3.437, -3.137]
+    kwargs = {"regression": "ct", "maxlag": 4}
 
     @classmethod
     def setup_class(cls):
-        cls.res1 = unit_root.adfuller(cls.x, regression="ct",
-                                      autolag=None, maxlag=4)
+        cls.res1 = unit_root.adfuller(cls.x, autolag=None, **cls.kwargs)
 
 
 @pytest.mark.not_vetted
@@ -84,11 +84,11 @@ class TestADFNoConstant(CheckADF):
     # Tau^max in MacKinnon (1994) is missing, so it is
     # assumed that its right-tail is well-behaved
     critvalues = [-2.587, -1.950, -1.617]
+    kwargs = {"regression": "nc", "maxlag": 4}
 
     @classmethod
     def setup_class(cls):
-        cls.res1 = unit_root.adfuller(cls.x, regression="nc",
-                                      autolag=None, maxlag=4)
+        cls.res1 = unit_root.adfuller(cls.x, autolag=None, **cls.kwargs)
 
 
 # No Unit Root
@@ -99,11 +99,11 @@ class TestADFConstant2(CheckADF):
     teststat = -4.3346988
     pvalue = .00038661
     critvalues = [-3.476, -2.883, -2.573]
+    kwargs = {"regression": "c", "maxlag": 1}
 
     @classmethod
     def setup_class(cls):
-        cls.res1 = unit_root.adfuller(cls.y, regression="c",
-                                      autolag=None, maxlag=1)
+        cls.res1 = unit_root.adfuller(cls.y, autolag=None, **cls.kwargs)
 
 
 @pytest.mark.not_vetted
@@ -111,11 +111,11 @@ class TestADFConstantTrend2(CheckADF):
     teststat = -4.425093
     pvalue = .00199633
     critvalues = [-4.006, -3.437, -3.137]
+    kwargs = {"regression": "ct", "maxlag": 1}
 
     @classmethod
     def setup_class(cls):
-        cls.res1 = unit_root.adfuller(cls.y, regression="ct",
-                                      autolag=None, maxlag=1)
+        cls.res1 = unit_root.adfuller(cls.y, autolag=None, **cls.kwargs)
 
 
 @pytest.mark.not_vetted
@@ -125,17 +125,17 @@ class TestADFNoConstant2(CheckADF):
     # Stata does not return a p-value for noconstant
     # this value is just taken from our results
     critvalues = [-2.587, -1.950, -1.617]
+    kwargs = {"regression": "nc", "maxlag": 1}
 
     @classmethod
     def setup_class(cls):
-        cls.res1 = unit_root.adfuller(cls.y, regression="nc",
-                                      autolag=None, maxlag=1)
-        _, _1, _2, cls.store = unit_root.adfuller(cls.y, regression="nc",
-                                                  autolag=None, maxlag=1,
-                                                  store=True)
+        cls.res1 = unit_root.adfuller(cls.y, autolag=None, **cls.kwargs)
 
     def test_store_str(self):
-        assert self.store.__str__() == 'Augmented Dickey-Fuller Test Results'
+        store = unit_root.adfuller(self.y, regression="nc",
+                                   autolag=None, maxlag=1,
+                                   store=True)[-1]
+        assert store.__str__() == 'Augmented Dickey-Fuller Test Results'
 
 
 # -----------------------------------------------------------------
