@@ -167,11 +167,11 @@ class BaseIRAnalysis(object):
                              "'asym', 'mc', 'sz1', 'sz2', "
                              "or 'sz3'")  # pragma: no cover
 
-        plotting.irf_grid_plot(irfs, stderr, impulse, response,
-                               self.model.names, title, signif=signif,
-                               subplot_params=subplot_params,
-                               plot_params=plot_params,
-                               stderr_type=stderr_type)
+        return plotting.irf_grid_plot(irfs, stderr, impulse, response,
+                                      self.model.names, title, signif=signif,
+                                      subplot_params=subplot_params,
+                                      plot_params=plot_params,
+                                      stderr_type=stderr_type)
 
     def plot_cum_effects(self, orth=False, impulse=None, response=None,
                          signif=0.05, plot_params=None,
@@ -226,12 +226,12 @@ class BaseIRAnalysis(object):
         if not plot_stderr:
             stderr = None
 
-        plotting.irf_grid_plot(cum_effects, stderr, impulse, response,
-                               self.model.names, title, signif=signif,
-                               hlines=lr_effects,
-                               subplot_params=subplot_params,
-                               plot_params=plot_params,
-                               stderr_type=stderr_type)
+        return plotting.irf_grid_plot(cum_effects, stderr, impulse, response,
+                                      self.model.names, title, signif=signif,
+                                      hlines=lr_effects,
+                                      subplot_params=subplot_params,
+                                      plot_params=plot_params,
+                                      stderr_type=stderr_type)
 
 
 # TODO: Whats the use case for this vs BaseIRAnalysis?

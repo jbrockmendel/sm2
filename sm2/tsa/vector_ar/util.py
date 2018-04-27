@@ -112,10 +112,20 @@ def varsim(coefs, intercept, sig_u, steps=100, initvalues=None, seed=None):
     rs = np.random.RandomState(seed=seed)
     rmvnorm = rs.multivariate_normal
     p, k, k = coefs.shape
+    if sig_u is None:
+        sig_u = np.eye(k)
+
     ugen = rmvnorm(np.zeros(len(sig_u)), sig_u, steps)
     result = np.zeros((steps, k))
     if intercept is not None:
-        result[p:] = intercept + ugen[p:]
+        # intercept can be 2-D like an offset variable
+        if np.ndim(intercept) > 1:
+            if not len(intercept) == len(ugen):
+                raise ValueError('2-D intercept needs to have length `steps`')
+        # add intercept/offset also to intial values
+        result += intercept
+        result[p:] += ugen[p:]
+
     else:
         result[p:] = ugen[p:]
 
