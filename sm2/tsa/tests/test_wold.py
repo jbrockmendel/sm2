@@ -548,3 +548,145 @@ class TestVARNotStationary(object):
         assert self.varma.is_stable(verbose=True)
         # pass verbose=True just for coverage, the printed output
         # doesnt affect anything
+
+
+class TestVARProcess(object):
+    @classmethod
+    def setup_class(cls):
+        # params obtained using data from test_var:
+        # data = get_macrodata().view((float, 3))
+        # model = VAR(data)
+        # res = model.fit(trend="c", maxlags=2)
+        neqs = 3
+        intercept = np.array([0.00152697, 0.0054596, -0.02390252])
+        arcoefs = np.array([[[-0.27943474, 0.67501575, 0.03321945],
+                             [-0.10046798, 0.26863955, 0.02573873],
+                             [-1.97097367, 4.41416233, 0.22547895]],
+
+                            [[0.00822108, 0.29045763, -0.00732091],
+                             [-0.12317393, 0.23249944, 0.02350376],
+                             [0.38078585, 0.80028092, -0.12407906]]])
+        sigma_u = np.array([[5.71136481e-05, 2.98394950e-05, 2.24637467e-04],
+                            [2.98394950e-05, 4.28305329e-05, 3.41917324e-05],
+                            [2.24637467e-04, 3.41917324e-05, 1.56770990e-03]])
+
+        proc = wold.VARProcess(arcoefs, intercept, sigma_u)
+        cls.proc = proc
+
+        # manually simulate in order to get reference results
+        np.random.seed(45974)
+        y = np.zeros((100000, neqs))
+        ugen = np.random.multivariate_normal(np.zeros(neqs), sigma_u, len(y))
+        y[0, :] = proc.mean() + ugen[0]
+        y[1, :] = proc.mean() + ugen[1]
+        for t in range(proc.k_ar, len(y)):
+            y[t] = (intercept +
+                    arcoefs[0].dot(y[t - 1, :]) +
+                    arcoefs[1].dot(y[t - 2, :]) +
+                    ugen[t])
+
+        cls.sim = y
+
+    def test_mean(self):
+        # self.sim has len 10^5 and
+        # mean = np.array([0.00763276, 0.0082689, 0.00780363])
+        # stdev = np.array([0.00886741, 0.00707128, 0.04733249])
+        # so (non-HAC)
+        # stderr = np.array([2.80412240e-05, 2.23613506e-05, 1.49678465e-04])
+        # so a tolerance of 1.8e-4 is just over 1 stderr in the third coordinate
+        mean = self.sim.mean(0)
+        res = self.proc.mean()
+        assert_allclose(res, mean, atol=1.8e-4, rtol=0)
+
+    def test_ma_rep(self):
+        # TODO: setup here is redundant with test_long_run_effects
+        proc = self.proc
+        ans = np.zeros((29, proc.neqs, proc.neqs))
+        y = np.zeros((30, proc.neqs))
+        for eq in range(proc.neqs):
+            y[:] = 0
+            y[proc.k_ar - 1, eq] = 1
+            for t in range(proc.k_ar, len(y)):
+                y[t, :] = (proc.arcoefs[0, :, :].dot(y[t - 1, :]) +
+                           proc.arcoefs[1, :, :].dot(y[t - 2, :]))
+            ans[:, :, eq] = y[1:]
+
+        res = proc.ma_rep(28)
+        assert_allclose(ans, res, rtol=1e-12)
+
+    def test_long_run_effects(self):
+        proc = self.proc
+        ans = np.zeros((proc.neqs, proc.neqs))
+        y = np.zeros((10000, proc.neqs))
+        for eq in range(proc.neqs):
+            y[:] = 0
+            y[proc.k_ar - 1, eq] = 1
+            for t in range(proc.k_ar, len(y)):
+                y[t, :] = (proc.arcoefs[0, :, :].dot(y[t - 1, :]) +
+                           proc.arcoefs[1, :, :].dot(y[t - 2, :]))
+
+            ans[:, eq] = y.sum(0)
+        # TODO: Should long_run_effects() output be labelled with
+        # impulse/response? on axes?
+        res = proc.long_run_effects()
+        assert_allclose(ans, res, rtol=1e-12)
+
+    def test_orth_ma_rep(self):
+        proc = self.proc
+        neqs = proc.neqs
+        sigma_u = proc.sigma_u
+        bse = np.sqrt(np.diag(proc.sigma_u))
+
+        # Manually orthogonalizing is effectively equivalent to re-calculating
+        # the cholesky decomposition of sigma_u.
+        # gs --> Graham-Schmidt
+        gs0 = np.array([bse[0], 0, 0])
+        # to solve for gs1, we have a system in a and b:
+        #   a**2 + b**2 = sigma_u[1, 1]
+        #   gs0[0] * a = sigma_u[0, 1]
+        a = sigma_u[0, 1] / bse[0]
+        gs1 = np.array([a, np.sqrt(sigma_u[1, 1] - a**2), 0])
+        # to solve for gs2, we have a system in a, b, c:
+        #   a**2 + b**2 + c**2 = sigma_u[2, 2]
+        #   gs0[0] * a = sigma_u[0, 2]
+        #   gs1[0] * a + gs1[1] * b = sigma_u[1, 2]
+        a = sigma_u[0, 2] / gs0[0]
+        b = (sigma_u[1, 2] - gs1[0] * a) / gs1[1]
+        c = np.sqrt(sigma_u[2, 2] - a**2 - b**2)
+        gs2 = np.array([a, b, c])
+        gss = np.c_[gs0, gs1, gs2].T
+
+        ans = np.zeros((11, neqs, neqs))
+        # similar to calculations in test_ma_rep, but with a different "shock"
+        y = np.zeros((12, neqs))
+        for eq in range(proc.neqs):
+            y[:] = 0
+            y[proc.k_ar - 1, :] = gss.T[eq]
+            for t in range(proc.k_ar, len(y)):
+                y[t, :] = (proc.arcoefs[0, :, :].dot(y[t - 1, :]) +
+                           proc.arcoefs[1, :, :].dot(y[t - 2, :]))
+            ans[:, :, eq] = y[1:]
+
+        # TODO: orth_ma_rep output axis labels
+        orth = proc.orth_ma_rep(10)
+        # TODO: Should we be normalizing to unit-normed shocks?
+        assert_allclose(orth, ans, rtol=1e-12)
+
+    def test_acf(self):
+        sim = self.sim
+        proc = self.proc
+        neqs = proc.neqs
+        ans = np.zeros((10, neqs, neqs))
+        for t in range(10):
+            # We have to index with ":len(sim)-t" otherwise we get an empty
+            # array for t=0
+            acov = np.cov(sim[t:].T, sim[:len(sim) - t].T)
+            # the upper-left block is the covariance for sim[t:] and
+            # the lower-right block is the covariance for sim[:-t], so
+            # take the upper-right block to get the autocovariance.
+            ans[t, :, :] = acov[:neqs, neqs:].T
+
+        res = proc.acf(9)
+        # TODO: this should come back with labelled axes
+        assert_allclose(res, ans, atol=9e-5)
+        # TODO: See discussion in GH#4572, this is not as precise as we'd like

@@ -105,24 +105,9 @@ def add_trend(x, trend="c", prepend=False, has_constant='skip'):
         trendarr = trendarr[:, 1]
 
     if "c" in trend:
-        if is_pandas or is_recarray:
-            # Mixed type protection
-            def safe_is_const(s):
-                try:
-                    return np.ptp(s) == 0.0 and np.any(s != 0.0)
-                except (ValueError, TypeError):
-                    return False
-            col_const = x.apply(safe_is_const, 0)
-        else:
-            ptp0 = np.ptp(np.asanyarray(x), axis=0) == 0
-            col_const = np.logical_and(np.any(ptp0, axis=0),
-                                       np.all(x != 0.0, axis=0))
-        if np.any(col_const):
-            if has_constant == 'raise':
-                raise ValueError("x already contains a constant")
-            elif has_constant == 'skip':
-                columns = columns[1:]
-                trendarr = trendarr[:, 1:]
+        columns, trendarr = _safe_col_trend(x, columns, trendarr,
+                                            is_pandas, is_recarray,
+                                            has_constant)
 
     order = 1 if prepend else -1
     if is_recarray or is_pandas:
@@ -134,24 +119,58 @@ def add_trend(x, trend="c", prepend=False, has_constant='skip'):
         x = np.column_stack(x[::order])
 
     if is_recarray:
-        x = x.to_records(index=False, convert_datetime64=False)
-        new_descr = x.dtype.descr
-        extra_col = len(new_descr) - len(descr)
-        if prepend:
-            descr = new_descr[:extra_col] + descr
-        else:
-            descr = descr + new_descr[-extra_col:]
+        x = _cast_trend_recarray(x, descr, prepend)
 
-        if not PY3:
-            # See GH#3658
-            names = [entry[0] for entry in descr]
-            dtypes = [entry[1] for entry in descr]
-            names = [bytes(name) for name in names]
-            # Fail loudly if there is a non-ascii name
-            descr = list(zip(names, dtypes))
+    return x
 
-        x = x.astype(np.dtype(descr))
 
+def _safe_col_trend(x, columns, trendarr, is_pandas, is_recarray, has_constant):
+    # TODO: better name
+    # TODO: docstring
+    if is_pandas or is_recarray:
+        # Mixed type protection
+        def safe_is_const(s):
+            try:
+                return np.ptp(s) == 0.0 and np.any(s != 0.0)
+            except (ValueError, TypeError):
+                return False
+        col_const = x.apply(safe_is_const, 0)
+    else:
+        ptp0 = np.ptp(np.asanyarray(x), axis=0) == 0
+        col_const = np.logical_and(np.any(ptp0, axis=0),
+                                   np.all(x != 0.0, axis=0))
+
+    if np.any(col_const):
+        if has_constant == 'raise':
+            raise ValueError("x already contains a constant")
+        elif has_constant == 'skip':
+            # TODO: are we sure the first col is the const?
+            columns = columns[1:]
+            trendarr = trendarr[:, 1:]
+
+    return columns, trendarr
+
+
+def _cast_trend_recarray(x, descr, prepend):
+    # TODO: docstring
+    x = x.to_records(index=False, convert_datetime64=False)
+    new_descr = x.dtype.descr
+    extra_col = len(new_descr) - len(descr)
+
+    if prepend:
+        descr = new_descr[:extra_col] + descr
+    else:
+        descr = descr + new_descr[-extra_col:]
+
+    if not PY3:
+        # See GH#3658
+        names = [entry[0] for entry in descr]
+        dtypes = [entry[1] for entry in descr]
+        names = [bytes(name) for name in names]
+        # Fail loudly if there is a non-ascii name
+        descr = list(zip(names, dtypes))
+
+    x = x.astype(np.dtype(descr))
     return x
 
 

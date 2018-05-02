@@ -28,10 +28,15 @@ class BaseIRAnalysis(object):
                  vecm=False):
         self.model = model
         self.periods = periods
+        self.svar = svar
+
+        self.names = model.names
         self.nobs = model.nobs
         self.k_ar = model.k_ar
-        self.neqs, self.lags, self.T = model.neqs, model.k_ar, model.nobs
-        # TODO: Dont use non-standard `T`
+        self.neqs = model.neqs
+
+        self.lags, self.T = model.k_ar, model.nobs
+        # TODO: deprecate self.lags, self.T
 
         self.order = order
 
@@ -49,8 +54,6 @@ class BaseIRAnalysis(object):
             P = np.linalg.cholesky(sigma)
 
         self.P = P
-
-        self.svar = svar
 
         self.irfs = model.ma_rep(periods)
         if svar:
@@ -168,7 +171,7 @@ class BaseIRAnalysis(object):
                              "or 'sz3'")  # pragma: no cover
 
         return plotting.irf_grid_plot(irfs, stderr, impulse, response,
-                                      self.model.names, title, signif=signif,
+                                      self.names, title, signif=signif,
                                       subplot_params=subplot_params,
                                       plot_params=plot_params,
                                       stderr_type=stderr_type)
@@ -227,7 +230,7 @@ class BaseIRAnalysis(object):
             stderr = None
 
         return plotting.irf_grid_plot(cum_effects, stderr, impulse, response,
-                                      self.model.names, title, signif=signif,
+                                      self.names, title, signif=signif,
                                       hlines=lr_effects,
                                       subplot_params=subplot_params,
                                       plot_params=plot_params,
@@ -641,7 +644,7 @@ class IRAnalysis(BaseIRAnalysis):
                 apiece = chain_dot(Ci, self.cov_a, Ci.T)
 
             Cibar = np.dot(np.kron(Ik, self.irfs[i]), self.H)
-            bpiece = chain_dot(Cibar, self.cov_sig, Cibar.T) / self.T
+            bpiece = chain_dot(Cibar, self.cov_sig, Cibar.T) / self.nobs
 
             # Lutkepohl typo, cov_sig correct
             covs[i] = apiece + bpiece
@@ -678,7 +681,7 @@ class IRAnalysis(BaseIRAnalysis):
                     apiece = chain_dot(Bn, self.cov_a, Bn.T)
 
                 Bnbar = np.dot(np.kron(Ik, self.cum_effects[i]), self.H)
-                bpiece = chain_dot(Bnbar, self.cov_sig, Bnbar.T) / self.T
+                bpiece = chain_dot(Bnbar, self.cov_sig, Bnbar.T) / self.nobs
 
                 covs[i] = apiece + bpiece
             else:
@@ -702,7 +705,7 @@ class IRAnalysis(BaseIRAnalysis):
 
     def lr_effect_cov(self, orth=False):
         lre = self.lr_effects
-        Finfty = np.kron(np.tile(lre.T, self.lags), lre)
+        Finfty = np.kron(np.tile(lre.T, self.k_ar), lre)
         Ik = np.eye(self.neqs)
 
         if orth:
@@ -732,6 +735,7 @@ class IRAnalysis(BaseIRAnalysis):
 
     @cache_readonly
     def H(self):
+        # TODO: documentation for what the heck this does?
         k = self.neqs
         Lk = tsatools.elimination_matrix(k)
         Kkk = tsatools.commutation_matrix(k, k)

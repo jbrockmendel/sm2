@@ -130,8 +130,7 @@ class ARMARoots(object):
         roots.
         """
         z = self.arroots
-        if not z.size:
-            return  # TODO: return empty array?
+        # Note: upstream returns None in case where z.size == 0
         return np.arctan2(z.imag, z.real) / (2 * np.pi)
 
     @cache_readonly
@@ -143,8 +142,7 @@ class ARMARoots(object):
         roots.
         """
         z = self.maroots
-        if not z.size:
-            return  # TODO: return empty array?
+        # Note: upstream returns None in case where z.size == 0
         return np.arctan2(z.imag, z.real) / (2 * np.pi)
 
     @property
@@ -961,6 +959,8 @@ class VARProcess(VARParams):
             \hat \Omega = \frac{T}{T - Kp - 1} \hat \Omega_{\mathrm{MLE}}
         """
         return scipy.linalg.det(self.sigma_u)
+        # TODO: Does this have degrees of freedom correction like
+        # the docstring claims?
 
     def orth_ma_rep(self, maxn=10, P=None):
         r"""Compute Orthogonalized MA coefficient matrices using P matrix such
@@ -979,6 +979,7 @@ class VARProcess(VARParams):
         -------
         coefs : ndarray (maxn x neqs x neqs)
         """
+        # TODO: if P is passed should we check that it is orthogonal?
         if P is None:
             P = self._chol_sigma_u
 
@@ -1035,6 +1036,7 @@ class VARProcess(VARParams):
         Lütkepohl Proposition 3.3
         """
         Ainv = scipy.linalg.inv(np.eye(self.neqs) - self.coefs.sum(0))
+        # TODO: use self._char_mat above?
         return Ainv.dot(self.sigma_u).dot(Ainv.T)
 
     @cache_readonly
@@ -1048,6 +1050,14 @@ class VARProcess(VARParams):
 
         sigxsig = np.kron(self.sigma_u, self.sigma_u)
         return 2 * D_Kinv.dot(sigxsig).dot(D_Kinv.T)
+        # TODO: Wrap with labels
+        # TODO: Does this come from a normality assumption?  unclear derivation
+
+    def simulate_var(self, steps=30, seed=None):
+        # Overriden in var_model, useful to have this here for testing
+        from sm2.tsa.vector_ar import util
+        return util.varsim(self.arcoefs, self.intercept, self.sigma_u,
+                           steps=steps, seed=seed)
 
     def acf(self, nlags=None):
         """

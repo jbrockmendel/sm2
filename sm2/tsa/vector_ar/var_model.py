@@ -1097,8 +1097,6 @@ class VARResults(VARProcess, tsa_model.TimeSeriesModelResults):
     @cache_readonly  # TODO: cached_data/cached_value?
     def _zz(self):
         return np.dot(self.endog_lagged.T, self.endog_lagged)
-        raise NotImplementedError("_zz not ported from upstream, "
-                                  "as it is neither used nor tested there.")
 
     @property
     def _cov_alpha(self):
@@ -1159,10 +1157,6 @@ class VARResults(VARProcess, tsa_model.TimeSeriesModelResults):
         -------
         covs : ndarray (steps x k x k)
         """
-        #mse = self.mse(steps)
-        ## omegas = self._omega_forc_cov(steps)
-        ## TODO: use omega or don't define it.
-        #return mse  # + omegas / self.nobs
         fc_cov = self.mse(steps)
         if method == 'mse':
             pass
@@ -1195,18 +1189,6 @@ class VARResults(VARProcess, tsa_model.TimeSeriesModelResults):
         return self.irf().irf_resim(orth=orth, repl=repl, T=T,
                                     seed=seed, burn=burn, cum=cum)
 
-    #def _omega_forc_cov(self, steps):  # pragma: no cover
-    #    # Approximate MSE matrix \Omega(h) as defined in Lut p97
-    #    raise NotImplementedError("_omega_forc_cov not ported from upstream, "
-    #                              "as it is neither used nor tested. "
-    #                              "See GH#4433")
-
-    #def _bmat_forc_cov(self):  # pragma: no cover
-    #    # B as defined on p. 96 of Lut
-    #    raise NotImplementedError("_bmat_forc_cov not ported from upstream, "
-    #                              "as it is neither used nor tested. "
-    #                              "See GH#4433")
-
     def _omega_forc_cov(self, steps):
         # Approximate MSE matrix \Omega(h) as defined in Lut p97
         G = self._zz
@@ -1214,13 +1196,13 @@ class VARResults(VARProcess, tsa_model.TimeSeriesModelResults):
 
         # memoize powers of B for speedup
         # TODO: see if can memoize better
-        # TODO: much lower-hanging fruit in caching `np.trace` and `chain_dot` below.
+        # TODO: much lower-hanging fruit in caching `np.trace`
+        #       and `chain_dot` below.
         B = self._bmat_forc_cov()
         _B = {}
         def bpow(i):
             if i not in _B:
                 _B[i] = np.linalg.matrix_power(B, i)
-
             return _B[i]
 
         phis = self.ma_rep(steps)
@@ -1229,17 +1211,17 @@ class VARResults(VARProcess, tsa_model.TimeSeriesModelResults):
         omegas = np.zeros((steps, self.neqs, self.neqs))
         for h in range(1, steps + 1):
             if h == 1:
-                omegas[h-1] = self.df_model * self.sigma_u
+                omegas[h - 1] = self.df_model * self.sigma_u
                 continue
 
-            om = omegas[h-1]
+            om = omegas[h - 1]
             for i in range(h):
                 for j in range(h):
                     Bi = bpow(h - 1 - i)
                     Bj = bpow(h - 1 - j)
                     mult = np.trace(chain_dot(Bi.T, Ginv, Bj, G))
                     om += mult * chain_dot(phis[i], sig_u, phis[j].T)
-            omegas[h-1] = om
+            omegas[h - 1] = om
 
         return omegas
 

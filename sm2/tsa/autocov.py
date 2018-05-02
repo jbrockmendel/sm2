@@ -207,13 +207,15 @@ def var_acf(coefs, sig_u):
     SigU[:k, :k] = sig_u
 
     # vec(ACF) = (I_(kp)^2 - kron(A, A))^-1 vec(Sigma_U)
-    vecACF = scipy.linalg.solve(np.eye((k * p)**2) - np.kron(A, A),
+    lhs = np.eye((k * p)**2) - np.kron(A, A)
+    # vecACF = np.linalg.inv(lhs).dot(SigU.ravel('F'))
+    vecACF = scipy.linalg.solve(lhs,
                                 SigU.ravel('F'))
     # TODO: Does the 'F' matter?
 
     acf = tsatools.unvec(vecACF)
-    acf = acf[:k].T.reshape((p, k, k))
-
+    acf = np.array(np.split(acf[:k], p, axis=1))
+    # See discussion in GH#4572
     return acf
 
 

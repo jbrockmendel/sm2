@@ -527,6 +527,7 @@ class TestVARResults(CheckIRF, CheckFEVD):
         # may not necessarily be true for other datasets
         assert self.res.is_stable(verbose=True)
 
+    @pytest.mark.smoke
     def test_acf(self):
         # test that it works...for now
         acfs = self.res.acf(10)

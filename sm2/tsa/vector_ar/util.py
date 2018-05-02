@@ -64,6 +64,8 @@ def comp_matrix(coefs):
          I_K 0       0     0
          0   I_K ... 0     0
          0 ...       I_K   0]
+
+    Introduced in Lutkepohl (2005) page 15.
     """
     p, k, k2 = coefs.shape
     assert k == k2
@@ -122,7 +124,7 @@ def varsim(coefs, intercept, sig_u, steps=100, initvalues=None, seed=None):
         if np.ndim(intercept) > 1:
             if not len(intercept) == len(ugen):
                 raise ValueError('2-D intercept needs to have length `steps`')
-        # add intercept/offset also to intial values
+        # add intercept/offset also to initial values
         result += intercept
         result[p:] += ugen[p:]
 

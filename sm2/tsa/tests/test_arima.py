@@ -1197,6 +1197,20 @@ class TestARMA00(object):
         assert_almost_equal(self.y.mean() * np.ones_like(predictions),
                             predictions)
 
+    def test_arroots(self):  # TODO: Belongs in test_wold?
+        # GH#4559
+        # regression test; older implementation of arroots returned None
+        # instead of en empty array
+        roots = self.arma_00_res.arroots
+        assert roots.size == 0
+
+    def test_maroots(self):  # TODO: Belongs in test_wold?
+        # GH#4559
+        # regression test; older implementation of arroots returned None
+        # instead of en empty array
+        roots = self.arma_00_res.maroots
+        assert roots.size == 0
+
     @pytest.mark.skip(reason=' This test is invalid since the ICs differ due '
                              'to df_model differences between OLS and ARIMA')
     def test_information_criteria(self):
