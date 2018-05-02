@@ -186,7 +186,6 @@ def acovf(x, unbiased=False, demean=True, fft=False, missing='none'):
 
 
 # Upstream this is var_model._var_acf
-# TODO: update test location
 def var_acf(coefs, sig_u):
     """
     Compute autocovariance function ACF_y(h) for h=1,...,p
