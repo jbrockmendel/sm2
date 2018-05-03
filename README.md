@@ -56,6 +56,8 @@ labels (:issue:`4541`)
 - `VARResults.cov_params` will correctly return a `DataFrame` instead
 of raising `ValueError`.
 
+- `VARResults.acf` will return correct results (:issue:`4572`)
+
 - The `ArmaProcess` class does not have a `nobs` attribute.
 
 - `tsa.stattools.acf` will always return `(acf, confint, qstat, pvalue)` here

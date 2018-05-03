@@ -246,7 +246,7 @@ class KalmanFilter(object):
             func = kalman_loglike.kalman_loglike_double
         elif np.issubdtype(paramsdtype, np.complex128):
             func = kalman_loglike.kalman_loglike_complex
-            Z_mat = Z_mat.astype(complex)
+            Z_mat = Z_mat.astype(np.complex128)
         else:  # pragma: no cover
             # TODO: upstream this raises TypeError, should be fixed there
             raise ValueError("This dtype %s is not supported.  "

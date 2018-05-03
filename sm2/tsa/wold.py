@@ -82,7 +82,10 @@ def _unpack_lags_and_neqs(ar, ma, intercept):
         # Default is univariate
         neqs = 1
 
-    if ma is not None:
+    if ma is None:
+        ma = np.array([]).reshape(0, neqs, neqs)
+        k_ma = 0
+    elif ma is not None:
         k_ma = ma.shape[0]
         if len(ma.shape) > 1:
             _check_param_dims(ma)
@@ -90,8 +93,6 @@ def _unpack_lags_and_neqs(ar, ma, intercept):
                 raise ValueError('ar.shape[1:] must match ma.shape[1:]',
                                  ar.shape, ma.shape)
             neqs = ma.shape[1]
-    else:
-        k_ma = 0
 
     intercept = _check_intercept_shape(intercept, neqs)
     return (k_ar, k_ma, neqs, intercept)
@@ -99,8 +100,11 @@ def _unpack_lags_and_neqs(ar, ma, intercept):
 
 # -----------------------------------------------------------------------
 
-# TODO: Merge this into ARMAParams?
 class ARMARoots(object):
+    """
+    ARMARoots is not a particularly useful stand-alone class, but
+    forms a self-contained subset of ARMAParams functionality
+    """
     @cache_readonly
     def arroots(self):
         """Roots of autoregressive lag-polynomial"""
@@ -126,8 +130,7 @@ class ARMARoots(object):
         roots.
         """
         z = self.arroots
-        if not z.size:
-            return  # TODO: return empty array?
+        # Note: upstream returns None in case where z.size == 0
         return np.arctan2(z.imag, z.real) / (2 * np.pi)
 
     @cache_readonly
@@ -139,8 +142,7 @@ class ARMARoots(object):
         roots.
         """
         z = self.maroots
-        if not z.size:
-            return  # TODO: return empty array?
+        # Note: upstream returns None in case where z.size == 0
         return np.arctan2(z.imag, z.real) / (2 * np.pi)
 
     @property
@@ -237,6 +239,7 @@ class ARMAParams(ARMARoots):
     # TODO: Check unit root behavior
     # @deprecate_kwarg("nobs", None)  # TODO: can't use on classmethod
     def __init__(self, ar=None, ma=None, intercept=0):
+        # TODO: docstring
         if ar is None:
             ar = np.array([1.])
         if ma is None:
@@ -256,7 +259,7 @@ class ARMAParams(ARMARoots):
                                                               self.ma,
                                                               intercept)
         self.intercept = intercept
-        if neqs != 1:
+        if neqs != 1:  # pragma: no cover
             raise NotImplementedError("Lag Polynomials for the vector case "
                                       "not implemented.")
 
@@ -505,7 +508,10 @@ class ARMAParams(ARMARoots):
         ma = self.ma
         _check_is_poly(np.array(ar))
         _check_is_poly(np.array(ma))
-        (w, h) = scipy.signal.freqz(ma, ar, worN=worN, whole=whole)
+        with np.errstate(all='ignore'):
+            # Suppress division-by-zero warnings
+            (w, h) = scipy.signal.freqz(ma, ar, worN=worN, whole=whole)
+
         sd = np.abs(h)**2 / np.sqrt(2 * np.pi)
         # TODO: is this normalization standard in the literature?
         # Fourier Transforms are like armpits...
@@ -513,6 +519,61 @@ class ARMAParams(ARMARoots):
             # This happens with unit root or seasonal unit root
             warnings.warn('nan in frequency response h, may be a unit root')
         return (w, sd)
+
+    def generate_sample(self, nsample=100, scale=1., distrvs=None, axis=0,
+                        burnin=0):
+        """
+        Simulate an ARMA
+
+        Parameters
+        ----------
+        nsample : int or tuple of ints
+            If nsample is an integer, then this creates a 1d timeseries of
+            length size. If nsample is a tuple, creates a len(nsample)
+            dimensional time series where time is indexed along the input
+            variable ``axis``. All series are unless ``distrvs`` generates
+            dependent data.
+        scale : float
+            standard deviation of noise
+        distrvs : function, random number generator
+            function that generates the random numbers, and takes sample size
+            as argument
+            default: np.random.randn
+            TODO: change to size argument
+        axis : int
+            See nsample.
+        burnin : integer (default: 0)
+            to reduce the effect of initial conditions, burnin observations
+            at the beginning of the sample are dropped
+
+        Returns
+        -------
+        rvs : ndarray
+            random sample(s) of arma process
+
+        Notes
+        -----
+        Should work for n-dimensional with time series along axis, but not
+        tested yet. Processes are sampled independently.
+        """
+        if distrvs is None:
+            distrvs = np.random.normal
+        if np.ndim(nsample) == 0:
+            nsample = [nsample]
+        if burnin:
+            # handle burin time for nd arrays
+            # maybe there is a better trick in scipy.fft code
+            newsize = list(nsample)
+            newsize[axis] += burnin
+            newsize = tuple(newsize)
+            fslice = [slice(None)] * len(newsize)
+            fslice[axis] = slice(burnin, None, None)
+            fslice = tuple(fslice)
+        else:
+            newsize = tuple(nsample)
+            fslice = tuple([slice(None)] * np.ndim(newsize))
+        eta = scale * distrvs(size=newsize)
+        return scipy.signal.lfilter(self.ma, self.ar, eta, axis=axis)[fslice]
 
 
 @deprecate_kwarg(old_arg_name='nobs', new_arg_name='lags')
@@ -700,6 +761,8 @@ class ARMATransparams(object):
         return newparams
 
 
+# -----------------------------------------------------------------------
+
 # TODO: Can this be extended to VARMA?  VARIMA?
 class VARParams(object):
     """Class representing a known VAR(p) process, *without* any information
@@ -712,6 +775,7 @@ class VARParams(object):
     """
     # def isindependent --> property from varma_process
     # def isstructured --> property from varma_process
+    # TODO: Implement __eq__
 
     @cache_readonly
     def k_ar(self):
@@ -719,10 +783,7 @@ class VARParams(object):
 
     @cache_readonly
     def k_ma(self):
-        macoefs = self.macoefs
-        if macoefs is None:
-            return 0
-        return macoefs.shape[0]
+        return self.macoefs.shape[0]
         # alternative: maparams.shape[0]-1?
 
     @cache_readonly
@@ -898,6 +959,8 @@ class VARProcess(VARParams):
             \hat \Omega = \frac{T}{T - Kp - 1} \hat \Omega_{\mathrm{MLE}}
         """
         return scipy.linalg.det(self.sigma_u)
+        # TODO: Does this have degrees of freedom correction like
+        # the docstring claims?
 
     def orth_ma_rep(self, maxn=10, P=None):
         r"""Compute Orthogonalized MA coefficient matrices using P matrix such
@@ -916,6 +979,7 @@ class VARProcess(VARParams):
         -------
         coefs : ndarray (maxn x neqs x neqs)
         """
+        # TODO: if P is passed should we check that it is orthogonal?
         if P is None:
             P = self._chol_sigma_u
 
@@ -972,6 +1036,7 @@ class VARProcess(VARParams):
         Lütkepohl Proposition 3.3
         """
         Ainv = scipy.linalg.inv(np.eye(self.neqs) - self.coefs.sum(0))
+        # TODO: use self._char_mat above?
         return Ainv.dot(self.sigma_u).dot(Ainv.T)
 
     @cache_readonly
@@ -985,6 +1050,14 @@ class VARProcess(VARParams):
 
         sigxsig = np.kron(self.sigma_u, self.sigma_u)
         return 2 * D_Kinv.dot(sigxsig).dot(D_Kinv.T)
+        # TODO: Wrap with labels
+        # TODO: Does this come from a normality assumption?  unclear derivation
+
+    def simulate_var(self, steps=30, seed=None):
+        # Overriden in var_model, useful to have this here for testing
+        from sm2.tsa.vector_ar import util
+        return util.varsim(self.arcoefs, self.intercept, self.sigma_u,
+                           steps=steps, seed=seed)
 
     def acf(self, nlags=None):
         """

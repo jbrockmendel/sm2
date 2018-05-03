@@ -603,7 +603,6 @@ class Test_ARIMA111CSS(CheckArimaResultsMixin, CheckForecastMixin,
     decimal_forecast = 2
     decimal_forecast_dyn = 2
     decimal_forecasterr = 3
-    # precisions
     decimal_arroots = 3
     decimal_cov_params = 3
     decimal_hqic = 3
@@ -1198,6 +1197,20 @@ class TestARMA00(object):
         assert_almost_equal(self.y.mean() * np.ones_like(predictions),
                             predictions)
 
+    def test_arroots(self):  # TODO: Belongs in test_wold?
+        # GH#4559
+        # regression test; older implementation of arroots returned None
+        # instead of en empty array
+        roots = self.arma_00_res.arroots
+        assert roots.size == 0
+
+    def test_maroots(self):  # TODO: Belongs in test_wold?
+        # GH#4559
+        # regression test; older implementation of arroots returned None
+        # instead of en empty array
+        roots = self.arma_00_res.maroots
+        assert roots.size == 0
+
     @pytest.mark.skip(reason=' This test is invalid since the ICs differ due '
                              'to df_model differences between OLS and ARIMA')
     def test_information_criteria(self):
@@ -1362,6 +1375,7 @@ def test_arima111_predict_exog_2127():
 
 @pytest.mark.not_vetted
 def test_ARIMA_exog_predict():
+    # TODO: break up giant test
     # test forecasting and dynamic prediction with exog against Stata
     dta = datasets.macrodata.load_pandas().data
     cpi_dates = pd.PeriodIndex(start='1959Q1', end='2009Q3', freq='Q')
@@ -1509,6 +1523,13 @@ def test_ARIMA_exog_predict():
     assert_allclose(dpredict_002,
                     res_d002[-len(dpredict_002):],
                     rtol=1e-4, atol=1e-6)
+
+    # GH#4497
+    # in-sample dynamic predict should not need exog, #2982
+    predict_3a = res_002.predict(start=100, end=120, dynamic=True)
+    predict_3b = res_002.predict(start=100, end=120,
+                                 exog=exog_full.values[100:120], dynamic=True)
+    assert_allclose(predict_3a, predict_3b, rtol=1e-10)
 
 
 @pytest.mark.not_vetted

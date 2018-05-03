@@ -164,13 +164,27 @@ def test_pacf_yw():
 
 
 @pytest.mark.smoke
-@pytest.mark.not_vetted
 def test_yule_walker_inter():
     # see GH#1869
     # upstream this is in tsa.tests.test_tsa_tools
     x = np.array([1, -1, 2, 2, 0, -2, 1, 0, -3, 0, 0])
     yule_walker(x, 3)
 
+
+@pytest.mark.not_vetted
+def test_yule_walker():
+    # upstream this is in test_regression.
+    # TODO: Document where R_params came from
+    R_params = [1.2831003105694765, -0.45240924374091945,
+                -0.20770298557575195, 0.047943648089542337]
+
+    data = sunspots.load()
+    rho, sigma = yule_walker(data.endog, order=4, method="mle")
+    # TODO: assert something about sigma?
+
+    assert_almost_equal(rho,
+                        R_params,
+                        4)
 
 @pytest.mark.not_vetted
 def test_ywcoef():

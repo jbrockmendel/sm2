@@ -1393,11 +1393,11 @@ class GeneralizedPoisson(_CountMixin, CountModel):
         a4 = a3 * y
         dmudb = mu * exog
 
-        dalpha = (mu_p * (y * ((y - 1) / a2 - 2 / a1) + a2 / a1**2))
-        dparams = dmudb * (-a4 / a1 +
-                           a3 * a2 / (a1 ** 2) +
-                           (1 + a4) * ((y - 1) / a2 - 1 / a1) +
-                           1 / mu)
+        dalpha = mu_p * (y * ((y - 1) / a2 - 2 / a1) + a2 / a1**2)
+        dparams = dmudb * (a3 * a2 / a1**2
+                           + (1 + a4) * ((y - 1) / a2 - 2 / a1)
+                           + 1 / a1
+                           + 1 / mu)
 
         return np.concatenate((dparams, np.atleast_2d(dalpha)),
                               axis=1)
@@ -1445,7 +1445,6 @@ class GeneralizedPoisson(_CountMixin, CountModel):
         a2 = mu + amp * y
         a3 = amp * p / mu
         a4 = a3 * y
-        a5 = p * mu ** (p - 1)
         dmudb = mu * exog
 
         # for dl/dparams dparams
@@ -1456,33 +1455,30 @@ class GeneralizedPoisson(_CountMixin, CountModel):
             for j in range(i + 1):
                 hess_arr[i, j] = np.sum(
                     mu * exog[:, i, None] * exog[:, j, None] *
-                    (mu * (a3 * a4 / a1**2 -
-                           2 * a3**2 * a2 / a1**3 +
-                           2 * a3 * (a4 + 1) / a1**2 -
-                           a4 * p / (mu * a1) +
-                           a3 * p * a2 / (mu * a1**2) +
-                           a4 / (mu * a1) -
-                           a3 * a2 / (mu * a1**2) +
-                           (y - 1) * a4 * (p - 1) / (a2 * mu) -
-                           (y - 1) * (1 + a4)**2 / a2**2 -
-                           a4 * (p - 1) / (a1 * mu) -
-                           1 / mu**2) +
-                     (-a4 / a1 +
-                      a3 * a2 / a1**2 +
-                      (y - 1) * (1 + a4) / a2 -
-                      (1 + a4) / a1 +
-                      1 / mu)), axis=0)
+                    (mu * (3 * y * a3**2 / a1**2
+                           - 2 * a2 * a3**2 / a1**3
+                           + 2 * a3 / a1**2
+                           - (1 - p) * a3 * a2 / (mu * a1**2)
+                           + 2 * (1 - p) * a4 / (a1 * mu)
+                           - (1 - p) * (y - 1) * a4 / (a2 * mu)
+                           - (y - 1) * (1 + a4)**2 / a2**2
+                           - 1 / mu**2) +
+                     (-2 * y * a3 / a1
+                      + a3 * a2 / a1**2
+                      + (y - 1) * (1 + a4) / a2
+                      - 1 / a1
+                      + 1 / mu)), axis=0)
         tri_idx = np.triu_indices(dim, k=1)
         hess_arr[tri_idx] = hess_arr.T[tri_idx]
 
         # for dl/dparams dalpha
-        dldpda = np.sum((2 * a4 * mu_p / a1**2 -
-                         2 * a3 * mu_p * a2 / a1**3 -
-                         mu_p * y * (y - 1) * (1 + a4) / a2**2 +
-                         mu_p * (1 + a4) / a1**2 +
-                         a5 * y * (y - 1) / a2 -
-                         2 * a5 * y / a1 +
-                         a5 * a2 / a1**2) * dmudb,
+        dldpda = np.sum((3 * y * a3 * mu_p / a1**2
+                         - 2 * a3 * mu_p * a2 / a1**3
+                         - mu_p * y * (y - 1) * (1 + a4) / a2**2
+                         + mu_p / a1**2
+                         + (p / mu) * mu_p * y * (y - 1) / a2
+                         - 2 * (p / mu) * mu_p * y / a1
+                         + (p / mu) * mu_p * a2 / a1**2) * dmudb,
                         axis=0)
 
         hess_arr[-1, :-1] = dldpda
@@ -2094,12 +2090,14 @@ class NegativeBinomialP(_CountMixin, CountModel):
         a4 = a1 * p / mu
 
         dgpart = special.digamma(y + a1) - special.digamma(a1)
+        dgterm = np.log(a1 / a2) + dgpart + 1 - a3 / a2
+        # TODO: better name or interpretation for dgterm?
 
-        dparams = (a4 * (dgpart + np.log(a1 / a2) + 1 - a3 / a2) -
+        dparams = (a4 * dgterm -
                    a3 / a2 +
                    y / mu)
         dparams = (self.exog.T * mu * dparams).T
-        dalpha = -a1 / alpha * (dgpart + np.log(a1 / a2) + 1 - a3 / a2)
+        dalpha = -a1 / alpha * dgterm
 
         return np.concatenate((dparams, np.atleast_2d(dalpha).T),
                               axis=1)
@@ -2159,7 +2157,6 @@ class NegativeBinomialP(_CountMixin, CountModel):
         a2 = mu + a1
         a3 = y + a1
         a4 = a1 * p / mu
-        a5 = a4 * p / mu
 
         dim = exog.shape[1]
         hess_arr = np.zeros((dim + 1, dim + 1))
@@ -2170,9 +2167,9 @@ class NegativeBinomialP(_CountMixin, CountModel):
         # TODO: better name or interpretation for dgterm?
 
         coeff = mu**2 * ((1 + a4)**2 * a3 / a2**2
-                         - 2 * a4 * (1 + a4) / a2
-                         + a5 * (dgterm + 1)
-                         - a4**2 * pgpart
+                         - 2 * (p / mu) * (1 + a4) * a1 / a2
+                         + a1 * (p / mu)**2 * (dgterm + 1)
+                         - a1**2 * (p / mu)**2 * pgpart
                          - a3 / a2 / mu)
 
         for i in range(dim):
@@ -2181,7 +2178,7 @@ class NegativeBinomialP(_CountMixin, CountModel):
 
         hess_arr[-1, :-1] = (exog[:, :].T * mu * a1 *
                              ((1 + a4) * (1 - a3 / a2) / a2
-                              - p / mu * (dgterm + 1)
+                              - (p / mu) * (dgterm + 1)
                               + p * a4 / a2
                               + a4 * pgpart
                               ) / alpha).sum(axis=1)
@@ -2684,8 +2681,55 @@ class MNLogit(MultinomialModel):
     See developer notes for further information on `MNLogit` internals.
     """ % {'extra_params': base._missing_param_doc}
 
-    def pdf(self, eXB):  # TODO: implement this
-        raise NotImplementedError
+    def pdf(self, X, dropfirst=False, submax=False):  # TODO: implement this
+        """
+        We take a derivative of `cdf` using the quotient
+        rule: (f'g - g'f) / g^2
+        Here "g" is `denom` and "f" is `eXB`
+
+        For each row, this derivative will be a nvars x nvars array, with
+        the first dimension representing the coordinate of `cdf` being
+        differentiated and the second dimension representing the variable
+        doing the differentiation [AWK: how to phrase the last sentence?]
+
+        i.e. row[:, i, j] == \frac{\partial cdf[:, i]}{\partial X[:, j]}
+
+        See tests.test_multinomial.mnlogit_pdf for an alternative (slower)
+        non-loop implementation.
+        """
+        drop = int(dropfirst)
+
+        nobs = len(X)
+        XB = np.column_stack((np.zeros(nobs), X))
+        if submax:
+            XB -= XB.max(1)[:, None]
+            # TODO: benchmark how this affects speed
+            # In a nobs=1e5 benchmark, this sped up pdf from 16.1508 to 15.0867
+            # ... but on Falcon it slows from 5.203 to 6.319
+
+        eXB = np.exp(XB)
+        denom = eXB.sum(1)
+        prob = eXB / denom[:, None]
+
+        J = self.J
+
+        mat_partials = [[None for idx1 in range(J - drop)]
+                        for idx2 in range(J - drop)]
+        for idx in range(J - drop):
+            for jdx in range(idx, J - drop):
+                mpartial = prob[:, idx + drop] * prob[:, jdx + drop]
+                if idx == jdx:
+                    mpartial -= prob[:, idx + drop]
+                    # An option is to avoid multiplying by `denom` here
+                    # because we will just re-divide by it later, but that
+                    # appears to be slower than just doing it here.
+
+                mat_partials[idx][jdx] = mpartial
+                mat_partials[jdx][idx] = mpartial
+                # Exploit symmetry to cut down on iterations
+
+        deriv = -np.asarray(mat_partials).T
+        return deriv
 
     def cdf(self, X):
         r"""
