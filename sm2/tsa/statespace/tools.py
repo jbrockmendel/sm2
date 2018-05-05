@@ -7,14 +7,14 @@ License: Simplified-BSD
 from __future__ import division, absolute_import, print_function
 
 import numpy as np
-# from scipy import linalg
-# from scipy.linalg import solve_sylvester
-# from scipy.linalg.blas import find_best_blas_type
+from scipy import linalg
+from scipy.linalg import solve_sylvester
+from scipy.linalg.blas import find_best_blas_type
 
 import pandas as pd
 
 from sm2.tools.data import _is_using_pandas
-# from sm2.tools.tools import not_ported
+from sm2.tools.tools import not_ported
 
 compatibility_mode = False
 has_trmm = True
@@ -44,9 +44,9 @@ def set_mode(compatibility=None):
 
     from scipy.linalg import cython_blas  # noqa:F401,F811
     from . import _tools
-    # from . import (_representation, _kalman_filter, _kalman_smoother,
-    #               _simulation_smoother)
-    '''
+    from . import (_representation, _kalman_filter, _kalman_smoother,
+                   _simulation_smoother)
+
     prefix_statespace_map.update({
         's': _representation.sStatespace, 'd': _representation.dStatespace,
         'c': _representation.cStatespace, 'z': _representation.zStatespace
@@ -69,7 +69,7 @@ def set_mode(compatibility=None):
         'c': _simulation_smoother.cSimulationSmoother,
         'z': _simulation_smoother.zSimulationSmoother
     })
-    '''
+
     prefix_pacf_map.update({
         's': _tools._scompute_coefficients_from_multivariate_pacf,
         'd': _tools._dcompute_coefficients_from_multivariate_pacf,
@@ -125,7 +125,7 @@ def set_mode(compatibility=None):
 compatibility_mode = False
 set_mode(compatibility=None)
 
-'''
+
 def companion_matrix(polynomial):
     r"""
     Create a companion matrix
@@ -435,7 +435,7 @@ def solve_discrete_lyapunov(a, q, complex_step=False):
         b = np.dot(aH - eye, aHI_inv)
         c = 2 * np.dot(np.dot(np.linalg.inv(a + eye), q), aHI_inv)
         return solve_sylvester(b.transpose(), b, -c)
-'''
+
 
 
 def constrain_stationary_univariate(unconstrained):
@@ -511,8 +511,6 @@ def unconstrain_stationary_univariate(constrained):
     x = r / ((1 - r**2)**0.5)
     return x
 
-
-'''
 
 _constrain_sv_less_than_one_python = not_ported(
     "_constrain_sv_less_than_one_python",
@@ -1529,7 +1527,6 @@ def copy_index_vector(a, b, index, inplace=False, prefix=None):
 
     copy(a, b, np.asfortranarray(index))
     return b
-'''
 
 
 def prepare_exog(exog):
