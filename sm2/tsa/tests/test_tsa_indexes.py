@@ -59,7 +59,7 @@ numpy_datestr_indexes = [(x.map(str), x.freq) for x in base_date_indexes]
 list_datestr_indexes = [(x.tolist(), y) for x, y in numpy_datestr_indexes]
 series_datestr_indexes = [(pd.Series(x), y) for x, y in list_datestr_indexes]
 
-numpy_datetime_indexes = [(x.to_datetime().to_pydatetime(), x.freq)
+numpy_datetime_indexes = [(x.to_pydatetime(), x.freq)
                           for x in base_date_indexes]
 list_datetime_indexes = [(x.tolist(), y) for x, y in numpy_datetime_indexes]
 series_datetime_indexes = [(pd.Series(x, dtype=object), y)

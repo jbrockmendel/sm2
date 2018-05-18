@@ -248,6 +248,8 @@ class CheckComparisonMixin(object):
         # FIXME: locally the above assertion passes with atol=1e-7, but on
         # Travis I'm just barely seeing failures 2018-03-21 with
         # the first entry of score1 being -1.006265e-07
+        # ... 2018-05-18 GH#4640 changed the tol to 5e-7, no documentation
+        # as to why.
 
     def test_hessian_unobserved(self):
         hessian1 = self.res1.model.hessian(self.res1.params, observed=False)
