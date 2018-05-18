@@ -488,6 +488,29 @@ class GLM(base.LikelihoodModel):
         score_factor = self.score_factor(params, scale=scale)
         return score_factor[:, None] * self.exog
 
+    def score(self, params, scale=None):
+        """score, first derivative of the loglikelihood function
+ 
+        Parameters
+        ----------
+        params : ndarray
+            parameter at which score is evaluated
+        scale : None or float
+            If scale is None, then the default scale will be calculated.
+            Default scale is defined by `self.scaletype` and set in fit.
+            If scale is not None, then it is used as a fixed scale.
+ 
+        Returns
+        -------
+        score : ndarray_1d
+            The first derivative of the loglikelihood function calculated as
+            the sum of `score_obs`
+        """
+        # appreciably more performant than the base implementation summing
+        # self.score_obs.
+        score_factor = self.score_factor(params, scale=scale)
+        return np.dot(score_factor, self.exog)
+
     def score_factor(self, params, scale=None):
         """weights for score for each observation
 

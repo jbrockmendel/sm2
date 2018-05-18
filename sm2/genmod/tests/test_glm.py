@@ -225,11 +225,27 @@ class CheckComparisonMixin(object):
                         rtol=1e-10)
 
     def test_score_obs(self):
-        score_obs1 = self.res1.model.score_obs(self.res1.params)
-        score_obsd = self.resd.model.score_obs(self.resd.params)
+        # upstream added the 0.98 terms in GH#4630; presumably so the
+        # params wouldn't be at an optimum and we wouldn't be comparing
+        # against zero
+        score_obs1 = self.res1.model.score_obs(self.res1.params * 0.98)
+        score_obsd = self.resd.model.score_obs(self.resd.params * 0.98)
         assert_allclose(score_obs1,
                         score_obsd,
                         rtol=1e-10)
+
+    def test_score(self):
+        # See comment in test_score_obs regarding 0.98 term
+        res1 = self.res1
+        score_obs1 = res1.model.score_obs(self.res1.params * 0.98)
+        score1 = res1.model.score(res1.params * 0.98)
+        assert_allclose(score1,
+                        score_obs1.sum(0),
+                        atol=1e-20)
+        score0 = res1.model.score(res1.params)
+        assert_allclose(score0,
+                        np.zeros(score_obs1.shape[1]),
+                        atol=1e-7)
 
     def test_compare_discrete(self):
         res1 = self.res1
@@ -252,15 +268,19 @@ class CheckComparisonMixin(object):
         # as to why.
 
     def test_hessian_unobserved(self):
-        hessian1 = self.res1.model.hessian(self.res1.params, observed=False)
-        hessiand = self.resd.model.hessian(self.resd.params)
+        res1 = self.res1
+        resd = self.resd
+        hessian1 = res1.model.hessian(res1.params * 0.98, observed=False)
+        hessiand = resd.model.hessian(resd.params * 0.98)
         assert_allclose(hessian1,
                         hessiand,
                         rtol=1e-10)
 
     def test_hessian_observed(self):
-        hessian1 = self.res1.model.hessian(self.res1.params, observed=True)
-        hessiand = self.resd.model.hessian(self.resd.params)
+        res1 = self.res1
+        resd = self.resd
+        hessian1 = res1.model.hessian(res1.params * 0.98, observed=True)
+        hessiand = resd.model.hessian(resd.params * 0.98)
         assert_allclose(hessian1,
                         hessiand,
                         rtol=1e-9)
