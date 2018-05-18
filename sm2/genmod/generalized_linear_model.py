@@ -1079,7 +1079,7 @@ class GLM(base.LikelihoodModel):
             wls_mod = reg_tools._MinimalWLS(wlsendog,
                                             wlsexog,
                                             self.weights)
-            wls_results = wls_mod.fit(method='lstsq')
+            wls_results = wls_mod.fit(method=wls_method)
             lin_pred = np.dot(self.exog, wls_results.params)
             lin_pred += self._offset_exposure
             mu = self.family.fitted(lin_pred)
