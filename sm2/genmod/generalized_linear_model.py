@@ -113,10 +113,6 @@ class GLM(base.LikelihoodModel):
         The estimated mean response of the transformed variable.
     n_trials : array
         See Parameters.
-    normalized_cov_params : array
-        `p` x `p` normalized covariance of the design / exogenous data.
-    pinv_wexog : array
-        For GLM this is just the pseudo inverse of the original design.
     scale : float
         The estimate of the scale / dispersion.  Available after fit is called.
     scaletype : str
@@ -272,16 +268,8 @@ class GLM(base.LikelihoodModel):
         as well. `n_trials` is the number of binomial trials and only available
         with that distribution. See sm2.families.Binomial for more
         information.
-    normalized_cov_params : array
-        The p x p normalized covariance of the design / exogenous data.
-        This is approximately equal to (X.T X)^(-1)
     offset : array-like
         Include offset in model with coefficient constrained to 1.
-    pinv_wexog : array
-        The pseudoinverse of the design / exogenous data array.  Note that
-        GLM has no whiten method, so this is just the pseudo inverse of the
-        design.
-        The pseudoinverse is approximately equal to (X.T X)^(-1)X.T
     scale : float
         The estimate of the scale / dispersion of the model fit.  Only
         available after fit is called.  See GLM.fit and GLM.estimate_scale
@@ -382,15 +370,6 @@ class GLM(base.LikelihoodModel):
         self.history = {'fittedvalues': [],
                         'params': [np.inf],
                         'deviance': [np.inf]}
-
-    @cached_data
-    def pinv_wexog(self):
-        return np.linalg.pinv(self.exog)
-
-    @cached_value
-    def normalized_cov_params(self):
-        return np.dot(self.pinv_wexog,
-                      np.transpose(self.pinv_wexog))
 
     def _check_inputs(self, family, offset, exposure, endog, freq_weights,
                       var_weights):
@@ -1290,7 +1269,7 @@ class GLMResults(base.LikelihoodModelResults):
     nobs : float
         The number of observations n.
     normalized_cov_params : array
-        See GLM docstring
+        See GLM docstring  # FIXME: after GH#4624 this is inaccurate
     null_deviance : float
         The value of the deviance function for the model fit with a constant
         as the only regressor.
@@ -1301,8 +1280,6 @@ class GLMResults(base.LikelihoodModelResults):
     pearson_chi2 : array
         Pearson's Chi-Squared statistic is defined as the sum of the squares
         of the Pearson residuals.
-    pinv_wexog : array
-        See GLM docstring.
     pvalues : array
         The two-tailed p-values for the parameters.
     scale : float
@@ -1315,12 +1292,6 @@ class GLMResults(base.LikelihoodModelResults):
     --------
     sm2.base.model.LikelihoodModelResults
     """
-
-    @cached_data
-    def pinv_wexog(self):
-        # we make this a cached_value instead of attribute so that remove_data
-        # gets it correctly
-        return self.model.pinv_wexog
 
     @cached_value
     def nobs(self):
