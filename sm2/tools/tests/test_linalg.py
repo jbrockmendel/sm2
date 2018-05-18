@@ -1,13 +1,17 @@
+#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """
 Tests for tools.linalg
 """
 
+from scipy import sparse
 import numpy as np
-from numpy.testing import assert_array_equal, assert_almost_equal
+from numpy.testing import (
+    assert_array_equal, assert_almost_equal, assert_allclose)
 import pytest
 
-from sm2.tools.linalg import pinv_extended, nan_dot, chain_dot
+from sm2.tools.linalg import (pinv_extended, nan_dot, chain_dot,
+                              smw_logdet, smw_solver)
 
 
 @pytest.mark.not_vetted
@@ -99,3 +103,60 @@ class TestPinvExtended(object):
         sm_inv, sing_vals = pinv_extended(X)
         assert_almost_equal(np_inv, sm_inv)
         assert_almost_equal(np_sing_vals, sing_vals)
+
+
+def test_smw_solver():
+    # GH#4594
+
+    np.random.seed(23)
+    p = 5
+    q = 4
+    r = 2
+    s = 2
+
+    A = np.random.normal(size=(p, q))
+    AtA = np.dot(A.T, A)
+
+    B = np.zeros((q, q))
+    B[0:r, 0:r] = np.random.normal(size=(r, r))
+    di = np.random.uniform(size=s)
+    B[r:q, r:q] = np.diag(1 / di)
+    Qi = np.linalg.inv(B[0:r, 0:r])
+    s = 0.5
+
+    x = np.random.normal(size=p)
+    y2 = np.linalg.solve(s * np.eye(p, p) + np.dot(A, np.dot(B, A.T)), x)
+
+    f = smw_solver(s, A, AtA, Qi, di)
+    y1 = f(x)
+    assert_allclose(y1, y2)
+
+    f = smw_solver(s, sparse.csr_matrix(A), sparse.csr_matrix(AtA), Qi, di)
+    y1 = f(x)
+    assert_allclose(y1, y2)
+
+
+def test_smw_logdet():
+    # GH#4594
+    np.random.seed(23)
+    p = 5
+    q = 4
+    r = 2
+    s = 2
+
+    A = np.random.normal(size=(p, q))
+    AtA = np.dot(A.T, A)
+
+    B = np.zeros((q, q))
+    c = np.random.normal(size=(r, r))
+    B[0:r, 0:r] = np.dot(c.T, c)
+    di = np.random.uniform(size=s)
+    B[r:q, r:q] = np.diag(1 / di)
+    Qi = np.linalg.inv(B[0:r, 0:r])
+    s = 0.5
+
+    _, d2 = np.linalg.slogdet(s * np.eye(p, p) + np.dot(A, np.dot(B, A.T)))
+
+    _, bd = np.linalg.slogdet(B)
+    d1 = smw_logdet(s, A, AtA, Qi, di, bd)
+    assert_allclose(d1, d2)
