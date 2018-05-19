@@ -3,12 +3,16 @@ import warnings
 from six import StringIO, iteritems
 import pandas as pd
 import pandas.util.testing as tm
+import numpy as np
 import numpy.testing as npt
 import pytest
 
 import sm2.api as sm
 from sm2.formula.formulatools import make_hypotheses_matrices
 from sm2.datasets.longley import load, load_pandas
+from sm2.datasets import cpunish
+
+ols = sm.OLS.from_formula
 
 
 def assert_equal(left, right):
@@ -178,3 +182,54 @@ def test_formula_predict_series():
     result = results.predict({"x": [1, 2, 3]})
     expected = pd.Series([1., 2., 3.], index=[0, 1, 2])
     tm.assert_series_equal(result, expected)
+
+
+@pytest.mark.not_vetted
+def test_patsy_lazy_dict():
+    class LazyDict(dict):
+        def __init__(self, data):
+            self.data = data
+
+        def __missing__(self, key):
+            return np.array(self.data[key])
+
+    data = cpunish.load_pandas().data
+    data = LazyDict(data)
+    res = ols('EXECUTIONS ~ SOUTH + INCOME', data=data).fit()
+
+    res2 = res.predict(data)
+    npt.assert_allclose(res.fittedvalues, res2)
+
+    data = cpunish.load_pandas().data
+    data['INCOME'].loc[0] = None
+
+    data = LazyDict(data)
+    data.index = cpunish.load_pandas().data.index
+    res = ols('EXECUTIONS ~ SOUTH + INCOME', data=data).fit()
+
+    res2 = res.predict(data)
+    assert_equal(res.fittedvalues, res2)  # Should lose a record
+    assert_equal(len(res2) + 1, len(cpunish.load_pandas().data))
+
+
+@pytest.mark.not_vetted
+def test_patsy_missing_data():
+    # Test pandas-style first
+    data = cpunish.load_pandas().data
+    data['INCOME'].loc[0] = None
+    res = ols('EXECUTIONS ~ SOUTH + INCOME', data=data).fit()
+    res2 = res.predict(data)
+    # First record will be dropped during fit, but not during predict
+    assert_equal(res.fittedvalues, res2[1:])
+
+    # Non-pandas version
+    data = cpunish.load_pandas().data
+    data['INCOME'].loc[0] = None
+    data = data.to_records(index=False)
+    with warnings.catch_warnings(record=True) as w:
+        warnings.simplefilter("always")
+        res2 = res.predict(data)
+        assert_equal(repr(w[-1].message),
+                     "ValueWarning('nan values have been dropped',)")
+    # Frist record will be dropped in both cases
+    assert_equal(res.fittedvalues, res2)

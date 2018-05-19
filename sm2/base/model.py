@@ -191,7 +191,7 @@ class Model(wrap.RemoveDataMixin):
                         cols.remove(col)
                     except ValueError:
                         pass  # OK if not present
-                design_info = design_info.builder.subset(cols).design_info
+                design_info = design_info.subset(cols).design_info
 
         kwargs.update({'missing_idx': missing_idx,
                        'missing': missing,
@@ -534,7 +534,7 @@ class Results(object):
         Parameters
         ----------
         exog : array-like, optional
-            The values for which you want to predict.
+            The values for which you want to predict.  See Notes below.
         transform : bool, optional
             If the model was fit via a formula, do you want to pass
             exog through the formula. Default is True. E.g., if you fit
@@ -550,22 +550,51 @@ class Results(object):
         -------
         prediction : ndarray, pandas.Series or pandas.DataFrame
             See self.model.predict
-        """
-        exog_index = exog.index if _is_using_pandas(exog, None) else None
 
-        if transform and hasattr(self.model, 'formula') and exog is not None:
+        Notes
+        -----
+        The types of exog that are supported depends on whether a formula
+        was used in the specification of the model.
+
+        If a formula was used, then exog is processed in the same way as
+        the original data. This transformation needs to have key access to the
+        same variable names, and can be a pandas DataFrame or a dict like
+        object.
+
+        If no formula was used, then the provided exog needs to have the
+        same number of columns as the original exog in the model. No
+        transformation of the data is performed except converting it to
+        a numpy array.
+
+        Row indices as in pandas data frames are supported, and added to the
+        returned prediction.
+        """
+        is_pandas = _is_using_pandas(exog, None)
+        exog_index = exog.index if is_pandas else None
+
+        if transform and hasattr(self.model, 'formula') and (exog is not None):
+            design_info = self.model.data.design_info
             from patsy import dmatrix
-            exog = pd.DataFrame(exog)  # user may pass series, if one predictor
-            if exog_index is None:  # user passed in a dictionary
-                exog_index = exog.index
-            exog = dmatrix(self.model.data.design_info.builder,
-                           exog, return_type="dataframe")
-            if len(exog) < len(exog_index):
-                # missing values, rows have been dropped
-                if exog_index is not None:
-                    exog = exog.reindex(exog_index)
+            if isinstance(exog, pd.Series):
+                # we are guessing whether it should be column or row
+                if (hasattr(exog, 'name') and
+                        isinstance(exog.name, str) and
+                        exog.name in design_info.describe()):
+                    # assume we need one column
+                    exog = pd.DataFrame(exog)
                 else:
-                    warnings.warn("nan rows have been dropped", ValueWarning)
+                    # assume we need a row
+                    exog = pd.DataFrame(exog).T
+
+            orig_exog_len = len(exog)
+            is_dict = isinstance(exog, dict)
+            exog = dmatrix(design_info, exog, return_type="dataframe")
+            if orig_exog_len > len(exog) and not is_dict:
+                if exog_index is None:
+                    warnings.warn("nan values have been dropped", ValueWarning)
+                else:
+                    exog = exog.reindex(exog_index)
+            exog_index = exog.index
 
         if exog is not None:
             exog = np.asarray(exog)
@@ -587,7 +616,6 @@ class Results(object):
                 ynames = self.model.data.ynames
                 return pd.DataFrame(predict_results, index=exog_index,
                                     columns=ynames)
-
         else:
             return predict_results
 
