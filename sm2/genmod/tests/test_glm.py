@@ -19,6 +19,7 @@ from sm2.genmod.generalized_linear_model import GLM
 from sm2.genmod.families import links
 from sm2.tools.tools import add_constant
 from sm2.tools.sm_exceptions import PerfectSeparationError
+
 from sm2.discrete import discrete_model as discrete
 
 from .results import glmnet_r_results, results_glm
@@ -1538,7 +1539,6 @@ class TestConvergence(object):
 
 # ------------------------------------------------------------
 # Unsorted
-
 
 @pytest.mark.not_vetted
 def test_tweedie_power_estimate():

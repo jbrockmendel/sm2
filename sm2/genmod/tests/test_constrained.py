@@ -66,6 +66,8 @@ class ConstrainedCompareMixin(object):
                                           self.idx_p_uc],
                         res2.cov_params(),
                         rtol=1e-10)
+        # Note: Upstream GH#4620 changes tolerance here to rtol=5e-9,
+        # not sure why.
 
     def test_resid(self):
         assert_allclose(self.res1.resid_response,

@@ -11,6 +11,30 @@ from numpy.testing import assert_allclose
 
 import sm2.api as sm
 from sm2.genmod.families import links
+from sm2.tools.numdiff import (approx_fprime, approx_fprime_cs,
+                               approx_hess)
+
+
+@pytest.mark.not_vetted
+def check_score_hessian(results):
+    # GH#4620
+    # compare models core and hessian with numerical derivatives
+
+    params = results.params
+    # avoid checking score at MLE, score close to zero
+    sc = results.model.score(params * 0.98, scale=1)
+    # cs currently (0.9) does not work for all families
+    # sc2 = approx_fprime_cs(params * 0.98, results.model.loglike)
+    llfunc = lambda x: results.model.loglike(x, scale=1)
+    sc2 = approx_fprime(params * 0.98, llfunc)
+    assert_allclose(sc, sc2, rtol=0.05)
+
+    hess = results.model.hessian(params, scale=1)
+    hess2 = approx_hess(params, llfunc)
+    assert_allclose(hess, hess2, rtol=0.05)
+    scfunc = lambda x: results.model.score(x, scale=1)
+    hess3 = approx_fprime(params, scfunc)
+    assert_allclose(hess, hess3, rtol=0.05)
 
 
 @pytest.mark.not_vetted
@@ -124,6 +148,11 @@ def test_gradient_irls():
                                               links.inverse_power):
                     # adding skip because of convergence failure
                     skip_one = True
+                # GH#4620
+                # the following fails with identity link, because endog < 0
+                # elif family_class == fam.Gamma:
+                #     lin_pred = (0.5 * exog.sum(1) +
+                #                 np.random.uniform(size=exog.shape[0]))
                 else:
                     lin_pred = np.random.uniform(size=exog.shape[0])
 
@@ -134,6 +163,12 @@ def test_gradient_irls():
                     mod_irls = sm.GLM(endog, exog,
                                       family=family_class(link=link()))
                 rslt_irls = mod_irls.fit(method="IRLS")
+
+                if (family_class, link) not in [(sm.families.Poisson, links.sqrt),
+                                                (sm.families.Gamma, links.inverse_power),
+                                                (sm.families.InverseGaussian, links.identity)]:
+                    # GH#4620
+                    check_score_hessian(rslt_irls)
 
                 # Try with and without starting values.
                 for max_start_irls, start_params in [(0, rslt_irls.params),
@@ -148,7 +183,8 @@ def test_gradient_irls():
                     rslt_gradient = mod_gradient.fit(
                         max_start_irls=max_start_irls,
                         start_params=start_params,
-                        method="newton")
+                        method="newton",
+                        maxiter=300)
 
                     assert_allclose(rslt_gradient.params,
                                     rslt_irls.params, rtol=1e-6, atol=5e-5)

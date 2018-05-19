@@ -516,7 +516,7 @@ class GLM(base.LikelihoodModel):
 
         score_factor = (self.endog - mu) / self.family.link.deriv(mu)
         score_factor /= self.family.variance(mu)
-        score_factor *= self.iweights
+        score_factor *= self.iweights * self.n_trials
 
         if scale != 1:
             score_factor /= scale
@@ -568,9 +568,9 @@ class GLM(base.LikelihoodModel):
         tmp = self.family.variance(mu) * self.family.link.deriv2(mu)
         tmp += self.family.variance.deriv(mu) * self.family.link.deriv(mu)
 
-        tmp = score_factor * eim_factor * tmp
+        tmp = score_factor * tmp
         # correct for duplicatee iweights in oim_factor and score_factor
-        tmp /= self.iweights
+        tmp /= self.iweights * self.n_trials
         oim_factor = eim_factor * (1 + tmp)
 
         if tmp.ndim > 1:
@@ -987,6 +987,10 @@ class GLM(base.LikelihoodModel):
         Fits a generalized linear model for a given family iteratively
         using the scipy gradient optimizers.
         """
+        # fix scale during optimization, see GH#4616
+        scaletype = self.scaletype
+        self.scaletype = 1.  # TODO: Avoid setting this attribute
+
         if (max_start_irls > 0) and (start_params is None):
             irls_rslt = self._fit_irls(start_params=start_params,
                                        maxiter=max_start_irls,
@@ -998,6 +1002,9 @@ class GLM(base.LikelihoodModel):
         rslt = super(GLM, self).fit(start_params=start_params, tol=tol,
                                     maxiter=maxiter, full_output=full_output,
                                     method=method, disp=disp, **kwargs)
+
+        # reset scaletype to original
+        self.scaletype = scaletype
 
         mu = self.predict(rslt.params)
         scale = self.estimate_scale(mu)
