@@ -358,6 +358,17 @@ def test_coint():
             assert_allclose(res1[i][0], res[i][0], rtol=1e-11)
             assert_allclose(res1[i][2], res[i][1:], rtol=0, atol=6e-7)
 
+    # use default autolag #GH4490, GH#4492
+    res1_0 = unit_root.coint(y[:, 0], y[:, 1], trend='ct', maxlag=4)
+    assert_allclose(res1_0[2],
+                    res_egranger['ct'][0][1:],
+                    rtol=0, atol=6e-7)
+    # the following is just a regression test
+    assert_allclose(res1_0[:2],
+                    [-13.992946638547112, 2.270898990540678e-27],
+                    rtol=1e-10, atol=1e-27)
+    # TODO: I don't like the giant atol here, see discussion in GH#4492
+
 
 @pytest.mark.not_vetted
 def test_coint_identical_series():
