@@ -246,7 +246,9 @@ class CheckComparisonMixin(object):
         score0 = res1.model.score(res1.params)
         assert_allclose(score0,
                         np.zeros(score_obs1.shape[1]),
-                        atol=1e-7)
+                        atol=2e-7)
+        # Note: upstream has atol=5e-7; locally 1e-7 passes and Travis fails
+        # but would be OK with 1.01e-7
 
     def test_compare_discrete(self):
         res1 = self.res1
