@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
 """Testing helper functions
 
 Warning: current status experimental, mostly copy paste

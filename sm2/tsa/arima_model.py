@@ -24,7 +24,7 @@ from sm2.tools.decorators import (cached_value, cached_data,
 
 import sm2.base.wrapper as wrap
 from sm2.base.naming import make_arma_names as _make_arma_names
-from sm2.regression.linear_model import yule_walker, GLS
+from sm2.regression.linear_model import yule_walker, OLS
 
 from sm2.tsa.base import tsa_model
 from sm2.tsa import wold
@@ -474,10 +474,11 @@ class ARMA(wold.ARMATransparams, tsa_model.TimeSeriesModel):
         """
         p, q, k = order
         start_params = np.zeros((p + q + k))
-        endog = self.endog.copy()  # copy because overwritten
+        # make copy of endog because overwritten
+        endog = np.array(self.endog, np.float64)
         exog = self.exog
         if k != 0:
-            ols_params = GLS(endog, exog).fit().params
+            ols_params = OLS(endog, exog).fit().params
             start_params[:k] = ols_params
             endog -= np.dot(exog, ols_params).squeeze()
         if q != 0:
@@ -517,7 +518,7 @@ class ARMA(wold.ARMATransparams, tsa_model.TimeSeriesModel):
                 lag_resid = lagmat(resid, q, 'both')[resid_start:]
                 # stack ar lags and resids
                 X = np.column_stack((lag_endog, lag_resid))
-                coefs = GLS(endog[max(p_tmp + q, p):], X).fit().params
+                coefs = OLS(endog[max(p_tmp + q, p):], X).fit().params
                 start_params[k:k + p + q] = coefs
             else:
                 start_params[k + p:k + p + q] = yule_walker(endog, order=q)[0]

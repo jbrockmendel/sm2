@@ -19,6 +19,7 @@ from sm2.genmod.generalized_linear_model import GLM
 from sm2.genmod.families import links
 from sm2.tools.tools import add_constant
 from sm2.tools.sm_exceptions import PerfectSeparationError
+
 from sm2.discrete import discrete_model as discrete
 
 from .results import glmnet_r_results, results_glm
@@ -225,11 +226,29 @@ class CheckComparisonMixin(object):
                         rtol=1e-10)
 
     def test_score_obs(self):
-        score_obs1 = self.res1.model.score_obs(self.res1.params)
-        score_obsd = self.resd.model.score_obs(self.resd.params)
+        # upstream added the 0.98 terms in GH#4630; presumably so the
+        # params wouldn't be at an optimum and we wouldn't be comparing
+        # against zero
+        score_obs1 = self.res1.model.score_obs(self.res1.params * 0.98)
+        score_obsd = self.resd.model.score_obs(self.resd.params * 0.98)
         assert_allclose(score_obs1,
                         score_obsd,
                         rtol=1e-10)
+
+    def test_score(self):
+        # See comment in test_score_obs regarding 0.98 term
+        res1 = self.res1
+        score_obs1 = res1.model.score_obs(self.res1.params * 0.98)
+        score1 = res1.model.score(res1.params * 0.98)
+        assert_allclose(score1,
+                        score_obs1.sum(0),
+                        atol=1e-20)
+        score0 = res1.model.score(res1.params)
+        assert_allclose(score0,
+                        np.zeros(score_obs1.shape[1]),
+                        atol=2e-7)
+        # Note: upstream has atol=5e-7; locally 1e-7 passes and Travis fails
+        # but would be OK with 1.01e-7
 
     def test_compare_discrete(self):
         res1 = self.res1
@@ -248,17 +267,23 @@ class CheckComparisonMixin(object):
         # FIXME: locally the above assertion passes with atol=1e-7, but on
         # Travis I'm just barely seeing failures 2018-03-21 with
         # the first entry of score1 being -1.006265e-07
+        # ... 2018-05-18 GH#4640 changed the tol to 5e-7, no documentation
+        # as to why.
 
     def test_hessian_unobserved(self):
-        hessian1 = self.res1.model.hessian(self.res1.params, observed=False)
-        hessiand = self.resd.model.hessian(self.resd.params)
+        res1 = self.res1
+        resd = self.resd
+        hessian1 = res1.model.hessian(res1.params * 0.98, observed=False)
+        hessiand = resd.model.hessian(resd.params * 0.98)
         assert_allclose(hessian1,
                         hessiand,
                         rtol=1e-10)
 
     def test_hessian_observed(self):
-        hessian1 = self.res1.model.hessian(self.res1.params, observed=True)
-        hessiand = self.resd.model.hessian(self.resd.params)
+        res1 = self.res1
+        resd = self.resd
+        hessian1 = res1.model.hessian(res1.params * 0.98, observed=True)
+        hessiand = resd.model.hessian(resd.params * 0.98)
         assert_allclose(hessian1,
                         hessiand,
                         rtol=1e-9)
@@ -666,6 +691,8 @@ class TestGlmPoissonOffset(CheckModelResultsMixin):
         mod2 = GLM(endog, exog, family=sm.families.Poisson(),
                    offset=offset2).fit()
         assert_almost_equal(mod1.params, mod2.params)
+        assert_allclose(mod1.null, mod2.null, rtol=1e-10)
+
 
         # test recreating model
         mod1_ = mod1.model
@@ -675,6 +702,11 @@ class TestGlmPoissonOffset(CheckModelResultsMixin):
         mod3 = mod1_.__class__(mod1_.endog, mod1_.exog, **kwds)
         assert_allclose(mod3.exposure, mod1_.exposure, rtol=1e-14)
         assert_allclose(mod3.offset, mod1_.offset, rtol=1e-14)
+
+        # test fit_regularized exposure, see GH#4605
+        resr1 = mod1.model.fit_regularized()
+        resr2 = mod2.model.fit_regularized()
+        assert_allclose(resr1.params, resr2.params, rtol=1e-10)
 
     def test_predict(self):
         np.random.seed(382304)
@@ -1516,7 +1548,6 @@ class TestConvergence(object):
 
 # ------------------------------------------------------------
 # Unsorted
-
 
 @pytest.mark.not_vetted
 def test_tweedie_power_estimate():

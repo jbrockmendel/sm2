@@ -15,6 +15,46 @@ from sm2.tsa import unit_root
 # -----------------------------------------------------------------
 # ADFuller
 
+# upstream this is in test_adfuller_lag
+@pytest.mark.not_vetted
+def test_adf_autolag():
+    # GH#246
+    d2 = macrodata.load().data
+
+    for k_trend, tr in enumerate(['nc', 'c', 'ct', 'ctt']):
+        x = np.log(d2['realgdp'])
+        xd = np.diff(x)
+
+        # check exog
+        adf3 = unit_root.adfuller(x, maxlag=None, autolag='aic',
+                                  regression=tr, store=True, regresults=True)
+        st2 = adf3[-1]
+
+        assert len(st2.autolag_results) == 15 + 1  # +1 for lagged level
+        for l, res in sorted(list(st2.autolag_results.items()))[:5]:
+            lag = l - k_trend
+            # assert correct design matrices in _autolag
+            assert_equal(res.model.exog[-10:, k_trend], x[-11:-1])
+            assert_equal(res.model.exog[-1, k_trend + 1:], xd[-lag:-1][::-1])
+            # min-ic lag of dfgls in Stata is also 2, or 9 for maic
+            # with notrend
+            assert st2.usedlag == 2
+
+        # same result with lag fixed at usedlag of autolag
+        adf2 = unit_root.adfuller(x, maxlag=2, autolag=None, regression=tr)
+        assert_almost_equal(adf3[:2], adf2[:2], decimal=12)
+
+    tr = 'c'
+    # check maxlag with autolag
+    adf3 = unit_root.adfuller(x, maxlag=5, autolag='aic',
+                              regression=tr, store=True, regresults=True)
+    assert len(adf3[-1].autolag_results) == 5 + 1
+
+    adf3 = unit_root.adfuller(x, maxlag=0, autolag='aic',
+                              regression=tr, store=True, regresults=True)
+    assert len(adf3[-1].autolag_results) == 0 + 1
+
+
 @pytest.mark.not_vetted
 class CheckADF(object):
     """
@@ -317,6 +357,17 @@ def test_coint():
             res = res_egranger[trend]
             assert_allclose(res1[i][0], res[i][0], rtol=1e-11)
             assert_allclose(res1[i][2], res[i][1:], rtol=0, atol=6e-7)
+
+    # use default autolag #GH4490, GH#4492
+    res1_0 = unit_root.coint(y[:, 0], y[:, 1], trend='ct', maxlag=4)
+    assert_allclose(res1_0[2],
+                    res_egranger['ct'][0][1:],
+                    rtol=0, atol=6e-7)
+    # the following is just a regression test
+    assert_allclose(res1_0[:2],
+                    [-13.992946638547112, 2.270898990540678e-27],
+                    rtol=1e-10, atol=1e-27)
+    # TODO: I don't like the giant atol here, see discussion in GH#4492
 
 
 @pytest.mark.not_vetted

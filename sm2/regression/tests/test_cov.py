@@ -3,7 +3,7 @@
 """
 import pytest
 import numpy as np
-from numpy.testing import assert_almost_equal
+from numpy.testing import assert_almost_equal, assert_allclose
 
 import sm2.api as sm
 
@@ -45,6 +45,4 @@ def test_HC_use():
     idx = np.array([0, 1])
     cov_slopes = results.cov_HC0[idx[:, None], idx]
     fval = np.dot(slopes, np.dot(np.linalg.inv(cov_slopes), slopes)) / len(idx)
-    assert_almost_equal(ftest.fvalue,
-                        fval,
-                        decimal=12)
+    assert_allclose(ftest.fvalue, fval, rtol=12)
