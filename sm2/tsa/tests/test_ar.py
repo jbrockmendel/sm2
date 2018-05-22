@@ -13,6 +13,7 @@ import pytest
 
 from sm2 import datasets
 from sm2.tsa.ar_model import AR
+from sm2.tsa.arima_model import ARMA
 from sm2.tsa.arima_process import arma_generate_sample
 
 from .results import results_ar
@@ -156,6 +157,24 @@ class TestAROLSNoConstant(CheckARMixin):
         assert_almost_equal(model.predict(params, start=308, end=327),
                             self.res2.FVOLSn15start312,
                             DECIMAL_4)
+
+    def test_mle(self):
+        # GH#4493
+        # check predict with no constant, GH#3945
+        res1 = self.res1
+        endog = res1.model.endog
+        res0 = AR(endog).fit(maxlag=9, method='mle', trend='nc', disp=0)
+        assert_allclose(res0.fittedvalues[-10:],
+                        res0.fittedvalues[-10:],
+                        rtol=0.015)
+
+        res_arma = ARMA(endog, (9, 0)).fit(method='mle', trend='nc', disp=0)
+        assert_allclose(res0.params,
+                        res_arma.params,
+                        atol=5e-6)
+        assert_allclose(res0.fittedvalues[-10:],
+                        res_arma.fittedvalues[-10:],
+                        rtol=1e-4)
 
 
 @pytest.mark.not_vetted

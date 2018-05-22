@@ -498,17 +498,17 @@ class TestAddTrend(object):
 
     def test_recarray(self):
         df = pd.DataFrame(self.arr_2d)
-        recarray = df.to_records(index=False, convert_datetime64=False)
+        recarray = df.to_records(index=False)
         appended = tsatools.add_trend(recarray)
         expected = pd.DataFrame(self.arr_2d)
         expected['const'] = self.c
-        expected = expected.to_records(index=False, convert_datetime64=False)
+        expected = expected.to_records(index=False)
         assert_equal(expected, appended)
 
         prepended = tsatools.add_trend(recarray, prepend=True)
         expected = pd.DataFrame(self.arr_2d)
         expected.insert(0, 'const', self.c)
-        expected = expected.to_records(index=False, convert_datetime64=False)
+        expected = expected.to_records(index=False)
         assert_equal(expected, prepended)
 
         appended = tsatools.add_trend(recarray, trend='ctt')
@@ -516,7 +516,7 @@ class TestAddTrend(object):
         expected['const'] = self.c
         expected['trend'] = self.t
         expected['trend_squared'] = self.t ** 2
-        expected = expected.to_records(index=False, convert_datetime64=False)
+        expected = expected.to_records(index=False)
         assert_equal(expected, appended)
 
     def test_duplicate_const(self):

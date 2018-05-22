@@ -467,13 +467,10 @@ class CheckDiscreteGLM(object):
         assert res1.cov_type == self.cov_type
         assert res2.cov_type == self.cov_type
 
-        assert_allclose(res1.params, res2.params, rtol=1e-13)
-        # bug TODO res1.scale missing ?  in Gaussian/OLS
-        assert_allclose(res1.bse, res2.bse, rtol=1e-13)
-        # if not self.cov_type == 'nonrobust':
-        #    assert_allclose(res1.bse * res1.scale, res2.bse, rtol=1e-13)
-        # else:
-        #    assert_allclose(res1.bse, res2.bse, rtol=1e-13)
+        rtol = getattr(res1, 'rtol', 1e-13)
+        # TODO: Should this be getting cls.rtol?  see GH#4620
+        assert_allclose(res1.params, res2.params, rtol=rtol)
+        assert_allclose(res1.bse, res2.bse, rtol=1e-10)
 
 
 @pytest.mark.not_vetted
@@ -494,8 +491,6 @@ class TestGLMLogit(CheckDiscreteGLM):
 
 
 @pytest.mark.not_vetted
-@pytest.mark.xfail(reason="This test is mangled upstream.  Has comment: "
-                          "invalid link. What's Probit as GLM?")
 class TestGLMProbit(CheckDiscreteGLM):
     cov_type = 'cluster'
     cov_kwds = {'groups': group}
@@ -505,11 +500,25 @@ class TestGLMProbit(CheckDiscreteGLM):
         endog_bin = (endog > endog.mean()).astype(int)
 
         mod1 = cls.model_cls(endog_bin, exog,
-                             family=families.Gaussian(link=links.CDFLink()))
-        cls.res1 = mod1.fit(cov_type=cls.cov_type, cov_kwds=cls.cov_kwds)
+                             family=families.Binomial(link=links.probit()))
+        cls.res1 = mod1.fit(method='newton',
+                            cov_type=cls.cov_type, cov_kwds=cls.cov_kwds)
 
         mod1 = smd.Probit(endog_bin, exog)
         cls.res2 = mod1.fit(cov_type=cls.cov_type, cov_kwds=cls.cov_kwds)
+        cls.rtol = 1e-6
+
+    def test_score_hessian(self):
+        res1 = self.res1
+        res2 = self.res2
+        # Note scale is fixed at 1, so we don't need to fix it explicitly
+        score1 = res1.model.score(res1.params * 0.98)
+        score2 = res2.model.score(res1.params * 0.98)
+        assert_allclose(score1, score2, rtol=1e-13)
+
+        hess1 = res1.model.hessian(res1.params)
+        hess2 = res2.model.hessian(res1.params)
+        assert_allclose(hess1, hess2, rtol=1e-10)
 
 
 @pytest.mark.not_vetted
@@ -698,6 +707,7 @@ class TestGLMGaussHACPanel(CheckDiscreteGLM):
 @pytest.mark.not_vetted
 class TestGLMGaussHACPanelGroups(CheckDiscreteGLM):
     cov_type = 'hac-panel'
+    mod_kwargs = {}
     cov_kwds = {'groups': pd.Series(np.repeat(np.arange(5), 7)[:-1]),
                 # check for GH#3606
                 'maxlags': 2,
