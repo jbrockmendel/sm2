@@ -18,7 +18,7 @@ from .tools import (
     constrain_stationary_univariate, unconstrain_stationary_univariate,
     constrain_stationary_multivariate, unconstrain_stationary_multivariate
 )
-from statsmodels.multivariate.pca import PCA
+from sm2.multivariate.pca import PCA
 
 from sm2.regression.linear_model import OLS
 from sm2.tsa.vector_ar.var_model import VAR
