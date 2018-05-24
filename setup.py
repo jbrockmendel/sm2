@@ -77,9 +77,18 @@ setuptools_kwargs = {
 # ------------------------------------------------------------------
 # Cython Preparation & Specification
 
-_pxifiles = ['sm2/tsa/regime_switching/_kim_smoother.pyx.in',
-             'sm2/tsa/regime_switching/_hamilton_filter.pyx.in',
-             'sm2/tsa/statespace/_tools.pyx.in']
+def _get_pxifiles(dname):
+    flist = os.listdir(dname)
+    flist = [x for x in flist if x.endswith('.pyx.in')]
+    flist = [os.path.join(dname, x) for x in flist]
+    return flist
+
+
+_pxifiles = (_get_pxifiles('sm2/tsa/regime_switching') +
+             _get_pxifiles('sm2/tsa/statespace') +
+             _get_pxifiles('sm2/tsa/statespace/_filters') +
+             _get_pxifiles('sm2/tsa/statespace/_smoothers'))
+
 
 # TODO: Can we just put this with the next (only) use of CYTHON_INSTALLED?
 min_cython_ver = '0.24'
