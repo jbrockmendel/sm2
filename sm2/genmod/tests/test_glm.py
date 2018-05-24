@@ -693,7 +693,6 @@ class TestGlmPoissonOffset(CheckModelResultsMixin):
         assert_almost_equal(mod1.params, mod2.params)
         assert_allclose(mod1.null, mod2.null, rtol=1e-10)
 
-
         # test recreating model
         mod1_ = mod1.model
         kwds = mod1_._get_init_kwds()

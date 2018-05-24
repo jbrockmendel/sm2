@@ -11,8 +11,7 @@ from numpy.testing import assert_allclose
 
 import sm2.api as sm
 from sm2.genmod.families import links
-from sm2.tools.numdiff import (approx_fprime, approx_fprime_cs,
-                               approx_hess)
+from sm2.tools.numdiff import approx_fprime, approx_hess
 
 
 @pytest.mark.not_vetted
@@ -164,9 +163,12 @@ def test_gradient_irls():
                                       family=family_class(link=link()))
                 rslt_irls = mod_irls.fit(method="IRLS")
 
-                if (family_class, link) not in [(sm.families.Poisson, links.sqrt),
-                                                (sm.families.Gamma, links.inverse_power),
-                                                (sm.families.InverseGaussian, links.identity)]:
+                if (family_class, link) not in [(sm.families.Poisson,
+                                                 links.sqrt),
+                                                (sm.families.Gamma,
+                                                 links.inverse_power),
+                                                (sm.families.InverseGaussian,
+                                                 links.identity)]:
                     # GH#4620
                     check_score_hessian(rslt_irls)
 

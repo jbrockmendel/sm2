@@ -7,7 +7,6 @@ import os
 import numpy as np
 from numpy.testing import assert_allclose
 import pandas as pd
-import scipy.integrate
 
 import sm2.api as sm
 from sm2.tools.numdiff import approx_fprime
