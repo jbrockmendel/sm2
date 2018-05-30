@@ -194,6 +194,7 @@ def test_smw_logdet():
     assert_allclose(d1, d2)
 
 
+# TODO: use hypothesis?  this uses the same random seed in all runs as is
 @pytest.mark.parametrize('n', range(100))
 def test_smw_logdet_randomized(n):
     # github.com/statsmodels/statsmodels/pull/4594#issuecomment-392286075
