@@ -625,7 +625,8 @@ class VARProcess(wold.VARProcess):
             else:
                 intercept = coefs_exog
         else:
-            intercept = None#np.zeros(self.neqs)
+            intercept = None
+            # TODO: upstream this is no.zeros(self.neqs)  why the difference?
 
         # TODO: move super(...) call down here and pass updated intercept?
         wold.VARProcess.__init__(self, coefs,
