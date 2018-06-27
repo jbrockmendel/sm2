@@ -186,6 +186,7 @@ def test_yule_walker():
                         R_params,
                         4)
 
+
 @pytest.mark.not_vetted
 def test_ywcoef():
     # upstream this is in tsa.tests.test_tsa_tools

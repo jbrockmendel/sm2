@@ -165,7 +165,7 @@ class TestVARExtras(object):
     @classmethod
     def setup_class(cls):
         mdata = sm.datasets.macrodata.load_pandas().data
-        mdata = mdata[['realgdp','realcons','realinv']]
+        mdata = mdata[['realgdp', 'realcons', 'realinv']]
         data = mdata.values
         data = np.diff(np.log(data), axis=0) * 400
         cls.res0 = VAR(data).fit(maxlags=2)
@@ -180,7 +180,7 @@ class TestVARExtras(object):
 
         ysim = res0.simulate_var(seed=987128)
         assert_allclose(ysim.mean(0), mean_lr, rtol=0.1)
-        # initialization does not use long run intercept, see #4542
+        # initialization does not use long run intercept, see GH#4542
         assert_allclose(ysim[0], res0.intercept, rtol=1e-10)
         assert_allclose(ysim[1], res0.intercept, rtol=1e-10)
 
@@ -189,7 +189,7 @@ class TestVARExtras(object):
                                   seed=987128)
         zero3 = np.zeros(3)
         assert_allclose(ysimz.mean(0), zero3, atol=0.4)
-        # initialization does not use long run intercept, see #4542
+        # initialization does not use long run intercept, see GH#4542
         assert_allclose(ysimz[0], zero3, atol=1e-10)
         assert_allclose(ysimz[1], zero3, atol=1e-10)
 
@@ -245,16 +245,16 @@ class TestVARExtras(object):
             covfc2 = res.forecast_cov(3, method='auto')
         assert_allclose(covfc2, covfc1, rtol=0.05)
         # regression test, TODO: replace with verified numbers (Stata)
-        res_covfc2 = np.array([[[ 9.45802013,  4.94142038,  37.1999646 ],
-                                [ 4.94142038,  7.09273624,   5.66215089],
-                                [37.1999646 ,  5.66215089, 259.61275869]],
+        res_covfc2 = np.array([[[9.45802013, 4.94142038, 37.1999646],
+                                [4.94142038, 7.09273624, 5.66215089],
+                                [37.1999646, 5.66215089, 259.61275869]],
 
-                               [[11.30364479,  5.72569141,  49.28744123],
-                                [ 5.72569141,  7.409761  ,  10.98164091],
-                                [49.28744123, 10.98164091, 336.4484723 ]],
+                               [[11.30364479, 5.72569141, 49.28744123],
+                                [5.72569141, 7.409761, 10.98164091],
+                                [49.28744123, 10.98164091, 336.4484723]],
 
-                               [[12.36188803,  6.44426905,  53.54588026],
-                                [ 6.44426905,  7.88850029,  13.96382545],
+                               [[12.36188803, 6.44426905, 53.54588026],
+                                [6.44426905, 7.88850029, 13.96382545],
                                 [53.54588026, 13.96382545, 352.19564327]]])
         assert_allclose(covfc2, res_covfc2, atol=1e-6)
 
@@ -270,7 +270,9 @@ class TestVARExtras(object):
         # TODO: intercept differs by 4e-3, others are < 1e-12
         assert_allclose(res_lin_trend.params, res_lin_trend1.params, rtol=5e-3)
         assert_allclose(res_lin_trend.params, res_lin_trend2.params, rtol=5e-3)
-        assert_allclose(res_lin_trend1.params, res_lin_trend2.params, rtol=1e-10)
+        assert_allclose(res_lin_trend1.params,
+                        res_lin_trend2.params,
+                        rtol=1e-10)
 
         y1 = res_lin_trend.simulate_var(seed=987128)
         y2 = res_lin_trend1.simulate_var(seed=987128)
@@ -297,7 +299,7 @@ class TestVARExtras(object):
                                                 exog_future=exf)
         exf2 = exf[:, None]**[0, 1]
         fci3 = res_lin_trend2.forecast_interval(res_lin_trend2.endog[-2:], h,
-                                               exog_future=exf2)
+                                                exog_future=exf2)
         assert_allclose(fci2, fci1, rtol=1e-12)
         assert_allclose(fci3, fci1, rtol=1e-12)
         assert_allclose(fci3, fci2, rtol=1e-12)

@@ -625,7 +625,8 @@ class VARProcess(wold.VARProcess):
             else:
                 intercept = coefs_exog
         else:
-            intercept = None#np.zeros(self.neqs)
+            intercept = None
+            # TODO: upstream this is no.zeros(self.neqs)  why the difference?
 
         # TODO: move super(...) call down here and pass updated intercept?
         wold.VARProcess.__init__(self, coefs,
@@ -676,8 +677,8 @@ class VARProcess(wold.VARProcess):
                 # if more than intercept
                 # endog_lagged contains all regressors, trend, exog_user
                 # and lagged endog, trimmed initial observations
-                offset = self.endog_lagged[:,:self.k_exog].dot(
-                                                     self.coefs_exog.T)
+                offset = np.dot(self.endog_lagged[:, :self.k_exog],
+                                self.coefs_exog.T)
                 steps_ = self.endog_lagged.shape[0]
             else:
                 offset = self.intercept
@@ -1200,6 +1201,7 @@ class VARResults(VARProcess, tsa_model.TimeSeriesModelResults):
         #       and `chain_dot` below.
         B = self._bmat_forc_cov()
         _B = {}
+
         def bpow(i):
             if i not in _B:
                 _B[i] = np.linalg.matrix_power(B, i)

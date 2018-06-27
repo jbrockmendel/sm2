@@ -9,6 +9,13 @@ matrix:
     - python: 3.6
       env: TOXENV=py36
 
+addons:
+  apt:
+    packages:
+      - libatlas-dev
+      - liblapack-dev
+      - python-numpy
+
 install: pip install tox codecov
 
 before_script:

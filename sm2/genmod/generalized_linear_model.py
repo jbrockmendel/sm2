@@ -472,7 +472,7 @@ class GLM(base.LikelihoodModel):
 
     def score(self, params, scale=None):
         """score, first derivative of the loglikelihood function
- 
+
         Parameters
         ----------
         params : ndarray
@@ -481,7 +481,7 @@ class GLM(base.LikelihoodModel):
             If scale is None, then the default scale will be calculated.
             Default scale is defined by `self.scaletype` and set in fit.
             If scale is not None, then it is used as a fixed scale.
- 
+
         Returns
         -------
         score : ndarray_1d
