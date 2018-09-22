@@ -851,6 +851,7 @@ class CheckProbitSpector(CheckBinaryResults):
 class TestProbitNewton(CheckProbitSpector):
     fit_kwargs = {"method": "newton", "disp": False}
 
+    # FIXME: don't comment-out tests
     #def test_predict(self):
     #    assert_allclose(self.res1.model.predict(self.res1.params),
     #                    self.res2.predict,
@@ -885,6 +886,15 @@ class TestProbitBasinhopping(CheckProbitSpector):
     fit_kwargs = {"method": "basinhopping", "disp": False,
                   "niter": 5,
                   "minimizer": {"method": "L-BFGS-B", "tol": 1e-8}}
+
+    @classmethod
+    def setup_class(cls)
+        # GH#5196
+        # Note: nothing would be hurt by doing this higher in the class
+        # hierarchy, but basinhopping is the only method that
+        # actually _needs_ it.
+        np.random.seed(1)
+        super(TestProbitBasinhopping, cls).setup_class()
 
 
 @pytest.mark.not_vetted
