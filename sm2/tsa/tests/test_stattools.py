@@ -105,6 +105,16 @@ def test_arma_order_select_ic():
     assert res.bic.index.equals(bic.index)
     assert res.bic.columns.equals(bic.columns)
 
+    # GH#4890
+    index = pd.date_range('2000-1-1', freq='M', periods=len(y))
+    y_series = pd.Series(y, index=index)
+    res_pd = arma_order_select_ic(y_series, max_ar=2, max_ma=1,
+                                  ic=['aic', 'bic'], trend='nc')
+    assert_almost_equal(res_pd.aic.values, aic.values[:3, :2], 5)
+    assert_almost_equal(res_pd.bic.values, bic.values[:3, :2], 5)
+    assert_equal(res_pd.aic_min_order, (2, 1))
+    assert_equal(res_pd.bic_min_order, (1, 1))
+
     res = arma_order_select_ic(y, ic='aic', trend='nc')
     assert_almost_equal(res.aic.values, aic.values, 5)
     assert res.aic.index.equals(aic.index)
