@@ -11,7 +11,7 @@ import os
 
 import pytest
 import numpy as np
-from numpy.testing import assert_almost_equal, assert_approx_equal
+from numpy.testing import assert_almost_equal, assert_allclose
 
 from sm2.regression.linear_model import OLS, GLSAR
 from sm2.tools.tools import add_constant
@@ -130,9 +130,9 @@ class TestGLSARGretl(object):
         assert_almost_equal(res.fvalue,
                             result_gretl_g1['fvalue'][1],
                             decimal=4)
-        assert_approx_equal(res.f_pvalue,
-                            result_gretl_g1['f_pvalue'][1],
-                            significant=2)
+        assert_allclose(res.f_pvalue,
+                        result_gretl_g1['f_pvalue'][1],
+                        rtol=1e-2)
         #assert_almost_equal(res.durbin_watson,
         #                    result_gretl_g1['dw'][1],
         #                    decimal=7)  # TODO
@@ -386,8 +386,8 @@ class TestGLSARGretl(object):
         # TODO: fvalue differs from Gretl, trying any of the HCx
         #assert_almost_equal(res2.fvalue, result_gretl_g1['fvalue'][1],
         #                     decimal=0) # FAIL
-        #assert_approx_equal(res.f_pvalue, result_gretl_g1['f_pvalue'][1],
-        #                     significant=1) # FAIL
+        #assert_allclose(res.f_pvalue, result_gretl_g1['f_pvalue'][1],
+        #                rtol=1e-1) # FAIL
         #assert_almost_equal(res.durbin_watson, result_gretl_g1['dw'][1],
         #                     decimal=7) # TODO
 

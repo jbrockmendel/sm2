@@ -15,7 +15,7 @@ import json
 import pandas as pd
 import numpy as np
 
-from numpy.testing import assert_almost_equal
+from numpy.testing import assert_almost_equal, assert_allclose
 import pytest
 
 from sm2.regression.linear_model import OLS
@@ -575,9 +575,9 @@ class TestDiagnosticG(object):
 
         compare_t_est(lf1, lilliefors1, decimal=(14, 14))
         compare_t_est(lf2, lilliefors2, decimal=(14, 14))  # pvalue very small
-        np.testing.assert_approx_equal(lf2[1],
-                                       lilliefors2['pvalue'],
-                                       significant=10)
+        assert_allclose(lf2[1],
+                        lilliefors2['pvalue'],
+                        rtol=1e-10)
         compare_t_est(lf3, lilliefors3, decimal=(14, 1))
         # R uses different approximation for pvalue in last case
 
@@ -801,7 +801,7 @@ def test_influence_dtype():
     res2 = OLS(y * 1., x).fit()
     cr1 = res1.get_influence().cov_ratio
     cr2 = res2.get_influence().cov_ratio
-    np.testing.assert_allclose(cr1, cr2, rtol=1e-14)
+    assert_allclose(cr1, cr2, rtol=1e-14)
     # regression test for values
     cr3 = np.array([
         1.22239215, 1.31551021, 1.52671069, 1.05003921, 0.89099323,

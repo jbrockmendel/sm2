@@ -10,7 +10,7 @@ import textwrap
 import pytest
 import pandas as pd
 import numpy as np
-from numpy.testing import (assert_almost_equal, assert_approx_equal,
+from numpy.testing import (assert_almost_equal,
                            assert_equal, assert_allclose)
 from scipy.linalg import toeplitz
 from scipy import stats
@@ -55,12 +55,12 @@ class CheckRegressionResults(object):
         conf1 = self.res1.conf_int()
         conf2 = self.res2.conf_int()
         for i in range(len(conf1)):
-            assert_approx_equal(conf1[i][0],
-                                conf2[i][0],
-                                DECIMAL_4)
-            assert_approx_equal(conf1[i][1],
-                                conf2[i][1],
-                                DECIMAL_4)
+            assert_allclose(conf1[i][0],
+                            conf2[i][0],
+                            rtol=1e-4)
+            assert_allclose(conf1[i][1],
+                            conf2[i][1],
+                            rtol=1e-4)
 
     def test_conf_int_subset(self):
         if len(self.res1.params) > 1:
@@ -205,29 +205,29 @@ class TestOLS(CheckRegressionResults):
         assert_almost_equal(self.res1.HC0_se[:-1],
                             self.res2.HC0_se[:-1],
                             DECIMAL_4)
-        assert_approx_equal(np.round(self.res1.HC0_se[-1]),
-                            self.res2.HC0_se[-1])
+        assert_allclose(np.round(self.res1.HC0_se[-1]),
+                        self.res2.HC0_se[-1])
 
     def test_HC1_errors(self):
         assert_almost_equal(self.res1.HC1_se[:-1],
                             self.res2.HC1_se[:-1],
                             DECIMAL_4)
-        assert_approx_equal(self.res1.HC1_se[-1],
-                            self.res2.HC1_se[-1])
+        assert_allclose(self.res1.HC1_se[-1],
+                        self.res2.HC1_se[-1])
 
     def test_HC2_errors(self):
         assert_almost_equal(self.res1.HC2_se[:-1],
                             self.res2.HC2_se[:-1],
                             DECIMAL_4)
-        assert_approx_equal(self.res1.HC2_se[-1],
-                            self.res2.HC2_se[-1])
+        assert_allclose(self.res1.HC2_se[-1],
+                        self.res2.HC2_se[-1])
 
     def test_HC3_errors(self):
         assert_almost_equal(self.res1.HC3_se[:-1],
                             self.res2.HC3_se[:-1],
                             DECIMAL_4)
-        assert_approx_equal(self.res1.HC3_se[-1],
-                            self.res2.HC3_se[-1])
+        assert_allclose(self.res1.HC3_se[-1],
+                        self.res2.HC3_se[-1])
 
     def test_qr_params(self):
         assert_almost_equal(self.res1.params,
@@ -277,7 +277,8 @@ class TestOLS(CheckRegressionResults):
         with warnings.catch_warnings(record=True):
             y = self.res1.model.endog
             res = OLS(y, y).fit()
-            assert_allclose(res.scale, 0, atol=1e-20)
+            assert_allclose(res.scale, 0,
+                            atol=1e-20)
             assert_allclose(res.wresid,
                             res.resid_pearson,
                             atol=5e-11)
@@ -976,14 +977,14 @@ class TestGLS(object):
         cls.endog = data.endog
 
     def test_aic(self):
-        assert_approx_equal(self.res1.aic + 2,
-                            self.res2.aic,
-                            3)
+        assert_allclose(self.res1.aic + 2,
+                        self.res2.aic,
+                        rtol=1e-3)
 
     def test_bic(self):
-        assert_approx_equal(self.res1.bic,
-                            self.res2.bic,
-                            2)
+        assert_allclose(self.res1.bic,
+                        self.res2.bic,
+                        rtol=1e-2)
 
     def test_loglike(self):
         assert_almost_equal(self.res1.llf,
