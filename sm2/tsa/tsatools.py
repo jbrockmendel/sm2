@@ -153,7 +153,7 @@ def _safe_col_trend(x, columns, trendarr, is_pandas, is_recarray, has_constant):
 
 def _cast_trend_recarray(x, descr, prepend):
     # TODO: docstring
-    x = x.to_records(index=False, convert_datetime64=False)
+    x = x.to_records(index=False)
     new_descr = x.dtype.descr
     extra_col = len(new_descr) - len(descr)
 
