@@ -6,7 +6,7 @@ import pytest
 import numpy as np
 from numpy.testing import assert_almost_equal, assert_equal, assert_allclose
 
-from sm2.tools.sm_exceptions import ColinearityWarning
+from sm2.tools.sm_exceptions import CollinearityWarning
 
 from sm2.datasets import macrodata
 from sm2.tsa import unit_root
@@ -376,7 +376,7 @@ def test_coint_identical_series():
     scale_e = 1
     np.random.seed(123)
     y = scale_e * np.random.randn(nobs)
-    warnings.simplefilter('always', ColinearityWarning)
+    warnings.simplefilter('always', CollinearityWarning)
     with warnings.catch_warnings(record=True) as w:
         c = unit_root.coint(y, y, trend="c", maxlag=0, autolag=None)
     assert len(w) == 1
@@ -392,7 +392,7 @@ def test_coint_perfect_collinearity():
     np.random.seed(123)
     x = scale_e * np.random.randn(nobs, 2)
     y = 1 + x.sum(axis=1)
-    warnings.simplefilter('always', ColinearityWarning)
+    warnings.simplefilter('always', CollinearityWarning)
     with warnings.catch_warnings(record=True):
         c = unit_root.coint(y, x, trend="c", maxlag=0, autolag=None)
     assert c[0] == 0.0
