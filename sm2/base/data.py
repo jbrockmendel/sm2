@@ -56,8 +56,7 @@ class NullHandler(object):
     """Class for handling Nans in input data"""
     @classmethod
     def _drop_nans_1d(cls, x, nan_mask):
-        if hasattr(x, 'ix'):
-            # pandas object
+        if isinstance(x, (pd.Series, pd.DataFrame)):
             return x.loc[nan_mask]
         else:
             return x[nan_mask]
@@ -65,8 +64,7 @@ class NullHandler(object):
     @classmethod
     def _drop_nans_2d(cls, x, nan_mask):
         # TODO: Any reason to do this in two slicing steps instead of one?
-        if hasattr(x, 'ix'):
-            # pandas object
+        if isinstance(x, (pd.Series, pd.DataFrame)):
             return x.loc[nan_mask].loc[:, nan_mask]
         else:
             # extra arguments could be plain ndarrays

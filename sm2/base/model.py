@@ -191,7 +191,7 @@ class Model(wrap.RemoveDataMixin):
                         cols.remove(col)
                     except ValueError:
                         pass  # OK if not present
-                design_info = design_info.subset(cols).design_info
+                design_info = design_info.subset(cols)
 
         kwargs.update({'missing_idx': missing_idx,
                        'missing': missing,

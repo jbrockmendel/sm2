@@ -816,7 +816,7 @@ class CheckBinaryResults(CheckModelResults):
 
     @classmethod
     def setup_class(cls):
-        data = sm2.datasets.spector.load()
+        data = sm2.datasets.spector.load(as_pandas=False)
         exog = add_constant(data.exog, prepend=False)
         model = cls.model_cls(data.endog, exog, **cls.mod_kwargs)
         cls.res1 = model.fit(**cls.fit_kwargs)
@@ -915,7 +915,7 @@ class TestProbitMinimizeAdditionalOptions(CheckProbitSpector):
 class TestProbitCG(CheckProbitSpector):
     @classmethod
     def setup_class(cls):
-        data = sm2.datasets.spector.load()
+        data = sm2.datasets.spector.load(as_pandas=False)
         data.exog = add_constant(data.exog, prepend=False)
 
         # fmin_cg fails to converge on some machines - reparameterize
@@ -979,7 +979,7 @@ class TestProbitL1(CheckLikelihoodModelL1):
 
     @classmethod
     def setup_class(cls):
-        data = sm2.datasets.spector.load()
+        data = sm2.datasets.spector.load(as_pandas=False)
         data.exog = add_constant(data.exog, prepend=True)
         model = cls.model_cls(data.endog, data.exog)
         cls.res1 = model.fit_regularized(**cls.fit_reg_kwargs)
@@ -1027,7 +1027,7 @@ class TestLogitL1(CheckLikelihoodModelL1):
 
     @classmethod
     def setup_class(cls):
-        data = sm2.datasets.spector.load()
+        data = sm2.datasets.spector.load(as_pandas=False)
         data.exog = add_constant(data.exog, prepend=True)
         model = cls.model_cls(data.endog, data.exog)
         cls.res1 = model.fit_regularized(**cls.fit_reg_kwargs)
@@ -1203,7 +1203,7 @@ class TestLogitL1Compatability(CheckL1Compatability):
 
     @classmethod
     def setup_class(cls):
-        data = sm2.datasets.spector.load()
+        data = sm2.datasets.spector.load(as_pandas=False)
         data.exog = add_constant(data.exog, prepend=True)
         # Do a regularized fit with alpha, effectively dropping the last column
         alpha = np.array([0, 0, 0, 10])
@@ -1225,7 +1225,7 @@ class TestMNLogitL1Compatability(CheckL1Compatability):
 
     @classmethod
     def setup_class(cls):
-        data = sm2.datasets.spector.load()
+        data = sm2.datasets.spector.load(as_pandas=False)
         data.exog = add_constant(data.exog, prepend=True)
         alpha = np.array([0, 0, 0, 10])
         mod = cls.model_cls(data.endog, data.exog)
@@ -1268,7 +1268,7 @@ class TestProbitL1Compatability(CheckL1Compatability):
 
     @classmethod
     def setup_class(cls):
-        data = sm2.datasets.spector.load()
+        data = sm2.datasets.spector.load(as_pandas=False)
         data.exog = add_constant(data.exog, prepend=True)
         alpha = np.array([0, 0, 0, 10])
         mod = cls.model_cls(data.endog, data.exog)
@@ -1392,7 +1392,7 @@ class TestL1AlphaZeroLogit(CompareL11D):
 
     @classmethod
     def setup_class(cls):
-        data = sm2.datasets.spector.load()
+        data = sm2.datasets.spector.load(as_pandas=False)
         data.exog = add_constant(data.exog, prepend=True)
         mod = cls.model_cls(data.endog, data.exog)
         cls.res1 = mod.fit_regularized(maxiter=1000, **cls.fit_reg_kwargs)
@@ -1410,7 +1410,7 @@ class TestL1AlphaZeroProbit(CompareL11D):
 
     @classmethod
     def setup_class(cls):
-        data = sm2.datasets.spector.load()
+        data = sm2.datasets.spector.load(as_pandas=False)
         data.exog = add_constant(data.exog, prepend=True)
         mod = cls.model_cls(data.endog, data.exog)
         cls.res1 = mod.fit_regularized(method="l1", alpha=0,
@@ -1682,7 +1682,7 @@ class TestLogitNewton(CheckBinaryResults, CheckMargEff):
 
     @classmethod
     def setup_class(cls):
-        data = sm2.datasets.spector.load()
+        data = sm2.datasets.spector.load(as_pandas=False)
         data.exog = add_constant(data.exog, prepend=False)
         model = cls.model_cls(data.endog, data.exog, **cls.mod_kwargs)
         cls.res1 = model.fit(**cls.fit_kwargs)
@@ -1751,7 +1751,7 @@ class TestLogitNewtonPrepend(CheckMargEff):
 
     @classmethod
     def setup_class(cls):
-        data = sm2.datasets.spector.load()
+        data = sm2.datasets.spector.load(as_pandas=False)
         data.exog = add_constant(data.exog, prepend=True)
         model = cls.model_cls(data.endog, data.exog, **cls.mod_kwargs)
         cls.res1 = model.fit(**cls.fit_kwargs)
@@ -2252,7 +2252,7 @@ class TestSweepAlphaL1(object):
 
     @classmethod
     def setup_class(cls):
-        data = sm2.datasets.spector.load()
+        data = sm2.datasets.spector.load(as_pandas=False)
         data.exog = add_constant(data.exog, prepend=True)
         cls.model = cls.model_cls(data.endog, data.exog)
 
