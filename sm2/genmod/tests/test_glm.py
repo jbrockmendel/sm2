@@ -346,7 +346,7 @@ class TestGlmGaussian(CheckModelResultsMixin):
         """
         Test Gaussian family with canonical identity link
         """
-        cls.data = sm.datasets.longley.load()
+        cls.data = sm.datasets.longley.load(as_pandas=False)
         cls.data.exog = add_constant(cls.data.exog, prepend=False)
         cls.res1 = GLM(cls.data.endog, cls.data.exog,
                        family=sm.families.Gaussian()).fit()
@@ -433,7 +433,7 @@ class TestGlmBinomial(CheckModelResultsMixin):
         """
         Test Binomial family with canonical logit link using star98 dataset.
         """
-        data = sm.datasets.star98.load()
+        data = sm.datasets.star98.load(as_pandas=False)
         data.exog = add_constant(data.exog, prepend=False)
         cls.res1 = GLM(data.endog, data.exog,
                        family=sm.families.Binomial()).fit()
@@ -505,7 +505,7 @@ class TestGlmGamma(CheckModelResultsMixin):
         """
         Tests Gamma family with canonical inverse link (power -1)
         """
-        data = sm.datasets.scotland.load()
+        data = sm.datasets.scotland.load(as_pandas=False)
         data.exog = add_constant(data.exog, prepend=False)
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
@@ -561,7 +561,7 @@ class TestGlmPoisson(CheckModelResultsMixin, CheckComparisonMixin):
 
         Test results were obtained by R.
         """
-        cls.data = sm.datasets.cpunish.load()
+        cls.data = sm.datasets.cpunish.load(as_pandas=False)
         cls.data.exog[:, 3] = np.log(cls.data.exog[:, 3])
         cls.data.exog = add_constant(cls.data.exog, prepend=False)
         cls.res1 = GLM(cls.data.endog, cls.data.exog,
@@ -636,7 +636,7 @@ class TestGlmNegbinomial(CheckModelResultsMixin):
         """
         Test Negative Binomial family with log link
         """
-        cls.data = sm.datasets.committee.load()
+        cls.data = sm.datasets.committee.load(as_pandas=False)
         cls.data.exog[:, 2] = np.log(cls.data.exog[:, 2])
         interaction = cls.data.exog[:, 2] * cls.data.exog[:, 1]
         cls.data.exog = np.column_stack((cls.data.exog, interaction))
@@ -659,7 +659,7 @@ class TestGlmPoissonOffset(CheckModelResultsMixin):
 
     @classmethod
     def setup_class(cls):
-        data = sm.datasets.cpunish.load()
+        data = sm.datasets.cpunish.load(as_pandas=False)
         data.exog[:, 3] = np.log(data.exog[:, 3])
         data.exog = add_constant(data.exog, prepend=True)
         exposure = [100] * len(data.endog)
@@ -759,7 +759,7 @@ class TestStartParams(CheckModelResultsMixin):
         """
         Test Gaussian family with canonical identity link
         """
-        cls.data = sm.datasets.longley.load()
+        cls.data = sm.datasets.longley.load(as_pandas=False)
         cls.data.exog = add_constant(cls.data.exog, prepend=False)
         params = sm.OLS(cls.data.endog, cls.data.exog).fit().params
         cls.res1 = GLM(cls.data.endog, cls.data.exog,
@@ -772,7 +772,7 @@ class CheckWtdDuplicationMixin(object):
 
     @classmethod
     def setup_class(cls):
-        cls.data = sm.datasets.cpunish.load()
+        cls.data = sm.datasets.cpunish.load(as_pandas=False)
         cls.endog = cls.data.endog
         cls.exog = cls.data.exog
         np.random.seed(1234)
@@ -1448,7 +1448,7 @@ class TestConvergence(object):
         """
         Test Binomial family with canonical logit link using star98 dataset.
         """
-        data = sm.datasets.star98.load()
+        data = sm.datasets.star98.load(as_pandas=False)
         data.exog = add_constant(data.exog, prepend=False)
         cls.model = GLM(data.endog, data.exog,
                         family=sm.families.Binomial())
@@ -1685,7 +1685,7 @@ def test_poisson_deviance():
 
 @pytest.mark.not_vetted
 def test_wtd_patsy_missing():
-    data = sm.datasets.cpunish.load()
+    data = sm.datasets.cpunish.load(as_pandas=False)
     data.exog[0, 0] = np.nan
     data.endog[[2, 4, 6, 8]] = np.nan
     data.pandas = pd.DataFrame(data.exog, columns=data.exog_name)
@@ -1838,7 +1838,7 @@ def test_non_invertible_hessian_fails_summary():
 def test_attribute_writable_resettable():
     # Regression test for mutables and class constructors.
     # TODO: GH reference?
-    data = sm.datasets.longley.load()
+    data = sm.datasets.longley.load(as_pandas=False)
     endog, exog = data.endog, data.exog
     glm_model = sm.GLM(endog, exog)
     assert glm_model.family.link.power == 1.0
