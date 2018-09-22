@@ -177,6 +177,14 @@ class CheckGenericMixin(object):
                 predicted_expected = pd.DataFrame(predicted, index=exog_index)
                 assert predicted_expected.equals(predicted_pandas)
 
+    def test_zero_constrained(self):
+        # TODO: if/when this is ported, see test classes implemented in GH#4576
+        pytest.skip("_fit_zeros is not (yet) ported from upstream")
+
+    def test_zero_collinear(self):
+        # TODO: if/when this is ported, see test classes implemented in GH#4576
+        pytest.skip("_fit_collinear is not (yet) ported from upstream")
+
 
 # subclasses for individual models, unchanged from test_shrink_pickle
 # TODO: check if setup_class is faster than setup

@@ -310,6 +310,8 @@ class RegressionModel(base.LikelihoodModel):
             # used in ANOVA
             self.effects = effects = np.dot(Q.T, self.wendog)
             beta = np.linalg.solve(R, effects)
+        else:
+            raise ValueError('`method` has to be "pinv" or "qr"')
 
         # TODO: Is this necessary given the existing properties?
         if self._df_model is None:

@@ -469,6 +469,18 @@ class LikelihoodModel(Model):
         mlefit.mle_settings = optim_settings
         return mlefit
 
+    def _fit_zeros(self, keep_index=None, start_params=None,
+                   return_auxiliary=False, k_params=None, **fit_kwds):
+        # TODO: If/when this is ported, see GH#4576 and nearby
+        raise NotImplementedError("_fit_zeros is not (yet) ported "
+                                  "from upstream")
+
+    def _fit_collinear(self, atol=1e-14, rtol=1e-13, **kwds):
+        # TODO: If/when this is ported, see GH#4576 and nearby
+        raise NotImplementedError("_fit_collinear is not (yet) ported "
+                                  "from upstream")
+
+
 
 class GenericLikelihoodModel(LikelihoodModel):
     # TODO: methods that may be worth porting from upstream:
