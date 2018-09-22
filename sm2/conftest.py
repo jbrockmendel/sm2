@@ -14,8 +14,8 @@ except ImportError:
 def pytest_addoption(parser):
     parser.addoption("--skip-slow", action="store_true",
                      help="skip slow tests")
-    #parser.addoption("--only-slow", action="store_true",
-    #                 help="run only slow tests")
+    parser.addoption("--only-slow", action="store_true",
+                     help="run only slow tests")
     parser.addoption("--skip-examples", action="store_true",
                      help="skip tests of examples")
     parser.addoption("--skip-matplotlib", action="store_true",
