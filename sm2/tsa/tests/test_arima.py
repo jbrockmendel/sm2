@@ -1112,11 +1112,12 @@ def test_bad_start_params():
 @pytest.mark.not_vetted
 def test_armax_predict_no_trend():
     # GH#1123 test ARMAX predict doesn't ignore exog when trend is none
-    np.random.seed(12345)
     arparams = np.array([.75, -.25])
     maparams = np.array([.65, .35])
 
     nobs = 20
+
+    np.random.seed(12345)
     y = arma_generate_sample(arparams, maparams, nobs)
 
     X = np.random.randn(nobs)
@@ -1558,12 +1559,12 @@ def test_arima_fit_multiple_calls():
 
 @pytest.mark.not_vetted
 def test_long_ar_start_params():
-    np.random.seed(12345)
     arparams = np.array([1, -.75, .25])
     maparams = np.array([1, .65, .35])
 
     nobs = 30
 
+    np.random.seed(12345)
     y = arma_generate_sample(arparams, maparams, nobs)
 
     model = ARMA(y, order=(2, 2))
@@ -2563,6 +2564,7 @@ def test_arima_predict_noma():
     # GH#657
     ar = [1, .75]
     ma = [1]
+    np.random.seed(12345)
     data = arma_generate_sample(ar, ma, 100)
     arma = ARMA(data, order=(0, 1))
     arma_res = arma.fit(disp=-1)
@@ -2588,6 +2590,7 @@ def test_arima_no_diff():
     # ARMA model, need ARIMA(p, 0, q) to return an ARMA in init.
     ar = [1, -.75, .15, .35]
     ma = [1, .25, .9]
+    np.random.seed(12345)
     y = arma_generate_sample(ar, ma, 100)
     mod = ARIMA(y, (3, 0, 2))
     assert type(mod) is ARMA
