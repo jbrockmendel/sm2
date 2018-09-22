@@ -125,8 +125,9 @@ class RLM(base.LikelihoodModel):
     def _res_classes(self):
         return {"fit": (RLMResults, RLMResultsWrapper)}
 
-    def __init__(self, endog, exog, M=norms.HuberT(), missing='none',
-                 **kwargs):
+    def __init__(self, endog, exog, M=None, missing='none', **kwargs):
+        if M is None:
+            M = norms.HuberT()
         self.M = M
         super(base.LikelihoodModel, self).__init__(endog, exog,
                                                    missing=missing, **kwargs)
