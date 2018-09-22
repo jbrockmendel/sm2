@@ -25,7 +25,7 @@ class HypothesisTestResults(object):
         summary.
     """
     def __init__(self, test_statistic, crit_value, pvalue, df,
-                 signif, method, title, h0, ):
+                 signif, method, title, h0):
         self.test_statistic = test_statistic
         self.crit_value = crit_value
         self.pvalue = pvalue
