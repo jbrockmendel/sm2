@@ -1,6 +1,7 @@
 
 import os
 
+import numpy as np
 from numpy.testing import assert_array_equal
 from pandas.util.testing import assert_frame_equal
 import pytest
@@ -34,6 +35,7 @@ def test_webuse():
     df['year'] = df['year'].astype('i2')
     df['quarter'] = df['quarter'].astype('i1')
     expected = df.to_records(index=False)
+    expected = np.array([list(row) for row in expected])
     res1 = webuse('macrodata', baseurl=base_gh, as_df=False)
     assert res1.dtype == expected.dtype
     assert_array_equal(res1, expected)

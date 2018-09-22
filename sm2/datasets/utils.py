@@ -85,7 +85,7 @@ def process_pandas(data, endog_idx=0, exog_idx=None, index_idx=None):
             exog = data[names[exog_idx]].copy()
 
     if index_idx is not None:  # NOTE: will have to be improved for dates
-        index = Index(data.iloc[:, index_idx])
+        index = pd.Index(data.iloc[:, index_idx])
         endog.index = index
         exog.index = index.copy()
         data = data.set_index(names[index_idx])

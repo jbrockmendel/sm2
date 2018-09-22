@@ -1,5 +1,6 @@
 import importlib
 
+from six import PY3
 import numpy as np
 import pandas as pd
 import pytest
@@ -19,10 +20,29 @@ for dataset_name in dir(sm2.datasets):
 @pytest.mark.parametrize('dataset_name', datasets)
 def test_dataset(dataset_name):
     dataset = importlib.import_module('sm2.datasets.' + dataset_name)
-    data = dataset.load()
-    assert isinstance(data, Dataset)
-    assert isinstance(data.data, np.recarray)
+    warning_type = FutureWarning if PY3 else None
+    with pytest.warns(warning_type):
+        ds = dataset.load()
 
-    df_data = dataset.load_pandas()
-    assert isinstance(df_data, Dataset)
-    assert isinstance(df_data.data, pd.DataFrame)
+    assert isinstance(ds, Dataset)
+    assert isinstance(ds.data, np.recarray)
+    if hasattr(ds, 'exog'):
+        assert isinstance(ds.exog, np.ndarray)
+    if hasattr(ds, 'endog'):
+        assert isinstance(ds.endog, np.ndarray)
+
+    ds = dataset.load(as_pandas=True)
+    assert isinstance(ds, Dataset)
+    assert isinstance(ds.data, pd.DataFrame)
+    if hasattr(ds, 'exog'):
+        assert isinstance(ds.exog, (pd.DataFrame, pd.Series))
+    if hasattr(ds, 'endog'):
+        assert isinstance(ds.endog, (pd.DataFrame, pd.Series))
+
+    ds = dataset.load_pandas()
+    assert isinstance(ds, Dataset)
+    assert isinstance(ds.data, pd.DataFrame)
+    if hasattr(ds, 'exog'):
+        assert isinstance(ds.exog, (pd.DataFrame, pd.Series))
+    if hasattr(ds, 'endog'):
+        assert isinstance(ds.endog, (pd.DataFrame, pd.Series))
