@@ -6,9 +6,6 @@ recursive-exclude build *
 recursive-exclude dist *
 recursive-exclude tools *
 
-# Cached Cython signatures
-include cythonize.dat
-
 prune */__pycache__
 
 global-exclude *~ *.swp  *.pyc *.pyo *.bak
