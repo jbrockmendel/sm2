@@ -57,7 +57,7 @@ class GLM(base.LikelihoodModel):
     GLM inherits from sm2.base.model.LikelihoodModel
 
     Parameters
-    -----------
+    ----------
     endog : array-like
         1d array of endogenous response variable.  This array can be 1d or 2d.
         Binomial family models accept a 2d array with two columns. If
