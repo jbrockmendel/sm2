@@ -46,14 +46,14 @@ def compare_ftest(contrast_res, other, decimal=(5, 4)):
 class TestGLSARGretl(object):
     @classmethod
     def setup_class(cls):
-        d = macrodata.load().data
+        d = macrodata.load_pandas().data
 
         # growth rates
-        gs_l_realinv = 400 * np.diff(np.log(d['realinv']))
-        gs_l_realgdp = 400 * np.diff(np.log(d['realgdp']))
+        gs_l_realinv = 400 * np.diff(np.log(d['realinv'].values))
+        gs_l_realgdp = 400 * np.diff(np.log(d['realgdp'].values))
 
         endogg = gs_l_realinv
-        exogg = add_constant(np.c_[gs_l_realgdp, d['realint'][:-1]])
+        exogg = add_constant(np.c_[gs_l_realgdp, d['realint'][:-1].values])
 
         res_ols = OLS(endogg, exogg).fit()
 
@@ -464,10 +464,11 @@ class TestGLSARGretl(object):
 @pytest.mark.not_vetted
 def test_GLSARlag():
     # test that results for lag>1 is close to lag=1, and smaller ssr
-    d2 = macrodata.load().data
-    g_gdp = 400 * np.diff(np.log(d2['realgdp']))
-    g_inv = 400 * np.diff(np.log(d2['realinv']))
-    exogg = add_constant(np.c_[g_gdp, d2['realint'][:-1]], prepend=False)
+    d2 = macrodata.load_pandas().data
+    g_gdp = 400 * np.diff(np.log(d2['realgdp'].values))
+    g_inv = 400 * np.diff(np.log(d2['realinv'].values))
+    exogg = add_constant(np.c_[g_gdp, d2['realint'][:-1].values],
+                         prepend=False)
 
     mod1 = GLSAR(g_inv, exogg, 1)
     res1 = mod1.iterative_fit(5)

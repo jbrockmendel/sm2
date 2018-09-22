@@ -267,7 +267,7 @@ class TestGenericNegativeBinomial(CheckGenericMixin):
     def setup(self):
         # fit for each test, because results will be changed by test
         np.random.seed(987689)
-        data = sm.datasets.randhie.load()
+        data = sm.datasets.randhie.load(as_pandas=False)
         exog = sm.add_constant(data.exog, prepend=False)
         # FIXME: we're editing exog but then not _using_ it.
         # Editing data.exog instead causes tests to fail.

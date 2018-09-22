@@ -174,7 +174,7 @@ class TestOLS(CheckRegressionResults):
 
     @classmethod
     def setup_class(cls):
-        data = datasets.longley.load()
+        data = datasets.longley.load(as_pandas=False)
         data.exog = add_constant(data.exog, prepend=False)
         cls.res1 = OLS(data.endog, data.exog).fit()
         #cls.res2.wresid = cls.res1.wresid  # workaround hack
@@ -245,7 +245,7 @@ class TestOLS(CheckRegressionResults):
                             5)
 
     def test_missing(self):
-        data = datasets.longley.load()
+        data = datasets.longley.load(as_pandas=False)
         data.exog = add_constant(data.exog, prepend=False)
         data.endog[[3, 7, 14]] = np.nan
         mod = OLS(data.endog, data.exog, missing='drop')
@@ -294,7 +294,7 @@ class TestRTO(CheckRegressionResults):
 
     @classmethod
     def setup_class(cls):
-        data = datasets.longley.load()
+        data = datasets.longley.load(as_pandas=False)
         res1 = OLS(data.endog, data.exog).fit()
         cls.res1 = res1
         #cls.res2.wresid = res1.wresid  # workaround hack
@@ -310,7 +310,7 @@ class TestGLS_alt_sigma(CheckRegressionResults):
     """
     @classmethod
     def setup_class(cls):
-        data = datasets.longley.load()
+        data = datasets.longley.load(as_pandas=False)
         data.exog = add_constant(data.exog, prepend=False)
         ols_res = OLS(data.endog, data.exog).fit()
         gls_res = GLS(data.endog, data.exog).fit()
@@ -341,7 +341,7 @@ class TestWLSExogWeights(CheckRegressionResults):
 
     @classmethod
     def setup_class(cls):
-        dta = datasets.ccard.load()
+        dta = datasets.ccard.load(as_pandas=False)
 
         dta.exog = add_constant(dta.exog, prepend=False)
         nobs = 72.
@@ -364,7 +364,7 @@ class TestWLSExogWeights(CheckRegressionResults):
 class TestWLSScalarVsArray(CheckRegressionResults):
     @classmethod
     def setup_class(cls):
-        dta = datasets.longley.load()
+        dta = datasets.longley.load(as_pandas=False)
         dta.exog = add_constant(dta.exog, prepend=True)
 
         wls_scalar = WLS(dta.endog, dta.exog, weights=1. / 3).fit()
@@ -379,7 +379,7 @@ class TestWLSScalarVsArray(CheckRegressionResults):
 class TestWLS_OLS(CheckRegressionResults):
     @classmethod
     def setup_class(cls):
-        data = datasets.longley.load()
+        data = datasets.longley.load(as_pandas=False)
         data.exog = add_constant(data.exog, prepend=False)
         cls.res1 = OLS(data.endog, data.exog).fit()
         cls.res2 = WLS(data.endog, data.exog).fit()
@@ -389,16 +389,17 @@ class TestWLS_OLS(CheckRegressionResults):
 class TestGLS_OLS(CheckRegressionResults):
     @classmethod
     def setup_class(cls):
-        data = datasets.longley.load()
+        data = datasets.longley.load(as_pandas=False)
         data.exog = add_constant(data.exog, prepend=False)
         cls.res1 = GLS(data.endog, data.exog).fit()
         cls.res2 = OLS(data.endog, data.exog).fit()
 
 
+# FIXME: dont comment-out
 # class TestWLS_GLS(CheckRegressionResults):
 #    @classmethod
 #    def setup_class(cls):
-#        data = datasets.ccard.load()
+#        data = datasets.ccard.load(as_pandas=False)
 #        cls.res1 = WLS(data.endog, data.exog,
 #                        weights=1 / data.exog[:, 2]).fit()
 #        cls.res2 = GLS(data.endog, data.exog, sigma=data.exog[:, 2]).fit()
@@ -407,7 +408,7 @@ class TestGLS_OLS(CheckRegressionResults):
 # TODO: test AR
 # why the two-stage in AR?
 # class test_ar(object):
-#     data = datasets.sunspots.load()
+#     data = datasets.sunspots.load(as_pandas=False)
 #     model = AR(data.endog, rho=4).fit()
 #     R_res = RModel(data.endog, aic="FALSE", order_max=4)#
 
@@ -511,7 +512,7 @@ class TestOLS_GLS_WLS_equivalence(object):
 
     @classmethod
     def setup_class(cls):
-        data = datasets.longley.load()
+        data = datasets.longley.load(as_pandas=False)
         data.exog = add_constant(data.exog, prepend=False)
         y = data.endog
         X = data.exog
@@ -565,7 +566,7 @@ class TestGLS_WLS_equivalence(TestOLS_GLS_WLS_equivalence):
 
     @classmethod
     def setup_class(cls):
-        data = datasets.longley.load()
+        data = datasets.longley.load(as_pandas=False)
         data.exog = add_constant(data.exog, prepend=False)
         y = data.endog
         X = data.exog
@@ -602,7 +603,7 @@ class TestFtest(object):
     """
     @classmethod
     def setup_class(cls):
-        data = datasets.longley.load()
+        data = datasets.longley.load(as_pandas=False)
         data.exog = add_constant(data.exog, prepend=False)
         cls.res1 = OLS(data.endog, data.exog).fit()
         R = np.identity(7)[:-1, :]
@@ -637,7 +638,7 @@ class TestFTest2(object):
     """
     @classmethod
     def setup_class(cls):
-        data = datasets.longley.load()
+        data = datasets.longley.load(as_pandas=False)
         data.exog = add_constant(data.exog, prepend=False)
         res1 = OLS(data.endog, data.exog).fit()
         R2 = [[0, 1, -1, 0, 0, 0, 0],
@@ -674,7 +675,7 @@ class TestFtestQ(object):
     """
     @classmethod
     def setup_class(cls):
-        data = datasets.longley.load()
+        data = datasets.longley.load(as_pandas=False)
         data.exog = add_constant(data.exog, prepend=False)
         res1 = OLS(data.endog, data.exog).fit()
         R = np.array([[0, 1, 1, 0, 0, 0, 0],
@@ -706,7 +707,7 @@ class TestTtest(object):
     """
     @classmethod
     def setup_class(cls):
-        data = datasets.longley.load()
+        data = datasets.longley.load(as_pandas=False)
         data.exog = add_constant(data.exog, prepend=False)
         cls.res1 = OLS(data.endog, data.exog).fit()
         R = np.identity(7)
@@ -755,7 +756,7 @@ class TestTtest2(object):
     def setup_class(cls):
         R = np.zeros(7)
         R[4:6] = [1, -1]
-        data = datasets.longley.load()
+        data = datasets.longley.load(as_pandas=False)
         data.exog = add_constant(data.exog, prepend=False)
         res1 = OLS(data.endog, data.exog).fit()
         cls.Ttest1 = res1.t_test(R)
@@ -964,7 +965,7 @@ class TestGLS(object):
 
     @classmethod
     def setup_class(cls):
-        data = datasets.longley.load()
+        data = datasets.longley.load(as_pandas=False)
         exog = add_constant(np.column_stack((data.exog[:, 1],
                                              data.exog[:, 4])),
                             prepend=False)
@@ -1048,7 +1049,7 @@ class TestGLS(object):
 class TestNonFit(object):
     @classmethod
     def setup_class(cls):
-        data = datasets.longley.load()
+        data = datasets.longley.load(as_pandas=False)
         data.exog = add_constant(data.exog, prepend=False)
         cls.endog = data.endog
         cls.exog = data.exog
@@ -1116,7 +1117,7 @@ def test_wls_tss():
 
 @pytest.mark.not_vetted
 def test_wls_missing():
-    data = datasets.ccard.load()
+    data = datasets.ccard.load(as_pandas=False)
     endog = data.endog
     endog[[10, 25]] = np.nan
     mod = WLS(data.endog, data.exog, weights=1 / data.exog[:, 2],

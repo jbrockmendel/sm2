@@ -418,7 +418,7 @@ class GLS(RegressionModel):
     --------
     >>> import numpy as np
     >>> import sm2.api as sm
-    >>> data = sm.datasets.longley.load()
+    >>> data = sm.datasets.longley.load(as_pandas=False)
     >>> data.exog = sm.add_constant(data.exog)
     >>> ols_resid = sm.OLS(data.endog, data.exog).fit().resid
     >>> res_fit = sm.OLS(ols_resid[1:], ols_resid[:-1]).fit()

@@ -19,10 +19,10 @@ from sm2.tsa import unit_root
 @pytest.mark.not_vetted
 def test_adf_autolag():
     # GH#246
-    d2 = macrodata.load().data
+    d2 = macrodata.load_pandas().data
 
     for k_trend, tr in enumerate(['nc', 'c', 'ct', 'ctt']):
-        x = np.log(d2['realgdp'])
+        x = np.log(d2['realgdp'].values)
         xd = np.diff(x)
 
         # check exog

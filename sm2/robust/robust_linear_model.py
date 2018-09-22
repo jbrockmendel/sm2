@@ -86,7 +86,7 @@ class RLM(base.LikelihoodModel):
     Examples
     ---------
     >>> import sm2.api as sm
-    >>> data = sm.datasets.stackloss.load()
+    >>> data = sm.datasets.stackloss.load(as_pandas=False)
     >>> data.exog = sm.add_constant(data.exog)
     >>> rlm_model = sm.RLM(data.endog, data.exog, \
                            M=sm.robust.norms.HuberT())

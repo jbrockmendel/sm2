@@ -1030,7 +1030,7 @@ class LikelihoodModelResults(wrap.SaveLoadMixin, Results):
         --------
         >>> import numpy as np
         >>> import sm2.api as sm
-        >>> data = sm.datasets.longley.load()
+        >>> data = sm.datasets.longley.load(as_pandas=False)
         >>> data.exog = sm.add_constant(data.exog)
         >>> results = sm.OLS(data.endog, data.exog).fit()
         >>> r = np.zeros_like(results.params)
@@ -1166,7 +1166,7 @@ class LikelihoodModelResults(wrap.SaveLoadMixin, Results):
         --------
         >>> import numpy as np
         >>> import sm2.api as sm
-        >>> data = sm.datasets.longley.load()
+        >>> data = sm.datasets.longley.load(as_pandas=False)
         >>> data.exog = sm.add_constant(data.exog)
         >>> results = sm.OLS(data.endog, data.exog).fit()
         >>> A = np.identity(len(results.params))
@@ -1494,7 +1494,7 @@ class LikelihoodModelResults(wrap.SaveLoadMixin, Results):
         Examples
         --------
         >>> import sm2.api as sm
-        >>> data = sm.datasets.longley.load()
+        >>> data = sm.datasets.longley.load(as_pandas=False)
         >>> data.exog = sm.add_constant(data.exog)
         >>> results = sm.OLS(data.endog, data.exog).fit()
         >>> results.conf_int()

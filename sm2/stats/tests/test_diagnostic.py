@@ -45,12 +45,12 @@ class TestDiagnosticG(object):
 
     @classmethod
     def setup_class(cls):
-        d = macrodata.load().data
+        d = macrodata.load(as_pandas=False).data
         # growth rates
-        gs_l_realinv = 400 * np.diff(np.log(d['realinv']))
-        gs_l_realgdp = 400 * np.diff(np.log(d['realgdp']))
-        lint = d['realint'][:-1]
-        tbilrate = d['tbilrate'][:-1]
+        gs_l_realinv = 400 * np.diff(np.log(d['realinv'].values))
+        gs_l_realgdp = 400 * np.diff(np.log(d['realgdp'].values))
+        lint = d['realint'][:-1].values
+        tbilrate = d['tbilrate'][:-1].values
 
         endogg = gs_l_realinv
         exogg = add_constant(np.c_[gs_l_realgdp, lint])

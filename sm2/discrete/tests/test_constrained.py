@@ -22,7 +22,7 @@ from sm2.tools.tools import add_constant
 from sm2 import datasets
 from sm2.api import GLM, families
 
-spector_data = datasets.spector.load()
+spector_data = datasets.spector.load(as_pandas=False)
 spector_data.exog = add_constant(spector_data.exog, prepend=False)
 
 from .results import results_poisson_constrained as results

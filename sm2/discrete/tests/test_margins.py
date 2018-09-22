@@ -15,7 +15,7 @@ import sm2.discrete.tests.results.results_count_margins as res_stata
 
 
 # load data into module namespace
-cpunish_data = sm.datasets.cpunish.load()
+cpunish_data = sm.datasets.cpunish.load(as_pandas=False)
 cpunish_data.exog[:, 3] = np.log(cpunish_data.exog[:, 3])
 exog = sm.add_constant(cpunish_data.exog, prepend=False)
 endog = cpunish_data.endog - 1  # avoid zero-truncation
