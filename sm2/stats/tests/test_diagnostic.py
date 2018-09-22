@@ -710,7 +710,7 @@ class TestDiagnosticGPandas(TestDiagnosticG):
 @pytest.mark.skip(reason="outliers_influence not ported from upstream")
 @pytest.mark.smoke
 @pytest.mark.not_vetted
-def test_outlier_influence_funcs():
+def test_outlier_influence_funcs(reset_randomstate):
     x = add_constant(np.random.randn(10, 2))
     y = x.sum(1) + np.random.randn(10)
     res = OLS(y, x).fit()

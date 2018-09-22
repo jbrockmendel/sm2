@@ -82,7 +82,7 @@ def test_omni_normtest():
 
 
 @pytest.mark.not_vetted
-def test_omni_normtest_axis():
+def test_omni_normtest_axis(reset_randomstate):
     # test axis of omni_normtest
     x = np.random.randn(25, 3)
     nt1 = omni_normtest(x)
@@ -167,10 +167,12 @@ def test_adnorm():
 
 
 @pytest.mark.not_vetted
-def test_durbin_watson_pandas():
+def test_durbin_watson_pandas(reset_randomstate):
     x = np.random.randn(50)
     x_series = pd.Series(x)
-    assert_almost_equal(durbin_watson(x), durbin_watson(x_series), decimal=13)
+    assert_almost_equal(durbin_watson(x),
+                        durbin_watson(x_series),
+                        decimal=13)
 
 
 @pytest.mark.not_vetted
@@ -212,25 +214,26 @@ class TestStattools(object):
         mc = medcouple(np.array([1, 2, 7, 9, 10.0]))
         assert_almost_equal(mc, -0.3333333)
 
-    def test_medcouple_symmetry(self):
+    def test_medcouple_symmetry(self, reset_randomstate):
         x = np.random.standard_normal(100)
         mcp = medcouple(x)
         mcn = medcouple(-x)
         assert_almost_equal(mcp + mcn, 0)
 
-    def test_durbin_watson(self):
+    def test_durbin_watson(self, reset_randomstate):
         x = np.random.standard_normal(100)
         dw = sum(np.diff(x)**2.0) / np.dot(x, x)
         assert_almost_equal(dw, durbin_watson(x))
 
-    def test_durbin_watson_2d(self):
+    def test_durbin_watson_2d(self, reset_randomstate):
         shape = (1, 10)
         x = np.random.standard_normal(100)
         dw = sum(np.diff(x)**2.0) / np.dot(x, x)
         x = np.tile(x[:, None], shape)
-        assert_almost_equal(np.squeeze(dw * np.ones(shape)), durbin_watson(x))
+        assert_almost_equal(np.squeeze(dw * np.ones(shape)),
+                            durbin_watson(x))
 
-    def test_durbin_watson_3d(self):
+    def test_durbin_watson_3d(self, reset_randomstate):
         shape = (10, 1, 10)
         x = np.random.standard_normal(100)
         dw = sum(np.diff(x)**2.0) / np.dot(x, x)
@@ -243,20 +246,20 @@ class TestStattools(object):
         sk = robust_skewness(x)
         assert_almost_equal(np.array(sk), np.zeros(4))
 
-    def test_robust_skewness_1d_2d(self):
+    def test_robust_skewness_1d_2d(self, reset_randomstate):
         x = np.random.randn(21)
         y = x[:, None]
         sk_x = robust_skewness(x)
         sk_y = robust_skewness(y, axis=None)
         assert_almost_equal(np.array(sk_x), np.array(sk_y))
 
-    def test_robust_skewness_symmetric(self):
+    def test_robust_skewness_symmetric(self, reset_randomstate):
         x = np.random.standard_normal(100)
         x = np.hstack([x, np.zeros(1), -x])
         sk = robust_skewness(x)
         assert_almost_equal(np.array(sk), np.zeros(4))
 
-    def test_robust_skewness_3d(self):
+    def test_robust_skewness_3d(self, reset_randomstate):
         x = np.random.standard_normal(100)
         x = np.hstack([x, np.zeros(1), -x])
         x = np.tile(x, (10, 10, 1))
