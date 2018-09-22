@@ -1476,10 +1476,17 @@ class ARMAResults(tsa_model.TimeSeriesModelResults, wold.ARMAParams):
                 exog = exog[None, :]
             if exog.shape[0] != steps:  # pragma: no cover
                 raise ValueError("new exog needed for each step")
+            if self.k_exog != exog.shape[1]:
+                raise ValueError('exog must contain the same number of '
+                                 'variables as in the estimated model.')
             # prepend in-sample exog observations
             if self.k_ar > 0:
                 exog = np.vstack((self.model.exog[-self.k_ar:, self.k_trend:],
                                   exog))
+        else:
+            if self.k_exog:
+                raise ValueError('Forecast values for exog are required when '
+                                 'the model contains exogenous regressors.')
 
         forecast = _arma_predict_out_of_sample(self.params,
                                                steps, self.resid, self.k_ar,
@@ -1680,10 +1687,18 @@ class ARIMAResults(ARMAResults):
                 exog = exog[:, None]
             if exog.shape[0] != steps:
                 raise ValueError("new exog needed for each step")
+            if self.k_exog != exog.shape[1]:
+                raise ValueError('exog must contain the same number of '
+                                 'variables as in the estimated model.')
             # prepend in-sample exog observations
             if self.k_ar > 0:
                 exog = np.vstack((self.model.exog[-self.k_ar:, self.k_trend:],
                                   exog))
+        else:
+            if self.k_exog:
+                raise ValueError('Forecast values for exog are required when '
+                                 'the model contains exogenous regressors.')
+
         forecast = _arma_predict_out_of_sample(self.params, steps, self.resid,
                                                self.k_ar, self.k_ma,
                                                self.k_trend, self.k_exog,
