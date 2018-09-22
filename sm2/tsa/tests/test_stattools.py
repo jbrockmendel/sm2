@@ -5,13 +5,14 @@ import warnings
 
 import pytest
 import numpy as np
-from numpy.testing import assert_almost_equal, assert_equal
+from numpy.testing import assert_almost_equal, assert_equal, assert_allclose
 import pandas as pd
 
 from sm2.compat.numpy import recarray_select
 from sm2.tsa.stattools import (pacf_yw,
                                pacf, grangercausalitytests,
-                               arma_order_select_ic)
+                               arma_order_select_ic,
+                               levinson_durbin)
 from sm2.datasets import macrodata
 from sm2.tsa.arima_process import arma_generate_sample
 
@@ -21,10 +22,6 @@ results_corrgram = pd.read_csv(path, delimiter=',')
 
 DECIMAL_8 = 8
 DECIMAL_6 = 6
-DECIMAL_5 = 5
-DECIMAL_4 = 4
-DECIMAL_3 = 3
-DECIMAL_2 = 2
 
 
 @pytest.mark.not_vetted
@@ -166,3 +163,14 @@ def test_granger_fails_on_nobs_check():
     grangercausalitytests(X, 2, verbose=False)  # This should pass.
     with pytest.raises(ValueError):
         grangercausalitytests(X, 3, verbose=False)
+
+
+def test_levinson_durbin_acov():
+    # GH#4879 by bashtage
+    rho = 0.9
+    m = 20
+    acov = rho**np.arange(200)
+    sigma2_eps, ar, pacf, _, _ = levinson_durbin(acov, m, isacov=True)
+    assert_allclose(sigma2_eps, 1 - rho ** 2)
+    assert_allclose(ar, np.array([rho] + [0] * (m - 1)), atol=1e-8)
+    assert_allclose(pacf, np.array([1, rho] + [0] * (m - 1)), atol=1e-8)
