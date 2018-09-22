@@ -63,9 +63,8 @@ def get_macrodata():
 
 
 def get_lutkepohl_data(name='e2'):
-    vdir = os.path.split(cur_dir)[0]
-    data_dir = os.path.join(vdir, 'data')
-    path = os.path.join(data_dir, '%s.dat' % name)
+    results_dir = os.path.join(cur_dir, "results")
+    path = os.path.join(results_dir, '%s.dat' % name)
     raise NotImplementedError("parse_lutkepohl_data not ported")
     return util.parse_lutkepohl_data(path)
 
