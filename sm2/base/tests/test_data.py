@@ -10,7 +10,7 @@ from sm2.formula import handle_formula_data
 from sm2.datasets import macrodata, longley
 from sm2.tools.sm_exceptions import MissingDataError
 
-
+# FIXME: dont comment-out
 # class TestDates(object):
 #    @classmethod
 #    def setup_class(cls):
@@ -739,16 +739,9 @@ class CheckHasConstant(object):
             # extra check after fit
             fit_kwds = self.fit_kwds
 
-            # upstream had this in a try/except block with a comment
-            # "some models raise on singular".  This doesnt affect us for
-            # the time being (likely because of skipped GLM/RLM tests).
-            # When it does, re-enable but catch something more specific.
             try:
                 res = mod.fit(**fit_kwds)
             except np.linalg.LinAlgError:
-                # upstream puts the next two assertions in a try/except
-                # block, _and_ catches _everything_ instead of just the one
-                # relevant error.
                 continue
             else:
                 np.testing.assert_equal(res.model.k_constant, result[0])

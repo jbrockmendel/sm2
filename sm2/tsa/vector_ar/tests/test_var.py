@@ -380,8 +380,7 @@ class CheckFEVD(object):
     def test_fevd_summary(self):
         self.fevd.summary()
 
-    @pytest.mark.xfail(reason="FEVD.cov() not implemented; this test is"
-                              "commented-out upstream")
+    @pytest.mark.xfail(reason="FEVD.cov() not implemented")
     def test_fevd_cov(self):
         # test does not crash
         # not implemented

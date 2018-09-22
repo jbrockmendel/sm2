@@ -492,7 +492,7 @@ class VAR(tsa_model.TimeSeriesModel):
         rhs = self._build_rhs(lags, offset, trend)
         y_sample = endog[lags:]
         # Lütkepohl p75, about 5x faster than stated formula
-        params = np.linalg.lstsq(rhs, y_sample, rcond=-1)[0]
+        params = np.linalg.lstsq(rhs, y_sample, rcond=1e-15)[0]
         resid = y_sample - np.dot(rhs, params)
 
         # Unbiased estimate of covariance matrix $\Sigma_u$ of the white noise
