@@ -1364,7 +1364,7 @@ def test_arima111_predict_exog_2127():
 
 
 @pytest.mark.not_vetted
-def test_ARIMA_exog_predict():
+def test_arima_exog_predict():
     # TODO: break up giant test
     # test forecasting and dynamic prediction with exog against Stata
     dta = datasets.macrodata.load_pandas().data
@@ -1383,7 +1383,6 @@ def test_ARIMA_exog_predict():
     exog_full = data[['loggdp', 'logcons']]
 
     # pandas
-
     mod = ARIMA(data_sample['loginv'], (1, 0, 1),
                 exog=data_sample[['loggdp', 'logcons']])
     with warnings.catch_warnings():
@@ -1408,19 +1407,21 @@ def test_ARIMA_exog_predict():
     predicted_arma_d = res2.predict(start=193, end=202,
                                     exog=exog_full[197:], dynamic=True)
 
+    endog_scale = 100
+    ex_scale = 1000
     # ARIMA(1, 1, 1)
-    ex = np.asarray(data_sample[['loggdp', 'logcons']].diff())
+    ex = ex_scale * np.asarray(data_sample[['loggdp', 'logcons']].diff())
     # The first obsevation is not (supposed to be) used, but I get
     # a Lapack problem
     # Intel MKL ERROR: Parameter 5 was incorrect on entry to DLASCL.
     ex[0] = 0
-    mod111 = ARIMA(np.asarray(data_sample['loginv']),
+    mod111 = ARIMA(100 * np.asarray(data_sample['loginv']),
                    (1, 1, 1),
                    # Stata differences also the exog
                    exog=ex)
 
     res111 = mod111.fit(disp=0, solver='bfgs', maxiter=5000)
-    exog_full_d = data[['loggdp', 'logcons']].diff()
+    exog_full_d = ex_scale * data[['loggdp', 'logcons']].diff()
     res111.predict(start=197, end=202, exog=exog_full_d.values[197:])
 
     predicted_arima_f = res111.predict(start=196, end=202,
@@ -1463,10 +1464,10 @@ def test_ARIMA_exog_predict():
     assert_allclose(predicted_arma_f,
                     res_f101[-len(predicted_arma_f):],
                     atol=1e-4)
-    assert_allclose(predicted_arima_d,
+    assert_allclose(predicted_arima_d / endog_scale,
                     res_d111[-len(predicted_arima_d):],
                     rtol=1e-4, atol=1e-4)
-    assert_allclose(predicted_arima_f,
+    assert_allclose(predicted_arima_f / endog_scale,
                     res_f111[-len(predicted_arima_f):],
                     rtol=1e-4, atol=1e-4)
 
