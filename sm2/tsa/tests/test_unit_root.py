@@ -63,9 +63,9 @@ class CheckADF(object):
     Test values taken from Stata.
     """
     levels = ['1%', '5%', '10%']
-    data = macrodata.load()
-    x = data.data['realgdp']
-    y = data.data['infl']
+    data = macrodata.load_pandas()
+    x = data.data['realgdp'].values
+    y = data.data['infl'].values
 
     def test_teststat(self):
         assert_almost_equal(self.res1[0],
@@ -194,8 +194,8 @@ class TestKPSS(object):
     In this context, x is the vector containing the
     macrodata['realgdp'] series.
     """
-    data = macrodata.load()
-    x = data.data['realgdp']
+    data = macrodata.load_pandas()
+    x = data.data['realgdp'].values
 
     def test_fail_nonvector_input(self):
         with warnings.catch_warnings(record=True):
@@ -266,9 +266,9 @@ class TestCoint_t(object):
     Test values taken from Stata
     """
     levels = ['1%', '5%', '10%']
-    data = macrodata.load()
-    y1 = data.data['realcons']
-    y2 = data.data['realgdp']
+    data = macrodata.load_pandas()
+    y1 = data.data['realcons'].values
+    y2 = data.data['realgdp'].values
 
     @classmethod
     def setup_class(cls):

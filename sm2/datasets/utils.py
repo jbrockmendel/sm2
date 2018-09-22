@@ -1,4 +1,3 @@
-# Note: as_numpy_dataset, load_csv, strip_column_names not ported from upstream
 import os
 import shutil
 
@@ -10,8 +9,6 @@ from six.moves.urllib_parse import urljoin
 
 import numpy as np
 import pandas as pd
-
-from sm2.compat.numpy import recarray_select
 
 
 def webuse(data, baseurl='https://www.stata-press.com/data/r11/', as_df=True):
@@ -25,12 +22,12 @@ def webuse(data, baseurl='https://www.stata-press.com/data/r11/', as_df=True):
     baseurl : str
         The base URL to the stata datasets.
     as_df : bool
-        If True, returns a `pandas.DataFrame`
+        Deprecated. Always returns a DataFrame
 
     Returns
     -------
-    dta : Record Array
-        A record array containing the Stata dataset.
+    dta : DataFrame
+        A DataFrame containing the Stata dataset.
 
     Examples
     --------
@@ -42,15 +39,7 @@ def webuse(data, baseurl='https://www.stata-press.com/data/r11/', as_df=True):
     error checking in response URLs.
     """
     url = urljoin(baseurl, data + '.dta')
-    dta = urlopen(url)
-    content = dta.read()
-    dta.close()
-    dta = BytesIO(content)  # make it truly file-like
-    df = pd.read_stata(dta)
-    if as_df:
-        return df
-    else:
-        return df.to_records(index=False)
+    return pd.read_stata(url)
 
 
 class Dataset(dict):
@@ -66,7 +55,7 @@ class Dataset(dict):
         # Some datasets have string variables. If you want a raw_data
         # attribute you must create this in the dataset's load function.
         try:  # some datasets have string variables
-            self.raw_data = self.data.view((float, len(self.names)))
+            self.raw_data = self.data.astype(float)
         except (TypeError, ValueError, AttributeError):
             # AttributeError is for DataFrame.view
             pass
@@ -75,73 +64,35 @@ class Dataset(dict):
         return str(self.__class__)
 
 
-def process_recarray(data, endog_idx=0, exog_idx=None, stack=True, dtype=None):
-    names = list(data.dtype.names)
-
-    if isinstance(endog_idx, integer_types):
-        endog = np.array(data[names[endog_idx]], dtype=dtype)
-        endog_name = names[endog_idx]
-        endog_idx = [endog_idx]
-    else:
-        endog_name = [names[i] for i in endog_idx]
-
-        if stack:
-            endog = np.column_stack(data[field] for field in endog_name)
-        else:
-            endog = data[endog_name]
-
-    if exog_idx is None:
-        exog_name = [names[i] for i in range(len(names))
-                     if i not in endog_idx]
-    else:
-        exog_name = [names[i] for i in exog_idx]
-
-    if stack:
-        exog = np.column_stack(data[field] for field in exog_name)
-    else:
-        exog = recarray_select(data, exog_name)
-
-    if dtype:
-        endog = endog.astype(dtype)
-        exog = exog.astype(dtype)
-
-    dataset = Dataset(data=data, names=names, endog=endog, exog=exog,
-                      endog_name=endog_name, exog_name=exog_name)
-
-    return dataset
-
-
-def process_recarray_pandas(data, endog_idx=0, exog_idx=None, dtype=None,
-                            index_idx=None):
-
-    data = pd.DataFrame(data, dtype=dtype)
+def process_pandas(data, endog_idx=0, exog_idx=None, index_idx=None):
     names = data.columns
 
     if isinstance(endog_idx, integer_types):
         endog_name = names[endog_idx]
-        endog = data[endog_name]
+        endog = data[endog_name].copy()
         if exog_idx is None:
             exog = data.drop([endog_name], axis=1)
         else:
-            exog = data.filter(names[exog_idx])
+            exog = data[names[exog_idx]].copy()
     else:
-        endog = data.loc[:, endog_idx]
+        endog = data.loc[:, endog_idx].copy()
         endog_name = list(endog.columns)
         if exog_idx is None:
             exog = data.drop(endog_name, axis=1)
         elif isinstance(exog_idx, integer_types):
-            exog = data.filter([names[exog_idx]])
+            exog = data[names[exog_idx]].copy()
         else:
-            exog = data.filter(names[exog_idx])
+            exog = data[names[exog_idx]].copy()
 
     if index_idx is not None:  # NOTE: will have to be improved for dates
-        endog.index = pd.Index(data.iloc[:, index_idx])
-        exog.index = pd.Index(data.iloc[:, index_idx])
+        index = Index(data.iloc[:, index_idx])
+        endog.index = index
+        exog.index = index.copy()
         data = data.set_index(names[index_idx])
 
     exog_name = list(exog.columns)
-    dataset = Dataset(data=data, names=list(names), endog=endog, exog=exog,
-                      endog_name=endog_name, exog_name=exog_name)
+    dataset = Dataset(data=data, names=list(names), endog=endog,
+                      exog=exog, endog_name=endog_name, exog_name=exog_name)
     return dataset
 
 
@@ -234,8 +185,8 @@ def _get_data(base_url, dataname, cache, extension="csv"):
 def _get_dataset_meta(dataname, package, cache):
     # get the index, you'll probably want this cached because you have
     # to download info about all the data to get info about any of the data...
-    index_url = ("https://raw.github.com/vincentarelbundock/Rdatasets/master/"
-                 "datasets.csv")
+    index_url = ("https://raw.githubusercontent.com/vincentarelbundock/"
+                 "Rdatasets/master/datasets.csv")
     data, _ = _urlopen_cached(index_url, cache)
     if PY3:  # pragma: no cover
         data = data.decode('utf-8', 'strict')
@@ -282,10 +233,10 @@ def get_rdataset(dataname, package="datasets", cache=False):
     dataset is in the cache, it's used.
     """
     # NOTE: use raw github bc html site might not be most up to date
-    data_base_url = ("https://raw.github.com/vincentarelbundock/Rdatasets/"
-                     "master/csv/" + package + "/")
-    docs_base_url = ("https://raw.github.com/vincentarelbundock/Rdatasets/"
-                     "master/doc/" + package + "/rst/")
+    data_base_url = ("https://raw.githubusercontent.com/vincentarelbundock/"
+                     "Rdatasets/master/csv/" + package + "/")
+    docs_base_url = ("https://raw.githubusercontent.com/vincentarelbundock/"
+                     "Rdatasets/master/doc/" + package + "/rst/")
     cache = _get_cache(cache)
     data, from_cache = _get_data(data_base_url, dataname, cache)
     data = pd.read_csv(data, index_col=0)
@@ -340,3 +291,66 @@ def check_internet(url=None):
     except URLError:
         return False
     return True
+
+
+def strip_column_names(df):
+    """
+    Remove leading and trailing single quotes
+     Parameters
+    ----------
+    df : DataFrame
+        DataFrame to process
+     Returns
+    -------
+    df : DataFrame
+        Dataframe with stripped column names
+     Notes
+    -----
+    In-place modification
+    """
+    columns = []
+    for c in df:
+        if c.startswith('\'') and c.endswith('\''):
+            c = c[1:-1]
+        elif c.startswith('\''):
+            c = c[1:]
+        elif c.endswith('\''):
+            c = c[:-1]
+        columns.append(c)
+    df.columns = columns
+    return df
+
+
+def load_csv(base_file, csv_name, sep=',', convert_float=False):
+    """Standard simple csv loader"""
+    filepath = os.path.dirname(os.path.abspath(base_file))
+    filename = os.path.join(filepath, csv_name)
+    engine = 'python' if sep != ',' else 'c'
+    float_precision = {}
+    if engine == 'c':
+        float_precision = {'float_precision': 'high'}
+
+    data = pd.read_csv(filename, sep=sep, engine=engine, **float_precision)
+    if convert_float:
+        data = data.astype(float)
+    return data
+
+
+def as_numpy_dataset(ds, as_pandas=None, retain_index=False):
+    """Convert a pandas dataset to a NumPy dataset"""
+    if as_pandas:
+        return ds
+    if as_pandas is None:
+        import warnings
+        warnings.warn('load will return datasets containing pandas '
+                      'DataFrames and Series in the Future.  '
+                      'To suppress this message, specify load_pandas=False',
+                      FutureWarning)
+    ds.data = ds.data.to_records(index=retain_index)
+    for d in dir(ds):
+        if d.startswith('_'):
+            continue
+        attr = getattr(ds, d)
+        if isinstance(attr, (pd.Series, pd.DataFrame)):
+            setattr(ds, d, np.asarray(attr))
+    return ds

@@ -572,7 +572,7 @@ class Test_ARIMA111(CheckArimaResultsMixin, CheckForecastMixin,
 
     @classmethod
     def setup_class(cls):
-        cpi = datasets.macrodata.load().data['cpi']
+        cpi = datasets.macrodata.load_pandas().data['cpi'].values
         cls.res1 = ARIMA(cpi, (1, 1, 1)).fit(disp=-1)
         cls.res2 = results_arima.ARIMA111()
         # make sure endog names changes to D.cpi
@@ -611,7 +611,7 @@ class Test_ARIMA111CSS(CheckArimaResultsMixin, CheckForecastMixin,
 
     @classmethod
     def setup_class(cls):
-        cpi = datasets.macrodata.load().data['cpi']
+        cpi = datasets.macrodata.load_pandas().data['cpi'].values
         cls.res1 = ARIMA(cpi, (1, 1, 1)).fit(disp=-1, method='css')
         cls.res2 = results_arima.ARIMA111(method='css')
         cls.res2.fittedvalues = - cpi[1:-1] + cls.res2.linear
@@ -638,7 +638,7 @@ class Test_ARIMA112CSS(CheckArimaResultsMixin):
 
     @classmethod
     def setup_class(cls):
-        cpi = datasets.macrodata.load().data['cpi']
+        cpi = datasets.macrodata.load_pandas().data['cpi'].values
         cls.res1 = ARIMA(cpi, (1, 1, 2)).fit(disp=-1, method='css',
                                              start_params=[.905322, -.692425,
                                                            1.07366, 0.172024])
@@ -669,7 +669,7 @@ class Test_ARIMA112CSS(CheckArimaResultsMixin):
 #class Test_ARIMADates(CheckArmaResults, CheckForecast, CheckDynamicForecast):
 #    @classmethod
 #    def setup_class(cls):
-#        cpi = datasets.macrodata.load().data['cpi']
+#        cpi = datasets.macrodata.load_pandas().data['cpi'].values
 #        dates = pd.date_range('1959', periods=203, freq='Q')
 #        cls.res1 = ARIMA(cpi, dates=dates, freq='Q').fit(order=(1, 1, 1),
 #                                                         disp=-1)
@@ -757,7 +757,7 @@ def test_start_params_bug():
 
 @pytest.mark.not_vetted
 def test_arima_predict_mle_dates():
-    cpi = datasets.macrodata.load().data['cpi']
+    cpi = datasets.macrodata.load_pandas().data['cpi'].values
     res1 = ARIMA(cpi, (4, 1, 1), dates=cpi_dates, freq='Q').fit(disp=-1)
 
     path = os.path.join(current_path, 'results',
@@ -792,7 +792,7 @@ def test_arima_predict_mle_dates():
 
 @pytest.mark.not_vetted
 def test_arma_predict_mle_dates():
-    sunspots = datasets.sunspots.load().data['SUNACTIVITY']
+    sunspots = datasets.sunspots.load_pandas().data['SUNACTIVITY'].values
     mod = ARMA(sunspots, (9, 0), dates=sun_dates, freq='A')
     mod.method = 'mle'
 
@@ -810,7 +810,7 @@ def test_arma_predict_mle_dates():
 
 @pytest.mark.not_vetted
 def test_arima_predict_css_dates():
-    cpi = datasets.macrodata.load().data['cpi']
+    cpi = datasets.macrodata.load_pandas().data['cpi'].values
     res1 = ARIMA(cpi, (4, 1, 1), dates=cpi_dates, freq='Q').fit(disp=-1,
                                                                 method='css',
                                                                 trend='nc')
@@ -852,7 +852,7 @@ def test_arima_predict_css_dates():
 @pytest.mark.not_vetted
 def test_arma_predict_css_dates():
     # TODO: GH reference?
-    sunspots = datasets.sunspots.load().data['SUNACTIVITY']
+    sunspots = datasets.sunspots.load_pandas().data['SUNACTIVITY'].values
     mod = ARMA(sunspots, (9, 0), dates=sun_dates, freq='A')
     mod.method = 'css'
     with pytest.raises(ValueError):
@@ -903,7 +903,7 @@ def test_1dexog():
 def test_arima_predict_bug():
     # predict_start_date wasn't getting set on start = None
     # TODO: GH reference?
-    dta = datasets.sunspots.load_pandas().data.SUNACTIVITY
+    dta = datasets.sunspots.load_pandas().data['SUNACTIVITY']
     dta.index = pd.DatetimeIndex(start='1700', end='2009', freq='A')[:309]
     arma_mod20 = ARMA(dta, (2, 0)).fit(disp=-1)
     arma_mod20.predict(None, None)
@@ -1181,7 +1181,7 @@ class TestARMA00(object):
 
     @classmethod
     def setup_class(cls):
-        sunspots = datasets.sunspots.load().data['SUNACTIVITY']
+        sunspots = datasets.sunspots.load_pandas().data['SUNACTIVITY'].values
         cls.y = y = sunspots
         cls.arma_00_model = ARMA(y, order=(0, 0))
         cls.arma_00_res = cls.arma_00_model.fit(disp=-1)
@@ -1582,7 +1582,7 @@ def test_long_ar_start_params():
 
 @pytest.mark.not_vetted
 def test_arima_predict_mle():
-    cpi = datasets.macrodata.load().data['cpi']
+    cpi = datasets.macrodata.load_pandas().data['cpi'].values
     res1 = ARIMA(cpi, (4, 1, 1)).fit(disp=-1)
     # fit the model so that we get correct endog length but use
     path = os.path.join(current_path, 'results',
@@ -1742,7 +1742,7 @@ def test_arima_predict_mle():
 
 @pytest.mark.not_vetted
 def test_arima_predict_css():
-    cpi = datasets.macrodata.load().data['cpi']
+    cpi = datasets.macrodata.load_pandas().data['cpi'].values
     # NOTE: Doing no-constant for now to kick the conditional exogenous
     # GH#274 down the road
     # go ahead and git the model to set up necessary variables
@@ -1908,7 +1908,7 @@ def test_arima_predict_css():
 
 @pytest.mark.not_vetted
 def test_arima_predict_mle_diffs():
-    cpi = datasets.macrodata.load().data['cpi']
+    cpi = datasets.macrodata.load_pandas().data['cpi'].values
     # NOTE: Doing no-constant for now to kick the conditional exogenous
     # GH#274 down the road
     # go ahead and git the model to set up necessary variables
@@ -2062,7 +2062,7 @@ def test_arima_predict_mle_diffs():
 
 @pytest.mark.not_vetted
 def test_arima_predict_css_diffs():
-    cpi = datasets.macrodata.load().data['cpi']
+    cpi = datasets.macrodata.load_pandas().data['cpi'].values
     # NOTE: Doing no-constant for now to kick the conditional exogenous
     # issue GH#274 down the road
     # go ahead and git the model to set up necessary variables
@@ -2241,7 +2241,7 @@ def _check_end(model, given, end_expect, out_of_sample_expect):
 
 @pytest.mark.not_vetted
 def test_arma_predict_indices():
-    sunspots = datasets.sunspots.load().data['SUNACTIVITY']
+    sunspots = datasets.sunspots.load_pandas().data['SUNACTIVITY'].values
     model = ARMA(sunspots, (9, 0), dates=sun_dates, freq='A')
     model.method = 'mle'
 
@@ -2306,7 +2306,7 @@ def test_arma_predict_indices():
 
 @pytest.mark.not_vetted
 def test_arima_predict_indices():
-    cpi = datasets.macrodata.load().data['cpi']
+    cpi = datasets.macrodata.load_pandas().data['cpi'].values
     model = ARIMA(cpi, (4, 1, 1), dates=cpi_dates, freq='Q')
     model.method = 'mle'
 
@@ -2440,7 +2440,7 @@ def test_arima_predict_indices():
 
 def test_arima_predict_indices_css_invalid():
     # TODO: GH Reference?
-    cpi = datasets.macrodata.load().data['cpi']
+    cpi = datasets.macrodata.load_pandas().data['cpi'].values
     # NOTE: Doing no-constant for now to kick the conditional exogenous
     # GH#274 down the road
     model = ARIMA(cpi, (4, 1, 1))

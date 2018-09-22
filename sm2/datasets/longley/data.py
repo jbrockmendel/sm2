@@ -1,10 +1,11 @@
 """Longley dataset"""
+from sm2.datasets import utils as du
 
 __docformat__ = 'restructuredtext'
 
-COPYRIGHT = """This is public domain."""
-TITLE = __doc__
-SOURCE = """
+COPYRIGHT   = """This is public domain."""
+TITLE       = __doc__
+SOURCE      = """
 The classic 1967 Longley Data
 
 http://www.itl.nist.gov/div898/strd/lls/data/Longley.shtml
@@ -16,13 +17,13 @@ http://www.itl.nist.gov/div898/strd/lls/data/Longley.shtml
         the American Statistical Association.  62.319, 819-41.
 """
 
-DESCRSHORT = """"""
+DESCRSHORT  = """"""
 
-DESCRLONG = """The Longley dataset contains various US macroeconomic
+DESCRLONG   = """The Longley dataset contains various US macroeconomic
 variables that are known to be highly collinear.  It has been used to appraise
 the accuracy of least squares routines."""
 
-NOTE = """::
+NOTE        = """::
 
     Number of Observations - 16
 
@@ -38,24 +39,25 @@ NOTE = """::
             POP - Population
             YEAR - Year (1947 - 1962)
 """
-import os
-
-import pandas as pd
-
-from sm2.datasets import utils as du
 
 
-def load():
+
+def load(as_pandas=None):
     """
     Load the Longley data and return a Dataset class.
+
+    Parameters
+    ----------
+    as_pandas : bool
+        Flag indicating whether to return pandas DataFrames and Series
+        or numpy recarrays and arrays.  If True, returns pandas.
 
     Returns
     -------
     Dataset instance
         See DATASET_PROPOSAL.txt for more information.
     """
-    data = _get_data()
-    return du.process_recarray(data, endog_idx=0, dtype=float)
+    return du.as_numpy_dataset(load_pandas(), as_pandas=as_pandas)
 
 
 def load_pandas():
@@ -68,11 +70,10 @@ def load_pandas():
         See DATASET_PROPOSAL.txt for more information.
     """
     data = _get_data()
-    return du.process_recarray_pandas(data, endog_idx=0)
+    return du.process_pandas(data, endog_idx=0)
 
 
 def _get_data():
-    cur_dir = os.path.dirname(os.path.abspath(__file__))
-    path = os.path.join(cur_dir, 'longley.csv')
-    data = pd.read_csv(path, float_precision='high')
-    return data.iloc[:, 1:].astype('float').to_records(index=False)
+    data = du.load_csv(__file__, 'longley.csv')
+    data = data.iloc[:, [1, 2, 3, 4, 5, 6, 7]].astype(float)
+    return data

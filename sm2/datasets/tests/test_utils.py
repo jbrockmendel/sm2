@@ -17,7 +17,7 @@ def test_get_rdataset():
     internet_available = check_internet(test_url)
     if not internet_available:
         raise pytest.skip('Unable to retrieve file - skipping test')
-    duncan = get_rdataset("Duncan", "car", cache=cur_dir)
+    duncan = get_rdataset("Duncan", "carData", cache=cur_dir)
     assert isinstance(duncan, utils.Dataset)
     assert duncan.from_cache
 
@@ -50,4 +50,4 @@ def test_webuse_pandas():
 
     res1 = webuse('macrodata', baseurl=base_gh)
     res1 = res1.astype(float)
-    assert_frame_equal(res1, dta)
+    assert_frame_equal(res1, dta.astype(float))

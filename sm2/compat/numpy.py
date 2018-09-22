@@ -41,23 +41,6 @@ from __future__ import absolute_import
 from six import PY3
 
 
-def recarray_select(recarray, fields):
-    """"
-    Work-around for changes in NumPy 1.13 that return views for recarray
-    multiple column selection
-    """
-    from pandas import DataFrame
-    fields = [fields] if not isinstance(fields, (tuple, list)) else fields
-    if len(fields) == len(recarray.dtype):
-        selection = recarray
-    else:
-        recarray = DataFrame.from_records(recarray)
-        selection = recarray[fields].to_records(index=False)
-
-    _bytelike_dtype_names(selection)
-    return selection
-
-
 def _bytelike_dtype_names(arr):
     # See GH#3658
     if not PY3:

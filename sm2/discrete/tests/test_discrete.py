@@ -63,7 +63,7 @@ class CheckModelResults(object):
 
     @classmethod
     def setup_class(cls):
-        data = sm2.datasets.randhie.load()
+        data = sm2.datasets.randhie.load(as_pandas=False)
         exog = add_constant(data.exog, prepend=False)
         model = cls.model_cls(data.endog, exog, **cls.mod_kwargs)
         cls.res1 = model.fit(**cls.fit_kwargs)
@@ -780,7 +780,7 @@ class TestMNLogitNewtonBaseZero(CheckMNLogitBaseZero):
 
     @classmethod
     def setup_class(cls):
-        data = sm2.datasets.anes96.load()
+        data = sm2.datasets.anes96.load(as_pandas=False)
         cls.data = data
         exog = add_constant(data.exog, prepend=False)
         model = cls.model_cls(data.endog, exog, **cls.mod_kwargs)
@@ -800,7 +800,7 @@ class TestMNLogitLBFGSBaseZero(CheckMNLogitBaseZero):
 
     @classmethod
     def setup_class(cls):
-        data = sm2.datasets.anes96.load()
+        data = sm2.datasets.anes96.load(as_pandas=False)
         cls.data = data
         exog = add_constant(data.exog, prepend=False)
         model = cls.model_cls(data.endog, exog, **cls.mod_kwargs)
@@ -888,7 +888,7 @@ class TestProbitBasinhopping(CheckProbitSpector):
                   "minimizer": {"method": "L-BFGS-B", "tol": 1e-8}}
 
     @classmethod
-    def setup_class(cls)
+    def setup_class(cls):
         # GH#5196
         # Note: nothing would be hurt by doing this higher in the class
         # hierarchy, but basinhopping is the only method that
@@ -1016,7 +1016,7 @@ class TestMNLogitL1(CheckLikelihoodModelL1):
 
     @classmethod
     def setup_class(cls):
-        data = sm2.datasets.anes96.load()
+        data = sm2.datasets.anes96.load(as_pandas=False)
         exog = add_constant(data.exog, prepend=False)
         model = cls.model_cls(data.endog, exog)
         cls.res1 = model.fit_regularized(**cls.fit_reg_kwargs)
@@ -1127,7 +1127,7 @@ class TestPoissonL1Compatability(CheckL1Compatability):
 
     @classmethod
     def setup_class(cls):
-        rand_data = sm2.datasets.randhie.load()
+        rand_data = sm2.datasets.randhie.load(as_pandas=False)
         rand_exog = rand_data.exog.view(float).reshape(len(rand_data.exog), -1)
         rand_exog = add_constant(rand_exog, prepend=True)
         # Drop some columns and do an unregularized fit
@@ -1153,7 +1153,7 @@ class TestNegativeBinomialL1Compatability(CheckL1Compatability):
 
     @classmethod
     def setup_class(cls):
-        rand_data = sm2.datasets.randhie.load()
+        rand_data = sm2.datasets.randhie.load(as_pandas=False)
         rand_exog = rand_data.exog.view(float).reshape(len(rand_data.exog), -1)
         rand_exog_st = (rand_exog - rand_exog.mean(0)) / rand_exog.std(0)
         rand_exog = add_constant(rand_exog_st, prepend=True)
@@ -1184,7 +1184,7 @@ class TestNegativeBinomialGeoL1Compatability(CheckL1Compatability):
 
     @classmethod
     def setup_class(cls):
-        rand_data = sm2.datasets.randhie.load()
+        rand_data = sm2.datasets.randhie.load(as_pandas=False)
         rand_exog = rand_data.exog.view(float).reshape(len(rand_data.exog), -1)
         rand_exog = add_constant(rand_exog, prepend=True)
         # Drop some columns and do an unregularized fit
@@ -1299,7 +1299,7 @@ class TestNegativeBinomialPL1Compatability(CheckL1Compatability):
 
     @classmethod
     def setup_class(cls):
-        rand_data = sm2.datasets.randhie.load()
+        rand_data = sm2.datasets.randhie.load(as_pandas=False)
         rand_exog = rand_data.exog.view(float).reshape(len(rand_data.exog), -1)
         rand_exog_st = (rand_exog - rand_exog.mean(0)) / rand_exog.std(0)
         rand_exog = add_constant(rand_exog_st, prepend=True)
@@ -1435,7 +1435,7 @@ class TestL1AlphaZeroMNLogit(CompareL1):
 
     @classmethod
     def setup_class(cls):
-        data = sm2.datasets.anes96.load()
+        data = sm2.datasets.anes96.load(as_pandas=False)
         data.exog = add_constant(data.exog, prepend=False)
 
         mod1 = cls.model_cls(data.endog, data.exog)
@@ -1997,7 +1997,7 @@ class TestGeneralizedPoisson_p2(object):
 
     @classmethod
     def setup_class(cls):
-        data = sm2.datasets.randhie.load()
+        data = sm2.datasets.randhie.load(as_pandas=False)
         data.exog = add_constant(data.exog, prepend=False)
         mod = cls.model_cls(data.endog, data.exog, p=2)
         cls.res1 = mod.fit(method='newton')
@@ -2053,7 +2053,7 @@ class TestGeneralizedPoisson_transparams(object):
 
     @classmethod
     def setup_class(cls):
-        data = sm2.datasets.randhie.load()
+        data = sm2.datasets.randhie.load(as_pandas=False)
         data.exog = add_constant(data.exog, prepend=False)
         gpmod = cls.model_cls(data.endog, data.exog, **cls.mod_kwargs)
         cls.res1 = gpmod.fit(**cls.fit_kwargs)
@@ -2092,7 +2092,7 @@ class TestGeneralizedPoisson_p1(object):
 
     @classmethod
     def setup_class(cls):
-        cls.data = sm2.datasets.randhie.load()
+        cls.data = sm2.datasets.randhie.load(as_pandas=False)
         cls.data.exog = add_constant(cls.data.exog, prepend=False)
         model = cls.model_cls(cls.data.endog, cls.data.exog, **cls.mod_kwargs)
         cls.res1 = model.fit(**cls.fit_kwargs)
@@ -2452,7 +2452,7 @@ def test_mnlogit_factor():
                                            'is not available')
 def test_cvxopt_versus_slsqp():
     # Compares results from cvxopt to the standard slsqp
-    data = sm2.datasets.spector.load()
+    data = sm2.datasets.spector.load(as_pandas=False)
     data.exog = add_constant(data.exog, prepend=True)
 
     alpha = 3. * np.array([0, 1, 1, 1.])  # / data.endog.shape[0]
@@ -2503,7 +2503,7 @@ def test_mnlogit_non_square():
     # make sure MNLogit summary works for J != K,
     # specifically that we don't
     # get `ValueError: endog_names has wrong length` from summary()
-    data = sm2.datasets.anes96.load()
+    data = sm2.datasets.anes96.load(as_pandas=False)
     exog = data.exog
     # leave out last exog column
     exog = exog[:, :-1]
@@ -2529,7 +2529,7 @@ def test_mnlogit_non_square():
 
 def test_mnlogit_2dexog():
     # GH#341
-    data = sm2.datasets.anes96.load()
+    data = sm2.datasets.anes96.load(as_pandas=False)
     exog = data.exog
     # leave out last exog column
     exog = exog[:, :-1]
@@ -2595,7 +2595,7 @@ def test_predict_with_exposure():
 
 def test_poisson_predict():
     # GH#175, make sure poisson predict works without offset and exposure
-    data = sm2.datasets.randhie.load()
+    data = sm2.datasets.randhie.load(as_pandas=False)
     exog = add_constant(data.exog, prepend=True)
     res = Poisson(data.endog, exog).fit(method='newton', disp=0)
     pred1 = res.predict()
@@ -2635,7 +2635,7 @@ def test_poisson_newton():
 def test_unchanging_degrees_of_freedom():
     # GH#3734, calling `fit_regularized` should not alter
     # model.df_model inplace.
-    data = sm2.datasets.randhie.load()
+    data = sm2.datasets.randhie.load(as_pandas=False)
     model = NegativeBinomial(data.endog, data.exog, loglike_method='nb2')
     params = np.array([-0.05654134, -0.21213734, 0.08783102, -0.02991825,
                        0.22902315, 0.06210253, 0.06799444, 0.08406794,

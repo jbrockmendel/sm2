@@ -1,21 +1,22 @@
 """Stack loss data"""
+from sm2.datasets import utils as du
 
 __docformat__ = 'restructuredtext'
 
-COPYRIGHT = """This is public domain. """
-TITLE = __doc__
-SOURCE = """
+COPYRIGHT   = """This is public domain. """
+TITLE       = __doc__
+SOURCE      = """
 Brownlee, K. A. (1965), "Statistical Theory and Methodology in
 Science and Engineering", 2nd edition, New York:Wiley.
 """
 
-DESCRSHORT = """Stack loss plant data of Brownlee (1965)"""
+DESCRSHORT  = """Stack loss plant data of Brownlee (1965)"""
 
-DESCRLONG = """The stack loss plant data of Brownlee (1965) contains
+DESCRLONG   = """The stack loss plant data of Brownlee (1965) contains
 21 days of measurements from a plant's oxidation of ammonia to nitric acid.
 The nitric oxide pollutants are captured in an absorption tower."""
 
-NOTE = """::
+NOTE        = """::
 
     Number of Observations - 21
 
@@ -29,25 +30,24 @@ NOTE = """::
         WATERTEMP - Cooling water temperature in the absorption tower
         ACIDCONC  - Acid concentration of circulating acid minus 50 times 10.
 """
-import os
-
-import pandas as pd
-
-from sm2.datasets import utils as du
 
 
-def load():
+def load(as_pandas=None):
     """
     Load the stack loss data and returns a Dataset class instance.
+
+    Parameters
+    ----------
+    as_pandas : bool
+        Flag indicating whether to return pandas DataFrames and Series
+        or numpy recarrays and arrays.  If True, returns pandas.
 
     Returns
     --------
     Dataset instance:
         See DATASET_PROPOSAL.txt for more information.
     """
-    data = _get_data()
-    return du.process_recarray(data, endog_idx=0, dtype=float)
-
+    return du.as_numpy_dataset(load_pandas(), as_pandas=as_pandas)
 
 def load_pandas():
     """
@@ -59,11 +59,8 @@ def load_pandas():
         See DATASET_PROPOSAL.txt for more information.
     """
     data = _get_data()
-    return du.process_recarray_pandas(data, endog_idx=0, dtype=float)
+    return du.process_pandas(data, endog_idx=0)
 
 
 def _get_data():
-    cur_dir = os.path.dirname(os.path.abspath(__file__))
-    path = os.path.join(cur_dir, 'stackloss.csv')
-    data = pd.read_csv(path, float_precision='high')
-    return data.astype('f8').to_records(index=False)
+    return du.load_csv(__file__, 'stackloss.csv').astype(float)

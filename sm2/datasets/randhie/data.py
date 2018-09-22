@@ -1,10 +1,11 @@
 """RAND Health Insurance Experiment Data"""
+from sm2.datasets import utils as du
 
 __docformat__ = 'restructuredtext'
 
-COPYRIGHT = """This is in the public domain."""
-TITLE = __doc__
-SOURCE = """
+COPYRIGHT   = """This is in the public domain."""
+TITLE       = __doc__
+SOURCE      = """
 The data was collected by the RAND corporation as part of the Health
 Insurance Experiment (HIE).
 
@@ -22,11 +23,11 @@ here contains only a subset of the original data.  The data varies slightly
 compared to that reported in Cameron and Trivedi.
 """
 
-DESCRSHORT = """The RAND Co. Health Insurance Experiment Data"""
+DESCRSHORT  = """The RAND Co. Health Insurance Experiment Data"""
 
-DESCRLONG = """"""
+DESCRLONG   = """"""
 
-NOTE = """::
+NOTE        = """::
 
     Number of observations - 20,190
     Number of variables - 10
@@ -44,48 +45,47 @@ NOTE = """::
         hlthp   - 1 if self-rated health is poor
         (Omitted category is excellent self-rated health)
 """
-import os
-
-import pandas as pd
-
-from sm2.datasets import utils as du
-
-cur_dir = os.path.dirname(os.path.abspath(__file__))
-PATH = os.path.join(cur_dir, 'randhie.csv')
 
 
-def load():
+def load(as_pandas=None):
     """
     Loads the RAND HIE data and returns a Dataset class.
 
+    Parameters
     ----------
-    endog - response variable, mdvis
-    exog - design
+    as_pandas : bool
+        Flag indicating whether to return pandas DataFrames and Series
+        or numpy recarrays and arrays.  If True, returns pandas.
 
     Returns
-    Load instance:
-        a class of the data with array attrbutes 'endog' and 'exog'
+    -------
+    Dataset instance:
+        See DATASET_PROPOSAL.txt for more information.
+
+    Notes
+    -----
+    endog - response variable, mdvis
+    exog - design
     """
-    data = _get_data()
-    return du.process_recarray(data, endog_idx=0, dtype=float)
+    return du.as_numpy_dataset(load_pandas(), as_pandas=as_pandas)
 
 
 def load_pandas():
     """
     Loads the RAND HIE data and returns a Dataset class.
 
-    ----------
+    Returns
+    -------
+    Dataset instance:
+        See DATASET_PROPOSAL.txt for more information.
+
+    Notes
+    -----
     endog - response variable, mdvis
     exog - design
-
-    Returns
-    Load instance:
-        a class of the data with array attrbutes 'endog' and 'exog'
     """
-    data = pd.read_csv(PATH)
-    return du.process_recarray_pandas(data, endog_idx=0)
+    return du.process_pandas(_get_data(), endog_idx=0)
 
 
 def _get_data():
-    data = pd.read_csv(PATH)
-    return data.astype('f8').to_records(index=False)
+    return du.load_csv(__file__, 'randhie.csv')

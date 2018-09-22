@@ -8,7 +8,6 @@ import numpy as np
 from numpy.testing import assert_almost_equal, assert_equal, assert_allclose
 import pandas as pd
 
-from sm2.compat.numpy import recarray_select
 from sm2.tsa.stattools import (pacf_yw,
                                pacf, grangercausalitytests,
                                arma_order_select_ic,
@@ -150,9 +149,10 @@ def test_arma_order_select_ic_failure():
 @pytest.mark.not_vetted
 def test_grangercausality():
     # some example data
-    mdata = macrodata.load().data
-    mdata = recarray_select(mdata, ['realgdp', 'realcons'])
-    data = mdata.view((float, 2))
+    mdata = macrodata.load_pandas().data
+    mdata = mdata[['realgdp', 'realcons']].values
+    data = mdata.astype(float)
+
     data = np.diff(np.log(data), axis=0)
 
     # R: lmtest:grangertest

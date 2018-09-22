@@ -1,7 +1,5 @@
-#! /usr/bin/env python
-# -*- coding: utf-8 -*-
-
 """Travel Mode Choice"""
+from sm2.datasets import utils as du
 
 __docformat__ = 'restructuredtext'
 
@@ -23,11 +21,10 @@ DESCRLONG = """The data, collected as part of a 1987 intercity mode choice
 study, are a sub-sample of 210 non-business trips between Sydney, Canberra and
 Melbourne in which the traveler chooses a mode from four alternatives (plane,
 car, bus and train). The sample, 840 observations, is choice based with
-over-sampling of the less popular modes (plane, train and bus) and
-under-sampling of the more popular mode, car. The level of service data was
-derived from highway and transport networks in Sydney, Melbourne,
-non-metropolitan N.S.W. and Victoria, including the
-Australian Capital Territory."""
+over-sampling of the less popular modes (plane, train and bus) and under-sampling
+of the more popular mode, car. The level of service data was derived from highway
+and transport networks in Sydney, Melbourne, non-metropolitan N.S.W. and Victoria,
+including the Australian Capital Territory."""
 
 NOTE = """::
 
@@ -51,28 +48,25 @@ NOTE = """::
         gc = generalized cost measure:invc+(invt*value of travel time savings)
             (dollars).
         hinc = household income ($1000s).
-        psize = traveling group size in mode chosen (number).
-"""
-import os
-
-import pandas as pd
-
-from sm2.datasets import utils as du
+        psize = traveling group size in mode chosen (number)."""
 
 
-def load():
+def load(as_pandas=None):
     """
     Load the data modechoice data and return a Dataset class instance.
+
+    Parameters
+    ----------
+    as_pandas : bool
+        Flag indicating whether to return pandas DataFrames and Series
+        or numpy recarrays and arrays.  If True, returns pandas.
 
     Returns
     -------
     Dataset instance:
         See DATASET_PROPOSAL.txt for more information.
     """
-    data = _get_data()
-    return du.process_recarray(data, endog_idx=2,
-                               exog_idx=[3, 4, 5, 6, 7, 8],
-                               dtype=float)
+    return du.as_numpy_dataset(load_pandas(), as_pandas=as_pandas)
 
 
 def load_pandas():
@@ -84,15 +78,9 @@ def load_pandas():
     Dataset instance:
         See DATASET_PROPOSAL.txt for more information.
     """
-
     data = _get_data()
-    return du.process_recarray_pandas(data, endog_idx=2,
-                                      exog_idx=[3, 4, 5, 6, 7, 8],
-                                      dtype=float)
+    return du.process_pandas(data, endog_idx = 2, exog_idx=[3,4,5,6,7,8])
 
 
 def _get_data():
-    cur_dir = os.path.dirname(os.path.abspath(__file__))
-    path = os.path.join(cur_dir, 'modechoice.csv')
-    data = pd.read_csv(path, delimiter=";")
-    return data.astype('f8').to_records(index=False)
+    return du.load_csv(__file__, 'modechoice.csv', sep=';', convert_float=True)
