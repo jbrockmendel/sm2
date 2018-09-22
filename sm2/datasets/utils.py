@@ -13,7 +13,7 @@ import pandas as pd
 from sm2.compat.numpy import recarray_select
 
 
-def webuse(data, baseurl='http://www.stata-press.com/data/r11/', as_df=True):
+def webuse(data, baseurl='https://www.stata-press.com/data/r11/', as_df=True):
     """
     Download and return an example dataset from Stata.
 

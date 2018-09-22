@@ -4,7 +4,8 @@ Compatibility tools for differences between Python 2 and 3
 import sys
 
 PY3 = (sys.version_info[0] >= 3)
-PY3_2 = sys.version_info[:2] == (3, 2)
+PY37 = sys.version_info[:2] == (3, 7)
+
 
 if PY3:
     def asstr(s):

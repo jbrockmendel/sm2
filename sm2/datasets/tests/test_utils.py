@@ -25,7 +25,7 @@ def test_get_rdataset():
 @pytest.mark.not_vetted
 def test_webuse():
     # test copied and adjusted from iolib/tests/test_foreign
-    base_gh = "http://github.com/statsmodels/statsmodels/raw/master/statsmodels/datasets/macrodata/"  # noqa: E501
+    base_gh = "https://github.com/statsmodels/statsmodels/raw/master/statsmodels/datasets/macrodata/"  # noqa: E501
     internet_available = check_internet(base_gh)
     if not internet_available:
         raise pytest.skip('Unable to retrieve file - skipping test')
@@ -43,7 +43,7 @@ def test_webuse():
 def test_webuse_pandas():
     # test copied and adjusted from iolib/tests/test_foreign
     dta = macrodata.load_pandas().data
-    base_gh = "http://github.com/statsmodels/statsmodels/raw/master/statsmodels/datasets/macrodata/"    # noqa: E501
+    base_gh = "https://github.com/statsmodels/statsmodels/raw/master/statsmodels/datasets/macrodata/"    # noqa: E501
     internet_available = check_internet(base_gh)
     if not internet_available:
         raise pytest.skip('Unable to retrieve file - skipping test')

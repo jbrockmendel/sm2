@@ -469,7 +469,7 @@ class Lbw(object):
     """
     The LBW data can be found here
 
-    http://www.stata-press.com/data/r9/rmain.html
+    https://www.stata-press.com/data/r9/rmain.html
     """
     # data set up for data not in datasets
     path = os.path.join(cur_dir, "stata_lbw_glm.csv")
@@ -585,7 +585,7 @@ class Cancer(object):
     """
     The Cancer data can be found here
 
-    http://www.stata-press.com/data/r10/rmain.html
+    https://www.stata-press.com/data/r10/rmain.html
     """
     path = os.path.join(cur_dir, "stata_cancer_glm.csv")
     with open(path, 'rb') as fd:
@@ -1866,7 +1866,7 @@ class Medpar1(object):
     """
     The medpar1 data can be found here.
 
-    http://www.stata-press.com/data/hh2/medpar1
+    https://www.stata-press.com/data/hh2/medpar1
     """
     path = os.path.join(cur_dir, "stata_medpar1_glm.csv")
     with open(path, 'rb') as fd:

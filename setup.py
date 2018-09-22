@@ -4,9 +4,9 @@
 Much of the build system code was adapted from work done by the pandas
 developers [1], which was in turn based on work done in pyzmq [2] and lxml [3].
 
-[1] http://pandas.pydata.org
-[2] http://zeromq.github.io/pyzmq/
-[3] http://lxml.de/
+[1] https://pandas.pydata.org
+[2] https://zeromq.github.io/pyzmq/
+[3] https://lxml.de/
 """
 import os
 import shutil
@@ -31,7 +31,7 @@ DESCRIPTION = 'Bugfix Fork of statsmodels'
 LONG_DESCRIPTION = README
 MAINTAINER = 'Brock Mendel'
 MAINTAINER_EMAIL = 'jbrockmendel@gmail.com'
-# URL = 'http://www.statsmodels.org/'
+# URL = 'https://www.statsmodels.org/'
 LICENSE = 'BSD License'
 DOWNLOAD_URL = ''
 
