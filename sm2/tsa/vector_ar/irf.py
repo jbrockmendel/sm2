@@ -218,8 +218,7 @@ class BaseIRAnalysis(object):
             lr_effects = self.lr_effects
 
         if stderr_type not in ['asym', 'mc']:  # pragma: no cover
-            # TODO: Upstream this TypeError, needs fixing
-            raise ValueError("stderr_type '%s' not recognized" % stderr_type)
+            raise ValueError("`stderr_type` must be one of 'asym', 'mc'")
         else:
             if stderr_type == 'asym':
                 stderr = self.cum_effect_cov(orth=orth)

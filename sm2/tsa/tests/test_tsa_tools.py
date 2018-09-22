@@ -699,9 +699,9 @@ class TestLagmat2DS(object):
 
     def test_3d_error(self):
         data = np.array(2)
-        with pytest.raises(TypeError):
+        with pytest.raises(ValueError):
             tsatools.lagmat2ds(data, 5)
 
         data = np.zeros((100, 2, 2))
-        with pytest.raises(TypeError):
+        with pytest.raises(ValueError):
             tsatools.lagmat2ds(data, 5)
