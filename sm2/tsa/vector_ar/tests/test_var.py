@@ -40,19 +40,6 @@ def setup_module():
     sys.stdout = StringIO()
 
 
-def teardown_module():
-    sys.stdout = _orig_stdout
-    close_plots()
-
-
-def close_plots():
-    try:
-        import matplotlib.pyplot as plt
-        plt.close('all')
-    except ImportError:
-        pass
-
-
 def get_macrodata():
     dataset = sm.datasets.macrodata.load_pandas()
     data = dataset.data[['realgdp', 'realcons', 'realinv']]
@@ -169,7 +156,7 @@ class TestVARExtras(object):
         data = np.diff(np.log(data), axis=0) * 400
         cls.res0 = VAR(data).fit(maxlags=2)
 
-    def test_process(self):
+    def test_process(self, close_figures):
         # TODO: split up giant test
         res0 = self.res0
         k_ar = res0.k_ar
@@ -204,9 +191,7 @@ class TestVARExtras(object):
         if have_matplotlib:
             # upstream conditions this on matplotlib >= 1.15
             fig = res0.plotsim()
-            plt.close(fig)
             fig = res0.plot_acorr()
-            plt.close(fig)
 
             fig = res0.plot_forecast(20)
             fcp = fig.axes[0].get_children()[1].get_ydata()[-20:]
@@ -216,8 +201,6 @@ class TestVARExtras(object):
             assert_allclose(fc20[:, 1], fcp, rtol=1e-13)
             fcp = fig.axes[2].get_children()[1].get_ydata()[-20:]
             assert_allclose(fc20[:, 2], fcp, rtol=1e-13)
-            plt.close(fig)
-            plt.close('all')
 
             fig_asym = irf.plot()
             fig_mc = irf.plot(stderr_type='mc', repl=1000, seed=987128)
@@ -228,9 +211,6 @@ class TestVARExtras(object):
                 # use m as desired because it is larger
                 # a is for some irf much smaller than m
                 assert_allclose(a, m, atol=0.1, rtol=0.9)
-            plt.close(fig_asym)
-            plt.close(fig_mc)
-            plt.close('all')
 
     def test_forecast_cov(self):
         # forecast_cov can include parameter uncertainty if contant-only
@@ -325,42 +305,29 @@ class CheckIRF(object):
 
     @pytest.mark.smoke
     @pytest.mark.skipif(not have_matplotlib, reason="matplotlib not available")
-    def test_plot_irf(self):
+    def test_plot_irf(self, close_figures):
         import matplotlib.pyplot as plt
         self.irf.plot()
-        plt.close('all')
         self.irf.plot(plot_stderr=False)
-        plt.close('all')
 
         self.irf.plot(impulse=0, response=1)
-        plt.close('all')
         self.irf.plot(impulse=0)
-        plt.close('all')
         self.irf.plot(response=0)
-        plt.close('all')
 
         self.irf.plot(orth=True)
-        plt.close('all')
         self.irf.plot(impulse=0, response=1, orth=True)
-        close_plots()
 
     @pytest.mark.smoke
     @pytest.mark.skipif(not have_matplotlib, reason="matplotlib not available")
-    def test_plot_cum_effects(self):
+    def test_plot_cum_effects(self, close_figures):
         # I need close after every plot to avoid segfault, see GH#3158
         import matplotlib.pyplot as plt
-        plt.close('all')
         self.irf.plot_cum_effects()
-        plt.close('all')
         self.irf.plot_cum_effects(plot_stderr=False)
-        plt.close('all')
         self.irf.plot_cum_effects(impulse=0, response=1)
-        plt.close('all')
 
         self.irf.plot_cum_effects(orth=True)
-        plt.close('all')
         self.irf.plot_cum_effects(impulse=0, response=1, orth=True)
-        close_plots()
 
 
 @pytest.mark.smoke
@@ -369,9 +336,8 @@ class CheckFEVD(object):
     fevd = None
 
     @pytest.mark.skipif(not have_matplotlib, reason="matplotlib not available")
-    def test_fevd_plot(self):
+    def test_fevd_plot(self, close_figures):
         self.fevd.plot()
-        close_plots()
 
     def test_fevd_repr(self):
         self.fevd
@@ -551,27 +517,23 @@ class TestVARResults(CheckIRF, CheckFEVD):
 
     @pytest.mark.smoke
     @pytest.mark.skipif(not have_matplotlib, reason="matplotlib not available")
-    def test_plot_sim(self):
+    def test_plot_sim(self, close_figures):
         self.res.plotsim(steps=100)
-        close_plots()
 
     @pytest.mark.smoke
     @pytest.mark.skipif(not have_matplotlib, reason="matplotlib not available")
-    def test_plot(self):
+    def test_plot(self, close_figures):
         self.res.plot()
-        close_plots()
 
     @pytest.mark.smoke
     @pytest.mark.skipif(not have_matplotlib, reason="matplotlib not available")
-    def test_plot_acorr(self):
+    def test_plot_acorr(self, close_figures):
         self.res.plot_acorr()
-        close_plots()
 
     @pytest.mark.smoke
     @pytest.mark.skipif(not have_matplotlib, reason="matplotlib not available")
-    def test_plot_forecast(self):
+    def test_plot_forecast(self, close_figures):
         self.res.plot_forecast(5)
-        close_plots()
 
     def test_reorder(self):
         # manually reorder

@@ -2461,7 +2461,7 @@ def test_arima_predict_indices_css_invalid():
 
 @pytest.mark.smoke
 @pytest.mark.skipif('not have_matplotlib')
-def test_plot_predict():
+def test_plot_predict(close_fitures):
     dta = datasets.sunspots.load_pandas().data[['SUNACTIVITY']]
     dta.index = pd.DatetimeIndex(start='1700', end='2009', freq='A')[:309]
 
@@ -2470,14 +2470,12 @@ def test_plot_predict():
         for plot_insample in [True, False]:
             fig = res.plot_predict('1990', '2012', dynamic=dynamic,
                                    plot_insample=plot_insample)
-            plt.close(fig)
 
     res = ARIMA(dta, (3, 1, 0)).fit(disp=-1)
     for dynamic in [True, False]:
         for plot_insample in [True, False]:
             fig = res.plot_predict('1990', '2012', dynamic=dynamic,
                                    plot_insample=plot_insample)
-            plt.close(fig)
 
 
 def test_arima_forecast_exog_incorrect_size():

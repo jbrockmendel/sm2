@@ -48,12 +48,10 @@ else:
 def close_or_save(pdf, fig):
     if pdf_output:
         pdf.savefig(fig)
-    plt.close(fig)
 
 
 def teardown_module():
     if have_matplotlib:
-        plt.close('all')
         if pdf_output:
             pdf.close()
 
@@ -1762,7 +1760,7 @@ def test_score_test_OLS():
 @pytest.mark.smoke
 @pytest.mark.skip(reason="plotting functions not ported from upstream")
 @pytest.mark.skipif(not have_matplotlib, reason='matplotlib not available')
-def test_plots():
+def test_plots(close_figures):
     np.random.seed(378)
     n = 200
     exog = np.random.normal(size=(n, 2))
