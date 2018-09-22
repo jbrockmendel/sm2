@@ -345,8 +345,10 @@ def S_white_simple(x):
     return np.dot(x.T, x)
 
 
-def group_sums(x, group):
-    """sum x for each group, simple bincount version, again
+# Note: upstream this is located in grouputils
+# written for and used in try_covariance_grouploop.py
+def group_sums(x, group, use_bincount=True):
+    """simple bincount version, again
 
     group : array, integer
         assumed to be consecutive integers
@@ -355,16 +357,28 @@ def group_sums(x, group):
 
     uses loop over columns of x
 
+    for comparison, simple python loop
     """
-    # TODO: remove this, already copied to tools/grouputils
-    # TODO: transpose return in group_sum, need test coverage first
+    x = np.asarray(x)
+    if x.ndim == 1:
+        x = x[:, None]
+    elif x.ndim > 2 and use_bincount:
+        raise ValueError('not implemented yet')
 
-    # re-label groups or bincount takes too much memory
-    if np.max(group) > 2 * x.shape[0]:
-        group = pd.factorize(group)[0]
+    if use_bincount:
 
-    return np.array([np.bincount(group, weights=x[:, col])
-                     for col in range(x.shape[1])])
+        # re-label groups or bincount takes too much memory
+        if np.max(group) > 2 * x.shape[0]:
+            group = pd.factorize(group)[0]
+
+        return np.array([np.bincount(group, weights=x[:, col])
+                         for col in range(x.shape[1])])
+    else:
+        uniques = np.unique(group)
+        result = np.zeros([len(uniques)] + list(x.shape[1:]))
+        for ii, cat in enumerate(uniques):
+            result[ii] = x[g == cat].sum(0)
+        return result
 
 
 def S_hac_groupsum(x, time, nlags=None, weights_func=weights_bartlett):
