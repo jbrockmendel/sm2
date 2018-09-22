@@ -289,10 +289,9 @@ def margeff():  # pragma: no cover
 
 def _check_at_is_all(method):
     if method['at'] == 'all':  # pragma: no cover
-        # TODO: Should this be a ValueError?
-        raise NotImplementedError("Only margeff are available when `at` is "
-                                  "all. Please input specific points if you "
-                                  "would like to do inference.")
+    raise ValueError("Only margeff are available when `at` is "
+                         "'all'. Please input specific points if you would "
+                         "like to do inference.")
 
 
 _transform_names = dict(dydx='dy/dx',

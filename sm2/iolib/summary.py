@@ -22,7 +22,8 @@ def forg(x, prec=3):
         else:
             return '%10.4f' % x
     else:  # pragma: no cover
-        raise NotImplementedError  # TODO: Should this be ValueError?
+        raise ValueError("`prec` argument must be either 3 or 4, not {prec}"
+                         .format(prec=prec))
 
 
 # TODO: not hit in tests?  how is that possible?

@@ -395,7 +395,6 @@ class VAR(tsa_model.TimeSeriesModel):
         if ic is not None:
             selections = self.select_order(maxlags=maxlags)
             if not hasattr(selections, ic):
-                # TODO: upstream this is Exception, fix to ValueError
                 raise ValueError("%s not recognized, must be among %s"
                                  % (ic, sorted(selections)))
             lags = getattr(selections, ic)
@@ -1454,7 +1453,6 @@ class VARResults(VARProcess, tsa_model.TimeSeriesModelResults):
             df = (num_restr, neqs * self.df_resid)
             dist = stats.f(*df)
         else:
-            # TODO: this is Exception upstream, fix to ValueError
             raise ValueError('kind %s not recognized' % kind)
 
         pvalue = dist.sf(statistic)

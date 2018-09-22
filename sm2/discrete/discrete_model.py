@@ -298,8 +298,6 @@ class DiscreteModel(base.LikelihoodModel):
         """
         # Set attributes based on method
         if method not in ['l1', 'l1_cvxopt_cp']:
-            # TODO: fix upstream raises Exception, also in subclasses
-            # they raise at the _end_ of the call (and redundantly)
             raise ValueError("argument method == %s, which is not handled"
                              % method)  # pragma: no cover
         if qc_verbose:  # pragma: no cover
