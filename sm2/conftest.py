@@ -23,7 +23,7 @@ def pytest_addoption(parser):
 
     parser.addoption("--skip-smoke", action="store_true",
                      help="skip tests marked as smoke (i.e. smoke-tests)")
-    parser.addoption("--skip-not_vetted", action="store_true",
+    parser.addoption("--skip-not-vetted", action="store_true",
                      help="skip tests marked as not_vetted")
 
 
@@ -48,7 +48,7 @@ def pytest_runtest_setup(item):
         pytest.skip("skipping due to --skip-smoke")
 
     if ('not_vetted' in item.keywords and
-            item.config.getoption("--skip-not_vetted")):
+            item.config.getoption("--skip-not-vetted")):
         pytest.skip("skipping due to --skip-not_vetted")
 
 
