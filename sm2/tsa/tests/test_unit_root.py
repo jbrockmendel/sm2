@@ -377,12 +377,12 @@ def test_coint_identical_series():
     np.random.seed(123)
     y = scale_e * np.random.randn(nobs)
     warnings.simplefilter('always', CollinearityWarning)
-    with warnings.catch_warnings(record=True) as w:
+    with pytest.warns(CollinearityWarning):
         c = unit_root.coint(y, y, trend="c", maxlag=0, autolag=None)
-    assert len(w) == 1
-    assert c[0] == 0.0
+
     # Limit of table
     assert c[1] > .98
+    assert np.isneginf(c[0])
 
 
 @pytest.mark.not_vetted

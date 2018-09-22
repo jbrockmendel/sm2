@@ -12,7 +12,7 @@ import numpy as np
 from pandas.util._decorators import deprecate_kwarg
 from scipy import stats
 
-from sm2.tools.sm_exceptions import InterpolationWarning
+from sm2.tools.sm_exceptions import InterpolationWarning, CollinearityWarning
 from sm2.tools.tools import add_constant
 
 from sm2.regression.linear_model import OLS
@@ -559,9 +559,10 @@ def coint(y0, y1, trend='c', method='aeg', maxlag=None, autolag='aic',
                            regression='nc')
     else:
         warnings.warn("y0 and y1 are perfectly colinear.  Cointegration test "
-                      "is not reliable in this case.")
+                      "is not reliable in this case.",
+                      CollinearityWarning)
         # Edge case where series are too similar
-        res_adf = (0,)
+        res_adf = (-np.inf,)
 
     # no constant or trend, see egranger in Stata and MacKinnon
     if trend == 'nc':
