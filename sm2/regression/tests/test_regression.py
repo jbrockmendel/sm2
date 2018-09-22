@@ -1373,3 +1373,18 @@ def test_summary_as_latex():
      strong multicollinearity or other numerical problems.""").strip()  # noqa:E501
 
     assert_equal(table, expected)
+
+
+def test_summary_rsquared_label():
+    # GH#5083
+    # Check that the "uncentered" label is correctly added after rsquared
+    # Note: upstream this is in test_summary2.TestSummaryLabels
+    x = [1, 5, 7, 3, 5, 2, 5, 3]
+    y = [6, 4, 2, 7, 4, 9, 10, 2]
+    reg_with_constant = OLS(y, x, hasconst=True).fit()
+    # assert 'R-squared:' in str(reg_with_constant.summary2())
+    assert 'R-squared:' in str(reg_with_constant.summary())
+    
+    reg_without_constant = OLS(y, x, hasconst=False).fit()
+    # assert 'R-squared (uncentered):' in str(reg_without_constant.summary2())
+    assert 'R-squared (uncentered):' in str(reg_without_constant.summary()) 

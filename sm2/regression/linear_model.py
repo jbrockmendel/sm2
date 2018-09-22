@@ -1907,13 +1907,18 @@ class RegressionResults(base.LikelihoodModelResults):
         if hasattr(self, 'cov_type'):
             top_left.append(('Covariance Type:', [self.cov_type]))
 
-        top_right = [('R-squared:', ["%#8.3f" % self.rsquared]),
-                     ('Adj. R-squared:', ["%#8.3f" % self.rsquared_adj]),
-                     ('F-statistic:', ["%#8.4g" % self.fvalue]),
-                     ('Prob (F-statistic):', ["%#6.3g" % self.f_pvalue]),
-                     ('Log-Likelihood:', None),  # ["%#6.4g" % self.llf]),
-                     ('AIC:', ["%#8.4g" % self.aic]),
-                     ('BIC:', ["%#8.4g" % self.bic])]
+        rsquared_type = '' if self.k_constant else ' (uncentered)'
+        top_right = [
+            ('R-squared' + rsquared_type + ':',
+             ["%#8.3f" % self.rsquared]),
+            ('Adj. R-squared' + rsquared_type + ':',
+             ["%#8.3f" % self.rsquared_adj]),
+            ('F-statistic:', ["%#8.4g" % self.fvalue]),
+            ('Prob (F-statistic):', ["%#6.3g" % self.f_pvalue]),
+            ('Log-Likelihood:', None),  #["%#6.4g" % self.llf]),
+            ('AIC:', ["%#8.4g" % self.aic]),
+            ('BIC:', ["%#8.4g" % self.bic])
+        ]
 
         diagn_left = [('Omnibus:', ["%#6.3f" % omni]),
                       ('Prob(Omnibus):', ["%#6.3f" % omnipv]),
