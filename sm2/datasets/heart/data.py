@@ -1,20 +1,19 @@
 """Heart Transplant Data, Miller 1976"""
+from sm2.datasets import utils as du
 
 __docformat__ = 'restructuredtext'
 
-COPYRIGHT = """???"""
+COPYRIGHT   = """???"""
 
-TITLE = """Transplant Survival Data"""
+TITLE       = """Transplant Survival Data"""
 
-SOURCE = """Miller, R. (1976). Least squares regression with censored data.
-Biometrica, 63 (3). 449-464.
+SOURCE      = """ Miller, R. (1976). Least squares regression with censored dara. Biometrica, 63 (3). 449-464.
+
 """
 
-DESCRSHORT = """Survival times after receiving a heart transplant"""
+DESCRSHORT  = """Survival times after receiving a heart transplant"""
 
-DESCRLONG = """This data contains the survival time after receiving a
-heart transplant, the age of the patient and whether or not the survival
-time was censored.
+DESCRLONG   = """This data contains the survival time after receiving a heart transplant, the age of the patient and whether or not the survival time was censored.
 """
 
 NOTE = """::
@@ -28,37 +27,33 @@ NOTE = """::
         age - age at the time of surgery
         censored - indicates if an observation is censored.  1 is uncensored
 """
-import os
-import pandas as pd
-from sm2.datasets import utils as du
 
 
-def load():
+def load(as_pandas=None):
     """
     Load the data and return a Dataset class instance.
+
+    Parameters
+    ----------
+    as_pandas : bool
+        Flag indicating whether to return pandas DataFrames and Series
+        or numpy recarrays and arrays.  If True, returns pandas.
 
     Returns
     -------
     Dataset instance:
         See DATASET_PROPOSAL.txt for more information.
     """
-    data = _get_data()
-    # NOTE: None for exog_idx is the complement of endog_idx
-    dset = du.process_recarray(data, endog_idx=0, exog_idx=None, dtype=float)
-    dset.censors = dset.exog[:, 0]
-    dset.exog = dset.exog[:, 1]
-    return dset
+    return du.as_numpy_dataset(load_pandas(), as_pandas=as_pandas)
 
 
 def load_pandas():
     data = _get_data()
-    # NOTE: None for exog_idx is the complement of endog_idx
-    return du.process_recarray_pandas(data, endog_idx=0, exog_idx=None,
-                                      dtype=float)
+    dataset = du.process_pandas(data, endog_idx=0, exog_idx=None)
+    dataset.censors = dataset.exog.iloc[:, 0]
+    dataset.exog = dataset.exog.iloc[:, 1]
+    return dataset
 
 
 def _get_data():
-    cur_dir = os.path.dirname(os.path.abspath(__file__))
-    path = os.path.join(cur_dir, 'heart.csv')
-    data = pd.read_csv(path).astype('f8').to_records(index=False)
-    return data
+    return du.load_csv(__file__, 'heart.csv')

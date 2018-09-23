@@ -69,7 +69,7 @@ class TestAROLSConstant(CheckARMixin):
     """
     @classmethod
     def setup_class(cls):
-        data = datasets.sunspots.load()
+        data = datasets.sunspots.load(as_pandas=False)
         cls.res1 = AR(data.endog).fit(maxlag=9, method='cmle')
         cls.res2 = results_ar.ARResultsOLS(constant=True)
 
@@ -118,7 +118,7 @@ class TestAROLSNoConstant(CheckARMixin):
     """
     @classmethod
     def setup_class(cls):
-        data = datasets.sunspots.load()
+        data = datasets.sunspots.load(as_pandas=False)
         cls.res1 = AR(data.endog).fit(maxlag=9, method='cmle', trend='nc')
         cls.res2 = results_ar.ARResultsOLS(constant=False)
 
@@ -181,7 +181,7 @@ class TestAROLSNoConstant(CheckARMixin):
 class TestARMLEConstant(object):
     @classmethod
     def setup_class(cls):
-        data = datasets.sunspots.load()
+        data = datasets.sunspots.load(as_pandas=False)
         cls.res1 = AR(data.endog).fit(maxlag=9, method="mle", disp=-1)
         cls.res2 = results_ar.ARResultsMLE(constant=True)
 
@@ -295,7 +295,7 @@ class TestARMLEConstant(object):
 class TestAutolagAR(object):
     @classmethod
     def setup_class(cls):
-        data = datasets.sunspots.load()
+        data = datasets.sunspots.load(as_pandas=False)
         endog = data.endog
         results = []
         for lag in range(1, 16 + 1):
@@ -335,7 +335,7 @@ class TestAutolagAR(object):
 @pytest.mark.smoke
 def test_ar_dates():
     # just make sure they work
-    data = datasets.sunspots.load()
+    data = datasets.sunspots.load(as_pandas=False)
     dates = pd.DatetimeIndex(start='1700', periods=len(data.endog), freq='A')
     endog = pd.Series(data.endog, index=dates)
     ar_model = AR(endog, freq='A').fit(maxlag=9, method='mle', disp=-1)
@@ -360,7 +360,7 @@ def test_ar_named_series():
 @pytest.mark.smoke
 def test_ar_start_params():
     # GH#236
-    data = datasets.sunspots.load()
+    data = datasets.sunspots.load(as_pandas=False)
     model = AR(data.endog)
     model.fit(maxlag=9, start_params=0.1 * np.ones(10),
               method="mle", disp=-1, maxiter=100)
@@ -379,10 +379,11 @@ def test_ar_series():
 
 # class TestARMLEConstant(CheckAR):
 
+# FIXME: dont comment-out code
 # TODO: likelihood for ARX model?
 # class TestAutolagARX(object):
 #    def setup(self):
-#        data = datasets.macrodata.load()
+#        data = datasets.macrodata.load(as_pandas=False)
 #        endog = data.data.realgdp
 #        exog = data.data.realint
 #        results = []

@@ -1,19 +1,20 @@
 """First 100 days of the US House of Representatives 1995"""
+from sm2.datasets import utils as du
 
 __docformat__ = 'restructuredtext'
 
-COPYRIGHT = """Used with express permission from the original author,
+COPYRIGHT   = """Used with express permission from the original author,
 who retains all rights."""
-TITLE = __doc__
-SOURCE = """
+TITLE       = __doc__
+SOURCE      = """
 Jeff Gill's `Generalized Linear Models: A Unifited Approach`
 
 http://jgill.wustl.edu/research/books.html
 """
 
-DESCRSHORT = """Number of bill assignments in the 104th House in 1995"""
+DESCRSHORT  = """Number of bill assignments in the 104th House in 1995"""
 
-DESCRLONG = """The example in Gill, seeks to explain the number of bill
+DESCRLONG   = """The example in Gill, seeks to explain the number of bill
 assignments in the first 100 days of the US' 104th House of Representatives.
 The response variable is the number of bill assignments in the first 100 days
 over 20 Committees.  The explanatory variables in the example are the number of
@@ -44,32 +45,31 @@ NOTE = """::
     Committee names are included as a variable in the data file though not
     returned by load.
 """
-import os
-
-import pandas as pd
-
-from sm2.datasets import utils as du
 
 
-def load():
+def load_pandas():
+    data = _get_data()
+    return du.process_pandas(data, endog_idx=0)
+
+
+def load(as_pandas=None):
     """Load the committee data and returns a data class.
+
+    Parameters
+    ----------
+    as_pandas : bool
+        Flag indicating whether to return pandas DataFrames and Series
+        or numpy recarrays and arrays.  If True, returns pandas.
 
     Returns
     --------
     Dataset instance:
         See DATASET_PROPOSAL.txt for more information.
     """
-    data = _get_data()
-    return du.process_recarray(data, endog_idx=0, dtype=float)
-
-
-def load_pandas():
-    data = _get_data()
-    return du.process_recarray_pandas(data, endog_idx=0, dtype=float)
+    return du.as_numpy_dataset(load_pandas(), as_pandas=as_pandas)
 
 
 def _get_data():
-    cur_dir = os.path.dirname(os.path.abspath(__file__))
-    path = os.path.join(cur_dir, 'committee.csv')
-    data = pd.read_csv(path, float_precision='high')
-    return data.iloc[:, 1:7].astype('f8').to_records(index=False)
+    data = du.load_csv(__file__, 'committee.csv')
+    data = data.iloc[:, 1:7].astype(float)
+    return data

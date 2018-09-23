@@ -1,25 +1,26 @@
 """World Copper Prices 1951-1975 dataset."""
+from sm2.datasets import utils as du
 
 __docformat__ = 'restructuredtext'
 
-COPYRIGHT = """Used with express permission from the original author,
+COPYRIGHT   = """Used with express permission from the original author,
 who retains all rights."""
-TITLE = "World Copper Market 1951-1975 Dataset"
-SOURCE = """
+TITLE       = "World Copper Market 1951-1975 Dataset"
+SOURCE      = """
 Jeff Gill's `Generalized Linear Models: A Unified Approach`
 
 http://jgill.wustl.edu/research/books.html
 """
 
-DESCRSHORT = """World Copper Market 1951-1975"""
+DESCRSHORT  = """World Copper Market 1951-1975"""
 
-DESCRLONG = """This data describes the world copper market from 1951 through
-1975.  In an example, in Gill, the outcome variable (of a 2 stage estimation)
-is the world consumption of copper for the 25 years.  The explanatory
-variables are the world consumption of copper in 1000 metric tons, the
-constant dollar adjusted price of copper, the price of a substitute,
-aluminum, an index of real per capita income base 1970, an annual measure
-of manufacturer inventory change, and a time trend.
+DESCRLONG   = """This data describes the world copper market from 1951 through 1975.  In an
+example, in Gill, the outcome variable (of a 2 stage estimation) is the world
+consumption of copper for the 25 years.  The explanatory variables are the
+world consumption of copper in 1000 metric tons, the constant dollar adjusted
+price of copper, the price of a substitute, aluminum, an index of real per
+capita income base 1970, an annual measure of manufacturer inventory change,
+and a time trend.
 """
 
 NOTE = """
@@ -38,31 +39,12 @@ Variable name definitions::
 
 Years are included in the data file though not returned by load.
 """
-import os
-
-import pandas as pd
-
-from sm2.datasets import utils as du
-
-
-def load():
-    """
-    Load the copper data and returns a Dataset class.
-
-    Returns
-    --------
-    Dataset instance:
-        See DATASET_PROPOSAL.txt for more information.
-    """
-    data = _get_data()
-    return du.process_recarray(data, endog_idx=0, dtype=float)
 
 
 def _get_data():
-    cur_dir = os.path.dirname(os.path.abspath(__file__))
-    path = os.path.join(cur_dir, 'copper.csv')
-    data = pd.read_csv(path, float_precision='high')
-    return data.iloc[:, 1:7].astype('f8').to_records(index=False)
+    data = du.load_csv(__file__, 'copper.csv')
+    data = data.iloc[:, 1:7]
+    return data.astype(float)
 
 
 def load_pandas():
@@ -75,4 +57,22 @@ def load_pandas():
         See DATASET_PROPOSAL.txt for more information.
     """
     data = _get_data()
-    return du.process_recarray_pandas(data, endog_idx=0, dtype=float)
+    return du.process_pandas(data, endog_idx=0)
+
+
+def load(as_pandas=None):
+    """
+    Load the copper data and returns a Dataset class.
+
+    Parameters
+    ----------
+    as_pandas : bool
+        Flag indicating whether to return pandas DataFrames and Series
+        or numpy recarrays and arrays.  If True, returns pandas.
+
+    Returns
+    --------
+    Dataset instance:
+        See DATASET_PROPOSAL.txt for more information.
+    """
+    return du.as_numpy_dataset(load_pandas(), as_pandas=as_pandas)

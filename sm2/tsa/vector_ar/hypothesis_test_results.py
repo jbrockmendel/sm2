@@ -1,3 +1,5 @@
+import numpy as np
+
 from sm2.iolib.table import SimpleTable
 
 
@@ -23,7 +25,7 @@ class HypothesisTestResults(object):
         summary.
     """
     def __init__(self, test_statistic, crit_value, pvalue, df,
-                 signif, method, title, h0, ):
+                 signif, method, title, h0):
         self.test_statistic = test_statistic
         self.crit_value = crit_value
         self.pvalue = pvalue
@@ -66,10 +68,10 @@ class HypothesisTestResults(object):
     def __eq__(self, other):
         if not isinstance(other, self.__class__):
             return False
-        return (self.test_statistic == other.test_statistic) \
-            and (self.crit_value == other.crit_value) \
-            and (self.pvalue == other.pvalue) \
-            and (self.signif == other.signif)
+        return (np.allclose(self.test_statistic, other.test_statistic) and
+                np.allclose(self.crit_value, other.crit_value) and
+                np.allclose(self.pvalue, other.pvalue) and
+                np.allclose(self.signif, other.signif))
 
 
 class CausalityTestResults(HypothesisTestResults):

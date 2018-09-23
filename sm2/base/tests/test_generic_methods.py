@@ -177,6 +177,14 @@ class CheckGenericMixin(object):
                 predicted_expected = pd.DataFrame(predicted, index=exog_index)
                 assert predicted_expected.equals(predicted_pandas)
 
+    def test_zero_constrained(self):
+        # TODO: if/when this is ported, see test classes implemented in GH#4576
+        pytest.skip("_fit_zeros is not (yet) ported from upstream")
+
+    def test_zero_collinear(self):
+        # TODO: if/when this is ported, see test classes implemented in GH#4576
+        pytest.skip("_fit_collinear is not (yet) ported from upstream")
+
 
 # subclasses for individual models, unchanged from test_shrink_pickle
 # TODO: check if setup_class is faster than setup
@@ -259,7 +267,7 @@ class TestGenericNegativeBinomial(CheckGenericMixin):
     def setup(self):
         # fit for each test, because results will be changed by test
         np.random.seed(987689)
-        data = sm.datasets.randhie.load()
+        data = sm.datasets.randhie.load(as_pandas=False)
         exog = sm.add_constant(data.exog, prepend=False)
         # FIXME: we're editing exog but then not _using_ it.
         # Editing data.exog instead causes tests to fail.

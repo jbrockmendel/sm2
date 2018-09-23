@@ -12,20 +12,20 @@ from collections import OrderedDict
 
 import numpy as np
 import pandas as pd
+from scipy.linalg.blas import find_best_blas_type
 
-from scipy.misc import logsumexp
-
+from sm2.compat.scipy import logsumexp
 from sm2.base.data import PandasData
-import sm2.tsa.base.tsa_model as tsbase
+
 from sm2.tools.tools import Bunch
 from sm2.tools.decorators import cache_readonly
 from sm2.tools.eval_measures import aic, bic, hqic
 from sm2.tools.tools import pinv_extended
 from sm2.tools.sm_exceptions import EstimationWarning
+
 import sm2.base.wrapper as wrap
 
-from scipy.linalg.blas import find_best_blas_type
-
+import sm2.tsa.base.tsa_model as tsbase
 from sm2.tsa.statespace.tools import prepare_exog
 
 from sm2.tsa.regime_switching._hamilton_filter import (

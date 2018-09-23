@@ -74,10 +74,11 @@ def test_vech():
 class TestLagmat(object):
     @classmethod
     def setup_class(cls):
-        data = datasets.macrodata.load()
-        cls.macro_df = pd.DataFrame.from_records(data.data)
-        cls.macro_df = cls.macro_df[['year', 'quarter', 'realgdp', 'cpi']]
-        cls.macro_data = cls.macro_df.to_records(index=False)
+        data = datasets.macrodata.load_pandas()
+        cls.macro_df = data.data[['year', 'quarter', 'realgdp', 'cpi']]
+        cols = list(cls.macro_df.columns)
+        cls.realgdp_loc = cols.index('realgdp')
+        cls.cpi_loc = cols.index('cpi')        
         cls.random_data = np.random.randn(100)
 
         index = [str(int(yr)) + '-Q' + str(int(qu))
@@ -87,42 +88,39 @@ class TestLagmat(object):
 
     @pytest.mark.skip(reason="add_lag not ported from upstream")
     def test_add_lag_insert(self):
-        data = self.macro_data
-        nddata = data.view((float, 4))
+        data = self.macro_df.values
+        nddata = data.astype(float)
         lagmat = tsatools.lagmat(nddata[:, 2], 3, trim='Both')
         results = np.column_stack((nddata[3:, :3], lagmat, nddata[3:, -1]))
-        lag_data = tsatools.add_lag(data, 'realgdp', 3)
-        assert_equal(lag_data.view((float, len(lag_data.dtype.names))),
-                     results)
+        lag_data = tsatools.add_lag(data, self.realgdp_loc, 3)
+        assert_equal(lag_data, results)
 
     @pytest.mark.skip(reason="add_lag not ported from upstream")
     def test_add_lag_noinsert(self):
-        data = self.macro_data
-        nddata = data.view((float, 4))
+        data = self.macro_df.values
+        nddata = data.astype(float)
         lagmat = tsatools.lagmat(nddata[:, 2], 3, trim='Both')
         results = np.column_stack((nddata[3:, :], lagmat))
-        lag_data = tsatools.add_lag(data, 'realgdp', 3, insert=False)
-        assert_equal(lag_data.view((float, len(lag_data.dtype.names))),
-                     results)
+        lag_data = tsatools.add_lag(data, self.realgdp_loc, 3, insert=False)
+        assert_equal(lag_data, results)
 
     @pytest.mark.skip(reason="add_lag not ported from upstream")
     def test_add_lag_noinsert_atend(self):
-        data = self.macro_data
-        nddata = data.view((float, 4))
+        data = self.macro_df.values
+        nddata = data.astype(float)
         lagmat = tsatools.lagmat(nddata[:, -1], 3, trim='Both')
         results = np.column_stack((nddata[3:, :], lagmat))
-        lag_data = tsatools.add_lag(data, 'cpi', 3, insert=False)
-        assert_equal(lag_data.view((float, len(lag_data.dtype.names))),
-                     results)
+        lag_data = tsatools.add_lag(data, self.cpi_loc, 3, insert=False)
+        assert_equal(lag_data, results)
+
         # should be the same as insert
-        lag_data2 = tsatools.add_lag(data, 'cpi', 3, insert=True)
-        assert_equal(lag_data2.view((float, len(lag_data2.dtype.names))),
-                     results)
+        lag_data2 = tsatools.add_lag(data, self.cpi_loc, 3, insert=True)
+        assert_equal(lag_data2, results)
 
     @pytest.mark.skip(reason="add_lag not ported from upstream")
     def test_add_lag_ndarray(self):
-        data = self.macro_data
-        nddata = data.view((float, 4))
+        data = self.macro_df.values
+        nddata = data.astype(float)
         lagmat = tsatools.lagmat(nddata[:, 2], 3, trim='Both')
         results = np.column_stack((nddata[3:, :3], lagmat, nddata[3:, -1]))
         lag_data = tsatools.add_lag(nddata, 2, 3)
@@ -130,8 +128,8 @@ class TestLagmat(object):
 
     @pytest.mark.skip(reason="add_lag not ported from upstream")
     def test_add_lag_noinsert_ndarray(self):
-        data = self.macro_data
-        nddata = data.view((float, 4))
+        data = self.macro_df.values
+        nddata = data.astype(float)
         lagmat = tsatools.lagmat(nddata[:, 2], 3, trim='Both')
         results = np.column_stack((nddata[3:, :], lagmat))
         lag_data = tsatools.add_lag(nddata, 2, 3, insert=False)
@@ -139,8 +137,8 @@ class TestLagmat(object):
 
     @pytest.mark.skip(reason="add_lag not ported from upstream")
     def test_add_lag_noinsertatend_ndarray(self):
-        data = self.macro_data
-        nddata = data.view((float, 4))
+        data = self.macro_df.values
+        nddata = data.astype(float)
         lagmat = tsatools.lagmat(nddata[:, -1], 3, trim='Both')
         results = np.column_stack((nddata[3:, :], lagmat))
         lag_data = tsatools.add_lag(nddata, 3, 3, insert=False)
@@ -215,23 +213,22 @@ class TestLagmat(object):
 
     @pytest.mark.skip(reason="add_lag not ported from upstream")
     def test_add_lag_drop_insert(self):
-        data = self.macro_data
-        nddata = data.view((float, 4))
+        data = self.macro_df.values
+        nddata = data.astype(float)
         lagmat = tsatools.lagmat(nddata[:, 2], 3, trim='Both')
         results = np.column_stack((nddata[3:, :2], lagmat, nddata[3:, -1]))
-        lag_data = tsatools.add_lag(data, 'realgdp', 3, drop=True)
-        assert_equal(lag_data.view((float, len(lag_data.dtype.names))),
-                     results)
+        lag_data = tsatools.add_lag(data, self.realgdp_loc, 3, drop=True)
+        assert_equal(lag_data, results)
 
     @pytest.mark.skip(reason="add_lag not ported from upstream")
     def test_add_lag_drop_noinsert(self):
-        data = self.macro_data
-        nddata = data.view((float, 4))
+        data = self.macro_df.values
+        nddata = data.astype(float)
         lagmat = tsatools.lagmat(nddata[:, 2], 3, trim='Both')
         results = np.column_stack((nddata[3:, np.array([0, 1, 3])], lagmat))
-        lag_data = tsatools.add_lag(data, 'realgdp', 3, insert=False, drop=True)
-        assert_equal(lag_data.view((float, len(lag_data.dtype.names))),
-                     results)
+        lag_data = tsatools.add_lag(data, self.realgdp_loc, 3,
+                                    insert=False, drop=True)
+        assert_equal(lag_data, results)
 
     def test_dataframe_without_pandas(self):
         data = self.macro_df
@@ -280,14 +277,14 @@ class TestLagmat(object):
             tsatools.lagmat(self.macro_df, 300, use_pandas=True)
 
         with pytest.raises(ValueError):
-            tsatools.lagmat(self.macro_data, 300)
+            tsatools.lagmat(self.macro_df.values, 300)
 
     def test_unknown_trim(self):
         with pytest.raises(ValueError):
             tsatools.lagmat(self.macro_df, 3, trim='unknown', use_pandas=True)
 
         with pytest.raises(ValueError):
-            tsatools.lagmat(self.macro_data, 3, trim='unknown')
+            tsatools.lagmat(self.macro_df.values, 3, trim='unknown')
 
     def test_dataframe_forward(self):
         data = self.macro_df
@@ -598,10 +595,8 @@ class TestAddTrend(object):
 class TestLagmat2DS(object):
     @classmethod
     def setup_class(cls):
-        data = datasets.macrodata.load()
-        cls.macro_df = pd.DataFrame.from_records(data.data)
-        cls.macro_df = cls.macro_df[['year', 'quarter', 'realgdp', 'cpi']]
-        cls.macro_data = cls.macro_df.to_records(index=False)
+        data = datasets.macrodata.load_pandas()
+        cls.macro_df = data.data[['year', 'quarter', 'realgdp', 'cpi']]
         cls.random_data = np.random.randn(100)
         index = [str(int(yr)) + '-Q' + str(int(qu))
                  for yr, qu in zip(cls.macro_df.year, cls.macro_df.quarter)]
@@ -699,9 +694,9 @@ class TestLagmat2DS(object):
 
     def test_3d_error(self):
         data = np.array(2)
-        with pytest.raises(TypeError):
+        with pytest.raises(ValueError):
             tsatools.lagmat2ds(data, 5)
 
         data = np.zeros((100, 2, 2))
-        with pytest.raises(TypeError):
+        with pytest.raises(ValueError):
             tsatools.lagmat2ds(data, 5)

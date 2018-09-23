@@ -529,7 +529,7 @@ class TestHamiltonAR4(MarkovAutoregression):
 
 @pytest.mark.not_vetted
 class TestHamiltonAR2Switch(MarkovAutoregression):
-    # Results from Stata, see http://www.stata.com/manuals14/tsmswitch.pdf
+    # Results from Stata, see https://www.stata.com/manuals14/tsmswitch.pdf
     @classmethod
     def setup_class(cls):
         path = os.path.join(current_path, 'results',

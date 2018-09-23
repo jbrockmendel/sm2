@@ -191,7 +191,7 @@ class Model(wrap.RemoveDataMixin):
                         cols.remove(col)
                     except ValueError:
                         pass  # OK if not present
-                design_info = design_info.subset(cols).design_info
+                design_info = design_info.subset(cols)
 
         kwargs.update({'missing_idx': missing_idx,
                        'missing': missing,
@@ -468,6 +468,18 @@ class LikelihoodModel(Model):
 
         mlefit.mle_settings = optim_settings
         return mlefit
+
+    def _fit_zeros(self, keep_index=None, start_params=None,
+                   return_auxiliary=False, k_params=None, **fit_kwds):
+        # TODO: If/when this is ported, see GH#4576 and nearby
+        raise NotImplementedError("_fit_zeros is not (yet) ported "
+                                  "from upstream")
+
+    def _fit_collinear(self, atol=1e-14, rtol=1e-13, **kwds):
+        # TODO: If/when this is ported, see GH#4576 and nearby
+        raise NotImplementedError("_fit_collinear is not (yet) ported "
+                                  "from upstream")
+
 
 
 class GenericLikelihoodModel(LikelihoodModel):
@@ -1018,7 +1030,7 @@ class LikelihoodModelResults(wrap.SaveLoadMixin, Results):
         --------
         >>> import numpy as np
         >>> import sm2.api as sm
-        >>> data = sm.datasets.longley.load()
+        >>> data = sm.datasets.longley.load(as_pandas=False)
         >>> data.exog = sm.add_constant(data.exog)
         >>> results = sm.OLS(data.endog, data.exog).fit()
         >>> r = np.zeros_like(results.params)
@@ -1154,7 +1166,7 @@ class LikelihoodModelResults(wrap.SaveLoadMixin, Results):
         --------
         >>> import numpy as np
         >>> import sm2.api as sm
-        >>> data = sm.datasets.longley.load()
+        >>> data = sm.datasets.longley.load(as_pandas=False)
         >>> data.exog = sm.add_constant(data.exog)
         >>> results = sm.OLS(data.endog, data.exog).fit()
         >>> A = np.identity(len(results.params))
@@ -1482,7 +1494,7 @@ class LikelihoodModelResults(wrap.SaveLoadMixin, Results):
         Examples
         --------
         >>> import sm2.api as sm
-        >>> data = sm.datasets.longley.load()
+        >>> data = sm.datasets.longley.load(as_pandas=False)
         >>> data.exog = sm.add_constant(data.exog)
         >>> results = sm.OLS(data.endog, data.exog).fit()
         >>> results.conf_int()

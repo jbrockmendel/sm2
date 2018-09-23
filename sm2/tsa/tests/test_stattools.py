@@ -5,13 +5,13 @@ import warnings
 
 import pytest
 import numpy as np
-from numpy.testing import assert_almost_equal, assert_equal
+from numpy.testing import assert_almost_equal, assert_equal, assert_allclose
 import pandas as pd
 
-from sm2.compat.numpy import recarray_select
 from sm2.tsa.stattools import (pacf_yw,
                                pacf, grangercausalitytests,
-                               arma_order_select_ic)
+                               arma_order_select_ic,
+                               levinson_durbin)
 from sm2.datasets import macrodata
 from sm2.tsa.arima_process import arma_generate_sample
 
@@ -21,10 +21,6 @@ results_corrgram = pd.read_csv(path, delimiter=',')
 
 DECIMAL_8 = 8
 DECIMAL_6 = 6
-DECIMAL_5 = 5
-DECIMAL_4 = 4
-DECIMAL_3 = 3
-DECIMAL_2 = 2
 
 
 @pytest.mark.not_vetted
@@ -108,6 +104,16 @@ def test_arma_order_select_ic():
     assert res.bic.index.equals(bic.index)
     assert res.bic.columns.equals(bic.columns)
 
+    # GH#4890
+    index = pd.date_range('2000-1-1', freq='M', periods=len(y))
+    y_series = pd.Series(y, index=index)
+    res_pd = arma_order_select_ic(y_series, max_ar=2, max_ma=1,
+                                  ic=['aic', 'bic'], trend='nc')
+    assert_almost_equal(res_pd.aic.values, aic.values[:3, :2], 5)
+    assert_almost_equal(res_pd.bic.values, bic.values[:3, :2], 5)
+    assert_equal(res_pd.aic_min_order, (2, 1))
+    assert_equal(res_pd.bic_min_order, (1, 1))
+
     res = arma_order_select_ic(y, ic='aic', trend='nc')
     assert_almost_equal(res.aic.values, aic.values, 5)
     assert res.aic.index.equals(aic.index)
@@ -143,9 +149,10 @@ def test_arma_order_select_ic_failure():
 @pytest.mark.not_vetted
 def test_grangercausality():
     # some example data
-    mdata = macrodata.load().data
-    mdata = recarray_select(mdata, ['realgdp', 'realcons'])
-    data = mdata.view((float, 2))
+    mdata = macrodata.load_pandas().data
+    mdata = mdata[['realgdp', 'realcons']].values
+    data = mdata.astype(float)
+
     data = np.diff(np.log(data), axis=0)
 
     # R: lmtest:grangertest
@@ -166,3 +173,14 @@ def test_granger_fails_on_nobs_check():
     grangercausalitytests(X, 2, verbose=False)  # This should pass.
     with pytest.raises(ValueError):
         grangercausalitytests(X, 3, verbose=False)
+
+
+def test_levinson_durbin_acov():
+    # GH#4879 by bashtage
+    rho = 0.9
+    m = 20
+    acov = rho**np.arange(200)
+    sigma2_eps, ar, pacf, _, _ = levinson_durbin(acov, m, isacov=True)
+    assert_allclose(sigma2_eps, 1 - rho ** 2)
+    assert_allclose(ar, np.array([rho] + [0] * (m - 1)), atol=1e-8)
+    assert_allclose(pacf, np.array([1, rho] + [0] * (m - 1)), atol=1e-8)

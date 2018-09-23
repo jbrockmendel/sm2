@@ -310,6 +310,8 @@ class RegressionModel(base.LikelihoodModel):
             # used in ANOVA
             self.effects = effects = np.dot(Q.T, self.wendog)
             beta = np.linalg.solve(R, effects)
+        else:
+            raise ValueError('`method` has to be "pinv" or "qr"')
 
         # TODO: Is this necessary given the existing properties?
         if self._df_model is None:
@@ -416,7 +418,7 @@ class GLS(RegressionModel):
     --------
     >>> import numpy as np
     >>> import sm2.api as sm
-    >>> data = sm.datasets.longley.load()
+    >>> data = sm.datasets.longley.load(as_pandas=False)
     >>> data.exog = sm.add_constant(data.exog)
     >>> ols_resid = sm.OLS(data.endog, data.exog).fit().resid
     >>> res_fit = sm.OLS(ols_resid[1:], ols_resid[:-1]).fit()
@@ -1325,10 +1327,20 @@ class RegressionResults(base.LikelihoodModelResults):
     def centered_tss(self):
         model = self.model
         weights = getattr(model, 'weights', None)
+        sigma = getattr(model, 'sigma', None)
+
         if weights is not None:
-            return np.sum(weights * (
-                model.endog - np.average(model.endog, weights=weights))**2)
-        else:  # this is probably broken for GLS
+            mean = np.average(model.endog, weights=weights)
+            return np.sum(weights * (model.endog - mean)**2)
+        elif sigma is not None:
+            # Exactly matches WLS when sigma is diagonal
+            iota = np.ones_like(model.endog)
+            iota = model.whiten(iota)
+            mean = model.wendog.dot(iota) / iota.dot(iota)
+            err = model.endog - mean
+            err = model.whiten(err)
+            return np.sum(err**2)
+        else:
             centered_endog = model.wendog - model.wendog.mean()
             return np.dot(centered_endog, centered_endog)
 
@@ -1905,13 +1917,18 @@ class RegressionResults(base.LikelihoodModelResults):
         if hasattr(self, 'cov_type'):
             top_left.append(('Covariance Type:', [self.cov_type]))
 
-        top_right = [('R-squared:', ["%#8.3f" % self.rsquared]),
-                     ('Adj. R-squared:', ["%#8.3f" % self.rsquared_adj]),
-                     ('F-statistic:', ["%#8.4g" % self.fvalue]),
-                     ('Prob (F-statistic):', ["%#6.3g" % self.f_pvalue]),
-                     ('Log-Likelihood:', None),  # ["%#6.4g" % self.llf]),
-                     ('AIC:', ["%#8.4g" % self.aic]),
-                     ('BIC:', ["%#8.4g" % self.bic])]
+        rsquared_type = '' if self.k_constant else ' (uncentered)'
+        top_right = [
+            ('R-squared' + rsquared_type + ':',
+             ["%#8.3f" % self.rsquared]),
+            ('Adj. R-squared' + rsquared_type + ':',
+             ["%#8.3f" % self.rsquared_adj]),
+            ('F-statistic:', ["%#8.4g" % self.fvalue]),
+            ('Prob (F-statistic):', ["%#6.3g" % self.f_pvalue]),
+            ('Log-Likelihood:', None),  #["%#6.4g" % self.llf]),
+            ('AIC:', ["%#8.4g" % self.aic]),
+            ('BIC:', ["%#8.4g" % self.bic])
+        ]
 
         diagn_left = [('Omnibus:', ["%#6.3f" % omni]),
                       ('Prob(Omnibus):', ["%#6.3f" % omnipv]),

@@ -140,7 +140,6 @@ def do_trim_params(params, k_params, alpha, score, passed, trim_mode,
         trimmed[mask] = True
         params[mask] = 0.0
     else:
-        # TODO: fix upstream this just raises "Exception"
         raise ValueError("trim_mode == %s, which is not recognized"
                          % (trim_mode))  # pragma: no cover
 

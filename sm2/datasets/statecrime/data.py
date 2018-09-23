@@ -1,22 +1,20 @@
-#! /usr/bin/env python
-
 """Statewide Crime Data"""
+from sm2.datasets import utils as du
 
 __docformat__ = 'restructuredtext'
 
-COPYRIGHT = """Public domain."""
-TITLE = """Statewide Crime Data 2009"""
-SOURCE = """
-All data is for 2009 and was obtained from the American Statistical Abstracts
-except as indicated below.
+COPYRIGHT   = """Public domain."""
+TITLE       = """Statewide Crime Data 2009"""
+SOURCE      = """
+All data is for 2009 and was obtained from the American Statistical Abstracts except as indicated below.
 """
 
-DESCRSHORT = """State crime data 2009"""
+DESCRSHORT  = """State crime data 2009"""
 
-DESCRLONG = DESCRSHORT
+DESCRLONG   = DESCRSHORT
 
-# suggested notes
-NOTE = """::
+#suggested notes
+NOTE        = """::
 
     Number of observations: 51
     Number of variables: 8
@@ -52,39 +50,32 @@ NOTE = """::
         household, divided by the total number of Family households.
     urban
         % of population in Urbanized Areas as of 2010 Census. Urbanized
-        Areas are area of 50,000 or more people.
-"""
-import os
-
-import pandas as pd
-
-from sm2.datasets import utils as du
+        Areas are area of 50,000 or more people."""
 
 
-def load():
+def load(as_pandas=None):
     """
     Load the statecrime data and return a Dataset class instance.
+
+    Parameters
+    ----------
+    as_pandas : bool
+        Flag indicating whether to return pandas DataFrames and Series
+        or numpy recarrays and arrays.  If True, returns pandas.
 
     Returns
     -------
     Dataset instance:
         See DATASET_PROPOSAL.txt for more information.
     """
-    data = _get_data()
-    # NOTE: None for exog_idx is the complement of endog_idx
-    return du.process_recarray(data, endog_idx=2, exog_idx=[7, 4, 3, 5],
-                               dtype=float)
+    return du.as_numpy_dataset(load_pandas(), as_pandas=as_pandas,
+                               retain_index=True)
 
 
 def load_pandas():
     data = _get_data()
-    # NOTE: None for exog_idx is the complement of endog_idx
-    return du.process_recarray_pandas(data, endog_idx=2, exog_idx=[7, 4, 3, 5],
-                                      dtype=float, index_idx=0)
+    return du.process_pandas(data, endog_idx=2, exog_idx=[7, 4, 3, 5], index_idx=0)
 
 
 def _get_data():
-    cur_dir = os.path.dirname(os.path.abspath(__file__))
-    path = os.path.join(cur_dir, 'statecrime.csv')
-    data = pd.read_csv(path, float_precision='high')
-    return data.to_records(index=False)
+    return du.load_csv(__file__, 'statecrime.csv')

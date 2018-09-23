@@ -56,8 +56,7 @@ class NullHandler(object):
     """Class for handling Nans in input data"""
     @classmethod
     def _drop_nans_1d(cls, x, nan_mask):
-        if hasattr(x, 'ix'):
-            # pandas object
+        if isinstance(x, (pd.Series, pd.DataFrame)):
             return x.loc[nan_mask]
         else:
             return x[nan_mask]
@@ -65,8 +64,7 @@ class NullHandler(object):
     @classmethod
     def _drop_nans_2d(cls, x, nan_mask):
         # TODO: Any reason to do this in two slicing steps instead of one?
-        if hasattr(x, 'ix'):
-            # pandas object
+        if isinstance(x, (pd.Series, pd.DataFrame)):
             return x.loc[nan_mask].loc[:, nan_mask]
         else:
             # extra arguments could be plain ndarrays
@@ -274,7 +272,7 @@ class ModelData(NullHandler):
         else:
             # detect where the constant is
             check_implicit = False
-            ptp_ = self.exog.ptp(axis=0)
+            ptp_ = np.ptp(self.exog, axis=0)
             if not np.isfinite(ptp_).all():
                 raise MissingDataError('exog contains inf or nans')
             const_idx = np.where(ptp_ == 0)[0].squeeze()

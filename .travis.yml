@@ -16,14 +16,16 @@ addons:
       - liblapack-dev
       - python-numpy
 
-install: pip install tox codecov
-
-before_script:
-    # configure a headless display to test plots
-    # https://stackoverflow.com/questions/35403127
-    - "export DISPLAY=:99.0"
-    - "sh -e /etc/init.d/xvfb start"
-    - sleep 3  # give xvfb some time to start
+before_install:
+  # Show information about CPU running job to understand BLAS issues
+  - sudo lshw -class processor
+  # Fix for headless TravisCI
+  #   https://stackoverflow.com/questions/35403127
+  - "export DISPLAY=:99.0"
+  - "sh -e /etc/init.d/xvfb start"
+  #- sleep 3  # give xvfb some time to start  # TODO: reinstate?
+  # Source recipe to install packages
+  - pip install pytest pytest-xdist pytest-randomly tox codecov
 
 script: tox
 

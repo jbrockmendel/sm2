@@ -45,7 +45,7 @@ from .results import res_R_var_weight as res_r
 
 # load data into module namespace
 from sm2.datasets.cpunish import load
-cpunish_data = load()
+cpunish_data = load(as_pandas=False)
 cpunish_data.exog[:, 3] = np.log(cpunish_data.exog[:, 3])
 cpunish_data.exog = add_constant(cpunish_data.exog, prepend=False)
 
@@ -658,7 +658,7 @@ class TestBinomial0RepeatedvsDuplicated(CheckWeight):
 class TestBinomialVsVarWeights(CheckWeight):
     @classmethod
     def setup_class(cls):
-        data = sm.datasets.star98.load()
+        data = sm.datasets.star98.load(as_pandas=False)
         data.exog = add_constant(data.exog, prepend=False)
         cls.res1 = GLM(data.endog, data.exog,
                        family=sm.families.Binomial()).fit()

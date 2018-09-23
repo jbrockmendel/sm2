@@ -299,17 +299,20 @@ class VAR(tsa_model.TimeSeriesModel):
         self.neqs = self.endog.shape[1]
         self.n_totobs = len(endog)
 
-    def _get_predict_start(self, start, k_ar):
-        if start is None:
-            start = k_ar
-        return super(VAR, self)._get_predict_start(start)
-
+    # TODO: ported #4785 from upstream, but that didn't have a test for the
+    # issue(s) it closed.  Implemented one.
     def predict(self, params, start=None, end=None, lags=1, trend='c'):
         """
         Returns in-sample predictions or forecasts
         """
-        start = self._get_predict_start(start, lags)
-        end, out_of_sample = self._get_predict_end(end)
+        params = np.array(params)
+
+        if start is None:
+            start = lags
+
+        # Handle start, end
+        start, end, out_of_sample, prediction_index = (
+            self._get_prediction_index(start, end))
 
         if end < start:
             raise ValueError("end is before start")
@@ -392,7 +395,6 @@ class VAR(tsa_model.TimeSeriesModel):
         if ic is not None:
             selections = self.select_order(maxlags=maxlags)
             if not hasattr(selections, ic):
-                # TODO: upstream this is Exception, fix to ValueError
                 raise ValueError("%s not recognized, must be among %s"
                                  % (ic, sorted(selections)))
             lags = getattr(selections, ic)
@@ -492,7 +494,7 @@ class VAR(tsa_model.TimeSeriesModel):
         rhs = self._build_rhs(lags, offset, trend)
         y_sample = endog[lags:]
         # Lütkepohl p75, about 5x faster than stated formula
-        params = np.linalg.lstsq(rhs, y_sample, rcond=-1)[0]
+        params = np.linalg.lstsq(rhs, y_sample, rcond=1e-15)[0]
         resid = y_sample - np.dot(rhs, params)
 
         # Unbiased estimate of covariance matrix $\Sigma_u$ of the white noise
@@ -1451,7 +1453,6 @@ class VARResults(VARProcess, tsa_model.TimeSeriesModelResults):
             df = (num_restr, neqs * self.df_resid)
             dist = stats.f(*df)
         else:
-            # TODO: this is Exception upstream, fix to ValueError
             raise ValueError('kind %s not recognized' % kind)
 
         pvalue = dist.sf(statistic)

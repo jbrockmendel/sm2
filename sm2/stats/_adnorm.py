@@ -41,20 +41,25 @@ def anderson_statistic(x, dist='norm', fit=True, params=(), axis=0):
             s = np.expand_dims(np.std(x, ddof=1, axis=axis), axis)
             w = (y - xbar) / s
             z = stats.norm.cdf(w)
-        elif hasattr(dist, '__call__'):
+        elif callable(dist):
             params = dist.fit(x)
             z = dist.cdf(y, *params)
     else:
-        if hasattr(dist, '__call__'):
+        if callable(dist):
             z = dist.cdf(y, *params)
         else:
             raise ValueError('If `fit` is False, then `dist` must be callable')
 
     i = np.arange(1, N + 1)
+
     sl1 = [None] * x.ndim
     sl1[axis] = slice(None)
+    sl1 = tuple(sl1)
+
     sl2 = [slice(None)] * x.ndim
     sl2[axis] = slice(None, None, -1)
+    sl2 = tuple(sl2)
+
     S = np.sum((2 * i[sl1] - 1.0) / N * (np.log(z) + np.log(1 - z[sl2])),
                axis=axis)
     A2 = -N - S

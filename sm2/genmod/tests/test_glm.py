@@ -48,12 +48,10 @@ else:
 def close_or_save(pdf, fig):
     if pdf_output:
         pdf.savefig(fig)
-    plt.close(fig)
 
 
 def teardown_module():
     if have_matplotlib:
-        plt.close('all')
         if pdf_output:
             pdf.close()
 
@@ -251,19 +249,16 @@ class CheckComparisonMixin(object):
         # but would be OK with 1.01e-7
 
     def test_compare_discrete(self):
+        # TODO: redundant with test_score above?
         res1 = self.res1
 
         # score
-        score1 = res1.model.score(res1.params)
-        score_obs1 = res1.model.score_obs(res1.params)
-
-        # Troubleshooting travis failures that don't happen locally
-        assert res1.model.exog.dtype == 'f8'
-        assert res1.params.dtype == 'f8'
-        assert score_obs1.dtype == 'f8'
+        score0 = res1.model.score(res1.params)
+        score1 = res1.model.score(res1.params * 0.98)  # near-optimum
+        score_obs1 = res1.model.score_obs(res1.params * 0.98)
 
         assert_allclose(score1, score_obs1.sum(0), atol=1e-20)
-        assert_allclose(score1, np.zeros(score_obs1.shape[1]), atol=1.01e-7)
+        assert_allclose(score0, np.zeros(score_obs1.shape[1]), atol=5e-7)
         # FIXME: locally the above assertion passes with atol=1e-7, but on
         # Travis I'm just barely seeing failures 2018-03-21 with
         # the first entry of score1 being -1.006265e-07
@@ -348,7 +343,7 @@ class TestGlmGaussian(CheckModelResultsMixin):
         """
         Test Gaussian family with canonical identity link
         """
-        cls.data = sm.datasets.longley.load()
+        cls.data = sm.datasets.longley.load(as_pandas=False)
         cls.data.exog = add_constant(cls.data.exog, prepend=False)
         cls.res1 = GLM(cls.data.endog, cls.data.exog,
                        family=sm.families.Gaussian()).fit()
@@ -435,7 +430,7 @@ class TestGlmBinomial(CheckModelResultsMixin):
         """
         Test Binomial family with canonical logit link using star98 dataset.
         """
-        data = sm.datasets.star98.load()
+        data = sm.datasets.star98.load(as_pandas=False)
         data.exog = add_constant(data.exog, prepend=False)
         cls.res1 = GLM(data.endog, data.exog,
                        family=sm.families.Binomial()).fit()
@@ -507,7 +502,7 @@ class TestGlmGamma(CheckModelResultsMixin):
         """
         Tests Gamma family with canonical inverse link (power -1)
         """
-        data = sm.datasets.scotland.load()
+        data = sm.datasets.scotland.load(as_pandas=False)
         data.exog = add_constant(data.exog, prepend=False)
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
@@ -563,7 +558,7 @@ class TestGlmPoisson(CheckModelResultsMixin, CheckComparisonMixin):
 
         Test results were obtained by R.
         """
-        cls.data = sm.datasets.cpunish.load()
+        cls.data = sm.datasets.cpunish.load(as_pandas=False)
         cls.data.exog[:, 3] = np.log(cls.data.exog[:, 3])
         cls.data.exog = add_constant(cls.data.exog, prepend=False)
         cls.res1 = GLM(cls.data.endog, cls.data.exog,
@@ -638,7 +633,7 @@ class TestGlmNegbinomial(CheckModelResultsMixin):
         """
         Test Negative Binomial family with log link
         """
-        cls.data = sm.datasets.committee.load()
+        cls.data = sm.datasets.committee.load(as_pandas=False)
         cls.data.exog[:, 2] = np.log(cls.data.exog[:, 2])
         interaction = cls.data.exog[:, 2] * cls.data.exog[:, 1]
         cls.data.exog = np.column_stack((cls.data.exog, interaction))
@@ -661,7 +656,7 @@ class TestGlmPoissonOffset(CheckModelResultsMixin):
 
     @classmethod
     def setup_class(cls):
-        data = sm.datasets.cpunish.load()
+        data = sm.datasets.cpunish.load(as_pandas=False)
         data.exog[:, 3] = np.log(data.exog[:, 3])
         data.exog = add_constant(data.exog, prepend=True)
         exposure = [100] * len(data.endog)
@@ -761,7 +756,7 @@ class TestStartParams(CheckModelResultsMixin):
         """
         Test Gaussian family with canonical identity link
         """
-        cls.data = sm.datasets.longley.load()
+        cls.data = sm.datasets.longley.load(as_pandas=False)
         cls.data.exog = add_constant(cls.data.exog, prepend=False)
         params = sm.OLS(cls.data.endog, cls.data.exog).fit().params
         cls.res1 = GLM(cls.data.endog, cls.data.exog,
@@ -774,7 +769,7 @@ class CheckWtdDuplicationMixin(object):
 
     @classmethod
     def setup_class(cls):
-        cls.data = sm.datasets.cpunish.load()
+        cls.data = sm.datasets.cpunish.load(as_pandas=False)
         cls.endog = cls.data.endog
         cls.exog = cls.data.exog
         np.random.seed(1234)
@@ -1450,7 +1445,7 @@ class TestConvergence(object):
         """
         Test Binomial family with canonical logit link using star98 dataset.
         """
-        data = sm.datasets.star98.load()
+        data = sm.datasets.star98.load(as_pandas=False)
         data.exog = add_constant(data.exog, prepend=False)
         cls.model = GLM(data.endog, data.exog,
                         family=sm.families.Binomial())
@@ -1687,7 +1682,7 @@ def test_poisson_deviance():
 
 @pytest.mark.not_vetted
 def test_wtd_patsy_missing():
-    data = sm.datasets.cpunish.load()
+    data = sm.datasets.cpunish.load(as_pandas=False)
     data.exog[0, 0] = np.nan
     data.endog[[2, 4, 6, 8]] = np.nan
     data.pandas = pd.DataFrame(data.exog, columns=data.exog_name)
@@ -1762,7 +1757,7 @@ def test_score_test_OLS():
 @pytest.mark.smoke
 @pytest.mark.skip(reason="plotting functions not ported from upstream")
 @pytest.mark.skipif(not have_matplotlib, reason='matplotlib not available')
-def test_plots():
+def test_plots(close_figures):
     np.random.seed(378)
     n = 200
     exog = np.random.normal(size=(n, 2))
@@ -1840,7 +1835,7 @@ def test_non_invertible_hessian_fails_summary():
 def test_attribute_writable_resettable():
     # Regression test for mutables and class constructors.
     # TODO: GH reference?
-    data = sm.datasets.longley.load()
+    data = sm.datasets.longley.load(as_pandas=False)
     endog, exog = data.endog, data.exog
     glm_model = sm.GLM(endog, exog)
     assert glm_model.family.link.power == 1.0

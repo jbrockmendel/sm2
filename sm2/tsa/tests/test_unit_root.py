@@ -6,7 +6,7 @@ import pytest
 import numpy as np
 from numpy.testing import assert_almost_equal, assert_equal, assert_allclose
 
-from sm2.tools.sm_exceptions import ColinearityWarning
+from sm2.tools.sm_exceptions import CollinearityWarning
 
 from sm2.datasets import macrodata
 from sm2.tsa import unit_root
@@ -19,10 +19,10 @@ from sm2.tsa import unit_root
 @pytest.mark.not_vetted
 def test_adf_autolag():
     # GH#246
-    d2 = macrodata.load().data
+    d2 = macrodata.load_pandas().data
 
     for k_trend, tr in enumerate(['nc', 'c', 'ct', 'ctt']):
-        x = np.log(d2['realgdp'])
+        x = np.log(d2['realgdp'].values)
         xd = np.diff(x)
 
         # check exog
@@ -63,9 +63,9 @@ class CheckADF(object):
     Test values taken from Stata.
     """
     levels = ['1%', '5%', '10%']
-    data = macrodata.load()
-    x = data.data['realgdp']
-    y = data.data['infl']
+    data = macrodata.load_pandas()
+    x = data.data['realgdp'].values
+    y = data.data['infl'].values
 
     def test_teststat(self):
         assert_almost_equal(self.res1[0],
@@ -194,8 +194,8 @@ class TestKPSS(object):
     In this context, x is the vector containing the
     macrodata['realgdp'] series.
     """
-    data = macrodata.load()
-    x = data.data['realgdp']
+    data = macrodata.load_pandas()
+    x = data.data['realgdp'].values
 
     def test_fail_nonvector_input(self):
         with warnings.catch_warnings(record=True):
@@ -266,9 +266,9 @@ class TestCoint_t(object):
     Test values taken from Stata
     """
     levels = ['1%', '5%', '10%']
-    data = macrodata.load()
-    y1 = data.data['realcons']
-    y2 = data.data['realgdp']
+    data = macrodata.load_pandas()
+    y1 = data.data['realcons'].values
+    y2 = data.data['realgdp'].values
 
     @classmethod
     def setup_class(cls):
@@ -376,13 +376,13 @@ def test_coint_identical_series():
     scale_e = 1
     np.random.seed(123)
     y = scale_e * np.random.randn(nobs)
-    warnings.simplefilter('always', ColinearityWarning)
-    with warnings.catch_warnings(record=True) as w:
+    warnings.simplefilter('always', CollinearityWarning)
+    with pytest.warns(CollinearityWarning):
         c = unit_root.coint(y, y, trend="c", maxlag=0, autolag=None)
-    assert len(w) == 1
-    assert c[0] == 0.0
+
     # Limit of table
-    assert c[1] > .98
+    assert c[1] == 0
+    assert np.isneginf(c[0])
 
 
 @pytest.mark.not_vetted
@@ -392,9 +392,10 @@ def test_coint_perfect_collinearity():
     np.random.seed(123)
     x = scale_e * np.random.randn(nobs, 2)
     y = 1 + x.sum(axis=1)
-    warnings.simplefilter('always', ColinearityWarning)
+    warnings.simplefilter('always', CollinearityWarning)
     with warnings.catch_warnings(record=True):
         c = unit_root.coint(y, x, trend="c", maxlag=0, autolag=None)
-    assert c[0] == 0.0
+
     # Limit of table
-    assert c[1] > .98
+    assert c[1] == 0
+    assert np.isneginf(c[0])

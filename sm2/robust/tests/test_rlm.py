@@ -30,7 +30,7 @@ class CheckRlmResultsMixin(object):
     """
     @classmethod
     def setup_class(cls):
-        cls.data = sm.datasets.stackloss.load()
+        cls.data = sm.datasets.stackloss.load(as_pandas=False)
         cls.data.exog = sm.add_constant(cls.data.exog, prepend=False)
 
     @pytest.mark.parametrize('attr', ['params', 'weights', 'resid',

@@ -201,7 +201,7 @@ class TestGLMBinomialCountConstrained(ConstrainedCompareMixin):
     @classmethod
     def setup_class(cls):
         from sm2.datasets.star98 import load
-        data = load()
+        data = load(as_pandas=False)
         exog = add_constant(data.exog, prepend=True)
         offset = np.ones(len(data.endog))
         exog_keep = exog[:, :-5]

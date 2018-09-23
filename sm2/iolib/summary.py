@@ -22,7 +22,8 @@ def forg(x, prec=3):
         else:
             return '%10.4f' % x
     else:  # pragma: no cover
-        raise NotImplementedError  # TODO: Should this be ValueError?
+        raise ValueError("`prec` argument must be either 3 or 4, not {prec}"
+                         .format(prec=prec))
 
 
 # TODO: not hit in tests?  how is that possible?
@@ -81,6 +82,13 @@ def summary_top(results, title=None, gleft=None, gright=None,
     # create dictionary with default
     # use lambdas because some values raise exception if they are not available
     # alternate spellings are commented out to force unique labels
+    def num_to_str(x, width=6):
+        # GH#5143
+        # TODO: Test for this is in GH#5143 but in miscmodels, so not ported
+        if np.isnan(x):
+            return (width - 3) * ' ' + 'NaN'
+        return "%#6d" % x
+
     default_items = dict([
         ('Dependent Variable:', lambda: [yname]),
         ('Dep. Variable:', lambda: [yname]),
@@ -88,10 +96,10 @@ def summary_top(results, title=None, gleft=None, gright=None,
         ('Date:', lambda: [date]),
         ('Time:', lambda: time_of_day),
         ('Number of Obs:', lambda: [results.nobs]),
-        ('No. Observations:', lambda: ["%#6d" % results.nobs]),
-        ('Df Model:', lambda: ["%#6d" % results.df_model]),
+        ('No. Observations:', lambda: [num_to_str(results.nobs)]),
+        ('Df Model:', lambda: [num_to_str(results.df_model)]),
         # TODO: check when we have non-integer df
-        ('Df Residuals:', lambda: ["%#6d" % results.df_resid]),
+        ('Df Residuals:', lambda: [num_to_str(results.df_resid)]),
         ('Log-Likelihood:', lambda: ["%#8.5g" % results.llf])  # doesn't exist for RLM - exception
         #('Method:', lambda: [???]),  # no default for this
     ])

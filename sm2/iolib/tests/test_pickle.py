@@ -31,4 +31,3 @@ def test_pickle():
     c = load_pickle(fh)
     fh.close()
     assert_equal(a, c)
-    # TODO: Fix upstream this asserts a==b _again_

@@ -48,7 +48,7 @@ class TestACF(CheckCorrGram):
         cls.acf = cls.results['acvar']
         cls.qstat = cls.results['Q1']
         cls.res1 = autocov.acf(cls.x, nlags=40, qstat=True, alpha=.05)
-        cls.confint_res = cls.results[['acvar_lb', 'acvar_ub']].as_matrix()
+        cls.confint_res = cls.results[['acvar_lb', 'acvar_ub']].values
 
     def test_acf(self):
         assert_almost_equal(self.res1[0][1:41], self.acf, 8)
@@ -61,6 +61,7 @@ class TestACF(CheckCorrGram):
         assert_almost_equal(self.res1[2][:40], self.qstat, 3)
         # 3 decimal places because of stata rounding
 
+    # FIXME: dont comment-out code
     #def pvalue(self):
     #     pass
     # NOTE: shouldn't need testing if Q stat is correct
@@ -214,6 +215,7 @@ def test_acovf_fft_vs_convolution():
     np.random.seed(1)
     q = np.random.normal(size=100)
 
+    # TODO: parametrize?
     for demean in [True, False]:
         for unbiased in [True, False]:
             F1 = autocov.acovf(q, demean=demean, unbiased=unbiased, fft=True)

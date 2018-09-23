@@ -100,7 +100,7 @@ class CheckGradLoglikeMixin(object):
 class TestGradMNLogit(CheckGradLoglikeMixin):
     @classmethod
     def setup_class(cls):
-        data = sm.datasets.anes96.load()
+        data = sm.datasets.anes96.load(as_pandas=False)
         exog = data.exog
         exog = sm.add_constant(exog, prepend=False)
         cls.mod = sm.MNLogit(data.endog, exog)
@@ -144,7 +144,7 @@ class TestGradMNLogit(CheckGradLoglikeMixin):
 class TestGradLogit(CheckGradLoglikeMixin):
     @classmethod
     def setup_class(cls):
-        data = sm.datasets.spector.load()
+        data = sm.datasets.spector.load(as_pandas=False)
         data.exog = sm.add_constant(data.exog, prepend=False)
         cls.mod = sm.Logit(data.endog, data.exog)
         cls.params = [np.array([1, 0.25, 1.4, -7])]

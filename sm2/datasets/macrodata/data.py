@@ -1,27 +1,28 @@
 """United States Macroeconomic data"""
+from sm2.datasets import utils as du
 
 __docformat__ = 'restructuredtext'
 
-COPYRIGHT = """This is public domain."""
-TITLE = __doc__
-SOURCE = """
+COPYRIGHT   = """This is public domain."""
+TITLE       = __doc__
+SOURCE      = """
 Compiled by Skipper Seabold. All data are from the Federal Reserve Bank of St.
 Louis [1] except the unemployment rate which was taken from the National
 Bureau of Labor Statistics [2]. ::
 
-    [1] Data Source: FRED, Federal Reserve Economic Data, Federal Reserve Bank
-        of St. Louis; http://research.stlouisfed.org/fred2/;
-        accessed December 15, 2009.
+    [1] Data Source: FRED, Federal Reserve Economic Data, Federal Reserve Bank of
+        St. Louis; http://research.stlouisfed.org/fred2/; accessed December 15,
+        2009.
 
     [2] Data Source: Bureau of Labor Statistics, U.S. Department of Labor;
         http://www.bls.gov/data/; accessed December 15, 2009.
 """
 
-DESCRSHORT = """US Macroeconomic Data for 1959Q1 - 2009Q3"""
+DESCRSHORT  = """US Macroeconomic Data for 1959Q1 - 2009Q3"""
 
-DESCRLONG = DESCRSHORT
+DESCRLONG   = DESCRSHORT
 
-NOTE = """::
+NOTE        = """::
     Number of Observations - 203
 
     Number of Variables - 14
@@ -52,15 +53,22 @@ NOTE = """::
         infl      - Inflation rate (ln(cpi_{t}/cpi_{t-1}) * 400)
         realint   - Real interest rate (tbilrate - infl)
 """
-import os
-import pandas as pd
-
-from sm2.datasets.utils import Dataset
 
 
-def load():
+def load_pandas():
+    data = _get_data()
+    return du.Dataset(data=data, names=list(data.columns))
+
+
+def load(as_pandas=None):
     """
     Load the US macro data and return a Dataset class.
+
+    Parameters
+    ----------
+    as_pandas : bool
+        Flag indicating whether to return pandas DataFrames and Series
+        or numpy recarrays and arrays.  If True, returns pandas.
 
     Returns
     -------
@@ -71,23 +79,11 @@ def load():
     -----
     The macrodata Dataset instance does not contain endog and exog attributes.
     """
-    data = _get_data()
-    names = data.dtype.names
-    dataset = Dataset(data=data, names=names)
-    return dataset
-
-
-def load_pandas():
-    dataset = load()
-    dataset.data = pd.DataFrame(dataset.data)
-    return dataset
+    return du.as_numpy_dataset(load_pandas(), as_pandas=as_pandas)
 
 
 def _get_data():
-    cur_dir = os.path.dirname(os.path.abspath(__file__))
-    path = os.path.join(cur_dir, 'macrodata.csv')
-    data = pd.read_csv(path, float_precision='high')
-    return data.astype('f8').to_records(index=False)
+    return du.load_csv(__file__, 'macrodata.csv').astype(float)
 
 
 variable_names = ["realcons", "realgdp", "realinv"]

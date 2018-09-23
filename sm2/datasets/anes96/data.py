@@ -1,4 +1,7 @@
 """American National Election Survey 1996"""
+from numpy import log
+
+from sm2.datasets import utils as du
 
 __docformat__ = 'restructuredtext'
 
@@ -10,8 +13,7 @@ http://www.electionstudies.org/
 The American National Election Studies.
 """
 
-DESCRSHORT = """This data is a subset of the American National Election
-Studies of 1996."""
+DESCRSHORT = """This data is a subset of the American National Election Studies of 1996."""
 
 DESCRLONG = DESCRSHORT
 
@@ -85,26 +87,6 @@ NOTE = """::
                 from "Left" to "Right".
             logpopul - log(popul + .1)
 """
-import os
-
-import numpy as np
-import numpy.lib.recfunctions as nprf
-
-from sm2.datasets import utils as du
-
-
-def load():
-    """Load the anes96 data and returns a Dataset class.
-
-    Returns
-    -------
-    Dataset instance:
-        See DATASET_PROPOSAL.txt for more information.
-    """
-    data = _get_data()
-    return du.process_recarray(data, endog_idx=5,
-                               exog_idx=[10, 2, 6, 7, 8],
-                               dtype=float)
 
 
 def load_pandas():
@@ -116,17 +98,28 @@ def load_pandas():
         See DATASET_PROPOSAL.txt for more information.
     """
     data = _get_data()
-    return du.process_recarray_pandas(data, endog_idx=5,
-                                      exog_idx=[10, 2, 6, 7, 8],
-                                      dtype=float)
+    return du.process_pandas(data, endog_idx=5, exog_idx=[10, 2, 6, 7, 8])
+
+
+def load(as_pandas=None):
+    """Load the anes96 data and returns a Dataset class.
+
+    Parameters
+    ----------
+    as_pandas : bool
+        Flag indicating whether to return pandas DataFrames and Series
+        or numpy recarrays and arrays.  If True, returns pandas.
+
+    Returns
+    -------
+    Dataset instance:
+        See DATASET_PROPOSAL.txt for more information.
+    """
+    return du.as_numpy_dataset(load_pandas(), as_pandas=as_pandas)
 
 
 def _get_data():
-    cur_dir = os.path.dirname(os.path.abspath(__file__))
-    path = os.path.join(cur_dir, 'anes96.csv')
-    with open(path, "rb") as fd:
-        data = np.recfromtxt(fd, delimiter="\t", names=True, dtype=float)
-        logpopul = np.log(data['popul'] + .1)
-        data = nprf.append_fields(data, 'logpopul', logpopul, usemask=False,
-                                  asrecarray=True)
-    return data
+    data = du.load_csv(__file__, 'anes96.csv', sep='\s')
+    data = du.strip_column_names(data)
+    data['logpopul'] = log(data['popul'] + .1)
+    return data.astype(float)

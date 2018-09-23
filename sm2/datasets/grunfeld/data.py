@@ -1,10 +1,13 @@
 """Grunfeld (1950) Investment Data"""
+import pandas as pd
+
+from sm2.datasets import utils as du
 
 __docformat__ = 'restructuredtext'
 
-COPYRIGHT = """This is public domain."""
-TITLE = __doc__
-SOURCE = """This is the Grunfeld (1950) Investment Data.
+COPYRIGHT   = """This is public domain."""
+TITLE       = __doc__
+SOURCE      = """This is the Grunfeld (1950) Investment Data.
 
 The source for the data was the original 11-firm data set from Grunfeld's Ph.D.
 thesis recreated by Kleiber and Zeileis (2008) "The Grunfeld Data at 50".
@@ -15,11 +18,11 @@ For a note on the many versions of the Grunfeld data circulating see:
 http://www.stanford.edu/~clint/bench/grunfeld.htm
 """
 
-DESCRSHORT = """Grunfeld (1950) Investment Data for 11 U.S. Firms."""
+DESCRSHORT  = """Grunfeld (1950) Investment Data for 11 U.S. Firms."""
 
-DESCRLONG = DESCRSHORT
+DESCRLONG   = DESCRSHORT
 
-NOTE = """::
+NOTE        = """::
 
     Number of observations - 220 (20 years for 11 firms)
 
@@ -38,17 +41,16 @@ NOTE = """::
     Note that raw_data has firm expanded to dummy variables, since it is a
     string categorical variable.
 """
-import os
 
-import numpy as np
-import pandas as pd
-
-from sm2.datasets import utils as du
-
-
-def load():
+def load(as_pandas=None):
     """
     Loads the Grunfeld data and returns a Dataset class.
+
+    Parameters
+    ----------
+    as_pandas : bool
+        Flag indicating whether to return pandas DataFrames and Series
+        or numpy recarrays and arrays.  If True, returns pandas.
 
     Returns
     -------
@@ -60,13 +62,7 @@ def load():
     raw_data has the firm variable expanded to dummy variables for each
     firm (ie., there is no reference dummy)
     """
-    from sm2.tools.tools import categorical
-    data = _get_data()
-    raw_data = categorical(data, col='firm', drop=True)
-    ds = du.process_recarray(data, endog_idx=0, stack=False)
-    ds.raw_data = raw_data
-    return ds
-
+    return du.as_numpy_dataset(load_pandas(), as_pandas=as_pandas)
 
 def load_pandas():
     """
@@ -82,17 +78,14 @@ def load_pandas():
     raw_data has the firm variable expanded to dummy variables for each
     firm (ie., there is no reference dummy)
     """
-    from sm2.tools.tools import categorical
     data = _get_data()
-    raw_data = categorical(data, col='firm', drop=True)
-    ds = du.process_recarray_pandas(data, endog_idx=0)
-    ds.raw_data = pd.DataFrame(raw_data)
+    data.year = data.year.astype(float)
+    raw_data = pd.get_dummies(data)
+    ds = du.process_pandas(data, endog_idx=0)
+    ds.raw_data = raw_data
     return ds
 
 
 def _get_data():
-    filepath = os.path.dirname(os.path.abspath(__file__))
-    with open(filepath + '/grunfeld.csv', 'rb') as fd:
-        data = np.recfromtxt(fd, delimiter=",",
-                             names=True, dtype="f8,f8,f8,a17,f8")
+    data = du.load_csv(__file__, 'grunfeld.csv')
     return data

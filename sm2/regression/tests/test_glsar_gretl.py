@@ -11,7 +11,7 @@ import os
 
 import pytest
 import numpy as np
-from numpy.testing import assert_almost_equal, assert_approx_equal
+from numpy.testing import assert_almost_equal, assert_allclose
 
 from sm2.regression.linear_model import OLS, GLSAR
 from sm2.tools.tools import add_constant
@@ -46,14 +46,14 @@ def compare_ftest(contrast_res, other, decimal=(5, 4)):
 class TestGLSARGretl(object):
     @classmethod
     def setup_class(cls):
-        d = macrodata.load().data
+        d = macrodata.load_pandas().data
 
         # growth rates
-        gs_l_realinv = 400 * np.diff(np.log(d['realinv']))
-        gs_l_realgdp = 400 * np.diff(np.log(d['realgdp']))
+        gs_l_realinv = 400 * np.diff(np.log(d['realinv'].values))
+        gs_l_realgdp = 400 * np.diff(np.log(d['realgdp'].values))
 
         endogg = gs_l_realinv
-        exogg = add_constant(np.c_[gs_l_realgdp, d['realint'][:-1]])
+        exogg = add_constant(np.c_[gs_l_realgdp, d['realint'][:-1].values])
 
         res_ols = OLS(endogg, exogg).fit()
 
@@ -130,9 +130,9 @@ class TestGLSARGretl(object):
         assert_almost_equal(res.fvalue,
                             result_gretl_g1['fvalue'][1],
                             decimal=4)
-        assert_approx_equal(res.f_pvalue,
-                            result_gretl_g1['f_pvalue'][1],
-                            significant=2)
+        assert_allclose(res.f_pvalue,
+                        result_gretl_g1['f_pvalue'][1],
+                        rtol=1e-2)
         #assert_almost_equal(res.durbin_watson,
         #                    result_gretl_g1['dw'][1],
         #                    decimal=7)  # TODO
@@ -386,8 +386,8 @@ class TestGLSARGretl(object):
         # TODO: fvalue differs from Gretl, trying any of the HCx
         #assert_almost_equal(res2.fvalue, result_gretl_g1['fvalue'][1],
         #                     decimal=0) # FAIL
-        #assert_approx_equal(res.f_pvalue, result_gretl_g1['f_pvalue'][1],
-        #                     significant=1) # FAIL
+        #assert_allclose(res.f_pvalue, result_gretl_g1['f_pvalue'][1],
+        #                rtol=1e-1) # FAIL
         #assert_almost_equal(res.durbin_watson, result_gretl_g1['dw'][1],
         #                     decimal=7) # TODO
 
@@ -464,10 +464,11 @@ class TestGLSARGretl(object):
 @pytest.mark.not_vetted
 def test_GLSARlag():
     # test that results for lag>1 is close to lag=1, and smaller ssr
-    d2 = macrodata.load().data
-    g_gdp = 400 * np.diff(np.log(d2['realgdp']))
-    g_inv = 400 * np.diff(np.log(d2['realinv']))
-    exogg = add_constant(np.c_[g_gdp, d2['realint'][:-1]], prepend=False)
+    d2 = macrodata.load_pandas().data
+    g_gdp = 400 * np.diff(np.log(d2['realgdp'].values))
+    g_inv = 400 * np.diff(np.log(d2['realinv'].values))
+    exogg = add_constant(np.c_[g_gdp, d2['realint'][:-1].values],
+                         prepend=False)
 
     mod1 = GLSAR(g_inv, exogg, 1)
     res1 = mod1.iterative_fit(5)

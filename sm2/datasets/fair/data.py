@@ -1,27 +1,26 @@
-#! /usr/bin/env python
-
 """Fair's Extramarital Affairs Data"""
+from sm2.datasets import utils as du
 
 __docformat__ = 'restructuredtext'
 
-COPYRIGHT = """Included with permission of the author."""
-TITLE = """Affairs dataset"""
-SOURCE = """
+COPYRIGHT   = """Included with permission of the author."""
+TITLE       = """Affairs dataset"""
+SOURCE      = """
 Fair, Ray. 1978. "A Theory of Extramarital Affairs," `Journal of Political
 Economy`, February, 45-61.
 
 The data is available at http://fairmodel.econ.yale.edu/rayfair/pdf/2011b.htm
 """
 
-DESCRSHORT = """Extramarital affair data."""
+DESCRSHORT  = """Extramarital affair data."""
 
-DESCRLONG = """Extramarital affair data used to explain the allocation
+DESCRLONG   = """Extramarital affair data used to explain the allocation
 of an individual's time among work, time spent with a spouse, and time
 spent with a paramour. The data is used as an example of regression
 with censored data."""
 
-# suggested notes
-NOTE = """::
+#suggested notes
+NOTE        = """::
 
     Number of observations: 6366
     Number of variables: 9
@@ -49,36 +48,30 @@ NOTE = """::
 
     See the original paper for more details.
 """
-import os
-
-import pandas as pd
-
-from sm2.datasets import utils as du
 
 
-def load():
+def load(as_pandas=None):
     """
     Load the data and return a Dataset class instance.
+
+    Parameters
+    ----------
+    as_pandas : bool
+        Flag indicating whether to return pandas DataFrames and Series
+        or numpy recarrays and arrays.  If True, returns pandas.
 
     Returns
     -------
     Dataset instance:
         See DATASET_PROPOSAL.txt for more information.
     """
-    data = _get_data()
-    # NOTE: None for exog_idx is the complement of endog_idx
-    return du.process_recarray(data, endog_idx=8, exog_idx=None, dtype=float)
+    return du.as_numpy_dataset(load_pandas(), as_pandas=as_pandas)
 
 
 def load_pandas():
     data = _get_data()
-    # NOTE: None for exog_idx is the complement of endog_idx
-    return du.process_recarray_pandas(data, endog_idx=8, exog_idx=None,
-                                      dtype=float)
+    return du.process_pandas(data, endog_idx=8, exog_idx=None)
 
 
 def _get_data():
-    cur_dir = os.path.dirname(os.path.abspath(__file__))
-    path = os.path.join(cur_dir, 'fair.csv')
-    data = pd.read_csv(path).astype('f8').to_records(index=False)
-    return data
+    return du.load_csv(__file__, 'fair.csv', convert_float=True)

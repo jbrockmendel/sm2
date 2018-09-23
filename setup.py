@@ -4,10 +4,12 @@
 Much of the build system code was adapted from work done by the pandas
 developers [1], which was in turn based on work done in pyzmq [2] and lxml [3].
 
-[1] http://pandas.pydata.org
-[2] http://zeromq.github.io/pyzmq/
-[3] http://lxml.de/
+[1] https://pandas.pydata.org
+[2] https://zeromq.github.io/pyzmq/
+[3] https://lxml.de/
 """
+from collections import defaultdict
+import fnmatch
 import os
 import shutil
 import sys
@@ -31,7 +33,7 @@ DESCRIPTION = 'Bugfix Fork of statsmodels'
 LONG_DESCRIPTION = README
 MAINTAINER = 'Brock Mendel'
 MAINTAINER_EMAIL = 'jbrockmendel@gmail.com'
-# URL = 'http://www.statsmodels.org/'
+# URL = 'https://www.statsmodels.org/'
 LICENSE = 'BSD License'
 DOWNLOAD_URL = ''
 
@@ -41,6 +43,7 @@ classifiers = ['Development Status :: 4 - Beta',
                'Programming Language :: Python :: 2.7',
                'Programming Language :: Python :: 3.5',
                'Programming Language :: Python :: 3.6',
+               'Programming Language :: Python :: 3.7',
                'Operating System :: OS Independent',
                'Intended Audience :: End Users/Desktop',
                'Intended Audience :: Developers',
@@ -48,6 +51,24 @@ classifiers = ['Development Status :: 4 - Beta',
                'Natural Language :: English',
                'License :: OSI Approved :: BSD License',
                'Topic :: Scientific/Engineering']
+
+FILES_TO_INCLUDE_IN_PACKAGE = ['LICENSE.txt', 'setup.cfg']
+FILES_COPIED_TO_PACKAGE = []
+for filename in FILES_TO_INCLUDE_IN_PACKAGE:
+    if os.path.exists(filename):
+        dest = os.path.join('sm2', filename)
+        shutil.copy2(filename, dest)
+        FILES_COPIED_TO_PACKAGE.append(dest)
+
+ADDITIONAL_PACKAGE_DATA = {
+    'sm2': FILES_TO_INCLUDE_IN_PACKAGE,
+    'sm2.datasets.tests': ['*.zip'],
+    'sm2.iolib.tests.results': ['*.dta'],
+    'sm2.stats.tests.results': ['*.json'],
+    'sm2.tsa.vector_ar.tests.results': ['*.npz', '*.dat'],
+    'sm2.stats.tests': ['*.txt'],
+}
+
 
 # ------------------------------------------------------------------
 # Dependencies
@@ -63,7 +84,6 @@ min_versions = {'numpy': '1.13.0',
                 'patsy': '0.4.0'}
 
 setuptools_kwargs = {
-    "zip_safe": False,
     'install_requires': [
         "numpy >= {version}".format(version=min_versions['numpy']),
         "scipy >= {version}".format(version=min_versions['scipy']),
@@ -307,49 +327,30 @@ extensions = [
 # ------------------------------------------------------------------
 
 
-def get_data_files():
-    # this adds *.csv and *.dta files in datasets folders
-    # and *.csv and *.txt files in test/results folders
-    data_files = {}
-    root = os.path.join(curdir, "sm2", "datasets")
-    if not os.path.exists(root):
-        return []
-    for i in os.listdir(root):
-        if i is "tests":
-            continue
-        path = os.path.join(root, i)
-        if os.path.isdir(path):
-            key = os.path.relpath(path, start=curdir).replace(os.sep, ".")
-            data_files[key] = ["*.csv", "*.dta"]
+# ------------------------------------------------------------------
+# Construct package data
+# ------------------------------------------------------------------
+package_data = defaultdict(list)
+filetypes = ['*.csv', '*.txt', '*.dta']
 
-    # add all the tests and results files
-    for r, ds, fs in os.walk(os.path.join(curdir, "sm2")):
-        relpath = os.path.relpath(r, start=curdir)
-        if relpath.endswith('results'):
-            key = relpath.replace(os.sep, ".")
-            data_files[key] = ["*.csv", "*.txt", "*.dta"]
+dsetdir = os.path.join(curdir, 'sm2', 'datasets')
+for root, _, filenames in os.walk(dsetdir):
+    matches = []
+    for filetype in filetypes:
+        for filename in fnmatch.filter(filenames, filetype):
+            matches.append(filename)
+    if matches:
+        key = '.'.join(os.path.relpath(root).split(os.path.sep))
+        package_data[key] = filetypes
 
-    # Manually fill in the rest.  Upstream this was done _outside_ this call
-    data_files["sm2.datasets.tests"].append("*.zip")
-    # data_files["sm2.iolib.tests.results"].append("*.dta")
-    data_files["sm2.stats.tests.results"].append("*.json")
-    data_files["sm2.tsa.vector_ar.tests.results"].append("*.npz")
-    # data files that don't follow the tests/results pattern. should fix.
-    data_files["sm2.stats.tests"] = ["*.txt"]
-    data_files["sm2.stats.libqsturng"] = ["*.r", "*.txt", "*.dat"]
-    data_files["sm2.stats.libqsturng.tests"] = ["*.csv", "*.dat"]
-    data_files["sm2.tsa.vector_ar.data"] = ["*.dat"]
-    data_files["sm2.tsa.vector_ar.data"] = ["*.dat"]
-    # temporary, until moved:
-    data_files["sm2.sandbox.regression.tests"] = ["*.dta", "*.csv"]
-    return data_files
+for root, _, _ in os.walk(os.path.join(curdir, 'sm2')):
+    if root.endswith('results'):
+        key = '.'.join(os.path.relpath(root).split(os.path.sep))
+        package_data[key] = filetypes
 
+for path, filetypes in ADDITIONAL_PACKAGE_DATA.items():
+    package_data[path].extend(filetypes)
 
-# TODO: deal with this. Not sure if it ever worked for bdists
-#('docs/build/htmlhelp/statsmodelsdoc.chm',
-# 'sm2/statsmodelsdoc.chm')
-
-cwd = os.path.abspath(os.path.dirname(__file__))
 
 setup(name=DISTNAME,
       version=versioneer.get_version(),
@@ -366,7 +367,14 @@ setup(name=DISTNAME,
       platforms='any',
       cmdclass=cmdclass,
       packages=find_packages(),
-      package_data=get_data_files(),
+      package_data=package_data,
       include_package_data=False,  # True will install all files in repo
       extras_require=extras,
+      zip_safe=False,
+      data_files=[('', ['LICENSE.txt', 'setup.cfg'])],
       **setuptools_kwargs)
+
+# Clean-up copied files
+# GH#5195
+for copy in FILES_COPIED_TO_PACKAGE:
+    os.unlink(copy)

@@ -153,7 +153,7 @@ def _safe_col_trend(x, columns, trendarr, is_pandas, is_recarray, has_constant):
 
 def _cast_trend_recarray(x, descr, prepend):
     # TODO: docstring
-    x = x.to_records(index=False, convert_datetime64=False)
+    x = x.to_records(index=False)
     new_descr = x.dtype.descr
     extra_col = len(new_descr) - len(descr)
 
@@ -344,7 +344,7 @@ def lagmat2ds(x, maxlag0, maxlagex=None, dropex=0, trim='forward',
         else:
             x = x[:, None]
     elif x.ndim == 0 or x.ndim > 2:
-        raise TypeError('Only supports 1 and 2-dimensional data.')
+        raise ValueError('Only supports 1 and 2-dimensional data.')
 
     nobs, nvar = x.shape
 

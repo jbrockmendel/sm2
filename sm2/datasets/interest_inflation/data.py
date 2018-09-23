@@ -1,10 +1,5 @@
 """(West) German interest and inflation rate 1972-1998"""
-
-import os
-
-import pandas as pd
-
-from sm2.datasets.utils import Dataset
+from sm2.datasets import utils as du
 
 __docformat__ = 'restructuredtext'
 
@@ -34,14 +29,19 @@ NOTE = """::
         R         - nominal long term interest rate
 """
 
-
 variable_names = ["Dp", "R"]
 first_season = 1  # 1 stands for: first observation in Q2 (0 would mean Q1)
 
 
-def load():
+def load(as_pandas=None):
     """
     Load the West German interest/inflation data and return a Dataset class.
+
+    Parameters
+    ----------
+    as_pandas : bool
+        Flag indicating whether to return pandas DataFrames and Series
+        or numpy recarrays and arrays.  If True, returns pandas.
 
     Returns
     -------
@@ -53,24 +53,18 @@ def load():
     The interest_inflation Dataset instance does not contain endog and exog
     attributes.
     """
-    data = _get_data()
-    names = data.dtype.names
-    dataset = Dataset(data=data, names=names)
-    return dataset
+    return du.as_numpy_dataset(load_pandas(), as_pandas=as_pandas)
 
 
 def load_pandas():
-    dataset = load()
-    dataset.data = pd.DataFrame(dataset.data)
+    data = _get_data()
+    names = data.columns
+    dataset = du.Dataset(data=data, names=names)
     return dataset
 
 
 def _get_data():
-    cur_dir = os.path.dirname(os.path.abspath(__file__))
-    path = os.path.join(cur_dir, 'E6.csv')
-    data = pd.read_csv(path, float_precision='high')
-    return data.astype('f8').to_records(index=False)
-
+    return du.load_csv(__file__, 'E6.csv', convert_float=True)
 
 def __str__():
     return "e6"

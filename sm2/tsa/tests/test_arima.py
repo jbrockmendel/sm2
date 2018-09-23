@@ -19,9 +19,6 @@ from sm2.tsa.arima_process import arma_generate_sample
 from sm2.tools.sm_exceptions import MissingDataError
 from .results import results_arma, results_arima
 
-import scipy  # only needed for version check
-scipy_old = scipy.__version__ < '0.16'
-
 try:
     import matplotlib.pyplot as plt
     have_matplotlib = True
@@ -575,7 +572,7 @@ class Test_ARIMA111(CheckArimaResultsMixin, CheckForecastMixin,
 
     @classmethod
     def setup_class(cls):
-        cpi = datasets.macrodata.load().data['cpi']
+        cpi = datasets.macrodata.load_pandas().data['cpi'].values
         cls.res1 = ARIMA(cpi, (1, 1, 1)).fit(disp=-1)
         cls.res2 = results_arima.ARIMA111()
         # make sure endog names changes to D.cpi
@@ -614,7 +611,7 @@ class Test_ARIMA111CSS(CheckArimaResultsMixin, CheckForecastMixin,
 
     @classmethod
     def setup_class(cls):
-        cpi = datasets.macrodata.load().data['cpi']
+        cpi = datasets.macrodata.load_pandas().data['cpi'].values
         cls.res1 = ARIMA(cpi, (1, 1, 1)).fit(disp=-1, method='css')
         cls.res2 = results_arima.ARIMA111(method='css')
         cls.res2.fittedvalues = - cpi[1:-1] + cls.res2.linear
@@ -641,7 +638,7 @@ class Test_ARIMA112CSS(CheckArimaResultsMixin):
 
     @classmethod
     def setup_class(cls):
-        cpi = datasets.macrodata.load().data['cpi']
+        cpi = datasets.macrodata.load_pandas().data['cpi'].values
         cls.res1 = ARIMA(cpi, (1, 1, 2)).fit(disp=-1, method='css',
                                              start_params=[.905322, -.692425,
                                                            1.07366, 0.172024])
@@ -672,7 +669,7 @@ class Test_ARIMA112CSS(CheckArimaResultsMixin):
 #class Test_ARIMADates(CheckArmaResults, CheckForecast, CheckDynamicForecast):
 #    @classmethod
 #    def setup_class(cls):
-#        cpi = datasets.macrodata.load().data['cpi']
+#        cpi = datasets.macrodata.load_pandas().data['cpi'].values
 #        dates = pd.date_range('1959', periods=203, freq='Q')
 #        cls.res1 = ARIMA(cpi, dates=dates, freq='Q').fit(order=(1, 1, 1),
 #                                                         disp=-1)
@@ -760,7 +757,7 @@ def test_start_params_bug():
 
 @pytest.mark.not_vetted
 def test_arima_predict_mle_dates():
-    cpi = datasets.macrodata.load().data['cpi']
+    cpi = datasets.macrodata.load_pandas().data['cpi'].values
     res1 = ARIMA(cpi, (4, 1, 1), dates=cpi_dates, freq='Q').fit(disp=-1)
 
     path = os.path.join(current_path, 'results',
@@ -795,7 +792,7 @@ def test_arima_predict_mle_dates():
 
 @pytest.mark.not_vetted
 def test_arma_predict_mle_dates():
-    sunspots = datasets.sunspots.load().data['SUNACTIVITY']
+    sunspots = datasets.sunspots.load_pandas().data['SUNACTIVITY'].values
     mod = ARMA(sunspots, (9, 0), dates=sun_dates, freq='A')
     mod.method = 'mle'
 
@@ -813,7 +810,7 @@ def test_arma_predict_mle_dates():
 
 @pytest.mark.not_vetted
 def test_arima_predict_css_dates():
-    cpi = datasets.macrodata.load().data['cpi']
+    cpi = datasets.macrodata.load_pandas().data['cpi'].values
     res1 = ARIMA(cpi, (4, 1, 1), dates=cpi_dates, freq='Q').fit(disp=-1,
                                                                 method='css',
                                                                 trend='nc')
@@ -855,7 +852,7 @@ def test_arima_predict_css_dates():
 @pytest.mark.not_vetted
 def test_arma_predict_css_dates():
     # TODO: GH reference?
-    sunspots = datasets.sunspots.load().data['SUNACTIVITY']
+    sunspots = datasets.sunspots.load_pandas().data['SUNACTIVITY'].values
     mod = ARMA(sunspots, (9, 0), dates=sun_dates, freq='A')
     mod.method = 'css'
     with pytest.raises(ValueError):
@@ -868,10 +865,12 @@ def test_arima_wrapper():
     cpi = datasets.macrodata.load_pandas().data['cpi']
     cpi.index = pd.Index(cpi_dates)
     res = ARIMA(cpi, (4, 1, 1), freq='Q').fit(disp=-1)
-    tm.assert_index_equal(res.params.index,
-                          pd.Index(['const', 'ar.L1.D.cpi', 'ar.L2.D.cpi',
-                                    'ar.L3.D.cpi', 'ar.L4.D.cpi',
-                                    'ma.L1.D.cpi']))
+
+    expected_index = pd.Index(['const', 'ar.L1.D.cpi', 'ar.L2.D.cpi',
+                               'ar.L3.D.cpi', 'ar.L4.D.cpi',
+                               'ma.L1.D.cpi'])
+    assert expected_index.equals(res.params.index)
+    tm.assert_index_equal(res.params.index, expected_index)
     assert res.model.endog_names == 'D.cpi'
 
 
@@ -906,7 +905,7 @@ def test_1dexog():
 def test_arima_predict_bug():
     # predict_start_date wasn't getting set on start = None
     # TODO: GH reference?
-    dta = datasets.sunspots.load_pandas().data.SUNACTIVITY
+    dta = datasets.sunspots.load_pandas().data['SUNACTIVITY']
     dta.index = pd.DatetimeIndex(start='1700', end='2009', freq='A')[:309]
     arma_mod20 = ARMA(dta, (2, 0)).fit(disp=-1)
     arma_mod20.predict(None, None)
@@ -1115,11 +1114,12 @@ def test_bad_start_params():
 @pytest.mark.not_vetted
 def test_armax_predict_no_trend():
     # GH#1123 test ARMAX predict doesn't ignore exog when trend is none
-    np.random.seed(12345)
     arparams = np.array([.75, -.25])
     maparams = np.array([.65, .35])
 
     nobs = 20
+
+    np.random.seed(12345)
     y = arma_generate_sample(arparams, maparams, nobs)
 
     X = np.random.randn(nobs)
@@ -1183,7 +1183,7 @@ class TestARMA00(object):
 
     @classmethod
     def setup_class(cls):
-        sunspots = datasets.sunspots.load().data['SUNACTIVITY']
+        sunspots = datasets.sunspots.load_pandas().data['SUNACTIVITY'].values
         cls.y = y = sunspots
         cls.arma_00_model = ARMA(y, order=(0, 0))
         cls.arma_00_res = cls.arma_00_model.fit(disp=-1)
@@ -1315,66 +1315,58 @@ def test_arima_diff2():
 
 
 @pytest.mark.not_vetted
-@pytest.mark.skipif("scipy.__version__ < '0.16'")
 def test_arima111_predict_exog_2127():
     # regression test for issue GH#2127
     ef = [0.03005, 0.03917, 0.02828, 0.03644, 0.03379, 0.02744,
-          0.03343, 0.02621, 0.0305, 0.02455, 0.03261, 0.03507,
+          0.03343, 0.02621, 0.03050, 0.02455, 0.03261, 0.03507,
           0.02734, 0.05373, 0.02677, 0.03443, 0.03331, 0.02741,
           0.03709, 0.02113, 0.03343, 0.02011, 0.03675, 0.03077,
           0.02201, 0.04844, 0.05518, 0.03765, 0.05433, 0.03049,
           0.04829, 0.02936, 0.04421, 0.02457, 0.04007, 0.03009,
           0.04504, 0.05041, 0.03651, 0.02719, 0.04383, 0.02887,
-          0.0344, 0.03348, 0.02364, 0.03496, 0.02549, 0.03284,
-          0.03523, 0.02579, 0.0308, 0.01784, 0.03237, 0.02078,
+          0.03440, 0.03348, 0.02364, 0.03496, 0.02549, 0.03284,
+          0.03523, 0.02579, 0.03080, 0.01784, 0.03237, 0.02078,
           0.03508, 0.03062, 0.02006, 0.02341, 0.02223, 0.03145,
-          0.03081, 0.0252, 0.02683, 0.0172, 0.02225, 0.01579,
-          0.02237, 0.02295, 0.0183, 0.02356, 0.02051, 0.02932,
-          0.03025, 0.0239, 0.02635, 0.01863, 0.02994, 0.01762,
+          0.03081, 0.02520, 0.02683, 0.01720, 0.02225, 0.01579,
+          0.02237, 0.02295, 0.01830, 0.02356, 0.02051, 0.02932,
+          0.03025, 0.02390, 0.02635, 0.01863, 0.02994, 0.01762,
           0.02837, 0.02421, 0.01951, 0.02149, 0.02079, 0.02528,
           0.02575, 0.01634, 0.02563, 0.01719, 0.02915, 0.01724,
-          0.02804, 0.0275, 0.02099, 0.02522, 0.02422, 0.03254,
+          0.02804, 0.02750, 0.02099, 0.02522, 0.02422, 0.03254,
           0.02095, 0.03241, 0.01867, 0.03998, 0.02212, 0.03034,
           0.03419, 0.01866, 0.02623, 0.02052]
-    ue = [4.9, 5., 5., 5., 4.9, 4.7, 4.8, 4.7, 4.7,
+    ue = [4.9, 5.0, 5.0, 5.0, 4.9, 4.7, 4.8, 4.7, 4.7,
           4.6, 4.6, 4.7, 4.7, 4.5, 4.4, 4.5, 4.4, 4.6,
           4.5, 4.4, 4.5, 4.4, 4.6, 4.7, 4.6, 4.7, 4.7,
-          4.7, 5., 5., 4.9, 5.1, 5., 5.4, 5.6, 5.8,
-          6.1, 6.1, 6.5, 6.8, 7.3, 7.8, 8.3, 8.7, 9.,
+          4.7, 5.0, 5.0, 4.9, 5.1, 5.0, 5.4, 5.6, 5.8,
+          6.1, 6.1, 6.5, 6.8, 7.3, 7.8, 8.3, 8.7, 9.0,
           9.4, 9.5, 9.5, 9.6, 9.8, 10., 9.9, 9.9, 9.7,
           9.8, 9.9, 9.9, 9.6, 9.4, 9.5, 9.5, 9.5, 9.5,
-          9.8, 9.4, 9.1, 9., 9., 9.1, 9., 9.1, 9.,
-          9., 9., 8.8, 8.6, 8.5, 8.2, 8.3, 8.2, 8.2,
+          9.8, 9.4, 9.1, 9.0, 9.0, 9.1, 9.0, 9.1, 9.0,
+          9.0, 9.0, 8.8, 8.6, 8.5, 8.2, 8.3, 8.2, 8.2,
           8.2, 8.2, 8.2, 8.1, 7.8, 7.8, 7.8, 7.9, 7.9,
           7.7, 7.5, 7.5, 7.5, 7.5, 7.3, 7.2, 7.2, 7.2,
-          7., 6.7, 6.6, 6.7, 6.7, 6.3, 6.3]
+          7.0, 6.7, 6.6, 6.7, 6.7, 6.3, 6.3]
 
-    # rescaling results in convergence failure
-    #model = ARIMA(np.array(ef)*100, (1, 1, 1), exog=ue)
+    ue = np.array(ue) / 100
     model = ARIMA(ef, (1, 1, 1), exog=ue)
     res = model.fit(transparams=False, pgtol=1e-8, iprint=0, disp=0)
+
     assert res.mle_retvals['warnflag'] == 0
+
     predicts = res.predict(start=len(ef), end=len(ef) + 10,
                            exog=ue[-11:], typ='levels')
 
     # regression test, not verified numbers
-    # if exog=ue in predict, which values are used ?
     predicts_res = np.array([
-        0.02612291, 0.02361929, 0.024966, 0.02448193, 0.0248772,
-        0.0248762, 0.02506319, 0.02516542, 0.02531214, 0.02544654,
-        0.02559099, 0.02550931])
-
-    # if exog=ue[-11:] in predict
-    predicts_res = np.array([
-        0.02591112, 0.02321336, 0.02436593, 0.02368773, 0.02389767,
-        0.02372018, 0.02374833, 0.02367407, 0.0236443, 0.02362868,
-        0.02362312])
-
+        0.02591095, 0.02321325, 0.02436579, 0.02368759, 0.02389753,
+        0.02372, 0.0237481, 0.0236738, 0.023644, 0.0236283,
+        0.02362267])
     assert_allclose(predicts, predicts_res, atol=5e-6)
 
 
 @pytest.mark.not_vetted
-def test_ARIMA_exog_predict():
+def test_arima_exog_predict():
     # TODO: break up giant test
     # test forecasting and dynamic prediction with exog against Stata
     dta = datasets.macrodata.load_pandas().data
@@ -1393,7 +1385,6 @@ def test_ARIMA_exog_predict():
     exog_full = data[['loggdp', 'logcons']]
 
     # pandas
-
     mod = ARIMA(data_sample['loginv'], (1, 0, 1),
                 exog=data_sample[['loggdp', 'logcons']])
     with warnings.catch_warnings():
@@ -1418,19 +1409,21 @@ def test_ARIMA_exog_predict():
     predicted_arma_d = res2.predict(start=193, end=202,
                                     exog=exog_full[197:], dynamic=True)
 
+    endog_scale = 100
+    ex_scale = 1000
     # ARIMA(1, 1, 1)
-    ex = np.asarray(data_sample[['loggdp', 'logcons']].diff())
+    ex = ex_scale * np.asarray(data_sample[['loggdp', 'logcons']].diff())
     # The first obsevation is not (supposed to be) used, but I get
     # a Lapack problem
     # Intel MKL ERROR: Parameter 5 was incorrect on entry to DLASCL.
     ex[0] = 0
-    mod111 = ARIMA(np.asarray(data_sample['loginv']),
+    mod111 = ARIMA(100 * np.asarray(data_sample['loginv']),
                    (1, 1, 1),
                    # Stata differences also the exog
                    exog=ex)
 
     res111 = mod111.fit(disp=0, solver='bfgs', maxiter=5000)
-    exog_full_d = data[['loggdp', 'logcons']].diff()
+    exog_full_d = ex_scale * data[['loggdp', 'logcons']].diff()
     res111.predict(start=197, end=202, exog=exog_full_d.values[197:])
 
     predicted_arima_f = res111.predict(start=196, end=202,
@@ -1473,10 +1466,10 @@ def test_ARIMA_exog_predict():
     assert_allclose(predicted_arma_f,
                     res_f101[-len(predicted_arma_f):],
                     atol=1e-4)
-    assert_allclose(predicted_arima_d,
+    assert_allclose(predicted_arima_d / endog_scale,
                     res_d111[-len(predicted_arima_d):],
                     rtol=1e-4, atol=1e-4)
-    assert_allclose(predicted_arima_f,
+    assert_allclose(predicted_arima_f / endog_scale,
                     res_f111[-len(predicted_arima_f):],
                     rtol=1e-4, atol=1e-4)
 
@@ -1531,6 +1524,16 @@ def test_ARIMA_exog_predict():
                                  exog=exog_full.values[100:120], dynamic=True)
     assert_allclose(predict_3a, predict_3b, rtol=1e-10)
 
+    # TODO: break this out into a specific non-smoke test
+    # GH#4915 invalid exogs passed to forecast should raise
+    h = len(exog_full.values[197:])
+    with pytest.raises(ValueError):
+        res_002.forecast(steps=h)
+    with pytest.raises(ValueError):
+        res_002.forecast(steps=h, exog=np.empty((h, 20)))
+    with pytest.raises(ValueError):
+        res_002.forecast(steps=h, exog=np.empty(20))
+
 
 @pytest.mark.not_vetted
 def test_arima_fit_multiple_calls():
@@ -1559,12 +1562,12 @@ def test_arima_fit_multiple_calls():
 
 @pytest.mark.not_vetted
 def test_long_ar_start_params():
-    np.random.seed(12345)
     arparams = np.array([1, -.75, .25])
     maparams = np.array([1, .65, .35])
 
     nobs = 30
 
+    np.random.seed(12345)
     y = arma_generate_sample(arparams, maparams, nobs)
 
     model = ARMA(y, order=(2, 2))
@@ -1581,7 +1584,7 @@ def test_long_ar_start_params():
 
 @pytest.mark.not_vetted
 def test_arima_predict_mle():
-    cpi = datasets.macrodata.load().data['cpi']
+    cpi = datasets.macrodata.load_pandas().data['cpi'].values
     res1 = ARIMA(cpi, (4, 1, 1)).fit(disp=-1)
     # fit the model so that we get correct endog length but use
     path = os.path.join(current_path, 'results',
@@ -1741,7 +1744,7 @@ def test_arima_predict_mle():
 
 @pytest.mark.not_vetted
 def test_arima_predict_css():
-    cpi = datasets.macrodata.load().data['cpi']
+    cpi = datasets.macrodata.load_pandas().data['cpi'].values
     # NOTE: Doing no-constant for now to kick the conditional exogenous
     # GH#274 down the road
     # go ahead and git the model to set up necessary variables
@@ -1907,7 +1910,7 @@ def test_arima_predict_css():
 
 @pytest.mark.not_vetted
 def test_arima_predict_mle_diffs():
-    cpi = datasets.macrodata.load().data['cpi']
+    cpi = datasets.macrodata.load_pandas().data['cpi'].values
     # NOTE: Doing no-constant for now to kick the conditional exogenous
     # GH#274 down the road
     # go ahead and git the model to set up necessary variables
@@ -2061,7 +2064,7 @@ def test_arima_predict_mle_diffs():
 
 @pytest.mark.not_vetted
 def test_arima_predict_css_diffs():
-    cpi = datasets.macrodata.load().data['cpi']
+    cpi = datasets.macrodata.load_pandas().data['cpi'].values
     # NOTE: Doing no-constant for now to kick the conditional exogenous
     # issue GH#274 down the road
     # go ahead and git the model to set up necessary variables
@@ -2240,7 +2243,7 @@ def _check_end(model, given, end_expect, out_of_sample_expect):
 
 @pytest.mark.not_vetted
 def test_arma_predict_indices():
-    sunspots = datasets.sunspots.load().data['SUNACTIVITY']
+    sunspots = datasets.sunspots.load_pandas().data['SUNACTIVITY'].values
     model = ARMA(sunspots, (9, 0), dates=sun_dates, freq='A')
     model.method = 'mle'
 
@@ -2305,7 +2308,7 @@ def test_arma_predict_indices():
 
 @pytest.mark.not_vetted
 def test_arima_predict_indices():
-    cpi = datasets.macrodata.load().data['cpi']
+    cpi = datasets.macrodata.load_pandas().data['cpi'].values
     model = ARIMA(cpi, (4, 1, 1), dates=cpi_dates, freq='Q')
     model.method = 'mle'
 
@@ -2439,7 +2442,7 @@ def test_arima_predict_indices():
 
 def test_arima_predict_indices_css_invalid():
     # TODO: GH Reference?
-    cpi = datasets.macrodata.load().data['cpi']
+    cpi = datasets.macrodata.load_pandas().data['cpi'].values
     # NOTE: Doing no-constant for now to kick the conditional exogenous
     # GH#274 down the road
     model = ARIMA(cpi, (4, 1, 1))
@@ -2460,7 +2463,7 @@ def test_arima_predict_indices_css_invalid():
 
 @pytest.mark.smoke
 @pytest.mark.skipif('not have_matplotlib')
-def test_plot_predict():
+def test_plot_predict(close_figures):
     dta = datasets.sunspots.load_pandas().data[['SUNACTIVITY']]
     dta.index = pd.DatetimeIndex(start='1700', end='2009', freq='A')[:309]
 
@@ -2469,14 +2472,81 @@ def test_plot_predict():
         for plot_insample in [True, False]:
             fig = res.plot_predict('1990', '2012', dynamic=dynamic,
                                    plot_insample=plot_insample)
-            plt.close(fig)
 
     res = ARIMA(dta, (3, 1, 0)).fit(disp=-1)
     for dynamic in [True, False]:
         for plot_insample in [True, False]:
             fig = res.plot_predict('1990', '2012', dynamic=dynamic,
                                    plot_insample=plot_insample)
-            plt.close(fig)
+
+
+def test_arima_forecast_exog_incorrect_size():
+    # GH#4915; upstream bashtage rolled this in to test_arima_exog_predict_1d
+    np.random.seed(12345)
+    y = np.random.random(100)
+    x = np.random.random(100)
+    mod = ARMA(y, (2, 1), x).fit(disp=-1)
+    newx = np.random.random(10)
+
+    with pytest.raises(ValueError):
+        mod.forecast(steps=10, alpha=0.05, exog=newx[:5])
+    with pytest.raises(ValueError):
+        mod.forecast(steps=10, alpha=0.05)
+    
+    too_many = pd.DataFrame(np.zeros((10, 2)),
+                            columns=['x1', 'x2'])
+    with pytest.raises(ValueError):
+        mod.forecast(steps=10, alpha=0.05, exog=too_many)
+
+
+def test_arma_forecast_exog_incorrect_size():
+    # GH#4915; upstream bashtage rolled this in
+    #   to test_arima111_predict_exog2127
+
+    # TODO: de-duplicate data input with test_arima111_predict_exog2127
+    ef = [0.03005, 0.03917, 0.02828, 0.03644, 0.03379, 0.02744,
+          0.03343, 0.02621, 0.0305, 0.02455, 0.03261, 0.03507,
+          0.02734, 0.05373, 0.02677, 0.03443, 0.03331, 0.02741,
+          0.03709, 0.02113, 0.03343, 0.02011, 0.03675, 0.03077,
+          0.02201, 0.04844, 0.05518, 0.03765, 0.05433, 0.03049,
+          0.04829, 0.02936, 0.04421, 0.02457, 0.04007, 0.03009,
+          0.04504, 0.05041, 0.03651, 0.02719, 0.04383, 0.02887,
+          0.0344, 0.03348, 0.02364, 0.03496, 0.02549, 0.03284,
+          0.03523, 0.02579, 0.0308, 0.01784, 0.03237, 0.02078,
+          0.03508, 0.03062, 0.02006, 0.02341, 0.02223, 0.03145,
+          0.03081, 0.0252, 0.02683, 0.0172, 0.02225, 0.01579,
+          0.02237, 0.02295, 0.0183, 0.02356, 0.02051, 0.02932,
+          0.03025, 0.0239, 0.02635, 0.01863, 0.02994, 0.01762,
+          0.02837, 0.02421, 0.01951, 0.02149, 0.02079, 0.02528,
+          0.02575, 0.01634, 0.02563, 0.01719, 0.02915, 0.01724,
+          0.02804, 0.0275, 0.02099, 0.02522, 0.02422, 0.03254,
+          0.02095, 0.03241, 0.01867, 0.03998, 0.02212, 0.03034,
+          0.03419, 0.01866, 0.02623, 0.02052]
+    ue = [4.9, 5., 5., 5., 4.9, 4.7, 4.8, 4.7, 4.7,
+          4.6, 4.6, 4.7, 4.7, 4.5, 4.4, 4.5, 4.4, 4.6,
+          4.5, 4.4, 4.5, 4.4, 4.6, 4.7, 4.6, 4.7, 4.7,
+          4.7, 5., 5., 4.9, 5.1, 5., 5.4, 5.6, 5.8,
+          6.1, 6.1, 6.5, 6.8, 7.3, 7.8, 8.3, 8.7, 9.,
+          9.4, 9.5, 9.5, 9.6, 9.8, 10., 9.9, 9.9, 9.7,
+          9.8, 9.9, 9.9, 9.6, 9.4, 9.5, 9.5, 9.5, 9.5,
+          9.8, 9.4, 9.1, 9., 9., 9.1, 9., 9.1, 9.,
+          9., 9., 8.8, 8.6, 8.5, 8.2, 8.3, 8.2, 8.2,
+          8.2, 8.2, 8.2, 8.1, 7.8, 7.8, 7.8, 7.9, 7.9,
+          7.7, 7.5, 7.5, 7.5, 7.5, 7.3, 7.2, 7.2, 7.2,
+          7., 6.7, 6.6, 6.7, 6.7, 6.3, 6.3]
+
+    model = ARIMA(np.array(ef), (1, 1, 1), exog=np.array(ue))
+    res = model.fit(transparams=False, pgtol=1e-8, iprint=0, disp=0)
+
+    # Smoke check of forecast with exog in ARIMA
+    res.forecast(steps=10, exog=np.empty(10))
+
+    with pytest.raises(ValueError):
+        res.forecast(steps=10)
+    with pytest.raises(ValueError):
+        res.forecast(steps=10, exog=np.empty((10, 2)))
+    with pytest.raises(ValueError):
+        res.forecast(steps=10, exog=np.empty(100))
 
 
 @pytest.mark.smoke
@@ -2495,6 +2565,7 @@ def test_arima_predict_noma():
     # GH#657
     ar = [1, .75]
     ma = [1]
+    np.random.seed(12345)
     data = arma_generate_sample(ar, ma, 100)
     arma = ARMA(data, order=(0, 1))
     arma_res = arma.fit(disp=-1)
@@ -2520,6 +2591,7 @@ def test_arima_no_diff():
     # ARMA model, need ARIMA(p, 0, q) to return an ARMA in init.
     ar = [1, -.75, .15, .35]
     ma = [1, .25, .9]
+    np.random.seed(12345)
     y = arma_generate_sample(ar, ma, 100)
     mod = ARIMA(y, (3, 0, 2))
     assert type(mod) is ARMA

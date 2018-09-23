@@ -162,7 +162,8 @@ def periodogram(X):
 # copied from nitime and sandbox\tsa\examples\try_ld_nitime.py
 # TODO: check what to return, for testing and trying out returns everything
 def levinson_durbin(s, nlags=10, isacov=False):
-    """Levinson-Durbin recursion for autoregressive processes
+    """
+    Levinson-Durbin recursion for autoregressive processes
 
     Parameters
     ----------
@@ -181,14 +182,14 @@ def levinson_durbin(s, nlags=10, isacov=False):
     sigma_v : float
         estimate of the error variance ?
     arcoefs : ndarray
-        estimate of the autoregressive coefficients
+        estimate of the autoregressive coefficients for a model including nlags
     pacf : ndarray
         partial autocorrelation function
     sigma : ndarray
         entire sigma array from intermediate result, last value is sigma_v
     phi : ndarray
         entire phi array from intermediate result, last column contains
-        autoregressive coefficients for AR(nlags) with a leading 1
+        autoregressive coefficients for AR(nlags)
 
     Notes
     -----
@@ -200,14 +201,8 @@ def levinson_durbin(s, nlags=10, isacov=False):
     (biased, no fft).
     """
     s = np.asarray(s)
-    order = nlags  # rename compared to nitime
-    # from nitime
+    order = nlags
 
-    # TODO: What to make of the commented-out code below?
-    # if sxx is not None and type(sxx) == np.ndarray:
-    #    sxx_m = sxx[:order+1]
-    # else:
-    #    sxx_m = ut.autocov(s)[:order+1]
     if isacov:
         sxx_m = s
     else:
@@ -315,7 +310,6 @@ def grangercausalitytests(x, maxlag, addconst=True, verbose=True):
         res2down = OLS(dta[:, 0], dtaown).fit()
         res2djoint = OLS(dta[:, 0], dtajoint).fit()
 
-        # print results
         # for ssr based tests see:
         # http://support.sas.com/rnd/app/examples/ets/granger/index.htm
         # the other tests are made-up

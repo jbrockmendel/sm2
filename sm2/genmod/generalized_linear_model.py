@@ -57,7 +57,7 @@ class GLM(base.LikelihoodModel):
     GLM inherits from sm2.base.model.LikelihoodModel
 
     Parameters
-    -----------
+    ----------
     endog : array-like
         1d array of endogenous response variable.  This array can be 1d or 2d.
         Binomial family models accept a 2d array with two columns. If
@@ -123,7 +123,7 @@ class GLM(base.LikelihoodModel):
     Examples
     --------
     >>> import sm2.api as sm
-    >>> data = sm.datasets.scotland.load()
+    >>> data = sm.datasets.scotland.load(as_pandas=False)
     >>> data.exog = sm.add_constant(data.exog)
 
     Instantiate a gamma family model with the default link function.
