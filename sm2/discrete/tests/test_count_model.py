@@ -286,6 +286,7 @@ class TestZeroInflatedPoisson_predict(object):
                         rtol=0.05, atol=0.05)
 
 
+@pytest.mark.slow
 @pytest.mark.not_vetted
 class TestZeroInflatedGeneralizedPoisson(CheckGeneric):
     res2 = RandHIE.zero_inflated_generalized_poisson
