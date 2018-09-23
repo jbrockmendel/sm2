@@ -2,14 +2,14 @@ __all__ = ["gls", "wls", "ols", "glsar",
            "glm",
            "rlm",
            "mnlogit", "logit", "probit", "poisson", "negativebinomial"]
-import statsmodels.discrete.discrete_model as dm_
-# import statsmodels.duration.hazard_regression as hr_
-import statsmodels.genmod.generalized_linear_model as glm_
-# import statsmodels.genmod.generalized_estimating_equations as gee_
-import statsmodels.regression.linear_model as lm_
-# import statsmodels.regression.mixed_linear_model as mlm_
-# import statsmodels.regression.quantile_regression as qr_
-import statsmodels.robust.robust_linear_model as roblm_
+import sm2.discrete.discrete_model as dm_
+# import sm2.duration.hazard_regression as hr_
+import sm2.genmod.generalized_linear_model as glm_
+# import sm2.genmod.generalized_estimating_equations as gee_
+import sm2.regression.linear_model as lm_
+# import sm2.regression.mixed_linear_model as mlm_
+# import sm2.regression.quantile_regression as qr_
+import sm2.robust.robust_linear_model as roblm_
 
 gls = lm_.GLS.from_formula
 wls = lm_.WLS.from_formula
