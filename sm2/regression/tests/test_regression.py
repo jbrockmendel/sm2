@@ -581,17 +581,6 @@ class TestGLS_WLS_equivalence(TestOLS_GLS_WLS_equivalence):
         cls.results.append(GLS(y, X, 100 * w_inv).fit())
         cls.results.append(GLS(y, X, np.diag(0.1 * w_inv)).fit())
 
-    def test_rsquared(self):
-        # TODO: WLS rsquared is ok, GLS might have wrong centered_tss
-        # We only check that WLS and GLS rsquared is invariant to scaling
-        # WLS and GLS have different rsquared
-        assert_almost_equal(self.results[1].rsquared,
-                            self.results[0].rsquared,
-                            DECIMAL_7)
-        assert_almost_equal(self.results[3].rsquared,
-                            self.results[2].rsquared,
-                            DECIMAL_7)
-
 
 # -------------------------------------------------------------
 # T-Test, F-Test
