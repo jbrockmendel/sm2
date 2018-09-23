@@ -17,6 +17,11 @@ addons:
       - python-numpy
 
 before_install:
+  # Skip if commit message contains [skip travis] or [travis skip]
+  - COMMIT_MESSAGE=$(git show -s $TRAVIS_COMMIT_RANGE | awk 'BEGIN{count=0}{if ($1=="Author:") count++; if (count==1) print $0}')
+  - if [[ $TRAVIS_PULL_REQUEST == false ]]; then COMMIT_MESSAGE=${TRAVIS_COMMIT_MESSAGE}; fi
+  - if echo "$COMMIT_MESSAGE" | grep -E '\[(skip travis|travis skip)\]'; then exit 0 ; fi
+  #
   # Show information about CPU running job to understand BLAS issues
   - sudo lshw -class processor
   # Fix for headless TravisCI
@@ -24,6 +29,7 @@ before_install:
   - "export DISPLAY=:99.0"
   - "sh -e /etc/init.d/xvfb start"
   #- sleep 3  # give xvfb some time to start  # TODO: reinstate?
+  #
   # Source recipe to install packages
   - pip install pytest pytest-xdist pytest-randomly tox codecov
 
