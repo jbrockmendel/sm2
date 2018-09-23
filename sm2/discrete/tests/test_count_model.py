@@ -6,10 +6,11 @@ import numpy as np
 from numpy.testing import assert_equal, assert_array_equal, assert_allclose
 
 import sm2.api as sm
+from .test_discrete import CheckModelMixin
 from .results.results_discrete import RandHIE
 
 
-class CheckGeneric(object):
+class CheckGeneric(CheckModelMixin):
     def test_params(self):
         assert_allclose(self.res1.params,
                         self.res2.params,

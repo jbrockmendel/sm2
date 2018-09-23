@@ -118,6 +118,29 @@ _l1_results_attr = """    nnz_params : Integer
     trimmed : Boolean array
         trimmed[i] == True if the ith parameter was trimmed from the model."""
 
+
+# ----------------------------------------------------------------
+# Helper Functions
+
+def _validate_l1_method(method):
+    """
+    As of 0.10.0, the supported values for `method` in `fit_regularized`
+    are "l1" and "l1_cvxopt_cp".  If an invalid value is passed, raise
+    with a helpful error message
+
+    Parameters
+    ----------
+    method : str
+
+    Raises
+    ------
+    ValueError
+    """
+    if method not in ['l1', 'l1_cvxopt_cp']:
+        raise ValueError('`method` = {method} is not supported, use either '
+                         '"l1" or "l1_cvxopt_cp"'.format(method=method))
+
+
 # ----------------------------------------------------------------
 # Private Model Classes
 
@@ -296,10 +319,9 @@ class DiscreteModel(base.LikelihoodModel):
         (i) :math:`|\\partial_k L| = \\alpha_k`  and  :math:`\\beta_k \\neq 0`
         (ii) :math:`|\\partial_k L| \\leq \\alpha_k`  and  :math:`\\beta_k = 0`
         """
+        _validate_l1_method(method)
         # Set attributes based on method
-        if method not in ['l1', 'l1_cvxopt_cp']:
-            raise ValueError("argument method == %s, which is not handled"
-                             % method)  # pragma: no cover
+
         if qc_verbose:  # pragma: no cover
             # TODO: Update docstring to reflect this restriction
             raise NotImplementedError("option `qc_verbose` is available "
@@ -1658,9 +1680,7 @@ class NegativeBinomial(_CountMixin, CountModel):
             self.score = self._score_geom
             self.loglikeobs = self._ll_geometric
         else:  # pragma: no cover
-            # TODO: Should this be a ValueError?
-            raise NotImplementedError("Likelihood type must nb1, nb2 or "
-                                      "geometric")
+            raise ValueError("Likelihood type must nb1, nb2 or geometric")
 
     # TODO: Can we move this to the base class?
     def __getstate__(self):
