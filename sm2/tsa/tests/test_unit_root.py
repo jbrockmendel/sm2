@@ -381,7 +381,7 @@ def test_coint_identical_series():
         c = unit_root.coint(y, y, trend="c", maxlag=0, autolag=None)
 
     # Limit of table
-    assert c[1] > .98
+    assert c[1] == 0
     assert np.isneginf(c[0])
 
 
@@ -395,6 +395,7 @@ def test_coint_perfect_collinearity():
     warnings.simplefilter('always', CollinearityWarning)
     with warnings.catch_warnings(record=True):
         c = unit_root.coint(y, x, trend="c", maxlag=0, autolag=None)
-    assert c[0] == 0.0
+
     # Limit of table
-    assert c[1] > .98
+    assert c[1] == 0
+    assert np.isneginf(c[0])

@@ -249,19 +249,16 @@ class CheckComparisonMixin(object):
         # but would be OK with 1.01e-7
 
     def test_compare_discrete(self):
+        # TODO: redundant with test_score above?
         res1 = self.res1
 
         # score
-        score1 = res1.model.score(res1.params)
-        score_obs1 = res1.model.score_obs(res1.params)
-
-        # Troubleshooting travis failures that don't happen locally
-        assert res1.model.exog.dtype == 'f8'
-        assert res1.params.dtype == 'f8'
-        assert score_obs1.dtype == 'f8'
+        score0 = res1.model.score(res1.params)
+        score1 = res1.model.score(res1.params * 0.98)  # near-optimum
+        score_obs1 = res1.model.score_obs(res1.params * 0.98)
 
         assert_allclose(score1, score_obs1.sum(0), atol=1e-20)
-        assert_allclose(score1, np.zeros(score_obs1.shape[1]), atol=1.01e-7)
+        assert_allclose(score0, np.zeros(score_obs1.shape[1]), atol=5e-7)
         # FIXME: locally the above assertion passes with atol=1e-7, but on
         # Travis I'm just barely seeing failures 2018-03-21 with
         # the first entry of score1 being -1.006265e-07

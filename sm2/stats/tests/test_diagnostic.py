@@ -45,7 +45,7 @@ class TestDiagnosticG(object):
 
     @classmethod
     def setup_class(cls):
-        d = macrodata.load(as_pandas=False).data
+        d = macrodata.load_pandas().data
         # growth rates
         gs_l_realinv = 400 * np.diff(np.log(d['realinv'].values))
         gs_l_realgdp = 400 * np.diff(np.log(d['realgdp'].values))

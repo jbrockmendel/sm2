@@ -21,6 +21,7 @@ from sm2.tools.sm_exceptions import InvalidTestWarning
 
 from .results import (results_macro_ols_robust,
                       results_grunfeld_ols_robust_cluster)
+# FIXME: Dont comment-out
 #test_hac_simple():
 
 
@@ -116,7 +117,7 @@ class TestOLSRobust1(CheckOLSRobust):
         d2 = macrodata.load_pandas().data
         g_gdp = 400 * np.diff(np.log(d2['realgdp'].values))
         g_inv = 400 * np.diff(np.log(d2['realinv'].values))
-        exogg = add_constant(np.c_[g_gdp, d2['realint'][:-1]].values,
+        exogg = add_constant(np.c_[g_gdp, d2['realint'][:-1].values],
                              prepend=False)
 
         cls.res1 = OLS(g_inv, exogg).fit()

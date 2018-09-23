@@ -157,7 +157,8 @@ def _urlopen_cached(url, cache):
         try:
             data = _open_cache(cache_path)
             from_cache = True
-        except OSError:  # TODO: Are there other errors to catch here?
+        except IOError:
+            # e.g. the file does not exist
             pass
 
     # not using the cache or didn't find it in cache

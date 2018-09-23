@@ -865,10 +865,12 @@ def test_arima_wrapper():
     cpi = datasets.macrodata.load_pandas().data['cpi']
     cpi.index = pd.Index(cpi_dates)
     res = ARIMA(cpi, (4, 1, 1), freq='Q').fit(disp=-1)
-    tm.assert_index_equal(res.params.index,
-                          pd.Index(['const', 'ar.L1.D.cpi', 'ar.L2.D.cpi',
-                                    'ar.L3.D.cpi', 'ar.L4.D.cpi',
-                                    'ma.L1.D.cpi']))
+
+    expected_index = pd.Index(['const', 'ar.L1.D.cpi', 'ar.L2.D.cpi',
+                               'ar.L3.D.cpi', 'ar.L4.D.cpi',
+                               'ma.L1.D.cpi'])
+    assert expected_index.equals(res.params.index)
+    tm.assert_index_equal(res.params.index, expected_index)
     assert res.model.endog_names == 'D.cpi'
 
 
@@ -2461,7 +2463,7 @@ def test_arima_predict_indices_css_invalid():
 
 @pytest.mark.smoke
 @pytest.mark.skipif('not have_matplotlib')
-def test_plot_predict(close_fitures):
+def test_plot_predict(close_figures):
     dta = datasets.sunspots.load_pandas().data[['SUNACTIVITY']]
     dta.index = pd.DatetimeIndex(start='1700', end='2009', freq='A')[:309]
 

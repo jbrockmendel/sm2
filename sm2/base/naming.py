@@ -39,7 +39,9 @@ def make_lag_names(names, lag_order, trendorder=1, exog=None):
         for name in names:
             if not isinstance(name, string_types):
                 name = str(name)  # will need consistent unicode handling
-            lag_names.append('L' + str(i) + '.' + name)
+            lag_names.append(u'L' + str(i) + u'.' + name)
+            # Note: explicit unicode is necessary
+            #   for test_arima.test_arima_wrapper
 
     # handle the constant name
     # Note: unicode literals are relevant for py2 tests,
