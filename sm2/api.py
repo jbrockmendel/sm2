@@ -22,3 +22,7 @@ from .genmod import families
 
 from . import datasets, distributions, robust
 from .tsa import api as tsa
+
+from ._version import get_versions
+__version__ = get_versions()['version']
+del get_versions
