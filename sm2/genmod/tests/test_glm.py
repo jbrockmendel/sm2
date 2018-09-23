@@ -31,12 +31,6 @@ DECIMAL_2 = 2
 DECIMAL_1 = 1
 DECIMAL_0 = 0
 
-try:
-    import matplotlib.pyplot as plt  # noqa: F401
-    have_matplotlib = True
-except ImportError:
-    have_matplotlib = False
-
 pdf_output = False
 if pdf_output:
     from matplotlib.backends.backend_pdf import PdfPages
@@ -51,9 +45,8 @@ def close_or_save(pdf, fig):
 
 
 def teardown_module():
-    if have_matplotlib:
-        if pdf_output:
-            pdf.close()
+    if pdf_output:
+        pdf.close()
 
 
 @pytest.mark.not_vetted
@@ -1756,7 +1749,7 @@ def test_score_test_OLS():
 @pytest.mark.not_vetted
 @pytest.mark.smoke
 @pytest.mark.skip(reason="plotting functions not ported from upstream")
-@pytest.mark.skipif(not have_matplotlib, reason='matplotlib not available')
+@pytest.mark.matplotlib
 def test_plots(close_figures):
     np.random.seed(378)
     n = 200

@@ -19,12 +19,6 @@ from sm2.tsa.arima_process import arma_generate_sample
 from sm2.tools.sm_exceptions import MissingDataError
 from .results import results_arma, results_arima
 
-try:
-    import matplotlib.pyplot as plt
-    have_matplotlib = True
-except ImportError:
-    have_matplotlib = False
-
 DECIMAL_4 = 4
 DECIMAL_3 = 3
 DECIMAL_2 = 2
@@ -2462,7 +2456,7 @@ def test_arima_predict_indices_css_invalid():
 # Smoke Tests Aimed at a specific issue/method
 
 @pytest.mark.smoke
-@pytest.mark.skipif('not have_matplotlib')
+@pytest.mark.matplotlib
 def test_plot_predict(close_figures):
     dta = datasets.sunspots.load_pandas().data[['SUNACTIVITY']]
     dta.index = pd.DatetimeIndex(start='1700', end='2009', freq='A')[:309]
