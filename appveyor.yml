@@ -10,17 +10,15 @@ environment:
 platform:
   - x64
 
-build_script:
-  # Show information about CPU running job to understand BLAS issues
-  - wmic cpu get caption, name, numberofcores
-
 install:
   - pip install pytest pytest-xdist pytest-randomly matplotlib wheel
   - pip install -r requirements.txt
   - python setup.py build_ext --inplace
 
-# run bdist_wheel so we can collect artifact to make available on PyPI
 build_script:
+  # Show information about CPU running job to understand BLAS issues
+  - wmic cpu get caption, name, numberofcores
+  # run bdist_wheel so we can collect artifact to make available on PyPI
   - python setup.py bdist_wheel
 
 test_script:

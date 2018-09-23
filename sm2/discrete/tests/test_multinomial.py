@@ -49,7 +49,7 @@ class TestUnderflow(object):
 
     def test_llf(self):
         # GH#3635 in particular we're concerned about np.nan and np.inf
-        assert self.res.llf == -432.84270068272059
+        assert_allclose(self.res.llf, -432.84270068272059, rtol=1e-15)
 
     def test_predict(self):
         # pre-fix we'd get back an all-NaN vector, and it wouldn't be wrapped
