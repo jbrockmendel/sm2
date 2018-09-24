@@ -1,12 +1,5 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-"""local, adjusted version from scipy.linalg.basic.py
-
-
-changes:
-The only changes are that additional results are returned
-
-"""
 from six.moves import reduce, range
 
 import numpy as np
