@@ -57,7 +57,9 @@ before_script:
   - export DISPLAY=":99.0"
   - ci/before_script_travis.sh
 
-script: tox
+script:
+  - pytest sm2 --skip-slow
+  #tox
 
 notifications:
   email: false
