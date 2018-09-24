@@ -49,7 +49,10 @@ before_install:
 
 install:
   # Source recipe to install packages
-  - pip install pytest>=3.6 pytest-xdist pytest-randomly tox codecov
+  - pip install pytest>=3.6 pytest-xdist pytest-randomly tox codecov matplotlib wheel
+  - pip install -r requirements.txt
+  - python setup.py build_ext --inplace
+  - python setup.py develop
 
 before_script:
   # Fix for headless TravisCI
@@ -58,8 +61,8 @@ before_script:
   - ci/before_script_travis.sh
 
 script:
-  #- pytest sm2 --skip-slow
-  - tox
+  - pytest sm2 --skip-slow
+  #- tox
 
 notifications:
   email: false
