@@ -1,15 +1,35 @@
 language: python
 
+env:
+  # Defaults
+  global:
+    - COVERAGE=false
+    - BLAS="mkl blas=*=mkl"  # Use Intel MKL by default
+    - MKL_NUM_THREADS=1  # Enforce single thread
+    - OPENBLAS_NUM_THREADS=1
+    - NUMEXPR_NUM_THREADS=1
+
 matrix:
   include:
-    - python: 2.7
-      env: TOXENV=py27
-    - python: 3.5
-      env: TOXENV=py35
-    - python: 3.6
-      env: TOXENV=py36
-    - python: 3.7
-      env: TOXENV=py37
+  - python: 2.7
+    env:
+    - TOXENV=py27
+    - BLAS="nomkl blas=*=openblas"
+  - python: 3.5
+    env:
+    - TOXENV=py35
+  - python: 3.6
+    env:
+    - TOXENV=py36
+    - BLAS="nomkl blas=*=openblas"
+  - python: 3.7
+    env:
+    - TOXENV=py37
+
+  - os: osx
+  language: generic
+  env:
+    - TOXENV=py36
 
 addons:
   apt:
