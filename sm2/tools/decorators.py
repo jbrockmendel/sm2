@@ -48,6 +48,7 @@ def deprecated_alias(old_name, new_name, remove_version=None):
     return res
 
 
+# TODO: just use pandas Appender?
 def copy_doc(docstring):
     """
     Add a docstring to a function, so that
