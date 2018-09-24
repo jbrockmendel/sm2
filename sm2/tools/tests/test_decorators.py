@@ -10,6 +10,52 @@ from sm2.tools.decorators import (cache_writable,
                                   deprecated_alias, copy_doc)
 
 
+
+def dummy_factory(msg, remove_version, warning):
+    # For testing deprecated alias
+    # ported from bashtage's port in GH#5220 upstream
+
+    class Dummy(object):
+        y = deprecated_alias('y', 'x',
+                             remove_version=remove_version,
+                             msg=msg,
+                             warning=warning)
+
+        def __init__(self, y):
+            self.x = y
+
+    return Dummy(1)
+
+
+@pytest.mark.parametrize('warning', [FutureWarning, UserWarning])
+@pytest.mark.parametrize('remove_version', [None, '0.11'])
+@pytest.mark.parametrize('msg', ['test message', None])
+def test_deprecated_alias(msg, remove_version, warning):
+    # taken from bashtage's port in GH#5220 upstream
+    dummy_set = dummy_factory(msg, remove_version, warning)
+    with pytest.warns(warning) as w:
+        dummy_set.y = 2
+        assert dummy_set.x == 2
+    
+    assert warning.__class__ is w[0].category.__class__
+
+    dummy_get = dummy_factory(msg, remove_version, warning)
+    with pytest.warns(warning) as w:
+        x = dummy_get.y
+        assert x == 1
+
+    assert warning.__class__ is w[0].category.__class__
+    message = str(w[0].message)
+    if not msg:
+        if remove_version:
+            assert 'will be removed' in message
+        else:
+            assert 'will be removed' not in message
+    else:
+        assert msg in message
+
+
+# TODO: is this rendered irrelevant by the parametrized tests 
 class TestDeprecatedAlias(object):
 
     @classmethod
