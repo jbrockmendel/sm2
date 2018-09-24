@@ -26,11 +26,6 @@ matrix:
     env:
     - TOXENV=py37
 
-  - os: osx
-  language: generic
-  env:
-    - TOXENV=py36
-
 addons:
   apt:
     packages:
@@ -49,7 +44,7 @@ before_install:
 
 install:
   # Source recipe to install packages
-  - pip install pytest>=3.6 pytest-xdist pytest-randomly tox codecov matplotlib wheel
+  - pip install -upgrade pytest>=3.6 pytest-xdist pytest-randomly tox codecov matplotlib wheel
   - pip install -r requirements.txt
   - python setup.py build_ext --inplace
   - python setup.py develop
