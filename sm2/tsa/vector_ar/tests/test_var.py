@@ -26,7 +26,7 @@ have_matplotlib = False
 try:
     import matplotlib  # noqa:F401
     have_matplotlib = True
-    import matplotlib.pyplot as plt
+    import matplotlib.pyplot as plt  # noqa:F401
     plt.switch_backend('Agg')  # otherwise segfault on windows
 except ImportError:
     pass

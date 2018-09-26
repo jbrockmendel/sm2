@@ -78,7 +78,7 @@ class TestLagmat(object):
         cls.macro_df = data.data[['year', 'quarter', 'realgdp', 'cpi']]
         cols = list(cls.macro_df.columns)
         cls.realgdp_loc = cols.index('realgdp')
-        cls.cpi_loc = cols.index('cpi')        
+        cls.cpi_loc = cols.index('cpi')
         cls.random_data = np.random.randn(100)
 
         index = [str(int(yr)) + '-Q' + str(int(qu))

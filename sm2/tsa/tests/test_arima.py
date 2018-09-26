@@ -2461,17 +2461,18 @@ def test_plot_predict(close_figures):
     dta = datasets.sunspots.load_pandas().data[['SUNACTIVITY']]
     dta.index = pd.DatetimeIndex(start='1700', end='2009', freq='A')[:309]
 
+    # TODO: parametrize?
     res = ARMA(dta, (3, 0)).fit(disp=-1)
     for dynamic in [True, False]:
         for plot_insample in [True, False]:
-            fig = res.plot_predict('1990', '2012', dynamic=dynamic,
-                                   plot_insample=plot_insample)
+            res.plot_predict('1990', '2012', dynamic=dynamic,
+                             plot_insample=plot_insample)
 
     res = ARIMA(dta, (3, 1, 0)).fit(disp=-1)
     for dynamic in [True, False]:
         for plot_insample in [True, False]:
-            fig = res.plot_predict('1990', '2012', dynamic=dynamic,
-                                   plot_insample=plot_insample)
+            res.plot_predict('1990', '2012', dynamic=dynamic,
+                             plot_insample=plot_insample)
 
 
 def test_arima_forecast_exog_incorrect_size():
@@ -2486,7 +2487,7 @@ def test_arima_forecast_exog_incorrect_size():
         mod.forecast(steps=10, alpha=0.05, exog=newx[:5])
     with pytest.raises(ValueError):
         mod.forecast(steps=10, alpha=0.05)
-    
+
     too_many = pd.DataFrame(np.zeros((10, 2)),
                             columns=['x1', 'x2'])
     with pytest.raises(ValueError):
@@ -2575,7 +2576,8 @@ def test_arima_dataframe_integer_name():
     dr = pd.date_range("1990", periods=len(vals), freq='Q')
     ts = pd.Series(vals, index=dr)
     df = pd.DataFrame(ts)
-    mod = ARIMA(df, (2, 0, 2))  # TODO: maybe _fit_ this model?
+    mod = ARIMA(df, (2, 0, 2))
+    mod.fit()
 
 
 @pytest.mark.smoke

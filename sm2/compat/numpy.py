@@ -46,6 +46,7 @@ def _bytelike_dtype_names(arr):
     if not PY3:
         dtype = arr.dtype
         names = dtype.names
-        names = [bytes(name) if isinstance(name, unicode) else name
+        names = [bytes(name)
+                 if isinstance(name, unicode) else name  # noqa:F821
                  for name in names]
         dtype.names = names

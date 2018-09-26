@@ -1579,7 +1579,7 @@ def prepare_trend_spec(trend):
     # constant term).
     k_trend = int(np.sum(polynomial_trend))
      return polynomial_trend, k_trend
- 
+
 
 def prepare_trend_data(polynomial_trend, k_trend, nobs, offset=1):
     # Cache the arrays for calculating the intercept from the trend

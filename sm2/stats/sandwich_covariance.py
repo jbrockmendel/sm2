@@ -377,7 +377,7 @@ def group_sums(x, group, use_bincount=True):
         uniques = np.unique(group)
         result = np.zeros([len(uniques)] + list(x.shape[1:]))
         for ii, cat in enumerate(uniques):
-            result[ii] = x[g == cat].sum(0)
+            result[ii] = x[group == cat].sum(0)
         return result
 
 

@@ -1,7 +1,7 @@
 import os
 import shutil
 
-from six import PY3, BytesIO, StringIO, integer_types
+from six import PY3, StringIO, integer_types
 from six.moves import range, cPickle
 from six.moves.urllib.error import URLError, HTTPError
 from six.moves.urllib.request import urlopen
