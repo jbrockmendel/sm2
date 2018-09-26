@@ -58,7 +58,7 @@ before_script:
 
 script:
   - pytest sm2 --skip-slow
-  #- tox
+  # - tox
 
 notifications:
   email: false
