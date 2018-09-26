@@ -3,26 +3,26 @@ from sm2.datasets import utils as du
 
 __docformat__ = 'restructuredtext'
 
-COPYRIGHT   = """This is public domain."""
-TITLE       = __doc__
-SOURCE      = """
+COPYRIGHT = """This is public domain."""
+TITLE = __doc__
+SOURCE = """
 Compiled by Skipper Seabold. All data are from the Federal Reserve Bank of St.
 Louis [1] except the unemployment rate which was taken from the National
 Bureau of Labor Statistics [2]. ::
 
-    [1] Data Source: FRED, Federal Reserve Economic Data, Federal Reserve Bank of
-        St. Louis; http://research.stlouisfed.org/fred2/; accessed December 15,
-        2009.
+    [1] Data Source: FRED, Federal Reserve Economic Data, Federal Reserve
+        Bank of St. Louis; http://research.stlouisfed.org/fred2/;
+        accessed December 15, 2009.
 
     [2] Data Source: Bureau of Labor Statistics, U.S. Department of Labor;
         http://www.bls.gov/data/; accessed December 15, 2009.
 """
 
-DESCRSHORT  = """US Macroeconomic Data for 1959Q1 - 2009Q3"""
+DESCRSHORT = """US Macroeconomic Data for 1959Q1 - 2009Q3"""
 
-DESCRLONG   = DESCRSHORT
+DESCRLONG = DESCRSHORT
 
-NOTE        = """::
+NOTE = """::
     Number of Observations - 203
 
     Number of Variables - 14

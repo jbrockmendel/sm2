@@ -389,7 +389,7 @@ class sqrt(Power):
 
 
 class inverse_squared(Power):
-    """
+    r"""
     The inverse squared transform
 
     Notes

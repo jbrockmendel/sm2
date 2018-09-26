@@ -2700,7 +2700,7 @@ class MNLogit(MultinomialModel):
     """ % {'extra_params': base._missing_param_doc}
 
     def pdf(self, X, dropfirst=False, submax=False):  # TODO: implement this
-        """
+        r"""
         We take a derivative of `cdf` using the quotient
         rule: (f'g - g'f) / g^2
         Here "g" is `denom` and "f" is `eXB`

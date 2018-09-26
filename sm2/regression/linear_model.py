@@ -1121,7 +1121,7 @@ class GLSAR(GLS):
 
 
 class RegressionResults(base.LikelihoodModelResults):
-    """
+    r"""
     This class summarizes the fit of a linear regression model.
 
     It handles the output of contrasts, estimates of covariance, etc.
@@ -1282,11 +1282,12 @@ class RegressionResults(base.LikelihoodModelResults):
         self.df_resid = model.df_resid
 
         if cov_type == 'nonrobust':
+            # TODO: roll this in to get_robustcov_results?
             self.cov_type = 'nonrobust'
             self.cov_kwds = {
-                'description': 'Standard Errors assume that the ' +
-                'covariance matrix of the errors is correctly ' +
-                'specified.'}
+                'description': 'Standard Errors assume that the '
+                               'covariance matrix of the errors is correctly '
+                               'specified.'}
             if use_t is None:
                 self.use_t = True  # TODO: class default
         else:

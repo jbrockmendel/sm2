@@ -160,7 +160,8 @@ class ARMARoots(object):
 
     @property
     def isinvertible(self):
-        """ARMA process is invertible if MA roots are outside unit circle.
+        r"""
+        ARMA process is invertible if MA roots are outside unit circle.
 
         From Powell (http://eml.berkeley.edu/~powell/e241b_f06/TS-StatInv.pdf):
 

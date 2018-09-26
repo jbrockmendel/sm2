@@ -209,7 +209,7 @@ class HuberT(RobustNorm):
                 (1 - test) * (np.fabs(z) * self.t - 0.5 * self.t**2))
 
     def psi(self, z):
-        """
+        r"""
         The psi function for Huber's t estimator
 
         The analytic derivative of rho

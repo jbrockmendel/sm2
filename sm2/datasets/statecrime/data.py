@@ -14,7 +14,7 @@ DESCRSHORT = """State crime data 2009"""
 
 DESCRLONG = DESCRSHORT
 
-NOTE = """::
+NOTE = """
 
     Number of observations: 51
     Number of variables: 8
@@ -74,7 +74,8 @@ def load(as_pandas=None):
 
 def load_pandas():
     data = _get_data()
-    return du.process_pandas(data, endog_idx=2, exog_idx=[7, 4, 3, 5], index_idx=0)
+    return du.process_pandas(data, endog_idx=2,
+                             exog_idx=[7, 4, 3, 5], index_idx=0)
 
 
 def _get_data():

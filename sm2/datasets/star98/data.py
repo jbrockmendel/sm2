@@ -3,17 +3,17 @@ from sm2.datasets import utils as du
 
 __docformat__ = 'restructuredtext'
 
-COPYRIGHT   = """Used with express permission from the original author,
+COPYRIGHT = """Used with express permission from the original author,
 who retains all rights."""
-TITLE       = "Star98 Educational Dataset"
-SOURCE      = """
+TITLE = "Star98 Educational Dataset"
+SOURCE = """
 Jeff Gill's `Generalized Linear Models: A Unified Approach`
 
 http://jgill.wustl.edu/research/books.html
 """
-DESCRSHORT  = """Math scores for 303 student with 10 explanatory factors"""
+DESCRSHORT = """Math scores for 303 student with 10 explanatory factors"""
 
-DESCRLONG   = """
+DESCRLONG = """
 This data is on the California education policy and outcomes (STAR program
 results for 1998.  The data measured standardized testing by the California
 Department of Education that required evaluation of 2nd - 11th grade students
@@ -25,7 +25,7 @@ over the national median value on the mathematics exam.
 The data used in this example is only a subset of the original source.
 """
 
-NOTE        = """::
+NOTE = """
 
     Number of Observations - 303 (counties in California).
 
@@ -66,7 +66,6 @@ NOTE        = """::
 """
 
 
-
 def load(as_pandas=None):
     """
     Load the star98 data and returns a Dataset class instance.
@@ -92,11 +91,12 @@ def load_pandas():
 
 def _get_data():
     data = du.load_csv(__file__, 'star98.csv')
-    names = ["NABOVE","NBELOW","LOWINC","PERASIAN","PERBLACK","PERHISP",
-            "PERMINTE","AVYRSEXP","AVSALK","PERSPENK","PTRATIO","PCTAF",
-            "PCTCHRT","PCTYRRND","PERMINTE_AVYRSEXP","PERMINTE_AVSAL",
-            "AVYRSEXP_AVSAL","PERSPEN_PTRATIO","PERSPEN_PCTAF","PTRATIO_PCTAF",
-            "PERMINTE_AVYRSEXP_AVSAL","PERSPEN_PTRATIO_PCTAF"]
+    names = ["NABOVE", "NBELOW", "LOWINC", "PERASIAN", "PERBLACK", "PERHISP",
+            "PERMINTE", "AVYRSEXP", "AVSALK", "PERSPENK", "PTRATIO", "PCTAF",
+            "PCTCHRT", "PCTYRRND","PERMINTE_AVYRSEXP", "PERMINTE_AVSAL",
+            "AVYRSEXP_AVSAL", "PERSPEN_PTRATIO", "PERSPEN_PCTAF",
+            "PTRATIO_PCTAF", "PERMINTE_AVYRSEXP_AVSAL",
+            "PERSPEN_PTRATIO_PCTAF"]
     data.columns = names
     nabove = data['NABOVE'].copy()
     nbelow = data['NBELOW'].copy()

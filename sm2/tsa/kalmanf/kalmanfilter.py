@@ -61,7 +61,7 @@ def updatematrices(params, y, xi10, ntrain, penalty, upperbound, lowerbound):
 
 
 class KalmanFilter(object):
-    """
+    r"""
     Kalman Filter code intended for use with the ARMA model.
 
     Notes
@@ -70,11 +70,11 @@ class KalmanFilter(object):
 
     The observation equations is
 
-    .. math:: y_{t} = Z_{t}\\alpha_{t} + \\epsilon_{t}
+    .. math:: y_{t} = Z_{t}\alpha_{t} + \epsilon_{t}
 
     The state equation is
 
-    .. math:: \\alpha_{t+1} = T_{t}\\alpha_{t} + R_{t}\\eta_{t}
+    .. math:: \alpha_{t+1} = T_{t}\alpha_{t} + R_{t}\eta_{t}
 
     For the present purposed \epsilon_{t} is assumed to always be zero.
     """

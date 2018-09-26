@@ -3,20 +3,20 @@ from sm2.datasets import utils as du
 
 __docformat__ = 'restructuredtext'
 
-COPYRIGHT   = """This is public domain. """
-TITLE       = __doc__
-SOURCE      = """
+COPYRIGHT = """This is public domain. """
+TITLE = __doc__
+SOURCE = """
 Brownlee, K. A. (1965), "Statistical Theory and Methodology in
 Science and Engineering", 2nd edition, New York:Wiley.
 """
 
-DESCRSHORT  = """Stack loss plant data of Brownlee (1965)"""
+DESCRSHORT = """Stack loss plant data of Brownlee (1965)"""
 
-DESCRLONG   = """The stack loss plant data of Brownlee (1965) contains
+DESCRLONG = """The stack loss plant data of Brownlee (1965) contains
 21 days of measurements from a plant's oxidation of ammonia to nitric acid.
 The nitric oxide pollutants are captured in an absorption tower."""
 
-NOTE        = """::
+NOTE = """
 
     Number of Observations - 21
 
@@ -48,6 +48,7 @@ def load(as_pandas=None):
         See DATASET_PROPOSAL.txt for more information.
     """
     return du.as_numpy_dataset(load_pandas(), as_pandas=as_pandas)
+
 
 def load_pandas():
     """

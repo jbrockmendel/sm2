@@ -882,13 +882,13 @@ default_latex_fmt = dict(
     empty='',
     missing='--',
     # replacements will be processed in lexicographical order
-    replacements={"#": "\#",
-                  "$": "\$",
-                  "%": "\%",
-                  "&": "\&",
-                  ">": "$>$",
-                  "_": "\_",
-                  "|": "$|$"})
+    replacements={"#": r"\#",
+                  "$": r"\$",
+                  "%": r"\%",
+                  "&": r"\&",
+                  ">": r"$>$",
+                  "_": r"\_",
+                  "|": r"$|$"})
 
 default_fmts = dict(html=default_html_fmt,
                     txt=default_txt_fmt,

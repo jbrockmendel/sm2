@@ -16,7 +16,6 @@ DESCRSHORT = """A short description."""
 DESCRLONG = """A longer description of the dataset."""
 
 NOTE = """
-::
 
     Number of observations:
     Number of variables:

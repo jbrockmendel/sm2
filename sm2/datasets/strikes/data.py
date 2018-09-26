@@ -3,9 +3,9 @@ from sm2.datasets import utils as du
 
 __docformat__ = 'restructuredtext'
 
-COPYRIGHT   = """This is public domain."""
-TITLE       = __doc__
-SOURCE      = """
+COPYRIGHT = """This is public domain."""
+TITLE = __doc__
+SOURCE = """
 This is a subset of the data used in Kennan (1985). It was originally
 published by the Bureau of Labor Statistics.
 
@@ -15,16 +15,15 @@ published by the Bureau of Labor Statistics.
         `Journal of Econometrics` 28.1, 5-28.
 """
 
-DESCRSHORT  = """Contains data on the length of strikes in US manufacturing and
+DESCRSHORT = """Contains data on the length of strikes in US manufacturing and
 unanticipated industrial production."""
 
-DESCRLONG   = """Contains data on the length of strikes in US manufacturing and
-unanticipated industrial production. The data is a subset of the data originally
-used by Kennan. The data here is data for the months of June only to avoid
-seasonal issues."""
+DESCRLONG = """Contains data on the length of strikes in US manufacturing and
+unanticipated industrial production. The data is a subset of the data
+originally used by Kennan. The data here is data for the months of June only
+to avoid seasonal issues."""
 
-#suggested notes
-NOTE        = """::
+NOTE = """
 
     Number of observations - 62
 
@@ -35,7 +34,6 @@ NOTE        = """::
                 duration - duration of the strike in days
                 iprod - unanticipated industrial production
 """
-
 
 
 def load_pandas():
