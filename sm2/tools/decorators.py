@@ -33,12 +33,12 @@ def deprecated_alias(old_name, new_name, remove_version=None, msg=None,
     Older or less-used classes may not conform to statsmodels naming
     conventions.  `deprecated_alias` lets us bring them into conformance
     without breaking backward-compatibility.
-    
+
     Example
     -------
     Instances of the `Foo` class have a `nvars` attribute, but it _should_
     be called `neqs`:
-    
+
     class Foo(object):
         nvars = deprecated_alias('nvars', 'neqs')
 
