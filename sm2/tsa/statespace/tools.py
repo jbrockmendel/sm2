@@ -125,7 +125,7 @@ def set_mode(compatibility=None):
 compatibility_mode = False
 set_mode(compatibility=None)
 
-'''
+r'''
 def companion_matrix(polynomial):
     r"""
     Create a companion matrix

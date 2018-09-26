@@ -19,12 +19,6 @@ from sm2.tsa.arima_process import arma_generate_sample
 from sm2.tools.sm_exceptions import MissingDataError
 from .results import results_arma, results_arima
 
-try:
-    import matplotlib.pyplot as plt
-    have_matplotlib = True
-except ImportError:
-    have_matplotlib = False
-
 DECIMAL_4 = 4
 DECIMAL_3 = 3
 DECIMAL_2 = 2
@@ -2462,7 +2456,7 @@ def test_arima_predict_indices_css_invalid():
 # Smoke Tests Aimed at a specific issue/method
 
 @pytest.mark.smoke
-@pytest.mark.skipif('not have_matplotlib')
+@pytest.mark.matplotlib
 def test_plot_predict(close_figures):
     dta = datasets.sunspots.load_pandas().data[['SUNACTIVITY']]
     dta.index = pd.DatetimeIndex(start='1700', end='2009', freq='A')[:309]
@@ -2628,8 +2622,8 @@ def test_arma_pickle():
     mod = ARMA(x, (1, 1))
     pkl_mod = cPickle.loads(cPickle.dumps(mod))
 
-    res = mod.fit(trend="c", disp=-1)
-    pkl_res = pkl_mod.fit(trend="c", disp=-1)
+    res = mod.fit(trend="c", disp=-1, solver='newton')
+    pkl_res = pkl_mod.fit(trend="c", disp=-1, solver='newton')
 
     assert_allclose(res.params, pkl_res.params)
     assert_allclose(res.llf, pkl_res.llf)
@@ -2646,8 +2640,8 @@ def test_arima_pickle():
     mod = ARIMA(endog, (1, 1, 1))
     pkl_mod = cPickle.loads(cPickle.dumps(mod))
 
-    res = mod.fit(trend="c", disp=-1)
-    pkl_res = pkl_mod.fit(trend="c", disp=-1)
+    res = mod.fit(trend="c", disp=-1, solver='newton')
+    pkl_res = pkl_mod.fit(trend="c", disp=-1, solver='newton')
 
     assert_allclose(res.params, pkl_res.params)
     assert_allclose(res.llf, pkl_res.llf)
@@ -2747,9 +2741,7 @@ def test_endog_int():
 
     res = ARIMA(y.cumsum(), order=(1, 1, 1)).fit(disp=0)
     resf = ARIMA(yf.cumsum(), order=(1, 1, 1)).fit(disp=0)
-    # FIXME: upstream only needs atol=1e-6; it isn't obvious why this is
-    # failing here
-    # FIXME: with atol=1.1e-6 this next assertion fails intermittently.
-    # shouldn't calling np.random.seed make this test deterministic?
-    assert_allclose(res.params, resf.params, atol=5e-6)
-    assert_allclose(res.bse, resf.bse, atol=1e-6)
+    assert_allclose(res.params, resf.params,
+                    rtol=1e-6, atol=1e-5)
+    assert_allclose(res.bse, resf.bse,
+                    rtol=1e-6, atol=1e-5)

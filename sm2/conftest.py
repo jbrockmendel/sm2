@@ -14,8 +14,8 @@ except ImportError:
 def pytest_addoption(parser):
     parser.addoption("--skip-slow", action="store_true",
                      help="skip slow tests")
-    #parser.addoption("--only-slow", action="store_true",
-    #                 help="run only slow tests")
+    parser.addoption("--only-slow", action="store_true",
+                     help="run only slow tests")
     parser.addoption("--skip-examples", action="store_true",
                      help="skip tests of examples")
     parser.addoption("--skip-matplotlib", action="store_true",
@@ -23,6 +23,9 @@ def pytest_addoption(parser):
 
     parser.addoption("--skip-smoke", action="store_true",
                      help="skip tests marked as smoke (i.e. smoke-tests)")
+    parser.addoption("--only-smoke", action="store_true",
+                     help="run only smoke tests")
+
     parser.addoption("--skip-not_vetted", action="store_true",
                      help="skip tests marked as not_vetted")
 
@@ -31,8 +34,8 @@ def pytest_runtest_setup(item):
     if 'slow' in item.keywords and item.config.getoption("--skip-slow"):
         pytest.skip("skipping due to --skip-slow")
 
-    #if 'slow' not in item.keywords and item.config.getoption("--only-slow"):
-    #    pytest.skip("skipping due to --only-slow")
+    if 'slow' not in item.keywords and item.config.getoption("--only-slow"):
+        pytest.skip("skipping due to --only-slow")
 
     if 'example' in item.keywords and item.config.getoption("--skip-examples"):
         pytest.skip("skipping due to --skip-examples")
@@ -46,6 +49,9 @@ def pytest_runtest_setup(item):
 
     if 'smoke' in item.keywords and item.config.getoption("--skip-smoke"):
         pytest.skip("skipping due to --skip-smoke")
+
+    if 'smoke' not in item.keywords and item.config.getoption('--only-smoke'):
+        pytest.skip("skipping due to --only-smoke")
 
     if ('not_vetted' in item.keywords and
             item.config.getoption("--skip-not_vetted")):

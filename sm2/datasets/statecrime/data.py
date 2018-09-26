@@ -3,18 +3,18 @@ from sm2.datasets import utils as du
 
 __docformat__ = 'restructuredtext'
 
-COPYRIGHT   = """Public domain."""
-TITLE       = """Statewide Crime Data 2009"""
-SOURCE      = """
-All data is for 2009 and was obtained from the American Statistical Abstracts except as indicated below.
+COPYRIGHT = """Public domain."""
+TITLE = """Statewide Crime Data 2009"""
+SOURCE = """
+All data is for 2009 and was obtained from the American Statistical Abstracts
+except as indicated below.
 """
 
-DESCRSHORT  = """State crime data 2009"""
+DESCRSHORT = """State crime data 2009"""
 
-DESCRLONG   = DESCRSHORT
+DESCRLONG = DESCRSHORT
 
-#suggested notes
-NOTE        = """::
+NOTE = """
 
     Number of observations: 51
     Number of variables: 8
@@ -37,7 +37,7 @@ NOTE        = """::
     murder
         Rate of murders / 100,000 population.
     hs_grad
-        Precent of population having graduated from high school or higher.
+        Percent of population having graduated from high school or higher.
     poverty
         % of individuals below the poverty line
     white
@@ -46,7 +46,7 @@ NOTE        = """::
     single
         Calculated from 2009 1-year American Community Survey obtained obtained
         from Census. Variable is Male householder, no wife present, family
-        household combined with Female household, no husband prsent, family
+        household combined with Female householder, no husband present, family
         household, divided by the total number of Family households.
     urban
         % of population in Urbanized Areas as of 2010 Census. Urbanized
@@ -74,7 +74,8 @@ def load(as_pandas=None):
 
 def load_pandas():
     data = _get_data()
-    return du.process_pandas(data, endog_idx=2, exog_idx=[7, 4, 3, 5], index_idx=0)
+    return du.process_pandas(data, endog_idx=2,
+                             exog_idx=[7, 4, 3, 5], index_idx=0)
 
 
 def _get_data():

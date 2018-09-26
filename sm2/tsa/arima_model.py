@@ -1741,7 +1741,7 @@ class ARIMAResults(ARMAResults):
 
         if plot_insample:
             k_diff = self.k_diff
-            label = re.sub("D\d*\.", "", self.model.endog_names)
+            label = re.sub(r"D\d*\.", "", self.model.endog_names)
             levels = unintegrate(self.model.endog,
                                  self.model._first_unintegrate)
             ax.plot(x[:end + 1 - start],

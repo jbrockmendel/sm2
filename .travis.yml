@@ -1,13 +1,33 @@
 language: python
 
+env:
+  # Defaults
+  global:
+    - COVERAGE=false
+    - SLOW=false
+
 matrix:
   include:
-    - python: 2.7
-      env: TOXENV=py27
-    - python: 3.5
-      env: TOXENV=py35
-    - python: 3.6
-      env: TOXENV=py36
+  - python: 2.7
+    env:
+    - TOXENV=py27
+  - python: 2.7
+    env:
+    - TOXENV=py27
+    - SLOW=true
+  - python: 3.5
+    env:
+    - TOXENV=py35
+  - python: 3.6
+    env:
+    - TOXENV=py36
+  - python: 3.6
+    env:
+    - TOXENV=py36
+    - SLOW=true
+  #- python: 3.7  # Not Yet Available on Travis
+  #  env:
+  #  - TOXENV=py37
 
 addons:
   apt:
@@ -17,17 +37,37 @@ addons:
       - python-numpy
 
 before_install:
+  # Skip if commit message contains [skip travis] or [travis skip]
+  - COMMIT_MESSAGE=$(git show -s $TRAVIS_COMMIT_RANGE | awk 'BEGIN{count=0}{if ($1=="Author:") count++; if (count==1) print $0}')
+  - if [[ $TRAVIS_PULL_REQUEST == false ]]; then COMMIT_MESSAGE=${TRAVIS_COMMIT_MESSAGE}; fi
+  - if echo "$COMMIT_MESSAGE" | grep -E '\[(skip travis|travis skip)\]'; then exit 0 ; fi
+  #
   # Show information about CPU running job to understand BLAS issues
   - sudo lshw -class processor
+  #
+  - |
+    if [ $SLOW = true ]; then
+        export TEST_ARGS="--only-slow"
+    else
+        export TEST_ARGS="--skip-slow"
+    fi
+
+install:
+  # Source recipe to install packages
+  - pip install pytest>=3.6 pytest-xdist pytest-randomly tox codecov matplotlib wheel
+  - pip install --upgrade pytest
+  - pip install -r requirements.txt
+  - python setup.py build_ext --inplace
+  - python setup.py develop
+
+before_script:
   # Fix for headless TravisCI
   #   https://stackoverflow.com/questions/35403127
-  - "export DISPLAY=:99.0"
-  - "sh -e /etc/init.d/xvfb start"
-  #- sleep 3  # give xvfb some time to start  # TODO: reinstate?
-  # Source recipe to install packages
-  - pip install pytest pytest-xdist pytest-randomly tox codecov
+  - export DISPLAY=":99.0"
+  - ci/before_script_travis.sh
 
-script: tox
+script:
+  - pytest sm2 $TEST_ARGS
 
 notifications:
   email: false

@@ -304,7 +304,7 @@ class CheckIRF(object):
             assert_almost_equal(ref_irfs, res_irfs)
 
     @pytest.mark.smoke
-    @pytest.mark.skipif(not have_matplotlib, reason="matplotlib not available")
+    @pytest.mark.matplotlib
     def test_plot_irf(self, close_figures):
         import matplotlib.pyplot as plt
         self.irf.plot()
@@ -318,7 +318,7 @@ class CheckIRF(object):
         self.irf.plot(impulse=0, response=1, orth=True)
 
     @pytest.mark.smoke
-    @pytest.mark.skipif(not have_matplotlib, reason="matplotlib not available")
+    @pytest.mark.matplotlib
     def test_plot_cum_effects(self, close_figures):
         # I need close after every plot to avoid segfault, see GH#3158
         import matplotlib.pyplot as plt
@@ -335,7 +335,7 @@ class CheckFEVD(object):
     # This is considered "vetted" only because it is exclusively smoke-tests
     fevd = None
 
-    @pytest.mark.skipif(not have_matplotlib, reason="matplotlib not available")
+    @pytest.mark.matplotlib
     def test_fevd_plot(self, close_figures):
         self.fevd.plot()
 
@@ -516,22 +516,22 @@ class TestVARResults(CheckIRF, CheckFEVD):
         self.res.forecast_interval(y, 5)
 
     @pytest.mark.smoke
-    @pytest.mark.skipif(not have_matplotlib, reason="matplotlib not available")
+    @pytest.mark.matplotlib
     def test_plot_sim(self, close_figures):
         self.res.plotsim(steps=100)
 
     @pytest.mark.smoke
-    @pytest.mark.skipif(not have_matplotlib, reason="matplotlib not available")
+    @pytest.mark.matplotlib
     def test_plot(self, close_figures):
         self.res.plot()
 
     @pytest.mark.smoke
-    @pytest.mark.skipif(not have_matplotlib, reason="matplotlib not available")
+    @pytest.mark.matplotlib
     def test_plot_acorr(self, close_figures):
         self.res.plot_acorr()
 
     @pytest.mark.smoke
-    @pytest.mark.skipif(not have_matplotlib, reason="matplotlib not available")
+    @pytest.mark.matplotlib
     def test_plot_forecast(self, close_figures):
         self.res.plot_forecast(5)
 

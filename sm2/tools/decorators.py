@@ -9,8 +9,27 @@ __all__ = ['resettable_cache', 'cache_readonly', 'cache_writable',
            'deprecated_alias', 'copy_doc']
 
 
-def deprecated_alias(old_name, new_name, remove_version=None):
+def deprecated_alias(old_name, new_name, remove_version=None, msg=None,
+                     warning=FutureWarning):
     """
+    Deprecate attribute in favor of alternative name
+
+    Parameters
+    ----------
+    old_name : str
+        Old, deprecated name
+    new_name : str
+        New name
+    remove_version : str, optional
+        Version that the alias will be removed
+    msg : str, optional
+        Message to show.  Default is
+        `old_name` is a deprecated alias for `new_name`
+    warning : Warning, optional
+        Warning class to give.  Default is FutureWarning.
+
+    Notes
+    -----
     Older or less-used classes may not conform to statsmodels naming
     conventions.  `deprecated_alias` lets us bring them into conformance
     without breaking backward-compatibility.
@@ -30,24 +49,25 @@ def deprecated_alias(old_name, new_name, remove_version=None):
     >>> foo.nvars
     __main__:1: FutureWarning: nvars is a deprecated alias for neqs
     3
-
     """
-    msg = '%s is a deprecated alias for %s' % (old_name, new_name)
-    if remove_version is not None:
-        msg += ', will be removed in version %s' % remove_version
+    if msg is None:
+        msg = '%s is a deprecated alias for %s' % (old_name, new_name)
+        if remove_version is not None:
+            msg += ', will be removed in version %s' % remove_version
 
     def fget(self):
-        warnings.warn(msg, FutureWarning, stacklevel=2)
+        warnings.warn(msg, warning, stacklevel=2)
         return getattr(self, new_name)
 
     def fset(self, value):
-        warnings.warn(msg, FutureWarning, stacklevel=2)
+        warnings.warn(msg, warning, stacklevel=2)
         setattr(self, new_name, value)
 
     res = property(fget=fget, fset=fset)
     return res
 
 
+# TODO: just use pandas Appender?
 def copy_doc(docstring):
     """
     Add a docstring to a function, so that

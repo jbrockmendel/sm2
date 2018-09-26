@@ -9,7 +9,10 @@ from numpy.testing import (assert_array_almost_equal, assert_equal,
 
 from sm2.tools.sm_exceptions import MissingDataError
 from sm2.datasets import sunspots, macrodata
-from sm2.tsa.autocov import yule_walker
+
+from sm2.tsa.stattools import levinson_durbin
+from sm2.tsa.autocov import (
+    yule_walker, levinson_durbin_pacf, pacf_yw, pacf_burg, burg)
 from sm2.tsa import autocov
 
 from sm2.tsa.tests.results import savedrvs
@@ -111,6 +114,7 @@ class TestACFMissing(CheckCorrGram):
                             self.qstat_none,
                             3)
 
+    # FIXME: dont comment-out
     # TODO: how to do this test? the correct q_stat depends on
     # whether nobs=len(x) is used when x contains NaNs or whether
     # nobs<len(x) when x contains NaNs
@@ -158,9 +162,9 @@ def test_ccf():
 @pytest.mark.not_vetted
 def test_pacf_yw():
     # upstream this is in tsa.tests.test_tsa_tools
-    pacfyw = autocov.pacf_yw(x100, 20, method='mle')
+    pacfyw = pacf_yw(x100, 20, method='mle')
     assert_array_almost_equal(mlpacf.pacf100.ravel(), pacfyw, 1)
-    pacfyw = autocov.pacf_yw(x1000, 20, method='mle')
+    pacfyw = pacf_yw(x1000, 20, method='mle')
     assert_array_almost_equal(mlpacf.pacf1000.ravel(), pacfyw, 2)
 
 
@@ -239,3 +243,105 @@ def test_pandasacovf():
     assert_allclose(autocov.acovf(ser),
                     autocov.acovf(ser.values),
                     rtol=1e-12)
+
+
+def test_pacf2acf_ar():
+    # GH#5016
+    pacf = np.zeros(10)
+    pacf[0] = 1
+    pacf[1] = 0.9
+
+    ar, acf = levinson_durbin_pacf(pacf)
+    assert_allclose(acf, 0.9 ** np.arange(10.))
+    assert_allclose(ar, pacf[1:], atol=1e-8)
+
+    ar, acf = levinson_durbin_pacf(pacf, nlags=5)
+    assert_allclose(acf, 0.9 ** np.arange(6.))
+    assert_allclose(ar, pacf[1:6], atol=1e-8)
+
+
+def test_pacf2acf_levinson_durbin():
+    # GH#5016
+    pacf = -0.9 ** np.arange(11.)
+    pacf[0] = 1
+    ar, acf = levinson_durbin_pacf(pacf)
+    _, ar_ld, pacf_ld, _, _ = levinson_durbin(acf, 10, isacov=True)
+    assert_allclose(ar, ar_ld, atol=1e-8)
+    assert_allclose(pacf, pacf_ld, atol=1e-8)
+
+    # From R, FitAR, PacfToAR
+    ar_from_r = [-4.1609, -9.2549, -14.4826, -17.6505, -17.5012,
+                 -14.2969, -9.5020, -4.9184, -1.7911, -0.3486]
+    assert_allclose(ar, ar_from_r, atol=1e-4)
+
+
+def test_pacf2acf_errors():
+    # GH#5016
+    pacf = -0.9 ** np.arange(11.)
+    pacf[0] = 1
+    with pytest.raises(ValueError):
+        levinson_durbin_pacf(pacf, nlags=20)
+    with pytest.raises(ValueError):
+        levinson_durbin_pacf(pacf[:1])
+    with pytest.raises(ValueError):
+        levinson_durbin_pacf(np.zeros(10))
+    with pytest.raises(ValueError):
+        levinson_durbin_pacf(np.zeros((10, 2)))
+
+
+def test_pacf_burg():
+    # GH#5016
+    rnd = np.random.RandomState(12345)
+    e = rnd.randn(10001)
+    y = e[1:] + 0.5 * e[:-1]
+    pacf, sigma2 = pacf_burg(y, 10)
+    yw_pacf = pacf_yw(y, 10)
+    assert_allclose(pacf, yw_pacf, atol=5e-4)
+    # Internal consistency check between pacf and sigma2
+    ye = y - y.mean()
+    s2y = ye.dot(ye) / 10000
+    pacf[0] = 0
+    sigma2_direct = s2y * np.cumprod(1 - pacf ** 2)
+    assert_allclose(sigma2, sigma2_direct, atol=1e-3)
+
+
+def test_pacf_burg_error():
+    # GH#5016
+    with pytest.raises(ValueError):
+        pacf_burg(np.empty((20, 2)), 10)
+    with pytest.raises(ValueError):
+        pacf_burg(np.empty(100), 101)
+
+
+def test_burg():
+    # GH#5016
+    # upstream this is in test_regression
+    rnd = np.random.RandomState(12345)
+    e = rnd.randn(10001)
+    y = e[1:] + 0.5 * e[:-1]
+
+    # R, ar.burg
+    expected = [
+        [0.3909931],
+        [0.4602607, -0.1771582],
+        [0.47473245, -0.21475602, 0.08168813],
+        [0.4787017, -0.2251910, 0.1047554, -0.0485900],
+        [0.47975462, - 0.22746106, 0.10963527, -0.05896347, 0.02167001]
+    ]
+
+    for i in range(1, 6):
+        ar, _ = burg(y, i)
+        assert_allclose(ar, expected[i - 1], atol=1e-6)
+        as_nodemean, _ = burg(1 + y, i, False)
+        assert np.all(ar != as_nodemean)
+
+
+def test_burg_errors():
+    # GH#5016
+    # upstream this is in test_regression
+    with pytest.raises(ValueError):
+        burg(np.ones((100, 2)))
+    with pytest.raises(ValueError):
+        burg(np.random.randn(100), 0)
+    with pytest.raises(ValueError):
+        burg(np.random.randn(100), 'apple')

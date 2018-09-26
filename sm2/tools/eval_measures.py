@@ -7,6 +7,13 @@ Created on Tue Nov 08 15:23:20 2011
 Author: Josef Perktold
 License: BSD-3
 """
+__all__ = [
+    "maxabs", "meanabs", "medianabs", "medianbias", "mse", "rmse", "stde",
+    "vare", "bias", "iqr",
+    "aic", "aic_sigma", "aicc", "aicc_sigma",
+    "bic", "bic_sigma",
+    "hqic", "hqic_sigma"]
+
 import numpy as np
 
 
@@ -380,7 +387,7 @@ def hqic(llf, nobs, df_modelwc):
 # IC based on residual sigma
 
 def aic_sigma(sigma2, nobs, df_modelwc, islog=False):
-    """Akaike information criterion
+    r"""Akaike information criterion
 
     Parameters
     ----------
@@ -533,11 +540,7 @@ def hqic_sigma(sigma2, nobs, df_modelwc, islog=False):
     return sigma2 + hqic(0, nobs, df_modelwc) / nobs
 
 
+# FIXME: don't comment-out code
 # from var_model.py, VAR only? separates neqs and k_vars per equation
 # def fpe_sigma():
 #     ((nobs + self.df_model) / self.df_resid) ** neqs * np.exp(ld)
-
-
-__all__ = [maxabs, meanabs, medianabs, medianbias, mse, rmse, stde, vare,
-           aic, aic_sigma, aicc, aicc_sigma, bias, bic, bic_sigma,
-           hqic, hqic_sigma, iqr]

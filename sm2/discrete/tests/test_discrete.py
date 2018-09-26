@@ -57,8 +57,20 @@ iris = pd.read_csv(iris_path).values
 
 # ------------------------------------------------------------------
 
+class CheckModelMixin(object):
+    # GH#5224
+    # Assertions about the Model object, as opposed to the Results
+    # Assumes that mixed-in class implements:
+    #   res1
+    def test_fit_regularized_invalid_method(self):
+        # GH#5224 check we get ValueError when passing invalid "method" arg
+        model = self.res1.model
+        with pytest.raises(ValueError, match=r'is not supported, use either'):
+            model.fit_regularized(method="foo")
+
+
 @pytest.mark.not_vetted
-class CheckModelResults(object):
+class CheckModelResults(CheckModelMixin):
     """res2 is reference results from results_discrete"""
 
     @classmethod

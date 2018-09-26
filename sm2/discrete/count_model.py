@@ -243,7 +243,7 @@ class GenericZeroInflated(CountModel):
         return np.hstack((dldw, dldp))
 
     def _hessian_main(self, params):
-        pass  # TODO: Should this raise?
+        pass
 
     def _hessian_logit(self, params):
         params_infl = params[:self.k_inflate]
@@ -289,7 +289,6 @@ class GenericZeroInflated(CountModel):
 
     def _hessian_probit(self, params):
         pass
-        # TODO: Should this maybe raise?
 
     def hessian(self, params):
         """

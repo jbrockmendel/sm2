@@ -67,6 +67,7 @@ def fit_l1_slsqp(f, score, start_params, args, kwargs, disp=False,
     # Make sure it's a vector
     alpha = alpha * np.ones(k_params)
     assert alpha.min() >= 0
+
     # Convert display parameters to scipy.optimize form
     disp_slsqp = _get_disp_slsqp(disp, retall)
     # Set/retrieve the desired accuracy
