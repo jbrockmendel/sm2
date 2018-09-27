@@ -241,13 +241,14 @@ class Test_Y_ARMA11_NoConst(CheckArmaResultsMixin, CheckForecastMixin):
         cls.res1.forecast_err = fc_err
         cls.res2 = results_arma.Y_arma11()
 
+    # TODO: share with test_ar? other test classes?
     def test_pickle(self):
         fh = BytesIO()
         # test wrapped results load save pickle
         self.res1.save(fh)
         fh.seek(0, 0)
         res_unpickled = self.res1.__class__.load(fh)
-        assert type(res_unpickled) is type(self.res1)
+        assert type(res_unpickled) is type(self.res1)  # noqa:E721
         # TODO: Test equality instead of just type equality?
 
 

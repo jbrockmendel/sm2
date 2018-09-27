@@ -412,7 +412,7 @@ class TestVARResults(CheckIRF, CheckFEVD):
 
     @pytest.mark.skip(reason="get_eq_index not ported from upstream")
     def test_get_eq_index(self):
-        assert type(self.res.names) is list
+        assert type(self.res.names) is list  # noqa:E721
 
         for i, name in enumerate(self.names):
             idx = self.res.get_eq_index(i)
@@ -566,7 +566,7 @@ class TestVARResults(CheckIRF, CheckFEVD):
         self.res.save(fh)
         fh.seek(0, 0)
         res_unpickled = self.res.__class__.load(fh)
-        assert type(res_unpickled) is type(self.res)
+        assert type(res_unpickled) is type(self.res)  # noqa:E721
         # TODO: Check something other than type equality?  not very meaningful
 
 
