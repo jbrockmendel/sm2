@@ -29,6 +29,8 @@ if [ "$LINT" == true ]; then
         sm2/tools/tests/test_linalg.py \
         sm2/tools/decorators.py \
         sm2/tools/tests/test_decorators.py \
+        sm2/tsa/stattools.py \
+        sm2/tsa/tests/test_stattools.py \
         sm2/tsa/kalmanf/ \
         sm2/tsa/regime_switching \
         sm2/tsa/vector_ar/hypothesis_test_results.py \
