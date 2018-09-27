@@ -306,7 +306,7 @@ if linetrace:
     macros = [('CYTHON_TRACE', '1'), ('CYTHON_TRACE_NOGIL', '1')]
 
 numpy_incl = pkg_resources.resource_filename('numpy', 'core/include')
-from numpy.distutils.misc_util import get_info
+from numpy.distutils.misc_util import get_info  # noqa:E402
 # TODO: Can we do this without numpy import?
 npymath = get_info("npymath")
 

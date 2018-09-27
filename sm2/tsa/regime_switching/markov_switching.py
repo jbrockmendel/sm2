@@ -292,7 +292,8 @@ def cy_hamilton_filter(initial_probabilities, regime_transition,
          conditional_likelihoods.reshape(k_regimes**(order + 1), nobs),
          joint_likelihoods,
          predicted_joint_probabilities.reshape(k_regimes**(order + 1), nobs),
-         filtered_joint_probabilities.reshape(k_regimes**(order + 1), nobs + 1))
+         filtered_joint_probabilities.reshape(k_regimes**(order + 1),
+                                              nobs + 1))
 
     # S_t | t
     filtered_marginal_probabilities = filtered_joint_probabilities[..., 1:]
@@ -1482,7 +1483,7 @@ class MarkovSwitching(tsbase.TimeSeriesModel):
                     if proposed_llf > llf:
                         llf = proposed_llf
                         params = self.untransform_params(proposed_params)
-                except:
+                except Exception:  # FIXME: catch something specific
                     pass
 
         # Return transformed parameters

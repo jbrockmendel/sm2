@@ -13,11 +13,13 @@ http://www.electionstudies.org/
 The American National Election Studies.
 """
 
-DESCRSHORT = """This data is a subset of the American National Election Studies of 1996."""
+DESCRSHORT = """
+This data is a subset of the American National Election Studies of 1996.
+"""
 
 DESCRLONG = DESCRSHORT
 
-NOTE = """::
+NOTE = """
 
     Number of observations - 944
     Number of variables - 10

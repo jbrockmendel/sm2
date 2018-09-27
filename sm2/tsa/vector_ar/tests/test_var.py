@@ -306,7 +306,6 @@ class CheckIRF(object):
     @pytest.mark.smoke
     @pytest.mark.matplotlib
     def test_plot_irf(self, close_figures):
-        import matplotlib.pyplot as plt
         self.irf.plot()
         self.irf.plot(plot_stderr=False)
 
@@ -321,7 +320,6 @@ class CheckIRF(object):
     @pytest.mark.matplotlib
     def test_plot_cum_effects(self, close_figures):
         # I need close after every plot to avoid segfault, see GH#3158
-        import matplotlib.pyplot as plt
         self.irf.plot_cum_effects()
         self.irf.plot_cum_effects(plot_stderr=False)
         self.irf.plot_cum_effects(impulse=0, response=1)

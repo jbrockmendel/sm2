@@ -5,6 +5,7 @@ env:
   global:
     - COVERAGE=false
     - SLOW=false
+    - LINT=false
 
 matrix:
   include:
@@ -15,6 +16,7 @@ matrix:
     env:
     - TOXENV=py27
     - SLOW=true
+    - LINT=true
   - python: 3.5
     env:
     - TOXENV=py35
@@ -25,6 +27,7 @@ matrix:
     env:
     - TOXENV=py36
     - SLOW=true
+    - LINT=true
   #- python: 3.7  # Not Yet Available on Travis
   #  env:
   #  - TOXENV=py37
@@ -68,6 +71,7 @@ before_script:
 
 script:
   - pytest sm2 $TEST_ARGS
+  - ci/lint.sh
 
 notifications:
   email: false

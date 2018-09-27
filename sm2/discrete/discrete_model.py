@@ -2932,7 +2932,8 @@ class MNLogit(MultinomialModel):
         K = self.K
         partials = [[None for i in range(J - 1)] for j in range(J - 1)]
         for i in range(J - 1):
-            for j in range(i, J - 1):  # this loop assumes we drop the first col.
+            for j in range(i, J - 1):
+                # this loop assumes we drop the first col.
                 if i == j:
                     part = ((pr[:, i + 1] * (1 - pr[:, j + 1]))[:, None] * X).T
                 else:

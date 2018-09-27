@@ -3,6 +3,8 @@
 from __future__ import print_function
 import warnings
 
+from pandas._libs.properties import cache_readonly as CR
+
 from sm2.tools.sm_exceptions import CacheWriteWarning
 
 __all__ = ['resettable_cache', 'cache_readonly', 'cache_writable',
@@ -159,9 +161,6 @@ def nottest(fn):  # pragma: no cover
 # are used by `remove_data` to
 #   a) identify array-like attributes to remove (cached_data)
 #   b) make sure certain values are evaluated before caching (cached_value)
-from pandas._libs.properties import cache_readonly as CR
-
-
 class cached_data(CR):
     pass
 
