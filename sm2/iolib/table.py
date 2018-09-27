@@ -638,12 +638,12 @@ class Cell(object):
     A cell can belong to a Row, but does not have to.
     """
     def __init__(self, data='', datatype=None, row=None, **fmt_dict):
-        try:
+        if isinstance(data, Cell):
             # might have passed a Cell instance
             self.data = data.data
             self._datatype = data.datatype
             self._fmt = data._fmt
-        except (AttributeError, TypeError):
+        else:
             # passed ordinary data
             self.data = data
             self._datatype = datatype
