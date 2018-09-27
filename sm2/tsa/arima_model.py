@@ -542,7 +542,7 @@ class ARMA(wold.ARMATransparams, tsa_model.TimeSeriesModel):
         return start_params
 
     def _fit_start_params_css(self, order, start_ar_lags=None):
-        func = lambda params: -self.loglike_css(params)
+        func = lambda params: -self.loglike_css(params)  # noqa:E731
         start_params = self._fit_start_params_hr(order, start_ar_lags)
         if self.transparams:
             start_params = self._invtransparams(start_params)

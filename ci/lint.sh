@@ -29,7 +29,14 @@ if [ "$LINT" == true ]; then
         sm2/tools/tests/test_linalg.py \
         sm2/tools/decorators.py \
         sm2/tools/tests/test_decorators.py \
+        sm2/tsa/_bds.py \
+        sm2/tsa/api.py \
+        sm2/tsa/arima_process.py \
+        sm2/tsa/autocov.py \
         sm2/tsa/stattools.py \
+        sm2/tsa/tsatools.py \
+        sm2/tsa/unit_root.py \
+        sm2/tsa/wold.py \
         sm2/tsa/tests/test_stattools.py \
         sm2/tsa/kalmanf/ \
         sm2/tsa/regime_switching \

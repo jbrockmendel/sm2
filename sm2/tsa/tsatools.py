@@ -124,7 +124,8 @@ def add_trend(x, trend="c", prepend=False, has_constant='skip'):
     return x
 
 
-def _safe_col_trend(x, columns, trendarr, is_pandas, is_recarray, has_constant):
+def _safe_col_trend(x, columns, trendarr, is_pandas,
+                    is_recarray, has_constant):
     # TODO: better name
     # TODO: docstring
     if is_pandas or is_recarray:

@@ -410,7 +410,7 @@ class ARMAParams(ARMARoots):
         >>> arma_impulse_response([1.0, -0.8], [1., 0.5, 0.2], lags=10)
         array([ 1.        ,  1.3       ,  1.24      ,  0.992     ,  0.7936    ,
                 0.63488   ,  0.507904  ,  0.4063232 ,  0.32505856,  0.26004685])
-        """  # TODO: update docstring
+        """  # noqa:E501  # TODO: update docstring
         ar = self.ar
         ma = self.ma
         _check_is_poly(np.array(ar))
@@ -690,8 +690,8 @@ class ARMATransparams(object):
         tmp = (1 - meparams) / (1 + meparams)
         for j in range(1, len(params)):
             a = newparams[j]
-            for kiter in range(j):
-                tmp[kiter] -= a * newparams[j - kiter - 1]
+            for kit in range(j):
+                tmp[kit] -= a * newparams[j - kit - 1]
             newparams[:j] = tmp[:j]
         return newparams
 
@@ -708,9 +708,9 @@ class ARMATransparams(object):
         tmp = params.copy()
         for j in range(len(params) - 1, 0, -1):
             a = params[j]
-            for kiter in range(j):
-                val = (params[kiter] + a * params[j - kiter - 1]) / (1 - a**2)
-                tmp[kiter] = val
+            for kit in range(j):
+                val = (params[kit] + a * params[j - kit - 1]) / (1 - a**2)
+                tmp[kit] = val
             params[:j] = tmp[:j]
 
         invarcoefs = -np.log((1 - params) / (1 + params))
@@ -728,9 +728,9 @@ class ARMATransparams(object):
         tmp = macoefs.copy()
         for j in range(len(macoefs) - 1, 0, -1):
             b = macoefs[j]
-            for kiter in range(j):
-                val = (macoefs[kiter] - b * macoefs[j - kiter - 1]) / (1 - b**2)
-                tmp[kiter] = val
+            for kit in range(j):
+                val = (macoefs[kit] - b * macoefs[j - kit - 1]) / (1 - b**2)
+                tmp[kit] = val
             macoefs[:j] = tmp[:j]
 
         invmacoefs = -np.log((1 - macoefs) / (1 + macoefs))
@@ -756,8 +756,8 @@ class ARMATransparams(object):
         # levinson-durbin to get macf
         for j in range(1, len(params)):
             b = newparams[j]
-            for kiter in range(j):
-                tmp[kiter] += b * newparams[j - kiter - 1]
+            for kit in range(j):
+                tmp[kit] += b * newparams[j - kit - 1]
             newparams[:j] = tmp[:j]
         return newparams
 

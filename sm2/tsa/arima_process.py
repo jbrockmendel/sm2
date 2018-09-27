@@ -139,7 +139,8 @@ def arma_acovf(ar, ma, nobs=10):
     # again no idea where the speed break points are:
     if nobs_ir > 50000 and nobs < 1001:
         end = len(ir)
-        # Explitly slice from the end to avoid foo[:-0] returning an empty slice
+        # Explicitly slice from the end to avoid foo[:-0] returning
+        #  an empty slice
         acovf = np.array([np.dot(ir[:end - nobs - t], ir[t:end - nobs])
                           for t in range(nobs)])
     else:

@@ -304,7 +304,8 @@ def ccf(x, y, unbiased=True):
 
 
 # Upstream this is in regression.linear_model
-def yule_walker(X, order=1, method="unbiased", df=None, inv=False, demean=True):
+def yule_walker(X, order=1, method="unbiased", df=None,
+                inv=False, demean=True):
     """
     Estimate AR(p) parameters from a sequence X using Yule-Walker equation.
 
@@ -373,9 +374,10 @@ def yule_walker(X, order=1, method="unbiased", df=None, inv=False, demean=True):
 
     if method == "unbiased":
         # this is df_resid ie., n - p
-        denom = lambda k: n - k
+        denom = lambda k: n - k  # noqa:E731
     else:
-        denom = lambda k: n
+        denom = lambda k: n  # noqa:E731
+
     if X.ndim > 1 and X.shape[1] != 1:  # pragma: no cover
         raise ValueError("expecting a vector to estimate AR parameters")
 
