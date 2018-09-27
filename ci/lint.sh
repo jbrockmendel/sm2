@@ -38,8 +38,10 @@ if [ "$LINT" == true ]; then
         sm2/tsa/unit_root.py \
         sm2/tsa/wold.py \
         sm2/tsa/tests/test_stattools.py \
+        sm2/tsa/filters/ \
         sm2/tsa/kalmanf/ \
-        sm2/tsa/regime_switching \
+        sm2/tsa/regime_switching/ \
+        sm2/tsa/statespace/ \
         sm2/tsa/vector_ar/hypothesis_test_results.py \
         setup.py
     if [ $? -ne "0" ]; then

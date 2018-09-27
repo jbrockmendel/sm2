@@ -802,7 +802,7 @@ def test_range_index():
     # Warning should not be given
     with warnings.catch_warnings(record=True) as w:
         warnings.simplefilter('always')
-        mod = tsa_model.TimeSeriesModel(endog)
+        tsa_model.TimeSeriesModel(endog)
         assert len(w) == 0
 
 
