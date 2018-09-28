@@ -411,11 +411,11 @@ class TestGLS_OLS(CheckRegressionResults):
 #     data = datasets.sunspots.load(as_pandas=False)
 #     model = AR(data.endog, rho=4).fit()
 #     R_res = RModel(data.endog, aic="FALSE", order_max=4)#
-
+#
 #     def test_params(self):
 #         assert_almost_equal(self.model.rho,
 #         pass
-
+#
 #     def test_order(self):
 #        # In R this can be defined or chosen by minimizing the AIC if aic=True
 #        pass
