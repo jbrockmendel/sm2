@@ -289,10 +289,9 @@ else:
     suffix = '.c'
     cmdclass['build_src'] = DummyBuildSrc
 
-# some linux distros require it
-# NOTE: we are not currently using this but add it to Extension, if needed.
-# libraries = ['m'] if 'win32' not in sys.platform else []
 
+# https://medium.com/@dfdeshom/\
+#  better-test-coverage-workflow-for-cython-modules-631615eb197a
 # Set linetrace environment variable to enable coverage measurement
 # for cython files
 linetrace = os.environ.get('linetrace', False)
@@ -356,7 +355,6 @@ setup(name=DISTNAME,
       version=versioneer.get_version(),
       maintainer=MAINTAINER,
       ext_modules=_cythonize(extensions, compiler_directives=directives),
-      # https://medium.com/@dfdeshom/better-test-coverage-workflow-for-cython-modules-631615eb197a
       maintainer_email=MAINTAINER_EMAIL,
       description=DESCRIPTION,
       license=LICENSE,
