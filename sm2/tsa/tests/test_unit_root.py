@@ -119,10 +119,12 @@ class TestADFConstantTrend(CheckADF):
 @pytest.mark.not_vetted
 class TestADFNoConstant(CheckADF):
     teststat = 3.5227498
+
     pvalue = .99999
     # Stata does not return a p-value for noconstant.
     # Tau^max in MacKinnon (1994) is missing, so it is
     # assumed that its right-tail is well-behaved
+
     critvalues = [-2.587, -1.950, -1.617]
     kwargs = {"regression": "nc", "maxlag": 4}
 
