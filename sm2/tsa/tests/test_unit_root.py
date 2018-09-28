@@ -84,6 +84,7 @@ class CheckADF(object):
                             2)
 
 
+# FIXME: Don't comment-out code
 # class TestADFConstantTrendSquared(CheckADF):
 #    pass
 # TODO: get test values from R?
