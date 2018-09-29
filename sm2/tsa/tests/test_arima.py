@@ -2577,8 +2577,7 @@ def test_arima_dataframe_integer_name():
     dr = pd.date_range("1990", periods=len(vals), freq='Q')
     ts = pd.Series(vals, index=dr)
     df = pd.DataFrame(ts)
-    mod = ARIMA(df, (2, 0, 2))
-    mod.fit()
+    mod = ARIMA(df, (2, 0, 2))  # TODO: maybe _fit_ this model?
 
 
 @pytest.mark.smoke
