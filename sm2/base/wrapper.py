@@ -2,6 +2,7 @@
 import inspect
 import functools
 
+from six import PY3
 from six.moves import reduce
 
 from sm2.tools.decorators import cached_data, cached_value
@@ -219,9 +220,16 @@ def make_wrapper(func, how):
             obj = data.wrap_output(func(results, *args, **kwargs), how)
         return obj
 
-    argspec = inspect.getargspec(func)
-    formatted = inspect.formatargspec(argspec[0], varargs=argspec[1],
-                                      defaults=argspec[3])
+    if PY3:
+        # Specifically >=3.3
+        # Avoid deprecated usage of getargspec, which gives warnings in py3
+        sig = inspect.signature(func)
+        formatted = str(sig)
+    else:
+        # TODO: Remove when Python 2.7 is dropped
+        argspec = inspect.getargspec(func)
+        formatted = inspect.formatargspec(argspec[0], varargs=argspec[1],
+                                          defaults=argspec[3])
 
     func_name = func.__name__
     wrapper.__doc__ = "%s%s\n%s" % (func_name, formatted, wrapper.__doc__)
