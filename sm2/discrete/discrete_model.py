@@ -429,6 +429,9 @@ class DiscreteModel(base.LikelihoodModel):
 
     def _wrap_derivative_exog(self, margeff, params, exog, dummy_idx,
                               count_idx, transform):
+        """
+        Helper for _derivative_exog to wrap results appropriately
+        """
         if count_idx is not None:
             from sm2.discrete.discrete_margins import _get_count_effects
             margeff = _get_count_effects(margeff, exog, count_idx, transform,
@@ -969,7 +972,7 @@ class _CountMixin(object):
             a = self._estimate_dispersion(res_poi.predict(), res_poi.resid,
                                           df_resid=res_poi.df_resid)
             start_params = np.append(start_params, max(0.05, a))
-            # FIXME: upstream uses -0.1 for GeneralizedPoisson and 0.05
+            # TODO: upstream uses -0.1 for GeneralizedPoisson and 0.05
             # for the others.  GH#4521
             # TODO: reasoning for -0.1?
         return start_params
@@ -1548,7 +1551,8 @@ class GeneralizedPoisson(_CountMixin, CountModel):
         # Yes, just need to change "mlefit._results" --> "mlefit" below
         mlefit = CountModel.fit(
             self, start_params=start_params, maxiter=maxiter, method=method,
-            disp=disp, full_output=full_output, callback=callback, **kwargs)
+            disp=disp, full_output=full_output, callback=callback,
+            cov_type=cov_type, cov_kwds=cov_kwds, use_t=use_t, **kwargs)
 
         if self._transparams:
             self._transparams = False
@@ -1958,7 +1962,8 @@ class NegativeBinomial(_CountMixin, CountModel):
         # Yes, just need to change "mlefit._results" --> "mlefit" below
         mlefit = CountModel.fit(
             self, start_params=start_params, maxiter=maxiter, method=method,
-            disp=disp, full_output=full_output, callback=callback, **kwargs)
+            disp=disp, full_output=full_output, callback=callback,
+            cov_type=cov_type, use_t=use_t, cov_kwds=cov_kwds, **kwargs)
         # TODO: Fix NBin _check_perfect_pred
 
         res_cls, wrap_cls = self._res_classes["fit"]
@@ -2038,7 +2043,7 @@ class NegativeBinomialP(_CountMixin, CountModel):
         kwds['p'] = self.parameterization
         return kwds
 
-    # TODO: This is pretty slow.  can it be optimized?
+    # TODO: This (and score_obs, hessian) is pretty slow.  can it be optimized?
     def loglikeobs(self, params):
         """
         Loglikelihood for observations of Generalized Negative
@@ -2074,7 +2079,6 @@ class NegativeBinomialP(_CountMixin, CountModel):
 
         return llf
 
-    # TODO: This is pretty slow.  can it be optimized?
     def score_obs(self, params):
         """
         Generalized Negative Binomial (NB-P) model score (gradient)
@@ -2109,7 +2113,6 @@ class NegativeBinomialP(_CountMixin, CountModel):
 
         dgpart = special.digamma(y + a1) - special.digamma(a1)
         dgterm = np.log(a1 / a2) + dgpart + 1 - a3 / a2
-        # TODO: better name or interpretation for dgterm?
 
         dparams = (a4 * dgterm -
                    a3 / a2 +
@@ -2143,7 +2146,6 @@ class NegativeBinomialP(_CountMixin, CountModel):
         else:
             return score
 
-    # TODO: This is pretty slow.  can it be optimized?
     def hessian(self, params):
         """
         Generalized Negative Binomial (NB-P) model hessian maxtrix
@@ -2182,7 +2184,7 @@ class NegativeBinomialP(_CountMixin, CountModel):
         dgpart = special.digamma(y + a1) - special.digamma(a1)
         pgpart = special.polygamma(1, a1) - special.polygamma(1, y + a1)
         dgterm = np.log(a1 / a2) + dgpart + 1 - a3 / a2
-        # TODO: better name or interpretation for dgterm?
+        # TODO: better name or interpretation for dgterm?  (ditto elsewhere)
 
         coeff = mu**2 * ((1 + a4)**2 * a3 / a2**2
                          - 2 * (p / mu) * (1 + a4) * a1 / a2
@@ -2250,7 +2252,9 @@ class NegativeBinomialP(_CountMixin, CountModel):
         # TODO: can we skip CountModel and go straight to DiscreteModel?
         mlefit = CountModel.fit(
             self, start_params=start_params, maxiter=maxiter, method=method,
-            disp=disp, full_output=full_output, callback=callback, **kwargs)
+            disp=disp, full_output=full_output, callback=callback,
+            cov_type=cov_type, cov_kwds=cov_kwds, use_t=use_t,
+            **kwargs)
 
         if self._transparams:
             self._transparams = False
@@ -2320,7 +2324,6 @@ class NegativeBinomialP(_CountMixin, CountModel):
             size, prob = self.convert_params(params, mu)
             return stats.nbinom.pmf(counts, size[:, None], prob[:, None])
         else:  # pragma: no cover
-            # TODO: fix upstream this is A TypeError
             raise ValueError('keyword "which" = %s not recognized' % which)
 
     def convert_params(self, params, mu):  # TODO: use this more?  privatize?
@@ -2655,7 +2658,6 @@ class Probit(BinaryModel):
         return np.dot(-L * (L + Xb) * self.exog.T, self.exog)
 
 
-# FIXME: MNLogit doesn't have `resid` upstream, and it raises here
 class MNLogit(MultinomialModel):
     __doc__ = """
     Multinomial logit model
@@ -2699,7 +2701,7 @@ class MNLogit(MultinomialModel):
     See developer notes for further information on `MNLogit` internals.
     """ % {'extra_params': base._missing_param_doc}
 
-    def pdf(self, X, dropfirst=False, submax=False):  # TODO: implement this
+    def pdf(self, X, dropfirst=False, submax=False):
         r"""
         We take a derivative of `cdf` using the quotient
         rule: (f'g - g'f) / g^2
@@ -2722,8 +2724,6 @@ class MNLogit(MultinomialModel):
         if submax:
             XB -= XB.max(1)[:, None]
             # TODO: benchmark how this affects speed
-            # In a nobs=1e5 benchmark, this sped up pdf from 16.1508 to 15.0867
-            # ... but on Falcon it slows from 5.203 to 6.319
 
         eXB = np.exp(XB)
         denom = eXB.sum(1)
@@ -2952,7 +2952,6 @@ class MNLogit(MultinomialModel):
 # ----------------------------------------------------------------
 # Results Classes
 
-
 class DiscreteResults(base.LikelihoodModelResults):
     __doc__ = _discrete_results_docs % {
         "one_line_description": "A results class for the discrete dependent "
@@ -2973,7 +2972,7 @@ class DiscreteResults(base.LikelihoodModelResults):
 
         self._cache = resettable_cache()
         self.nobs = model.exog.shape[0]  # i.e. model.nobs
-        self.__dict__.update(mlefit.__dict__)
+        self.__dict__.update(mlefit.__dict__)  # TODO: dont do this
 
         if not hasattr(self, 'cov_type'):
             # do this only if super, i.e. mlefit didn't already add cov_type
@@ -3230,7 +3229,6 @@ class CountResults(DiscreteResults):
         "one_line_description": "A results class for count data",
         "extra_attr": ""}
 
-    # TODO: Make this the base class default?
     @cached_data
     def resid(self):
         """
@@ -3495,14 +3493,13 @@ class ProbitResults(BinaryResults):
         return endog * pdf / cdf - (1 - endog) * pdf / (1 - cdf)
 
 
+# FIXME: MultinomialResults doesn't have `resid` upstream, and it raises here
 class MultinomialResults(DiscreteResults):
     __doc__ = ProbitResults.__doc__.replace("Probit", "multinomial")
 
     def __init__(self, model, mlefit):
         # Make sure params have the appropriate shape;
-        # TODO: Should we avoid altering this in-place?
         mlefit.params = mlefit.params.reshape(model.K, -1, order='F')
-        # TODO: Is the "order='F'" really necessary?
         super(MultinomialResults, self).__init__(model, mlefit)
         self.J = model.J
         self.K = model.K
@@ -3632,7 +3629,7 @@ class L1CountResults(DiscreteResults, L1ResultsMixin):
 
     def __init__(self, model, cntfit):
         # TODO: Make this happen higher up the chain.  Not doing it here breaks
-        # thing sin count_model
+        # things in count_model
         self.params = cntfit.params
         self.nobs = model.endog.shape[0]
 
