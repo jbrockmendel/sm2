@@ -232,6 +232,7 @@ def get_robustcov_results(self, cov_type='HC1', use_t=None, **kwds):
     if adjust_df:
         # Note: df_resid is used for scale and others, add new attribute
         res.df_resid_inference = n_groups - 1
+        # TODO: I'm not wild about adding a new attribute here
 
     return res
 

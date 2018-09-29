@@ -61,7 +61,7 @@ class Longley(object):
     df_resid = 9
 
     # TODO: taken from Stata; not available in sm yet
-    self.chi2 = 1981.711859508729
+    chi2 = 1981.711859508729
 
     # pearson_chi2 = 836424.1293162981   # from Stata (?) TODO
     fittedvalues = np.array([
@@ -3779,7 +3779,7 @@ class FairTweedieLog15(object):
     df_resid = 6363
 
     # TODO: taken from Stata; not available in sm yet
-    # self.chi2 = 2699.138063147485
+    # chi2 = 2699.138063147485
 
     fittedvalues = [1.10897954981504, 0.537938133372725,
                     0.722602160018842, 0.507247757370731,
