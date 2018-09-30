@@ -35,8 +35,8 @@ class ARIMA111(object):
             self.bic = self.icstats[5]
             self.fittedvalues = self.xb[1:]  # no idea why this initial value
             self.linear = self.y[1:]
-            # their bse are OPG
-            #self.bse = np.diag(self.cov_params) ** .5
+            # stata bse are OPG
+            # self.bse = np.diag(self.cov_params) ** .5
 
             # from gretl
             self.arroots = [1.0640 + 0j]
@@ -44,14 +44,15 @@ class ARIMA111(object):
             self.hqic = 496.8653
             self.aic_gretl = 491.5112
             self.bic_gretl = 504.7442
-            #self.bse = [.205811, .0457010, .0897565]
             self.tvalues = [4.280, 20.57, -8.590]
             self.pvalues = [1.87e-5, 5.53e-94, 8.73e-18]
             self.cov_params = [[0.0423583, -0.00167449, 0.00262911],
                                [-0.00167449, 0.00208858, -0.0035068],
                                [0.00262911, -0.0035068, 0.00805622]]
             self.bse = np.diag(np.sqrt(self.cov_params))
-            # from stata
+            # these bse are approx [.205811, .0457010, .0897565]
+
+            # from stata  # TODO: What is stata and what is gretl??
             # from gretl
             self.forecast = forecast_results['fc111c'][-25:]
             self.forecasterr = forecast_results['fc111cse'][-25:]
@@ -198,15 +199,15 @@ class ARIMA211(object):
             self.linear = self.y[1:]
             self.k_diff = 1
 
-            # their bse are OPG
-            #self.bse = np.diag(self.cov_params) ** .5
+            # stata bse are OPG
+            # self.bse = np.diag(self.cov_params) ** .5
+
             # from gretl
             self.arroots = [1.027 + 0j, 5.7255 + 0j]
             self.maroots = [1.1442 + 0j]
             self.hqic = 496.5314
             self.aic_gretl = 489.8388
             self.bic_gretl = 506.3801
-            #self.bse = [0.248376, 0.102617, 0.0871312, 0.0696346]
             self.tvalues = [3.468, 11.14, -1.941, 12.55]
             self.pvalues = [.0005, 8.14e-29, .0522, 3.91e-36]
             cov_params = np.array([
@@ -217,6 +218,8 @@ class ARIMA211(object):
             self.cov_params = (cov_params + cov_params.T -
                                np.diag(np.diag(cov_params)))
             self.bse = np.diag(np.sqrt(self.cov_params))
+            # these bse are approx [0.248376, 0.102617, 0.0871312, 0.0696346]
+
             self.forecast = forecast_results['fc211c'][-25:]
             self.forecasterr = forecast_results['fc211cse'][-25:]
             self.forecast_dyn = forecast_results['fc211cdyn'][-25:]
@@ -289,6 +292,7 @@ class ARIMA112(object):
             self.cov_params = (cov_params + cov_params.T -
                                np.diag(np.diag(cov_params)))
             self.bse = np.diag(np.sqrt(self.cov_params))
+
             # from gretl
             self.forecast = forecast_results['fc112c'][-25:]
             self.forecasterr = forecast_results['fc112cse'][-25:]

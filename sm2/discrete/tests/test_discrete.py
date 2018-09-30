@@ -157,6 +157,7 @@ class CheckModelResults(CheckModelMixin):
     def test_normalized_cov_params(self):
         pass
 
+    # FIXME: don't comment-out
     #def test_cov_params(self):
     #    assert_allclose(self.res1.cov_params(),
     #                    self.res2.cov_params,
@@ -210,6 +211,7 @@ class TestNegativeBinomialNB2Newton(CheckModelResults):
     mod_kwargs = {"loglike_method": "nb2"}
     fit_kwargs = {"method": "newton", "disp": False}
 
+    # TODO: don't pass; either skip or xfail
     def test_jac(self):
         pass
 
@@ -283,12 +285,15 @@ class TestNegativeBinomialNB1Newton(CheckModelResults):
                         self.res2.conf_int,
                         atol=1e-2)
 
+    # TODO: dont pass; either skip or xfail
     def test_jac(self):
         pass
 
+    # TODO: dont pass; either skip or xfail
     def test_predict(self):
         pass
 
+    # TODO: dont pass; either skip or xfail
     def test_predict_xb(self):
         pass
 
@@ -301,6 +306,7 @@ class TestNegativeBinomialNB2BFGS(CheckModelResults):
     mod_kwargs = {"loglike_method": "nb2"}
     fit_kwargs = {"method": "bfgs", "maxiter": 1000, "disp": False}
 
+    # TODO: dont pass; either skip or xfail
     def test_jac(self):
         pass
 
@@ -374,12 +380,15 @@ class TestNegativeBinomialNB1BFGS(CheckModelResults):
                         self.res2.conf_int,
                         atol=1e-2)
 
+    # TODO: dont pass; either skip or xfail
     def test_jac(self):
         pass
 
+    # TODO: dont pass; either skip or xfail
     def test_predict(self):
         pass
 
+    # TODO: dont pass; either skip or xfail
     def test_predict_xb(self):
         pass
 
@@ -413,6 +422,7 @@ class TestNegativeBinomialGeometricBFGS(CheckModelResults):
                         self.res2.fittedvalues[:10],
                         atol=1e-3)
 
+    # TODO: dont pass; either skip or xfail
     def test_jac(self):
         pass
 
@@ -894,7 +904,6 @@ class TestProbitNCG(CheckProbitSpector):
 
 @pytest.mark.not_vetted
 class TestProbitBasinhopping(CheckProbitSpector):
-    # upstream skips this test conditionally if scipy doesnt have basinhopping
     fit_kwargs = {"method": "basinhopping", "disp": False,
                   "niter": 5,
                   "minimizer": {"method": "L-BFGS-B", "tol": 1e-8}}
@@ -917,7 +926,6 @@ class TestProbitMinimizeDefault(CheckProbitSpector):
 
 @pytest.mark.not_vetted
 class TestProbitMinimizeDogleg(CheckProbitSpector):
-    # upstream skips this test conditionally if scipy doesnt have dogleg
     fit_kwargs = {"method": "minimize", "disp": False,
                   "niter": 5, "tol": 1e-8, "min_method": "dogleg"}
 
@@ -928,7 +936,7 @@ class TestProbitMinimizeAdditionalOptions(CheckProbitSpector):
     fit_kwargs = {"method": "minimize", "disp": False,
                   "maxiter": 500,
                   "min_method": "Nelder-Mead",
-                  "xtol": 1e-4, "ftol": 1e-4}
+                  "xtol": 1e-4, "xatol": 1e-4}
 
 
 @pytest.mark.skip(reason="tools.transform_model not ported from upstream")
@@ -2271,6 +2279,7 @@ class TestSweepAlphaL1(object):
     alphas = np.array([[0.1, 0.1, 0.1, 0.1],
                        [0.4, 0.4, 0.5, 0.5],
                        [0.5, 0.5, 1, 1]])  # / data.exog.shape[0]
+    # TODO: remove commented-out division above
 
     @classmethod
     def setup_class(cls):
@@ -2288,7 +2297,7 @@ class TestSweepAlphaL1(object):
             assert_allclose(res1.params,
                             self.res2.params[i],
                             atol=1.5e-4)
-            # 2018-03-08: 1.5e-4 vs 1e-4 makes a difference
+            # Note: tolerance is tight; this fails with atol=1e-4
 
 
 @pytest.mark.not_vetted
@@ -2532,11 +2541,9 @@ def test_mnlogit_non_square():
 
     assert smry == test_case[:-1]
 
-    """
-    # summary2 not implemented in sm2 as of 2018-03-04 (also smoketests suck)
+    # summary2 not implemented in sm2 as of 2018-03-04
     # smoke test for summary2
-    res1.summary2()  # see GH#3651
-    """
+    # res1.summary2()  # see GH#3651
 
 
 def test_mnlogit_2dexog():
@@ -2691,3 +2698,35 @@ def test_binary_pred_table_zeros():
     assert_equal(res.pred_table(), expected)
 
     check_inherited_attributes(res)
+
+
+@pytest.mark.parametrize('method', ['newton', 'bfgs'])
+@pytest.mark.parametrize('cov_type', ['nonrobust', 'HC0', 'HC1', 'HC2', 'HC3'])
+@pytest.mark.parametrize('use_t', [True, False])
+@pytest.mark.parametrize('use_transparams', [True, False])
+@pytest.mark.parametrize('mod_cls', [NegativeBinomialP,
+                                     GeneralizedPoisson,
+                                     Poisson])
+def test_cov_types_attached(mod_cls, use_transparams, use_t, cov_type, method):
+    # GH#5234 Test that cov_type and use_t are correctly attached to the
+    # results of `model.fit`
+
+    # avoid runtime warning in cases where use_transparams is ignored
+    use_transparams = use_transparams and method not in ['newton', 'ncg']
+
+    # Data construction based
+    # on TestNegativeBinomialPL1Compatability.setup_class
+    rand_data = sm2.datasets.randhie.load(as_pandas=False)
+
+    rand_exog = rand_data.exog.view(float).reshape(len(rand_data.exog), -1)
+    rand_exog_st = (rand_exog - rand_exog.mean(0)) / rand_exog.std(0)
+    rand_exog = add_constant(rand_exog_st, prepend=True)
+
+    # Use only first 500 observations to trim runtime
+    model = mod_cls(rand_data.endog[:500], rand_exog[:500])
+    result = model.fit(method=method, cov_type=cov_type, use_t=use_t,
+                       use_transparams=use_transparams,
+                       disp=False)
+
+    assert result.use_t is use_t
+    assert result.cov_type == cov_type

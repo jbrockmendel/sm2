@@ -13,7 +13,7 @@ http://jgill.wustl.edu/research/books.html
 """
 DESCRSHORT = """Taxation Powers' Yes Vote for Scottish Parliamanet-1997"""
 
-DESCRLONG  = """
+DESCRLONG = """
 This data is based on the example in Gill and describes the proportion of
 voters who voted Yes to grant the Scottish Parliament taxation powers.
 The data are divided into 32 council districts.  This example's explanatory

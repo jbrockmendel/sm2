@@ -10,7 +10,6 @@ from sm2.tools.decorators import (cache_writable,
                                   deprecated_alias, copy_doc)
 
 
-
 def dummy_factory(msg, remove_version, warning):
     # For testing deprecated alias
     # ported from bashtage's port in GH#5220 upstream
@@ -36,7 +35,7 @@ def test_deprecated_alias(msg, remove_version, warning):
     with pytest.warns(warning) as w:
         dummy_set.y = 2
         assert dummy_set.x == 2
-    
+
     assert warning.__class__ is w[0].category.__class__
 
     dummy_get = dummy_factory(msg, remove_version, warning)
@@ -55,7 +54,7 @@ def test_deprecated_alias(msg, remove_version, warning):
         assert msg in message
 
 
-# TODO: is this rendered irrelevant by the parametrized tests 
+# TODO: is this rendered irrelevant by the parametrized tests above?
 class TestDeprecatedAlias(object):
 
     @classmethod

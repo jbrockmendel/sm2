@@ -58,8 +58,9 @@ def pandas_wrapper_bunch(func, trim_head=None, trim_tail=None,
 
 def pandas_wrapper_predict(func, trim_head=None, trim_tail=None,
                            columns=None, *args, **kwargs):  # pragma: no cover
-    raise NotImplementedError("pandas_wrapper_predict not ported from upstream "
-                              "as it is neither used nor tested there.")
+    raise NotImplementedError("pandas_wrapper_predict not ported from "
+                              "upstream as it is neither used nor tested "
+                              "there.")
 
 
 def pandas_wrapper_freq(func, trim_head=None, trim_tail=None,

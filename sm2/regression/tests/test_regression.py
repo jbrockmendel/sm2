@@ -16,8 +16,9 @@ from scipy.linalg import toeplitz
 from scipy import stats
 from patsy import PatsyError
 
+from sm2.tools.sm_exceptions import MissingDataError
 from sm2.tools.tools import add_constant, categorical
-from sm2.regression.linear_model import OLS, WLS, GLS
+from sm2.regression.linear_model import OLS, WLS, GLS, GLSAR
 from sm2 import datasets
 
 from .results import results_regression
@@ -411,11 +412,11 @@ class TestGLS_OLS(CheckRegressionResults):
 #     data = datasets.sunspots.load(as_pandas=False)
 #     model = AR(data.endog, rho=4).fit()
 #     R_res = RModel(data.endog, aic="FALSE", order_max=4)#
-
+#
 #     def test_params(self):
 #         assert_almost_equal(self.model.rho,
 #         pass
-
+#
 #     def test_order(self):
 #        # In R this can be defined or chosen by minimizing the AIC if aic=True
 #        pass
@@ -1250,6 +1251,65 @@ def test_ols_bad_size_raises():
         OLS(data, data[1:])
 
 
+@pytest.mark.parametrize('mod', [OLS, GLS, WLS, GLSAR])
+@pytest.mark.parametrize('bad_value', [np.nan, np.inf])
+@pytest.mark.parametrize('use_pandas', [True, False])
+def test_test_finite_check(mod, bad_value, use_pandas):
+    # GH#4969
+    endog = np.random.randn(100)
+    exog = np.random.randn(100, 2)
+    if use_pandas:
+        endog = pd.Series(endog)
+        exog = pd.DataFrame(exog)
+
+    endog_missing = endog.copy()
+    endog_missing[50] = bad_value
+
+    with pytest.raises(MissingDataError) as err:
+        mod(endog_missing, exog)
+
+    assert err.type is MissingDataError
+    assert 'endog' in err.value.args[0]
+
+    if bad_value is np.nan:
+        mod(endog_missing, exog, missing='drop')
+
+    arr = exog.values if use_pandas else exog
+    arr[0] = bad_value
+    with pytest.raises(MissingDataError) as err:
+        mod(endog, exog)
+
+    assert err.type is MissingDataError
+    assert 'exog' in err.value.args[0]
+
+    if bad_value is np.nan:
+        mod(endog, exog, missing='drop')
+
+
+@pytest.mark.parametrize('use_pandas', [True, False])
+@pytest.mark.parametrize('bad_value', [np.nan, np.inf])
+def test_finite_weight_sigma(bad_value, use_pandas):
+    # GH#4969
+    endog = np.random.randn(100)
+    exog = np.random.randn(100, 2)
+    weights = sigma = np.ones(100)
+    weights[-2:] = bad_value
+    if use_pandas:
+        sigma = weights = pd.Series(weights)
+
+    with pytest.raises(MissingDataError) as err:
+        WLS(endog, exog, weights=weights)
+
+    assert err.type is MissingDataError
+    assert 'weights' in err.value.args[0]
+
+    with pytest.raises(MissingDataError) as err:
+        GLS(endog, exog, sigma=sigma)
+
+    assert err.type is MissingDataError
+    assert 'sigma' in err.value.args[0]
+
+
 # -------------------------------------------------------------
 # Issue Regression Tests
 
@@ -1374,7 +1434,7 @@ def test_summary_rsquared_label():
     reg_with_constant = OLS(y, x, hasconst=True).fit()
     # assert 'R-squared:' in str(reg_with_constant.summary2())
     assert 'R-squared:' in str(reg_with_constant.summary())
-    
+
     reg_without_constant = OLS(y, x, hasconst=False).fit()
     # assert 'R-squared (uncentered):' in str(reg_without_constant.summary2())
-    assert 'R-squared (uncentered):' in str(reg_without_constant.summary()) 
+    assert 'R-squared (uncentered):' in str(reg_without_constant.summary())

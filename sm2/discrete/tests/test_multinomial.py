@@ -156,7 +156,7 @@ def test_pdf_equiv():
     # Check that differentiating cdf matches pdf
     pdf1 = np.zeros((J - 1, J - 1))
     for k in range(J - 1):
-        func = lambda x: model.cdf(x.reshape(1, -1))[0][k]
+        func = lambda x: model.cdf(x.reshape(1, -1))[0][k]  # noqa:E731
         pdf1[k, :] = approx_fprime(Xb[0], func)
 
     pdf2 = model.pdf(Xb[:1])[0]

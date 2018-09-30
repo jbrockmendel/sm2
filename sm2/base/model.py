@@ -481,7 +481,6 @@ class LikelihoodModel(Model):
                                   "from upstream")
 
 
-
 class GenericLikelihoodModel(LikelihoodModel):
     # TODO: methods that may be worth porting from upstream:
     #   _set_extra_param_names

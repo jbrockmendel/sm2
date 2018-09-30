@@ -241,13 +241,14 @@ class Test_Y_ARMA11_NoConst(CheckArmaResultsMixin, CheckForecastMixin):
         cls.res1.forecast_err = fc_err
         cls.res2 = results_arma.Y_arma11()
 
+    # TODO: share with test_ar? other test classes?
     def test_pickle(self):
         fh = BytesIO()
         # test wrapped results load save pickle
         self.res1.save(fh)
         fh.seek(0, 0)
         res_unpickled = self.res1.__class__.load(fh)
-        assert type(res_unpickled) is type(self.res1)
+        assert type(res_unpickled) is type(self.res1)  # noqa:E721
         # TODO: Test equality instead of just type equality?
 
 
@@ -2461,17 +2462,18 @@ def test_plot_predict(close_figures):
     dta = datasets.sunspots.load_pandas().data[['SUNACTIVITY']]
     dta.index = pd.DatetimeIndex(start='1700', end='2009', freq='A')[:309]
 
+    # TODO: parametrize?
     res = ARMA(dta, (3, 0)).fit(disp=-1)
     for dynamic in [True, False]:
         for plot_insample in [True, False]:
-            fig = res.plot_predict('1990', '2012', dynamic=dynamic,
-                                   plot_insample=plot_insample)
+            res.plot_predict('1990', '2012', dynamic=dynamic,
+                             plot_insample=plot_insample)
 
     res = ARIMA(dta, (3, 1, 0)).fit(disp=-1)
     for dynamic in [True, False]:
         for plot_insample in [True, False]:
-            fig = res.plot_predict('1990', '2012', dynamic=dynamic,
-                                   plot_insample=plot_insample)
+            res.plot_predict('1990', '2012', dynamic=dynamic,
+                             plot_insample=plot_insample)
 
 
 def test_arima_forecast_exog_incorrect_size():
@@ -2486,7 +2488,7 @@ def test_arima_forecast_exog_incorrect_size():
         mod.forecast(steps=10, alpha=0.05, exog=newx[:5])
     with pytest.raises(ValueError):
         mod.forecast(steps=10, alpha=0.05)
-    
+
     too_many = pd.DataFrame(np.zeros((10, 2)),
                             columns=['x1', 'x2'])
     with pytest.raises(ValueError):

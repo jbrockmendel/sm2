@@ -11,15 +11,18 @@ TITLE = """World Bank Fertility Data"""
 SOURCE = """
 This data has been acquired from
 
-The World Bank: Fertility rate, total (births per woman): World Development Indicators
+The World Bank: Fertility rate, total (births per woman): World Development
+Indicators
 
 At the following URL: http://data.worldbank.org/indicator/SP.DYN.TFRT.IN
 
 The sources for these statistics are listed as
 
 (1) United Nations Population Division. World Population Prospects
-(2) United Nations Statistical Division. Population and Vital Statistics Repot (various years)
-(3) Census reports and other statistical publications from national statistical offices
+(2) United Nations Statistical Division. Population and Vital Statistics
+    Report (various years)
+(3) Census reports and other statistical publications from national
+    statistical offices
 (4) Eurostat: Demographic Statistics
 (5) Secretariat of the Pacific Community: Statistics and Demography Programme
 (6) U.S. Census Bureau: International Database

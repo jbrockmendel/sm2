@@ -80,7 +80,7 @@ class ARResultsOLS(object):
             # self.hqic = 8.353136159250697
 
             # NOTE: predictions were taken from gretl, but agree with Stata
-            # test predict
+            #    test predict
             # TODO: remove one of the files
             filename = os.path.join(cur_dir, "AROLSConstantPredict.csv")
             predictresults = np.loadtxt(filename)

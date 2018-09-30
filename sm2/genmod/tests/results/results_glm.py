@@ -59,10 +59,11 @@ class Longley(object):
     bic_Stata = 836399.1760177979  # no bic in R?
     df_model = 6
     df_resid = 9
-    chi2 = 1981.711859508729
-    # TODO: taken from Stata not available in sm yet
 
-    # pearson_chi2 = 836424.1293162981   # from Stata (?)
+    # TODO: taken from Stata; not available in sm yet
+    chi2 = 1981.711859508729
+
+    # pearson_chi2 = 836424.1293162981   # from Stata (?) TODO
     fittedvalues = np.array([
         60055.659970240202, 61216.013942398131,
         60124.71283224225, 61597.114621930756,
@@ -192,7 +193,10 @@ class GaussianLog(object):
     bic_Stata = -446.7014211525822
     df_model = 2
     df_resid = 97
-    chi2 = 33207648.86501769   # from Stata not in sm
+
+    # TODO: taken from Stata; not available in sm yet
+    chi2 = 33207648.86501769
+
     fittedvalues = np.array([
         2.7181850213327747, 2.664122305869506,
         2.6106125414084405, 2.5576658143523567, 2.5052916730829535,
@@ -346,7 +350,7 @@ class GaussianInverse(object):
     bic_Stata = -446.7014364279675
     df_model = 2
     df_resid = 97
-    chi2 = 2704006.698904491
+    chi2 = 2704006.698904491  # TODO: is this taken from stata?
     fittedvalues = np.array([
         0.99954024, 0.97906956, 0.95758077, 0.93526008, 0.91228657,
         0.88882978, 0.8650479, 0.84108646, 0.81707757, 0.79313958,
@@ -498,7 +502,10 @@ class Lbw(object):
     deviance = 201.4479911325021
     scale = 1
     llf = -100.7239955662511
-    chi2 = 25.65329337867037  # from Stata not used by sm
+
+    # TODO: taken from Stata; not available in sm yet
+    chi2 = 25.65329337867037
+
     null_deviance = 234.671996193219
     bic_Stata = -742.0664715782335
     df_resid = 180
@@ -666,7 +673,9 @@ class CancerLog(Cancer):
     bic_Stata = -154.1582089453923  # from Stata
     df_model = 3
     df_resid = 44
-    chi2 = 36.77821448266359  # from Stata not in sm
+
+    # TODO: taken from Stata; not available in sm yet
+    chi2 = 36.77821448266359
 
     fittedvalues = np.array([
         6.78419193, 5.67167253, 7.41979002, 10.15123371,
@@ -791,7 +800,10 @@ class Cpunish(object):
     aic_R = 77.8546573896503   # same as Stata
     aic_Stata = 4.579685683305706
     bic_Stata = -9.740492454486446
-    chi2 = 128.8021169250578   # from Stata not in sm
+
+    # TODO: taken from Stata; not available in sm yet
+    chi2 = 128.8021169250578
+
     llf = -31.92732869482515
     scale = 1
     pearson_chi2 = 24.75374835
@@ -1900,7 +1912,10 @@ class InvGaussLog(Medpar1):
     # llf = -9268.9182107979905  # from R; we're using Stata version
     llf = -12162.72308108797     # from Stata, big rounding diff with R
     bic_Stata = -29849.51723280784
-    chi2 = 398.5465213008323   # from Stata not in sm
+
+    # TODO: taken from Stata; not available in sm yet
+    chi2 = 398.5465213008323
+
     df_model = 2
     df_resid = 3673
     fittedvalues = np.array([
@@ -2660,7 +2675,10 @@ class InvGaussIdentity(Medpar1):
     aic_Stata = 6.619290231464371
     bic_Stata = -29848.45250412075
     llf_stata = -12163.25544543151
-    chi2 = 567.1229375785638  # in Stata not sm
+
+    # TODO: taken from Stata; not available in sm yet
+    chi2 = 567.1229375785638
+
     # llf = -9275.3386384410078  # from R; we're using Stata version
     llf = -12163.25545           # from Stata, big diff with R
     scale = 0.10115387793455666
@@ -3475,8 +3493,9 @@ class Wfs(object):
     bic_Stata = -179.9959200693088  # no bic in R?
     df_model = 10
     df_resid = 59
+
+    # TODO: taken from Stata; not available in sm yet
     chi2 = 2699.138063147485
-    # TODO: taken from Stata not available in sm yet
 
     fittedvalues = [
         7.11599, 19.11356, 33.76075, 33.26743, 11.94399,
@@ -3545,8 +3564,9 @@ class CpunishTweediePower15(object):
     # bic_Stata = -179.9959200693088  # no bic in R?
     df_model = 1
     df_resid = 15
+
+    # TODO: taken from Stata; not available in sm yet
     # chi2 = 2699.138063147485
-    # TODO: taken from Stata not available in sm yet
 
     fittedvalues = [8.09501758000751, 8.42856326056927,
                     1.68642881732415, 7.74178229423817,
@@ -3611,8 +3631,9 @@ class CpunishTweediePower2(object):
     # bic_Stata = -179.9959200693088  # no bic in R?
     df_model = 1
     df_resid = 15
+
+    # TODO: taken from Stata; not available in sm yet
     # chi2 = 2699.138063147485
-    # TODO: taken from Stata not available in sm yet
 
     fittedvalues = [8.06024318838318, 8.39480078450791,
                     1.69154512871877, 7.7059362524505,
@@ -3679,8 +3700,9 @@ class CpunishTweedieLog1(object):
     # bic_Stata = -179.9959200693088 # no bic in R?
     df_model = 1
     df_resid = 15
+
+    # TODO: taken from Stata; not available in sm yet
     # chi2 = 2699.138063147485
-    # TODO: taken from Stata not available in sm yet
 
     fittedvalues = [8.27689906137016, 9.30731835845648,
                     1.80984539843424, 7.30975297068573,
@@ -3755,8 +3777,9 @@ class FairTweedieLog15(object):
     # bic_Stata = -179.9959200693088 # no bic in R?
     df_model = 2
     df_resid = 6363
+
+    # TODO: taken from Stata; not available in sm yet
     # chi2 = 2699.138063147485
-    # TODO: taken from Stata not available in sm yet
 
     fittedvalues = [1.10897954981504, 0.537938133372725,
                     0.722602160018842, 0.507247757370731,

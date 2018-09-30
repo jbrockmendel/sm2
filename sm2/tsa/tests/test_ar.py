@@ -58,7 +58,7 @@ class CheckARMixin(object):
         self.res1.save(fh)
         fh.seek(0, 0)
         res_unpickled = self.res1.__class__.load(fh)
-        assert type(res_unpickled) is type(self.res1)
+        assert type(res_unpickled) is type(self.res1)  # noqa:E721
         # TODO: Better to test equality?  Is equality even defined?
 
 

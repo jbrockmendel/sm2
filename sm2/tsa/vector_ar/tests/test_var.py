@@ -26,7 +26,7 @@ have_matplotlib = False
 try:
     import matplotlib  # noqa:F401
     have_matplotlib = True
-    import matplotlib.pyplot as plt
+    import matplotlib.pyplot as plt  # noqa:F401
     plt.switch_backend('Agg')  # otherwise segfault on windows
 except ImportError:
     pass
@@ -306,7 +306,6 @@ class CheckIRF(object):
     @pytest.mark.smoke
     @pytest.mark.matplotlib
     def test_plot_irf(self, close_figures):
-        import matplotlib.pyplot as plt
         self.irf.plot()
         self.irf.plot(plot_stderr=False)
 
@@ -321,7 +320,6 @@ class CheckIRF(object):
     @pytest.mark.matplotlib
     def test_plot_cum_effects(self, close_figures):
         # I need close after every plot to avoid segfault, see GH#3158
-        import matplotlib.pyplot as plt
         self.irf.plot_cum_effects()
         self.irf.plot_cum_effects(plot_stderr=False)
         self.irf.plot_cum_effects(impulse=0, response=1)
@@ -414,7 +412,7 @@ class TestVARResults(CheckIRF, CheckFEVD):
 
     @pytest.mark.skip(reason="get_eq_index not ported from upstream")
     def test_get_eq_index(self):
-        assert type(self.res.names) is list
+        assert type(self.res.names) is list  # noqa:E721
 
         for i, name in enumerate(self.names):
             idx = self.res.get_eq_index(i)
@@ -568,7 +566,7 @@ class TestVARResults(CheckIRF, CheckFEVD):
         self.res.save(fh)
         fh.seek(0, 0)
         res_unpickled = self.res.__class__.load(fh)
-        assert type(res_unpickled) is type(self.res)
+        assert type(res_unpickled) is type(self.res)  # noqa:E721
         # TODO: Check something other than type equality?  not very meaningful
 
 

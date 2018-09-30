@@ -38,7 +38,7 @@ from six.moves import range
 import numpy as np
 from scipy import stats
 
-from sm2.tools.sm_exceptions import InvalidTestWarning
+from sm2.tools.sm_exceptions import InvalidTestWarning, MissingDataError
 from sm2.tools.tools import chain_dot, pinv_extended
 from sm2.tools.decorators import (resettable_cache,
                                   cache_readonly, cached_data, cached_value,
@@ -194,6 +194,9 @@ class RegressionModel(base.LikelihoodModel):
 
         super(RegressionModel, self).__init__(endog, exog, **kwargs)
         self._data_attr.extend(['pinv_wexog', 'wendog', 'wexog', 'weights'])
+        # TODO: can we get rid of _data_attr?
+
+        self._check_finite(list(kwargs.keys()))
 
     # TODO: merge this into __init__
     def initialize(self):
@@ -201,6 +204,17 @@ class RegressionModel(base.LikelihoodModel):
         # makes merging this into __init__ troublesome
         self.wexog = self.whiten(self.exog)
         self.wendog = self.whiten(self.endog)
+
+    def _check_finite(self, additional_vars):
+        # GH#4969
+        checks = ['endog', 'exog'] + additional_vars
+        msg = '{0} contains Inf/NaN values. Model cannot be estimated.'
+        for check in checks:
+            if not hasattr(self, check):
+                continue
+            val = getattr(self, check)
+            if isinstance(val, np.ndarray) and not np.all(np.isfinite(val)):
+                raise MissingDataError(msg.format(check))
 
     @property
     def df_model(self):

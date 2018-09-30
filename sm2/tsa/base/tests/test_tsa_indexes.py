@@ -260,7 +260,7 @@ def test_instantiation_valid_range_index():
         endog.index = supported_increment_indexes[1][0]
 
         mod = tsa_model.TimeSeriesModel(endog)
-        assert type(mod._index) is pd.RangeIndex
+        assert type(mod._index) is pd.RangeIndex  # noqa:E721
         assert mod._index_none is False
         assert mod._index_dates is False
         assert mod._index_generated is False
@@ -642,7 +642,7 @@ def test_prediction_increment_pandas_dates():
     assert start == 0
     assert end == nobs - 1
     assert out_of_sample == 0
-    assert type(prediction_index) == type(endog.index)  # noqa: E721
+    assert type(prediction_index) is type(endog.index)  # noqa: E721
     assert prediction_index.equals(mod._index)
 
     # Negative index: [-2, end]
@@ -654,7 +654,7 @@ def test_prediction_increment_pandas_dates():
     assert start == 3
     assert end == 4
     assert out_of_sample == 0
-    assert type(prediction_index) == type(endog.index)  # noqa: E721
+    assert type(prediction_index) is type(endog.index)  # noqa: E721
     assert prediction_index.equals(mod._index[3:])
 
     # Forecasting: [1, 5]; the index is an extended version of the date index
@@ -702,7 +702,7 @@ def test_prediction_increment_pandas_dates_nanosecond():
     assert start == 0
     assert end == nobs - 1
     assert out_of_sample == 0
-    assert type(prediction_index) == type(endog.index)  # noqa: E721
+    assert type(prediction_index) is type(endog.index)  # noqa: E721
     assert prediction_index.equals(mod._index)
 
     # Negative index: [-2, end]
@@ -714,7 +714,7 @@ def test_prediction_increment_pandas_dates_nanosecond():
     assert start == 3
     assert end == 4
     assert out_of_sample == 0
-    assert type(prediction_index) == type(endog.index)  # noqa: E721
+    assert type(prediction_index) is type(endog.index)  # noqa: E721
     assert prediction_index.equals(mod._index[3:])
 
     # Forecasting: [1, 5]; the index is an extended version of the date index
@@ -802,7 +802,7 @@ def test_range_index():
     # Warning should not be given
     with warnings.catch_warnings(record=True) as w:
         warnings.simplefilter('always')
-        mod = tsa_model.TimeSeriesModel(endog)
+        tsa_model.TimeSeriesModel(endog)
         assert len(w) == 0
 
 

@@ -166,9 +166,9 @@ def normality_summary(results):
 
 
 def hypothesis_test_table(results, title, null_hyp):
-    raise NotImplementedError("hypothesis_test_table not ported from upstream, "
-                              "as it is not used or tested outside of one "
-                              "example file.")  # pragma: no cover
+    raise NotImplementedError("hypothesis_test_table not ported from "
+                              "upstream, as it is not used or tested outside "
+                              "of one example file.")  # pragma: no cover
 
 
 def pprint_matrix(values, rlabels, clabels, col_space=None):

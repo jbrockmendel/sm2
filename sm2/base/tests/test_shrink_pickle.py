@@ -5,7 +5,6 @@ Created on Fri Mar 09 16:00:27 2012
 
 Author: Josef Perktold
 """
-from __future__ import print_function
 import warnings
 
 from six import BytesIO, iterkeys
@@ -13,7 +12,6 @@ from six.moves import cPickle
 
 import pytest
 import numpy as np
-from numpy.testing import assert_
 import pandas as pd
 import pandas.util.testing as tm
 
@@ -87,7 +85,7 @@ class RemoveDataPickle(object):
 
         # Note: l_max is just a guess for the limit on the length of the pickle
         l_max = self.l_max
-        assert_(plen < l_max, msg='pickle length not %d < %d' % (plen, l_max))
+        assert plen < l_max
 
         pred3 = results.predict(xf, **pred_kwds)
         assert_equal(pred1, pred3)
@@ -102,7 +100,7 @@ class RemoveDataPickle(object):
         self.results._results.save(fh)
         fh.seek(0, 0)
         res_unpickled = self.results._results.__class__.load(fh)
-        assert type(res_unpickled) == type(self.results._results)
+        assert type(res_unpickled) is type(self.results._results)  # noqa:E721
         # TODO: Check equality instead?  This check isnt exactly meaningful
 
         # test wrapped results load save
@@ -111,24 +109,24 @@ class RemoveDataPickle(object):
         fh.seek(0, 0)
         res_unpickled = self.results.__class__.load(fh)
         fh.close()
-        assert type(res_unpickled) == type(self.results)
+        assert type(res_unpickled) is type(self.results)  # noqa:E721
         # TODO: Check equality instead?  This check isnt exactly meaningful
 
         before = sorted(iterkeys(self.results.__dict__))
         after = sorted(iterkeys(res_unpickled.__dict__))
-        assert_(before == after, msg='not equal %r and %r' % (before, after))
+        assert before == after
 
         before = sorted(iterkeys(self.results._results.__dict__))
         after = sorted(iterkeys(res_unpickled._results.__dict__))
-        assert_(before == after, msg='not equal %r and %r' % (before, after))
+        assert before == after
 
         before = sorted(iterkeys(self.results.model.__dict__))
         after = sorted(iterkeys(res_unpickled.model.__dict__))
-        assert_(before == after, msg='not equal %r and %r' % (before, after))
+        assert before == after
 
         before = sorted(iterkeys(self.results._cache))
         after = sorted(iterkeys(res_unpickled._cache))
-        assert_(before == after, msg='not equal %r and %r' % (before, after))
+        assert before == after
 
 
 @pytest.mark.not_vetted

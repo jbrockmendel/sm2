@@ -75,7 +75,8 @@ mse = forecast_cov
 def _forecast_vars(steps, ma_coefs, sig_u):  # pragma: no cover
     raise NotImplementedError("_forecast_vars not ported from upstream, "
                               "as (contrary to its docstring) it is entirely "
-                              "redundant with VARREsults methods.  See GH#4459")
+                              "redundant with VARREsults methods.  "
+                              "See GH#4459")
 
 
 def forecast_interval(y, coefs, trend_coefs, sig_u, steps=5, alpha=0.05,
@@ -266,7 +267,7 @@ class LagOrderResults:
                    + ", FPE -> " + str(self.fpe) \
                    + ", HQIC -> " + str(self.hqic) + ">"
 
-# -------------------------------------------------------------------------------
+# -------------------------------------------------------------------------
 # VARProcess class: for known or unknown VAR process
 
 
@@ -1235,8 +1236,8 @@ class VARResults(VARProcess, tsa_model.TimeSeriesModelResults):
         upper[:, :self.k_exog] = np.eye(self.k_exog)
 
         lower_dim = self.neqs * (self.k_ar - 1)
-        I = np.eye(lower_dim)
-        lower = np.column_stack((np.zeros((lower_dim, self.k_exog)), I,
+        Imat = np.eye(lower_dim)
+        lower = np.column_stack((np.zeros((lower_dim, self.k_exog)), Imat,
                                  np.zeros((lower_dim, self.neqs))))
 
         return np.vstack((upper, self.params.T, lower))
@@ -1349,7 +1350,8 @@ class VARResults(VARProcess, tsa_model.TimeSeriesModelResults):
                                                    steps,
                                                    alpha=alpha)
         return plotting.plot_var_forc(self.endog, mid, lower, upper,
-                                      names=self.names, plot_stderr=plot_stderr)
+                                      names=self.names,
+                                      plot_stderr=plot_stderr)
 
     # -----------------------------------------------------------------
     # VAR Diagnostics: Granger-causality, whiteness of

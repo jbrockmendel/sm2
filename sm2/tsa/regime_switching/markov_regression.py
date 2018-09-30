@@ -155,8 +155,9 @@ class MarkovRegression(markov_switching.MarkovSwitching):
         elif len(self.switching_exog) != self.k_exog:
             raise ValueError('Invalid iterable passed to `switching_exog`.')
 
-        self.switching_coeffs = np.r_[self.switching_trend,
-                                      self.switching_exog].astype(bool).tolist()
+        switching_coeffs = np.r_[self.switching_trend,
+                                 self.switching_exog].astype(bool).tolist()
+        self.switching_coeffs = switching_coeffs
 
         # Parameters
         self.parameters['exog'] = self.switching_coeffs

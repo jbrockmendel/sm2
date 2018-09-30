@@ -92,11 +92,11 @@ def load_pandas():
 def _get_data():
     data = du.load_csv(__file__, 'star98.csv')
     names = ["NABOVE", "NBELOW", "LOWINC", "PERASIAN", "PERBLACK", "PERHISP",
-            "PERMINTE", "AVYRSEXP", "AVSALK", "PERSPENK", "PTRATIO", "PCTAF",
-            "PCTCHRT", "PCTYRRND","PERMINTE_AVYRSEXP", "PERMINTE_AVSAL",
-            "AVYRSEXP_AVSAL", "PERSPEN_PTRATIO", "PERSPEN_PCTAF",
-            "PTRATIO_PCTAF", "PERMINTE_AVYRSEXP_AVSAL",
-            "PERSPEN_PTRATIO_PCTAF"]
+             "PERMINTE", "AVYRSEXP", "AVSALK", "PERSPENK", "PTRATIO", "PCTAF",
+             "PCTCHRT", "PCTYRRND", "PERMINTE_AVYRSEXP", "PERMINTE_AVSAL",
+             "AVYRSEXP_AVSAL", "PERSPEN_PTRATIO", "PERSPEN_PCTAF",
+             "PTRATIO_PCTAF", "PERMINTE_AVYRSEXP_AVSAL",
+             "PERSPEN_PTRATIO_PCTAF"]
     data.columns = names
     nabove = data['NABOVE'].copy()
     nbelow = data['NBELOW'].copy()
