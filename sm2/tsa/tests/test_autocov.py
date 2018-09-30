@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 import os
+
 import pytest
 import pandas as pd
 import numpy as np
@@ -12,6 +13,7 @@ from sm2.datasets import sunspots, macrodata
 
 from sm2.tsa.stattools import levinson_durbin
 from sm2.tsa.autocov import (
+    acovf, acf,
     yule_walker, levinson_durbin_pacf, pacf_yw, pacf_burg, burg)
 from sm2.tsa import autocov
 
@@ -41,6 +43,13 @@ class CheckCorrGram(object):
 
 # -----------------------------------------------------------------
 
+@pytest.fixture('module')
+def acovf_data():
+    # GH#4937
+    rnd = np.random.RandomState(12345)
+    return rnd.randn(250)
+
+
 @pytest.mark.not_vetted
 class TestACF(CheckCorrGram):
     """
@@ -50,7 +59,8 @@ class TestACF(CheckCorrGram):
     def setup_class(cls):
         cls.acf = cls.results['acvar']
         cls.qstat = cls.results['Q1']
-        cls.res1 = autocov.acf(cls.x, nlags=40, qstat=True, alpha=.05)
+        cls.res1 = acf(cls.x, nlags=40,
+                       qstat=True, alpha=.05, fft=False)
         cls.confint_res = cls.results[['acvar_lb', 'acvar_ub']].values
 
     def test_acf(self):
@@ -78,20 +88,20 @@ class TestACFMissing(CheckCorrGram):
         cls.x = np.concatenate((np.array([np.nan]), cls.x))
         cls.acf = cls.results['acvar']  # drop and conservative
         cls.qstat = cls.results['Q1']
-        cls.res_drop = autocov.acf(cls.x, nlags=40, qstat=True, alpha=.05,
-                                   missing='drop')
-        cls.res_conservative = autocov.acf(cls.x, nlags=40,
-                                           qstat=True, alpha=.05,
-                                           missing='conservative')
+        cls.res_drop = acf(cls.x, nlags=40, qstat=True, alpha=.05,
+                           missing='drop', fft=False)
+        cls.res_conservative = acf(cls.x, nlags=40,
+                                   qstat=True, alpha=.05,
+                                   missing='conservative', fft=False)
         cls.acf_none = np.empty(40) * np.nan  # lags 1 to 40 inclusive
         cls.qstat_none = np.empty(40) * np.nan
-        cls.res_none = autocov.acf(cls.x, nlags=40, qstat=True, alpha=.05,
-                                   missing='none')
+        cls.res_none = acf(cls.x, nlags=40, qstat=True, alpha=.05,
+                           missing='none', fft=False)
 
     def test_raise(self):
         with pytest.raises(MissingDataError):
-            autocov.acf(self.x, nlags=40, qstat=True, alpha=0.5,
-                        missing='raise')
+            acf(self.x, nlags=40, qstat=True, alpha=0.5,
+                missing='raise', fft=False)
 
     def test_acf_none(self):
         assert_almost_equal(self.res_none[0][1:41],
@@ -129,7 +139,7 @@ class TestACF_FFT(CheckCorrGram):
     def setup_class(cls):
         cls.acf = cls.results['acvarfft']
         cls.qstat = cls.results['Q1']
-        cls.res1 = autocov.acf(cls.x, nlags=40, qstat=True, fft=True)
+        cls.res1 = acf(cls.x, nlags=40, qstat=True, fft=True)
 
     def test_acf(self):
         assert_almost_equal(self.res1[0][1:], self.acf, 8)
@@ -142,10 +152,10 @@ class TestACF_FFT(CheckCorrGram):
 @pytest.mark.not_vetted
 def test_acf():
     # upstream this is in tsa.tests.test_tsa_tools
-    acf_x = autocov.acf(x100, unbiased=False)[0][:21]
+    acf_x = acf(x100, unbiased=False, fft=False)[0][:21]
     assert_array_almost_equal(mlacf.acf100.ravel(), acf_x, 8)
     # TODO: why only dec=8?
-    acf_x = autocov.acf(x1000, unbiased=False)[0][:21]
+    acf_x = acf(x1000, unbiased=False, fft=False)[0][:21]
     assert_array_almost_equal(mlacf.acf1000.ravel(), acf_x, 8)
     # TODO: why only dec=9? (comment out of date?)
 
@@ -206,12 +216,12 @@ def test_acovf2d():
     dta = sunspots.load_pandas().data
     dta.index = pd.DatetimeIndex(start='1700', end='2009', freq='A')[:309]
     del dta["YEAR"]
-    res = autocov.acovf(dta)
-    assert_equal(res, autocov.acovf(dta.values))
+    res = acovf(dta, fft=False)
+    assert_equal(res, acovf(dta.values, fft=False))
 
     X = np.random.random((10, 2))
     with pytest.raises(ValueError):
-        autocov.acovf(X)
+        acovf(X, fft=False)
 
 
 @pytest.mark.not_vetted
@@ -222,8 +232,8 @@ def test_acovf_fft_vs_convolution():
     # TODO: parametrize?
     for demean in [True, False]:
         for unbiased in [True, False]:
-            F1 = autocov.acovf(q, demean=demean, unbiased=unbiased, fft=True)
-            F2 = autocov.acovf(q, demean=demean, unbiased=unbiased, fft=False)
+            F1 = acovf(q, demean=demean, unbiased=unbiased, fft=True)
+            F2 = acovf(q, demean=demean, unbiased=unbiased, fft=False)
             assert_almost_equal(F1, F2, decimal=7)
 
 
@@ -231,8 +241,54 @@ def test_acovf_fft_vs_convolution():
 def test_acf_fft_dataframe():
     # GH#322
     data = sunspots.load_pandas().data[['SUNACTIVITY']]
-    result = autocov.acf(data, fft=True)[0]
+    result = acf(data, fft=True)[0]
     assert result.ndim == 1
+
+
+@pytest.mark.parametrize("missing", ['conservative', 'drop', 'raise', 'none'])
+@pytest.mark.parametrize("fft", [False, True])
+@pytest.mark.parametrize("demean", [True, False])
+@pytest.mark.parametrize("unbiased", [True, False])
+def test_acovf_nlags(acovf_data, unbiased, demean, fft, missing):
+    # GH#4937
+    full = acovf(acovf_data, unbiased=unbiased, demean=demean, fft=fft,
+                 missing=missing)
+    limited = acovf(acovf_data, unbiased=unbiased, demean=demean, fft=fft,
+                    missing=missing, nlag=10)
+    assert_allclose(full[:11], limited)
+
+
+@pytest.mark.parametrize("missing", ['conservative', 'drop'])
+@pytest.mark.parametrize("fft", [False, True])
+@pytest.mark.parametrize("demean", [True, False])
+@pytest.mark.parametrize("unbiased", [True, False])
+def test_acovf_nlags_missing(acovf_data, unbiased, demean, fft, missing):
+    # GH#4937
+    acovf_data = acovf_data.copy()
+    acovf_data[1:3] = np.nan
+    full = acovf(acovf_data, unbiased=unbiased, demean=demean, fft=fft,
+                 missing=missing)
+    limited = acovf(acovf_data, unbiased=unbiased, demean=demean, fft=fft,
+                    missing=missing, nlag=10)
+    assert_allclose(full[:11], limited)
+
+
+def test_acovf_error(acovf_data):
+    # GH#4937
+    with pytest.raises(ValueError):
+        acovf(acovf_data, nlag=250, fft=False)
+
+
+def test_acovf_warns(acovf_data):
+    # GH#4937
+    with pytest.warns(FutureWarning):
+        acovf(acovf_data)
+
+
+def test_acf_warns(acovf_data):
+    # GH#4937
+    with pytest.warns(FutureWarning):
+        acf(acovf_data, nlags=40)
 
 
 def test_pandasacovf():
@@ -240,8 +296,8 @@ def test_pandasacovf():
     # TODO: GH reference?
     # TODO: Same test for other functions?
     ser = pd.Series(list(range(1, 11)))
-    assert_allclose(autocov.acovf(ser),
-                    autocov.acovf(ser.values),
+    assert_allclose(acovf(ser, fft=False),
+                    acovf(ser.values, fft=False),
                     rtol=1e-12)
 
 

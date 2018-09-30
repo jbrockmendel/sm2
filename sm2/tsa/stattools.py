@@ -111,13 +111,13 @@ def pacf(x, nlags=40, method='ywunbiased', alpha=None):
     elif method in ['ywm', 'ywmle', 'yw_mle']:
         ret = pacf_yw(x, nlags=nlags, method='mle')
     elif method in ['ld', 'ldu', 'ldunbiase', 'ld_unbiased']:
-        acv = acovf(x, unbiased=True)
+        acv = acovf(x, unbiased=True, fft=False)
         ld_ = levinson_durbin(acv, nlags=nlags, isacov=True)
         ret = ld_[2]
 
     # FIXME: inconsistent naming with ywmle
     elif method in ['ldb', 'ldbiased', 'ld_biased']:
-        acv = acovf(x, unbiased=False)
+        acv = acovf(x, unbiased=False, fft=False)
         ld_ = levinson_durbin(acv, nlags=nlags, isacov=True)
         ret = ld_[2]
     else:  # pragma: no cover
@@ -210,7 +210,7 @@ def levinson_durbin(s, nlags=10, isacov=False):
     if isacov:
         sxx_m = s
     else:
-        sxx_m = acovf(s)[:order + 1]  # not tested
+        sxx_m = acovf(s, fft=False)[:order + 1]  # TODO: not tested
 
     phi = np.zeros((order + 1, order + 1), 'd')
     sig = np.zeros(order + 1)
