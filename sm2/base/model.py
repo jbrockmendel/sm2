@@ -528,15 +528,15 @@ class Results(object):
         (array) The predicted values of the model. An (nobs x k_endog) array.
         """
         return self.model.predict(self.params)
+        # TODO: GH#5255 is this necessarily equivalent to self.predict()?
 
     @cached_data
     def resid(self):
         """
         (array) The model residuals. An (nobs x k_endog) array.
         """
+        # GH#5255
         return self.model.endog - self.fittedvalues
-        # TODO: Is this only accurate for linear models?
-        # is there a more generally correct version?
 
     def predict(self, exog=None, transform=True, *args, **kwargs):
         """
