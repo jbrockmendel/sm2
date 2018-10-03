@@ -110,7 +110,7 @@ def pacf(x, nlags=40, method='ywunbiased', alpha=None):
         ret = pacf_yw(x, nlags=nlags, method='unbiased')
     elif method in ['ywm', 'ywmle', 'yw_mle']:
         ret = pacf_yw(x, nlags=nlags, method='mle')
-    elif method in ['ld', 'ldu', 'ldunbiase', 'ld_unbiased']:
+    elif method in ['ld', 'ldu', 'ldunbiased', 'ld_unbiased']:
         acv = acovf(x, unbiased=True, fft=False)
         ld_ = levinson_durbin(acv, nlags=nlags, isacov=True)
         ret = ld_[2]
