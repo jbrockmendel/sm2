@@ -11,12 +11,13 @@ dependencies:
   - matplotlib
   - nomkl
   - numexpr
-  - numpy=1.10.4
+  - numpy=1.13
+  - scipy
+  #
   - openpyxl=2.5.5
   - pytables
   - python=3.5*
   - pytz
-  - scipy
   - xarray
   - xlrd
   - xlsxwriter
