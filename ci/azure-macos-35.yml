@@ -16,6 +16,7 @@ dependencies:
   - pytables
   - python=3.5*
   - pytz
+  - scipy
   - xarray
   - xlrd
   - xlsxwriter
