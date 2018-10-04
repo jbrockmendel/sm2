@@ -54,8 +54,8 @@ build_script:
   - python setup.py bdist_wheel
 
 test_script:
-  - python -c 'import numpy as np; print(np.__version__); np.show_config()'
-  - python -c 'import scipy; print(scipy.__version__); scipy.show_config()'
+  - python -c "import numpy as np; print(np.__version__); np.show_config()"
+  - python -c "import scipy; print(scipy.__version__); scipy.show_config()"
   #- pytest sm2
   - call ci\run_test.bat
 
