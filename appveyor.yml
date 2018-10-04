@@ -29,9 +29,8 @@ install:
         Where-Object pullRequestId -eq $env:APPVEYOR_PULL_REQUEST_NUMBER)[0].buildNumber) { `
         throw "There are newer queued builds for this pull request, failing early." }
 
-  - pip install pytest pytest-xdist pytest-randomly matplotlib wheel
-  - pip install -r requirements.txt
-  - python setup.py build_ext --inplace
+  #- pip install pytest pytest-xdist pytest-randomly matplotlib wheel
+  #- pip install -r requirements.txt
 
 build_script:
   # Search for [appveyor skip] or [skip appveyor] and exit if found in full commit message
@@ -46,8 +45,13 @@ build_script:
   - SET NUMEXPR_NUM_THREADS=1
   - SET OMP_NUM_THREADS=1
   - SET OPENBLAS_NUM_THREADS=1
+
   - If Defined PY_MAJOR_VER ( call ci\appveyor_conda.bat ) else ( call ci\appveyor_pip.bat )
+
+  - pip install --upgrade pip
   - pip install pytest pytest-xdist pytest-randomly
+
+  - python setup.py build_ext --inplace
   - if Defined PYTEST_DIRECTIVES ( python setup.py develop ) else ( python setup.py install )
 
   # run bdist_wheel so we can collect artifact to make available on PyPI
