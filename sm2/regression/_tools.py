@@ -35,7 +35,7 @@ class _MinimalWLS(object):
     -----
     Provides only resid, scale, fittedvalues, model.weights which are used by
     methods that iteratively apply WLS.
-    
+
     Does not perform any checks on the input data for type or shape
     compatibility
     """
