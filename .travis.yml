@@ -70,6 +70,10 @@ before_script:
   - ci/before_script_travis.sh
 
 script:
+  # Show versions
+  - python -c 'import numpy as np; print(np.__version__); np.show_config()'
+  - python -c 'import scipy; print(scipy.__version__); scipy.show_config()'
+
   - pytest sm2 $TEST_ARGS
   - ci/lint.sh
 
