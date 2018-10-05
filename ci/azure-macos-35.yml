@@ -1,4 +1,4 @@
-name: pandas
+name: sm2
 channels:
   - defaults
 dependencies:
