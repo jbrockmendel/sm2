@@ -55,6 +55,7 @@ build_script:
   - if Defined PYTEST_DIRECTIVES ( python setup.py develop ) else ( python setup.py install )
 
   # run bdist_wheel so we can collect artifact to make available on PyPI
+  - pip install wheel
   - python setup.py bdist_wheel
 
 test_script:
