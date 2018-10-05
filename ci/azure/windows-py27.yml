@@ -14,7 +14,7 @@ jobs:
       py36_np14:
         ENV_FILE: ci/azure-windows-27.yml
         CONDA_PY: "27"
-        CONDA_ENV: sm2
+        CONDA_ENV: "sm2"
 
   steps:
     - task: CondaEnvironment@1
