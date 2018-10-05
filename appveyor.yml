@@ -53,7 +53,7 @@ build_script:
 
   # run bdist_wheel so we can collect artifact to make available on PyPI
   - pip install wheel
-  - python setup.py bdist_wheel --quiet
+  - python setup.py --quiet bdist_wheel
 
 test_script:
   - python -c "import numpy as np; print(np.__version__); np.show_config()"
