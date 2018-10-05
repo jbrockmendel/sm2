@@ -36,9 +36,9 @@ jobs:
         ci/script_multi.sh
         echo "[Test done]"
       displayName: 'Test'
-    #- script: |
-    #    export PATH=$HOME/miniconda3/bin:$PATH
-    #    source activate sm2 && pushd /tmp && python -c "import sm2; sm2.show_versions();" && popd
+    - script: |
+        export PATH=$HOME/miniconda3/bin:$PATH
+        source activate sm2 && pushd /tmp && python -c "import pandas; pandas.show_versions();" && popd
     - task: PublishTestResults@2
       inputs:
         testResultsFiles: '/tmp/*.xml'
