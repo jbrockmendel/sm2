@@ -109,13 +109,17 @@ class CheckModelResults(CheckModelMixin):
                         self.res2.z,
                         atol=1e-4)
 
-    # FIXME: the reason it is mangled upstream is because the tests fail!
-    # TODO: upstream fix the name "pvalues" --> "test_pvalues" (and un-mangle!)
-    #def test_pvalues(self):
-    #    # not overriden --> parametrize?
-    #    assert_allclose(self.res1.pvalues,
-    #                    self.res2.pvalues,
-    #                    atol=1e-4)
+    # TODO: # not overriden --> parametrize?
+    def test_pvalues(self):
+        # GH#5255
+        # NB-geometric and NB2 have less agreement and larger rtol
+        # NB1 fails at rtol=0.01
+        # possible reason is that we compute cov_params at alpha and
+        # not log-alpha parameterization
+        rtol = getattr(self, 'rtol_pvalues', 0.02)
+        # no reference pvalues for extra params in some NegBin tests
+        assert_allclose(self.res1.pvalues[:len(self.res2.pvalues)],
+                        self.res2.pvalues, rtol=rtol, atol=1e-19)
 
     def test_bse(self):
         assert_allclose(self.res1.bse,
@@ -123,21 +127,61 @@ class CheckModelResults(CheckModelMixin):
                         atol=1e-4)
 
     def test_dof(self):
-        # not overriden --> parametrize?
         assert self.res1.df_model == self.res2.df_model
         assert self.res1.df_resid == self.res2.df_resid
 
     def test_predict(self):
-        yhat = self.res1.model.predict(self.res1.params)
-        assert_allclose(yhat,
-                        self.res2.phat,
-                        atol=1e-4)
+        fitted = self.res1.model.predict(self.res1.params)
+
+        res2_fitted = getattr(self.res2, 'phat', None)
+        if res2_fitted is None:
+            res2_fitted = np.exp(getattr(self.res2, 'linpred', None))
+
+        assert res2_fitted is not None
+        assert_allclose(fitted[:len(res2_fitted)],
+                        res2_fitted,
+                        rtol=5e-4)
+
+        # fittedvalues in discrete are currently linear prediction
+        assert_allclose(self.res1.fittedvalues[:len(res2_fitted)],
+                        res2_fitted,
+                        atol=5e-4, rtol=5e-4)
+        # TODO: Can these tolerances be tightened?  At least for some
+        # subclasses?
+
+    def test_resid_response(self):
+        # Upstream GH#5255 makes this part of test_predict
+        fitted = self.res1.fittedvalues
+
+        if self.res1.params.ndim == 2:
+            # special case for MNLogit
+            endog = self.res1.model.wendog
+        else:
+            endog = self.res1.model.endog
+
+        resid = (endog - fitted)
+        assert_allclose(self.res1.resid,
+                        resid,
+                        atol=1e-10)
+        assert_allclose(self.res1.resid,
+                        self.res1.resid_response,
+                        atol=1e-10)
 
     def test_predict_xb(self):
-        yhat = self.res1.model.predict(self.res1.params, linear=True)
-        assert_allclose(yhat,
-                        self.res2.yhat,
-                        atol=1e-4)
+        # GH#5255
+        try:
+            linpred = self.res1.predict(linear=True)
+        except TypeError:
+            # new count models do not have 'linear' as keyword
+            linpred = self.res1.predict(which='linear')
+
+        res2_linpred = getattr(self.res2, 'linpred', None)
+        if res2_linpred is not None:
+            assert_allclose(linpred[:len(res2_linpred)], res2_linpred,
+                            atol=5e-4, rtol=1e-4)
+        # TODO: Can these tolerances be tightened?  At least for some
+        #   subclasses?  Particularly TestNegativeBinomialPNB2Newton
+        #   had rtol=1e-7 previously
 
     def test_loglikeobs(self):
         # basic cross check
@@ -154,14 +198,13 @@ class CheckModelResults(CheckModelMixin):
                         score,
                         atol=1e-9)  # Poisson has low precision ?
 
-    def test_normalized_cov_params(self):
-        pass
-
-    # FIXME: don't comment-out
-    #def test_cov_params(self):
-    #    assert_allclose(self.res1.cov_params(),
-    #                    self.res2.cov_params,
-    #                    atol=1e-4)
+    def test_cov_params(self):
+        if getattr(self.res2, "cov_params", None) is None:
+            pytest.skip("External validation results do not "
+                        "have `cov_params`")
+        assert_allclose(self.res1.cov_params(),
+                        self.res2.cov_params,
+                        atol=1.5e-4)
 
 
 @pytest.mark.not_vetted
@@ -210,10 +253,8 @@ class TestNegativeBinomialNB2Newton(CheckModelResults):
     model_cls = NegativeBinomial
     mod_kwargs = {"loglike_method": "nb2"}
     fit_kwargs = {"method": "newton", "disp": False}
-
-    # TODO: don't pass; either skip or xfail
-    def test_jac(self):
-        pass
+    # pvalues for NB2 and NBP2 has lower agreement
+    rtol_pvalues = 0.04
 
     # NOTE: The bse is much closer precitions to stata
     def test_bse(self):
@@ -240,21 +281,6 @@ class TestNegativeBinomialNB2Newton(CheckModelResults):
                         self.res2.pvalues,
                         atol=1e-2)
 
-    def test_fittedvalues(self):
-        assert_allclose(self.res1.fittedvalues[:10],
-                        self.res2.fittedvalues[:10],
-                        atol=1e-3)
-
-    def test_predict(self):
-        assert_allclose(self.res1.predict()[:10],
-                        np.exp(self.res2.fittedvalues[:10]),
-                        atol=1e-3)
-
-    def test_predict_xb(self):
-        assert_allclose(self.res1.predict(linear=True)[:10],
-                        self.res2.fittedvalues[:10],
-                        atol=1e-3)
-
 
 @pytest.mark.not_vetted
 @pytest.mark.match_stata11
@@ -267,7 +293,7 @@ class TestNegativeBinomialNB1Newton(CheckModelResults):
     def test_zstat(self):
         assert_allclose(self.res1.tvalues,
                         self.res2.z,
-                        atol=1e-1)
+                        rtol=5e-3, atol=5e-4)
 
     def test_lnalpha(self):
         self.res1.bse  # attaches alpha_std_err
@@ -285,18 +311,6 @@ class TestNegativeBinomialNB1Newton(CheckModelResults):
                         self.res2.conf_int,
                         atol=1e-2)
 
-    # TODO: dont pass; either skip or xfail
-    def test_jac(self):
-        pass
-
-    # TODO: dont pass; either skip or xfail
-    def test_predict(self):
-        pass
-
-    # TODO: dont pass; either skip or xfail
-    def test_predict_xb(self):
-        pass
-
 
 @pytest.mark.not_vetted
 @pytest.mark.match_stata11
@@ -305,10 +319,7 @@ class TestNegativeBinomialNB2BFGS(CheckModelResults):
     model_cls = NegativeBinomial
     mod_kwargs = {"loglike_method": "nb2"}
     fit_kwargs = {"method": "bfgs", "maxiter": 1000, "disp": False}
-
-    # TODO: dont pass; either skip or xfail
-    def test_jac(self):
-        pass
+    rtol_pvalues = 0.04
 
     # NOTE: The bse is much closer precitions to stata
     def test_bse(self):
@@ -334,21 +345,6 @@ class TestNegativeBinomialNB2BFGS(CheckModelResults):
         assert_allclose(self.res1.pvalues[:-1],
                         self.res2.pvalues,
                         atol=1e-2)
-
-    def test_fittedvalues(self):
-        assert_allclose(self.res1.fittedvalues[:10],
-                        self.res2.fittedvalues[:10],
-                        atol=1e-3)
-
-    def test_predict(self):
-        assert_allclose(self.res1.predict()[:10],
-                        np.exp(self.res2.fittedvalues[:10]),
-                        atol=1e-3)
-
-    def test_predict_xb(self):
-        assert_allclose(self.res1.predict(linear=True)[:10],
-                        self.res2.fittedvalues[:10],
-                        atol=1e-3)
 
 
 @pytest.mark.not_vetted
@@ -380,18 +376,6 @@ class TestNegativeBinomialNB1BFGS(CheckModelResults):
                         self.res2.conf_int,
                         atol=1e-2)
 
-    # TODO: dont pass; either skip or xfail
-    def test_jac(self):
-        pass
-
-    # TODO: dont pass; either skip or xfail
-    def test_predict(self):
-        pass
-
-    # TODO: dont pass; either skip or xfail
-    def test_predict_xb(self):
-        pass
-
 
 @pytest.mark.not_vetted
 #@pytest.mark.match_stata11 # --> see notes in results, says its a smoketest
@@ -404,6 +388,7 @@ class TestNegativeBinomialGeometricBFGS(CheckModelResults):
     model_cls = NegativeBinomial
     mod_kwargs = {"loglike_method": "geometric"}
     fit_kwargs = {"method": "bfgs", "disp": False}
+    rtol_pvalues = 0.05
 
     tols = CheckModelResults.tols.copy()
     tols.update({
@@ -415,25 +400,6 @@ class TestNegativeBinomialGeometricBFGS(CheckModelResults):
     def test_conf_int(self):
         assert_allclose(self.res1.conf_int(),
                         self.res2.conf_int,
-                        atol=1e-3)
-
-    def test_fittedvalues(self):
-        assert_allclose(self.res1.fittedvalues[:10],
-                        self.res2.fittedvalues[:10],
-                        atol=1e-3)
-
-    # TODO: dont pass; either skip or xfail
-    def test_jac(self):
-        pass
-
-    def test_predict(self):
-        assert_allclose(self.res1.predict()[:10],
-                        np.exp(self.res2.fittedvalues[:10]),
-                        atol=1e-3)
-
-    def test_predict_xb(self):
-        assert_allclose(self.res1.predict(linear=True)[:10],
-                        self.res2.fittedvalues[:10],
                         atol=1e-3)
 
     def test_zstat(self):  # Low precision because Z vs. t
@@ -454,6 +420,7 @@ class TestNegativeBinomialPNB2Newton(CheckModelResults):
     model_cls = NegativeBinomialP
     mod_kwargs = {"p": 2}
     fit_kwargs = {"method": "newton", "disp": False}
+    rtol_pvalues = 0.04
 
     tols = CheckModelResults.tols.copy()
     tols.update({
@@ -483,21 +450,6 @@ class TestNegativeBinomialPNB2Newton(CheckModelResults):
         assert_allclose(self.res1.pvalues[:-1],
                         self.res2.pvalues,
                         atol=5e-3, rtol=5e-3)
-
-    def test_fittedvalues(self):
-        assert_allclose(self.res1.fittedvalues[:10],
-                        self.res2.fittedvalues[:10],
-                        rtol=1e-7)
-
-    def test_predict(self):
-        assert_allclose(self.res1.predict()[:10],
-                        np.exp(self.res2.fittedvalues[:10]),
-                        rtol=1e-7)
-
-    def test_predict_xb(self):
-        assert_allclose(self.res1.predict(which='linear')[:10],
-                        self.res2.fittedvalues[:10],
-                        rtol=1e-7)
 
 
 @pytest.mark.not_vetted
@@ -535,16 +487,6 @@ class TestNegativeBinomialPNB1Newton(CheckModelResults):
                         self.res2.conf_int,
                         atol=1e-3, rtol=1e-3)
 
-    def test_predict(self):
-        assert_allclose(self.res1.predict()[:10],
-                        np.exp(self.res2.fittedvalues[:10]),
-                        atol=1e-3, rtol=1e-3)
-
-    def test_predict_xb(self):
-        assert_allclose(self.res1.predict(which='linear')[:10],
-                        self.res2.fittedvalues[:10],
-                        atol=1e-3, rtol=1e-3)
-
 
 @pytest.mark.not_vetted
 @pytest.mark.match_stata11
@@ -554,6 +496,7 @@ class TestNegativeBinomialPNB2BFGS(CheckModelResults):
     mod_kwargs = {"p": 2}
     fit_kwargs = {"method": "bfgs", "maxiter": 1000,
                   "disp": False, "use_transparams": True}
+    rtol_pvalues = 0.04
 
     tols = CheckModelResults.tols.copy()
     tols.update({
@@ -584,21 +527,6 @@ class TestNegativeBinomialPNB2BFGS(CheckModelResults):
         assert_allclose(self.res1.pvalues[:-1],
                         self.res2.pvalues,
                         atol=5e-3, rtol=5e-3)
-
-    def test_fittedvalues(self):
-        assert_allclose(self.res1.fittedvalues[:10],
-                        self.res2.fittedvalues[:10],
-                        atol=1e-4, rtol=1e-4)
-
-    def test_predict(self):
-        assert_allclose(self.res1.predict()[:10],
-                        np.exp(self.res2.fittedvalues[:10]),
-                        atol=1e-3, rtol=1e-3)
-
-    def test_predict_xb(self):
-        assert_allclose(self.res1.predict(which='linear')[:10],
-                        self.res2.fittedvalues[:10],
-                        atol=1e-3, rtol=1e-3)
 
 
 @pytest.mark.not_vetted
@@ -643,16 +571,6 @@ class TestNegativeBinomialPNB1BFGS(CheckModelResults):
         assert_allclose(self.res1.conf_int(),
                         self.res2.conf_int,
                         atol=5e-2, rtol=5e-2)
-
-    def test_predict(self):
-        assert_allclose(self.res1.predict()[:10],
-                        np.exp(self.res2.fittedvalues[:10]),
-                        atol=5e-3, rtol=5e-3)
-
-    def test_predict_xb(self):
-        assert_allclose(self.res1.predict(which='linear')[:10],
-                        self.res2.fittedvalues[:10],
-                        atol=5e-3, rtol=5e-3)
 
     def test_init_kwds(self):
         kwds = self.res1.model._get_init_kwds()
@@ -857,10 +775,6 @@ class CheckBinaryResults(CheckModelResults):
                         self.res2.resid_generalized,
                         atol=1e-4)
 
-    @pytest.mark.smoke
-    def test_resid_response_smoke(self):
-        self.res1.resid_response
-
 
 @pytest.mark.match_stata11
 class CheckProbitSpector(CheckBinaryResults):
@@ -872,12 +786,6 @@ class CheckProbitSpector(CheckBinaryResults):
 @pytest.mark.not_vetted
 class TestProbitNewton(CheckProbitSpector):
     fit_kwargs = {"method": "newton", "disp": False}
-
-    # FIXME: don't comment-out tests
-    #def test_predict(self):
-    #    assert_allclose(self.res1.model.predict(self.res1.params),
-    #                    self.res2.predict,
-    #                    atol=1e-4)
 
 
 @pytest.mark.not_vetted
@@ -1287,6 +1195,7 @@ class TestMNLogitL1Compatability(CheckL1Compatability):
 
     @pytest.mark.skip("Skipped test_f_test for MNLogit")
     def test_f_test(self):
+        # TODO: better message; dont just pass
         pass
 
 

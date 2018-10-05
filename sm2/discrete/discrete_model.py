@@ -3099,11 +3099,25 @@ class DiscreteResults(base.LikelihoodModelResults):
 
         return res_null.llf
 
-    @cached_data
-    def fittedvalues(self):
-        # doesn't match self.model.predict(self.params), so we can't delegate
-        # to base class
-        return np.dot(self.model.exog, self.params[:self.model.exog.shape[1]])
+    @property
+    def resid(self):
+        # GH#5255
+        return self.resid_response
+
+    @cache_readonly
+    def resid_response(self):
+        """
+        The response residuals
+
+        Notes
+        -----
+        Response residuals are defined to be
+
+        .. math:: y - p
+
+        where :math:`p=cdf(X\\beta)`.
+        """
+        return self.model.endog - self.fittedvalues
 
     @cached_value
     def aic(self):
@@ -3545,6 +3559,11 @@ class MultinomialResults(DiscreteResults):
         bins = np.concatenate(([0], np.linspace(0.5, ju - 0.5, ju), [ju]))
         return np.histogram2d(self.model.endog, self.predict().argmax(1),
                               bins=bins)[0]
+
+    @cached_data
+    def resid_response(self):
+        # GH#5255
+        return self.model.wendog - self.fittedvalues
 
     @cached_value
     def bse(self):

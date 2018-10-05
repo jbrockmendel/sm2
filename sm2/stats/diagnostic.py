@@ -167,8 +167,9 @@ def acorr_ljungbox(x, lags=None, boxpierce=True):
     maxlag = max(lags)
 
     from sm2.tsa.stattools import acf
-    acfx = acf(x, nlags=maxlag)[0]  # normalize by nobs not (nobs - nlags)
+    # normalize by nobs not (nobs-nlags)
     # SS: unbiased=False is default now
+    acfx = acf(x, nlags=maxlag, fft=False)[0]
 
     acf2norm = acfx[1:maxlag + 1]**2 / (nobs - np.arange(1, maxlag + 1))
     qljungbox = nobs * (nobs + 2) * np.cumsum(acf2norm)[lags - 1]

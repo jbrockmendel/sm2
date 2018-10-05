@@ -68,6 +68,17 @@ class TestPACF(CheckCorrGram):
         pacfld = pacf(self.x, nlags=40, method="ldu")
         assert_almost_equal(pacfyw, pacfld, DECIMAL_8)
 
+    @pytest.mark.smoke
+    @pytest.mark.parametrize("method", [
+        "ols",
+        "yw", "ywu", "ywunbiased", "yw_unbiased",
+        "ywm", "ywmle", "yw_mle",
+        "ld", "ldu", "ldunbiased", "ld_unbiased",
+        "ldb", "ldbiased", "ld_biased"])
+    def test_pacf_method(self, method):
+        # GH#5212
+        pacfols, confint = pacf(self.x, nlags=40, alpha=.05, method=method)
+
 
 # -----------------------------------------------------------------
 

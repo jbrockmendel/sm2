@@ -352,8 +352,7 @@ def _opt_1d(func, grad, hess, model, start, L1_wt, tol, check_step=True):
 
 
 class RegularizedResults(Results):
-    def __init__(self, model, params):
-        super(RegularizedResults, self).__init__(model, params)
+    pass
 
 
 class RegularizedResultsWrapper(wrap.ResultsWrapper):
