@@ -14,7 +14,7 @@ jobs:
       py35_np_110:
         ENV_FILE: ci/azure-macos-35.yml
         CONDA_PY: "35"
-        CONDA_ENV: pandas
+        CONDA_ENV: sm2
         TEST_ARGS: "--skip-slow --skip-network"
 
   steps:
@@ -32,13 +32,14 @@ jobs:
       displayName: 'Build'
     - script: |
         export PATH=$HOME/miniconda3/bin:$PATH
-        ci/script_single.sh
-        ci/script_multi.sh
+        pytest sm2 --skip-slow
+        #ci/script_single.sh
+        #ci/script_multi.sh
         echo "[Test done]"
       displayName: 'Test'
     - script: |
         export PATH=$HOME/miniconda3/bin:$PATH
-        source activate pandas && pushd /tmp && python -c "import pandas; pandas.show_versions();" && popd
+        source activate sm2 && pushd /tmp && python -c "import sm2; sm2.show_versions();" && popd
     - task: PublishTestResults@2
       inputs:
         testResultsFiles: '/tmp/*.xml'

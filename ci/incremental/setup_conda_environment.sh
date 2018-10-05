@@ -26,12 +26,12 @@ set -v
 
 # remove any installed pandas package
 # w/o removing anything else
-echo
+#echo
 #echo "[removing installed pandas]"
 #conda remove pandas -y --force
 #pip uninstall -y pandas
 
-echo
+#echo
 #echo "[no installed pandas]"
 #conda list pandas
 

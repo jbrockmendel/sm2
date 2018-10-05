@@ -7,6 +7,7 @@ call activate %CONDA_ENV%
 python setup.py build_ext -q --inplace
 
 @rem Install pandas locally
+python -m pip install --upgrade pip
 python -m pip install -e .
 
 if %errorlevel% neq 0 exit /b %errorlevel%
