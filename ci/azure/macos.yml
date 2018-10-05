@@ -15,7 +15,7 @@ jobs:
         ENV_FILE: ci/azure-macos-35.yml
         CONDA_PY: "35"
         CONDA_ENV: sm2
-        TEST_ARGS: "--skip-slow --skip-network"
+        TEST_ARGS: "--skip-slow"
 
   steps:
     - script: |
