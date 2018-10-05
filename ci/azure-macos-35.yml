@@ -2,26 +2,16 @@ name: sm2
 channels:
   - defaults
 dependencies:
-  - beautifulsoup4
-  - bottleneck
+  - python=3.5*
   - cython>=0.28.2
-  - html5lib
-  - jinja2
-  - lxml
+  - bottleneck
   - matplotlib
   - nomkl
   - numexpr
   - numpy=1.13
   - scipy
   #
-  - openpyxl=2.5.5
-  - pytables
-  - python=3.5*
-  - pytz
   - xarray
-  - xlrd
-  - xlsxwriter
-  - xlwt
   # universal
   - pandas>=0.23.3
   - pytest

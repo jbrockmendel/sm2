@@ -12,10 +12,6 @@ if [ -n "$LOCALE_OVERRIDE" ]; then
     python -c "$pycmd"
 fi
 
-# Enforce absent network during testing by faking a proxy
-if echo "$TEST_ARGS" | grep -e --skip-network -q; then
-    export http_proxy=http://1.2.3.4 https_proxy=http://1.2.3.4;
-fi
 
 # Workaround for pytest-xdist flaky collection order
 # https://github.com/pytest-dev/pytest/issues/920
@@ -31,7 +27,7 @@ elif [ "$COVERAGE" ]; then
     pytest -s -n 2 -m "not single" --cov=sm2 --cov-report xml:/tmp/cov-multiple.xml --junitxml=/tmp/multiple.xml --strict $TEST_ARGS sm2
 
 elif [ "$SLOW" ]; then
-    TEST_ARGS="--only-slow --skip-network"
+    TEST_ARGS="--only-slow"
     echo pytest -r xX -m "not single and slow" -v --junitxml=/tmp/multiple.xml --strict $TEST_ARGS sm2
     pytest -r xX -m "not single and slow" -v --junitxml=/tmp/multiple.xml --strict $TEST_ARGS sm2
 

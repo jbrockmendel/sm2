@@ -3,27 +3,18 @@ channels:
   - defaults
   - conda-forge
 dependencies:
+  - python=3.6.*
   - blosc
   - bottleneck
-  - fastparquet
-  - feather-format
   - matplotlib
   - numexpr
   - numpy=1.14*
   - scipy
-  - pandas>=0.23.3
   #
-  - openpyxl=2.5.5
   - pyarrow
-  - pytables
-  - python-dateutil
-  - python=3.6.*
-  - pytz
   - thrift=0.10*
-  - xlrd
-  - xlsxwriter
-  - xlwt
   # universal
+  - pandas>=0.23.3
   - cython>=0.28.2
   - pytest
   - pytest-xdist
