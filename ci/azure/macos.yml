@@ -41,5 +41,5 @@ jobs:
         source activate sm2 && pushd /tmp && python -c "import pandas; pandas.show_versions();" && popd
     - task: PublishTestResults@2
       inputs:
-        testResultsFiles: '/tmp/*.xml'
+        #testResultsFiles: '/tmp/*.xml'
         testRunTitle: 'MacOS-35'
