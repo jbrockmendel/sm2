@@ -33,7 +33,9 @@ jobs:
     - script: |
         export PATH=$HOME/miniconda3/bin:$PATH
         ci/script_single.sh
+        echo $?
         ci/script_multi.sh
+        echo $?
         echo "[Test done]"
       displayName: 'Test'
     - script: |
