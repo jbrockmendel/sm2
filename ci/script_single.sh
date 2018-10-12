@@ -33,7 +33,6 @@ else
 
 fi
 
-exit 1
 RET="$?"
 
 exit "$RET"
