@@ -9,6 +9,7 @@ from numpy.testing import assert_almost_equal, assert_equal, assert_allclose
 import pandas as pd
 import pandas.util.testing as tm
 
+from sm2.compat.numpy import lstsq
 from sm2.tsa.stattools import (pacf_yw, pacf_ols,
                                pacf, grangercausalitytests,
                                arma_order_select_ic,
@@ -68,8 +69,7 @@ class TestPACF(CheckCorrGram):
         direct[0] = 1.0
         for i in range(lag_len):
             lags[:, i] = x[5 - (i + 1):-(i + 1)]
-            direct[i + 1] = np.linalg.lstsq(lags[:, :(i + 1)], lead,
-                                            rcond=None)[0][-1]
+            direct[i + 1] = lstsq(lags[:, :(i + 1)], lead, rcond=None)[0][-1]
         assert_allclose(pacfols, direct, atol=1e-8)
 
     def test_yw(self):

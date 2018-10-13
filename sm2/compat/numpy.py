@@ -37,9 +37,24 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 """
 from __future__ import absolute_import
+from distutils.version import LooseVersion
 
+import numpy as np
 from six import PY3
 
+
+NP_LT_114 = LooseVersion(np.__version__) < LooseVersion('1.14')
+
+
+def lstsq(a, b, rcond=None):
+    """
+    Shim that allows modern rcond setting with backward compat for NumPY
+    earlier than 1.14
+    """
+    # GH#5153
+    if NP_LT_114 and rcond is None:
+        rcond = -1
+    return np.linalg.lstsq(a, b, rcond=rcond)
 
 def _bytelike_dtype_names(arr):
     # See GH#3658

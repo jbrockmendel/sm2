@@ -12,6 +12,7 @@ import pandas as pd
 from scipy import stats
 
 from sm2.tools.tools import add_constant
+from sm2.compat.numpy import lstsq
 
 from sm2.regression.linear_model import OLS
 
@@ -94,7 +95,7 @@ def pacf_ols(x, nlags=40, efficient=True, unbiased=False):
         xlags, x0 = lagmat(x, nlags, original='sep')
         xlags = add_constant(xlags)
         for k in range(1, nlags + 1):
-            params = np.linalg.lstsq(xlags[k:, :k + 1], x0[k:], rcond=None)[0]
+            params = lstsq(xlags[k:, :k + 1], x0[k:], rcond=None)[0]
             pacf[k] = params[-1]
 
     else:
@@ -102,7 +103,7 @@ def pacf_ols(x, nlags=40, efficient=True, unbiased=False):
         # Create a single set of lags for multivariate OLS
         xlags, x0 = lagmat(x, nlags, original='sep', trim='both')
         for k in range(1, nlags + 1):
-            params = np.linalg.lstsq(xlags[:, :k], x0, rcond=None)[0]
+            params = lstsq(xlags[:, :k], x0, rcond=None)[0]
             # Last coefficient corresponds to PACF value (see [1])
             pacf[k] = params[-1]
 
