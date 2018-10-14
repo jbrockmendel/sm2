@@ -231,7 +231,7 @@ class HuberT(RobustNorm):
         return test * z + (1 - test) * self.t * np.sign(z)
 
     def weights(self, z):
-        """
+        r"""
         Huber's t weighting function for the IRLS algorithm
 
         The psi function scaled by z

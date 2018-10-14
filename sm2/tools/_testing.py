@@ -9,8 +9,39 @@ during refactoring arises.
 
 The first group of functions provide consistency checks
 """
+import pytest
+
 import numpy as np
 from numpy.testing import assert_allclose
+
+import pandas as pd
+import pandas.util.testing as tm
+
+
+def assert_equal(left, right):
+    """
+    pandas >= 0.24.0 has `tm.assert_equal` that works for any of
+    Index, Series, and DataFrame inputs.  Until statsmodels/sm2 requirements
+    catch up to that, we implement a version of that here.
+
+    Parameters
+    ----------
+    left : pd.Index, pd.Series, or pd.DataFrame
+    right : object
+
+    Raises
+    ------
+    AssertionError
+    """
+    if isinstance(left, pd.Index):
+        tm.assert_index_equal(left, right)
+    elif isinstance(left, pd.Series):
+        tm.assert_series_equal(left, right)
+    elif isinstance(left, pd.DataFrame):
+        tm.assert_frame_equal(left, right)
+    else:
+        raise TypeError(type(left))
+
 
 # the following are copied from
 # sm2.base.tests.test_generic_methods.CheckGenericMixin
@@ -42,9 +73,25 @@ def check_ttest_tvalues(results):
     tt = res.t_test(mat[0])
     tt.summary()   # smoke test for GH#1323
     assert_allclose(tt.pvalue, res.pvalues[0], rtol=5e-10)
+    # TODO: Adapt more of test_generic_methods.test_ttest_values here?
 
 
 def check_ftest_pvalues(results):
+    """
+    Check that the outputs of `res.wald_test` produces pvalues that
+    match res.pvalues.
+    Check that the string representations of `res.summary()` and (possibly)
+    `res.summary2()` correctly label either the t or z-statistic.
+
+    Parameters
+    ----------
+    results : Results
+
+    Raises
+    ------
+    AssertionError
+    """
+
     res = results
     use_t = res.use_t
     k_vars = len(res.params)
@@ -58,28 +105,72 @@ def check_ftest_pvalues(results):
              for k in range(k_vars)]
     assert_allclose(pvals, res.pvalues, rtol=5e-10, atol=1e-25)
 
-    # label for pvalues in summary
-    string_use_t = 'P>|z|' if use_t is False else 'P>|t|'
-    summ = str(res.summary())
-    assert string_use_t in summ
-
-    '''
-    # summary2 not ported as of 2018-03-05
-    # try except for models that don't have summary2
-    try:
-        summ2 = str(res.summary2())
-    except AttributeError:
-        summ2 = None
-    if summ2 is not None:
-        assert string_use_t in summ2
-    '''
-
 
 def check_fitted(results):
-    raise NotImplementedError("check_fitted not ported from upstream, "
-                              "as it is not used (or tested) there")
+    # ignore wrapper for isinstance check
+    from sm2.genmod.generalized_linear_model import GLMResults
+    from sm2.discrete.discrete_model import DiscreteResults
+
+    # possibly unwrap -- GEE has no wrapper
+    results = getattr(results, '_results', results)
+
+    if isinstance(results, (GLMResults, DiscreteResults)):
+        pytest.skip('Not supported for {0}'.format(type(results)))
+
+    res = results
+    fitted = res.fittedvalues
+    assert_allclose(res.model.endog - fitted, res.resid, rtol=1e-12)
+    assert_allclose(fitted, res.predict(), rtol=1e-12)
 
 
-def check_predict_types(results):  # pragma: no cover
-    raise NotImplementedError("check_predict_types not ported from upstream, "
-                              "as it is not used (or tested) there")
+def check_predict_types(results):
+    """
+    Check that the `predict` method of the given results object produces the
+    correct output type.
+    Parameters
+    ----------
+    results : Results
+    Raises
+    ------
+    AssertionError
+    """
+    res = results
+    # squeeze to make 1d for single regressor test case
+    p_exog = np.squeeze(np.asarray(res.model.exog[:2]))
+
+    # ignore wrapper for isinstance check
+    from sm2.genmod.generalized_linear_model import GLMResults
+    from sm2.discrete.discrete_model import DiscreteResults
+
+    # possibly unwrap -- GEE has no wrapper
+    results = getattr(results, '_results', results)
+
+    if isinstance(results, (GLMResults, DiscreteResults)):
+        # SMOKE test only  TODO: mark this somehow
+        res.predict(p_exog)
+        res.predict(p_exog.tolist())
+        res.predict(p_exog[0].tolist())
+    else:
+        fitted = res.fittedvalues[:2]
+        assert_allclose(fitted, res.predict(p_exog), rtol=1e-12)
+        # this needs reshape to column-vector:
+        assert_allclose(fitted, res.predict(np.squeeze(p_exog).tolist()),
+                        rtol=1e-12)
+        # only one prediction:
+        assert_allclose(fitted[:1], res.predict(p_exog[0].tolist()),
+                        rtol=1e-12)
+        assert_allclose(fitted[:1], res.predict(p_exog[0]),
+                        rtol=1e-12)
+
+        # Check that pandas wrapping works as expected
+        exog_index = range(len(p_exog))
+        predicted = res.predict(p_exog)
+
+        cls = pd.Series if p_exog.ndim == 1 else pd.DataFrame
+        predicted_pandas = res.predict(cls(p_exog, index=exog_index))
+
+        # predicted.ndim may not match p_exog.ndim because it may be squeezed
+        #  if p_exog has only one column
+        cls = pd.Series if predicted.ndim == 1 else pd.DataFrame
+        predicted_expected = cls(predicted, index=exog_index)
+        assert_equal(predicted_expected, predicted_pandas)

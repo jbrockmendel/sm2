@@ -454,7 +454,7 @@ class ARMAParams(ARMARoots):
     # TODO: clarify worN arg?
     # Note: upstream only has nobs kwarg
     def periodogram(self, nobs=100, whole=0):
-        """
+        r"""
         This might be more accurately referred to as a Spectral Density.
         Spectral Density refers to the population function, while Periodiogram
         refers to the sample estimate of the Spectral Density [citation needed]

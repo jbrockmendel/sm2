@@ -108,7 +108,7 @@ def smw_solver(s, A, AtA, Qi, di):  # TODO: Clarify I think A*B*A' is matmul
 
 # upstream this is implemented in regression.mixed_linear_model._smw_logdet
 def smw_logdet(s, A, AtA, Qi, di, B_logdet):
-    """
+    r"""
     Returns the log determinant of
 
     .. math::
