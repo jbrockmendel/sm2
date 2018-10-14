@@ -56,6 +56,7 @@ def lstsq(a, b, rcond=None):
         rcond = -1
     return np.linalg.lstsq(a, b, rcond=rcond)
 
+
 def _bytelike_dtype_names(arr):
     # See GH#3658
     if not PY3:
