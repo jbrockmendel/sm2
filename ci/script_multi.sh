@@ -24,7 +24,7 @@ if [ "$DOC" ]; then
 
 elif [ "$COVERAGE" ]; then
     echo pytest -s -n 2 -m "not single" --cov=sm2 --cov-report xml:/tmp/cov-multiple.xml --junitxml=/tmp/multiple.xml --strict $TEST_ARGS sm2
-    pytest -s -n 2 -m "not single" --cov=sm2 --cov-report xml:/tmp/cov-multiple.xml --junitxml=/tmp/multiple.xml --strict $TEST_ARGS sm2
+    pytest      -s -n 2 -m "not single" --cov=sm2 --cov-report xml:/tmp/cov-multiple.xml --junitxml=/tmp/multiple.xml --strict $TEST_ARGS sm2
 
 elif [ "$SLOW" ]; then
     TEST_ARGS="--only-slow"
@@ -33,7 +33,7 @@ elif [ "$SLOW" ]; then
 
 else
     echo pytest -n 2 -r xX -m "not single" --junitxml=/tmp/multiple.xml --strict $TEST_ARGS sm2
-    pytest -n 2 -r xX -m "not single" --junitxml=/tmp/multiple.xml --strict $TEST_ARGS sm2 # TODO: doctest
+    pytest      -n 2 -r xX -m "not single" --junitxml=/tmp/multiple.xml --strict $TEST_ARGS sm2 # TODO: doctest
 
 fi
 
