@@ -12,7 +12,6 @@ dependencies:
   - scipy
   #
   - pyarrow
-  - thrift=0.10*
   # universal
   - pandas>=0.23.3
   - cython>=0.28.2

@@ -1,0 +1,20 @@
+name: pandas
+channels:
+  - defaults
+  - conda-forge
+dependencies:
+  - matplotlib
+  - nomkl
+  - numexpr
+  - numpy
+  - python-dateutil
+  - python=3.6*
+  - pytz
+  - scipy
+  # universal
+  - cython>=0.28.2
+  - pandas>=0.23.3
+  - pytest
+  - pytest-xdist
+  - pip:
+    - hypothesis>=3.58.0
