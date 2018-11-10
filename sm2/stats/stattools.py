@@ -15,7 +15,7 @@ from sm2.tools.sm_exceptions import ValueWarning
 
 # TODO: these are pretty straightforward but they should be tested
 def durbin_watson(resids, axis=0):
-    """
+    r"""
     Calculates the Durbin-Watson statistic
 
     Parameters

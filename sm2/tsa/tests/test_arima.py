@@ -2728,7 +2728,7 @@ def test_endog_int():
     # int endog should produce same result as float, GH#3504, GH#4512
 
     np.random.seed(123987)
-    y = np.random.random_integers(0, 15, size=100)
+    y = np.random.randint(0, 15, size=100)
     yf = y.astype(np.float64)
 
     res = AR(y).fit(5)
