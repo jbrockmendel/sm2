@@ -1376,10 +1376,10 @@ def test_summary_as_latex():
         table = res.summary().as_latex()
 
     # replace the date and time
-    table = re.sub("(?<=\n\\\\textbf\{Date:\}             &).+?&",
-                   " Sun, 07 Apr 2013 &", table)
-    table = re.sub("(?<=\n\\\\textbf\{Time:\}             &).+?&",
-                   "     13:46:07     &", table)
+    table = re.sub(r"(?<=\n\\textbf\{Date:\}             &).+?&",
+                   r" Sun, 07 Apr 2013 &", table)
+    table = re.sub(r"(?<=\n\\textbf\{Time:\}             &).+?&",
+                   r"     13:46:07     &", table)
 
     expected = textwrap.dedent("""
     \\begin{center}

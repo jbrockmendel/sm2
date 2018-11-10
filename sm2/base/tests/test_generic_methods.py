@@ -372,7 +372,7 @@ kidney_table = StringIO("""Days      Duration Weight ID
     1.0      2      3     10
 """)
 kidney_table.seek(0)
-kidney_table = pd.read_table(kidney_table, sep="\s+")
+kidney_table = pd.read_table(kidney_table, sep=r"\s+")
 
 
 @pytest.mark.not_vetted
