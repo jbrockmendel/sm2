@@ -1032,6 +1032,7 @@ class GLM(base.LikelihoodModel):
             glm_results.mle_retvals = rslt.mle_retvals
             if 'iterations' in rslt.mle_retvals:
                 history['iteration'] = rslt.mle_retvals['iterations']
+        glm_results.mle_settings = rslt.mle_settings
         glm_results.method = method
         glm_results.fit_history = history
 
@@ -1089,7 +1090,9 @@ class GLM(base.LikelihoodModel):
                         self._offset_exposure)
             wls_mod = reg_tools._MinimalWLS(wlsendog,
                                             wlsexog,
-                                            self.weights)
+                                            self.weights,
+                                            check_endog=True,
+                                            check_weights=True)
             wls_results = wls_mod.fit(method=wls_method)
             lin_pred = np.dot(self.exog, wls_results.params)
             lin_pred += self._offset_exposure
@@ -1121,6 +1124,7 @@ class GLM(base.LikelihoodModel):
         glm_results.mle_settings = {}
         glm_results.mle_settings['wls_method'] = wls_method
         glm_results.mle_settings['optimizer'] = glm_results.method
+        glm_results.mle_settings['start_params'] = start_params
         if (maxiter > 0) and (attach_wls is True):
             glm_results.results_wls = wls_results
         history['iteration'] = iteration + 1
@@ -1130,7 +1134,7 @@ class GLM(base.LikelihoodModel):
 
     def fit_regularized(self, method="elastic_net", alpha=0.,
                         start_params=None, refit=False, **kwargs):
-        """
+        r"""
         Return a regularized fit to a linear regression model.
 
         Parameters
@@ -1383,6 +1387,11 @@ class GLMResults(base.LikelihoodModelResults):
         self._var_weights = None
         self._iweights = None
         self._n_trials = None
+
+    @property
+    def resid(self):
+        # GH#5255
+        return self.resid_response
 
     @cached_data
     def resid_response(self):

@@ -167,8 +167,9 @@ def acorr_ljungbox(x, lags=None, boxpierce=True):
     maxlag = max(lags)
 
     from sm2.tsa.stattools import acf
-    acfx = acf(x, nlags=maxlag)[0]  # normalize by nobs not (nobs - nlags)
+    # normalize by nobs not (nobs-nlags)
     # SS: unbiased=False is default now
+    acfx = acf(x, nlags=maxlag, fft=False)[0]
 
     acf2norm = acfx[1:maxlag + 1]**2 / (nobs - np.arange(1, maxlag + 1))
     qljungbox = nobs * (nobs + 2) * np.cumsum(acf2norm)[lags - 1]
@@ -329,14 +330,15 @@ def het_arch(resid, maxlag=None, autolag=None, store=False, regresults=False,
 
 
 def het_breuschpagan(resid, exog_het):
-    """Breusch-Pagan Lagrange Multiplier test for heteroscedasticity
+    r"""
+    Breusch-Pagan Lagrange Multiplier test for heteroscedasticity
 
     The tests the hypothesis that the residual variance does not depend on
     the variables in x in the form
 
-    :math: \sigma_i = \\sigma * f(\\alpha_0 + \\alpha z_i)
+    :math: \sigma_i = \sigma * f(\alpha_0 + \alpha z_i)
 
-    Homoscedasticity implies that $\\alpha=0$
+    Homoscedasticity implies that $\alpha=0$
 
     Parameters
     ----------

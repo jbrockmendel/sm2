@@ -25,7 +25,7 @@ x1000 = xo / 1000.
 
 
 @pytest.mark.not_vetted
-def test_pacf_ols():
+def test_pacf_ols():  # TODO: belongs elsewhere?
     pacfols = stattools.pacf_ols(x100, 20)
     assert_array_almost_equal(mlpacf.pacf100.ravel(), pacfols, 8)
     pacfols = stattools.pacf_ols(x1000, 20)

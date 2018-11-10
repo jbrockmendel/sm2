@@ -231,7 +231,7 @@ class HuberT(RobustNorm):
         return test * z + (1 - test) * self.t * np.sign(z)
 
     def weights(self, z):
-        """
+        r"""
         Huber's t weighting function for the IRLS algorithm
 
         The psi function scaled by z
@@ -317,7 +317,7 @@ class AndrewWave(RobustNorm):
                 (1 - test) * 2 * a)
 
     def psi(self, z):
-        """
+        r"""
         The psi function for Andrew's wave
 
         The analytic derivative of rho
@@ -340,7 +340,7 @@ class AndrewWave(RobustNorm):
         return test * np.sin(z / a)
 
     def weights(self, z):
-        """
+        r"""
         Andrew's wave weighting function for the IRLS algorithm
 
         The psi function scaled by z
@@ -442,7 +442,7 @@ class Hampel(RobustNorm):
         return v
 
     def psi(self, z):
-        """
+        r"""
         The psi function for Hampel's estimator
 
         The analytic derivative of rho
@@ -476,7 +476,7 @@ class Hampel(RobustNorm):
         return v
 
     def weights(self, z):
-        """
+        r"""
         Hampel weighting function for the IRLS algorithm
 
         The psi function scaled by z
@@ -561,7 +561,7 @@ class TukeyBiweight(RobustNorm):
         return -(1 - (z / self.c)**2)**3 * subset * self.c**2 / 6.
 
     def psi(self, z):
-        """
+        r"""
         The psi function for Tukey's biweight estimator
 
         The analytic derivative of rho
@@ -583,7 +583,7 @@ class TukeyBiweight(RobustNorm):
         return z * (1 - (z / self.c)**2)**2 * subset
 
     def weights(self, z):
-        """
+        r"""
         Tukey's biweight weighting function for the IRLS algorithm
 
         The psi function scaled by z

@@ -31,26 +31,6 @@ cpdef int dldl(cnp.float64_t[::1, :] A) except *
 cpdef int cldl(cnp.complex64_t[::1, :] A) except *
 cpdef int zldl(cnp.complex128_t[::1, :] A) except *
 
-cdef int _sreorder_missing_diagonal(cnp.float32_t* a, int* missing, int n)
-cdef int _dreorder_missing_diagonal(cnp.float64_t* a, int* missing, int n)
-cdef int _creorder_missing_diagonal(cnp.complex64_t* a, int* missing, int n)
-cdef int _zreorder_missing_diagonal(cnp.complex128_t* a, int* missing, int n)
-
-cdef int _sreorder_missing_submatrix(cnp.float32_t* a, int* missing, int n)
-cdef int _dreorder_missing_submatrix(cnp.float64_t* a, int* missing, int n)
-cdef int _creorder_missing_submatrix(cnp.complex64_t* a, int* missing, int n)
-cdef int _zreorder_missing_submatrix(cnp.complex128_t* a, int* missing, int n)
-
-cdef int _sreorder_missing_rows(cnp.float32_t* a, int* missing, int n, int m)
-cdef int _dreorder_missing_rows(cnp.float64_t* a, int* missing, int n, int m)
-cdef int _creorder_missing_rows(cnp.complex64_t* a, int* missing, int n, int m)
-cdef int _zreorder_missing_rows(cnp.complex128_t* a, int* missing, int n, int m)
-
-cdef int _sreorder_missing_cols(cnp.float32_t* a, int* missing, int n, int m)
-cdef int _dreorder_missing_cols(cnp.float64_t* a, int* missing, int n, int m)
-cdef int _creorder_missing_cols(cnp.complex64_t* a, int* missing, int n, int m)
-cdef int _zreorder_missing_cols(cnp.complex128_t* a, int* missing, int n, int m)
-
 cpdef int sreorder_missing_matrix(cnp.float32_t[::1, :, :] A, int[::1, :] missing, int reorder_rows, int reorder_cols, int diagonal) except *
 cpdef int dreorder_missing_matrix(cnp.float64_t[::1, :, :] A, int[::1, :] missing, int reorder_rows, int reorder_cols, int diagonal) except *
 cpdef int creorder_missing_matrix(cnp.complex64_t[::1, :, :] A, int[::1, :] missing, int reorder_rows, int reorder_cols, int diagonal) except *
@@ -60,26 +40,6 @@ cpdef int sreorder_missing_vector(cnp.float32_t[::1, :] A, int[::1, :] missing) 
 cpdef int dreorder_missing_vector(cnp.float64_t[::1, :] A, int[::1, :] missing) except *
 cpdef int creorder_missing_vector(cnp.complex64_t[::1, :] A, int[::1, :] missing) except *
 cpdef int zreorder_missing_vector(cnp.complex128_t[::1, :] A, int[::1, :] missing) except *
-
-cdef int _scopy_missing_diagonal(cnp.float32_t* a, cnp.float32_t* b, int* missing, int n)
-cdef int _dcopy_missing_diagonal(cnp.float64_t* a, cnp.float64_t* b, int* missing, int n)
-cdef int _ccopy_missing_diagonal(cnp.complex64_t* a, cnp.complex64_t* b, int* missing, int n)
-cdef int _zcopy_missing_diagonal(cnp.complex128_t* a, cnp.complex128_t* b, int* missing, int n)
-
-cdef int _scopy_missing_submatrix(cnp.float32_t* a, cnp.float32_t* b, int* missing, int n)
-cdef int _dcopy_missing_submatrix(cnp.float64_t* a, cnp.float64_t* b, int* missing, int n)
-cdef int _ccopy_missing_submatrix(cnp.complex64_t* a, cnp.complex64_t* b, int* missing, int n)
-cdef int _zcopy_missing_submatrix(cnp.complex128_t* a, cnp.complex128_t* b, int* missing, int n)
-
-cdef int _scopy_missing_rows(cnp.float32_t* a, cnp.float32_t* b, int* missing, int n, int m)
-cdef int _dcopy_missing_rows(cnp.float64_t* a, cnp.float64_t* b, int* missing, int n, int m)
-cdef int _ccopy_missing_rows(cnp.complex64_t* a, cnp.complex64_t* b, int* missing, int n, int m)
-cdef int _zcopy_missing_rows(cnp.complex128_t* a, cnp.complex128_t* b, int* missing, int n, int m)
-
-cdef int _scopy_missing_cols(cnp.float32_t* a, cnp.float32_t* b, int* missing, int n, int m)
-cdef int _dcopy_missing_cols(cnp.float64_t* a, cnp.float64_t* b, int* missing, int n, int m)
-cdef int _ccopy_missing_cols(cnp.complex64_t* a, cnp.complex64_t* b, int* missing, int n, int m)
-cdef int _zcopy_missing_cols(cnp.complex128_t* a, cnp.complex128_t* b, int* missing, int n, int m)
 
 cpdef int scopy_missing_matrix(cnp.float32_t[::1, :, :] A, cnp.float32_t[::1, :, :] B, int[::1, :] missing, int copy_rows, int copy_cols, int diagonal) except *
 cpdef int dcopy_missing_matrix(cnp.float64_t[::1, :, :] A, cnp.float64_t[::1, :, :] B, int[::1, :] missing, int copy_rows, int copy_cols, int diagonal) except *
@@ -120,3 +80,27 @@ cpdef int scopy_index_vector(cnp.float32_t[::1, :] A, cnp.float32_t[::1, :] B, i
 cpdef int dcopy_index_vector(cnp.float64_t[::1, :] A, cnp.float64_t[::1, :] B, int[::1, :] index) except *
 cpdef int ccopy_index_vector(cnp.complex64_t[::1, :] A, cnp.complex64_t[::1, :] B, int[::1, :] index) except *
 cpdef int zcopy_index_vector(cnp.complex128_t[::1, :] A, cnp.complex128_t[::1, :] B, int[::1, :] index) except *
+
+cdef int _sselect_cov(int k_states, int k_posdef, int k_states_total,
+                      cnp.float32_t* tmp,
+                      cnp.float32_t* selection,
+                      cnp.float32_t* cov,
+                      cnp.float32_t* selected_cov)
+
+cdef int _dselect_cov(int k_states, int k_posdef, int k_states_total,
+                      cnp.float64_t* tmp,
+                      cnp.float64_t* selection,
+                      cnp.float64_t* cov,
+                      cnp.float64_t* selected_cov)
+
+cdef int _cselect_cov(int k_states, int k_posdef, int k_states_total,
+                      cnp.complex64_t* tmp,
+                      cnp.complex64_t* selection,
+                      cnp.complex64_t* cov,
+                      cnp.complex64_t* selected_cov)
+
+cdef int _zselect_cov(int k_states, int k_posdef, int k_states_total,
+                      cnp.complex128_t* tmp,
+                      cnp.complex128_t* selection,
+                      cnp.complex128_t* cov,
+                      cnp.complex128_t* selected_cov)

@@ -9,7 +9,8 @@ from numpy.testing import assert_almost_equal, assert_equal, assert_allclose
 import pandas as pd
 import pandas.util.testing as tm
 
-from sm2.tsa.stattools import (pacf_yw,
+from sm2.compat.numpy import lstsq
+from sm2.tsa.stattools import (pacf_yw, pacf_ols,
                                pacf, grangercausalitytests,
                                arma_order_select_ic,
                                levinson_durbin,
@@ -55,6 +56,22 @@ class TestPACF(CheckCorrGram):
         assert_equal(confint[0], [1, 1])
         assert pacfols[0] == 1
 
+    def test_ols_inefficient(self):
+        # GH#5153
+        lag_len = 5
+        pacfols = pacf_ols(self.x, nlags=lag_len, efficient=False)
+        x = self.x.copy()
+        x -= x.mean()
+        n = x.shape[0]
+        lags = np.zeros((n - 5, 5))
+        lead = x[5:]
+        direct = np.empty(lag_len + 1)
+        direct[0] = 1.0
+        for i in range(lag_len):
+            lags[:, i] = x[5 - (i + 1):-(i + 1)]
+            direct[i + 1] = lstsq(lags[:, :(i + 1)], lead, rcond=None)[0][-1]
+        assert_allclose(pacfols, direct, atol=1e-8)
+
     def test_yw(self):
         pacfyw = pacf_yw(self.x, nlags=40, method="mle")
         assert_almost_equal(pacfyw[1:], self.pacfyw, DECIMAL_8)
@@ -67,6 +84,17 @@ class TestPACF(CheckCorrGram):
         pacfyw = pacf(self.x, nlags=40, method="yw")
         pacfld = pacf(self.x, nlags=40, method="ldu")
         assert_almost_equal(pacfyw, pacfld, DECIMAL_8)
+
+    @pytest.mark.smoke
+    @pytest.mark.parametrize("method", [
+        "ols",
+        "yw", "ywu", "ywunbiased", "yw_unbiased",
+        "ywm", "ywmle", "yw_mle",
+        "ld", "ldu", "ldunbiased", "ld_unbiased",
+        "ldb", "ldbiased", "ld_biased"])
+    def test_pacf_method(self, method):
+        # GH#5212
+        pacfols, confint = pacf(self.x, nlags=40, alpha=.05, method=method)
 
 
 # -----------------------------------------------------------------

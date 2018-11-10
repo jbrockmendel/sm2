@@ -70,7 +70,7 @@ _armax_notes = """
 
     .. math::
 
-       \\phi(L)(y_t - X_t\\beta) = \\theta(L)\epsilon_t
+       \\phi(L)(y_t - X_t\\beta) = \\theta(L)\\epsilon_t
 
     where :math:`\\phi` and :math:`\\theta` are polynomials in the lag
     operator, :math:`L`. This is the regression model with ARMA errors,

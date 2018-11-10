@@ -19,8 +19,8 @@ import pandas as pd
 import pandas.util.testing as tm
 
 import sm2.api as sm
-from sm2.discrete.discrete_model import DiscreteResults
 import sm2.formula.api as smf  # noqa:F841 # mostly just to get coverage
+import sm2.tools._testing as smt
 
 
 @pytest.mark.not_vetted
@@ -37,30 +37,13 @@ class CheckGenericMixin(object):
 
     def test_ttest_tvalues(self):
         # test that t_test has same results a params, bse, tvalues, ...
+        smt.check_ttest_tvalues(self.results)
+
         res = self.results
         mat = np.eye(len(res.params))
-        tt = res.t_test(mat)
-
-        assert_allclose(tt.effect, res.params, rtol=1e-12)
-        # TODO: tt.sd and tt.tvalue are 2d also for single regressor, squeeze
-        assert_allclose(np.squeeze(tt.sd), res.bse, rtol=1e-10)
-        assert_allclose(np.squeeze(tt.tvalue), res.tvalues, rtol=1e-12)
-        assert_allclose(tt.pvalue, res.pvalues, rtol=5e-10)
-        assert_allclose(tt.conf_int(), res.conf_int(), rtol=1e-10)
-
-        # test params table frame returned by t_test
-        table_res = np.column_stack((res.params, res.bse, res.tvalues,
-                                     res.pvalues, res.conf_int()))
-        table2 = tt.summary_frame().values
-        assert_allclose(table2, table_res, rtol=1e-12)
-
-        # move this to test_attributes ?
-        assert hasattr(res, 'use_t')
 
         tt = res.t_test(mat[0])
-
-        summ = tt.summary()   # smoke test for GH#1323
-        assert_allclose(tt.pvalue, res.pvalues[0], rtol=5e-10)
+        summ = tt.summary()
 
         string_confint = "[%4.3F      %4.3F]" % (.05 / 2, 1 - .05 / 2)
         assert string_confint in str(summ)
@@ -77,18 +60,7 @@ class CheckGenericMixin(object):
         assert_array_equal(summf.columns.values, cols)
 
     def test_ftest_pvalues(self):
-        res = self.results
-        use_t = res.use_t
-        k_vars = len(res.params)
-        # check default use_t
-        pvals = [res.wald_test(np.eye(k_vars)[k], use_f=use_t).pvalue
-                 for k in range(k_vars)]
-        assert_allclose(pvals, res.pvalues, rtol=5e-10, atol=1e-25)
-
-        # automatic use_f based on results class use_t
-        pvals = [res.wald_test(np.eye(k_vars)[k]).pvalue
-                 for k in range(k_vars)]
-        assert_allclose(pvals, res.pvalues, rtol=5e-10, atol=1e-25)
+        smt.check_ftest_pvalues(self.results)
 
     @pytest.mark.smoke
     def test_summary(self):
@@ -114,68 +86,10 @@ class CheckGenericMixin(object):
         assert string_use_t in summ2
 
     def test_fitted(self):
-        # ignore wrapper for isinstance check
-        # FIXME: work around GEE has no wrapper
-        results = getattr(self.results, '_results', self.results)
-        if (isinstance(results, DiscreteResults) or
-                results.__class__.__name__ == 'GLMResults'):
-            # __name__ check is a kludge to avoid needing import from upstream
-            raise pytest.skip('Infeasible for {0}'.format(type(results)))
-
-        res = self.results
-        fitted = res.fittedvalues
-        assert_allclose(res.model.endog - fitted, res.resid, rtol=1e-12)
-        assert_allclose(fitted, res.predict(), rtol=1e-12)
+        smt.check_fitted(self.results)
 
     def test_predict_types(self):
-        res = self.results
-        # squeeze to make 1d for single regressor test case
-        p_exog = np.squeeze(np.asarray(res.model.exog[:2]))
-
-        # ignore wrapper for isinstance check
-        # FIXME: work around GEE has no wrapper
-        results = getattr(self.results, '_results', self.results)
-
-        if (isinstance(results, DiscreteResults) or
-                results.__class__.__name__ == 'GLMResults'):
-            # __name__ check is a kludge to avoid needing import from upstream
-            # SMOKE test only  TODO
-            res.predict(p_exog)
-            res.predict(p_exog.tolist())
-            res.predict(p_exog[0].tolist())
-        else:
-
-            fitted = res.fittedvalues[:2]
-            assert_allclose(fitted, res.predict(p_exog), rtol=1e-12)
-            # this needs reshape to column-vector:
-            assert_allclose(fitted, res.predict(np.squeeze(p_exog).tolist()),
-                            rtol=1e-12)
-            # only one prediction:
-            assert_allclose(fitted[:1],
-                            res.predict(p_exog[0].tolist()),
-                            rtol=1e-12)
-            assert_allclose(fitted[:1],
-                            res.predict(p_exog[0]),
-                            rtol=1e-12)
-
-            exog_index = range(len(p_exog))
-            predicted = res.predict(p_exog)
-
-            if p_exog.ndim == 1:
-                predicted_pandas = res.predict(pd.Series(p_exog,
-                                                         index=exog_index))
-            else:
-                predicted_pandas = res.predict(pd.DataFrame(p_exog,
-                                                            index=exog_index))
-
-            if predicted.ndim == 1:
-                assert isinstance(predicted_pandas, pd.Series)
-                predicted_expected = pd.Series(predicted, index=exog_index)
-                tm.assert_series_equal(predicted_expected, predicted_pandas)
-            else:
-                assert isinstance(predicted_pandas, pd.DataFrame)
-                predicted_expected = pd.DataFrame(predicted, index=exog_index)
-                assert predicted_expected.equals(predicted_pandas)
+        smt.check_predict_types(self.results)
 
     def test_zero_constrained(self):
         # TODO: if/when this is ported, see test classes implemented in GH#4576
@@ -458,7 +372,7 @@ kidney_table = StringIO("""Days      Duration Weight ID
     1.0      2      3     10
 """)
 kidney_table.seek(0)
-kidney_table = pd.read_table(kidney_table, sep="\s+")
+kidney_table = pd.read_table(kidney_table, sep=r"\s+")
 
 
 @pytest.mark.not_vetted

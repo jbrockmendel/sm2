@@ -15,7 +15,7 @@ from sm2.compat.scipy import _next_regular
 # NOTE: Changed unbiased to False
 # see for example
 # http://www.itl.nist.gov/div898/handbook/eda/section3/autocopl.htm
-def acf(x, unbiased=False, nlags=40, qstat=True, fft=False, alpha=True,
+def acf(x, unbiased=False, nlags=40, qstat=True, fft=None, alpha=True,
         missing='none'):
     """
     Autocorrelation function for 1d arrays.
@@ -58,11 +58,14 @@ def acf(x, unbiased=False, nlags=40, qstat=True, fft=False, alpha=True,
     -----
     The acf at lag 0 (ie., 1) is returned.
 
-    This is based np.correlate which does full convolution. For very long time
-    series it is recommended to use fft convolution instead.
+    For very long time series it is recommended to use fft convolution instead.
+    When fft is False uses a simple, direct estimator of the autocovariances
+    that only computes the first nlag + 1 values. This can be much faster when
+    the time series is long and only a small number of autocovariances are
+    needed.
 
     If unbiased is true, the denominator for the autocovariance is adjusted
-    but the autocorrelation is not an unbiased estimtor.
+    but the autocorrelation is not an unbiased estimator.
 
     References
     ----------
@@ -77,6 +80,15 @@ def acf(x, unbiased=False, nlags=40, qstat=True, fft=False, alpha=True,
                                   "are not supported in sm2.  `acf` always "
                                   "returns a tuple "
                                   "(acf, confint, qstat, pvalue)")
+
+    if fft is None:
+        # GH#4937
+        import warnings
+        warnings.warn('fft=True will become the default in a future version '
+                      'of statsmodels/sm2. To suppress this warning, '
+                      'explicitly set fft=False.', FutureWarning)
+        fft = False
+
     nobs = len(x)  # should this shrink for missing='drop' and NaNs in x?
     avf = acovf(x, unbiased=unbiased, demean=True, fft=fft, missing=missing)
     acf = avf[:nlags + 1] / avf[0]
@@ -93,7 +105,7 @@ def acf(x, unbiased=False, nlags=40, qstat=True, fft=False, alpha=True,
     return acf, confint, qstat, pvalue
 
 
-def acovf(x, unbiased=False, demean=True, fft=False, missing='none'):
+def acovf(x, unbiased=False, demean=True, fft=None, missing='none', nlag=None):
     """
     Autocovariance for 1D
 
@@ -109,8 +121,14 @@ def acovf(x, unbiased=False, demean=True, fft=False, missing='none'):
         If True, use FFT convolution.  This method should be preferred
         for long time series.
     missing : str
-        A string in ['none', 'raise', 'conservative', 'drop'] specifying
-        how any NaNs are to be treated.
+        A string in ['none', 'raise', 'conservative', 'drop'] specifying how
+        any NaNs are to be treated.
+    nlag : {int, None}
+        Limit the number of autocovariances returned.  Size of returned
+        array is nlag + 1.  Setting nlag when fft is False uses a simple,
+        direct estimator of the autocovariances that only computes the first
+        nlag + 1 values. This can be much faster when the time series is long
+        and only a small number of autocovariances are needed.
 
     Returns
     -------
@@ -123,6 +141,14 @@ def acovf(x, unbiased=False, demean=True, fft=False, missing='none'):
            and amplitude modulation. Sankhya: The Indian Journal of
            Statistics, Series A, pp.383-392.
     """
+    if fft is None:
+        # GH#4937
+        import warnings
+        warnings.warn('fft=True will become the default in a future version '
+                      'of statsmodels/sm2. To suppress this warning, '
+                      'explicitly set fft=False.', FutureWarning)
+        fft = False
+
     x = np.squeeze(np.asarray(x))
     if x.ndim > 1:
         raise ValueError("x must be 1d. Got %d dims." % x.ndim)
@@ -140,6 +166,8 @@ def acovf(x, unbiased=False, demean=True, fft=False, missing='none'):
             raise MissingDataError("NaNs were encountered in the data")
         notmask_bool = ~np.isnan(x)
         if missing == 'conservative':
+            # Must copy for thread safety (GH#4937)
+            x = x.copy()
             x[~notmask_bool] = 0
         else:
             # 'drop'
@@ -157,8 +185,41 @@ def acovf(x, unbiased=False, demean=True, fft=False, missing='none'):
         xo = x
 
     n = len(x)
+
+    lag_len = nlag
+    if nlag is None:
+        lag_len = n - 1
+    elif nlag > n - 1:
+        raise ValueError('nlag must be smaller than nobs - 1')
+
+    if not fft and nlag is not None:
+        # GH#4937
+        acov = np.empty(lag_len + 1)
+        acov[0] = xo.dot(xo)
+        for i in range(lag_len):
+            acov[i + 1] = xo[i + 1:].dot(xo[:-(i + 1)])
+        if not deal_with_masked or missing == 'drop':
+            if unbiased:
+                acov /= (n - np.arange(lag_len + 1))
+            else:
+                acov /= n
+        else:
+            if unbiased:
+                divisor = np.empty(lag_len + 1, dtype=np.int64)
+                divisor[0] = notmask_int.sum()
+                for i in range(lag_len):
+                    divisor[i + 1] = np.dot(notmask_int[i + 1:],
+                                            notmask_int[:-(i + 1)])
+                divisor[divisor == 0] = 1
+                acov /= divisor
+            else:
+                # biased, missing data but npt 'drop'
+                acov /= notmask_int.sum()
+        return acov
+
     if unbiased and deal_with_masked and missing == 'conservative':
         d = np.correlate(notmask_int, notmask_int, 'full')
+        d[d == 0] = 1
     elif unbiased:
         xi = np.arange(1, n + 1)
         d = np.hstack((xi, xi[:-1][::-1]))
@@ -176,11 +237,11 @@ def acovf(x, unbiased=False, demean=True, fft=False, missing='none'):
         acov = np.fft.ifft(Frf * np.conjugate(Frf))[:nobs] / d[nobs - 1:]
         acov = acov.real
     else:
-        acov = (np.correlate(xo, xo, 'full') / d)[n - 1:]
+        acov = np.correlate(xo, xo, 'full')[n - 1:] / d[n - 1:]
 
-    if deal_with_masked and missing == 'conservative':
-        # restore data for the user
-        x[~notmask_bool] = np.nan
+    if nlag is not None:
+        # GH#4937 Copy to allow gc of full array rather than view
+        return acov[:lag_len + 1].copy()
 
     return acov
 

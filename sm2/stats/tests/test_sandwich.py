@@ -25,7 +25,7 @@ cur_dir = os.path.abspath(os.path.dirname(__file__))
 # Petersen's test_data from:
 # www.kellogg.northwestern.edu/faculty/petersen/htm/papers/se/test_data.txt
 fpath = os.path.join(cur_dir, "test_data.txt")
-pet_data = pd.read_csv(fpath, delimiter='\s+', header=None).values
+pet_data = pd.read_csv(fpath, delimiter=r'\s+', header=None).values
 
 
 @pytest.mark.not_vetted
