@@ -1,0 +1,19 @@
+name: pandas
+channels:
+  - defaults
+  - conda-forge
+dependencies:
+  - bottleneck=1.2.0
+  - numexpr=2.6.1
+  - numpy=1.12.0
+  - python-dateutil=2.5.0
+  - python=2.7*
+  - pytz=2013b
+  - scipy=0.18.1
+  # universal
+  - cython>=0.28.2
+  - pandas>=0.23.3
+  - pytest
+  - pytest-xdist
+  - pip:
+    - hypothesis>=3.58.0

@@ -1,0 +1,17 @@
+name: sm2
+channels:
+  - defaults
+  - conda-forge
+dependencies:
+  - python=2.7.*
+  - bottleneck
+  - matplotlib
+  - numexpr
+  - numpy=1.12*
+  - scipy
+  # universal
+  - cython>=0.28.2
+  - pandas>=0.23.3
+  - pytest
+  - pytest-xdist
+  - hypothesis>=3.58.0

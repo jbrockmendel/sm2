@@ -1,0 +1,21 @@
+name: sm2
+channels:
+  - defaults
+dependencies:
+  - python=3.5*
+  - cython>=0.28.2
+  - bottleneck
+  - matplotlib
+  - nomkl
+  - numexpr
+  - numpy=1.13
+  - scipy
+  #
+  - xarray
+  # universal
+  - pandas>=0.23.3
+  - pytest
+  - pytest-xdist
+  - pip:
+    - python-dateutil==2.5.3
+    - hypothesis>=3.58.0
