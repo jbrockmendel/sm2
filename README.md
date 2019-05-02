@@ -31,8 +31,8 @@ With luck, fixes made here will eventually be ported upstream.
 <tr>
   <td></td>
   <td>
-    <a href="https://dev.azure.com/jbrockmende/sm2/_build/latest?definitionId=1&branch=master">
-      <img src="https://dev.azure.com/jbrockmende/sm2/_apis/build/status/jbrockmendel.sm2?branch=master" alt="Azure Pipelines build status" />
+    <a href="https://dev.azure.com/jbrockmendel/sm2/_build/latest?definitionId=1&branch=master">
+      <img src="https://dev.azure.com/jbrockmendel/sm2/_apis/build/status/jbrockmendel.sm2?branch=master" alt="Azure Pipelines build status" />
     </a>
   </td>
 </tr>
